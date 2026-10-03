@@ -191,18 +191,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
-
-  const showToast = useCallback((msg: string = "Not wired in this prototype.") => {
-    setToastMessage(msg);
-  }, []);
-
   useEffect(() => {
     if (!drawerOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
@@ -451,11 +439,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </nav>
 
           <div className={styles.content}>
-            <section className={styles.recentStrip} aria-label="Recently opened">
-              <p className={styles.stripLabel}>Recently opened</p>
-              {recentNames.length === 0 ? (
-                <p className={styles.recentNone}>Nothing opened yet — teams you visit will appear here.</p>
-              ) : (
+            {recentNames.length > 0 ? (
+              <section className={styles.recentStrip} aria-label="Recently opened">
+                <p className={styles.stripLabel}>Recently opened</p>
                 <div className={styles.recentRow}>
                   {recentNames.map((name) => {
                     const team = teamRef(name);
@@ -472,10 +458,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     );
                   })}
                 </div>
-              )}
-            </section>
+              </section>
+            ) : null}
 
-            <WardPanel title="Community teams" testId="community-index-teams">
+            <WardPanel title="A–Z directory" testId="community-index-teams">
               {allTeams.length === 0 ? (
                 /*
                  * An empty SOURCE is rendered as a stated absence, never as an empty list. A blank
@@ -644,7 +630,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </div>
               <div className={styles.drawerBody}>
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Single Source of Truth</h3>
+                  <h3 className={styles.drawerSectionTitle}>Directory source</h3>
                   <p className={styles.drawerText}>
                     Every team listed in this directory is derived directly from the referral intake vocabulary
                     extracted from Western Australian Mental Health Service catchment documentation.
@@ -652,11 +638,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </section>
 
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Spelling Collisions &amp; Verification</h3>
+                  <h3 className={styles.drawerSectionTitle}>Similar names</h3>
                   <p className={styles.drawerText}>
-                    Certain service entries carry variant spellings in upstream records (e.g. &ldquo;Midalnd&rdquo; vs
-                    &ldquo;Midland&rdquo;). Ward Flow flags these with a verification prompt rather than performing
-                    unauthorized merges.
+                    Some recorded names read alike. Each remains a separate entry; check that you are opening the team
+                    you mean. This directory has not been verified with the services.
                   </p>
                 </section>
 
@@ -665,25 +650,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   <div className={styles.drawerActions}>
                     <Link href="/mockups/ward-flow/referrals/new" className={styles.drawerBtnPrimary}>
                       <FileText aria-hidden="true" className={styles.btnIcon} />
-                      <span>Intake Referral for Community Team</span>
+                      <span>Raise referral</span>
                     </Link>
-                    <button
-                      type="button"
-                      className={styles.drawerBtnSecondary}
-                      onClick={() => showToast("Not wired in this prototype.")}
-                    >
-                      <span>Download Catchment Matrix</span>
-                    </button>
                   </div>
                 </section>
               </div>
             </div>
-          </div>
-        ) : null}
-
-        {toastMessage ? (
-          <div className={styles.toast} role="status" aria-live="polite">
-            {toastMessage}
           </div>
         ) : null}
       </main>
