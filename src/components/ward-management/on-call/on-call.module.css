@@ -583,6 +583,16 @@
 }
 
 @media print {
+  /* Include the recorded detail for every printed role without changing screen expansion. */
+  .coverageRow[hidden] {
+    display: table-row;
+  }
+
+  .main .detailButton,
+  .main .favouriteButton {
+    display: none;
+  }
+
   .main {
     max-width: none;
     padding: 0;

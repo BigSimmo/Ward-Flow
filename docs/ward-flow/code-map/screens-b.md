@@ -342,6 +342,8 @@ guards.
 
 ## `on-call/`
 
+Review repair, 3 October 2026 (PR #26): print CSS reveals coverage/handover rows for every displayed role and hides the interactive disclosure/favourite controls. Screen selection stays unchanged when returning from print. `ui-ward-on-call-print.spec.ts` checks the actual print-media visibility, recorded verification wording and restored screen expansion in Chromium.
+
 **Route:** `/on-call`. **Mockup:** `on-call-third-edition.html`. **Dispatches:**
 `RECORD_ESCALATION`. **Reads:** its own `on-call-roster.ts`; no imports from `ward-derivations.ts`.
 **Tests:** `ward-on-call-holds-no-people.test.ts`, `ward-on-call-screen.dom.test.tsx`, plus

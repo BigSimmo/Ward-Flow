@@ -401,7 +401,11 @@ export function OnCallScreen() {
                             </a>
                           </td>
                         </tr>
-                        <tr hidden={expandedRole !== item.id} id={`ward-coverage-${item.id}`}>
+                        <tr
+                          className={styles.coverageRow}
+                          hidden={expandedRole !== item.id}
+                          id={`ward-coverage-${item.id}`}
+                        >
                           <td colSpan={5} className={styles.coverageCell}>
                             <dl className={styles.coverageGrid}>
                               <div>
