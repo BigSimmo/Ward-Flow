@@ -1,5 +1,7 @@
 # Ward Flow — the task ledger
 
+> **Current task navigation — 3 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The [3 October pathway audit](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) is a later audit than the September record below, covering its own scope. The WF-RULES completion update at the end supersedes that task's earlier pending-integration/reconciliation entry.
+
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
 > 🟢 **STATUS AS OF 25 SEPTEMBER 2026, ESTATE RESOLUTION & ELEVATION: read this first.** The latest session closeout,
@@ -7956,3 +7958,11 @@ Same task ID: `WA-PATHWAYS-2026-10-03`. Owner permission to continue technical w
 Verified published follow-up: [PR #27](https://github.com/BigSimmo/Ward-Flow/pull/27) includes alerts review fixes; 36 focused checks passed. [CI run 37129195508](https://github.com/BigSimmo/Ward-Flow/actions/runs/37129195508) passed on head `224f77d55e2d45c3eb1d6533c711cc3a1b3b056d`. [PR #29](https://github.com/BigSimmo/Ward-Flow/pull/29) adds print-preview protection and a collected Chromium regression; 26 focused checks, Chromium print verification, production build and full TypeScript checking passed. [CI run 37129884445](https://github.com/BigSimmo/Ward-Flow/actions/runs/37129884445) passed on head `655c7b31ab88bbe3ed6a807bd4fb87370adac339`. These results apply to the named revisions and do not certify later commits or deployed clinical use.
 
 Original audit fixes were merged as PR #22 by the owner. This follow-up performed no merge, deployment, live hospital transaction or clinical sign-off.
+
+## WF-RULES-20261002 — documentation follow-up, 3 October 2026
+
+This supersedes the earlier WF-RULES pending-integration/reconciliation next action while preserving its dated evidence. The original technical repairs were published in [Ward PR14](https://github.com/BigSimmo/Ward-Flow/pull/14), merged at `3950980f43b898d5a2db9c84701923446371c179` on 2 October 2026 at 16:40:52 UTC. The [existing canonical task](https://app.notion.com/p/3ed7889e8a2281948826cbcf6c9da2b1) received the original Completed record; this is separate from later local follow-up delivery.
+
+The follow-up against public main `2220bde5f606c79681d9167e1e5b0b10ec2d8ed2` repairs six remaining documentation ambiguities: current design/status navigation; owner-ruling source edits rather than hand edits to the generated index; manual Ward review handling; dated task-state supersession; checkout-based client loading; and the compact receipt route for simple tasks. The [same checkpoint](ward-flow/plans/2026-10-02-rules-repair.md) records the isolated task branch and focused evidence. Josh approved the seven-file scoped takeover; command, relative-link, formatting and ownership checks passed against the actual edits. No application, clinical, storage or visual change was made.
+
+Shared mirror delivery, native GUI/cloud loading, missing historical clinical evidence/sign-offs and deployed runtime/provider checks remain separate gaps. The previously malformed historical patient mockup passed its focused formatting check on the reviewed main. The new follow-up is implemented and checked locally; its publication, merge and canonical delivery must each be reported from actual evidence.
