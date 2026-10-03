@@ -43,7 +43,7 @@ Compare adds ward stay, blocker and long-stay measures, plus ED open, urgent and
 unplaced measures. Search, metric selection, order, row selection and statistics
 links use the same current derivations as the detailed tables. Service statistics
 adds a ward-scoped capacity graph and referral placement destination distribution.
-The existing distance visual stays. Ward pages show current capacity first, followed
+Travel-band comparisons use recorded categories. Ward pages show current capacity first, followed
 by recorded discharge barriers and established current-stay bands. Missing stays
 are counted separately. ED pages show the headline figures and an elapsed placement
 wait dot plot, with overlapping urgent/unplaced filters and placement links.
