@@ -5,7 +5,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
-import { referrals, wardMovements } from "@/components/ward-management/ward-movements";
+import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -130,7 +130,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
    */
   it("says out loud that it cannot watch handover sheets", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("What this group checks and cannot check", { selector: "summary" }));
+    fireEvent.click(screen.getByText("Monitoring scope & limitations", { selector: "summary" }));
     const section = screen.getByRole("region", { name: "What this screen does not watch" });
 
     expect(section).toHaveTextContent(/handover/iu);

@@ -367,6 +367,11 @@ describe("the breakpoint scale", () => {
     // 390/820/1440 matrices establish the surrounding layouts, but do not claim pixel-level proof
     // at every threshold between those sampled widths.
     "src/components/ward-management/alerts/alerts.module.css: 62.5",
+    // Alerts refinement (PR #27): the two-column panel grid starts at 70rem, and dense mouse
+    // controls apply from 55.0625rem, the one-pixel complement of the existing 55rem phone/tablet
+    // range, so both ranges stay unambiguous. File-qualified so no other stylesheet adopts them.
+    "src/components/ward-management/alerts/alerts.module.css: 55.0625",
+    "src/components/ward-management/alerts/alerts.module.css: 70",
     "src/components/ward-management/capacity/bed-map.module.css: 48",
     "src/components/ward-management/ed/ed.module.css: 80",
     "src/components/ward-management/legal-forms/legal-forms.module.css: 62.5",
