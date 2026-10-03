@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { statisticsChartScale } from "./statistics-chart-scale";
 import styles from "./statistics-insight-chart.module.css";
@@ -58,6 +58,7 @@ export function StatisticsInsightChart({
   const [sort, setSort] = useState(defaultSort);
   const [group, setGroup] = useState(defaultGroup);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"chart" | "table">("chart");
   const metric = metrics.find((item) => item.id === metricId) ?? metrics[0];
   if (!metric) return null;
   const valueOf = (row: InsightRow) => row.values[metric.id] ?? null;
@@ -78,7 +79,11 @@ export function StatisticsInsightChart({
   );
   const references = (metric.references ?? []).filter((reference) => reference.value > 0 && reference.value <= maximum);
   const changed =
-    query !== "" || sort !== defaultSort || group !== defaultGroup || metric.id !== (defaultMetric ?? metrics[0]?.id);
+    view !== "chart" ||
+    query !== "" ||
+    sort !== defaultSort ||
+    group !== defaultGroup ||
+    metric.id !== (defaultMetric ?? metrics[0]?.id);
   const selected = visible.find((row) => row.id === selectedId);
   const format = (value: number) => new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 }).format(value);
   const unitFor = (value: number) =>
@@ -89,11 +94,30 @@ export function StatisticsInsightChart({
     const value = valueOf(row);
     return value === null ? (row.unavailable ?? "Not recorded") : `${format(value)} ${unitFor(value)}`;
   };
+  function navigateRows(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    const direction =
+      event.key === "ArrowDown" || event.key === "ArrowRight"
+        ? 1
+        : event.key === "ArrowUp" || event.key === "ArrowLeft"
+          ? -1
+          : 0;
+    if (direction || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? visible.length - 1
+            : (index + direction + visible.length) % visible.length;
+      rowButtons.current.get(visible[nextIndex].id)?.focus();
+    }
+  }
   function closeDetails() {
     if (selected) rowButtons.current.get(selected.id)?.focus();
     setSelectedId(null);
   }
   function reset() {
+    setView("chart");
     setQuery("");
     setSort(defaultSort);
     setGroup(defaultGroup);
@@ -141,6 +165,26 @@ export function StatisticsInsightChart({
           <span className={styles.count} aria-live="polite">
             {visible.length} of {rows.length}
           </span>
+          <button
+            type="button"
+            aria-label={`${title} data view`}
+            aria-pressed={view === "table"}
+            onClick={() => setView(view === "chart" ? "table" : "chart")}
+          >
+            <svg
+              aria-hidden="true"
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.2"
+            >
+              <rect x="1.5" y="2.5" width="13" height="11" rx="1" />
+              <path d="M1.5 6.5h13M1.5 10h13M6.5 2.5v11" />
+            </svg>
+            Data
+          </button>
           <button type="button" onClick={exportCsv} disabled={!visible.length}>
             Export CSV
           </button>
@@ -225,120 +269,154 @@ export function StatisticsInsightChart({
       )}
       <p className={styles.note}>{metric.note}</p>
       <div className={styles.workspace}>
-        <div
-          className={styles.plot}
-          data-variant={variant}
-          data-empty={visible.every((row) => valueOf(row) === null || valueOf(row) === 0)}
-        >
-          <div className={styles.axis} aria-hidden="true">
-            <span>{metric.label}</span>
-            <span>{metric.unit}</span>
-          </div>
-          <div className={styles.rows} data-variant={variant}>
-            <div className={variant === "distribution" ? styles.yAxis : styles.xAxis} aria-hidden="true">
-              {variant !== "distribution" &&
-                references.map((reference) => (
+        {view === "chart" ? (
+          <div
+            className={styles.plot}
+            data-variant={variant}
+            data-empty={visible.every((row) => valueOf(row) === null || valueOf(row) === 0)}
+          >
+            <div className={styles.axis} aria-hidden="true">
+              <span>{metric.label}</span>
+              <span>{metric.unit}</span>
+            </div>
+            <div className={styles.rows} data-variant={variant}>
+              <div className={variant === "distribution" ? styles.yAxis : styles.xAxis} aria-hidden="true">
+                {variant !== "distribution" &&
+                  references.map((reference) => (
+                    <span
+                      className={styles.referenceLabel}
+                      key={reference.label}
+                      style={{ left: `${(reference.value / maximum) * 100}%` }}
+                    >
+                      {reference.label}
+                    </span>
+                  ))}
+                {ticks.map((tick) => (
                   <span
-                    className={styles.referenceLabel}
-                    key={reference.label}
-                    style={{ left: `${(reference.value / maximum) * 100}%` }}
+                    key={tick}
+                    data-tick={tick}
+                    style={{ [variant === "distribution" ? "bottom" : "left"]: `${(tick / maximum) * 100}%` }}
                   >
-                    {reference.label}
+                    {format(tick)}
                   </span>
                 ))}
-              {ticks.map((tick) => (
-                <span
-                  key={tick}
-                  data-tick={tick}
-                  style={{ [variant === "distribution" ? "bottom" : "left"]: `${(tick / maximum) * 100}%` }}
-                >
-                  {format(tick)}
-                </span>
-              ))}
+              </div>
+              {visible.map((row, index) => {
+                const value = valueOf(row);
+                return (
+                  <button
+                    key={row.id}
+                    ref={(node) => {
+                      if (node) rowButtons.current.set(row.id, node);
+                      else rowButtons.current.delete(row.id);
+                    }}
+                    title={`${row.name}: ${display(row)}${row.context ? ` · ${row.context}` : ""}`}
+                    onKeyDown={(event) => navigateRows(event, index)}
+                    type="button"
+                    className={styles.row}
+                    data-chart-record=""
+                    data-tone={row.tone ?? metric.tone}
+                    aria-pressed={selected?.id === row.id}
+                    aria-label={`${row.name}: ${display(row)}`}
+                    onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
+                  >
+                    <span className={styles.identity}>
+                      <strong>{row.name}</strong>
+                      {row.context && <small>{row.context}</small>}
+                    </span>
+                    <span className={styles.track} aria-hidden="true">
+                      {ticks.map((tick) => (
+                        <i
+                          key={tick}
+                          className={styles.guide}
+                          style={{ [variant === "distribution" ? "bottom" : "left"]: `${(tick / maximum) * 100}%` }}
+                        />
+                      ))}
+                      {references.map((reference) => (
+                        <i
+                          key={reference.label}
+                          className={styles.reference}
+                          style={{
+                            [variant === "distribution" ? "bottom" : "left"]: `${(reference.value / maximum) * 100}%`,
+                          }}
+                        />
+                      ))}
+                      {value !== null && (
+                        <span
+                          className={styles.bar}
+                          data-tone={row.tone ?? metric.tone}
+                          style={{
+                            [variant === "distribution" ? "height" : "width"]:
+                              `${Math.max(0, Math.min(100, (value / maximum) * 100))}%`,
+                          }}
+                        />
+                      )}
+                    </span>
+                    <span className={styles.value} data-unavailable={value === null}>
+                      {display(row)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-            {visible.map((row, index) => {
-              const value = valueOf(row);
-              return (
-                <button
-                  key={row.id}
-                  ref={(node) => {
-                    if (node) rowButtons.current.set(row.id, node);
-                    else rowButtons.current.delete(row.id);
-                  }}
-                  title={`${row.name}: ${display(row)}${row.context ? ` · ${row.context}` : ""}`}
-                  onKeyDown={(event) => {
-                    const direction =
-                      event.key === "ArrowDown" || event.key === "ArrowRight"
-                        ? 1
-                        : event.key === "ArrowUp" || event.key === "ArrowLeft"
-                          ? -1
-                          : 0;
-                    if (direction || event.key === "Home" || event.key === "End") {
-                      event.preventDefault();
-                      const nextIndex =
-                        event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? visible.length - 1
-                            : (index + direction + visible.length) % visible.length;
-                      rowButtons.current.get(visible[nextIndex].id)?.focus();
-                    }
-                  }}
-                  type="button"
-                  className={styles.row}
-                  data-tone={row.tone ?? metric.tone}
-                  aria-pressed={selected?.id === row.id}
-                  aria-label={`${row.name}: ${display(row)}`}
-                  onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
-                >
-                  <span className={styles.identity}>
-                    <strong>{row.name}</strong>
-                    {row.context && <small>{row.context}</small>}
-                  </span>
-                  <span className={styles.track} aria-hidden="true">
-                    {ticks.map((tick) => (
-                      <i
-                        key={tick}
-                        className={styles.guide}
-                        style={{ [variant === "distribution" ? "bottom" : "left"]: `${(tick / maximum) * 100}%` }}
-                      />
-                    ))}
-                    {references.map((reference) => (
-                      <i
-                        key={reference.label}
-                        className={styles.reference}
-                        style={{
-                          [variant === "distribution" ? "bottom" : "left"]: `${(reference.value / maximum) * 100}%`,
-                        }}
-                      />
-                    ))}
-                    {value !== null && (
-                      <span
-                        className={styles.bar}
-                        data-tone={row.tone ?? metric.tone}
-                        style={{
-                          [variant === "distribution" ? "height" : "width"]:
-                            `${Math.max(0, Math.min(100, (value / maximum) * 100))}%`,
-                        }}
-                      />
-                    )}
-                  </span>
-                  <span className={styles.value} data-unavailable={value === null}>
-                    {display(row)}
-                  </span>
+            {!visible.length && (
+              <div className={styles.empty}>
+                <p>{emptyText}</p>
+                <button type="button" onClick={reset}>
+                  Clear filters
                 </button>
-              );
-            })}
+              </div>
+            )}
           </div>
-          {!visible.length && (
-            <div className={styles.empty}>
-              <p>{emptyText}</p>
-              <button type="button" onClick={reset}>
-                Clear filters
-              </button>
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className={styles.dataView}>
+            <table>
+              <caption className={styles.srOnly}>
+                {title}: {metric.label} ({metric.unit})
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Record</th>
+                  <th scope="col">
+                    {metric.label} <small>({metric.unit})</small>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((row, index) => (
+                  <tr key={row.id} data-selected={selected?.id === row.id}>
+                    <th scope="row">
+                      <button
+                        data-chart-record=""
+                        type="button"
+                        aria-label={`${row.name}: ${display(row)}`}
+                        aria-pressed={selected?.id === row.id}
+                        ref={(node) => {
+                          if (node) rowButtons.current.set(row.id, node);
+                          else rowButtons.current.delete(row.id);
+                        }}
+                        onKeyDown={(event) => navigateRows(event, index)}
+                        onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
+                      >
+                        <strong>{row.name}</strong>
+                        {row.context && <small>{row.context}</small>}
+                      </button>
+                    </th>
+                    <td data-unavailable={valueOf(row) === null}>{display(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!visible.length && (
+              <div className={styles.empty}>
+                <p>{emptyText}</p>
+                <button type="button" onClick={reset}>
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {selected && (
           <aside className={styles.inspector} aria-label={`${selected.name} details`}>
             <div className={styles.inspectorHeading}>

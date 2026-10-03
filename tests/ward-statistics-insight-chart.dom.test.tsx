@@ -83,7 +83,7 @@ describe("interactive statistics insights", () => {
     chart();
     fireEvent.change(screen.getByLabelText("Waits measure"), { target: { value: "count" } });
     fireEvent.change(screen.getByLabelText("Waits order"), { target: { value: "value" } });
-    const plotted = screen.getAllByRole("button").filter((button) => button.hasAttribute("aria-pressed"));
+    const plotted = screen.getAllByRole("button").filter((button) => button.hasAttribute("data-chart-record"));
     expect(plotted[0]).toHaveAccessibleName("Other 3: 4 people");
     expect(plotted.at(-1)).toHaveAccessibleName("Gamma: Not linked");
     expect(screen.getByText("Recorded counts.")).toBeInTheDocument();
@@ -165,6 +165,25 @@ describe("interactive statistics insights", () => {
     const alpha = screen.getByRole("button", { name: "Alpha: 25 h" });
     expect(alpha).toHaveAttribute("data-tone", "warning");
     expect(alpha.querySelector<HTMLElement>('i[class*="reference"]')?.style.left).toBe("80%");
+  });
+  it("switches to tabular values without losing filters, missingness or selection", () => {
+    chart();
+    const alpha = screen.getByRole("button", { name: "Alpha: 12 h" });
+    fireEvent.click(alpha);
+    fireEvent.click(screen.getByRole("button", { name: "Waits data view" }));
+    const table = within(screen.getByRole("table"));
+    expect(table.getByRole("row", { name: /Beta/ })).toHaveTextContent("0 h");
+    expect(table.getByRole("row", { name: /Gamma/ })).toHaveTextContent("Not linked");
+    expect(table.getByRole("button", { name: "Alpha: 12 h" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.keyDown(screen.getByRole("button", { name: "Close chart details" }), { key: "Escape" });
+    expect(table.getByRole("button", { name: "Alpha: 12 h" })).toHaveFocus();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Gamma" } });
+    expect(table.getAllByRole("row")).toHaveLength(2);
+    fireEvent.change(screen.getByLabelText("Waits measure"), { target: { value: "count" } });
+    expect(table.getByRole("columnheader", { name: "Count (people)" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Waits data view" }));
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.getByRole("button", { name: "Gamma: Not linked" })).toBeInTheDocument();
   });
   it("drops removed live records from the inspector", () => {
     const view = chart();

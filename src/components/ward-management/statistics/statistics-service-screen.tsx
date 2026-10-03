@@ -6,7 +6,6 @@ import family from "./statistics-family.module.css";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
 
 import { StatFootnote } from "@/components/ward-management/statistics/statistics-primitives";
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
@@ -80,13 +79,6 @@ import pageStyles from "./statistics-service-third-edition.module.css";
  * reaching a real chart by accident.
  */
 
-const DISTANCE_THRESHOLDS = [
-  { band: "under_an_hour", range: "< 15 km", label: "Under 1 hour", color: "var(--good)" },
-  { band: "one_to_three_hours", range: "15–50 km", label: "1 to 3 hours", color: "var(--accent)" },
-  { band: "three_hours_or_more", range: "50–100 km", label: "3 hours or more", color: "var(--warn)" },
-  { band: "air_transport_only", range: "> 100 km", label: "Air transport only", color: "var(--danger)" },
-] as const;
-
 function DistanceBandsBar({
   total,
   bandCounts,
@@ -94,256 +86,31 @@ function DistanceBandsBar({
   total: number;
   bandCounts: Map<(typeof OUT_OF_AREA_BANDS)[number], number>;
 }) {
-  const [hoveredBand, setHoveredBand] = useState<{
-    idx: number;
-    label: string;
-    range: string;
-    n: number;
-    pct: string;
-    color: string;
-    leftPos: number;
-  } | null>(null);
-
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  const w = 640;
-  const h = 104;
-  const padL = 16;
-  const padR = 16;
-  const barW = w - padL - padR;
-  const barH = 32;
-  const barY = 16;
-
-  const segmentData = DISTANCE_THRESHOLDS.map((thresh, i) => {
-    const n = bandCounts.get(thresh.band) ?? 0;
-    const segW = total > 0 ? (n / total) * barW : 0;
-    const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
-    const previousCount = DISTANCE_THRESHOLDS.slice(0, i).reduce(
-      (sum, item) => sum + (bandCounts.get(item.band) ?? 0),
-      0,
-    );
-    const segStartX = padL + (total > 0 ? (previousCount / total) * barW : 0);
-    const segMid = segStartX + segW / 2;
-    return {
-      idx: i,
-      x: segStartX,
-      w: segW,
-      mid: segMid,
-      pct,
-      color: thresh.color,
-      range: thresh.range,
-      label: thresh.label,
-      n,
-    };
-  });
-
-  const handleFocusOrHover = (seg: (typeof segmentData)[number]) => {
-    if (!wrapRef.current) return;
-    const rect = wrapRef.current.getBoundingClientRect();
-    const pixelMid = (seg.mid / w) * rect.width;
-    let leftPos = pixelMid - 95;
-    if (leftPos > rect.width - 200) leftPos = rect.width - 210;
-    if (leftPos < 10) leftPos = 10;
-    setHoveredBand({
-      idx: seg.idx,
-      label: seg.label,
-      range: seg.range,
-      n: seg.n,
-      pct: seg.pct,
-      color: seg.color,
-      leftPos,
-    });
-  };
-
   return (
-    <div className={pageStyles.chartWrap} ref={wrapRef} style={{ padding: "0.75rem 0", background: "transparent" }}>
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        style={{ width: "100%", height: "auto", display: "block" }}
-        aria-label="Distance bands proportional breakdown"
-      >
-        {/* Background track container */}
-        <rect
-          x={padL}
-          y={barY}
-          width={barW}
-          height={barH}
-          rx={5}
-          fill="var(--sunk)"
-          stroke="var(--line)"
-          strokeWidth="1"
-        />
-
-        {total === 0 ? (
-          <text x={w / 2} y={barY + 20} fontFamily="var(--body)" fontSize="12" fill="var(--muted)" textAnchor="middle">
-            No patients currently recorded out of area
-          </text>
-        ) : (
-          segmentData.map((seg, i) => {
-            if (seg.w <= 0) return null;
-            const isHovered = hoveredBand?.idx === i;
-            return (
-              <g
-                key={seg.range}
-                className={pageStyles.distBandSeg}
-                tabIndex={0}
-                role="graphics-symbol"
-                aria-label={`${seg.range}: ${seg.n} patients (${seg.pct}%)`}
-                onMouseEnter={() => handleFocusOrHover(seg)}
-                onMouseLeave={() => setHoveredBand(null)}
-                onFocus={() => handleFocusOrHover(seg)}
-                onBlur={() => setHoveredBand(null)}
-              >
-                <rect
-                  className={pageStyles.distBandRect}
-                  x={seg.x.toFixed(1)}
-                  y={barY}
-                  width={Math.max(1, seg.w).toFixed(1)}
-                  height={barH}
-                  fill={seg.color}
-                  stroke={isHovered ? "var(--ink)" : "var(--surface)"}
-                  strokeWidth={isHovered ? 2.5 : 1.5}
-                  style={isHovered ? { filter: "brightness(1.18)" } : undefined}
-                  rx={3}
-                />
-                {seg.w >= 44 && (
-                  <>
-                    <rect
-                      x={(seg.mid - 21).toFixed(1)}
-                      y={barY + 6}
-                      width={42}
-                      height={20}
-                      rx={4}
-                      fill="rgba(0,0,0,0.36)"
-                    />
-                    <text
-                      x={seg.mid.toFixed(1)}
-                      y={barY + 20}
-                      fontFamily="var(--mono)"
-                      style={{ fontVariantNumeric: "tabular-nums" }}
-                      fontSize="12"
-                      fontWeight="600"
-                      fill="var(--surface)"
-                      textAnchor="middle"
-                    >
-                      {seg.pct}%
-                    </text>
-                  </>
-                )}
-              </g>
-            );
-          })
-        )}
-
-        {/* Boundary tick lines between segments */}
-        {total > 0 &&
-          segmentData.map((seg, i) => {
-            if (i === 0 || seg.x <= padL || seg.x >= w - padR) return null;
-            return (
-              <line
-                key={`tick-${seg.range}`}
-                x1={seg.x.toFixed(1)}
-                y1={barY}
-                x2={seg.x.toFixed(1)}
-                y2={barY + barH + 8}
-                stroke="var(--line-strong)"
-                strokeWidth="1.5"
-              />
-            );
-          })}
-
-        {/* Threshold markers beneath the bar */}
-        {segmentData.map((seg, i) => {
-          let midX = total > 0 && seg.w > 0 ? seg.mid : padL + (barW / 4) * (i + 0.5);
-          if (midX < padL + 35) midX = padL + 35;
-          if (midX > w - padR - 35) midX = w - padR - 35;
-          const isLastNarrow = seg.w < 50 && i === segmentData.length - 1;
-
-          if (isLastNarrow && total > 0) {
-            midX = w - padR;
-            return (
-              <g key={`marker-${seg.range}`}>
-                <text
-                  x={midX}
-                  y={barY + barH + 20}
-                  fontFamily="var(--mono)"
-                  fontSize="12"
-                  fontWeight="600"
-                  fill="var(--ink)"
-                  textAnchor="end"
-                >
-                  {seg.range}
-                </text>
-                <text
-                  x={midX}
-                  y={barY + barH + 36}
-                  fontFamily="var(--mono)"
-                  style={{ fontVariantNumeric: "tabular-nums" }}
-                  fontSize="12"
-                  fill="var(--muted)"
-                  textAnchor="end"
-                >
-                  {seg.n} ({seg.pct}%)
-                </text>
-              </g>
-            );
-          }
-
-          return (
-            <g key={`marker-${seg.range}`}>
-              <text
-                x={midX.toFixed(1)}
-                y={barY + barH + 20}
-                fontFamily="var(--mono)"
-                fontSize="12"
-                fontWeight="600"
-                fill="var(--ink)"
-                textAnchor="middle"
-              >
-                {seg.range}
-              </text>
-              <text
-                x={midX.toFixed(1)}
-                y={barY + barH + 36}
-                fontFamily="var(--mono)"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-                fontSize="12"
-                fill="var(--muted)"
-                textAnchor="middle"
-              >
-                {seg.n} ({seg.pct}%)
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {hoveredBand && (
-        <div
-          className={pageStyles.distBandTooltip}
-          role="tooltip"
-          style={{ left: Math.max(10, hoveredBand.leftPos), top: 6, display: "block" }}
-        >
-          <div className={pageStyles.ttTitle}>{hoveredBand.label}</div>
-          <div className={pageStyles.ttRow}>
-            <span style={{ color: "var(--muted)" }}>Distance threshold:</span>
-            <strong className={pageStyles.ttVal}>{hoveredBand.range}</strong>
-          </div>
-          <div className={pageStyles.ttRow}>
-            <span style={{ color: "var(--muted)" }}>Patient volume:</span>
-            <strong className={pageStyles.ttVal}>
-              {hoveredBand.n} {hoveredBand.n === 1 ? "patient" : "patients"}
-            </strong>
-          </div>
-          <div className={pageStyles.ttRow}>
-            <span style={{ color: "var(--muted)" }}>Percentage share:</span>
-            <strong className={pageStyles.ttVal} style={{ color: hoveredBand.color }}>
-              {hoveredBand.pct}% of total
-            </strong>
-          </div>
-        </div>
-      )}
-    </div>
+    <StatisticsInsightChart
+      title="Travel bands"
+      testId="statistics-service-travel-chart"
+      metrics={[
+        {
+          id: "people",
+          label: "Recorded patients",
+          unit: "people",
+          note: "Recorded travel bands use synthetic travel times and prototype thresholds.",
+        },
+      ]}
+      rows={OUT_OF_AREA_BANDS.map((band) => {
+        const count = bandCounts.get(band) ?? 0;
+        return {
+          id: band,
+          name: TRAVEL_BAND_LABELS[band],
+          values: { people: count },
+          detail:
+            total > 0
+              ? `${count} of ${total} recorded patients (${((count / total) * 100).toFixed(1)}%). Travel bands are synthetic, not a live travel estimate.`
+              : "No patients currently recorded out of area. Travel bands are synthetic, not a live travel estimate.",
+        };
+      })}
+    />
   );
 }
 
@@ -756,10 +523,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         </div>
 
         <div className={pageStyles.rightColumn}>
-          <WardPanel
-            title="How many of this service's own patients are far from home"
-            testId="ward-statistics-service-out-of-area"
-          >
+          <WardPanel title="Patients far from home" testId="ward-statistics-service-out-of-area">
             <div className={styles.panelBody} role="group" aria-label="Out of area content" tabIndex={0}>
               <dl className={pageStyles.kpiBand}>
                 <div>
@@ -776,34 +540,36 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
               <DistanceBandsBar total={outOfAreaEntries.length} bandCounts={bandCounts} />
 
-              <h3 className={pageStyles.sectionHeading}>By band</h3>
-              <ul
-                className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
-                data-testid="ward-statistics-service-out-of-area-bands"
-              >
-                {OUT_OF_AREA_BANDS.map((band) => (
-                  <li
-                    key={band}
-                    className={serviceStyles.tallyRow}
-                    data-testid={`ward-statistics-service-out-of-area-band-${band}`}
-                  >
-                    <span className={serviceStyles.tallyReason}>{TRAVEL_BAND_LABELS[band]}</span>
-                    <span className={pageStyles.bandTrack} aria-hidden="true">
-                      <span
-                        style={{
-                          width: `${outOfAreaEntries.length === 0 ? 0 : ((bandCounts.get(band) ?? 0) / outOfAreaEntries.length) * 100}%`,
-                        }}
-                      />
-                    </span>
-                    <span
-                      className={serviceStyles.tallyCount}
-                      data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}
+              <details className={`${pageStyles.measureDetails} source-print`}>
+                <summary>Recorded band counts</summary>
+                <ul
+                  className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
+                  data-testid="ward-statistics-service-out-of-area-bands"
+                >
+                  {OUT_OF_AREA_BANDS.map((band) => (
+                    <li
+                      key={band}
+                      className={serviceStyles.tallyRow}
+                      data-testid={`ward-statistics-service-out-of-area-band-${band}`}
                     >
-                      {bandCounts.get(band) ?? 0}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                      <span className={serviceStyles.tallyReason}>{TRAVEL_BAND_LABELS[band]}</span>
+                      <span className={pageStyles.bandTrack} aria-hidden="true">
+                        <span
+                          style={{
+                            width: `${outOfAreaEntries.length === 0 ? 0 : ((bandCounts.get(band) ?? 0) / outOfAreaEntries.length) * 100}%`,
+                          }}
+                        />
+                      </span>
+                      <span
+                        className={serviceStyles.tallyCount}
+                        data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}
+                      >
+                        {bandCounts.get(band) ?? 0}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
 
               <details className={`${pageStyles.measureDetails} source-print`}>
                 <summary>Synthetic distance definitions</summary>

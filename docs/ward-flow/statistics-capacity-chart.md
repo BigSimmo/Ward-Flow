@@ -89,3 +89,20 @@ targets; no forecast, target or historical data is inferred.
 The accepted Network overview top and existing exact tables, distance bands and
 labelled historical illustrations are retained. Disclosure counts can wrap without
 floating over their headings. There are no new chart libraries or dependencies.
+
+## Disclosure and data-view alignment
+
+Statistics disclosure rows use inset labels, separated rows and trailing chevrons;
+Open/Close remains the native details interaction with keyboard access. Missing
+ward/ED data-block styles are restored. Chart category labels and values share
+tracks and baselines, including wrapping on phones; compact chart headers respond
+to their actual module width.
+
+Every insight offers a Data view of the plotted values with the same filters,
+measure, availability and selection. Native table rows retain keyboard inspection
+and focus return. CSV continues to contain the unrounded recorded values.
+Service travel bands use the canonical travel-time vocabulary instead of the old
+SVG's unsupported kilometre conversion. Counts and percentages retain the existing
+out-of-area population; the synthetic travel disclosure and recorded band counts
+remain available. The accepted Network overview top and existing precision tables
+are retained.
