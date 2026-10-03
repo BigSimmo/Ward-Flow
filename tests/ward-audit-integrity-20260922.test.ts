@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { LEAVING_DESTINATIONS } from "../src/components/ward-management/ward-admissions";
 import { lockedBedsFree } from "../src/components/ward-management/ward-bed-designation";
 import {
   CANCEL_TRANSPORT_REASONS,

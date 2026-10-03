@@ -15,7 +15,6 @@ import {
   validCareChange,
   currentCareContact,
   separationHandoff,
-  type CareChange,
 } from "../ward-care-journey";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
