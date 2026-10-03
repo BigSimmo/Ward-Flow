@@ -93,7 +93,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   );
   const fact = (at: number, by: string) => `${by} · ${formatInstantWithDay(at, now)}`;
   return (
-    <section className={styles.drawerSection} aria-label="Care journey">
+    <section className={`${styles.drawerSection} ${styles.careJourney}`} aria-label="Care journey">
       <h4>Care journey</h4>
       <p>
         Chosen workflow facts are attributed to the recording role. Clinical documents remain in the clinical record.
@@ -291,6 +291,10 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
               <>
                 <Choice label="Receiving establishment class" values={RECEIVING_CLASSES} />
                 <Choice label="Separation code" values={SEPARATION_CODES.filter((c) => c !== "50")} />
+                <label>
+                  <input type="checkbox" name="fromLeave" />
+                  Clinical ending from leave confirmed
+                </label>
                 <p>
                   Code 70 records discharge from leave after the stay has ended. Code 50 uses the statistical episode
                   control and keeps the bed occupied.
@@ -301,6 +305,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   kind: "coding",
                   receivingClass: d.get("Receiving establishment class"),
                   separationCode: d.get("Separation code"),
+                  dischargedFromLeave: d.has("fromLeave"),
                 }),
             )}
           {clinical && record.admissionState === "occupied" && !dead && (

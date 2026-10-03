@@ -1,5 +1,5 @@
 import { communityTeamById } from "./community/community-derivations";
-import { validCareChange } from "./ward-care-journey";
+import { validCareChange, type CareChange } from "./ward-care-journey";
 import {
   ADMISSION_STATES,
   FOLLOW_UP_STATES,
@@ -116,7 +116,7 @@ export type BedReleaseAuditRequest =
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
   | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
 export type DischargeDetails =
-  | { kind: "care"; operation: string | null }
+  | { kind: "care"; operation: CareChange["kind"] | null; recorded: CareChange | null }
   | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
   | {
       kind: "departure";
@@ -154,8 +154,13 @@ export type AuditEvent = AuditBase &
         // movement's legal form — see `RECORD_LEGAL_FORM_EXPIRY`'s own doc comment in
         // `ward-flow-events.ts` for why the two share one event and one audit shape.
         category: "legal-form";
-        action: "RECORD_LEGAL_FORM_EXPIRY";
-        details: { operation: "expiry-recorded" | "extension-recorded"; dueAt: Instant | null };
+        action: "RECORD_LEGAL_FORM_EXPIRY" | "RECORD_COUNTRY_EXTENSION" | "RECORD_LEGAL_FORM_CONTINUATION";
+        details: {
+          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded";
+          dueAt: Instant | null;
+          formCode?: string | null;
+          startedAt?: Instant | null;
+        };
       }
     | {
         // T4 (2026-09-17 build plan). A Form 1A receipt correction — the fixed reason given and
@@ -220,6 +225,8 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "RAISE_REFERRAL":
       return event.draft?.legalFormCode !== undefined ? "legal-form" : null;
     case "RECORD_LEGAL_FORM_EXPIRY":
+    case "RECORD_COUNTRY_EXTENSION":
+    case "RECORD_LEGAL_FORM_CONTINUATION":
     case "CORRECT_LEGAL_FORM_RECEIPT":
       return "legal-form";
     case "FLAG_BED_RELEASE":
@@ -465,6 +472,28 @@ export function appendAudit(
         },
       };
       break;
+    case "RECORD_COUNTRY_EXTENSION":
+    case "RECORD_LEGAL_FORM_CONTINUATION": {
+      captured = {
+        ...base,
+        category: "legal-form",
+        action: event.type,
+        details: {
+          operation: event.type === "RECORD_COUNTRY_EXTENSION" ? "extension-recorded" : "continuation-recorded",
+          dueAt: finiteInstant(event.paperExpiresAt),
+          ...(event.type === "RECORD_LEGAL_FORM_CONTINUATION"
+            ? {
+                formCode: enumValue(
+                  SELECTABLE_LEGAL_FORMS.map((f) => f.code),
+                  event.formCode,
+                ),
+                startedAt: finiteInstant(event.startedAt),
+              }
+            : {}),
+        },
+      };
+      break;
+    }
     case "RECORD_LEGAL_FORM_EXPIRY": {
       // Read from `before`, the same discipline `RECORD_LEGAL_FORM_RECEIVED`'s own "already
       // recorded" check uses in the reducer: whether this was the first typed expiry or an
@@ -506,7 +535,12 @@ export function appendAudit(
         ...base,
         category: "discharge",
         action: event.type,
-        details: { kind: "care", operation: validCareChange(event.change) ? event.change.kind : null },
+        details: {
+          kind: "care",
+          operation: validCareChange(event.change) ? event.change.kind : null,
+          recorded:
+            decision.outcome === "accepted" && validCareChange(event.change) ? structuredClone(event.change) : null,
+        },
       };
       break;
     }

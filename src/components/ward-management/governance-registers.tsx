@@ -180,6 +180,8 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   RAISE_REFERRAL: "Record legal form",
   // T2 (2026-09-17 build plan). Covers both the first typed expiry and a later extension — see
   // `legalFormOperationLabels` below for which of the two this row was.
+  RECORD_COUNTRY_EXTENSION: "Country paper extension",
+  RECORD_LEGAL_FORM_CONTINUATION: "Paper continuation",
   RECORD_LEGAL_FORM_EXPIRY: "Record legal form expiry",
   // T4 (2026-09-17 build plan).
   CORRECT_LEGAL_FORM_RECEIPT: "Correct legal form receipt",
@@ -362,7 +364,14 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
       return (
         <FactList
           facts={[
-            ["Operation", event.details.operation === "extension-recorded" ? "Extension recorded" : "Expiry recorded"],
+            [
+              "Operation",
+              event.details.operation === "extension-recorded"
+                ? "Extension recorded"
+                : event.details.operation === "continuation-recorded"
+                  ? "Continuation recorded"
+                  : "Expiry recorded",
+            ],
             [
               "Expiry typed",
               event.details.dueAt === null ? "Not recorded" : formatInstantWithDay(event.details.dueAt, now),
@@ -385,7 +394,21 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
       );
     case "discharge":
       return event.details.kind === "care" ? (
-        <FactList facts={[["Care operation", display(event.details.operation)]]} />
+        <>
+          <FactList facts={[["Care operation", display(event.details.operation)]]} />
+          {event.details.recorded && (
+            <dl>
+              {Object.entries(event.details.recorded)
+                .filter(([key]) => key !== "kind")
+                .map(([key, value]) => (
+                  <div key={key}>
+                    <dt>{key}</dt>
+                    <dd>{String(value)}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
+        </>
       ) : event.details.kind === "follow-up" ? (
         <FactList
           facts={[

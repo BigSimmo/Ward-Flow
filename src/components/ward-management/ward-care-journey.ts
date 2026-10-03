@@ -57,6 +57,7 @@ export type CareChange =
       kind: "coding";
       receivingClass: (typeof RECEIVING_CLASSES)[number];
       separationCode: (typeof SEPARATION_CODES)[number];
+      dischargedFromLeave: boolean;
     }
   | { kind: "episode"; episodeType: (typeof EPISODE_TYPES)[number] }
   | {
@@ -72,8 +73,8 @@ export type CareChange =
   | { kind: "transfer"; receivingUnitId: string; step: "accepted" | "handover" | "arrived" }
   | { kind: "legal"; authority: "revocation" | "5A" | "5B"; writtenAt: Instant; paperChecked: true };
 export type CareJourney = {
-  followUp?: Extract<CareChange, { kind: "follow_up" }> & Stamp;
-  contacts: (Extract<CareChange, { kind: "contact" }> & Stamp)[];
+  followUp?: Extract<CareChange, { kind: "follow_up" }> & Stamp & { appointmentVersion: number };
+  contacts: (Extract<CareChange, { kind: "contact" }> & Stamp & { appointmentVersion: number })[];
   plan: Partial<Record<(typeof CARE_PLAN_ITEMS)[number], { status: CareStatus } & Stamp>>;
   documents: Partial<
     Record<(typeof CARE_DOCUMENTS)[number], { status: CareStatus; cohort: "adult" | "camhs" } & Stamp>
@@ -120,7 +121,8 @@ export function validCareChange(value: unknown): value is CareChange {
       );
     case "coding":
       return (
-        exact(v, ["kind", "receivingClass", "separationCode"]) &&
+        exact(v, ["kind", "receivingClass", "separationCode", "dischargedFromLeave"]) &&
+        typeof v.dischargedFromLeave === "boolean" &&
         member(RECEIVING_CLASSES, v.receivingClass) &&
         member(SEPARATION_CODES, v.separationCode)
       );
@@ -178,7 +180,15 @@ export function validCareJourney(value: unknown): value is CareJourney {
     return false;
   const fact = (f: unknown, kind: string) => {
     if (!f || typeof f !== "object") return false;
-    const { recordedAt, recordedBy, ...change } = f as Record<string, unknown>;
+    const { recordedAt, recordedBy, ...stored } = f as Record<string, unknown>;
+    const { appointmentVersion, ...versionedChange } = stored;
+    const versioned = kind === "contact" || kind === "follow_up";
+    const change = versioned ? versionedChange : stored;
+    if (
+      versioned &&
+      !(typeof appointmentVersion === "number" && Number.isSafeInteger(appointmentVersion) && appointmentVersion > 0)
+    )
+      return false;
     return (
       finite(recordedAt) &&
       member(["Ward manager", "Flow coordinator", "Community service"], recordedBy) &&
@@ -193,6 +203,10 @@ export function validCareJourney(value: unknown): value is CareJourney {
         choices.includes(key) &&
         f &&
         typeof f === "object" &&
+        exact(
+          f,
+          document ? ["cohort", "status", "recordedAt", "recordedBy"] : ["status", "recordedAt", "recordedBy"],
+        ) &&
         (() => {
           const { recordedAt, recordedBy, ...body } = f as Record<string, unknown>;
           return fact(
@@ -227,15 +241,21 @@ export function validCareJourney(value: unknown): value is CareJourney {
 export function codingCode(
   admission: Pick<Admission, "state" | "leavingDestination">,
   receivingClass: (typeof RECEIVING_CLASSES)[number],
+  dischargedFromLeave = false,
 ): string | null {
   if (admission.state !== "departed") return null;
+  if (
+    dischargedFromLeave &&
+    ["did-not-return", "discharged-to-the-community"].includes(admission.leavingDestination ?? "")
+  )
+    return "70";
   switch (admission.leavingDestination) {
     case "died-on-the-ward":
       return "80";
     case "left-against-advice":
       return "60";
     case "did-not-return":
-      return "70";
+      return receivingClass === "community_or_custody" ? "90" : null;
     case "discharged-to-the-community":
     case "transferred-to-custody":
       return receivingClass === "community_or_custody" ? "90" : null;
@@ -258,22 +278,13 @@ export function codingCode(
             ? "40"
             : null;
     default:
-      return (
-        {
-          acute_hospital: "10",
-          psychiatric_hospital: "30",
-          aged_care_new: "21",
-          aged_care_usual: "22",
-          other_health_care: "40",
-          community_or_custody: "90",
-        } as const
-      )[receivingClass];
+      return null;
   }
 }
 export function careChangeRefusal(admission: Admission, change: CareChange, now: Instant): string | null {
   const care = admission.careJourney ?? emptyCareJourney();
   if (change.kind === "coding")
-    return change.separationCode === codingCode(admission, change.receivingClass)
+    return change.separationCode === codingCode(admission, change.receivingClass, change.dischargedFromLeave)
       ? null
       : "Choose a separation code consistent with the recorded departure and receiving establishment class. Statistical changes use the episode control.";
   if (change.kind === "episode")
@@ -282,12 +293,19 @@ export function careChangeRefusal(admission: Admission, change: CareChange, now:
     return "Care actions are unavailable after a recorded death.";
   if (["transport", "transfer"].includes(change.kind) && admission.state !== "occupied")
     return "Transport and transfer changes require the current occupied stay.";
+  if (
+    change.kind === "contact" &&
+    (change.contactedAt > now || (admission.arrivedAt !== null && change.contactedAt < admission.arrivedAt))
+  )
+    return "The contact time must belong to this stay or its follow-up and cannot be in the future.";
   if (change.kind === "contact")
     return !care.followUp
       ? "Record responsibility and an appointment first."
       : change.contactedAt > now || (change.outcome === "completed" && change.contactedAt < care.followUp.appointmentAt)
         ? "An appointment cannot be completed before its recorded time."
         : null;
+  if (change.kind === "follow_up" && (care.followUp?.appointmentVersion ?? 0) >= Number.MAX_SAFE_INTEGER)
+    return "Appointment version is unavailable.";
   if (change.kind === "follow_up")
     return admission.arrivedAt !== null && change.appointmentAt < admission.arrivedAt
       ? "The appointment must belong to the current stay or its follow-up."
@@ -328,9 +346,25 @@ export function applyCareChange(
   const stamped = { ...change, recordedAt, recordedBy };
   switch (change.kind) {
     case "follow_up":
-      return { ...care, followUp: stamped as CareJourney["followUp"] };
+      return {
+        ...care,
+        followUp: {
+          ...change,
+          recordedAt,
+          recordedBy,
+          appointmentVersion: (care.followUp?.appointmentVersion ?? 0) + 1,
+        },
+      };
     case "contact":
-      return { ...care, contacts: [...care.contacts, stamped as CareJourney["contacts"][number]] };
+      return care.followUp
+        ? {
+            ...care,
+            contacts: [
+              ...care.contacts,
+              { ...change, recordedAt, recordedBy, appointmentVersion: care.followUp.appointmentVersion },
+            ],
+          }
+        : care;
     case "plan":
       return { ...care, plan: { ...care.plan, [change.item]: { status: change.status, recordedAt, recordedBy } } };
     case "document":
@@ -358,15 +392,45 @@ export function separationHandoff(
   admission: Pick<Admission, "id" | "leftAt" | "state" | "leavingDestination" | "careJourney">,
 ) {
   const coding = admission.careJourney?.coding;
-  if (!coding || coding.separationCode !== codingCode(admission, coding.receivingClass)) return null;
+  if (!coding || coding.separationCode !== codingCode(admission, coding.receivingClass, coding.dischargedFromLeave))
+    return null;
   return {
     schemaVersion: 1,
     kind: "separation-review",
     admissionId: admission.id,
     separationCode: coding.separationCode,
     receivingClass: coding.receivingClass,
+    dischargedFromLeave: coding.dischargedFromLeave,
     leftAt: admission.leftAt,
     externalSubmission: "not_connected",
     requires: ["verified_receiving_establishment_code", "authorised_PAS_adapter"],
   } as const;
+}
+
+/** Completion applies to the current appointment, never an earlier arrangement. */
+export function currentCareContact(care: CareJourney | undefined) {
+  if (!care?.followUp) return undefined;
+  return care.contacts.findLast((c) => c.appointmentVersion === care.followUp!.appointmentVersion);
+}
+export function currentCareContactCompleted(care: CareJourney | undefined): boolean {
+  return (
+    !!care?.followUp &&
+    care.contacts.some((c) => c.outcome === "completed" && c.appointmentVersion === care.followUp!.appointmentVersion)
+  );
+}
+
+/** A declared current paper transition; no legal expiry or statutory authority is inferred. */
+export function recordedCommunityTransition(
+  admission: Admission,
+  lastStatusChangeAt: number | undefined,
+  destination: Admission["leavingDestination"],
+): boolean {
+  const legal = admission.careJourney?.legal;
+  if (!legal || (lastStatusChangeAt !== undefined && lastStatusChangeAt > legal.recordedAt)) return false;
+  if (legal.authority === "revocation") return true;
+  return (
+    destination === "discharged-to-the-community" &&
+    admission.followUp?.state === "arranged" &&
+    !!admission.careJourney?.followUp
+  );
 }

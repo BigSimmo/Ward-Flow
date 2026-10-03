@@ -1,4 +1,4 @@
-import { validCareJourney } from "./ward-care-journey";
+import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isLeavingDestination } from "./ward-admissions";
 import {
@@ -490,6 +490,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   for (const row of value.refreshRequests as RecordValue[]) if (!finite(row.at) || !text(row.byRole)) return false;
   for (const row of value.auditEvents as RecordValue[]) {
+    if (row.action === "RECORD_ADMISSION_CARE") {
+      if (
+        !object(row.details) ||
+        row.details.kind !== "care" ||
+        (row.details.recorded !== undefined && row.details.recorded !== null && !validCareChange(row.details.recorded))
+      )
+        return false;
+    }
+
     // `appendAudit` (ward-audit.ts) numbers rows from 1 and stores the newest number as
     // `auditSequence`, so issued numbers run 1..auditSequence INCLUSIVE. This used to refuse
     // `>= auditSequence`, i.e. always the newest row, so no audited day could be restored on

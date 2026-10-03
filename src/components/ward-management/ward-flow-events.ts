@@ -150,6 +150,12 @@ export type ReferralDraft = {
  * One variant per row of spec §6. Every event carries `role` (checked against `EVENT_ROLE`
  * before anything else happens) and `now` (the reducer never reads a clock itself).
  */
+export const WARD_BUZZ_MESSAGES = [
+  "Please review and confirm ward capacity.",
+  "Please review the current placement request.",
+  "Synthetic ward count request",
+] as const;
+
 export type WardFlowEvent =
   | {
       type: "RECORD_ADMISSION_CARE";
@@ -1920,7 +1926,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       unitId: string;
-      message: string;
+      message: (typeof WARD_BUZZ_MESSAGES)[number];
       urgent?: boolean;
     }
   | {

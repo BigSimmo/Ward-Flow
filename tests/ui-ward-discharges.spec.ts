@@ -451,3 +451,35 @@ test.describe("@mockup WA disposition pathways", () => {
     await expect(page.getByTestId("ward-bed-release-admission")).toBeVisible();
   });
 });
+
+test.describe("@mockup complete care dossier", () => {
+  test("records planning, clinician responsibility and an appointment at phone width", async ({ page }) => {
+    const seed = seedWardFlowState();
+    const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
+    const p = seed.patients.find((p) => p.id === a.patientId)!;
+    await page.goto("/mockups/ward-flow/discharges");
+    await page.getByRole("button", { name: /Admission records/ }).click();
+    await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
+    const detail = page.getByRole("region", { name: "Selected discharge details" });
+    await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+    const care = detail.getByRole("region", { name: "Care journey" });
+    await care.locator("summary", { hasText: "Planning item" }).click();
+    await care.getByRole("combobox", { name: "Planning item", exact: true }).selectOption("crisis_plan");
+    await care.getByRole("combobox", { name: "Planning status" }).selectOption("completed");
+    await care.getByRole("button", { name: "Record planning item" }).click();
+    await expect(care).toContainText("crisis plan: completed");
+    await care.locator("summary", { hasText: "Appointment" }).first().click();
+    await care.getByRole("combobox", { name: "Responsible clinician" }).selectOption("demo-adult-clinician");
+    await care.getByRole("combobox", { name: "Responsible community service" }).selectOption({ index: 1 });
+    await care.getByRole("combobox", { name: "Appointment mode" }).selectOption("telephone");
+    const when = new Date();
+    when.setMinutes(when.getMinutes() + 1);
+    const local = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}-${String(when.getDate()).padStart(2, "0")}T${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+    await care.getByLabel("Appointment date and time").fill(local);
+    await care.getByRole("button", { name: "Record appointment", exact: true }).click();
+    await expect(care).toContainText("Dr Alex Taylor");
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await care.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await expect(care.getByRole("alert")).toHaveCount(0);
+  });
+});

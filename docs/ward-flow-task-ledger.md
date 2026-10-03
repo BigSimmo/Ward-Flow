@@ -7903,7 +7903,7 @@ Receipt handoff: stable identity `BigSimmo/Ward-Flow:WF-RULES-20261002`, local e
 
 ## WA-PATHWAYS-2026-10-03
 
-**Task:** WA Health comparison, implemented-pathway audit and disposition wiring. **Owner:** Codex. **Status:** Paused at the user’s request for a PC restart; remediation is unfinished. **Source:** user request in this chat, 3 October 2026. **Branch:** `codex/wa-pathway-audit-20261003`.
+**Task:** WA Health comparison, implemented-pathway audit and disposition wiring. **Owner:** Codex. **Status:** In progress — resumed from checkpoint `9aee219` after the requested pause. **Source:** user request in this chat, 3 October 2026. **Branch:** `codex/wa-pathway-audit-20261003`.
 
 The [audit report](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) records official sources, ten WA separation codes, eleven operational destinations, all 97 events, implemented fixes and remaining gaps. Added missing aged-care/other-care destinations, validated current-admission departures, attributed follow-up recording and the departure-planning link. Verification: `108 passed (5.2m)`, `2 skipped` browser journeys; all eleven new disposition journeys and planning passed. Focused repairs: `Tests 84 passed (84)`. The broad Ward run had 8,156 passed and three failures, all subsequently repaired and included in the passing focused run; it was not repeated after those repairs. Clean typecheck, production build and changed-file lint/typecheck passed.
 

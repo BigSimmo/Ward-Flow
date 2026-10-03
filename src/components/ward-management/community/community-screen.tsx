@@ -1,4 +1,5 @@
 "use client";
+import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
 
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode } from "react";
@@ -3079,7 +3080,7 @@ export function CommunityScreen({
                             followUpFilter === "all" ||
                             (followUpFilter === "missing_arrangement"
                               ? a.followUp?.state !== "arranged"
-                              : !a.careJourney?.contacts.some((c) => c.outcome === "completed")),
+                              : !currentCareContactCompleted(a.careJourney)),
                         )
                         .map((admission) => (
                           <li
@@ -3091,7 +3092,8 @@ export function CommunityScreen({
                             <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
                             <p>
                               Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
-                              {admission.careJourney?.contacts.at(-1)?.outcome?.replaceAll("_", " ") ?? "Not recorded"}
+                              {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ??
+                                "Not recorded"}
                             </p>
                             <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
                           </li>

@@ -4,6 +4,7 @@ import {
   validCareChange,
   validCareJourney,
   emptyCareJourney,
+  currentCareContactCompleted,
   separationHandoff,
   type CareChange,
   CARE_PLAN_ITEMS,
@@ -60,6 +61,46 @@ describe("complete guarded local care journey", () => {
       details: { kind: "care", operation: "contact" },
     });
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(completed)))).toBe(true);
+  });
+  it("does not count a previous contact as completion of a new appointment", () => {
+    const { state, admission } = fixture();
+    let next = wardFlowReducer(state, command(state, admission.id, appointment));
+    next = wardFlowReducer(
+      next,
+      command(next, admission.id, { kind: "contact", outcome: "completed", contactedAt: NOW_ANCHOR }),
+    );
+    expect(currentCareContactCompleted(next.admissions.find((a) => a.id === admission.id)?.careJourney)).toBe(true);
+    next = wardFlowReducer(next, command(next, admission.id, { ...appointment, appointmentAt: NOW_ANCHOR + 1 }));
+    expect(currentCareContactCompleted(next.admissions.find((a) => a.id === admission.id)?.careJourney)).toBe(false);
+    expect(next.admissions.find((a) => a.id === admission.id)?.careJourney?.contacts).toHaveLength(1);
+  });
+  it("requires paper authority and follow-up for a CTO community departure", () => {
+    const { state, admission } = fixture();
+    state.patients.find((p) => p.id === admission.patientId)!.legalStatus = "Involuntary inpatient";
+    const depart = (s: WardFlowState) =>
+      wardFlowReducer(s, {
+        type: "RECORD_PATIENT_DISCHARGE",
+        role: "ward",
+        now: NOW_ANCHOR,
+        actingUnitId: admission.unitId,
+        admissionId: admission.id,
+        patientId: admission.patientId!,
+        expectedGeneration: s.worldGeneration,
+        expectedRevision: s.dischargeRevisions[admission.id] ?? 0,
+        leavingDestination: "discharged-to-the-community",
+      });
+    expect(depart(state).units).toBe(state.units);
+    let next = wardFlowReducer(state, command(state, admission.id, appointment));
+    next = wardFlowReducer(
+      next,
+      command(next, admission.id, { kind: "legal", authority: "5A", writtenAt: NOW_ANCHOR, paperChecked: true }),
+    );
+    expect(next.rejections).toEqual([]);
+    const departed = depart(next);
+    expect(departed.admissions.find((a) => a.id === admission.id)?.state).toBe("departed");
+    expect(departed.units.find((u) => u.id === admission.unitId)!.empty.value).toBe(
+      next.units.find((u) => u.id === admission.unitId)!.empty.value + 1,
+    );
   });
   it("cannot complete an unknown or future appointment", () => {
     const { state, admission } = fixture();
@@ -153,12 +194,22 @@ describe("complete guarded local care journey", () => {
     admission.leavingDestination = "moved-to-residential-care";
     const wrong = wardFlowReducer(
       state,
-      command(state, admission.id, { kind: "coding", receivingClass: "aged_care_usual", separationCode: "21" }),
+      command(state, admission.id, {
+        kind: "coding",
+        dischargedFromLeave: false,
+        receivingClass: "aged_care_usual",
+        separationCode: "21",
+      }),
     );
     expect(wrong.admissions).toBe(state.admissions);
     const right = wardFlowReducer(
       state,
-      command(state, admission.id, { kind: "coding", receivingClass: "aged_care_usual", separationCode: "22" }),
+      command(state, admission.id, {
+        kind: "coding",
+        dischargedFromLeave: false,
+        receivingClass: "aged_care_usual",
+        separationCode: "22",
+      }),
     );
     const a = right.admissions.find((a) => a.id === admission.id)!;
     expect(a.leavingDestination).toBe("moved-to-residential-care");

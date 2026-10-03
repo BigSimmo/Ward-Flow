@@ -59,7 +59,7 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Planning status" }), { target: { value: "completed" } });
     fireEvent.click(screen.getByRole("button", { name: "Record planning item" }));
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent(
-      "crisis plan: recorded Flow coordinator",
+      "crisis plan: completed · Flow coordinator",
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Document cohort" }), { target: { value: "camhs" } });
     expect(

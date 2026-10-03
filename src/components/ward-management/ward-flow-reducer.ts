@@ -1,4 +1,10 @@
-import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
+import {
+  validCareChange,
+  careChangeRefusal,
+  applyCareChange,
+  emptyCareJourney,
+  recordedCommunityTransition,
+} from "./ward-care-journey";
 import {
   appendAudit,
   classifyAuditEvent,
@@ -65,6 +71,7 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
+  WARD_BUZZ_MESSAGES,
   REPATRIATION_MODES,
   WARD_FLOW_ROLE_LABELS,
   type RepatriationMode,
@@ -1760,6 +1767,15 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       if (patientRecordIsInvoluntary(patient?.legalStatus) || (movement && movement.legalStatus !== "Voluntary"))
         return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
     }
+    if (event.change.kind === "legal" && event.change.authority === "5B") {
+      const previous = admission.careJourney?.legal?.authority ?? dischargeMovement(state, admission)?.legalForm?.code;
+      if (previous !== "5A" && previous !== "5B")
+        return deny(
+          "transition",
+          "denied",
+          "A Form 5B continuation needs a recorded Form 5A or earlier Form 5B for this stay.",
+        );
+    }
     const careJourney = applyCareChange(
       admission.careJourney ?? emptyCareJourney(),
       event.change,
@@ -1789,6 +1805,20 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
           "denied",
           "The receiving ward must have a suitable available bed and a linked placement record.",
         );
+      if (
+        state.admissions.some(
+          (a) =>
+            a.id !== admission.id &&
+            a.patientId === admission.patientId &&
+            (a.state === "occupied" || a.state === "pulled"),
+        )
+      )
+        return deny("transition", "denied", "The patient already has another occupied or held bed.");
+      if (
+        (admission.specialling && remainingSpeciallingCapacity(receiving, state.admissions) <= 0) ||
+        (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
+      )
+        return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
       const bedKind =
         movement.legalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
       if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
@@ -1896,10 +1926,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       event.leavingDestination === "discharged-to-the-community" ||
       event.leavingDestination === "left-against-advice"
     ) {
-      if (
-        !admission.careJourney?.legal ||
-        (admission.careJourney.legal.authority !== "revocation" && event.leavingDestination === "left-against-advice")
-      ) {
+      if (!recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)) {
         return deny(
           "transition",
           "denied",
@@ -4970,9 +4997,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event.leavingDestination === "left-against-advice"
         ) {
           if (
-            !admission.careJourney?.legal ||
-            (admission.careJourney.legal.authority !== "revocation" &&
-              event.leavingDestination === "left-against-advice")
+            !recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)
           ) {
             return reject(
               state,
@@ -8881,9 +8906,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
     case "SEND_WARD_BUZZ": {
       if (
-        typeof event.message !== "string" ||
-        !event.message.trim() ||
-        event.message.length > 160 ||
+        !WARD_BUZZ_MESSAGES.includes(event.message) ||
         (event.urgent !== undefined && typeof event.urgent !== "boolean")
       )
         return reject(state, event, "Choose a valid ward refresh message.");
