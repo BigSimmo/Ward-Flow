@@ -559,6 +559,10 @@ test.describe("@mockup Emergency department screen", () => {
   test("a form with no recorded expiry reads identically for every patient who carries one, and the department clock is unmoved", async ({
     page,
   }) => {
+    // Keep the fixture's exact department duration stable across hydration and network waits.
+    // Install before the paused instant so pauseAt cannot race the running fake clock.
+    await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
+    await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
