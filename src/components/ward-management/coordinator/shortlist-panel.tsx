@@ -3,7 +3,7 @@
 import { CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useMemo, useState, type Dispatch, type FormEvent } from "react";
+import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 import {
@@ -470,11 +470,16 @@ export function ShortlistPanel({
   const [overrideReason, setOverrideReason] = useState("");
 
   const isOverrideDirty = overrideReason.trim().length > 0;
+  const handleRestoreOverride = useCallback((cached: string) => {
+    setOverrideReason(cached);
+    setOverrideOpen(true);
+  }, []);
+
   const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
     key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
     isDirty: isOverrideDirty,
     value: overrideReason,
-    onRestore: setOverrideReason,
+    onRestore: handleRestoreOverride,
     confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
   });
   /**

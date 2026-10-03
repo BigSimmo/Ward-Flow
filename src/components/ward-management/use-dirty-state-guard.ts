@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 export interface DirtyStateGuardOptions {
   key?: string;
@@ -14,7 +14,7 @@ export interface DirtyStateGuardOptions {
  * Guards against accidental loss of clinical text, form input, or active draft sessions.
  * 1. Attaches window 'beforeunload' listener when isDirty is true (browser reload, tab close).
  * 2. Caches draft responses in sessionStorage keyed by `key`, restoring content if the tab reloads.
- * 3. Clears cached draft when isDirty becomes false (form submitted or discarded).
+ * 3. Clears cached draft when isDirty becomes false or when text is erased.
  */
 export function useDirtyStateGuard({
   key,
@@ -23,30 +23,42 @@ export function useDirtyStateGuard({
   onRestore,
   confirmMessage = "You have unsaved clinical text. Are you sure you want to leave?",
 }: DirtyStateGuardOptions) {
+  const isRestoringRef = useRef(true);
+  const onRestoreRef = useRef(onRestore);
+
+  useEffect(() => {
+    onRestoreRef.current = onRestore;
+  }, [onRestore]);
+
   // 1. Restore cached draft on initial mount
   useEffect(() => {
-    if (!key || typeof window === "undefined" || !onRestore) return;
+    if (!key || typeof window === "undefined" || !onRestoreRef.current) {
+      isRestoringRef.current = false;
+      return;
+    }
     try {
       const cached = window.sessionStorage.getItem(`wf-draft:${key}`);
       if (cached !== null && cached.length > 0) {
-        onRestore(cached);
+        onRestoreRef.current(cached);
       }
     } catch {
       // Storage unavailable or disabled
+    } finally {
+      isRestoringRef.current = false;
     }
-  }, [key, onRestore]);
+  }, [key]);
 
-  // 2. Cache draft when value changes and isDirty is true
+  // 2. Cache draft when value changes and isDirty is true; clear when clean or text erased
   useEffect(() => {
-    if (!key || typeof window === "undefined") return;
+    if (!key || typeof window === "undefined" || isRestoringRef.current) return;
     try {
       if (isDirty && value !== undefined && value.length > 0) {
         window.sessionStorage.setItem(`wf-draft:${key}`, value);
-      } else if (!isDirty) {
+      } else if (!isDirty || (value !== undefined && value.length === 0)) {
         window.sessionStorage.removeItem(`wf-draft:${key}`);
       }
     } catch {
-      // Storage quota or unavailable
+      // Storage quota exceeded or disabled
     }
   }, [key, isDirty, value]);
 

@@ -77,4 +77,63 @@ describe("useDirtyStateGuard", () => {
     rerender({ isDirty: false, value: "" });
     expect(window.sessionStorage.getItem("wf-draft:test-override")).toBeNull();
   });
+
+  it("clears cached draft in sessionStorage when user erases text while remaining dirty", () => {
+    const { rerender } = renderHook(
+      ({ isDirty, value }: { isDirty: boolean; value: string }) =>
+        useDirtyStateGuard({
+          key: "test-erase",
+          isDirty,
+          value,
+        }),
+      { initialProps: { isDirty: true, value: "Preliminary clinical note" } },
+    );
+
+    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBe("Preliminary clinical note");
+
+    // User deletes all content from the input
+    rerender({ isDirty: true, value: "" });
+    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBeNull();
+  });
+
+  it("handles QuotaExceededError and disabled storage gracefully without throwing", () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+
+    expect(() => {
+      renderHook(() =>
+        useDirtyStateGuard({
+          key: "quota-test",
+          isDirty: true,
+          value: "Large clinical payload",
+        }),
+      );
+    }).not.toThrow();
+
+    setItemSpy.mockRestore();
+  });
+
+  it("does not re-trigger onRestore when an inline callback identity changes on re-render", () => {
+    window.sessionStorage.setItem("wf-draft:test-identity", "Cached content");
+    let callCount = 0;
+
+    const { rerender } = renderHook(
+      ({ renderIndex }: { renderIndex: number }) =>
+        useDirtyStateGuard({
+          key: "test-identity",
+          isDirty: false,
+          onRestore: () => {
+            callCount++;
+          },
+        }),
+      { initialProps: { renderIndex: 1 } },
+    );
+
+    expect(callCount).toBe(1);
+
+    // Rerender with new inline function reference
+    rerender({ renderIndex: 2 });
+    expect(callCount).toBe(1);
+  });
 });

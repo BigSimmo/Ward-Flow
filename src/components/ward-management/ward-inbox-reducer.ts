@@ -88,6 +88,8 @@ export function reduceInboxEvent(
       if (notice.readAt !== undefined) {
         return reject(state, event, `notice ${event.noticeId} is already marked read`);
       }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       const updated: Notice = { ...notice, readAt: event.now, readBy: event.role };
       return {
         ...state,
@@ -109,6 +111,8 @@ export function reduceInboxEvent(
           `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id`,
         );
       }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       const acknowledgement: InboxAcknowledgement = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role] };
       const existing = state.inboxAcknowledgements[inboxItemId] ?? [];
       return {
@@ -136,6 +140,8 @@ export function reduceInboxEvent(
       if (inboxItemCompletionState(history) === "complete") {
         return reject(state, event, `inbox row ${inboxItemId} is already complete`);
       }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       const entry: InboxCompletionEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "completed" };
       return {
         ...state,
@@ -152,6 +158,8 @@ export function reduceInboxEvent(
       if (inboxItemCompletionState(history) !== "complete") {
         return reject(state, event, `inbox row ${inboxItemId} is not complete, so there is nothing to reopen`);
       }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       const entry: InboxCompletionEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "reopened" };
       return {
         ...state,
