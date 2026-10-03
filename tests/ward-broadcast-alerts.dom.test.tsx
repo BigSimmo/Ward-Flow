@@ -11,7 +11,6 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WA_BROADCAST_TEMPLATES } from "@/components/ward-management/alerts/ward-broadcast-model";
 
 const NOW = NOW_ANCHOR;
 
