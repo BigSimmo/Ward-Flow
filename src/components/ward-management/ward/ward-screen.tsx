@@ -6,15 +6,11 @@ import { useEffect, useCallback, useRef, useState, type FormEvent } from "react"
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
-  changeReasonLabels,
-  withdrawalReasonLabels,
-  RELEASE_PULL_REASONS,
   type BedPreparationNote,
   type BedReleaseBlocker,
   type ReleasePullReason,
   OVERRIDE_REASONS,
   type OverrideReason,
-  GENDER_NO_LONGER_SUITS_REFUSAL,
   WARD_INTAKE_CONSTRAINTS,
   wardIntakeConstraintLabels,
   type WardIntakeConstraint,
@@ -35,26 +31,16 @@ import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   BED_RELEASE_BLOCKED_LABEL,
   bedReleaseStateLabels,
-  eligibilityWarning,
-  elapsedLabel,
   isOpen,
   overridesAgainstUnit,
-  restrictionNotice,
   stageCopy,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
-import { OverrideRegister } from "@/components/ward-management/override-register";
 import { WardChip } from "@/components/ward-management/ward-chip";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import {
-  eligibility,
-  GENDER_DESIGNATION_PRIVACY_SENTENCE,
-  wardFacingGateDetail,
-  type EligibilityGate,
-} from "@/components/ward-management/ward-eligibility";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 /**
@@ -72,14 +58,11 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 const WAITING_ON_LONGEST = "One only — the one that will take longest. A ward is often waiting on several.";
 
 import {
-  ARRIVAL_MODE_LABELS,
   BED_RELEASE_WAITING_ON,
-  DECLINE_REASONS,
   type BedReleaseWaitingOn,
   type DeclineReason,
   type Movement,
   type Rejection,
-  type Unit,
 } from "@/components/ward-management/ward-model";
 import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import {
@@ -87,7 +70,6 @@ import {
   LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardNotificationCenter } from "./ward-notification-center";
 
@@ -95,7 +77,6 @@ import { handoverScopeValue } from "@/components/ward-management/handover/handov
 import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { SuburbTeamPanel } from "./suburb-team-panel";
 /**
  * Task F1 (owner answer 32): the release/leave forms used to parse an `<input type="time">`'s
  * `HH:MM` straight into an `Instant` with `hours * 60 + minutes` — a bare minute of demo DAY
@@ -124,41 +105,6 @@ import {
 
 type WardScreenProps = { departurePlanning?: boolean; unitId: string; presentation?: "overview" | "answer" };
 
-/**
- * `ACCEPT_IN_PRINCIPLE` and `DECLINE` refuse for exactly the same reasons in
- * `wardFlowReducer` — outside `destination_review`, an already-accepted movement, or this unit
- * holding no live referral for it. Computed once so the two buttons on an incoming-referral card
- * can never advertise different verdicts about whether the reducer would take the action (the
- * defect class this whole phase exists to close — see `shortlist-panel.tsx`'s `canRefer`).
- */
-// Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
-  if (movement.stage !== "destination_review") {
-    return `${who ?? "This patient"} is ${stageCopy[movement.stage].label.toLowerCase()}, not awaiting a destination decision.`;
-  }
-  if (movement.acceptedUnitId) {
-    return `${who ?? "This patient"} already has an accepted destination.`;
-  }
-  if (!movement.referredUnitIds.includes(unit.id)) {
-    return `${unit.name} does not currently hold a live referral for ${who ?? "this patient"}.`;
-  }
-  return undefined;
-}
-
-/** `PULL_PATIENT`'s own preconditions, named so the Pull button can never advertise an action the
- * reducer would refuse. Only rendered at all once `movement.stage === "accepted_awaiting_bed"`;
- * this covers the remaining reasons a pull could still be refused at that stage. */
-// Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-function pullBlockedReason(movement: Movement, unit: Unit, who?: string): string | undefined {
-  if (movement.acceptedUnitId !== unit.id) {
-    return `${who ?? "This patient"} was accepted at a different unit, not ${unit.name}.`;
-  }
-  if (unit.allocatable.value <= 0) {
-    return `No allocatable bed remains at ${unit.name}.`;
-  }
-  return undefined;
-}
-
 function originPlaceLabel(originEdId: string): string {
   return edById(originEdId)?.name ?? originEdId;
 }
@@ -167,72 +113,6 @@ function arrivalIsLate(movement: Movement, now: Instant): boolean {
   const estimatedArrivalAt = movement.arrivalDetails?.estimatedArrivalAt;
   if (estimatedArrivalAt === undefined) return false;
   return now > estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES;
-}
-
-/**
- * Labels for the two decisions this screen dispatches that the reducer can still refuse even
- * once `referralAnswerBlocked`/`pullBlockedReason` above say go ahead — `PULL_PATIENT`'s own
- * bed-readiness and specialling gates, and a second `ACCEPT_IN_PRINCIPLE` for a movement another
- * dispatch already accepted, are both real, reducer-enforced refusals neither local check
- * mirrors. Keyed by `Rejection.attempted`, which is the event's own type string verbatim (see
- * `makeRejection` in `ward-flow-reducer.ts`) — this reads it back as the words already on the
- * button, not the SCREAMING_CASE event name.
- */
-const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
-  ACCEPT_IN_PRINCIPLE: "Accept in principle",
-  PULL_PATIENT: "Pull a bed",
-  PATIENT_ARRIVED: "Confirm Arrival",
-};
-
-/** Human labels for the existing movement eligibility result shown in this ward's own view. */
-const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
-  acuity: "Acuity",
-  age: "Age band",
-  allocatable_bed: "Allocatable bed",
-  authorisation: "Authorisation",
-  capacity_freshness: "Capacity freshness",
-  cohort: "Cohort",
-  forensic: "Forensic bed",
-  legal_status: "Legal status",
-  prior_decline: "Prior decline",
-  security: "Security",
-  // 🔴 RENAMED FROM `sex_designation`, T10 (item 8): now reads gender recorded at referral.
-  // Opus review round 2, 17 September 2026 (P2), privacy: a ward or ED screen must never show
-  // the words "sex" or "gender" beside this gate, because a verdict beside a displayed sex could
-  // reveal a trans or non-binary patient (plan §2). "Bed designation" — never "Gender
-  // designation" — is this label on THIS screen only; the coordinator's own console shows no gate
-  // label at all and keeps the specific `detail` text (see `GENDER_DESIGNATION_PRIVACY_SENTENCE`'s
-  // own doc comment below for the detail half of this rule).
-  gender_designation: "Bed designation",
-  sex_mix: "Sex mix",
-  specialling: "Specialling",
-};
-
-/**
- * Opus review round 2, 17 September 2026 (P2), privacy: the T12 non-binary-placement refusals
- * (`ward-flow-reducer.ts`'s `ACCEPT_IN_PRINCIPLE`/`PULL_PATIENT` cases) name the word "non-binary"
- * directly in their `reason`, written for `state.rejections` generally — an audience that
- * includes the coordinator, who is meant to see it. `lastActionRejection.reason` below renders
- * THAT SAME string verbatim on this ward-only screen, which is exactly the leak plan §2 exists to
- * close: a ward user reading "non-binary" learns a fact about the patient no gate detail is
- * allowed to state here. Matches by substring, never by event type, because the same
- * `ACCEPT_IN_PRINCIPLE`/`PULL_PATIENT` refusal has other, unrelated reasons this function must
- * leave untouched.
- *
- * P1-3 (Ward Lead ruling, 17 September 2026): extended for `heldUnitGenderRefusal`'s two forward-
- * stage refusals (`ward-flow-reducer.ts`) — `GENDER_NO_LONGER_SUITS_REFUSAL` and its non-binary
- * sibling `GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL`. Both are already generic (neither names
- * "sex", "gender" or "non-binary"), but they differ from each other ONLY in whether the ward must
- * also record a reason and a ward check — and that difference is itself the T12 non-binary
- * placement procedure, so showing it verbatim on this screen would leak exactly what the
- * "non-binary" substitution just above exists to hide, through a different door. Both collapse to
- * the plain sentence, matched by a phrase common to both rather than by the whole string, so this
- * still catches the non-binary variant.
- */
-function wardSafeRejectionReason(reason: string): string {
-  if (reason.toLowerCase().includes("non-binary")) return GENDER_DESIGNATION_PRIVACY_SENTENCE;
-  if (reason.toLowerCase().includes("no longer suits this patient")) return GENDER_NO_LONGER_SUITS_REFUSAL;
-  return reason;
 }
 
 /**
@@ -418,7 +298,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
   );
-  const [dischargeSubTab, setDischargeSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
   const [selectedPod, setSelectedPod] = useState<string>("all");
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
@@ -1111,8 +990,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       legalStatusLabel,
     };
   });
-
-  const filteredBeds = selectedPod === "all" ? bedsList : bedsList.filter((b) => b.podId === selectedPod);
 
   /**
    * OD-3's read side, ward-scoped. **`overridesAgainstUnit`, never `allOverrides`** — the register

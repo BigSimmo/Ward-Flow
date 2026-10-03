@@ -47,7 +47,6 @@ import {
   type LegalStatus,
   type Notice,
 } from "../../src/components/ward-management/ward-model";
-import { wardMovements } from "../../src/components/ward-management/ward-movements";
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./ward-referral-history";

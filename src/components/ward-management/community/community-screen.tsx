@@ -91,12 +91,6 @@ import {
   DEMO_COMMUNITY_CASELOAD,
   DEMO_COMMUNITY_STAFF,
   resolveCommunityTeamConfig,
-  type CommunityTeamConfig,
-  type DemoReferral,
-  type DemoInpatient,
-  type DemoEgress,
-  type DemoCaseloadRow,
-  type DemoStaff,
 } from "./community-demo-cohort";
 
 /** Said wherever this screen has a heading for a fact that no Ward Flow record holds. */

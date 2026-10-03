@@ -4,7 +4,6 @@ import type { Gender, PatientId } from "@/components/ward-management/ward-patien
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
-  BroadcastAlert,
   BroadcastCategory,
   BroadcastSeverity,
   BroadcastTargetScope,

@@ -25,7 +25,6 @@ import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { WardDynamicIsland } from "./shell/ward-dynamic-island";
 
-import se from "./ward-modes-second-edition.module.css";
 import thirdEdition from "./governance-third-edition.module.css";
 
 /**
