@@ -115,6 +115,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       await page.goto(HUB, { waitUntil: "load" });
       await waitForStreamToSettle(page);
 
+      await page.getByText("Browse detailed statistics", { exact: true }).click();
       await page.getByRole("link", { name: destination.linkText, exact: false }).first().click();
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);

@@ -939,7 +939,7 @@ export function StatisticsScreen({
             </div>
 
             <p className={pageStyles.panelFoot}>
-              Wait bands overlap: 24h+ is included in 8h+. Median is across people, not department averages.
+              Wait bands overlap. Median is across people, not department averages.
             </p>
 
             {/* Declines articles (preserved for test suite) */}
