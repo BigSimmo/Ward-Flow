@@ -42,6 +42,17 @@ export function referencedTestChanges({ root, population, changed }) {
       visit(result.resolvedFileName);
     }
     function walk(node) {
+      if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+        const expression = node.moduleReference.expression;
+        if (expression && ts.isStringLiteralLike(expression)) resolve(expression.text);
+        else uncertain = true;
+      }
+      if (
+        (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
+        ts.isIdentifier(node.expression) &&
+        ["eval", "Function", "createRequire"].includes(node.expression.text)
+      )
+        uncertain = true;
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
         if (ts.isStringLiteralLike(node.moduleSpecifier)) resolve(node.moduleSpecifier.text);
         else uncertain = true;

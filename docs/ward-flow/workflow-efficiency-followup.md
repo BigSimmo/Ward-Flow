@@ -14,7 +14,7 @@ Use `node scripts/ward-flow/claim-files.mjs <exact-file> [<exact-file> ...]` bef
 
 `test-module-dependencies.mjs` resolves actual TypeScript module paths, aliases, re-exports and transitive helper imports. A same-named production helper or prose is not a test dependency. Unknown local imports, computed imports, parse/config failures and exported test helpers keep the conservative full gate. Dependency/environment/population completeness checks remain required; this helper never manufactures passing evidence.
 
-Integration into the existing recheck runner requires exact-file ownership clearance. Focused fixtures exercise same-name separation, transitive imports, extension substitution, aliases and uncertainty refusal.
+Josh approved the exact-file takeover on 3 October 2026. The existing recheck runner now uses this resolver. Focused fixtures exercise same-name separation, transitive imports, extension substitution, aliases and uncertainty refusal. Existing receipt completeness and environment gates remain intact.
 
 ## CI scope decision
 
@@ -22,8 +22,12 @@ Policy-only changes already run meaningful policy contracts without application/
 
 ## Activation and external delivery
 
-The installed Codex app-server `hooks/list` reports all five user hooks enabled/trusted with no loader warnings/errors. Eight offline contract groups passed. Registration discovery does not prove event execution: an exact shell-launch replay found WSL `bash` cannot open the Windows adapter path (exit 127). Corrected Git Bash registration/trust needs explicit approval. Existing chats do not hot-reload instruction edits.
+The installed Codex app-server `hooks/list` reports all five user hooks enabled/trusted with no loader warnings/errors. Eight offline contract groups passed. An exact Windows shell-launch replay found WSL `bash` could not open the Windows adapter path (exit 127). With Josh's explicit approval, the four shell registrations now use `C:/Users/joshs/ai-rules/run-ward-shell-hook.mjs`, which passes the payload as data to the same four existing scripts through the absolute Git Bash executable. Only those four trust records changed; original bytes are backed up privately. Four exact registered command replays pass denial/context contracts, and unknown bridge targets are refused. This proves launcher execution and native registry loading; it does not prove every event matcher firing in an existing GUI conversation. Existing chats do not hot-reload instruction edits.
 
 All locally checked shared-rule sources/copies match. The same-identity Library mirror is stale; this client exposes no supported replacement capability. A new upload would not replace it. Cursor GUI rules and cloud/phone context activation need their supported client interfaces; native apps are unavailable to this task. No private application databases, credentials or protection settings were altered to work around this limit.
 
 Canonical ledger reconciliation is available through the configured Notion connection. The original objective is recorded under Ward Flow with current evidence; implementation completion remains distinct from publication, merge and deployment.
+
+## Local completion evidence
+
+The focused claim, dependency and FULL-recheck contract tests pass. Normal commit hooks check the staged source with lint/typechecking and generated-document checks. Installed dependency parity covers 526 package locations and 32,146 files. Private launcher backups, native loader results and exact command replays are under `C:/Users/joshs/Documents/Codex/audits/2026-10-03-ward-flow-policy/`. No broad-suite performance claim, hosted follow-up CI verdict, publication, merge or deployment is inferred from these local checks.

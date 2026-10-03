@@ -60,6 +60,8 @@ describe("resolved test dependencies", () => {
     "require(unknown)",
     "export const helper=1",
     "const invalid = ;",
+    "eval('import(unknown)')",
+    "new Function('return import(unknown)')",
   ])("refuses uncertain or exported modules: %s", (source) => {
     const f = fixture({ "tests/a.test.ts": source });
     try {
