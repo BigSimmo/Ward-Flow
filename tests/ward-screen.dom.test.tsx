@@ -356,10 +356,7 @@ describe("ward screen bed release controls", () => {
     expect(EXPECTED_RELEASE, "no unblocked expected release counted today exists in the derived seed").toBeDefined();
     expect(EXPECTED_RELEASE?.state).toBe("expected");
     expect(EXPECTED_RELEASE?.blocker).toBeNull();
-    expect(
-      CONFIRMED_RELEASE,
-      "no unblocked confirmed release counted today exists in the derived seed",
-    ).toBeDefined();
+    expect(CONFIRMED_RELEASE, "no unblocked confirmed release counted today exists in the derived seed").toBeDefined();
     expect(CONFIRMED_RELEASE?.state).toBe("confirmed");
     expect(CONFIRMED_RELEASE?.blocker).toBeNull();
   });
@@ -528,6 +525,34 @@ describe("ward screen bed release controls", () => {
     expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
       "0 beds currently on leave at Mental Health Unit",
     );
+  });
+
+  it("records a bed on leave when an admitted patient is chosen and increments the on-leave count", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="scgh-adult-open" />
+      </WardFlowProvider>,
+    );
+
+    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
+      "1 bed currently on leave at Mental Health Unit",
+    );
+
+    const patientSelect = screen.getByTestId("ward-leave-bed-patient") as HTMLSelectElement;
+    expect(patientSelect).not.toBeDisabled();
+    const options = Array.from(patientSelect.options).filter((o) => o.value !== "");
+    expect(options.length).toBeGreaterThan(0);
+    const chosenAdmissionId = options[0].value;
+
+    fireEvent.change(patientSelect, { target: { value: chosenAdmissionId } });
+    fireEvent.change(screen.getByTestId("ward-leave-bed-expected-return"), { target: { value: "14:30" } });
+    fireEvent.click(screen.getByTestId("ward-leave-bed-submit"));
+
+    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
+      "2 beds currently on leave at Mental Health Unit",
+    );
+    const list = screen.getByTestId("ward-leave-bed-list");
+    expect(list).toHaveTextContent("14:30");
   });
 });
 

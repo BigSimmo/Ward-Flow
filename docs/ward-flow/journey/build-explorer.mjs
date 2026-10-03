@@ -66,7 +66,8 @@ const WRITES = {
   SET_DISCHARGE_BARRIER: "The one thing holding this discharge up, or that nothing is.",
   RELEASE_BED:
     "Nothing, in practice: recording the named patient leaving completes their release in the same write, so none is left for this to complete.",
-  UPDATE_EXPECTED_DISCHARGE: "When this admission is expected to leave, how many times that date has moved, and when it was set.",
+  UPDATE_EXPECTED_DISCHARGE:
+    "When this admission is expected to leave, how many times that date has moved, and when it was set.",
   RECORD_MOVEMENT_MEDICAL_CLEARANCE:
     "The medical-clearance answer on a MOVEMENT — the referral carries its own, separately.",
   UPLOAD_PATIENT_FORM: "That a file was attached to this movement, by name and size. The file itself is not modelled.",
@@ -123,6 +124,9 @@ const WRITES = {
   DISPATCH_BROADCAST_ALERT: "A network-wide alert, active, with nobody yet acknowledging it. Belongs to no patient.",
   ACKNOWLEDGE_BROADCAST_ALERT: "One more unit on the alert's acknowledged list.",
   STAND_DOWN_BROADCAST_ALERT: "The alert marked stood down, with the time and the role.",
+  RECORD_ADMISSION_CARE:
+    "A care journey fact (transfer, transport, clinical plan or document) recorded against an admission.",
+  RECORD_ADMISSION_FOLLOW_UP: "Follow-up contact arrangements recorded against an admission on the discharge board.",
 };
 
 /* ---------------------------- integrity checks ---------------------------- */
@@ -387,8 +391,29 @@ stages.edges.forEach((e, i) => {
  * agree.
  */
 {
-  const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+  const NUMBER_WORDS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+  ];
   const word = (n) => (n <= 20 ? NUMBER_WORDS[n] : n < 30 ? "twenty-" + NUMBER_WORDS[n - 20] : String(n));
   const model = fs.readFileSync(path.join(repoRoot, "src/components/ward-management/ward-model.ts"), "utf8");
   // Ends at the first member followed by ";" — comments inside the union carry semicolons of their own.
@@ -403,8 +428,9 @@ stages.edges.forEach((e, i) => {
       ["the map", JSON.stringify(stages)],
     ];
     for (const [where, text] of said) {
-      const stated = [...text.matchAll(/\b([a-z]+(?:-[a-z]+)?) kinds of (?:message|notice)|one of ([a-z]+(?:-[a-z]+)?) kinds/gi)]
-        .map((m) => (m[1] || m[2]).toLowerCase());
+      const stated = [
+        ...text.matchAll(/\b([a-z]+(?:-[a-z]+)?) kinds of (?:message|notice)|one of ([a-z]+(?:-[a-z]+)?) kinds/gi),
+      ].map((m) => (m[1] || m[2]).toLowerCase());
       for (const s of stated)
         if (s !== word(kinds))
           problems.push(`${where} says "${s}" kinds of notice; the engine's NoticeKind has ${kinds}`);

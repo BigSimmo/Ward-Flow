@@ -307,3 +307,34 @@ test("readiness contacts storage on every probe", async () => {
   healthy = false;
   await assert.rejects(store.ready(), /container unavailable/);
 });
+
+test("storage account name can be configured via environment variable", () => {
+  const custom = readConfig({
+    ...environment,
+    AZURE_STORAGE_ACCOUNT: "customstorageacct",
+    AzureWebJobsStorage__accountName: "customstorageacct",
+  });
+  assert.equal(custom.storage.account, "customstorageacct");
+});
+
+test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async () => {
+  const tenantConfig = readConfig({
+    ...environment,
+    WARD_ALLOW_TENANT_USERS: "true",
+  });
+  assert.equal(tenantConfig.allowTenantUsers, true);
+  const otherUserOid = "33333333-3333-4333-8333-333333333333";
+  const authenticate = await createAuthenticator(tenantConfig, {
+    keys: {},
+    jose: {
+      jwtVerify: async () => ({
+        payload: {
+          tid: environment.AZURE_TENANT_ID,
+          oid: otherUserOid,
+          scp: "WardFlow.Access",
+        },
+      }),
+    },
+  });
+  assert.equal(await authenticate("Bearer accepted"), otherUserOid);
+});

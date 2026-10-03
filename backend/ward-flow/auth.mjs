@@ -38,9 +38,10 @@ export async function createAuthenticator(config, dependencies = {}) {
       if (CREDENTIAL_FAILURES.has(error?.code)) throw new Error("Unauthorised");
       throw new VerifierUnavailableError("Token verifier unavailable");
     }
+    const isUserAllowed = config.allowTenantUsers || payload.oid === config.allowedObjectId;
     if (
       payload.tid !== config.tenant ||
-      payload.oid !== config.allowedObjectId ||
+      !isUserAllowed ||
       typeof payload.scp !== "string" ||
       !payload.scp.split(" ").includes("WardFlow.Access")
     )
