@@ -5,7 +5,7 @@ Repository: `BigSimmo/Ward-Flow`.
 Base: `d8c1a05c24a55282c90547725ae9f397cf2ef284`, the provided main merge snapshot.
 Branch: `codex/out-of-area-inspector`.
 
-The out-of-area register now uses a slim segmented summary bar, a naturally
+The out-of-area register now uses a compact floating summary island, a naturally
 scrolling table and an inspector that fits its content. The compact overview groups
 catchments into clickable rows with proportional bars. It avoids duplicating the
 summary strip and presents the longest stay as one compact, actionable record. The longest current stay
@@ -30,12 +30,18 @@ page flow on shorter screens, tablets and phones. The table keeps all five colum
 on tablets and uses the existing patient cards on phones. No nested vertical
 scrolling or equal-height inspector is imposed.
 
-The visual refinement reduces the summary to one 52px desktop strip, with compact
-figures, subtle dividers and a clear active underline. Travel requirements use plain
-text and a small transport symbol, without a filled badge or border. The register
-uses quieter metadata links, clearer header contrast and tighter row spacing. The
-inspector retains its compact structure with a lightly tinted header and stronger
-field labels. All colours continue to use the existing light/dark theme tokens.
+The summary is now a content-width floating island rather than a full-width card
+strip. Its four concise metrics share one contrast surface with understated active
+states. The register heading groups its title and count, with alphabetical sort,
+row-density and arrangement controls opposite. Search and catchment filtering sit
+alongside a unified segmented transport control on a tinted toolbar.
+
+The register starts in its original ledger order. Optional Patient A–Z and Home
+region A–Z sorting changes only the displayed copy, and inspector navigation follows
+that order. It does not rank elapsed stays or imply clinical priority. Compact rows
+are the default; users can choose comfortable spacing. Travel requirements retain
+plain text and a small symbol without a surrounding badge. The inspector retains
+its compact layout. All colours use the existing light/dark theme tokens.
 
 Validation is local and synthetic. See the task receipt and browser report in the
 private review workspace for executed checks. This design preview does not assert

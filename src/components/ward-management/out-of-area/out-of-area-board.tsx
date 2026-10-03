@@ -31,8 +31,8 @@ import pageStyles from "./out-of-area-third-edition.module.css";
  * Full provenance appears once in a disclosure, shared by all placements.
  *
  * **It calls `outOfAreaLedger` and recomputes nothing.** Neither number is derived here, the
- * entries render in the order the ledger returns them, and there is no comparator anywhere in this
- * file. That order is the admission fixture's own order, deliberately: a sort by elapsed time
+ * entries default to the order the ledger returns them. Optional alphabetical sorting changes
+ * only the displayed register. The default is the admission fixture's own order: a sort by elapsed time
  * would be a ranking of people by how recently they were sent away, which reads as a repatriation
  * priority nobody has decided. `ward-referrals.ts` holds a sibling derivation that does sort
  * most-recent-first (`recentlyDecidedReferrals`); it answers a different question and must never
@@ -299,6 +299,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [transportFilter, setTransportFilter] = useState<"all" | "air_transport_only" | "three_hours_or_more">("all");
   const [catchmentFilter, setCatchmentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"ledger" | "patient" | "catchment">("ledger");
+  const [compactRows, setCompactRows] = useState(true);
 
   const homeRegionCounts = entries.reduce<Record<string, number>>((acc, entry) => {
     const region = entry.admission.homeRegion ?? "Not recorded";
@@ -330,6 +332,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     }
     return true;
   });
+  if (sortOrder !== "ledger") {
+    filteredEntries.sort((a, b) => {
+      const left = sortOrder === "patient" ? resolvePatient(a.admission).displayName : (a.admission.homeRegion ?? "");
+      const right = sortOrder === "patient" ? resolvePatient(b.admission).displayName : (b.admission.homeRegion ?? "");
+      return left.localeCompare(right, "en-AU");
+    });
+  }
 
   const selectedIndex = filteredEntries.findIndex((entry) => entry.admission.id === selectedId);
   const hasFilters = transportFilter !== "all" || catchmentFilter !== "all" || searchQuery.trim().length > 0;
@@ -397,115 +406,58 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           </div>
         ) : null}
 
-        {/* Executive 4-card KPI strip */}
+        {/* Compact floating summary island; actions use the existing cohort and selection. */}
         <div className={pageStyles.kpiStrip} role="region" aria-label="Executive Out-of-Area KPIs">
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "all" && catchmentFilter === "all" && !searchQuery ? pageStyles.kpiCardActive : ""}`}
-            data-tone="accent"
-            onClick={() => {
-              setTransportFilter("all");
-              setCatchmentFilter("all");
-              setSearchQuery("");
-            }}
+            onClick={resetFilters}
             aria-pressed={transportFilter === "all" && catchmentFilter === "all" && !searchQuery}
             aria-label={`Total Out-of-Area: ${entries.length} active placements. Click to view all.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="accent">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-              </span>
-            </div>
             <span className={pageStyles.kpiVal}>{entries.length}</span>
-            <span className={pageStyles.kpiSub}>Cross-catchment admissions</span>
+            <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
           </button>
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "air_transport_only" ? pageStyles.kpiCardActive : ""}`}
-            data-tone="danger"
             onClick={() => setTransportFilter(transportFilter === "air_transport_only" ? "all" : "air_transport_only")}
             aria-pressed={transportFilter === "air_transport_only"}
             aria-label={`Air Transport Only: ${airCount} patients. Click to filter.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Air Transport Only</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="danger">
-                <PlacementStatusGlyph tone="danger" />
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.dangerVal}`}>{airCount}</span>
-            <span className={pageStyles.kpiSub}>Air-only travel band</span>
+            <span className={pageStyles.kpiVal}>{airCount}</span>
+            <span className={pageStyles.kpiLabel}>Air only</span>
           </button>
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "three_hours_or_more" ? pageStyles.kpiCardActive : ""}`}
-            data-tone="warn"
             onClick={() =>
               setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
             }
             aria-pressed={transportFilter === "three_hours_or_more"}
             aria-label={`Road Travel: ${roadCount} patients. Click to filter.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Road Travel</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="warn">
-                <PlacementStatusGlyph tone="warn" />
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.warnVal}`}>{roadCount}</span>
-            <span className={pageStyles.kpiSub}>Three hours or more from home</span>
+            <span className={pageStyles.kpiVal}>{roadCount}</span>
+            <span className={pageStyles.kpiLabel}>Road travel</span>
           </button>
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${maxDaysEntry && selectedId === maxDaysEntry.admission.id ? pageStyles.kpiCardActive : ""}`}
-            data-tone="accent"
             onClick={(e) => {
-              if (maxDaysEntry) {
-                selectPlacement(maxDaysEntry.admission.id, e.currentTarget);
-              }
+              if (maxDaysEntry) selectPlacement(maxDaysEntry.admission.id, e.currentTarget);
             }}
             aria-label={`Longest Out-of-Area: ${longestDays}, ${longestSub}. Click to inspect case.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="accent">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.accentVal}`}>{longestDays}</span>
-            <span className={pageStyles.kpiSub}>{longestSub}</span>
+            <span className={pageStyles.kpiVal}>{longestDays}</span>
+            <span className={pageStyles.kpiLabel}>Longest stay</span>
           </button>
         </div>
 
         {/* Main Workbench Grid: Inpatients Ledger Table (Left) & Case Inspector (Right) */}
-        <div className={`${pageStyles.boardGrid} ${pageStyles.ledgerGrid}`}>
+        <div
+          className={`${pageStyles.boardGrid} ${pageStyles.ledgerGrid}`}
+          data-row-density={compactRows ? "compact" : "comfortable"}
+        >
           <div className={pageStyles.registerColumn}>
             <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-entries">
               <div className={pageStyles.ph}>
@@ -518,6 +470,48 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   </span>
                 </div>
                 <div className={pageStyles.phRight}>
+                  <label className={pageStyles.sortControl}>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <path d="M4 6h16M4 12h11M4 18h6" />
+                    </svg>
+                    <select
+                      aria-label="Sort placements"
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                    >
+                      <option value="ledger">Ledger order</option>
+                      <option value="patient">Patient A–Z</option>
+                      <option value="catchment">Home region A–Z</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className={pageStyles.densityToggle}
+                    aria-label="Compact rows"
+                    aria-pressed={compactRows}
+                    title={compactRows ? "Switch to comfortable rows" : "Switch to compact rows"}
+                    onClick={() => setCompactRows(!compactRows)}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <path d="M4 5h16v4H4zM4 15h16v4H4zM4 12h16" />
+                    </svg>
+                  </button>
                   <button
                     className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
                     type="button"
@@ -682,7 +676,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* The ledger's own order, unsorted and untruncated. */}
+                          {/* All matching entries; alphabetical sorting is an explicit view choice. */}
                           {filteredEntries.map((entry) => {
                             const site = siteByCode(entry.unit.siteCode);
                             const tone = entry.band === "air_transport_only" ? "danger" : "warn";

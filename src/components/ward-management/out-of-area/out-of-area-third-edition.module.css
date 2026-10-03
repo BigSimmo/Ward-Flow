@@ -150,31 +150,33 @@
   }
 }
 
-/* Compact segmented summary */
+/* Floating summary island: one compact surface rather than four cards. */
 .kpiStrip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, auto);
+  justify-self: center;
+  max-width: 100%;
   gap: 0;
-  padding: 3px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
-  background: var(--surface);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 4%, transparent);
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--on-accent) 18%, var(--accent-ink));
+  border-radius: 14px;
+  background: var(--accent-ink);
+  box-shadow:
+    0 6px 16px color-mix(in srgb, var(--ink) 12%, transparent),
+    0 1px 3px color-mix(in srgb, var(--ink) 8%, transparent);
 }
-
 .kpiCard {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 44px;
+  justify-content: center;
+  gap: 9px;
+  min-height: 36px;
   min-width: 0;
-  width: 100%;
   border: 0;
-  border-radius: 5px;
+  border-radius: 9px;
   background: transparent;
-  padding: 8px 16px;
-  color: var(--ink);
+  padding: 7px 16px;
+  color: var(--on-accent);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -182,29 +184,33 @@
   transition: background 0.15s ease;
 }
 .kpiCard + .kpiCard {
-  border-left: 1px solid var(--line);
+  border-left: 1px solid color-mix(in srgb, var(--on-accent) 18%, transparent);
 }
-.kpiCard:hover {
-  background: var(--surface-2);
+.kpiCard:hover,
+.kpiCardActive {
+  background: color-mix(in srgb, var(--on-accent) 12%, transparent);
 }
 .kpiCard:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--on-accent);
   outline-offset: -2px;
 }
-.kpiCardActive {
-  background: var(--surface-2);
-  box-shadow: inset 0 -2px var(--accent);
-}
 .kpiCard .kpiVal {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1;
-  color: var(--ink) !important;
+  color: var(--on-accent) !important;
   flex-shrink: 0;
 }
-.kpiCard .kpiSub,
-.kpiCard .kpiToneBadge {
-  display: none;
+.kpiCard .kpiLabel {
+  color: var(--on-accent);
+  font-weight: 400;
+  font-size: var(--t-0, 12px);
+  line-height: 1.3;
+}
+@media (pointer: coarse) {
+  .kpiCard {
+    min-height: 44px;
+  }
 }
 
 .kpiLabelRow {
@@ -359,7 +365,7 @@
 }
 
 .ph {
-  padding: 14px 20px;
+  padding: 18px 20px 16px;
   border-bottom: 1px solid var(--line);
   border-top-left-radius: var(--r1i, 9px);
   border-top-right-radius: var(--r1i, 9px);
@@ -372,10 +378,8 @@
 }
 
 .phLeft {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 5px;
 }
 
 .phRight {
@@ -385,24 +389,60 @@
 }
 
 .countBadge {
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: var(--t-0, 12px);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  background: transparent;
+  padding: 0;
+  border: 0;
+}
+
+.sortControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+.sortControl select {
+  max-width: 150px;
+  min-height: 36px;
+  background: transparent;
+  border: 0;
+  color: var(--ink-soft);
+  font: 500 12px var(--body);
+  cursor: pointer;
+}
+.densityToggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   background: var(--surface);
-  padding: 2px 8px;
-  border-radius: var(--r2, 4px);
+  color: var(--muted);
   border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.densityToggle[aria-pressed="true"] {
+  background: var(--surface-2);
+  color: var(--accent);
+  border-color: var(--line-strong);
+}
+.densityToggle:focus-visible,
+.sortControl select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .tableToolbar {
-  padding: 12px 20px;
-  background: var(--surface);
+  padding: 12px 16px;
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -423,9 +463,9 @@
 
 .searchInput {
   width: 100%;
-  height: 2rem;
-  min-height: 2rem;
-  padding: 0 26px 0 28px;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 26px 0 30px;
   font-size: var(--t-0, 12px);
   font-family: var(--body);
   color: var(--ink);
@@ -471,9 +511,9 @@
 }
 
 .filterSelect {
-  height: 2rem;
-  min-height: 2rem;
-  padding: 0 20px 0 8px;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 24px 0 10px;
   font-size: var(--t-1, 13px);
   font-family: var(--body);
   color: var(--ink);
@@ -495,8 +535,12 @@
 .filterChips {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--sunk);
+  order: -1;
 }
 
 .filterChip {
@@ -504,14 +548,14 @@
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--pill, 9999px);
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--ink-soft);
   font-size: var(--t-0, 12px);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background 0.12s ease;
   height: 1.875rem;
   min-height: 1.875rem;
   box-sizing: border-box;
@@ -529,14 +573,14 @@
 }
 
 .filterChipActive {
-  background: var(--accent) !important;
-  color: var(--on-accent) !important;
-  border-color: var(--accent) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 8%, transparent);
   font-weight: 600;
 }
-
 .filterChipActive svg {
-  color: var(--on-accent) !important;
+  color: var(--ink) !important;
 }
 
 .noMatches {
@@ -552,7 +596,7 @@
 
 .ph h2 {
   margin: 0;
-  font-size: var(--t-2, 13.5px);
+  font-size: 16px;
   font-weight: 600;
   text-transform: none;
   letter-spacing: -0.01em;
@@ -635,10 +679,14 @@
 }
 
 .screen[data-ward-design="third-edition"] .table tbody td {
-  padding: 11px 16px;
+  padding: 9px 16px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   vertical-align: middle;
+}
+
+.screen[data-ward-design="third-edition"] [data-row-density="comfortable"] .table tbody td {
+  padding-block: 16px;
 }
 
 .table tbody td:nth-child(5) {
@@ -2141,6 +2189,15 @@
 }
 
 @media (pointer: coarse) {
+  .densityToggle,
+  .sortControl select,
+  .searchInput,
+  .filterSelect {
+    min-height: 44px;
+  }
+  .densityToggle {
+    width: 44px;
+  }
   .iconButton {
     min-width: 44px;
     height: 44px;
@@ -2203,7 +2260,7 @@
     border-left: 0;
   }
   .kpiCard:nth-child(n + 3) {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid color-mix(in srgb, var(--on-accent) 18%, transparent);
   }
   .boardGrid,
   .ledgerGrid {
@@ -2235,6 +2292,8 @@
   }
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    box-sizing: border-box;
     gap: 0;
   }
   .kpiCard {
@@ -2242,7 +2301,7 @@
     gap: 8px;
   }
   .kpiCard .kpiVal {
-    font-size: 20px;
+    font-size: 18px;
   }
   .kpiCard .kpiSub {
     grid-column: 1 / -1;
@@ -2250,9 +2309,12 @@
   .ph {
     padding: 16px;
   }
-  .phRight,
-  .phRight .btn {
+  .phRight {
     width: 100%;
+    justify-content: space-between;
+  }
+  .phRight .btn {
+    margin-left: auto;
   }
   .tableToolbar {
     padding: 12px 16px;
@@ -2287,7 +2349,12 @@
   }
   .filterChips {
     width: 100%;
+    box-sizing: border-box;
     justify-content: flex-start;
+  }
+  .filterChips .filterChip {
+    flex: 1;
+    justify-content: center;
   }
   .segmentedControl {
     flex-direction: column;

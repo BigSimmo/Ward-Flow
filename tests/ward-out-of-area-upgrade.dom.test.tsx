@@ -293,6 +293,25 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
 });
 
 describe("out-of-area inspector — navigation and explicit patient choice", () => {
+  it("sorts the displayed register alphabetically and navigates in that order, retaining ledger order by default", () => {
+    renderBoard();
+    const register = screen.getByTestId("ward-out-of-area-table");
+    const rows = () => within(register).getAllByTestId(/^ward-out-of-area-row-/);
+    const originalIds = rows().map((row) => row.getAttribute("data-testid"));
+    expect(originalIds).toEqual(entries.map((entry) => `ward-out-of-area-row-${entry.admission.id}`));
+    const originalLabels = rows().map((row) => row.getAttribute("aria-label") ?? "");
+    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "patient" } });
+    expect(rows().map((row) => row.getAttribute("aria-label"))).toEqual(
+      [...originalLabels].sort((a, b) => a.localeCompare(b, "en-AU")),
+    );
+    const sortedRows = rows();
+    fireEvent.click(sortedRows[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
+    expect(sortedRows[1]).toHaveAttribute("aria-selected", "true");
+    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "ledger" } });
+    expect(rows().map((row) => row.getAttribute("data-testid"))).toEqual(originalIds);
+  });
+
   it("requires patient selection before opening the arrangement form", () => {
     renderBoard();
     const action = screen.getByRole("button", { name: /Initiate Repatriation/i });
