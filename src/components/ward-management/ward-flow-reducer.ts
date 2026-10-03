@@ -79,7 +79,7 @@ import {
   type OverridableWardFlowEvent,
   type WardFlowRole,
 } from "@/components/ward-management/ward-flow-events";
-import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { SELECTABLE_LEGAL_FORMS, countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import {
   form3CRefusedAfter3D,
   isLegalClockFormCode,
@@ -1799,7 +1799,13 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       if (event.role !== "coordinator" || admission.state !== "occupied") return deny("role");
       const receiving = uniqueRecord(state.units, event.change.receivingUnitId);
       const movement = dischargeMovement(state, admission);
-      if (!receiving || !movement || !eligibility(movement, receiving, event.now).eligible)
+      if (
+        !receiving ||
+        !safeCounter(receiving.empty.value) ||
+        receiving.empty.value <= 0 ||
+        !movement ||
+        !eligibility(movement, receiving, event.now).eligible
+      )
         return deny(
           "transition",
           "denied",
@@ -8576,6 +8582,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
       }
       if (
+        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
         !Number.isFinite(event.writtenAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -8607,6 +8614,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         legalForm: {
           code: event.formCode,
           kind,
+          ...(event.region
+            ? { region: event.region }
+            : sameFormTimeEdit && movement.legalForm?.region
+              ? { region: movement.legalForm.region }
+              : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
         },
         legalClock: undefined,
@@ -8625,6 +8637,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COUNTRY_EXTENSION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (!countryExtensionEligible(movement))
+        return reject(
+          state,
+          event,
+          "A country extension requires a current Form 1A with its paper setting recorded as country.",
+        );
       if (movement.closure || event.paperExpiresAt === undefined || !Number.isFinite(event.paperExpiresAt))
         return reject(
           state,
@@ -8642,6 +8660,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         },
         decision,
       );
+      if (next.rejections.length === state.rejections.length) {
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
+      }
       return next;
     }
 
@@ -8650,6 +8672,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
       if (
+        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
         !Number.isFinite(event.startedAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -8658,6 +8681,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
       }
+      if (event.formCode === "5B" && movement.legalForm?.code !== "5A")
+        return reject(state, event, "Form 5B must continue a current Form 5A.");
       const expiryHistory =
         event.paperExpiresAt === undefined
           ? movement.legalFormExpiryHistory
@@ -8689,6 +8714,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           legalClock: undefined,
           legalFormExpiryHistory: expiryHistory,
         };
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
         return replaceMovement(state, movement.id, continued);
       }
       // Any other continuation replaces current paper facts while retaining the earlier expiry history.
@@ -8697,12 +8724,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         formedAt: event.startedAt,
         legalForm: {
           code: event.formCode,
+          ...(event.region ? { region: event.region } : {}),
           ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
         },
         legalClock: undefined,
         legalFormReceivedAt: undefined,
         legalFormExpiryHistory: expiryHistory,
       };
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       return replaceMovement(state, movement.id, updated);
     }
 

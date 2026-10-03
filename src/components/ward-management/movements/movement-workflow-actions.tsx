@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import type { Movement } from "../ward-model";
-import { SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
+import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
 import { isArrivalLate, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import styles from "./movement-workspace-cockpit.module.css";
@@ -177,8 +177,8 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Continuation form
             <select value={form} onChange={(e) => setForm(e.target.value)}>
               <option value="">Choose form</option>
-              {SELECTABLE_LEGAL_FORMS.map((f) => (
-                <option key={f.code} value={f.code}>
+              {CONTINUATION_LEGAL_FORMS.map((f) => (
+                <option key={f.code} value={f.code} disabled={f.code === "5B" && movement.legalForm?.code !== "5A"}>
                   {f.code}
                 </option>
               ))}
@@ -194,7 +194,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </label>
           <button
             type="button"
-            disabled={!form || !written}
+            disabled={!form || !written || (form === "5B" && movement.legalForm?.code !== "5A")}
             onClick={() => {
               if (!Number.isFinite(started) || (expiry && !Number.isFinite(due))) {
                 setLocalError("Enter the date and time written on the form.");
@@ -216,7 +216,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </button>
           <button
             type="button"
-            disabled={!movement.legalForm || !expiry}
+            disabled={!countryExtensionEligible(movement) || !expiry}
             onClick={() => {
               if (!Number.isFinite(due)) {
                 setLocalError("Enter the new expiry written on the extension form.");
@@ -234,6 +234,12 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           >
             Record country paper extension
           </button>
+          {!countryExtensionEligible(movement) && (
+            <p>
+              A country extension requires a current Form 1A. Record its country paper setting in{" "}
+              <a href="/mockups/ward-flow/legal-forms">Legal forms</a> first.
+            </p>
+          )}
           <p>A missing expiry stays unknown. No statutory interval is calculated.</p>
         </details>
       )}

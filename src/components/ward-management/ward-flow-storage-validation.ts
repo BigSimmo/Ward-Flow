@@ -93,6 +93,12 @@ function nested(value: unknown, depth = 0): boolean {
     return false;
   if ("legalForm" in value && (!object(value.legalForm) || !text(value.legalForm.code))) return false;
   if (
+    object(value.legalForm) &&
+    value.legalForm.region !== undefined &&
+    !["metro", "country"].includes(String(value.legalForm.region))
+  )
+    return false;
+  if (
     "transport" in value &&
     (!object(value.transport) ||
       !fields(value.transport, ["id", "provider"], text) ||

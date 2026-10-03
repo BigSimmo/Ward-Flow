@@ -1386,3 +1386,55 @@ describe("the KPI figures state absence in words, never a bare zero rendered as 
     expect(figure?.textContent).toContain("None waiting");
   });
 });
+
+describe("community follow-up filters report real empty results", () => {
+  it.each(["missing_arrangement", "missing_contact"])(
+    "explains no matches for %s instead of leaving an empty list",
+    (filter) => {
+      const [referral] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
+      const departed = admission({
+        id: "AD-FILTER-COMPLETE",
+        referralId: referral.id,
+        state: "departed",
+        leavingDestination: "discharged-to-the-community",
+        leftAt: NOW_ANCHOR - 1,
+        followUp: { state: "arranged", recordedAt: NOW_ANCHOR - 1, recordedBy: "Flow coordinator" },
+      });
+      departed.careJourney = {
+        contacts: [
+          {
+            kind: "contact",
+            outcome: "completed",
+            contactedAt: NOW_ANCHOR,
+            appointmentVersion: 1,
+            recordedAt: NOW_ANCHOR,
+            recordedBy: "Community service",
+          },
+        ],
+        episodes: [],
+        plan: {},
+        documents: {},
+        followUp: {
+          kind: "follow_up",
+          contactId: "demo-adult-clinician",
+          serviceId: TEAM_A.id,
+          appointmentAt: NOW_ANCHOR,
+          appointmentVersion: 1,
+          mode: "telephone",
+          recordedAt: NOW_ANCHOR - 1,
+          recordedBy: "Flow coordinator",
+        },
+      };
+      renderTeam(TEAM_A.id, [departed], [referral]);
+      const section = screen.getByTestId("ward-community-discharged");
+      expect(within(section).getByTestId("ward-community-discharged-list")).toBeTruthy();
+      fireEvent.change(screen.getByRole("combobox", { name: "Community follow-up filter" }), {
+        target: { value: filter },
+      });
+      expect(within(section).queryByTestId("ward-community-discharged-list")).toBeNull();
+      expect(within(section).getByTestId("ward-community-discharged-empty").textContent).toContain(
+        "No community departures match this follow-up filter",
+      );
+    },
+  );
+});

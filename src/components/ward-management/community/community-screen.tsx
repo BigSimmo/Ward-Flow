@@ -863,6 +863,13 @@ export function CommunityScreen({
 
   const teamConfig = resolveCommunityTeamConfig(team);
   const lists = communityHubLists(source, team, sourceReferrals);
+  const filteredDepartures = lists.dischargedIntoTheArea.filter(
+    (a) =>
+      followUpFilter === "all" ||
+      (followUpFilter === "missing_arrangement"
+        ? a.followUp?.state !== "arranged"
+        : !currentCareContactCompleted(a.careJourney)),
+  );
   const unattributable = admissionsWithNoCommunityTeam(source, sourceReferrals);
   /*
    * 🔴 **WHICH KIND OF EMPTY EVERY EMPTY LIST BELOW IS.** Ward Lead's ruling, 2026-09-05: a list
@@ -3055,9 +3062,11 @@ export function CommunityScreen({
                       <option value="missing_contact">No completed contact recorded</option>
                     </select>
                   </label>
-                  {lists.dischargedIntoTheArea.length === 0 ? (
+                  {filteredDepartures.length === 0 ? (
                     <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
-                      {cannotResolve ? (
+                      {lists.dischargedIntoTheArea.length > 0 ? (
+                        <>No community departures match this follow-up filter.</>
+                      ) : cannotResolve ? (
                         <>
                           A bed carries no link back to the referral that named this team, so this list cannot be built
                           for {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
@@ -3068,30 +3077,21 @@ export function CommunityScreen({
                     </p>
                   ) : (
                     <ul className={styles.cardList} data-testid="ward-community-discharged-list">
-                      {lists.dischargedIntoTheArea
-                        .filter(
-                          (a) =>
-                            followUpFilter === "all" ||
-                            (followUpFilter === "missing_arrangement"
-                              ? a.followUp?.state !== "arranged"
-                              : !currentCareContactCompleted(a.careJourney)),
-                        )
-                        .map((admission) => (
-                          <li
-                            key={admission.id}
-                            className={styles.card}
-                            data-testid={`ward-community-discharged-${admission.id}`}
-                          >
-                            <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
-                            <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
-                            <p>
-                              Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
-                              {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ??
-                                "Not recorded"}
-                            </p>
-                            <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
-                          </li>
-                        ))}
+                      {filteredDepartures.map((admission) => (
+                        <li
+                          key={admission.id}
+                          className={styles.card}
+                          data-testid={`ward-community-discharged-${admission.id}`}
+                        >
+                          <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
+                          <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
+                          <p>
+                            Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
+                            {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded"}
+                          </p>
+                          <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
+                        </li>
+                      ))}
                     </ul>
                   )}
 

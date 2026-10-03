@@ -223,7 +223,7 @@ export function validCareJourney(value: unknown): value is CareJourney {
         })(),
     );
   };
-  return (
+  const shapeValid =
     Array.isArray(v.contacts) &&
     v.contacts.every((f) => fact(f, "contact")) &&
     Array.isArray(v.episodes) &&
@@ -236,7 +236,16 @@ export function validCareJourney(value: unknown): value is CareJourney {
       ["transport", "transport"],
       ["transfer", "transfer"],
       ["legal", "legal"],
-    ].every(([key, kind]) => v[key] === undefined || fact(v[key], kind))
+    ].every(([key, kind]) => v[key] === undefined || fact(v[key], kind));
+  if (!shapeValid) return false;
+  const care = value as CareJourney;
+  if (!care.followUp) return care.contacts.length === 0;
+  return care.contacts.every(
+    (contact) =>
+      contact.appointmentVersion <= care.followUp!.appointmentVersion &&
+      (contact.appointmentVersion !== care.followUp!.appointmentVersion ||
+        contact.outcome !== "completed" ||
+        contact.contactedAt >= care.followUp!.appointmentAt),
   );
 }
 export function codingCode(
@@ -428,7 +437,7 @@ export function recordedCommunityTransition(
   destination: Admission["leavingDestination"],
 ): boolean {
   const legal = admission.careJourney?.legal;
-  if (!legal || (lastStatusChangeAt !== undefined && lastStatusChangeAt > legal.recordedAt)) return false;
+  if (!legal || (lastStatusChangeAt !== undefined && lastStatusChangeAt > legal.writtenAt)) return false;
   if (legal.authority === "revocation") return true;
   return (
     destination === "discharged-to-the-community" &&

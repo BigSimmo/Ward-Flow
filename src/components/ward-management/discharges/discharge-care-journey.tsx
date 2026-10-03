@@ -99,11 +99,13 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         Chosen workflow facts are attributed to the recording role. Clinical documents remain in the clinical record.
       </p>
       {localError && <p role="alert">{localError}</p>}
-      {submitted !== null && rejections.length > submitted && (
-        <p role="alert">
-          {rejections.at(-1)?.reason ?? "Care action was not recorded."} Reopen the current record before retrying.
-        </p>
-      )}
+      {submitted !== null &&
+        rejections.length > submitted &&
+        rejections.at(-1)?.attempted === "RECORD_ADMISSION_CARE" && (
+          <p role="alert">
+            {rejections.at(-1)?.reason ?? "Care action was not recorded."} Reopen the current record before retrying.
+          </p>
+        )}
       <dl>
         <dt>Responsible clinician and appointment</dt>
         <dd>

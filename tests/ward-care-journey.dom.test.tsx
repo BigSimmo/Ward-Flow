@@ -7,7 +7,7 @@ import { DischargeCareJourney } from "@/components/ward-management/discharges/di
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 function Workspace() {
-  const { admissions, openDischargeRecord, readDischargeRecord, dayZero } = useWardFlow();
+  const { admissions, openDischargeRecord, readDischargeRecord, dayZero, dispatch, rejections } = useWardFlow();
   const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
   const admission = admissions.find((a) => a.state === "occupied" && a.patientId)!;
   const actor = { role: "coordinator" } as const;
@@ -17,6 +17,14 @@ function Workspace() {
   return (
     <>
       <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open care record</button>
+      <button
+        onClick={() =>
+          dispatch({ type: "CLEAR_EXPECT_FLAG", role: "coordinator", now: NOW_ANCHOR, movementId: "missing" })
+        }
+      >
+        Unrelated rejected command
+      </button>
+      <output data-testid="global-rejection-count">{rejections.length}</output>
       <output data-testid="appointment-time">{local}</output>
       {read.status === "allowed" && <DischargeCareJourney record={read.value} actor={actor} />}
     </>
@@ -80,5 +88,19 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Record responsibility and an appointment first");
     expect(screen.getByRole("region", { name: "Care journey" })).not.toHaveTextContent("recorded Flow coordinator");
+  });
+});
+
+describe("care action rejection attribution", () => {
+  it("keeps a successful care save successful after an unrelated command rejection", () => {
+    start();
+    fireEvent.change(screen.getByRole("combobox", { name: "Planning item" }), { target: { value: "crisis_plan" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Planning status" }), { target: { value: "completed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record planning item" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Unrelated rejected command" }));
+    expect(screen.getByTestId("global-rejection-count")).toHaveTextContent("1");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("crisis plan: completed");
   });
 });

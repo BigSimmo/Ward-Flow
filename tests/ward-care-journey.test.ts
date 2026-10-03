@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import {
+  recordedCommunityTransition,
   validCareChange,
   validCareJourney,
   emptyCareJourney,
@@ -389,6 +390,19 @@ describe("complete guarded local care journey", () => {
       next,
       command(next, admission.id, { kind: "transfer", receivingUnitId: target.id, step: "handover" }),
     );
+    const unavailable = structuredClone(next);
+    const receiving = unavailable.units.find((u) => u.id === target.id)!;
+    receiving.empty.value = 0;
+    expect(receiving.allocatable.value).toBeGreaterThan(0);
+    expect(eligibility(base, receiving, NOW_ANCHOR).eligible).toBe(true);
+    const refused = wardFlowReducer(
+      unavailable,
+      command(unavailable, admission.id, { kind: "transfer", receivingUnitId: target.id, step: "arrived" }),
+    );
+    expect(refused.admissions).toBe(unavailable.admissions);
+    expect(refused.units).toBe(unavailable.units);
+    expect(refused.units.find((u) => u.id === target.id)!.empty.value).toBe(0);
+    expect(refused.rejections.at(-1)?.reason).toContain("suitable available bed");
     const before = next;
     next = wardFlowReducer(
       next,
@@ -411,5 +425,67 @@ describe("complete guarded local care journey", () => {
         command(next, admission.id, { kind: "transfer", receivingUnitId: target.id, step: "arrived" }),
       ).units,
     ).toBe(next.units);
+  });
+});
+
+describe("care restore and paper provenance review boundaries", () => {
+  it.each(["revocation", "5A", "5B"] as const)(
+    "refuses an older %s paper entered after the current status change",
+    (authority) => {
+      const { state, admission } = fixture();
+      const arranged = wardFlowReducer(state, command(state, admission.id, appointment));
+      const preceding =
+        authority === "5B"
+          ? wardFlowReducer(
+              arranged,
+              command(arranged, admission.id, {
+                kind: "legal",
+                authority: "5A",
+                writtenAt: NOW_ANCHOR - 20,
+                paperChecked: true,
+              }),
+            )
+          : arranged;
+      const updated = wardFlowReducer(
+        preceding,
+        command(preceding, admission.id, { kind: "legal", authority, writtenAt: NOW_ANCHOR - 10, paperChecked: true }),
+      );
+      const a = updated.admissions.find((a) => a.id === admission.id)!;
+      expect(a.careJourney?.legal?.recordedAt).toBe(NOW_ANCHOR);
+      expect(recordedCommunityTransition(a, NOW_ANCHOR - 5, "discharged-to-the-community")).toBe(false);
+      expect(recordedCommunityTransition(a, NOW_ANCHOR - 20, "discharged-to-the-community")).toBe(true);
+    },
+  );
+  it("rejects tampered contact timing, missing appointments and future appointment versions on restore", () => {
+    const { state, admission } = fixture();
+    const arranged = wardFlowReducer(state, command(state, admission.id, appointment));
+    const completed = wardFlowReducer(
+      arranged,
+      command(arranged, admission.id, { kind: "contact", outcome: "completed", contactedAt: NOW_ANCHOR }),
+    );
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(completed)))).toBe(true);
+    for (const tamper of [
+      (care: NonNullable<typeof admission.careJourney>) => {
+        care.contacts[0].contactedAt = NOW_ANCHOR - 1;
+      },
+      (care: NonNullable<typeof admission.careJourney>) => {
+        care.contacts[0].appointmentVersion = 2;
+      },
+      (care: NonNullable<typeof admission.careJourney>) => {
+        delete care.followUp;
+      },
+    ]) {
+      const stored = structuredClone(completed);
+      const care = stored.admissions.find((a) => a.id === admission.id)!.careJourney!;
+      tamper(care);
+      expect(validCareJourney(care)).toBe(false);
+      expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(stored)))).toBe(false);
+    }
+    const later = wardFlowReducer(
+      completed,
+      command(completed, admission.id, { ...appointment, appointmentAt: NOW_ANCHOR + 10 }),
+    );
+    expect(validCareJourney(later.admissions.find((a) => a.id === admission.id)!.careJourney)).toBe(true);
+    expect(currentCareContactCompleted(later.admissions.find((a) => a.id === admission.id)!.careJourney)).toBe(false);
   });
 });
