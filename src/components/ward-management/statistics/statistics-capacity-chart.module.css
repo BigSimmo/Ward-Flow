@@ -147,7 +147,7 @@
 .axis,
 .row {
   display: grid;
-  grid-template-columns: minmax(10rem, 0.65fr) minmax(0, 1fr) 4rem;
+  grid-template-columns: minmax(min(10rem, 100%), 0.65fr) minmax(0, 1fr) 4rem;
   gap: 1rem;
   align-items: center;
 }

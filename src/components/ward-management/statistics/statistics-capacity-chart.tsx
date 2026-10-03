@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { unitCapacity } from "../ward-derivations";
+import { bedsPendingPreparation } from "../ward-bed-availability";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
@@ -16,6 +17,7 @@ type CapacityRow = {
   occupied: number;
   ready: number;
   held: number;
+  pending: number;
   units: Unit[];
 };
 
@@ -56,6 +58,7 @@ export function StatisticsCapacityChart({
         occupied: 0,
         ready: 0,
         held: 0,
+        pending: 0,
         units: [],
       };
       const capacity = unitCapacity(unit, bedReleases);
@@ -63,6 +66,7 @@ export function StatisticsCapacityChart({
       row.occupied += capacity.occupied;
       row.ready += capacity.available;
       row.held += capacity.held;
+      row.pending += bedsPendingPreparation(unit.id, bedReleases);
       row.units.push(unit);
       grouped.set(id, row);
     }
@@ -87,8 +91,9 @@ export function StatisticsCapacityChart({
       ready: sum.ready + row.ready,
       occupied: sum.occupied + row.occupied,
       held: sum.held + row.held,
+      pending: sum.pending + row.pending,
     }),
-    { beds: 0, ready: 0, occupied: 0, held: 0 },
+    { beds: 0, ready: 0, occupied: 0, held: 0, pending: 0 },
   );
   const { maximum, ticks } =
     scale === "share"
@@ -207,7 +212,7 @@ export function StatisticsCapacityChart({
       </div>
 
       <div className={styles.summary}>
-        <div className={styles.summaryNumbers} aria-live="polite">
+        <div className={styles.summaryNumbers} aria-live="polite" aria-atomic="true">
           <strong>
             {total.ready}
             <span>ready</span>
@@ -223,6 +228,12 @@ export function StatisticsCapacityChart({
                 : "wards"}
             {hasFilters ? " matched" : ` ${scopeLabel}`}
           </span>
+          {total.pending > 0 ? (
+            <span data-testid="ward-statistics-capacity-pending">
+              {total.pending} of the ready beds still being made ready
+            </span>
+          ) : null}
+          <span className={styles.srOnly}>The beds are synthetic.</span>
         </div>
         <div className={styles.legend} aria-label="Bed status legend">
           <span>

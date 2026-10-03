@@ -162,8 +162,9 @@ export function StatisticsInsightChart({
           <h2 id={headingId}>{title}</h2>
         </div>
         <div className={styles.actions}>
-          <span className={styles.count} aria-live="polite">
+          <span className={styles.count} aria-live="polite" aria-atomic="true">
             {visible.length} of {rows.length}
+            <span className={styles.srOnly}> synthetic records shown</span>
           </span>
           <button
             type="button"
