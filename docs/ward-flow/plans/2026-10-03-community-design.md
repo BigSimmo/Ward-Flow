@@ -12,3 +12,6 @@ Verification: 23 focused tests passed across gateway, index and alphabet accessi
 Owner correction: removed the boxed, scrolling alphabet rail. Retained a plain vertical rail with a small gap between letters. Josh approved scoped takeover of community-index.tsx. Browser confirmed alphabet rail has no border or internal scrolling, with 20px letters and 4px gaps.
 
 Follow-up: matched the header search with a recessed surface, rounded corners, inset depth, soft outer elevation and an accent focus ring. Results use separated rounded rows with soft elevation instead of a bordered grid. Alphabet rail remains plain and non-scrolling.
+
+Further search refinement: removed legacy ancestor-dark overrides that flattened the shadow even with the explicit light palette. Search and filters share a 56px height, with 16px search curvature, layered inset and outer shadows, and aligned internal spacing. Palette remains token based.
+Browser proof for the refinement: computed 56px search height, 16px corner radius and four active shadow layers; left edge matches the alphabet rail at 20px. Albany search returned 1 of 64 and Clear restored 64. CSS-only follow-up; no repeat unit suite required. git diff --check passed.

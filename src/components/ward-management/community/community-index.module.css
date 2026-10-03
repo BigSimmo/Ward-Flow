@@ -378,7 +378,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ward-space-8, 0.5rem);
+  gap: var(--ward-space-12);
 }
 
 .searchBox {
@@ -387,26 +387,35 @@
   flex: 1 1 18rem;
   align-items: center;
   border: 1px solid transparent;
-  border-radius: var(--r1);
-  background: var(--surface-2);
-  min-height: var(--ward-tap);
+  border-radius: var(--ward-space-16);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  min-height: 3.5rem;
   box-shadow:
-    inset 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.12),
+    inset 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.1),
     inset 0 0 0 1px var(--line),
-    var(--lift);
-  transition: all 0.15s ease;
+    0 3px 6px -3px rgb(var(--ward-shadow-rgb) / 0.16),
+    0 10px 24px -12px rgb(var(--ward-shadow-rgb) / 0.18);
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
 }
 
 .searchBox:hover {
-  background: var(--surface);
+  box-shadow:
+    inset 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.08),
+    inset 0 0 0 1px var(--line-strong),
+    0 4px 8px -4px rgb(var(--ward-shadow-rgb) / 0.18),
+    0 12px 28px -12px rgb(var(--ward-shadow-rgb) / 0.2);
 }
 
 .searchBox:focus-within {
   border-color: var(--accent);
   box-shadow:
     0 0 0 3px var(--accent-soft),
-    inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.06),
-    var(--lift);
+    inset 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.08),
+    0 4px 8px -4px rgb(var(--ward-shadow-rgb) / 0.18),
+    0 12px 28px -12px rgb(var(--ward-shadow-rgb) / 0.2);
 }
 
 .searchField {
@@ -417,6 +426,7 @@
   align-items: center;
   gap: var(--ward-space-8, 0.5rem);
   padding-inline-start: var(--ward-space-16);
+  gap: var(--ward-space-12);
   cursor: text;
 }
 
@@ -481,8 +491,9 @@
 
 .kbdHint {
   flex: none;
-  margin-inline-end: var(--ward-space-8);
-  border: 1px solid var(--line-strong);
+  margin-inline-end: var(--ward-space-12);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08);
+  border: 1px solid var(--line);
   border-radius: var(--radius-xs, 4px);
   background: var(--surface-2);
   padding: 0.08rem 0.45rem;
@@ -494,11 +505,13 @@
 }
 
 .chips {
+  min-height: 3.5rem;
+  border-radius: var(--ward-space-16);
+  box-shadow: inset 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.06);
   display: inline-flex;
   align-items: center;
   background: var(--surface-2);
   padding: 2px;
-  border-radius: var(--r2, 6px);
   border: 1px solid var(--line);
   gap: 2px;
 }
@@ -1306,13 +1319,6 @@
 
 /* ── Dark Mode Contrast & Border Enforcement ────────────────────────────── */
 
-:global([data-theme="dark"]) .searchBox,
-:global(.dark) .searchBox {
-  border-color: var(--line-strong);
-  background: var(--surface-2);
-  box-shadow: var(--lift-sm);
-}
-
 :global([data-theme="dark"]) .searchIcon,
 :global(.dark) .searchIcon {
   color: var(--muted);
@@ -1651,12 +1657,6 @@
 :global([data-theme="dark"]) .toolbar,
 :global(.dark) .toolbar {
   background: var(--surface);
-}
-
-:global([data-theme="dark"]) .searchBox,
-:global(.dark) .searchBox {
-  border-color: transparent;
-  background: var(--surface-2);
 }
 
 :global([data-theme="dark"]) .glanceCard,
