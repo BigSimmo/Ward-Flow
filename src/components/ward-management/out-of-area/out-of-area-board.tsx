@@ -616,7 +616,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               {hasFilters && (
                 <div className={pageStyles.filterContext}>
                   <span role="status">
-                    {filteredEntries.length} of {entries.length} placements match your filters
+                    {filteredEntries.length} of {entries.length} synthetic records match your filters
                   </span>
                   <button type="button" className={pageStyles.textButton} onClick={resetFilters}>
                     Clear filters
@@ -664,7 +664,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     <div className={`${pageStyles.printTable} ${pageStyles.tableWrap}`}>
                       <WardTable
                         className={`${styles.table} ${pageStyles.table}`}
-                        wrapperClassName={`${styles.tableScroll} ${pageStyles.registerTableScroll}`}
+                        wrapperClassName={styles.tableScroll}
                         testId="ward-out-of-area-table"
                       >
                         <thead>
@@ -943,7 +943,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <div className={pageStyles.caseNavigation}>
                     <span role="status">
                       {selectedIndex >= 0
-                        ? `Patient ${selectedIndex + 1} of ${filteredEntries.length}`
+                        ? `Synthetic patient ${selectedIndex + 1} of ${filteredEntries.length}`
                         : "Outside current filters"}
                     </span>
                     <div>

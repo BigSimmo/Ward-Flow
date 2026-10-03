@@ -2146,7 +2146,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.registerTableScroll {
+.tableWrap > div:first-child {
   overflow: visible;
 }
 .table tbody tr:last-child td:first-child {
