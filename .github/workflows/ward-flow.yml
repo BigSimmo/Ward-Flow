@@ -75,6 +75,15 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
+      # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
+      # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
+      # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
+      # concurrent-runner limit.
+      - name: Run the tests related to this PR's changes
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .
       - name: Check maintained policy contracts
         if: ${{ !cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/check-policy-contracts.mjs
@@ -91,37 +100,6 @@ jobs:
         run: |
           node node_modules/next/dist/bin/next typegen
           node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
-
-  quick:
-    # Fast signal, not a gate: only the tests that import the files this PR changed, so a red shows
-    # in about a minute. The unit shards below still run every file and decide the required check.
-    name: Ward Flow quick feedback
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24.15.0"
-          cache: npm
-      - name: Plan Ward scope
-        id: plan
-        env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/ward-ci-public/plan.mjs
-      - name: Install locked dependencies
-        id: install
-        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
-        run: npm ci --ignore-scripts
-      - name: Run the tests related to this PR's changes
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD
 
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
