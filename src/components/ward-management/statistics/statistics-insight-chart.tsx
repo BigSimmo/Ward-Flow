@@ -65,9 +65,13 @@ export function StatisticsInsightChart({
   const maximum = Math.max(1, ...visible.map((row) => valueOf(row) ?? 0));
   const selected = visible.find((row) => row.id === selectedId);
   const format = (value: number) => new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 }).format(value);
+  const unitFor = (value: number) =>
+    value === 1
+      ? ({ people: "person", admissions: "admission", referrals: "referral", days: "day" }[metric.unit] ?? metric.unit)
+      : metric.unit;
   const display = (row: InsightRow) => {
     const value = valueOf(row);
-    return value === null ? (row.unavailable ?? "Not recorded") : `${format(value)} ${metric.unit}`;
+    return value === null ? (row.unavailable ?? "Not recorded") : `${format(value)} ${unitFor(value)}`;
   };
   function reset() {
     setQuery("");
@@ -192,7 +196,7 @@ export function StatisticsInsightChart({
           <div className={styles.axis} aria-hidden="true">
             <span>{metric.label}</span>
             <span>
-              0 — {format(maximum)} {metric.unit}
+              0 — {format(maximum)} {unitFor(maximum)}
             </span>
           </div>
           {visible.map((row) => {
