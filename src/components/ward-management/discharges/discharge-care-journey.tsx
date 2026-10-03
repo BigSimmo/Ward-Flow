@@ -13,6 +13,7 @@ import {
   SEPARATION_CODES,
   EPISODE_TYPES,
   validCareChange,
+  currentCareContact,
   separationHandoff,
   type CareChange,
 } from "../ward-care-journey";
@@ -111,12 +112,22 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
             ? `${CARE_CONTACTS.find((c) => c.id === care.followUp?.contactId)?.label} · ${communityTeamById(care.followUp.serviceId)?.name} · ${words(care.followUp.mode)} · ${formatInstantWithDay(care.followUp.appointmentAt, now)} · ${fact(care.followUp.recordedAt, care.followUp.recordedBy)}`
             : "Not recorded"}
         </dd>
-        <dt>Follow-up contact</dt>
+        <dt>Current appointment contact</dt>
+        <dd>
+          {care?.followUp
+            ? currentCareContact(care)
+              ? `${words(currentCareContact(care)!.outcome)} · appointment ${care.followUp.appointmentVersion}`
+              : "No contact recorded for the current appointment"
+            : "No appointment recorded"}
+        </dd>
+        <dt>Follow-up contact history</dt>
         <dd>
           {care?.contacts.length
             ? care.contacts.map((c, i) => (
                 <p key={i}>
-                  {words(c.outcome)} · contact {formatInstantWithDay(c.contactedAt, now)} · recorded{" "}
+                  {words(c.outcome)} · appointment {c.appointmentVersion}
+                  {c.appointmentVersion === care.followUp?.appointmentVersion ? " (current)" : " (previous)"} · contact{" "}
+                  {formatInstantWithDay(c.contactedAt, now)} · recorded{" "}
                   {fact(c.recordedAt, c.recordedBy)}
                 </p>
               ))

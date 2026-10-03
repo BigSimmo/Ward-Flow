@@ -2,7 +2,7 @@
 
 ## WA remediation update — 3 October 2026
 
-Added `ward-care-journey.test.ts`, `ward-care-journey.dom.test.tsx` and `ward-workflow-actions.dom.test.tsx` for guarded care actions, current-appointment attribution, paper transitions, transport requirements and atomic ward transfer. Updated exhaustive event/privacy/history/field guards for 98 events. `ui-ward-disposition-pathways.spec.ts` covers all eleven departures and the real care form at phone width. The existing officer print test is enabled; referral table thresholds are additionally measured in their supported print layout. Final gate results are recorded in the dated WA audit report; historical counts below describe their original snapshot.
+Added `ward-care-journey.test.ts`, `ward-care-journey.dom.test.tsx` and `ward-workflow-actions.dom.test.tsx` for guarded care actions, current-appointment attribution, paper transitions, transport requirements and atomic ward transfer. Updated exhaustive event/privacy/history/field guards for 98 events. `ui-ward-discharges.spec.ts` covers all eleven departures and the real care form at phone width. The existing officer print test is enabled; referral table thresholds are additionally measured in their supported print layout. Final gate results are recorded in the dated WA audit report; historical counts below describe their original snapshot.
 
 The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
 

@@ -52,6 +52,11 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("recorded Flow coordinator");
+    expect(screen.getByText("completed · appointment 1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Record appointment" }));
+    expect(screen.getByText("No contact recorded for the current appointment")).toBeInTheDocument();
+    expect(screen.queryByText("completed · appointment 1")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("appointment 1 (previous)");
   });
   it("records a planning fact and filters adult-only forms out of CAMHS", () => {
     start();
