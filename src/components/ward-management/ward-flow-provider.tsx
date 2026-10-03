@@ -253,7 +253,10 @@ type WardFlowContainer = {
  * hydration. Keyed by a module-private symbol so no caller-built event can ever take this path.
  */
 const ADOPT_SESSION: unique symbol = Symbol("ward-flow-adopt-session");
-type AdoptSessionAction = { [ADOPT_SESSION]: (current: WardFlowContainer) => WardFlowContainer };
+type AdoptSessionAction = {
+  type: "ADOPT_SAVED_SESSION";
+  [ADOPT_SESSION]: (current: WardFlowContainer) => WardFlowContainer;
+};
 
 function wardFlowContainerReducer(
   container: WardFlowContainer,
@@ -693,6 +696,7 @@ function WardFlowWorld({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
     if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
     dispatch({
+      type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) => {
         if (current.sessionAdopted) return current;
         if (saved)
