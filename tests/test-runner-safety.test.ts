@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -178,6 +178,61 @@ describe("temporary path cleanup", () => {
 });
 
 describe("repository-wide heavyweight lock", () => {
+  it.each(["missing", "unreadable"])(
+    "blocks admission and coordinator removal for %s owners with unfinished children",
+    (kind) => {
+      const baseDirectory = temporaryDirectory("ward-unknown-lease-");
+      const repositoryIdentity = path.join(baseDirectory, "shared.git");
+      const first = acquireHeavyRunLock({
+        projectRoot: path.join(baseDirectory, "a"),
+        repositoryIdentity,
+        baseDirectory,
+        mode: "shared",
+        environment: {},
+      });
+      const coordinator = first.coordinatorPath;
+      const unknown = path.join(coordinator, "leases", "unknown.lock");
+      mkdirSync(path.join(unknown, "children"), { recursive: true });
+      if (kind === "unreadable") writeFileSync(path.join(unknown, "owner.json"), "{broken");
+      writeFileSync(
+        path.join(unknown, "children", "work.json"),
+        JSON.stringify({ token: "orphan", state: "running", guardianPid: 2147483647 }),
+      );
+      expect(testRunLockInternals.ownerDirectoryIsStale(unknown)).toBe(false);
+      expect(() =>
+        acquireHeavyRunLock({
+          projectRoot: path.join(baseDirectory, "b"),
+          repositoryIdentity,
+          baseDirectory,
+          environment: {},
+          waitTimeoutMs: 0,
+        }),
+      ).toThrow(/heavyweight/);
+      expect(() =>
+        acquireHeavyRunLock({
+          projectRoot: path.join(baseDirectory, "b"),
+          repositoryIdentity,
+          baseDirectory,
+          mode: "shared",
+          environment: {},
+          waitTimeoutMs: 0,
+        }),
+      ).toThrow(/capacity/);
+      expect(() =>
+        acquireHeavyRunLock({
+          projectRoot: path.join(baseDirectory, "b"),
+          repositoryIdentity,
+          baseDirectory,
+          environment: {},
+          forceLockRelease: true,
+          waitTimeoutMs: 0,
+        }),
+      ).toThrow(/live or unfinished/);
+      first.release();
+      expect(existsSync(coordinator)).toBe(true);
+      expect(existsSync(path.join(unknown, "children", "work.json"))).toBe(true);
+    },
+  );
   it("lets exclusive work queue through long browser or build leases without making focused runs wait indefinitely", () => {
     expect(testRunLockInternals.defaultWaitTimeoutFor("shared")).toBe(30_000);
     expect(testRunLockInternals.defaultWaitTimeoutFor("exclusive")).toBe(15 * 60_000);
@@ -625,7 +680,7 @@ describe("repository-wide heavyweight lock", () => {
     replacement.release();
   });
 
-  it("allows an explicit force-lock-release to replace a live owner", () => {
+  it("refuses force-lock-release while a live owner retains admission", () => {
     const baseDirectory = temporaryDirectory("clinical-kb-force-lock-");
     const repositoryIdentity = path.join(baseDirectory, "shared.git");
     const first = acquireHeavyRunLock({
@@ -636,24 +691,21 @@ describe("repository-wide heavyweight lock", () => {
       command: "first",
     });
 
-    const replacement = acquireHeavyRunLock({
-      projectRoot: path.join(baseDirectory, "worktree-b"),
-      repositoryIdentity,
-      baseDirectory,
-      environment: {},
-      command: "replacement",
-      forceLockRelease: true,
-    });
-
-    expect(replacement.owner.token).not.toBe(first.owner.token);
-    expect(readFileSync(path.join(requireLeasePath(replacement), "owner.json"), "utf8")).toContain(
-      replacement.owner.token,
-    );
+    expect(() =>
+      acquireHeavyRunLock({
+        projectRoot: path.join(baseDirectory, "worktree-b"),
+        repositoryIdentity,
+        baseDirectory,
+        environment: {},
+        command: "replacement",
+        forceLockRelease: true,
+      }),
+    ).toThrow(/live or unfinished/);
+    expect(readFileSync(path.join(requireLeasePath(first), "owner.json"), "utf8")).toContain(first.owner.token);
     first.release();
-    replacement.release();
   });
 
-  it("keeps a live owner's lock even when startedAt is older than five minutes", () => {
+  it("keeps a live owner's lock even when its heartbeat is older than thirty minutes", () => {
     const baseDirectory = temporaryDirectory("clinical-kb-live-old-lock-");
     const repositoryIdentity = path.join(baseDirectory, "shared.git");
     const first = acquireHeavyRunLock({
@@ -675,8 +727,10 @@ describe("repository-wide heavyweight lock", () => {
         repositoryIdentity: string;
         startedAt: string;
       };
-      owner.startedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
+      const old = new Date(Date.now() - 31 * 60 * 1000);
+      owner.startedAt = old.toISOString();
       writeFileSync(ownerPath, `${JSON.stringify(owner, null, 2)}\n`, "utf8");
+      utimesSync(ownerPath, old, old);
 
       expect(() =>
         acquireHeavyRunLock({
@@ -732,11 +786,28 @@ describe("repository-wide heavyweight lock", () => {
 });
 
 describe("focused test admission", () => {
+  it("rejects Vitest substring filter fan-out even when the selected literal file exists", () => {
+    const file = "tests/policy.test.ts";
+    const options = { isFile: () => true, population: [file] };
+    expect(vitestLeaseMode(["run", file], options)).toBe("shared");
+    for (const extra of [
+      "tests/policy.test.ts-extra.test.ts",
+      "tests/sub/tests/policy.test.ts",
+      "tests/POLICY.test.ts-extra.test.ts",
+    ]) {
+      expect(vitestLeaseMode(["run", file], { ...options, population: [file, extra] })).toBe("exclusive");
+      expect(vitestLeaseMode(["run", path.resolve(file)], { ...options, population: [file, extra] })).toBe("exclusive");
+    }
+    expect(vitestLeaseMode(["run", file], { ...options, population: [] })).toBe("exclusive");
+  });
+
   it("shares only explicit focused selections and keeps broad or custom-worker runs exclusive", () => {
-    expect(vitestLeaseMode(["related", "--run", "src/lib/example.ts"])).toBe("shared");
-    expect(vitestLeaseMode(["run", "tests/example.test.ts", "--reporter=dot"])).toBe("shared");
-    expect(vitestLeaseMode(["run", "tests/example.dom.test.tsx"])).toBe("shared");
-    expect(vitestLeaseMode(["tests/example.test.ts", "tests/other.dom.test.tsx"])).toBe("shared");
+    expect(vitestLeaseMode(["related", "--run", "src/lib/example.ts"])).toBe("exclusive");
+    expect(vitestLeaseMode(["run", "tests/unit-test-population.test.ts", "--reporter=dot"])).toBe("shared");
+    expect(vitestLeaseMode(["run", "tests/ward-dynamic-island.dom.test.tsx"])).toBe("shared");
+    expect(
+      vitestLeaseMode(["tests/unit-test-population.test.ts", "tests/ward-dynamic-island-rollout.contract.test.tsx"]),
+    ).toBe("shared");
     expect(vitestLeaseMode(["tests/example.test.ts", "src/lib/example.ts"])).toBe("exclusive");
     expect(vitestLeaseMode(["tests/example.test.ts", "--coverage"])).toBe("exclusive");
     expect(vitestLeaseMode(["run", "--reporter=dot"])).toBe("exclusive");
@@ -745,6 +816,19 @@ describe("focused test admission", () => {
     expect(vitestLeaseMode(["run", "tests/example.test.ts", "--maxWorkers=4"])).toBe("exclusive");
     expect(vitestLeaseMode(["run", "tests/example.test.ts", "--max-workers=4"])).toBe("exclusive");
     expect(vitestLeaseMode(["run", "tests/example.test.ts", "-c", "vitest.other.mts"])).toBe("exclusive");
+  });
+
+  it("requires every filter to be an existing supported file and consumes known option values", () => {
+    const file = "tests/unit-test-population.test.ts";
+    expect(vitestLeaseMode(["run", file, "tests"])).toBe("exclusive");
+    expect(vitestLeaseMode(["run", file, "tests/not-present.test.ts"])).toBe("exclusive");
+    expect(vitestLeaseMode(["run", file, "--unknown", "tests"])).toBe("exclusive");
+    expect(
+      vitestLeaseMode(["run", file, "--project", "node", "--reporter", "json", "--outputFile.json", "report.json"]),
+    ).toBe("shared");
+    expect(vitestLeaseMode(["run", file, "--project"])).toBe("exclusive");
+    expect(vitestLeaseMode(["run", file, "--pool=forks"])).toBe("exclusive");
+    expect(vitestLeaseMode(["run", file, "--include=tests/**"])).toBe("exclusive");
   });
 
   it("uses different transform-cache directories for different worktrees", () => {

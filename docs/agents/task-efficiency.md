@@ -5,6 +5,13 @@ On-demand guidance for `BigSimmo/Ward-Flow`. Follow [AGENTS.md](../../AGENTS.md)
 repairs, retries and review; completion, user acceptance, merge and deployment are
 separate states.
 
+Complete the requested stage with its evidence: delivered audit, evidenced Fast Preview and
+verified local engineering do not require unrequested integration/publication/deployment.
+Use judgement for routine reversible choices; ask only when material uncertainty changes scope,
+meaning, safety, ownership or authority, and continue independent authorised work. Read the
+current entry/relevant rules/exact task row or checkpoint and affected code-map sections;
+retain full history without making every task reread it.
+
 ## Task brief
 
 ```text
@@ -27,9 +34,11 @@ check results, limitations and delivery state.
 Inspect each script and its hooks before execution. Select checks for the actual
 diff using [public CI policy](../ward-flow/PUBLIC-CI.md) and the declared
 [workflow](../../.github/workflows/ward-flow.yml). The [hosting record](../hosting.md)
-records disabled Actions at setup on 27 September 2026; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Current-head results and deployment remain separate evidence. Its planner recognises only
-`README.md` and Markdown under `docs/ward-flow/` as documentation-only; other
-guidance paths retain conservative full CI selection. This page changes no gates.
+records disabled Actions at setup on 27 September 2026; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Current-head results and deployment remain separate evidence.
+Known maintained-policy changes use the shared local/CI classifier: installation/parity,
+policy-contract tests, local doc links/commands and changed-file static checks. That scope
+does not itself select the full unit/browser suites. Unknown paths, source or deleted files
+retain conservative full selection; inspect the actual planner output and required gate.
 
 - `node scripts/ward-ci-public/check-contracts.mjs` checks local workflow and scope
   contracts. `npm run docs:check-scripts` validates maintained npm command references.
@@ -46,13 +55,29 @@ guidance paths retain conservative full CI selection. This page changes no gates
   and environment; artifact-dependent checks also need their artifacts. Record
   reused versus newly executed evidence. Unknown validity requires a run or blocker.
 
-The inherited arbiter currently reads an absent `ci.yml`; its fallback establishes
-no CI coverage and keeps gates running. Ward's workflow declares PR, merge-group and manual events,
-changed-file lint, generated route types with `tsconfig.json`, and reconciled unit
-shards. These are not established equivalents of local gates. Do not infer
-deferral from filenames or job names. Declared coverage, authorised pending
-deferral and completed passing evidence are distinct. Unknown conditions remain
-conservative; a skipped or deferred check is never a pass.
+`npm run verify:pr-local -- --base <task-base> --dry-run` previews the shared classifier's
+local commands; omit `--dry-run` for the normal selected local readiness stage. Source, tooling,
+unknown, deleted or renamed inputs retain the full unit population and production Ward journeys.
+The legacy `ready-check.mjs` runs exact merged-snapshot static/policy/backend compatibility checks
+only. Its broad READY route is retired with exit 75; it cannot approve source-code or queued READY,
+or consume later FULL/browser receipts. A compatibility pass supplies only its stated scope.
+The Ward gate arbiter still runs locally when required; a declared workflow
+does not supply an observed equivalent CI verdict or authorise implicit provider reads.
+When browser work is selected, the local planner uses `test:e2e:ward-journeys`; `--extended`
+is retained for compatibility and does not change its coverage.
+
+CI observation is separately authorised and provider-gated. Any permitted evidence reuse or
+deferral needs the exact Ward repository, head, `ward-flow.yml` workflow and check scope;
+workflow declarations/job names alone are not equivalent coverage. Unknown, unavailable or
+mismatched CI identity supplies no reusable verdict. Declared coverage, authorised pending
+deferral and completed passing evidence are distinct; a skipped or deferred check is never a pass.
+
+For owned formatting, use `npm run format -- --files <owned-path> ...`: literal selected paths,
+ownership validation and partial-staging protection; no automatic staging or whole-tree write.
+`format:all` is a separate explicit operation. Changed formatter policy/configuration requires
+the broader format check, not a broader write. Generated-doc commit verification reads an index
+snapshot via `scripts/check-staged-docs.mjs`; it does not regenerate the working tree. Mandatory
+Ward indexes fail on drift; general documentation checks report advisory versus strict mode.
 
 ## Continue one task record
 
@@ -94,3 +119,10 @@ intervals. Keep token estimates, external cash and local/CI compute separate.
 Collect during ordinary future work only when telemetry is already available;
 no paid replay or account scraping. Document size is only a proxy. These edits
 establish neither global Codex setting changes nor realised credit savings.
+
+For a single uninterrupted scoped reversible task without unresolved ownership, a new provider/
+publication boundary or substantial recovery need, one final compact lifecycle contribution can
+carry start/completion metadata. Update immediately at a genuine pause/blocker/transfer/scope
+change, and at meaningful checkpoints for substantial work. Reuse the original task identity;
+Last verified needs newly checked evidence, such as a new immutable run-evidence location in
+that same record. Timestamp-only refresh is invalid.

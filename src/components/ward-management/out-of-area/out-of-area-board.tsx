@@ -31,8 +31,8 @@ import pageStyles from "./out-of-area-third-edition.module.css";
  * Full provenance appears once in a disclosure, shared by all placements.
  *
  * **It calls `outOfAreaLedger` and recomputes nothing.** Neither number is derived here, the
- * entries render in the order the ledger returns them, and there is no comparator anywhere in this
- * file. That order is the admission fixture's own order, deliberately: a sort by elapsed time
+ * entries default to the order the ledger returns them. Optional alphabetical sorting changes
+ * only the displayed register. The default is the admission fixture's own order: a sort by elapsed time
  * would be a ranking of people by how recently they were sent away, which reads as a repatriation
  * priority nobody has decided. `ward-referrals.ts` holds a sibling derivation that does sort
  * most-recent-first (`recentlyDecidedReferrals`); it answers a different question and must never
@@ -235,11 +235,22 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [repatFormNotice, setRepatFormNotice] = useState<string | null>(null);
 
   const triggerRef = useRef<HTMLElement | null>(null);
+  const selectionOriginRef = useRef<HTMLElement | null>(null);
   const detailColumnRef = useRef<HTMLDivElement | null>(null);
+
+  const selectPlacement = (id: string, origin?: HTMLElement) => {
+    if (origin) selectionOriginRef.current = origin;
+    setSelectedId(id);
+  };
+
+  const returnToOverview = () => {
+    setSelectedId(null);
+    selectionOriginRef.current?.focus();
+  };
 
   useEffect(() => {
     if (selectedId === null) return;
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1099px)").matches) {
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) {
       return;
     }
     window.requestAnimationFrame(() => {
@@ -255,6 +266,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           triggerRef.current?.focus();
         } else if (selectedId !== null) {
           setSelectedId(null);
+          selectionOriginRef.current?.focus();
         }
       }
     };
@@ -278,7 +290,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   const longestDays = maxDaysEntry ? `${daysInBed(maxDaysEntry.admission, now) ?? 0}d` : "0d";
   const longestSub = maxDaysEntry
-    ? `${maxDaysEntry.admission.id} · ${siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}`
+    ? `${resolvePatient(maxDaysEntry.admission).displayName} · ${maxDaysEntry.admission.homeRegion}`
     : "Not recorded";
 
   const airCount = entries.filter((e) => e.band === "air_transport_only").length;
@@ -287,6 +299,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [transportFilter, setTransportFilter] = useState<"all" | "air_transport_only" | "three_hours_or_more">("all");
   const [catchmentFilter, setCatchmentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"ledger" | "patient" | "catchment">("ledger");
+  const [compactRows, setCompactRows] = useState(true);
 
   const homeRegionCounts = entries.reduce<Record<string, number>>((acc, entry) => {
     const region = entry.admission.homeRegion ?? "Not recorded";
@@ -318,6 +332,35 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     }
     return true;
   });
+  if (sortOrder !== "ledger") {
+    filteredEntries.sort((a, b) => {
+      const left = sortOrder === "patient" ? resolvePatient(a.admission).displayName : (a.admission.homeRegion ?? "");
+      const right = sortOrder === "patient" ? resolvePatient(b.admission).displayName : (b.admission.homeRegion ?? "");
+      return left.localeCompare(right, "en-AU");
+    });
+  }
+
+  const selectedIndex = filteredEntries.findIndex((entry) => entry.admission.id === selectedId);
+  const hasFilters = transportFilter !== "all" || catchmentFilter !== "all" || searchQuery.trim().length > 0;
+  const resetFilters = () => {
+    setSearchQuery("");
+    setTransportFilter("all");
+    setCatchmentFilter("all");
+  };
+
+  const openRepatriation = (origin: HTMLElement) => {
+    if (!selected) return;
+    triggerRef.current = origin;
+    setRepatDraft(BLANK_REPAT_DRAFT);
+    setRepatFormNotice(null);
+    setIsRepatModalOpen(true);
+  };
+
+  const patientInfo = selected ? resolvePatient(selected.admission) : undefined;
+  const profileHref = patientInfo ? getPatientProfileHref(patientInfo) : null;
+  const site = selected ? siteByCode(selected.unit.siteCode) : undefined;
+  const selectedStayDays = selected ? daysInBed(selected.admission, now) : null;
+  const longestPatientInfo = maxDaysEntry ? resolvePatient(maxDaysEntry.admission) : undefined;
 
   return (
     <div
@@ -363,115 +406,58 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           </div>
         ) : null}
 
-        {/* Executive 4-card KPI strip */}
+        {/* Compact floating summary island; actions use the existing cohort and selection. */}
         <div className={pageStyles.kpiStrip} role="region" aria-label="Executive Out-of-Area KPIs">
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "all" && catchmentFilter === "all" && !searchQuery ? pageStyles.kpiCardActive : ""}`}
-            data-tone="warn"
-            onClick={() => {
-              setTransportFilter("all");
-              setCatchmentFilter("all");
-              setSearchQuery("");
-            }}
+            onClick={resetFilters}
             aria-pressed={transportFilter === "all" && catchmentFilter === "all" && !searchQuery}
             aria-label={`Total Out-of-Area: ${entries.length} active placements. Click to view all.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="accent">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-              </span>
-            </div>
             <span className={pageStyles.kpiVal}>{entries.length}</span>
-            <span className={pageStyles.kpiSub}>Cross-catchment admissions</span>
+            <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
           </button>
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "air_transport_only" ? pageStyles.kpiCardActive : ""}`}
-            data-tone="danger"
             onClick={() => setTransportFilter(transportFilter === "air_transport_only" ? "all" : "air_transport_only")}
             aria-pressed={transportFilter === "air_transport_only"}
             aria-label={`Air Transport Only: ${airCount} patients. Click to filter.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Air Transport Only</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="danger">
-                <PlacementStatusGlyph tone="danger" />
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.dangerVal}`}>{airCount}</span>
-            <span className={pageStyles.kpiSub}>Aeromedical flight required</span>
+            <span className={pageStyles.kpiVal}>{airCount}</span>
+            <span className={pageStyles.kpiLabel}>Air only</span>
           </button>
           <button
             type="button"
             className={`${pageStyles.kpiCard} ${transportFilter === "three_hours_or_more" ? pageStyles.kpiCardActive : ""}`}
-            data-tone="warn"
             onClick={() =>
               setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
             }
             aria-pressed={transportFilter === "three_hours_or_more"}
             aria-label={`Road Travel: ${roadCount} patients. Click to filter.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Road Travel</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="warn">
-                <PlacementStatusGlyph tone="warn" />
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.warnVal}`}>{roadCount}</span>
-            <span className={pageStyles.kpiSub}>Long-distance ground transfer</span>
+            <span className={pageStyles.kpiVal}>{roadCount}</span>
+            <span className={pageStyles.kpiLabel}>Road travel</span>
           </button>
           <button
             type="button"
-            className={`${pageStyles.kpiCard} ${selectedId === maxDaysEntry?.admission.id ? pageStyles.kpiCardActive : ""}`}
-            data-tone="accent"
-            onClick={() => {
-              if (maxDaysEntry) {
-                setSelectedId(maxDaysEntry.admission.id);
-              }
+            className={`${pageStyles.kpiCard} ${maxDaysEntry && selectedId === maxDaysEntry.admission.id ? pageStyles.kpiCardActive : ""}`}
+            onClick={(e) => {
+              if (maxDaysEntry) selectPlacement(maxDaysEntry.admission.id, e.currentTarget);
             }}
             aria-label={`Longest Out-of-Area: ${longestDays}, ${longestSub}. Click to inspect case.`}
           >
-            <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
-              <span className={pageStyles.kpiToneBadge} data-tone="accent">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${pageStyles.accentVal}`}>{longestDays}</span>
-            <span className={pageStyles.kpiSub}>{longestSub}</span>
+            <span className={pageStyles.kpiVal}>{longestDays}</span>
+            <span className={pageStyles.kpiLabel}>Longest stay</span>
           </button>
         </div>
 
         {/* Main Workbench Grid: Inpatients Ledger Table (Left) & Case Inspector (Right) */}
-        <div className={`${pageStyles.boardGrid} ${pageStyles.ledgerGrid}`}>
+        <div
+          className={`${pageStyles.boardGrid} ${pageStyles.ledgerGrid}`}
+          data-row-density={compactRows ? "compact" : "comfortable"}
+        >
           <div className={pageStyles.registerColumn}>
             <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-entries">
               <div className={pageStyles.ph}>
@@ -484,26 +470,94 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   </span>
                 </div>
                 <div className={pageStyles.phRight}>
+                  <label className={pageStyles.sortControl}>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <path d="M4 6h16M4 12h11M4 18h6" />
+                    </svg>
+                    <select
+                      aria-label="Sort placements"
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                    >
+                      <option value="ledger">Ledger order</option>
+                      <option value="patient">Patient A–Z</option>
+                      <option value="catchment">Home region A–Z</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className={pageStyles.densityToggle}
+                    aria-label="Compact rows"
+                    aria-pressed={compactRows}
+                    title={compactRows ? "Switch to comfortable rows" : "Switch to compact rows"}
+                    onClick={() => setCompactRows(!compactRows)}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <path d="M4 5h16v4H4zM4 15h16v4H4zM4 12h16" />
+                    </svg>
+                  </button>
                   <button
                     className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
                     type="button"
-                    onClick={(e) => {
-                      triggerRef.current = e.currentTarget;
-                      if (!selected && entries.length > 0) {
-                        setSelectedId(entries[0].admission.id);
-                      }
-                      setRepatDraft(BLANK_REPAT_DRAFT);
-                      setRepatFormNotice(null);
-                      setIsRepatModalOpen(true);
-                    }}
+                    disabled={!selected}
+                    aria-label="Initiate Repatriation"
+                    title={
+                      selected ? "Arrange return for the selected patient" : "Select a patient to arrange their return"
+                    }
+                    onClick={(e) => openRepatriation(e.currentTarget)}
                   >
-                    + Initiate Repatriation
+                    + Arrange return
                   </button>
                 </div>
               </div>
 
               {/* In-page search and cohort filter toolbar */}
               <div className={pageStyles.tableToolbar}>
+                <div className={pageStyles.filterChips}>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "all"}
+                    onClick={() => setTransportFilter("all")}
+                  >
+                    All ({entries.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "air_transport_only"}
+                    onClick={() => setTransportFilter("air_transport_only")}
+                  >
+                    <PlacementStatusGlyph tone="danger" />
+                    <span>Air ({airCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "three_hours_or_more"}
+                    onClick={() => setTransportFilter("three_hours_or_more")}
+                  >
+                    <PlacementStatusGlyph tone="warn" />
+                    <span>Road ({roadCount})</span>
+                  </button>
+                </div>
+
                 <div className={pageStyles.searchBox}>
                   <svg
                     className={pageStyles.searchIcon}
@@ -523,7 +577,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <input
                     type="text"
                     inputMode="search"
-                    placeholder="Filter by patient, UMRN, ID, catchment, or unit..."
+                    placeholder="Search patient, UMRN or hospital…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     aria-label="Filter out-of-area placements"
@@ -557,33 +611,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className={pageStyles.filterChips}>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
-                    onClick={() => setTransportFilter("all")}
-                  >
-                    All ({entries.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
-                    onClick={() => setTransportFilter("air_transport_only")}
-                  >
-                    <PlacementStatusGlyph tone="danger" />
-                    <span>Air ({airCount})</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
-                    onClick={() => setTransportFilter("three_hours_or_more")}
-                  >
-                    <PlacementStatusGlyph tone="warn" />
-                    <span>Road ({roadCount})</span>
+              {hasFilters && (
+                <div className={pageStyles.filterContext}>
+                  <span role="status">
+                    {filteredEntries.length} of {entries.length} synthetic records match your filters
+                  </span>
+                  <button type="button" className={pageStyles.textButton} onClick={resetFilters}>
+                    Clear filters
                   </button>
                 </div>
-              </div>
+              )}
 
               <p className="sr-only" data-testid="ward-out-of-area-counts">
                 <span data-testid="ward-out-of-area-count-people">
@@ -638,7 +677,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* The ledger's own order, unsorted and untruncated. */}
+                          {/* All matching entries; alphabetical sorting is an explicit view choice. */}
                           {filteredEntries.map((entry) => {
                             const site = siteByCode(entry.unit.siteCode);
                             const tone = entry.band === "air_transport_only" ? "danger" : "warn";
@@ -657,11 +696,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 aria-selected={entry.admission.id === selectedId}
                                 tabIndex={0}
                                 aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                                onClick={() => setSelectedId(entry.admission.id)}
+                                onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
                                 onKeyDown={(event) => {
-                                  if (event.key === "Enter" || event.key === " ") {
+                                  if (
+                                    event.target === event.currentTarget &&
+                                    (event.key === "Enter" || event.key === " ")
+                                  ) {
                                     event.preventDefault();
-                                    setSelectedId(entry.admission.id);
+                                    selectPlacement(entry.admission.id, event.currentTarget);
                                   }
                                 }}
                               >
@@ -705,6 +747,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <td>
                                   <span
                                     className={pageStyles.travelBadge}
+                                    title={TRAVEL_BAND_LABELS[entry.band]}
                                     data-tone={tone}
                                     data-ward-type-floor="badge"
                                   >
@@ -743,11 +786,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             tabIndex={0}
                             role="button"
                             aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                            onClick={() => setSelectedId(entry.admission.id)}
+                            onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
                             onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
+                              if (
+                                event.target === event.currentTarget &&
+                                (event.key === "Enter" || event.key === " ")
+                              ) {
                                 event.preventDefault();
-                                setSelectedId(entry.admission.id);
+                                selectPlacement(entry.admission.id, event.currentTarget);
                               }
                             }}
                           >
@@ -799,304 +845,205 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           </div>
 
           <div ref={detailColumnRef} className={pageStyles.detailColumn}>
-            {/* Repatriation Case Inspector */}
-            <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-subject">
-              <div className={pageStyles.ph}>
-                <div className={pageStyles.phLeft}>
-                  <h2>Case Inspector</h2>
-                  <span className={pageStyles.caseUrmBadge}>{selected ? selected.admission.id : "COHORT"}</span>
-                </div>
-                {selected && (
+            <section
+              className={`${styles.section} ${pageStyles.panel} ${pageStyles.inspectorPanel}`}
+              data-testid="ward-out-of-area-subject"
+            >
+              <div className={pageStyles.inspectorHead}>
+                <h2>{selected ? "Case inspector" : "Repatriation"}</h2>
+                {selected ? (
                   <button
                     type="button"
-                    className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.backBtn}`}
-                    onClick={() => setSelectedId(null)}
+                    className={pageStyles.iconButton}
+                    onClick={returnToOverview}
                     aria-label="Return to cohort overview"
+                    title="Return to overview (Escape)"
                   >
-                    &larr; Overview
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 6 12 12M6 18 18 6" />
+                    </svg>
                   </button>
+                ) : (
+                  <span className={pageStyles.overviewCount}>{entries.length} placements</span>
                 )}
               </div>
-              <div
-                className={pageStyles.panelBody}
-                role="region"
-                aria-label="Selected out-of-area placement"
-                tabIndex={0}
-              >
-                {!selected ? (
-                  <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.defaultInspectorCard}>
-                    <div className={pageStyles.defaultHeader}>
-                      <span className={pageStyles.defaultHeaderIcon}>
+              {!selected || !patientInfo ? (
+                <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.overviewBody}>
+                  <div className={pageStyles.catchmentSection}>
+                    <div className={pageStyles.sectionHeading}>
+                      <h3>Home catchments</h3>
+                      <span>{homeRegionSummary.length} regions</span>
+                    </div>
+                    <div className={pageStyles.catchmentList}>
+                      {homeRegionSummary.map(([region, count]) => (
+                        <button
+                          key={region}
+                          type="button"
+                          className={pageStyles.catchmentRow}
+                          onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
+                          aria-pressed={catchmentFilter === region}
+                          aria-label={`Filter by ${region}: ${count} placements`}
+                        >
+                          <span className={pageStyles.catchmentName}>{region}</span>
+                          <span className={pageStyles.catchmentBar} aria-hidden="true">
+                            <span style={{ width: `${entries.length ? (count / entries.length) * 100 : 0}%` }} />
+                          </span>
+                          <strong>{count}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {maxDaysEntry && longestPatientInfo && (
+                    <div className={pageStyles.longestSpotlight}>
+                      <div className={pageStyles.sectionHeading}>
+                        <h3>Longest current stay</h3>
+                        <span className={pageStyles.stayPill}>{longestDays}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={pageStyles.spotlightAction}
+                        onClick={(event) => selectPlacement(maxDaysEntry.admission.id, event.currentTarget)}
+                        aria-label={`Inspect longest case: ${longestPatientInfo.displayName}`}
+                      >
+                        <span>
+                          <strong className={pageStyles.spotlightName}>{longestPatientInfo.displayName}</strong>
+                          <span className={pageStyles.spotlightMeta}>
+                            {maxDaysEntry.admission.homeRegion} ·{" "}
+                            {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
+                          </span>
+                        </span>
                         <svg
-                          width="20"
-                          height="20"
+                          width="12"
+                          height="12"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2"
+                          strokeWidth="1.8"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           aria-hidden="true"
                         >
-                          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                          <path d="M7 17 17 7M7 7h10v10" />
                         </svg>
-                      </span>
-                      <div>
-                        <h3 className={pageStyles.defaultTitle}>Statewide Repatriation Cohort</h3>
-                        <p className={pageStyles.defaultSub}>
-                          {entries.length} inpatients placed outside residential catchment
-                        </p>
-                      </div>
+                      </button>
                     </div>
-
-                    <div className={pageStyles.transportSummaryRow}>
-                      <div className={pageStyles.transportSummaryItem}>
-                        <PlacementStatusGlyph tone="danger" />
-                        <span className={pageStyles.transportSummaryLabel}>Air-only transfers:</span>
-                        <strong className={`${pageStyles.mono} ${pageStyles.dangerVal}`}>{airCount}</strong>
-                      </div>
-                      <div className={pageStyles.transportSummaryItem}>
-                        <PlacementStatusGlyph tone="warn" />
-                        <span className={pageStyles.transportSummaryLabel}>Ground:</span>
-                        <strong className={`${pageStyles.mono} ${pageStyles.warnVal}`}>{roadCount}</strong>
-                      </div>
-                    </div>
-
-                    <div className={pageStyles.defaultSection}>
-                      <span className={pageStyles.detailLabel}>Home Catchments Represented</span>
-                      <div className={pageStyles.regionPillList}>
-                        {homeRegionSummary.map(([region, count]) => (
-                          <button
-                            key={region}
-                            type="button"
-                            className={`${pageStyles.regionPill} ${catchmentFilter === region ? pageStyles.regionPillActive : ""}`}
-                            onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
-                            aria-pressed={catchmentFilter === region}
-                            aria-label={`Filter by ${region}: ${count} placements`}
-                          >
-                            <span className={pageStyles.regionPillName}>{region}</span>
-                            <span className={`${pageStyles.regionPillCount} ${pageStyles.mono}`}>{count}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {maxDaysEntry &&
-                      (() => {
-                        const longestPatientInfo = resolvePatient(maxDaysEntry.admission);
-                        const longestProfileHref = getPatientProfileHref(longestPatientInfo);
-                        return (
-                          <div className={pageStyles.defaultSection}>
-                            <span className={pageStyles.detailLabel}>Priority Case (Longest Out-of-Area)</span>
-                            <div className={pageStyles.longestCaseBox}>
-                              <div className={pageStyles.longestCaseHead}>
-                                <div className={pageStyles.longestCaseIdentity}>
-                                  <span className={pageStyles.longestCasePatientName}>
-                                    {longestPatientInfo.displayName}
-                                  </span>
-                                  <div className={pageStyles.longestCaseIdRow}>
-                                    {longestProfileHref ? (
-                                      <Link
-                                        href={longestProfileHref}
-                                        className={pageStyles.inspectorUmrnLink}
-                                        title={`Open profile for ${longestPatientInfo.displayName} (${longestPatientInfo.umrn})`}
-                                      >
-                                        {longestPatientInfo.umrn}
-                                      </Link>
-                                    ) : (
-                                      <span className={pageStyles.unrecordedUmrn}>{longestPatientInfo.umrn}</span>
-                                    )}
-                                    <span className={pageStyles.metaDot}>&bull;</span>
-                                    <span className={`${pageStyles.mono} ${pageStyles.longestCaseId}`}>
-                                      {maxDaysEntry.admission.id}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className={`${pageStyles.badge} ${pageStyles.mono}`} data-tone="accent">
-                                  {longestDays}
-                                </span>
-                              </div>
-                              <p className={pageStyles.longestCaseSub}>
-                                Home: <b>{maxDaysEntry.admission.homeRegion}</b> &bull; At{" "}
-                                {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
-                              </p>
-                              <button
-                                type="button"
-                                className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
-                                onClick={() => setSelectedId(maxDaysEntry.admission.id)}
-                              >
-                                Inspect Longest Case &rarr;
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                    <div className={pageStyles.defaultPromptBox}>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                        className={pageStyles.promptIcon}
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      <p className={pageStyles.defaultPromptText}>
-                        Select an inpatient to review their transfer requirements or start repatriation.
-                      </p>
-                    </div>
-
+                  )}
+                  <p className={pageStyles.selectionHint}>Select a patient to review their return.</p>
+                </div>
+              ) : (
+                <div className={pageStyles.caseBody}>
+                  <div className={pageStyles.caseNavigation}>
+                    <span role="status">
+                      {selectedIndex >= 0
+                        ? `Synthetic patient ${selectedIndex + 1} of ${filteredEntries.length}`
+                        : "Outside current filters"}
+                    </span>
                     <div>
                       <button
                         type="button"
-                        className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
-                        onClick={(e) => {
-                          triggerRef.current = e.currentTarget;
-                          if (entries.length > 0) {
-                            setSelectedId(entries[0].admission.id);
-                          }
-                          setRepatDraft(BLANK_REPAT_DRAFT);
-                          setRepatFormNotice(null);
-                          setIsRepatModalOpen(true);
-                        }}
+                        className={pageStyles.iconButton}
+                        disabled={selectedIndex <= 0}
+                        aria-label="Inspect previous patient"
+                        onClick={() => selectPlacement(filteredEntries[selectedIndex - 1].admission.id)}
                       >
-                        + Initiate Repatriation Transfer
+                        ←
                       </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={pageStyles.detailCard}>
-                    {(() => {
-                      const selectedPatientInfo = resolvePatient(selected.admission);
-                      const selectedProfileHref = getPatientProfileHref(selectedPatientInfo);
-                      return (
-                        <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.detailSection}>
-                          <span className={pageStyles.detailLabel}>Patient Demographics & Home Catchment</span>
-                          <div className={pageStyles.inspectorPatientBox}>
-                            <div className={pageStyles.inspectorPatientName}>{selectedPatientInfo.displayName}</div>
-                            <div className={pageStyles.inspectorPatientUmrnRow}>
-                              <span className={pageStyles.umrnLabel}>UMRN:</span>
-                              {selectedProfileHref ? (
-                                <Link
-                                  href={selectedProfileHref}
-                                  className={pageStyles.inspectorUmrnLink}
-                                  title={`Open profile for ${selectedPatientInfo.displayName} (${selectedPatientInfo.umrn})`}
-                                >
-                                  <span>{selectedPatientInfo.umrn}</span>
-                                  <svg
-                                    width="12"
-                                    height="12"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
-                                  >
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                    <polyline points="15 3 21 3 21 9" />
-                                    <line x1="10" y1="14" x2="21" y2="3" />
-                                  </svg>
-                                </Link>
-                              ) : (
-                                <span className={pageStyles.unrecordedUmrn}>{selectedPatientInfo.umrn}</span>
-                              )}
-                              <span className={pageStyles.metaDot}>&bull;</span>
-                              <span className={`${pageStyles.mono} ${pageStyles.admissionIdText}`}>
-                                {selected.admission.id}
-                              </span>
-                            </div>
-                          </div>
-                          <div className={pageStyles.inspectorPlacementGrid}>
-                            <div className={pageStyles.placementGridItem}>
-                              <span className={pageStyles.gridItemLabel}>Catchment</span>
-                              <span className={pageStyles.gridItemVal}>
-                                <b>{selected.admission.homeRegion}</b>
-                              </span>
-                            </div>
-                            <div className={pageStyles.placementGridItem}>
-                              <span className={pageStyles.gridItemLabel}>Current Placement</span>
-                              <span className={pageStyles.gridItemVal}>
-                                <b>{selected.unit.name}</b>
-                                <span className={pageStyles.gridItemSub}>
-                                  {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"}
-                                </span>
-                              </span>
-                            </div>
-                            <div className={pageStyles.placementGridItem}>
-                              <span className={pageStyles.gridItemLabel}>Travel Band</span>
-                              <span className={pageStyles.gridItemVal}>
-                                <span
-                                  className={pageStyles.travelBadge}
-                                  data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
-                                  data-ward-type-floor="badge"
-                                >
-                                  <PlacementStatusGlyph
-                                    tone={selected.band === "air_transport_only" ? "danger" : "warn"}
-                                  />
-                                  <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
-                                </span>
-                              </span>
-                            </div>
-                            <div className={pageStyles.placementGridItem}>
-                              <span className={pageStyles.gridItemLabel}>Days Out-of-Area</span>
-                              <span className={`${pageStyles.gridItemVal} ${pageStyles.mono}`}>
-                                <b>{sinceArrivalLabel(selected, now)}</b>
-                              </span>
-                            </div>
-                          </div>
-                          <p className={pageStyles.detailMetaText} style={{ marginTop: "4px" }}>
-                            Group: <b>In a bed far from home</b>
-                          </p>
-                        </div>
-                      );
-                    })()}
-
-                    <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.detailSection}>
-                      <span className={pageStyles.detailLabel}>Clinical Repatriation Assessment</span>
-                      <div className={pageStyles.detailValueSub}>
-                        Clinically stable in acute open bed &bull; ready for repatriation transfer back to{" "}
-                        {selected.admission.homeRegion} Adult Unit as soon as bed vacates.
-                      </div>
-                    </div>
-
-                    <div className={pageStyles.detailSection}>
-                      <div className={pageStyles.destinationRow}>
-                        <div>
-                          <span className={pageStyles.detailLabel}>Target Destination</span>
-                          <div className={`${pageStyles.detailValue} ${pageStyles.accentVal}`}>
-                            {selected.admission.homeRegion} Adult MHU
-                          </div>
-                        </div>
-                        <span className={pageStyles.enquiryBadge}>Awaiting bed vacancy</span>
-                      </div>
-                    </div>
-
-                    <div className={pageStyles.detailActionWrap}>
                       <button
                         type="button"
-                        className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.wFull}`}
-                        onClick={(e) => {
-                          triggerRef.current = e.currentTarget;
-                          setIsRepatModalOpen(true);
-                        }}
+                        className={pageStyles.iconButton}
+                        disabled={selectedIndex < 0 || selectedIndex >= filteredEntries.length - 1}
+                        aria-label="Inspect next patient"
+                        onClick={() => selectPlacement(filteredEntries[selectedIndex + 1].admission.id)}
                       >
-                        Execute Repatriation Transfer Order &rarr;
+                        →
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
+                  <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.patientHero}>
+                    <div className={pageStyles.patientHeading}>
+                      <div className={pageStyles.patientIdentity}>
+                        <h3>{patientInfo.displayName}</h3>
+                        <div className={pageStyles.patientIdentifiers}>
+                          {profileHref ? (
+                            <Link href={profileHref} className={pageStyles.inspectorUmrnLink}>
+                              {patientInfo.umrn}
+                            </Link>
+                          ) : (
+                            <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                          )}
+                          <span className={pageStyles.admissionIdText}>{selected.admission.id}</span>
+                        </div>
+                      </div>
+                      <div className={pageStyles.staySummary}>
+                        <strong>{selectedStayDays === null ? "—" : `${selectedStayDays}d`}</strong>
+                        <span>in this bed</span>
+                        <span className="sr-only">{sinceArrivalLabel(selected, now)}</span>
+                      </div>
+                    </div>
+                    <dl className={pageStyles.placementFacts}>
+                      <div>
+                        <dt>Current placement</dt>
+                        <dd>
+                          <strong>{selected.unit.name}</strong>
+                          <span>{site?.name ?? "Site not recorded"}</span>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Home catchment</dt>
+                        <dd>{selected.admission.homeRegion}</dd>
+                      </div>
+                      <div>
+                        <dt>Travel band</dt>
+                        <dd
+                          className={pageStyles.travelRequirement}
+                          data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                        >
+                          <PlacementStatusGlyph tone={selected.band === "air_transport_only" ? "danger" : "warn"} />
+                          <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.returnPlanning}>
+                    <p>Choose a receiving hospital and confirm ward agreement.</p>
+                  </div>
+                  <div className={pageStyles.caseActions}>
+                    <button
+                      type="button"
+                      className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
+                      onClick={(event) => openRepatriation(event.currentTarget)}
+                    >
+                      Initiate repatriation <span aria-hidden="true">→</span>
+                    </button>
+                    {profileHref && (
+                      <Link className={pageStyles.profileAction} href={profileHref} aria-label="Open patient profile">
+                        Profile{" "}
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M7 17 17 7M7 7h10v10" />
+                        </svg>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         </div>

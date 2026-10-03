@@ -1,3 +1,13 @@
+# Ward Flow agents — current entry points
+
+Follow [AGENTS](../AGENTS.md), [Ward README](ward-flow/README.md),
+[builder workflow](ward-flow/HOW-WE-WORK.md) and the task's scoped source/checkpoint.
+Native client adapters and loading limits are described in [task receipts](task-receipts.md).
+File changes, loaded instructions and actual execution are separate evidence.
+Ward Flow uses synthetic data; foreign Supabase/RAG/MCP/workflow instructions below are
+history. Local connector configuration is not authority to contact any provider. Use only
+separately authorised Ward targets; the inherited Run PR sweep is disabled.
+
 > **Historical source boundary — 2 October 2026.** The preserved material below
 > describes the former Database/PsychSift workflow or a completed task. Its commands,
 > hosting and appearance claims are not current Ward instructions. Use the

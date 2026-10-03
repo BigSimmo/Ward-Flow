@@ -41,6 +41,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { OUTCOME_AFFECTING_ENV_VARS } from "./test-evidence-identity.mjs";
+export { OUTCOME_AFFECTING_ENV_VARS } from "./test-evidence-identity.mjs";
 
 /**
  * Bumping this invalidates every stored receipt. Change it whenever the signature
@@ -51,10 +53,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
  * @typedef {Record<string, string | undefined>} GateEnvironment
  * @typedef {{ key: string, recordedAt: string, inputHash?: string, environmentHash?: string, args?: string[], fileCount?: number }} GateReceipt
  * @typedef {{ gates: Record<string, GateReceipt[]> }} ReceiptStore
- * @typedef {{ reuse: boolean, reason: string, message: string | null, gate: string, args: string[], key: string | null, inputHash: string | null, environmentHash: string | null, fileCount: number }} GateDecision
+ * @typedef {{ reuse: boolean, reason: string, message: string | null, gate: string, args: string[], key: string | null, inputHash: string | null, environmentHash: string | null, fileCount: number, dependencies?: string, dependencyIdentity?: () => string | null }} GateDecision
  */
 
-export const RECEIPT_FORMAT_VERSION = 1;
+export const RECEIPT_FORMAT_VERSION = 2;
 
 /** Receipts kept per gate before the oldest is dropped (branch switching thrashes otherwise). */
 export const MAX_RECEIPTS_PER_GATE = 8;
@@ -306,18 +308,6 @@ export function computeInputSignature(projectRoot, scopes, { git = runGit } = {}
  * `NODE_OPTIONS` can change runtime behaviour outright. Performance-only knobs such as
  * `VITEST_MAX_WORKERS` are deliberately absent — they do not change the verdict.
  */
-export const OUTCOME_AFFECTING_ENV_VARS = [
-  "ALLOW_PROVIDER_TESTS",
-  // Whether the caring-contacts Postgres project is collected: a pass recorded
-  // without it must not vouch for a run that includes it, and vice versa.
-  "CARING_CONTACTS_DATABASE_URL",
-  "CARING_CONTACTS_DB_TESTS",
-  "FAST_CHECK_SEED",
-  "LANG",
-  "LC_ALL",
-  "NODE_OPTIONS",
-  "TZ",
-];
 
 /**
  * Toolchain identity. `node_modules/.package-lock.json` changes on every install, so
@@ -408,10 +398,17 @@ export function appendReceipt(store, gate, receipt) {
  * signature is computed once, and so recording can verify the content did not
  * change while the gate was running.
  *
- * @param {{ projectRoot: string, gate: string, args?: string[], env?: GateEnvironment, now?: () => Date }} options
+ * @param {{ projectRoot: string, gate: string, args?: string[], env?: GateEnvironment, now?: () => Date, dependencyIdentity?: () => string | null }} options
  * @returns {GateDecision}
  */
-export function consultGateReceipt({ projectRoot, gate, args = [], env = process.env, now = () => new Date() }) {
+export function consultGateReceipt({
+  projectRoot,
+  gate,
+  args = [],
+  env = process.env,
+  now = () => new Date(),
+  dependencyIdentity = () => null,
+}) {
   const miss = (reason) => ({
     reuse: false,
     reason,
@@ -430,10 +427,16 @@ export function consultGateReceipt({ projectRoot, gate, args = [], env = process
   const setting = receiptsEnabled(env);
   if (!setting.enabled) return miss(setting.reason);
 
+  const dependencies = dependencyIdentity();
+  if (!dependencies)
+    return miss("dependency byte identity unavailable; mutable installed metadata cannot authorise receipt reuse");
+
   const signature = computeInputSignature(projectRoot, GATE_INPUT_SCOPES[scopeGate]);
   if (!signature) return miss("input signature unavailable — running the gate");
 
-  const environmentHash = environmentSignature(projectRoot, env);
+  const environmentHash = createHash("sha256")
+    .update(`${environmentSignature(projectRoot, env)}\0${dependencies}`)
+    .digest("hex");
   const key = receiptKey({ gate: scopeGate, args, inputHash: signature.hash, environmentHash });
   const base = {
     reuse: false,
@@ -445,6 +448,8 @@ export function consultGateReceipt({ projectRoot, gate, args = [], env = process
     inputHash: signature.hash,
     environmentHash,
     fileCount: signature.fileCount,
+    dependencies,
+    dependencyIdentity,
   };
 
   if (setting.refresh) return { ...base, reason: "GATE_RECEIPTS=refresh — re-running" };
@@ -487,6 +492,14 @@ export function recordGateReceipt({ projectRoot, decision, exitCode, env = proce
   if (exitCode !== 0) return { recorded: false, reason: "non-zero exit — failures are never memoised" };
   if (!decision?.key) return { recorded: false, reason: decision?.reason ?? "no signature to record" };
   if (!receiptsEnabled(env).enabled) return { recorded: false, reason: "receipts disabled" };
+  const dependencies = decision.dependencyIdentity?.();
+  if (!dependencies || dependencies !== decision.dependencies)
+    return { recorded: false, reason: "dependency bytes changed or unavailable while the gate ran — not recorded" };
+  const afterEnvironment = createHash("sha256")
+    .update(`${environmentSignature(projectRoot, env)}\0${dependencies}`)
+    .digest("hex");
+  if (afterEnvironment !== decision.environmentHash)
+    return { recorded: false, reason: "environment changed while the gate ran — not recorded" };
 
   const scopeGate = typecheckScopeAlias(decision.gate);
   const after = computeInputSignature(projectRoot, GATE_INPUT_SCOPES[scopeGate]);
@@ -513,10 +526,18 @@ export function recordGateReceipt({ projectRoot, decision, exitCode, env = proce
 
 /**
  * Wrapper helper: consult, run, record. `run` returns the gate's exit code.
- * @param {{ projectRoot: string, gate: string, args?: string[], env?: GateEnvironment, run: () => Promise<number>, log?: (message: string) => void }} options
+ * @param {{ projectRoot: string, gate: string, args?: string[], env?: GateEnvironment, run: () => Promise<number>, log?: (message: string) => void, dependencyIdentity?: () => string | null }} options
  */
-export async function withGateReceipt({ projectRoot, gate, args = [], env = process.env, run, log = console.log }) {
-  const decision = consultGateReceipt({ projectRoot, gate, args, env });
+export async function withGateReceipt({
+  projectRoot,
+  gate,
+  args = [],
+  env = process.env,
+  run,
+  log = console.log,
+  dependencyIdentity = () => null,
+}) {
+  const decision = consultGateReceipt({ projectRoot, gate, args, env, dependencyIdentity });
   if (decision.reuse) {
     log(decision.message);
     return 0;

@@ -30,7 +30,7 @@ function renderScreen() {
 describe("Alerts — confirm controls (F3.1)", () => {
   it("Dispatch Broadcast requires clinical confirmation safeguard and dispatches directive", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
     const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirm).toBeDisabled();
 
@@ -44,7 +44,7 @@ describe("Alerts — confirm controls (F3.1)", () => {
 
   it("Record Intervention is aria-disabled, carries the exact D4 wording, and shows no toast", () => {
     renderScreen();
-    const actionButtons = screen.queryAllByRole("button", { name: "Action" });
+    const actionButtons = screen.queryAllByTestId("ward-alerts-action-btn");
     if (actionButtons.length === 0) {
       // No inbox item on this fixture to open the intervention modal from — nothing to prove.
       return;

@@ -19,6 +19,11 @@ describe("Ward selectors use the dedicated repository base", () => {
         mkdirSync(path.join(fixture, "tests"));
         const script = path.join(fixture, "scripts/ward-flow", name);
         writeFileSync(script, readFileSync(path.join(root, "scripts/ward-flow", name)));
+        if (name === "select-fold-gate.mjs") {
+          const dependency = "scripts/ward-ci-public/plan.mjs";
+          mkdirSync(path.dirname(path.join(fixture, dependency)), { recursive: true });
+          writeFileSync(path.join(fixture, dependency), readFileSync(path.join(root, dependency)));
+        }
         writeFileSync(path.join(fixture, "README.md"), "Synthetic fixture\n");
         git("init", "-b", "main");
         git("add", "--", "scripts", "README.md");

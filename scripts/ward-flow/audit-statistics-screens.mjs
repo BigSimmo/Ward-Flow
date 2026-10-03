@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { newestPreinstalledChromiumHeadlessShell } from "../playwright-browser-preflight.mjs";
@@ -7,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppData/Local", "ms-playwright");
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
-const BASE_URL = "http://localhost:3605";
+const BASE_URL = (await resolveAuditTarget({ root: path.resolve(__dirname, "../..") })).url;
 
 // The 7 target URLs given in prompt
 const TARGET_SCREENS = [
@@ -17,20 +18,26 @@ const TARGET_SCREENS = [
   { name: "Health Service Intersite Transfers", url: `${BASE_URL}/mockups/ward-flow/statistics/service/North%20Metro` },
   { name: "Ward Unit Inpatient Statistics", url: `${BASE_URL}/mockups/ward-flow/statistics/ward/ward-4a` },
   { name: "Emergency Department Statistics", url: `${BASE_URL}/mockups/ward-flow/statistics/ed/fsh-ed` },
-  { name: "Community Mental Health Team Statistics", url: `${BASE_URL}/mockups/ward-flow/statistics/community/fremantle` },
+  {
+    name: "Community Mental Health Team Statistics",
+    url: `${BASE_URL}/mockups/ward-flow/statistics/community/fremantle`,
+  },
 ];
 
 // Valid working screen URLs for comparison/investigation
 const VALID_SCREENS = [
   { name: "Health Service (North Metro)", url: `${BASE_URL}/mockups/ward-flow/statistics/service/North%20Metro` },
-  { name: "Ward Unit (Ward 2K / rph-adult-secure)", url: `${BASE_URL}/mockups/ward-flow/statistics/ward/rph-adult-secure` },
+  {
+    name: "Ward Unit (Ward 2K / rph-adult-secure)",
+    url: `${BASE_URL}/mockups/ward-flow/statistics/ward/rph-adult-secure`,
+  },
   { name: "Community Team (midland or Fremantle)", url: `${BASE_URL}/mockups/ward-flow/statistics/community/midland` },
 ];
 
 const VIEWPORTS = [
   { id: "desktop-1440", width: 1440, height: 900, isMobile: false },
   { id: "tablet-820", width: 820, height: 1180, isMobile: false },
-  { id: "mobile-390", width: 390, height: 844, isMobile: true }
+  { id: "mobile-390", width: 390, height: 844, isMobile: true },
 ];
 
 const THEMES = ["light", "dark"];
@@ -39,7 +46,7 @@ async function main() {
   console.log("Launching headless browser at:", BROWSER_PATH);
   const browser = await chromium.launch({
     executablePath: BROWSER_PATH,
-    headless: true
+    headless: true,
   });
 
   const page = await browser.newPage();
@@ -58,15 +65,15 @@ async function main() {
       pageErrors: [],
       notFoundOrRefusal: false,
       notFoundMessage: "",
-      viewports: {}
+      viewports: {},
     };
 
-    page.on("console", msg => {
+    page.on("console", (msg) => {
       if (msg.type() === "error") {
         screenResult.consoleErrors.push(msg.text());
       }
     });
-    page.on("pageerror", err => {
+    page.on("pageerror", (err) => {
       screenResult.pageErrors.push(err.message);
     });
 
@@ -79,12 +86,14 @@ async function main() {
       const notFoundInfo = await page.evaluate(() => {
         const h1 = document.querySelector("h1")?.innerText || "";
         const notFoundEl = document.querySelector("[data-testid*='unresolved'], [class*='notFound']");
-        const disclosureBanner = !!document.querySelector("[data-testid*='disclosure'], [data-testid*='disclaimer'], [class*='disclosure'], [class*='disclaimer'], [class*='prototypeDisclaimer'], [class*='syntheticBanner'], footer");
+        const disclosureBanner = !!document.querySelector(
+          "[data-testid*='disclosure'], [data-testid*='disclaimer'], [class*='disclosure'], [class*='disclaimer'], [class*='prototypeDisclaimer'], [class*='syntheticBanner'], footer",
+        );
         return {
           h1,
           isNotFound: h1.toLowerCase().includes("not found"),
           notFoundText: notFoundEl?.innerText || "",
-          hasDisclosure: disclosureBanner
+          hasDisclosure: disclosureBanner,
         };
       });
 
@@ -98,7 +107,7 @@ async function main() {
         await page.waitForTimeout(200);
 
         for (const theme of THEMES) {
-          await page.evaluate(t => {
+          await page.evaluate((t) => {
             document.documentElement.setAttribute("data-theme", t);
             if (t === "dark") document.documentElement.classList.add("dark");
             else document.documentElement.classList.remove("dark");
@@ -114,7 +123,9 @@ async function main() {
             const hasHorizontalOverflow = scrollWidth > clientWidth + 1;
 
             // Text clipping check
-            const textNodes = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, span, td, th, label, a, button"));
+            const textNodes = Array.from(
+              document.querySelectorAll("h1, h2, h3, h4, p, span, td, th, label, a, button"),
+            );
             const clipped = [];
             for (const el of textNodes) {
               if (!el.offsetParent) continue;
@@ -124,7 +135,7 @@ async function main() {
                   clipped.push({
                     tag: el.tagName,
                     text: (el.innerText || "").slice(0, 30),
-                    diff: el.scrollWidth - el.clientWidth
+                    diff: el.scrollWidth - el.clientWidth,
                   });
                 }
               }
@@ -133,7 +144,9 @@ async function main() {
             // Small touch targets (<48px for mobile/tablet per prompt rubric)
             const smallTargets = [];
             if (isMobile) {
-              const interactives = Array.from(document.querySelectorAll("button, a, input, select, [role='button'], [role='tab']"));
+              const interactives = Array.from(
+                document.querySelectorAll("button, a, input, select, [role='button'], [role='tab']"),
+              );
               for (const el of interactives) {
                 if (!el.offsetParent) continue;
                 const rect = el.getBoundingClientRect();
@@ -143,7 +156,7 @@ async function main() {
                       tag: el.tagName,
                       text: (el.innerText || el.getAttribute("aria-label") || "").trim().slice(0, 30),
                       w: Math.round(rect.width),
-                      h: Math.round(rect.height)
+                      h: Math.round(rect.height),
                     });
                   }
                 }
@@ -158,7 +171,7 @@ async function main() {
               clippedCount: clipped.length,
               clippedExamples: clipped.slice(0, 3),
               smallTargetCount: smallTargets.length,
-              smallTargetExamples: smallTargets.slice(0, 4)
+              smallTargetExamples: smallTargets.slice(0, 4),
             };
           }, vp.isMobile);
 
@@ -172,9 +185,10 @@ async function main() {
       }
       for (const vp of VIEWPORTS) {
         const mLight = screenResult.viewports[vp.id]["light"];
-        console.log(`  ${vp.id} [light]: overflow=${mLight.hasHorizontalOverflow} (scroll: ${mLight.scrollWidth} / client: ${mLight.clientWidth}), clipped=${mLight.clippedCount}, smallTargets=${mLight.smallTargetCount}`);
+        console.log(
+          `  ${vp.id} [light]: overflow=${mLight.hasHorizontalOverflow} (scroll: ${mLight.scrollWidth} / client: ${mLight.clientWidth}), clipped=${mLight.clippedCount}, smallTargets=${mLight.smallTargetCount}`,
+        );
       }
-
     } catch (e) {
       console.error(`  Error auditing ${screen.name}:`, e.message);
       screenResult.error = e.message;
@@ -187,7 +201,7 @@ async function main() {
   console.log("\nFinished audit. Summary written to memory.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Fatal audit runner error:", err);
   process.exit(1);
 });

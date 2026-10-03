@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 // The gate's own predicate, imported rather than re-implemented: a validator re-written inside its
 // own test proves only that two copies agree.
-import { validateEntry } from "../scripts/check-ward-expected-reds.mjs";
+import { isUnitTestFile, validateEntry } from "../scripts/check-ward-expected-reds.mjs";
 
 /**
  * THE CHEAP HALF OF THE EXPECTED-RED GATE.
@@ -56,9 +56,7 @@ function wardPopulation(): string[] {
     }
   };
   walk(join(ROOT, "tests"));
-  return files
-    .filter((rel) => !rel.endsWith(".live.test.ts") && (rel.endsWith(".test.ts") || rel.endsWith(".dom.test.tsx")))
-    .sort();
+  return files.filter(isUnitTestFile).sort();
 }
 
 describe("the expected-red manifest", () => {
