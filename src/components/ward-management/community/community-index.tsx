@@ -2,19 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  BookOpen,
-  ChevronRight,
-  Download,
-  FileText,
-  Layers,
-  Search,
-  ShieldCheck,
-  Users,
-  X,
-} from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileText, Search, X } from "lucide-react";
 
 import {
   COMMUNITY_TEAM_PAGES,
@@ -27,7 +15,7 @@ import {
   communityNamesInCollisions,
   type CommunityNameCollision,
 } from "@/components/ward-management/community/community-vocabulary";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import panelStyles from "@/components/ward-management/ward-panel.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -185,7 +173,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const familyGroups = useMemo(() => communityNameCollisions(), []);
 
   const [query, setQuery] = useState("");
-  const [alikeOnly, setAlikeOnly] = useState(false);
+  const [nameFilter, setNameFilter] = useState("all");
+  const alikeOnly = nameFilter === "alike";
+  const recentOnly = nameFilter === "recent";
 
   // `useSyncExternalStore` (via `createBrowserStore`, module scope below), not a `useState` fed
   // from an effect: an effect that calls `setState` in its own body — which is exactly what a
@@ -194,25 +184,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   // `renderToStaticMarkup` in several test files, which never runs effects OR subscribes, so the
   // server snapshot (an empty list) is what those tests see — exactly the honest "nothing opened
   // yet" state a server-rendered first paint should have anyway.
-  const recentNames = useRecentTeamNames();
+  const storedRecentNames = useRecentTeamNames();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const familyPanelRef = useRef<HTMLDetailsElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
-
-  const showToast = useCallback((msg: string = "Not wired in this prototype.") => {
-    setToastMessage(msg);
-  }, []);
-
   useEffect(() => {
     if (!drawerOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
@@ -276,16 +254,24 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     heading.focus();
   }, []);
 
+  // One source-validated recent list feeds the strip, the filter and its count, so a stored name that
+  // was renamed or removed can never show a chip the filter then reports as empty.
+  const recentNames = useMemo(() => {
+    const known = new Set(allTeams.map((team) => team.name));
+    return storedRecentNames.filter((name) => known.has(name));
+  }, [allTeams, storedRecentNames]);
+
   const normalizedQuery = query.trim().toLowerCase();
 
   const filteredTeams = useMemo(
     () =>
       allTeams.filter((team) => {
         if (alikeOnly && !collisionByName.has(team.name)) return false;
+        if (recentOnly && !recentNames.includes(team.name)) return false;
         if (normalizedQuery && !team.name.toLowerCase().includes(normalizedQuery)) return false;
         return true;
       }),
-    [allTeams, alikeOnly, normalizedQuery, collisionByName],
+    [allTeams, alikeOnly, recentOnly, recentNames, normalizedQuery, collisionByName],
   );
 
   const grouped = useMemo(() => {
@@ -312,8 +298,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <div className={styles.topActionBar}>
           <div className={styles.topActionContext}>
-            <span className={styles.contextPill}>Statewide Directory</span>
-            <span className={styles.contextSub}>Mental Health Catchment</span>
+            <h1 className={styles.pageTitle}>All community teams</h1>
           </div>
           <div className={styles.topActionButtons}>
             <Link
@@ -344,157 +329,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <BookOpen aria-hidden="true" className={styles.btnIcon} />
               <span>Catchment Guide</span>
             </button>
-            <button
-              type="button"
-              className={styles.btnActionSecondary}
-              onClick={() => showToast("Not wired in this prototype.")}
-              data-testid="community-action-export"
-            >
-              <Download aria-hidden="true" className={styles.btnIcon} />
-              <span>Export Directory</span>
-            </button>
           </div>
         </div>
 
-        <h1 className="sr-only">All community teams</h1>
         <p className="sr-only">
           These are recorded <strong>names</strong>, not verified services; possible aliases remain separate.
         </p>
-
-        <div className={styles.glanceStrip} role="region" aria-label="Directory statistics summary">
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <Users aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>DIRECTORY TEAMS</span>
-              </div>
-              <span className={styles.glancePillNeutral}>Reachability not recorded</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{allTeams.length}</span>
-              <span className={styles.glanceSub}>All derived catchment destinations</span>
-            </div>
-          </div>
-
-          <div
-            className={`${styles.glanceCard} ${styles.glanceCardInteractive} ${alikeOnly ? styles.glanceCardActive : ""}`}
-            onClick={() => setAlikeOnly(!alikeOnly)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAlikeOnly(!alikeOnly);
-              }
-            }}
-            aria-pressed={alikeOnly}
-            title={alikeOnly ? "Show all names" : "Filter names that read alike"}
-          >
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <AlertTriangle aria-hidden="true" className={styles.glanceIconWarn} />
-                <span className={styles.glanceLabel}>NAMES READING ALIKE</span>
-              </div>
-              <span className={styles.glancePillWarn}>Verification check</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{namesInCollisionsAmongAll}</span>
-              <span className={styles.glanceSub}>
-                In {familyGroups.length} spelling groups · {alikeOnly ? "Active filter" : "Click to toggle"}
-              </span>
-            </div>
-          </div>
-
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <Layers aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>ALPHABET REACH</span>
-              </div>
-              <span className={styles.glancePill}>A–Z Index</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{grouped.size} of 26</span>
-              <span className={styles.glanceSub}>Active initial letters populated</span>
-            </div>
-          </div>
-
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <ShieldCheck aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>PROVENANCE</span>
-              </div>
-              <span className={styles.glancePillNeutral}>Single Source</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>Synthetic</span>
-              <span className={styles.glanceSub}>WA Health Mental Health Catchment</span>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.toolbar}>
-          <div className={styles.searchRow}>
-            <div className={styles.searchBox}>
-              <label className={styles.searchField}>
-                <Search aria-hidden="true" className={styles.searchIcon} />
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  className={styles.searchInput}
-                  placeholder="Search team names"
-                  autoComplete="off"
-                  aria-label="Search team names"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape" && query) {
-                      event.stopPropagation();
-                      setQuery("");
-                    }
-                  }}
-                />
-              </label>
-              {query ? (
-                <button
-                  type="button"
-                  className={styles.clearButton}
-                  aria-label="Clear search"
-                  onClick={() => {
-                    setQuery("");
-                    searchInputRef.current?.focus();
-                  }}
-                >
-                  Clear
-                </button>
-              ) : null}
-              <kbd className={styles.kbdHint} aria-hidden="true">
-                /
-              </kbd>
-            </div>
-
-            <div className={styles.chips} role="group" aria-label="Filter the list">
-              <button
-                type="button"
-                className={styles.chip}
-                aria-pressed={!alikeOnly}
-                onClick={() => setAlikeOnly(false)}
-              >
-                All names <span className={styles.chipCount}>{allTeams.length}</span>
-              </button>
-              <button type="button" className={styles.chip} aria-pressed={alikeOnly} onClick={() => setAlikeOnly(true)}>
-                Names that read alike <span className={styles.chipCount}>{namesInCollisionsAmongAll}</span>
-              </button>
-            </div>
-          </div>
-
-          <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-            <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
-            {alikeOnly ? " — only entries whose name reads like another" : ""}
-            {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
-          </p>
-        </div>
 
         <div className={styles.body}>
           <nav className={styles.azRail} aria-label="Jump to letter">
@@ -542,11 +382,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </nav>
 
           <div className={styles.content}>
-            <section className={styles.recentStrip} aria-label="Recently opened">
-              <p className={styles.stripLabel}>Recently opened</p>
-              {recentNames.length === 0 ? (
-                <p className={styles.recentNone}>Nothing opened yet — teams you visit will appear here.</p>
-              ) : (
+            {recentNames.length > 0 ? (
+              <section className={styles.recentStrip} aria-label="Recently opened">
+                <p className={styles.stripLabel}>Recently opened</p>
                 <div className={styles.recentRow}>
                   {recentNames.map((name) => {
                     const team = teamRef(name);
@@ -563,10 +401,77 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     );
                   })}
                 </div>
-              )}
-            </section>
+              </section>
+            ) : null}
 
-            <WardPanel title="Community teams" testId="community-index-teams">
+            <section
+              className={`${panelStyles.panel} ${styles.directoryPanel}`}
+              aria-label="A–Z directory"
+              data-testid="community-index-teams"
+              data-ward-primitive="panel"
+            >
+              <header className={styles.directoryHeader} data-ward-primitive="panel-header">
+                <h2 className={styles.directoryTitle}>A–Z directory</h2>
+                <div className={styles.searchRow}>
+                  <div className={styles.searchBox}>
+                    <label className={styles.searchField}>
+                      <Search aria-hidden="true" className={styles.searchIcon} />
+                      <input
+                        ref={searchInputRef}
+                        type="search"
+                        className={styles.searchInput}
+                        placeholder="Search team names"
+                        autoComplete="off"
+                        aria-label="Search team names"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape" && query) {
+                            event.stopPropagation();
+                            setQuery("");
+                          }
+                        }}
+                      />
+                    </label>
+                    {query ? (
+                      <button
+                        type="button"
+                        className={styles.clearButton}
+                        aria-label="Clear search"
+                        onClick={() => {
+                          setQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                    <kbd className={styles.kbdHint} aria-hidden="true">
+                      /
+                    </kbd>
+                  </div>
+
+                  <div className={styles.nameFilter}>
+                    <select
+                      className={styles.filterSelect}
+                      aria-label="Filter team names"
+                      value={nameFilter}
+                      onChange={(event) => setNameFilter(event.target.value)}
+                    >
+                      <option value="all">All names ({allTeams.length})</option>
+                      <option value="recent">Recently opened ({recentNames.length})</option>
+                      <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
+                    </select>
+                    <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                  </div>
+                </div>
+
+                <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
+                  <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
+                  {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
+                  {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
+                </p>
+              </header>
               {allTeams.length === 0 ? (
                 /*
                  * An empty SOURCE is rendered as a stated absence, never as an empty list. A blank
@@ -588,7 +493,17 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </p>
                 </div>
               ) : filteredTeams.length === 0 ? (
-                <SearchEmptyNotice alikeOnly={alikeOnly} query={query.trim()} />
+                recentOnly ? (
+                  <div className={styles.emptyNotice}>
+                    <p>
+                      {normalizedQuery
+                        ? "No recently opened teams match this search."
+                        : "No teams opened yet. Open a team from All names to add it here."}
+                    </p>
+                  </div>
+                ) : (
+                  <SearchEmptyNotice alikeOnly={alikeOnly} query={query.trim()} />
+                )
               ) : (
                 <div className={styles.letterGroups} role="region" aria-label="Community team directory" tabIndex={0}>
                   {[...grouped.keys()].sort().map((letter) => (
@@ -612,7 +527,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   ))}
                 </div>
               )}
-            </WardPanel>
+            </section>
 
             <details className={styles.familyPanel} ref={familyPanelRef} data-testid="community-gateway-family-panel">
               <summary className={styles.familySummary}>
@@ -621,7 +536,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   Names that read alike — <strong>{communityNamesInCollisions()}</strong> names in{" "}
                   <strong>{familyGroups.length}</strong> groups
                 </span>
-                <span className={styles.familyWhy}>Check before you open one</span>
+                <span className={styles.familyWhy}>View details</span>
               </summary>
               <div className={styles.familyBody}>
                 <p>
@@ -725,7 +640,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </div>
               <div className={styles.drawerBody}>
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Single Source of Truth</h3>
+                  <h3 className={styles.drawerSectionTitle}>Directory source</h3>
                   <p className={styles.drawerText}>
                     Every team listed in this directory is derived directly from the referral intake vocabulary
                     extracted from Western Australian Mental Health Service catchment documentation.
@@ -733,11 +648,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </section>
 
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Spelling Collisions &amp; Verification</h3>
+                  <h3 className={styles.drawerSectionTitle}>Similar names</h3>
                   <p className={styles.drawerText}>
-                    Certain service entries carry variant spellings in upstream records (e.g. &ldquo;Midalnd&rdquo; vs
-                    &ldquo;Midland&rdquo;). Ward Flow flags these with a verification prompt rather than performing
-                    unauthorized merges.
+                    Some recorded names read alike. Each remains a separate entry; check that you are opening the team
+                    you mean. This directory has not been verified with the services.
                   </p>
                 </section>
 
@@ -746,25 +660,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   <div className={styles.drawerActions}>
                     <Link href="/mockups/ward-flow/referrals/new" className={styles.drawerBtnPrimary}>
                       <FileText aria-hidden="true" className={styles.btnIcon} />
-                      <span>Intake Referral for Community Team</span>
+                      <span>Raise referral</span>
                     </Link>
-                    <button
-                      type="button"
-                      className={styles.drawerBtnSecondary}
-                      onClick={() => showToast("Not wired in this prototype.")}
-                    >
-                      <span>Download Catchment Matrix</span>
-                    </button>
                   </div>
                 </section>
               </div>
             </div>
-          </div>
-        ) : null}
-
-        {toastMessage ? (
-          <div className={styles.toast} role="status" aria-live="polite">
-            {toastMessage}
           </div>
         ) : null}
       </main>

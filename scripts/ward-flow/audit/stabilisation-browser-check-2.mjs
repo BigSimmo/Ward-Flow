@@ -2,8 +2,9 @@
  * Follow-up browser checks: bed-alert totals, community team transport, tasks filters, ED waits.
  */
 import { chromium } from "playwright";
+import { resolveAuditTarget } from "../local-audit-target.mjs";
 
-const BASE = process.env.WARD_URL || "http://localhost:3605";
+const BASE = (await resolveAuditTarget()).url;
 const log = (m) => console.log(m);
 
 async function main() {
@@ -13,10 +14,14 @@ async function main() {
   // --- Bed alerts ---
   await page.goto(`${BASE}/mockups/ward-flow`, { waitUntil: "networkidle", timeout: 120_000 });
   await page.waitForTimeout(1000);
-  const live = await page.locator(".shiftLiveTz, text=AWST").first().evaluate((el) => {
-    const row = el.closest("div") || el.parentElement;
-    return row?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  }).catch(() => "");
+  const live = await page
+    .locator(".shiftLiveTz, text=AWST")
+    .first()
+    .evaluate((el) => {
+      const row = el.closest("div") || el.parentElement;
+      return row?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    })
+    .catch(() => "");
   log(`live clock row: ${JSON.stringify(live)}`);
   const handover = await page.locator('[aria-label*="Handover countdown"]').first().getAttribute("aria-label");
   log(`handover aria-label: ${JSON.stringify(handover)}`);
@@ -27,9 +32,12 @@ async function main() {
   const panelVisible = await panel.isVisible();
   log(`bed alerts panel visible: ${panelVisible}`);
   if (panelVisible) {
-    const header = await panel.locator(".alertsTotalBadge, [class*='alertsTotalBadge']").textContent().catch(async () => {
-      return (await panel.locator("text=/Free Beds/i").first().textContent()) ?? "";
-    });
+    const header = await panel
+      .locator(".alertsTotalBadge, [class*='alertsTotalBadge']")
+      .textContent()
+      .catch(async () => {
+        return (await panel.locator("text=/Free Beds/i").first().textContent()) ?? "";
+      });
     log(`header free beds badge: ${JSON.stringify(header?.replace(/\s+/g, " ").trim())}`);
     const headerNum = Number((header || "").match(/(\d+)\s*Free Beds/i)?.[1] ?? NaN);
     const rowFree = await panel.locator("text=/\\d+ free \\(/").allTextContents();
@@ -45,9 +53,9 @@ async function main() {
 
   // --- ED waits ---
   // Discover ED routes from rail or hub
-  const edHrefs = await page.locator('a[href*="/mockups/ward-flow/ed/"]').evaluateAll((as) =>
-    [...new Set(as.map((a) => a.getAttribute("href")).filter(Boolean))],
-  );
+  const edHrefs = await page
+    .locator('a[href*="/mockups/ward-flow/ed/"]')
+    .evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")).filter(Boolean))]);
   log(`ED hrefs on hub: ${JSON.stringify(edHrefs.slice(0, 8))}`);
   const edHref = edHrefs.find((h) => /ed\//.test(h)) || "/mockups/ward-flow/ed/fsh-ed";
   await page.goto(edHref.startsWith("http") ? edHref : `${BASE}${edHref}`, {
@@ -72,9 +80,9 @@ async function main() {
   // --- Community teams: walk until book/cancel found ---
   await page.goto(`${BASE}/mockups/ward-flow/community`, { waitUntil: "networkidle", timeout: 120_000 });
   await page.waitForTimeout(800);
-  const teamHrefs = await page.locator('a[href*="/mockups/ward-flow/community/"]').evaluateAll((as) =>
-    [...new Set(as.map((a) => a.getAttribute("href")).filter(Boolean))],
-  );
+  const teamHrefs = await page
+    .locator('a[href*="/mockups/ward-flow/community/"]')
+    .evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")).filter(Boolean))]);
   log(`community team hrefs: ${JSON.stringify(teamHrefs.slice(0, 15))} (total ${teamHrefs.length})`);
 
   let found = null;
@@ -142,7 +150,8 @@ async function main() {
   const escChip = page.locator('[data-testid="ward-bar-activity-filter-escalation"]');
   log(`activity chips visible: all=${await allChip.isVisible()} esc=${await escChip.isVisible()}`);
   // Count list items before/after
-  const listSel = '[data-testid^="ward-bar-activity-"], [class*="activityList"] li, [class*="changeList"] li, [class*="timeline"] li';
+  const listSel =
+    '[data-testid^="ward-bar-activity-"], [class*="activityList"] li, [class*="changeList"] li, [class*="timeline"] li';
   const countItems = async () => page.locator("li").filter({ hasText: /.+/ }).count();
   // Prefer activity sheet content
   const sheet = page.locator('[role="dialog"], [class*="sheet"], [class*="drawer"]').filter({ hasText: "All" }).first();

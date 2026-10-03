@@ -21,6 +21,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { wardFlowCheckoutVerdict } from "./guard-push.mjs";
 
 const APPLY = process.argv.includes("--apply");
 const BASE = "main";
@@ -28,7 +29,7 @@ const SKIP_LABELS = new Set(["hold", "do-not-merge", "skip-branch-sync"]);
 const ACTIVE_RUN_STATES = new Set(["pending", "queued", "in_progress", "requested", "waiting"]);
 
 function ghJson(args) {
-  const result = spawnSync("gh", args, { encoding: "utf8" });
+  const result = spawnSync("gh", args, { encoding: "utf8", timeout: 30000 });
   if (result.status !== 0) {
     throw new Error((result.stderr || result.stdout || `gh ${args.join(" ")} failed`).trim());
   }
@@ -56,7 +57,7 @@ export function classifyPr(pr, behindBy) {
 
 export function hasRequiredCiInFlight(payload) {
   return (payload?.workflow_runs ?? []).some((run) => {
-    const isRequiredCi = run?.name === "CI" || /(?:^|\/)ci\.yml$/.test(String(run?.path ?? ""));
+    const isRequiredCi = run?.name === "Ward Flow CI" || /(?:^|\/)ward-flow\.yml$/.test(String(run?.path ?? ""));
     return isRequiredCi && ACTIVE_RUN_STATES.has(String(run?.status ?? "").toLowerCase());
   });
 }
@@ -80,7 +81,10 @@ export function repositoryNameWithOwner(repository) {
 }
 
 function main() {
+  if (!wardFlowCheckoutVerdict(process.cwd()).ok)
+    throw new Error("Cannot verify canonical Ward Flow checkout before provider reads");
   const repo = repositoryNameWithOwner(ghJson(["repo", "view", "--json", "nameWithOwner"]));
+  if (repo !== "BigSimmo/Ward-Flow") throw new Error("Resolved provider repository is not BigSimmo/Ward-Flow");
   if (APPLY) {
     const login = validateApplyIdentity(ghJson(["api", "user"]));
     console.log(`Apply identity: ${login}`);

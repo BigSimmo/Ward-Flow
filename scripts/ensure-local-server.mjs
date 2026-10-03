@@ -5,6 +5,7 @@ import http from "node:http";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { startupFailure } from "./local-server-startup.mjs";
 import {
   describeUnadoptableServer,
   isReservedDevPort,
@@ -239,7 +240,7 @@ function startDevServer(port) {
   try {
     const child = spawn(
       process.execPath,
-      [path.join("scripts", "dev-free-port.mjs"), "--port", String(port), "--webpack"],
+      [path.join("scripts", "dev-free-port.mjs"), "--port", String(port), "--strict-port", "--webpack"],
       {
         cwd: projectRoot,
         detached: true,
@@ -252,16 +253,25 @@ function startDevServer(port) {
         windowsHide: true,
       },
     );
+    let launchError;
+    child.on("error", (error) => {
+      launchError = error;
+    });
     child.unref();
+    return {
+      failure: () => startupFailure({ error: launchError, exitCode: child.exitCode, signalCode: child.signalCode }),
+    };
   } finally {
     fs.closeSync(out);
     fs.closeSync(err);
   }
 }
 
-async function waitForProject(port) {
+async function waitForProject(port, launcher = null) {
   let stableSince = null;
   for (let attempt = 0; attempt < 120; attempt += 1) {
+    const failed = launcher?.failure();
+    if (failed) throw new Error(`${failed}. Check ${logPath}`);
     if (await isThisProject(port, 1)) {
       stableSince ??= Date.now();
       const stableForMs = Date.now() - stableSince;
@@ -326,9 +336,9 @@ async function main() {
       );
     }
 
-    startDevServer(target.port);
+    const launcher = startDevServer(target.port);
 
-    if (await waitForProject(target.port)) {
+    if (await waitForProject(target.port, launcher)) {
       console.log(printUrlOnly ? localUrl(target.port) : `Ward Flow is running at ${localUrl(target.port)}`);
       if (!printUrlOnly) console.log(`Server log: ${logPath}`);
       return 0;
@@ -341,4 +351,9 @@ async function main() {
   }
 }
 
-process.exitCode = await main();
+try {
+  process.exitCode = await main();
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+}

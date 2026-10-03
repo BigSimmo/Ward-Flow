@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,7 +10,7 @@ const projectRoot = path.resolve(__dirname, "../..");
 const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppData/Local", "ms-playwright");
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
-const BASE_URL = "http://localhost:3605";
+const BASE_URL = (await resolveAuditTarget({ root: projectRoot })).url;
 const SCREENSHOT_DIR = path.resolve(projectRoot, ".audit-reports/on-call-elevation");
 
 if (!fs.existsSync(SCREENSHOT_DIR)) {
@@ -100,17 +101,27 @@ async function main() {
             hasOverflow: docEl.scrollWidth > docEl.clientWidth,
           };
         });
-        console.log(`Overflow: scrollWidth=${overflow.scrollWidth}, clientWidth=${overflow.clientWidth}, hasOverflow=${overflow.hasOverflow}`);
+        console.log(
+          `Overflow: scrollWidth=${overflow.scrollWidth}, clientWidth=${overflow.clientWidth}, hasOverflow=${overflow.hasOverflow}`,
+        );
         if (overflow.hasOverflow) auditResults.fatalFlaws.ff4HorizontalOverflow++;
 
         // Measure Clipped Text
         const clippedText = await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, span, td, th, label, dt, dd, button"));
+          const elements = Array.from(
+            document.querySelectorAll("h1, h2, h3, h4, p, span, td, th, label, dt, dd, button"),
+          );
           const clipped = [];
           for (const el of elements) {
             if (!el.offsetParent) continue;
             // Ignore screen-reader only elements and 0/1-dimension items
-            if (el.clientWidth <= 1 || el.clientHeight <= 1 || el.classList.contains("sr-only") || el.getAttribute("aria-hidden") === "true") continue;
+            if (
+              el.clientWidth <= 1 ||
+              el.clientHeight <= 1 ||
+              el.classList.contains("sr-only") ||
+              el.getAttribute("aria-hidden") === "true"
+            )
+              continue;
             const style = window.getComputedStyle(el);
             if (style.overflow === "hidden" && style.textOverflow !== "ellipsis") {
               if (el.scrollWidth > el.clientWidth + 2) {
@@ -155,10 +166,7 @@ async function main() {
         // Check Invariant FF8: Prototype Disclosure Banner
         const disclosure = await page.evaluate(() => {
           const text = document.body.innerText || "";
-          return (
-            text.includes("Roles and shifts are invented") &&
-            text.includes("Contact details are not held")
-          );
+          return text.includes("Roles and shifts are invented") && text.includes("Contact details are not held");
         });
         if (disclosure) auditResults.fatalFlaws.ff8DisclosureBannerPresent = true;
 
@@ -186,8 +194,9 @@ async function main() {
       await connectButtons[0].click();
       await page.waitForTimeout(300);
       const toastText = await page.evaluate(() => {
-        const t = document.querySelector("[data-testid='ward-on-call-toast']") || document.querySelector("[role='status']");
-        return t ? (t.innerText || t.textContent) : null;
+        const t =
+          document.querySelector("[data-testid='ward-on-call-toast']") || document.querySelector("[role='status']");
+        return t ? t.innerText || t.textContent : null;
       });
       console.log(`Toast text on Connect click: "${toastText}"`);
       auditResults.interactiveTests.ruleD4Feedback = toastText?.includes("Not wired in this prototype.") ?? false;

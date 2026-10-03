@@ -4,6 +4,7 @@
  */
 
 import { chromium } from "playwright";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +15,7 @@ const projectRoot = path.resolve(__dirname, "../..");
 const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppData/Local", "ms-playwright");
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
-const BASE_URL = "http://localhost:3605";
+const BASE_URL = (await resolveAuditTarget({ root: projectRoot })).url;
 const OUTPUT_DIR = path.resolve(projectRoot, ".audit-reports");
 const SCREENSHOT_DIR = path.join(OUTPUT_DIR, "screenshots");
 
@@ -25,7 +26,7 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
 const VIEWPORTS = [
   { id: "desktop-1440", width: 1440, height: 900, isMobile: false },
   { id: "tablet-820", width: 820, height: 1180, isMobile: false },
-  { id: "mobile-390", width: 390, height: 844, isMobile: true }
+  { id: "mobile-390", width: 390, height: 844, isMobile: true },
 ];
 
 const THEMES = ["light", "dark"];
@@ -68,7 +69,7 @@ const SCREENS = [
   { name: "ward-flow-ward-answer", path: "/mockups/ward-flow/ward/rph-adult-secure/answer" },
   // Companion applications (the PsychSift home and applications screens went with PsychSift)
   { name: "caring-contacts", path: "/caring-contacts" },
-  { name: "safety-plan", path: "/safety-plan" }
+  { name: "safety-plan", path: "/safety-plan" },
 ];
 
 async function runPass1(browser) {
@@ -78,7 +79,7 @@ async function runPass1(browser) {
 
   const findings = [];
   const context = await browser.newContext({
-    viewport: { width: 1440, height: 900 }
+    viewport: { width: 1440, height: 900 },
   });
   const page = await context.newPage();
 
@@ -102,7 +103,7 @@ async function runPass1(browser) {
       // 1. Initial navigation (allow up to 60s for compiler warmup)
       const res = await page.goto(`${BASE_URL}${screen.path}`, {
         waitUntil: "domcontentloaded",
-        timeout: 60000
+        timeout: 60000,
       });
 
       const status = res ? res.status() : 0;
@@ -112,7 +113,7 @@ async function runPass1(browser) {
           path: screen.path,
           type: "HTTP_ERROR",
           severity: "CRITICAL",
-          message: `HTTP response status ${status}`
+          message: `HTTP response status ${status}`,
         });
         continue;
       }
@@ -122,8 +123,10 @@ async function runPass1(browser) {
       // Check React crash
       const reactCrash = await page.evaluate(() => {
         const txt = document.body.innerText || "";
-        if (txt.includes("Application error: a client-side exception has occurred") ||
-            txt.includes("Unhandled Runtime Error")) {
+        if (
+          txt.includes("Application error: a client-side exception has occurred") ||
+          txt.includes("Unhandled Runtime Error")
+        ) {
           return txt.slice(0, 300);
         }
         return null;
@@ -135,7 +138,7 @@ async function runPass1(browser) {
           path: screen.path,
           type: "REACT_CRASH",
           severity: "CRITICAL",
-          message: `React error boundary triggered: ${reactCrash}`
+          message: `React error boundary triggered: ${reactCrash}`,
         });
       }
 
@@ -146,7 +149,7 @@ async function runPass1(browser) {
           path: screen.path,
           type: "CONSOLE_ERROR",
           severity: "HIGH",
-          message: consoleErrors.slice(0, 3).join(" | ")
+          message: consoleErrors.slice(0, 3).join(" | "),
         });
       }
 
@@ -174,7 +177,7 @@ async function runPass1(browser) {
             return {
               scrollWidth: docEl.scrollWidth,
               clientWidth: docEl.clientWidth,
-              hasOverflow: docEl.scrollWidth > docEl.clientWidth + 1
+              hasOverflow: docEl.scrollWidth > docEl.clientWidth + 1,
             };
           });
 
@@ -187,7 +190,7 @@ async function runPass1(browser) {
               theme,
               type: "HORIZONTAL_OVERFLOW",
               severity: "HIGH",
-              message: `Page scrolls horizontally: scrollWidth (${overflow.scrollWidth}px) > clientWidth (${overflow.clientWidth}px)`
+              message: `Page scrolls horizontally: scrollWidth (${overflow.scrollWidth}px) > clientWidth (${overflow.clientWidth}px)`,
             });
           }
 
@@ -205,7 +208,7 @@ async function runPass1(browser) {
                     type: "CLIPPED_TEXT",
                     tag: el.tagName,
                     text: (el.innerText || "").slice(0, 40),
-                    detail: `scrollWidth ${el.scrollWidth}px > clientWidth ${el.clientWidth}px without ellipsis`
+                    detail: `scrollWidth ${el.scrollWidth}px > clientWidth ${el.clientWidth}px without ellipsis`,
                   });
                   if (issues.length >= 3) break;
                 }
@@ -221,8 +224,8 @@ async function runPass1(browser) {
                 if (rect.width > 0 && rect.height > 0 && (rect.width < 28 || rect.height < 28)) {
                   issues.push({
                     type: "SMALL_TOUCH_TARGET",
-                    text: ((btn.innerText || btn.getAttribute("aria-label") || "unlabeled").trim()).slice(0, 25),
-                    detail: `${Math.round(rect.width)}x${Math.round(rect.height)}px touch target (< 28px)`
+                    text: (btn.innerText || btn.getAttribute("aria-label") || "unlabeled").trim().slice(0, 25),
+                    detail: `${Math.round(rect.width)}x${Math.round(rect.height)}px touch target (< 28px)`,
                   });
                   if (issues.length >= 4) break;
                 }
@@ -241,16 +244,17 @@ async function runPass1(browser) {
               theme,
               type: anomaly.type,
               severity: anomaly.type === "SMALL_TOUCH_TARGET" ? "MEDIUM" : "HIGH",
-              message: `${anomaly.text ? `"${anomaly.text}": ` : ""}${anomaly.detail}`
+              message: `${anomaly.text ? `"${anomaly.text}": ` : ""}${anomaly.detail}`,
             });
           }
 
           // Capture screenshots for key representative configurations
-          const shouldScreenshot = (vp.id === "desktop-1440" && theme === "light") ||
-                                   (vp.id === "desktop-1440" && theme === "dark") ||
-                                   (vp.id === "mobile-390" && theme === "light") ||
-                                   overflow.hasOverflow ||
-                                   reactCrash;
+          const shouldScreenshot =
+            (vp.id === "desktop-1440" && theme === "light") ||
+            (vp.id === "desktop-1440" && theme === "dark") ||
+            (vp.id === "mobile-390" && theme === "light") ||
+            overflow.hasOverflow ||
+            reactCrash;
 
           if (shouldScreenshot) {
             const shotPath = path.join(SCREENSHOT_DIR, `${key}.png`);
@@ -264,7 +268,7 @@ async function runPass1(browser) {
         path: screen.path,
         type: "EXCEPTION",
         severity: "CRITICAL",
-        message: err.message
+        message: err.message,
       });
       console.log(`  ❌ Error auditing ${screen.name}: ${err.message}`);
     }
@@ -287,14 +291,16 @@ async function runPass2(browser) {
       path: "/mockups/ward-flow",
       name: "Global Search / Typeahead Input",
       action: async (page) => {
-        const searchInput = await page.$("input[type='search'], input[placeholder*='Search'], input[aria-label*='Search']");
+        const searchInput = await page.$(
+          "input[type='search'], input[placeholder*='Search'], input[aria-label*='Search']",
+        );
         if (searchInput) {
           await searchInput.fill("David");
           await page.waitForTimeout(400);
           return { success: true, detail: "Typed query into search input" };
         }
         return { success: false, detail: "Search input not found" };
-      }
+      },
     },
     {
       screen: "ward-flow-bed-board",
@@ -314,14 +320,16 @@ async function runPass2(browser) {
           }
         }
         return { success: true, detail: `Exercised ${clicked} buttons on Bed Board` };
-      }
+      },
     },
     {
       screen: "ward-flow-patient-now",
       path: "/mockups/ward-flow/people/WF-014",
       name: "Patient Now Tab Switching",
       action: async (page) => {
-        const tabs = await page.$$("[role='tab'], button:has-text('Overview'), button:has-text('Clinical'), button:has-text('Timeline'), button:has-text('Legal')");
+        const tabs = await page.$$(
+          "[role='tab'], button:has-text('Overview'), button:has-text('Clinical'), button:has-text('Timeline'), button:has-text('Legal')",
+        );
         let switched = 0;
         for (const tab of tabs) {
           try {
@@ -331,28 +339,32 @@ async function runPass2(browser) {
           } catch (e) {}
         }
         return { success: true, detail: `Switched through ${switched} patient tabs` };
-      }
+      },
     },
     {
       screen: "ward-flow-add-patient",
       path: "/mockups/ward-flow/people/new",
       name: "Add Patient Form Submit Validation",
       action: async (page) => {
-        const submitBtn = await page.$("button[type='submit'], button:has-text('Add Patient'), button:has-text('Save'), button:has-text('Submit')");
+        const submitBtn = await page.$(
+          "button[type='submit'], button:has-text('Add Patient'), button:has-text('Save'), button:has-text('Submit')",
+        );
         if (submitBtn) {
           await submitBtn.click();
           await page.waitForTimeout(300);
           return { success: true, detail: "Triggered validation on empty Add Patient submission" };
         }
         return { success: false, detail: "Submit button not found on Add Patient" };
-      }
+      },
     },
     {
       screen: "ward-flow-delays",
       path: "/mockups/ward-flow/delays",
       name: "Delays Filter Pills",
       action: async (page) => {
-        const filterPills = await page.$$("button[role='radio'], [data-filter], button:has-text('All'), button:has-text('NDIS'), button:has-text('Housing')");
+        const filterPills = await page.$$(
+          "button[role='radio'], [data-filter], button:has-text('All'), button:has-text('NDIS'), button:has-text('Housing')",
+        );
         let clicked = 0;
         for (const pill of filterPills.slice(0, 4)) {
           try {
@@ -362,7 +374,7 @@ async function runPass2(browser) {
           } catch (e) {}
         }
         return { success: true, detail: `Clicked ${clicked} delay filter pills` };
-      }
+      },
     },
   ];
 
@@ -370,7 +382,7 @@ async function runPass2(browser) {
     console.log(`Running interactive test: ${test.name} on ${test.screen}...`);
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
-      colorScheme: "light"
+      colorScheme: "light",
     });
     const page = await context.newPage();
     const errors = [];
@@ -385,7 +397,10 @@ async function runPass2(browser) {
       const res = await test.action(page);
 
       // Take interactive snapshot
-      const shotPath = path.join(SCREENSHOT_DIR, `interactive__${test.screen}__${test.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`);
+      const shotPath = path.join(
+        SCREENSHOT_DIR,
+        `interactive__${test.screen}__${test.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`,
+      );
       await page.screenshot({ path: shotPath });
 
       if (errors.length > 0) {
@@ -395,7 +410,7 @@ async function runPass2(browser) {
           type: "INTERACTION_RUNTIME_ERROR",
           severity: "HIGH",
           message: errors.join(" | "),
-          screenshot: shotPath
+          screenshot: shotPath,
         });
       } else {
         interactiveFindings.push({
@@ -404,7 +419,7 @@ async function runPass2(browser) {
           type: "SUCCESS",
           severity: "INFO",
           message: res.detail,
-          screenshot: shotPath
+          screenshot: shotPath,
         });
       }
     } catch (err) {
@@ -413,7 +428,7 @@ async function runPass2(browser) {
         screen: test.screen,
         type: "INTERACTION_FAILURE",
         severity: "CRITICAL",
-        message: err.message
+        message: err.message,
       });
     } finally {
       await context.close();
@@ -426,7 +441,7 @@ async function runPass2(browser) {
 async function main() {
   console.log("Launching headless browser at:", BROWSER_PATH);
   const browser = await chromium.launch({
-    executablePath: BROWSER_PATH
+    executablePath: BROWSER_PATH,
   });
 
   try {
@@ -438,10 +453,11 @@ async function main() {
       baseUrl: BASE_URL,
       pass1Findings: pass1,
       pass2Findings: pass2,
-      criticalCount: pass1.filter(f => f.severity === "CRITICAL").length + pass2.filter(f => f.severity === "CRITICAL").length,
-      highCount: pass1.filter(f => f.severity === "HIGH").length + pass2.filter(f => f.severity === "HIGH").length,
-      mediumCount: pass1.filter(f => f.severity === "MEDIUM").length,
-      screenshots: fs.readdirSync(SCREENSHOT_DIR)
+      criticalCount:
+        pass1.filter((f) => f.severity === "CRITICAL").length + pass2.filter((f) => f.severity === "CRITICAL").length,
+      highCount: pass1.filter((f) => f.severity === "HIGH").length + pass2.filter((f) => f.severity === "HIGH").length,
+      mediumCount: pass1.filter((f) => f.severity === "MEDIUM").length,
+      screenshots: fs.readdirSync(SCREENSHOT_DIR),
     };
 
     const reportFile = path.join(OUTPUT_DIR, "adversarial-audit-report.json");

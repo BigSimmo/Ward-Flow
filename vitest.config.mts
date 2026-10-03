@@ -1,5 +1,6 @@
 import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
 import { COVERAGE_INCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
+import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "./scripts/unit-test-population.mjs";
 
 const liveProviderTests = process.env.ALLOW_PROVIDER_TESTS === "true";
 
@@ -64,8 +65,8 @@ const config = {
           // Node environment, unchanged glob — existing tests behave exactly as before.
           name: "node",
           environment: "node",
-          include: liveProviderTests ? ["tests/**/*.live.test.ts"] : ["tests/**/*.test.ts"],
-          exclude: liveProviderTests ? [] : ["tests/**/*.live.test.ts", ...gateExcludedFiles],
+          include: liveProviderTests ? LIVE_UNIT_TEST_GLOBS : NODE_UNIT_TEST_GLOBS,
+          exclude: liveProviderTests ? [] : [...LIVE_UNIT_TEST_GLOBS, ...gateExcludedFiles],
         },
       },
       ...(!liveProviderTests
@@ -78,7 +79,7 @@ const config = {
                 // `*.test.ts` files (and vice versa).
                 name: "jsdom",
                 environment: "jsdom",
-                include: ["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"],
+                include: DOM_UNIT_TEST_GLOBS,
                 ...(gateExcludedFiles.length > 0 ? { exclude: gateExcludedFiles } : {}),
                 setupFiles: ["tests/setup/jsdom.setup.ts"],
               },

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { newestPreinstalledChromiumHeadlessShell } from "../playwright-browser-preflight.mjs";
 import path from "node:path";
 
@@ -6,9 +7,10 @@ const browsersRoot = path.join(process.env.LOCALAPPDATA || "C:/Users/joshs/AppDa
 const BROWSER_PATH = newestPreinstalledChromiumHeadlessShell(browsersRoot);
 
 async function run() {
+  const base = (await resolveAuditTarget()).url;
   const browser = await chromium.launch({ executablePath: BROWSER_PATH, headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto("http://localhost:3605/mockups/ward-flow/statistics");
+  await page.goto(`${base}/mockups/ward-flow/statistics`);
   await page.waitForTimeout(500);
 
   const toolsBtn = await page.$("button:has-text('Tools')");
@@ -42,7 +44,7 @@ async function run() {
     if (tabEl) {
       await tabEl.click();
       await page.waitForTimeout(200);
-      const isSelected = await page.evaluate(id => document.getElementById(id)?.getAttribute("aria-selected"), t);
+      const isSelected = await page.evaluate((id) => document.getElementById(id)?.getAttribute("aria-selected"), t);
       console.log(`Tab ${t} clicked, aria-selected: ${isSelected}`);
     }
   }

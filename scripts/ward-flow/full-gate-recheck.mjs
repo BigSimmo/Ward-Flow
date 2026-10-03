@@ -2,11 +2,38 @@
 // correction. Source and shared-runner changes may affect tests outside an import graph: fail closed.
 import path from "node:path";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { isOfflineUnitTestFile } from "../unit-test-population.mjs";
 
-const TEST = /^tests\/.*\.(?:test\.ts|dom\.test\.tsx)$/;
 const MAX_RECHECK_FILES = 8;
 const sameFiles = (a, b) => a.length === b.length && a.every((file, index) => file === b[index]);
 const sorted = (files) => [...files].sort();
+
+// Vitest's numTotalTests includes pending/skipped assertions. Floors measure execution.
+export function executedAssertionCount(report) {
+  return (report?.testResults ?? []).reduce(
+    (total, suite) =>
+      total +
+      (suite.assertionResults ?? []).filter((test) => test.status === "passed" || test.status === "failed").length,
+    0,
+  );
+}
+
+export function validatePolicyReport(report, expectedFiles, root) {
+  const completeness = validateBatchReport(report, expectedFiles, root);
+  if (!completeness.valid) return completeness;
+  if (
+    report.testResults.some(
+      (suite) =>
+        suite.status !== "passed" ||
+        !suite.assertionResults.some((test) => test.status === "passed") ||
+        suite.assertionResults.some(
+          (test) => !["passed", "failed", "pending", "skipped", "todo"].includes(test.status),
+        ),
+    )
+  )
+    return { valid: false, reason: "each selected policy suite must execute a passing assertion" };
+  return completeness;
+}
 
 export function splitFullGateBatches(files, { maxFiles = 100, maxChars = 12_000 } = {}) {
   const batches = [];
@@ -29,7 +56,7 @@ export function validateBatchReport(report, expectedFiles, root) {
   const files = report.testResults.map((suite) => relativeName(root, suite.name));
   if (new Set(files).size !== files.length || !sameFiles(sorted(files), sorted(expectedFiles)))
     return { valid: false, reason: "batch result files differ from selected files" };
-  if (report.testResults.some((suite) => !Array.isArray(suite.assertionResults)))
+  if (report.testResults.some((suite) => !Array.isArray(suite.assertionResults) || suite.assertionResults.length === 0))
     return { valid: false, reason: "batch result has no assertion list" };
   const failing = report.testResults
     .filter((suite) => suite.status === "failed" || suite.assertionResults.some((test) => test.status === "failed"))
@@ -47,9 +74,10 @@ export function runFullGateBatches({
   runBatch,
   maxFiles = 100,
 }) {
+  if (!environmentFingerprint) throw new Error("FULL checkpoint requires a reliable outcome-input identity");
   const batches = splitFullGateBatches(population, { maxFiles });
   const identity = {
-    version: 1,
+    version: 2,
     commit,
     root: path.resolve(root),
     population,
@@ -109,23 +137,25 @@ export function planFullGateRecheck({
   minimumTests = 2500,
 }) {
   const refuse = (reason) => ({ eligible: false, reason });
-  if (receipt?.version !== 1 || !/^[a-f0-9]{40}$/.test(receipt.commit ?? ""))
+  if (receipt?.version !== 2 || !/^[a-f0-9]{40}$/.test(receipt.commit ?? ""))
     return refuse("missing or invalid full-run receipt");
   if (!/^[a-f0-9]{40}$/.test(currentCommit ?? "") || currentCommit === receipt.commit)
     return refuse("recheck needs a new committed tip");
   if (receipt.skippedTooling !== skippedTooling) return refuse("the tooling-test selection changed");
+  if (!environmentFingerprint || !receipt.environmentFingerprint)
+    return refuse("the test outcome-input identity is unavailable");
   if (receipt.environmentFingerprint !== environmentFingerprint) return refuse("the test environment changed");
   if (!Array.isArray(receipt.population) || !sameFiles(sorted(receipt.population), sorted(population)))
     return refuse("the test population changed");
   const prior = receipt.report;
-  if (!Array.isArray(prior?.testResults) || (prior.numTotalTests ?? 0) < minimumTests)
+  if (!Array.isArray(prior?.testResults) || executedAssertionCount(prior) < minimumTests)
     return refuse("the original full report is incomplete");
   const ran = prior.testResults.map((suite) => suite.name);
   if (new Set(ran).size !== ran.length || !sameFiles(sorted(ran), sorted(population)))
     return refuse("the original full report did not cover exactly the population");
   if (!Array.isArray(changes) || changes.length === 0 || changes.length > MAX_RECHECK_FILES)
     return refuse("the correction is empty or too broad");
-  if (changes.some(({ status, path: file }) => status !== "M" || !TEST.test(file)))
+  if (changes.some(({ status, path: file }) => status !== "M" || !isOfflineUnitTestFile(file)))
     return refuse("source, setup, new, deleted or renamed tests require FULL");
   const selected = sorted([...new Set(changes.map((change) => change.path))]);
   if (selected.some((file) => !population.includes(file) || referencedByOtherTests.includes(file)))

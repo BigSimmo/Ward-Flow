@@ -1,145 +1,174 @@
-import { test, describe, expect } from "vitest";
-import { headingToSlug, extractSlugs, brokenLinksIn } from "../scripts/ward-flow/check-doc-links.mjs";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
+import { checkLinksIn, headingIds, inlineLinks, main, selectFiles } from "../scripts/ward-flow/check-doc-links.mjs";
 
-describe("headingToSlug", () => {
-  test("slugifies simple heading", () => {
-    expect(headingToSlug("Simple Heading")).toBe("simple-heading");
+const roots: string[] = [];
+function fixture() {
+  const root = mkdtempSync(join(tmpdir(), "ward-doclinks-"));
+  roots.push(root);
+  mkdirSync(join(root, "docs", "ward-flow"), { recursive: true });
+  const file = join(root, "README.md");
+  writeFileSync(file, "# Home\n");
+  return { root, file };
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  for (const root of roots.splice(0)) removePathSync(root, { recursive: true });
+});
+
+describe("offline documentation links", () => {
+  it("selects maintained root files explicitly and rejects missing/escaping/non-Markdown selections", () => {
+    const { root, file } = fixture();
+    expect(selectFiles(["--file", "README.md", "--file", "README.md", "--anchors"], root)).toEqual({
+      files: [file],
+      explicit: true,
+      anchors: true,
+    });
+    expect(() => selectFiles(["--file", "missing.md"], root)).toThrow();
+    expect(() => selectFiles(["--file", "../outside.md"], root)).toThrow(/Invalid/);
+    expect(() => selectFiles(["--file", "package.json"], root)).toThrow(/Invalid/);
+    expect(() => selectFiles(["--unknown"], root)).toThrow(/Usage/);
   });
 
-  test("strips HTML tags and markdown formatting", () => {
-    expect(headingToSlug("Heading with <code>tags</code> and [a link](https://example.com)")).toBe(
-      "heading-with-tags-and-a-link",
+  it("keeps default Ward scope and reports missing local paths without fetching URLs", () => {
+    const { root, file } = fixture();
+    const ward = join(root, "docs", "ward-flow", "guide.md");
+    writeFileSync(ward, "# Guide\n");
+    expect(selectFiles([], root)).toEqual({ files: [ward], explicit: false, anchors: false });
+    const result = checkLinksIn(
+      file,
+      "[ok](docs/ward-flow/guide.md) [bad](missing.md) [web](https://invalid.example/a) [mail](mailto:x@example.invalid)",
+      { root },
     );
+    expect(result.broken).toEqual([expect.objectContaining({ target: "missing.md", reason: "missing path" })]);
+    expect(result.advisory).toEqual([]);
   });
 
-  test("strips backticks and special punctuation", () => {
-    expect(headingToSlug("Section 2 · For the owner: `get_data()`")).toBe("section-2-for-the-owner-get_data");
+  it.each(["docs", "docs/ward-flow"])(
+    "refuses a default tree whose %s parent resolves outside the repository",
+    (selectedParent) => {
+      const { root } = fixture();
+      const outside = mkdtempSync(join(tmpdir(), "ward-doclinks-outside-"));
+      roots.push(outside);
+      mkdirSync(join(outside, "ward-flow"));
+      writeFileSync(join(outside, "outside.md"), "# Outside\n");
+      writeFileSync(join(outside, "ward-flow", "outside.md"), "# Outside\n");
+      removePathSync(join(root, selectedParent), { recursive: true });
+      symlinkSync(outside, join(root, selectedParent), "junction");
+      expect(() => selectFiles([], root)).toThrow(/outside repository/);
+      expect(() => selectFiles(["--file", `${selectedParent}/outside.md`], root)).toThrow(/repository file/);
+    },
+  );
+
+  it("checks same-file and cross-file supported headings including duplicate and setext headings", () => {
+    const { root, file } = fixture();
+    const other = join(root, "guide.md");
+    writeFileSync(other, '# **Hello** `world`!\n# Hello world!\nSetext title\n============\n<a id="manual"></a>\n');
+    const source =
+      "# Home\n[home](#home) [one](guide.md#hello-world) [two](guide.md#hello-world-1) [setext](guide.md#setext-title) [id](guide.md#manual) [gone](guide.md#removed)";
+    expect(checkLinksIn(file, source, { root, anchors: true }).broken).toEqual([
+      expect.objectContaining({ target: "guide.md#removed" }),
+    ]);
+    expect(checkLinksIn(file, source, { root }).broken).toEqual([]);
   });
 
-  test("collapses multiple spaces into single hyphen", () => {
-    expect(headingToSlug("Multi   Space   Heading")).toBe("multi-space-heading");
-  });
-});
-
-describe("extractSlugs", () => {
-  test("extracts markdown headings with deduplication counts", () => {
-    const markdown = ["# Overview", "## Details", "## Details", "### Sub details"].join("\n");
-    const slugs = extractSlugs(markdown);
-    expect(slugs.has("overview")).toBe(true);
-    expect(slugs.has("details")).toBe(true);
-    expect(slugs.has("details-1")).toBe(true);
-    expect(slugs.has("sub-details")).toBe(true);
+  it("does not invent headings or links from fenced and inline examples", () => {
+    const { root, file } = fixture();
+    const source =
+      "# Real\n```md\n# Fake\n[bad](missing.md)\n```\n~~~md\n# Also fake\n[bad](missing2.md)\n~~~\n`[bad](missing3.md)`\n[real](#real)";
+    expect([...headingIds(source)]).toEqual(["real"]);
+    expect(checkLinksIn(file, source, { root, anchors: true }).broken).toEqual([]);
   });
 
-  test("extracts explicit HTML anchor tags and attribute markers", () => {
-    const markdown = [
-      '# My Section <a id="custom-anchor"></a>',
-      '<span name="named-span"></span>',
-      "## Header with {#custom-id}",
-    ].join("\n");
-    const slugs = extractSlugs(markdown);
-    expect(slugs.has("my-section")).toBe(true);
-    expect(slugs.has("custom-anchor")).toBe(true);
-    expect(slugs.has("named-span")).toBe(true);
-    expect(slugs.has("custom-id")).toBe(true);
-  });
-});
-
-describe("brokenLinksIn", () => {
-  test("accepts valid relative links and reports missing files", () => {
-    const root = mkdtempSync(join(tmpdir(), "ward-link-test-"));
-    try {
-      const docA = join(root, "docA.md");
-      const docB = join(root, "docB.md");
-      writeFileSync(docA, "# Doc A\nLink to [Doc B](docB.md) and [Missing](missing.md).");
-      writeFileSync(docB, "# Doc B\nContent.");
-
-      const broken = brokenLinksIn(docA, "# Doc A\nLink to [Doc B](docB.md) and [Missing](missing.md).");
-      expect(broken.length).toBe(1);
-      expect(broken[0].target).toBe("missing.md");
-      expect(broken[0].reason).toBe("file does not exist");
-    } finally {
-      removePathSync(root, { recursive: true });
-    }
+  it("keeps inline code across LF boundaries out of links and explicit HTML IDs", () => {
+    const { root, file } = fixture();
+    const source =
+      '# A `code` heading\n`[example](missing.md)\ncontinued`\n`<a id="ghost"></a>`\n[real](#a-code-heading)\n[ghost](#ghost)';
+    expect([...headingIds(source)]).toEqual(["a-code-heading"]);
+    expect(checkLinksIn(file, source, { root, anchors: true }).broken).toEqual([
+      expect.objectContaining({ target: "#ghost", line: 6 }),
+    ]);
+    expect(inlineLinks("``[example](missing.md)\n` continued``\n[actual](missing2.md)")).toEqual([
+      { raw: "missing2.md", line: 3 },
+    ]);
   });
 
-  test("validates in-file and cross-file heading anchors", () => {
-    const root = mkdtempSync(join(tmpdir(), "ward-link-anchor-test-"));
-    try {
-      const docA = join(root, "docA.md");
-      const docB = join(root, "docB.md");
-      const contentB = "# Target Header\nSome text.";
-      writeFileSync(docB, contentB);
-
-      const contentA = [
-        "# Doc A",
-        "Valid in-file: [Self](#doc-a)",
-        "Invalid in-file: [Bad](#bad-heading)",
-        "Valid cross-file: [Target](docB.md#target-header)",
-        "Invalid cross-file: [Bad Target](docB.md#missing-header)",
-      ].join("\n");
-      writeFileSync(docA, contentA);
-
-      const slugsB = extractSlugs(contentB);
-      const slugsA = extractSlugs(contentA);
-      const mockSlugGetter = (file: string) => (file === docA ? slugsA : slugsB);
-
-      const broken = brokenLinksIn(docA, contentA, mockSlugGetter);
-      expect(broken.length).toBe(2);
-      expect(broken[0].target).toBe("#bad-heading");
-      expect(broken[1].target).toBe("docB.md#missing-header");
-    } finally {
-      removePathSync(root, { recursive: true });
-    }
+  it("checks LF-spanning inline link labels and retains their starting line", () => {
+    const { root, file } = fixture();
+    expect(checkLinksIn(file, "Intro\n[two\nlines](missing.md)", { root }).broken).toEqual([
+      expect.objectContaining({ target: "missing.md", line: 2 }),
+    ]);
   });
 
-  test("accepts GitHub line-range citations for source code files", () => {
-    const root = mkdtempSync(join(tmpdir(), "ward-link-code-test-"));
-    try {
-      const docA = join(root, "docA.md");
-      const codeFile = join(root, "module.ts");
-      writeFileSync(codeFile, "export const x = 1;");
-
-      const contentA = [
-        "# Doc A",
-        "Line single: [Line 10](module.ts#L10)",
-        "Line range: [Lines 10-25](module.ts#L10-L25)",
-        "Line range alt: [Lines 10-25](module.ts#L10-25)",
-      ].join("\n");
-      writeFileSync(docA, contentA);
-
-      const broken = brokenLinksIn(docA, contentA);
-      expect(broken.length).toBe(0);
-    } finally {
-      removePathSync(root, { recursive: true });
-    }
+  it("accepts encoded/angle paths, titles and balanced parentheses", () => {
+    const { root, file } = fixture();
+    writeFileSync(join(root, "my guide.md"), "# Heading\n");
+    writeFileSync(join(root, "guide(v2).md"), "# Heading\n");
+    const source = '[encoded](my%20guide.md#heading "Title") [angle](<my guide.md> "Title") [paren](guide(v2).md)';
+    expect(inlineLinks(source).map((item: { raw: string }) => item.raw)).toEqual([
+      "my%20guide.md#heading",
+      "my guide.md",
+      "guide(v2).md",
+    ]);
+    expect(checkLinksIn(file, source, { root, anchors: true }).broken).toEqual([]);
   });
 
-  test("ignores code blocks, external links, and external-by-design entries", () => {
-    const root = mkdtempSync(join(tmpdir(), "ward-link-exempt-test-"));
-    try {
-      const docA = join(root, "docA.md");
-      const contentA = [
-        "# Doc A",
-        "External URL: [Google](https://google.com)",
-        "Mailto URL: [Mail](mailto:test@example.com)",
-        "Fenced code:",
-        "```",
-        "[Not A Link](missing-inside-fence.md)",
-        "```",
-        "Inline code: `[Also Not A Link](missing-in-code.md)`",
-        "Exempted design link: [Design](../../../development-system.md)",
-      ].join("\n");
-      writeFileSync(docA, contentA);
+  it("checks nested route labels rather than silently losing their destinations", () => {
+    const { root, file } = fixture();
+    expect(checkLinksIn(file, "[board/[unitId]/page.tsx](missing.md)", { root }).broken).toEqual([
+      expect.objectContaining({ target: "missing.md" }),
+    ]);
+  });
 
-      const broken = brokenLinksIn(docA, contentA);
-      expect(broken.length).toBe(0);
-    } finally {
-      removePathSync(root, { recursive: true });
-    }
+  it("does not treat unfinished link syntax as an actual missing destination", () => {
+    expect(inlineLinks("[draft](missing.md\n[angle](<missing.md>\n")).toEqual([]);
+  });
+
+  it("keeps code line ranges and forensic evidence advisory", () => {
+    const { root, file } = fixture();
+    writeFileSync(join(root, "source.ts"), "export {};\n");
+    const result = checkLinksIn(file, "[source](source.ts#L1-L2) [old](file:///retired/worktree/report.md)", {
+      root,
+      anchors: true,
+    });
+    expect(result.broken).toEqual([]);
+    expect(result.advisory.map((item: { reason: string }) => item.reason)).toEqual([
+      "code line reference (bounds not checked)",
+      "nonportable file evidence",
+    ]);
+  });
+
+  it("does not globally exempt an outside-repository lesson path", () => {
+    const { root, file } = fixture();
+    expect(checkLinksIn(file, "[outside](../../../development-system.md)", { root }).broken).toEqual([
+      expect.objectContaining({ reason: "outside repository" }),
+    ]);
+  });
+
+  it("fails selected maintained missing targets while excluding preserved history and unselected files", () => {
+    const { root, file } = fixture();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    writeFileSync(join(root, "unselected.md"), "[bad](unselected-missing.md)\n");
+    writeFileSync(
+      file,
+      "# Home\n<!-- docs-script-refs:historical-start -->\n[old](retired.md)\n<!-- docs-script-refs:historical-end -->\n",
+    );
+    expect(main(["--file", "README.md", "--anchors"], root)).toBe(0);
+    writeFileSync(file, "# Home\n[bad](missing.md)\n");
+    expect(main(["--file", "README.md"], root)).toBe(1);
+    writeFileSync(file, "<!-- docs-script-refs:historical-start -->\n");
+    expect(() => main(["--file", "README.md"], root)).toThrow(/Unclosed/);
+  });
+
+  it("rejects invalid encoded destinations rather than skipping them", () => {
+    const { root, file } = fixture();
+    expect(checkLinksIn(file, "[bad](%ZZ.md)", { root }).broken).toEqual([
+      expect.objectContaining({ reason: "invalid URI encoding" }),
+    ]);
   });
 });

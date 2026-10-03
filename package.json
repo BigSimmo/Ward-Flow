@@ -63,7 +63,7 @@
     "worktrees:report": "node scripts/clean-worktree.mjs",
     "worktrees:inventory": "node scripts/worktree-inventory.mjs",
     "clean:worktree": "npm run worktrees:report",
-    "verify:preflight": "npm run check:installed-lock-parity && npm run typecheck && npm run verify:cheap && npm run worktrees:report -- --self-test",
+    "verify:preflight": "npm run verify:cheap && npm run worktrees:report -- --self-test",
     "verify:cheap": "npm run verify:cheap:internal",
     "verify:cheap:internal": "npm run docs:check-scripts && npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
     "verify:pr-local": "node scripts/verify-pr-local.mjs",
@@ -82,7 +82,7 @@
     "sitemap:update": "node scripts/run-tsx.mjs scripts/generate-site-map.ts",
     "sitemap:check": "node scripts/run-tsx.mjs scripts/generate-site-map.ts --check",
     "check:installed-lock-parity": "node scripts/check-installed-lock-parity.mjs",
-    "format": "prettier --write .",
+    "format": "node scripts/check-format-changed.mjs --write",
     "format:check": "prettier --check .",
     "format:changed": "node scripts/check-format-changed.mjs",
     "flake:ledger": "node scripts/flake-ledger.mjs",
@@ -121,7 +121,10 @@
     "check:dev-drive-cache": "node scripts/check-dev-drive-cache.mjs --self-test && node scripts/check-dev-drive-cache.mjs",
     "design-system:token-divergence:update": "node scripts/token-layer-divergences.mjs --write",
     "check:design-system-contract": "node scripts/token-layer-divergences.mjs",
-    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts"
+    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts",
+    "format:all": "prettier --write .",
+    "check:ward-policy-contracts": "node scripts/ward-ci-public/check-policy-contracts.mjs",
+    "check:ward-backend": "npm --prefix backend/ward-flow test"
   },
   "dependencies": {
     "@next/env": "16.3.6",

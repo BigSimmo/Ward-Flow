@@ -43,7 +43,7 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 
-The dedicated healthcheck endpoint is `/api/health`, returning `{ status: "ok", appName: "Ward Flow", synthetic: true }` (HTTP 200). Check `/mockups/ward-flow` directly after deployments and distinguish build success from runtime verification.
+The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/mockups/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
 ## Known limits
 
