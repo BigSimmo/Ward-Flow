@@ -238,12 +238,19 @@ function AlertRows({
   onResetFilters?: () => void;
 }) {
   const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
+  const quickMenuRef = useRef<HTMLDivElement>(null);
+  const quickMenuTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!openQuickMenuId) return;
+    quickMenuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
     const handleClickOutside = () => setOpenQuickMenuId(null);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenQuickMenuId(null);
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpenQuickMenuId(null);
+        quickMenuTriggerRef.current?.focus();
+      }
     };
     window.addEventListener("click", handleClickOutside);
     window.addEventListener("keydown", handleKeyDown);
@@ -330,7 +337,7 @@ function AlertRows({
             <div className={styles.alertActions}>
               <button
                 type="button"
-                aria-label="Action"
+                aria-label={`${actionVerb} for ${patientInfo.displayName}`}
                 title={`${actionVerb}: ${item.title}`}
                 data-testid="ward-alerts-action-btn"
                 className={`${styles.btn} ${styles.btnSm} ${severity.tone === "danger" ? styles.btnDanger : ""}`}
@@ -364,18 +371,48 @@ function AlertRows({
                 <button
                   type="button"
                   className={`${styles.btn} ${styles.btnSm} ${styles.quickActionTrigger}`}
-                  aria-label={`More actions for ${item.title}`}
-                  aria-haspopup="true"
+                  aria-label={`More actions for ${item.title} · ${patientInfo.displayName}`}
+                  title={`More actions for ${patientInfo.displayName}`}
+                  aria-haspopup="menu"
                   aria-expanded={openQuickMenuId === item.id}
                   onClick={(e) => {
                     e.stopPropagation();
+                    quickMenuTriggerRef.current = e.currentTarget;
                     setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
                   }}
                 >
                   <ChevronDown className={styles.btnIcon} aria-hidden="true" />
                 </button>
                 {openQuickMenuId === item.id && (
-                  <div className={styles.quickActionMenu} role="menu" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    ref={quickMenuRef}
+                    className={styles.quickActionMenu}
+                    role="menu"
+                    aria-label={`Actions for ${patientInfo.displayName}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenQuickMenuId(null);
+                    }}
+                    onKeyDown={(event) => {
+                      const options = Array.from(
+                        event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+                      );
+                      const current = options.indexOf(document.activeElement as HTMLButtonElement);
+                      const next =
+                        event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? options.length - 1
+                            : event.key === "ArrowDown"
+                              ? (current + 1) % options.length
+                              : event.key === "ArrowUp"
+                                ? (current - 1 + options.length) % options.length
+                                : -1;
+                      if (next < 0) return;
+                      event.preventDefault();
+                      options[next]?.focus();
+                    }}
+                  >
                     <button
                       type="button"
                       role="menuitem"
@@ -1002,7 +1039,7 @@ function AlertsWorkspace() {
               onClick={() => setTierFilter("emergency")}
             >
               <AlertCircle className={styles.tabIcon} aria-hidden="true" />
-              <span>Tier 1 · Clinical risk</span>
+              <span>Clinical risk</span>
               <span className={styles.tabCount} data-tone="danger">
                 {tier1Count}
               </span>
@@ -1019,7 +1056,7 @@ function AlertsWorkspace() {
               onClick={() => setTierFilter("capacity")}
             >
               <BedDouble className={styles.tabIcon} aria-hidden="true" />
-              <span>Tier 2 · Capacity & delay</span>
+              <span>Capacity &amp; delay</span>
               <span className={styles.tabCount} data-tone="warn">
                 {tier2Count}
               </span>
@@ -1036,7 +1073,7 @@ function AlertsWorkspace() {
               onClick={() => setTierFilter("admin")}
             >
               <ClipboardList className={styles.tabIcon} aria-hidden="true" />
-              <span>Tier 3 · Admin &amp; transfer</span>
+              <span>Admin &amp; transfer</span>
               <span className={styles.tabCount} data-tone="accent">
                 {tier3Count}
               </span>
@@ -1090,7 +1127,7 @@ function AlertsWorkspace() {
               </button>
             </div>
             <div className={styles.filterSummary}>
-              <span>
+              <span role="status" aria-live="polite" aria-atomic="true">
                 Showing {filteredNeedsYou.length + filteredOtherRoles.length} of {totalActive} alerts
               </span>
               {(tierFilter !== "all" || roleFilter !== "all") && (
@@ -1144,7 +1181,7 @@ function AlertsWorkspace() {
               <div className={styles.feedHead}>
                 <div className={styles.feedHeadTitleGroup}>
                   <BellRing className={styles.feedIconAccent} aria-hidden="true" />
-                  <h2>Role Notices &amp; Shift Communication Feed</h2>
+                  <h2>Role notices</h2>
                 </div>
                 <span className={styles.feedCount}>{feedNotices.length} recorded</span>
               </div>

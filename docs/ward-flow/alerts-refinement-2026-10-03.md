@@ -53,3 +53,9 @@ monitoring scope into a compact disclosure under notices, rather than the operat
 queue footer. Use 36-pixel controls for desktop mouse input, retaining 48-pixel targets
 for touch and smaller viewports. Preserve all seven condition scopes and recorded
 counts, including unavailable handover monitoring.
+
+Navigation refinement: balance the page title and summary typography, reduce repeated
+tier wording while retaining full accessible names, and unify selected states. Patient
+action names identify their subject. Menus focus their first action, support arrow keys
+and Home/End, and return focus on Escape. Filter results announce changes. Mobile
+tier navigation uses a two-by-two grid. Shorten the notice heading to Role notices.

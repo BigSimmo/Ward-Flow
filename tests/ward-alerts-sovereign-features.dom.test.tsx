@@ -24,6 +24,21 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
     expect(screen.getByRole("tab", { name: /Tier 3: Administrative/i })).toBeInTheDocument();
   });
 
+  it("supports keyboard navigation and focus return in the alert action menu", () => {
+    renderScreen();
+    const trigger = screen.getAllByRole("button", { name: /More actions for/ })[0]!;
+    fireEvent.click(trigger);
+    const options = screen.getAllByRole("menuitem");
+    expect(options[0]).toHaveFocus();
+    fireEvent.keyDown(options[0]!, { key: "ArrowDown" });
+    expect(options[1]).toHaveFocus();
+    fireEvent.keyDown(options[1]!, { key: "End" });
+    expect(options[options.length - 1]).toHaveFocus();
+    fireEvent.keyDown(options[options.length - 1]!, { key: "Escape" });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
   it("renders role-based addressed filter pills", () => {
     renderScreen();
     expect(screen.getByRole("button", { name: /All Roles/i })).toBeInTheDocument();
@@ -50,7 +65,7 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
 
   it("opens Right Inspector Drawer on Action button click, closes on Escape, and restores focus", () => {
     renderScreen();
-    const actionButtons = screen.getAllByRole("button", { name: "Action" });
+    const actionButtons = screen.getAllByTestId("ward-alerts-action-btn");
     expect(actionButtons.length).toBeGreaterThan(0);
 
     const firstActionBtn = actionButtons[0];
@@ -70,7 +85,7 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
 
   it("can acknowledge an alert from the Right Inspector Drawer", () => {
     renderScreen();
-    const actionButtons = screen.getAllByRole("button", { name: "Action" });
+    const actionButtons = screen.getAllByTestId("ward-alerts-action-btn");
     fireEvent.click(actionButtons[0]);
 
     const ackButton = screen.queryByRole("button", { name: "Acknowledge Alert" });
@@ -87,7 +102,7 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
   it("renders the Operational Notices & Shift Communication Feed from recorded notices only", () => {
     renderScreen();
     const feed = screen.getByRole("region", { name: "Operational Notices and Shift Communication Feed" });
-    expect(within(feed).getByText("Role Notices & Shift Communication Feed")).toBeInTheDocument();
+    expect(within(feed).getByText("Role notices")).toBeInTheDocument();
     expect(within(feed).getByText("No notices have been raised this session.")).toBeInTheDocument();
     expect(feed.textContent).not.toMatch(/Catchment Override Logged|Custodial Transfer Completed|Luke Davies/);
   });
