@@ -2016,6 +2016,10 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                 id="endorseNotes"
                 value={endorseNotes}
                 onChange={(e) => setEndorseNotes(e.target.value)}
+                data-gramm="false"
+                data-enable-grammarly="false"
+                spellCheck={false}
+                autoComplete="off"
               />
             </div>
           </div>

@@ -2233,6 +2233,10 @@ export function ReferralIntakeForm() {
                 data-testid="ward-referral-patient-search"
                 className={styles.rapidSearchInput}
                 placeholder="Search or link a patient (name, UMRN)..."
+                autoComplete="off"
+                data-gramm="false"
+                data-enable-grammarly="false"
+                spellCheck={false}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -2538,6 +2542,10 @@ export function ReferralIntakeForm() {
                         onChange={(e) => setNewGivenName(e.target.value)}
                         required
                         placeholder="e.g. Alistair"
+                        autoComplete="off"
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
                         autoFocus
                       />
                     </div>
@@ -2553,6 +2561,10 @@ export function ReferralIntakeForm() {
                         onChange={(e) => setNewFamilyName(e.target.value)}
                         required
                         placeholder="e.g. Montgomery"
+                        autoComplete="off"
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
                       />
                     </div>
                   </div>
@@ -2570,6 +2582,10 @@ export function ReferralIntakeForm() {
                         onChange={(e) => setNewUmrn(e.target.value)}
                         required
                         placeholder="e.g. UM999001"
+                        autoComplete="off"
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
                       />
                     </div>
                     <div className={styles.modalField}>
@@ -3655,6 +3671,10 @@ export function ReferralIntakeForm() {
                                 setDraft((current) => ({ ...current, [field.key]: event.target.value }))
                               }
                               rows={5}
+                              data-gramm="false"
+                              data-enable-grammarly="false"
+                              spellCheck={false}
+                              autoComplete="off"
                             />
                             <div className={pageStyles.meterRow}>
                               <div className={pageStyles.meterBar}>

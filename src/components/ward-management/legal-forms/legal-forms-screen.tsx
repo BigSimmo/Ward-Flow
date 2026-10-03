@@ -1432,6 +1432,10 @@ export function LegalFormsScreen() {
                     id="legal-forms-new-notes"
                     className={styles.formTextarea}
                     placeholder="Enter clinical rationale and recorded grounds..."
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -1516,6 +1520,10 @@ export function LegalFormsScreen() {
                     id="legal-forms-renew-justification"
                     className={styles.formTextarea}
                     placeholder="Clinical justification for recorded extension..."
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
               </div>
