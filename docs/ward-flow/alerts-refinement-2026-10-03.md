@@ -30,3 +30,14 @@ user acceptance and hosted behaviour are separate from local implementation.
 The Windows shared sign-out file is unavailable in this Linux environment; local
 claims and release status are held under `/workspace/shared/ward-flow-alerts-sign-out.md`.
 Desktop concurrent claims could not be verified. All changes stay in the isolated worktree.
+
+Local acceptance: 32 focused tests passed across six test files. Changed-file ESLint
+and the pre-commit scoped TypeScript checks passed. Browser checks passed for tier
+keyboard navigation, role filtering and counts, action menus, drawer and modal
+Escape/focus return, and access to the final rows. Layouts were inspected at 1440,
+1024, 768 and 390 pixels, with no page overflow or nested panel scrolling. No
+page JavaScript errors were observed in the completed interaction run.
+
+Recommended follow-up: complete the unavailable intervention confirmation workflow;
+add recipient-scoped notice read actions using the existing `MARK_NOTICE_READ` event.
+These require separate behavioural implementation and are not claimed complete here.
