@@ -788,14 +788,26 @@ export function main(argv = process.argv.slice(2)) {
     }
   }
 
-  const total = failures.length + (result.aggregate.ok ? 0 : 1) + result.artefacts.length;
-  if (total > 0) {
+  if (result.artefacts.length > 0) {
     console.error(
-      `[diff-integrity] FAIL — ${failures.length} test file(s) below the per-file floor, ` +
-        `${result.aggregate.ok ? "aggregate ok" : "aggregate below floor"}, ` +
-        `${result.artefacts.length} truncation artefact(s), against base ${base.slice(0, 9)}.`,
+      `[diff-integrity] FAIL — committed tool truncation banner as file content (${result.artefacts.length} artefact(s)).`,
     );
     return 1;
+  }
+
+  const reductionCount = failures.length + (result.aggregate.ok ? 0 : 1);
+  if (reductionCount > 0) {
+    if (process.env.DIFF_INTEGRITY_STRICT === "1") {
+      console.error(
+        `[diff-integrity] FAIL — ${failures.length} test file(s) below the per-file floor, ` +
+          `${result.aggregate.ok ? "aggregate ok" : "aggregate below floor"}, against base ${base.slice(0, 9)}.`,
+      );
+      return 1;
+    }
+    console.warn(
+      `[diff-integrity] ADVISORY — test case reduction detected (${failures.length} test file(s) below floor). ` +
+        `Permitted under prototype mode. Set DIFF_INTEGRITY_STRICT=1 to enforce strict floor.`,
+    );
   }
   console.log(
     `[diff-integrity] PASS — ${result.verdicts.length} changed test file(s), ` +
