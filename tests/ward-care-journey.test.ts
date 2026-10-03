@@ -62,6 +62,28 @@ describe("complete guarded local care journey", () => {
     });
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(completed)))).toBe(true);
   });
+  it("cannot complete an appointment after its arrangement is withdrawn", () => {
+    const { state, admission } = fixture();
+    const arranged = wardFlowReducer(state, command(state, admission.id, appointment));
+    const withdrawn = wardFlowReducer(arranged, {
+      type: "RECORD_ADMISSION_FOLLOW_UP",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: admission.id,
+      patientId: admission.patientId!,
+      expectedGeneration: arranged.worldGeneration,
+      expectedRevision: arranged.dischargeRevisions[admission.id] ?? 0,
+      followUpState: "not_arranged",
+    });
+    expect(withdrawn.rejections).toEqual([]);
+    const completed = wardFlowReducer(
+      withdrawn,
+      command(withdrawn, admission.id, { kind: "contact", outcome: "completed", contactedAt: NOW_ANCHOR }),
+    );
+    expect(completed.admissions).toBe(withdrawn.admissions);
+    expect(completed.rejections.at(-1)?.reason).toContain("marked arranged");
+    expect(withdrawn.admissions.find((a) => a.id === admission.id)?.careJourney?.followUp).toBeDefined();
+  });
   it("does not count a previous contact as completion of a new appointment", () => {
     const { state, admission } = fixture();
     let next = wardFlowReducer(state, command(state, admission.id, appointment));

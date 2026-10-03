@@ -299,8 +299,8 @@ export function careChangeRefusal(admission: Admission, change: CareChange, now:
   )
     return "The contact time must belong to this stay or its follow-up and cannot be in the future.";
   if (change.kind === "contact")
-    return !care.followUp
-      ? "Record responsibility and an appointment first."
+    return !care.followUp || admission.followUp?.state !== "arranged"
+      ? "Record responsibility and an appointment first. The current arrangement must be marked arranged."
       : change.contactedAt > now || (change.outcome === "completed" && change.contactedAt < care.followUp.appointmentAt)
         ? "An appointment cannot be completed before its recorded time."
         : null;

@@ -115,9 +115,11 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         <dt>Current appointment contact</dt>
         <dd>
           {care?.followUp
-            ? currentCareContact(care)
-              ? `${words(currentCareContact(care)!.outcome)} · appointment ${care.followUp.appointmentVersion}`
-              : "No contact recorded for the current appointment"
+            ? record.followUp?.state !== "arranged"
+              ? "Appointment is not marked arranged; earlier details remain in history"
+              : currentCareContact(care)
+                ? `${words(currentCareContact(care)!.outcome)} · appointment ${care.followUp.appointmentVersion}`
+                : "No contact recorded for the current appointment"
             : "No appointment recorded"}
         </dd>
         <dt>Follow-up contact history</dt>
@@ -127,8 +129,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 <p key={i}>
                   {words(c.outcome)} · appointment {c.appointmentVersion}
                   {c.appointmentVersion === care.followUp?.appointmentVersion ? " (current)" : " (previous)"} · contact{" "}
-                  {formatInstantWithDay(c.contactedAt, now)} · recorded{" "}
-                  {fact(c.recordedAt, c.recordedBy)}
+                  {formatInstantWithDay(c.contactedAt, now)} · recorded {fact(c.recordedAt, c.recordedBy)}
                 </p>
               ))
             : "Not recorded"}
