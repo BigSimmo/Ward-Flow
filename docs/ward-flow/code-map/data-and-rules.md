@@ -1,5 +1,11 @@
 # Data, seeds and domain rules
 
+## WA remediation update — 3 October 2026
+
+`ward-care-journey.ts` owns the closed care vocabulary, strict restore validation, planning/document status, synthetic contacts, appointment-version attribution, separation-code crosswalk, transport checks and recorded community-transition rules. Code 50 is an episode change without a physical discharge. Code 70 requires an explicit ending-from-leave fact. `ward-discharge-records.ts` grants community reads only through an explicitly linked team; no catchment guess grants access. Transfer completion checks receiver eligibility, beds and staffing before a single occupancy transaction.
+
+The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
+
 ## WA pathway audit update — 3 October 2026
 
 `LEAVING_DESTINATIONS` now contains eleven operational choices, including new/usual residential aged-care residence and other health care. Legacy residential care remains distinct; statistical type change is excluded from physical departure. The shared `isLeavingDestination` guard validates commands and storage. `DischargeRecord` projects attributed `followUp` without exposing additional patient fields. The [WA report](../reports/wa-health-pathway-audit-2026-10-03.md) separates these choices from the ten official separation codes.

@@ -1,5 +1,11 @@
 # Engine: reducer, events, state and persistence
 
+## WA remediation update — 3 October 2026
+
+The current event union has **98** types. `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
+
+The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
+
 ## WA pathway audit update — 3 October 2026
 
 `RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the [WA comparison and pathway report](../reports/wa-health-pathway-audit-2026-10-03.md).
