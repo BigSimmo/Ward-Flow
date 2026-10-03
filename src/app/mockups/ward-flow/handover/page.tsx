@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -9,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function WardHandoverPage() {
-  return (
-    <Suspense fallback={null}>
-      <HandoverPage />
-    </Suspense>
-  );
+  return <HandoverPage />;
 }
