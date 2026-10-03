@@ -14,6 +14,7 @@ export default function SovereignShowcaseLoading() {
             style={{
               height: "0.85rem",
               width: "14rem",
+              maxWidth: "100%",
               background: "var(--surface-2)",
               borderRadius: "var(--r2)",
               marginBottom: "0.75rem",
@@ -33,6 +34,7 @@ export default function SovereignShowcaseLoading() {
             style={{
               height: "1rem",
               width: "85%",
+              maxWidth: "100%",
               background: "var(--surface-2)",
               borderRadius: "var(--r2)",
             }}
@@ -43,6 +45,7 @@ export default function SovereignShowcaseLoading() {
             style={{
               height: "2rem",
               width: "9rem",
+              maxWidth: "100%",
               background: "var(--surface-2)",
               borderRadius: "9999px",
             }}
@@ -85,6 +88,7 @@ export default function SovereignShowcaseLoading() {
                 style={{
                   height: "1.5rem",
                   width: "12rem",
+                  maxWidth: "100%",
                   background: "var(--surface-2)",
                   borderRadius: "var(--r2)",
                 }}
@@ -93,6 +97,7 @@ export default function SovereignShowcaseLoading() {
                 style={{
                   height: "0.85rem",
                   width: "18rem",
+                  maxWidth: "100%",
                   background: "var(--surface-2)",
                   borderRadius: "var(--r2)",
                 }}

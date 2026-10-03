@@ -336,6 +336,18 @@ test("storage account must be on the fixed Ward Flow allowlist, not merely agree
   );
 });
 
+test("unapproved storage account is refused even if both env variables agree", () => {
+  assert.throws(
+    () =>
+      readConfig({
+        ...environment,
+        AZURE_STORAGE_ACCOUNT: "unapprovedstorageacct",
+        AzureWebJobsStorage__accountName: "unapprovedstorageacct",
+      }),
+    /Unapproved storage account/,
+  );
+});
+
 test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async () => {
   const tenantConfig = readConfig({
     ...environment,

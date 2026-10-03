@@ -4,8 +4,8 @@
 // never through this file's own import graph, so the hook cannot see it register jest-dom's
 // matcher types otherwise. This import makes this file typecheck on its own.
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
@@ -29,6 +29,10 @@ function renderAlertsScreen() {
 }
 
 describe("Ward Flow Statewide Broadcast Alerts", () => {
+  afterEach(() => {
+    cleanup();
+    window.sessionStorage.clear();
+  });
   it("renders the broadcast trigger button and opens the modal", () => {
     renderAlertsScreen();
     const trigger = screen.getByRole("button", { name: "Broadcast Network Alert" });
