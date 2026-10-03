@@ -549,7 +549,11 @@ export function ShortlistPanel({
     setOverrideRecord(undefined);
     setOverrideOpen(false);
     setOverrideReason("");
-    clearOverrideDraft();
+    // ⚠️ DO NOT CLEAR THE PERSISTED DRAFT HERE. `useDirtyStateGuard` has already been called with the
+    // NEWLY selected movement's key by the time this render-time reset runs, so clearing here would
+    // delete the draft of the movement being ARRIVED AT (and leave the one being left). Drafts are
+    // kept per movement; only the on-screen state resets, and returning to a movement restores its
+    // own draft. A draft is removed only on submit (below), where the key is still the right one.
     setReferTargets([]);
     setEscalationOpen(false);
     setEscalationContact(ESCALATION_CONTACTS[0]);
