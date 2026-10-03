@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Scale, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { type LegalClockAgeBand, type LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { formTitleForCode } from "@/lib/form-register";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -18,7 +19,6 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import {
@@ -338,28 +338,11 @@ export function LegalFormsScreen() {
           </div>
         </dl>
 
-        {/* Elevated Executive Top Action & Statutory Oversight Bar */}
-        <header className={styles.pageHeader}>
-          <div className={styles.pageActionBar}>
-            <div className={styles.statutoryNoticeCard}>
-              <ShieldAlert size={18} className={styles.statutoryNoticeIcon} aria-hidden="true" />
-              <div className={styles.statutoryNoticeContent}>
-                <span className={styles.statutoryNoticeTitle}>Recorded forms and clinician-entered expiry times</span>
-                <LegalLimitsNotChecked variant="full" />
-              </div>
-            </div>
-            <div className={styles.headerActions}>
-              <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
-                + Record a form
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Dynamic HUD Island: MHA Statutory Status (Consolidating alert banner and 5 KPI cards) */}
+        {/* Dynamic HUD Island: MHA Statutory Status */}
         <WardDynamicIsland
           testId="ward-legal-hud-island"
           title="Recorded legal form due times"
+          icon={<Scale size={16} aria-hidden="true" />}
           status={passed > 0 ? "alarm" : upcoming > 0 ? "warning" : "nominal"}
           statusText={
             passed > 0
@@ -373,7 +356,7 @@ export function LegalFormsScreen() {
             {
               testId: "ward-legal-kpi-passed",
               id: "kpi-deadlines-passed",
-              label: "Deadlines Passed",
+              label: "Passed",
               value: passed,
               tone: passed > 0 ? "danger" : "good",
               active: urgencyFilter === "urgent",
@@ -413,7 +396,7 @@ export function LegalFormsScreen() {
             {
               testId: "ward-legal-kpi-clockless",
               id: "kpi-clockless",
-              label: "Clockless / Voluntary",
+              label: "Clockless",
               value: noDeadline.length + voluntary,
               tone: "muted",
               active: authorityFilter === "all" && urgencyFilter === "all",
@@ -425,22 +408,23 @@ export function LegalFormsScreen() {
             },
           ]}
           actions={
-            passed > 0 ? (
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
-                data-testid="ward-legal-reauth-btn"
-                onClick={() => handleOpenRenew()}
-                aria-label="Re-Authorise Order"
-              >
-                <Clock size={14} aria-hidden="true" />
-                <span>Re-Authorise</span>
+            <div className={styles.islandActionsWrap}>
+              <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
+                + Record a form
               </button>
-            ) : (
-              <span data-testid="ward-legal-limits-tag">
-                <LegalLimitsNotChecked variant="tag" />
-              </span>
-            )
+              {passed > 0 ? (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
+                  data-testid="ward-legal-reauth-btn"
+                  onClick={() => handleOpenRenew()}
+                  aria-label="Re-Authorise Order"
+                >
+                  <Clock size={14} aria-hidden="true" />
+                  <span>Re-Authorise</span>
+                </button>
+              ) : null}
+            </div>
           }
         />
 
@@ -497,221 +481,209 @@ export function LegalFormsScreen() {
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "all" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("all")}
+                    title="All recorded forms — Every form recorded in this prototype"
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>ALL FORMS</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="accent">
-                          {rows.length} Active
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>ALL</span>
+                      <span className={styles.catalogTitle}>All recorded forms</span>
                     </div>
-                    <div className={styles.catalogTitle}>All recorded forms</div>
-                    <div className={styles.catalogMeta}>
-                      Every form recorded in this prototype, across the services it covers.
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="accent">
+                        {rows.length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
                     </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "1A" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("1A")}
+                    title={catalogFormLabel("1A")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 1A</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="accent" data-form="1">
-                          {rows.filter((m) => m.legalForm?.code === "1A").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>1A</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("1A")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("1A")}</div>
-                    <div className={styles.catalogMeta}>
-                      Medical practitioner referral for specialist psychiatrist examination.
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="accent" data-form="1">
+                        {rows.filter((m) => m.legalForm?.code === "1A").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
                     </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "3A" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("3A")}
+                    title={catalogFormLabel("3A")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 3A</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="danger" data-form="3">
-                          {rows.filter((m) => m.legalForm?.code === "3A").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>3A</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("3A")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("3A")}</div>
-                    <div className={styles.catalogMeta}>
-                      Recorded as a detention order for examination. Does not record involuntary treatment without a
-                      separate treatment order.
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="danger" data-form="3">
+                        {rows.filter((m) => m.legalForm?.code === "3A").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
                     </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "3C" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("3C")}
+                    title={catalogFormLabel("3C")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 3C</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="danger" data-form="3">
-                          {rows.filter((m) => m.legalForm?.code === "3C").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>3C</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("3C")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("3C")}</div>
-                    <div className={styles.catalogMeta}>Continuation of detention for a further examination.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="danger" data-form="3">
+                        {rows.filter((m) => m.legalForm?.code === "3C").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "3B_3D" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("3B_3D")}
+                    title={`${catalogFormLabel("3B")} / ${catalogFormLabel("3D")}`}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 3B / 3D</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="danger" data-form="3">
-                          {rows.filter((m) => m.legalForm?.code === "3B" || m.legalForm?.code === "3D").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>3B / 3D</span>
+                      <span className={styles.catalogTitle}>
+                        {formTitleForCode("3B")} / {formTitleForCode("3D")}
+                      </span>
                     </div>
-                    <div className={styles.catalogTitle}>
-                      {catalogFormLabel("3B")} / {catalogFormLabel("3D")}
-                    </div>
-                    <div className={styles.catalogMeta}>
-                      Recorded as a detention order for examination. Does not record involuntary treatment without a
-                      separate treatment order.
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="danger" data-form="3">
+                        {rows.filter((m) => m.legalForm?.code === "3B" || m.legalForm?.code === "3D").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
                     </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "4A_4C" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("4A_4C")}
+                    title={`${catalogFormLabel("4A")} / ${catalogFormLabel("4C")}`}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 4A / 4C</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="warn">
-                          {rows.filter((m) => m.legalForm?.code === "4A" || m.legalForm?.code === "4C").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>4A / 4C</span>
+                      <span className={styles.catalogTitle}>
+                        {formTitleForCode("4A")} / {formTitleForCode("4C")}
+                      </span>
                     </div>
-                    <div className={styles.catalogTitle}>
-                      {catalogFormLabel("4A")} / {catalogFormLabel("4C")}
-                    </div>
-                    <div className={styles.catalogMeta}>
-                      Apprehension, transport, and transfer powers for authorized officers.
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="warn">
+                        {rows.filter((m) => m.legalForm?.code === "4A" || m.legalForm?.code === "4C").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
                     </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "5A" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("5A")}
+                    title={catalogFormLabel("5A")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 5A</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="good">
-                          {rows.filter((m) => m.legalForm?.code === "5A").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>5A</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("5A")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("5A")}</div>
-                    <div className={styles.catalogMeta}>Community treatment forms.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="good">
+                        {rows.filter((m) => m.legalForm?.code === "5A").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "5B" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("5B")}
+                    title={catalogFormLabel("5B")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 5B</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="good">
-                          {rows.filter((m) => m.legalForm?.code === "5B").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>5B</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("5B")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("5B")}</div>
-                    <div className={styles.catalogMeta}>Continuation of a community treatment order.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="good">
+                        {rows.filter((m) => m.legalForm?.code === "5B").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "6A" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("6A")}
+                    title={catalogFormLabel("6A")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 6A</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="good">
-                          {rows.filter((m) => m.legalForm?.code === "6A").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>6A</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("6A")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("6A")}</div>
-                    <div className={styles.catalogMeta}>Inpatient treatment forms.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="good">
+                        {rows.filter((m) => m.legalForm?.code === "6A").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "6B" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("6B")}
+                    title={catalogFormLabel("6B")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 6B</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="good">
-                          {rows.filter((m) => m.legalForm?.code === "6B").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>6B</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("6B")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("6B")}</div>
-                    <div className={styles.catalogMeta}>Inpatient treatment order in general hospital.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="good">
+                        {rows.filter((m) => m.legalForm?.code === "6B").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "6C" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("6C")}
+                    title={catalogFormLabel("6C")}
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>FORM 6C</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="good">
-                          {rows.filter((m) => m.legalForm?.code === "6C").length}
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>6C</span>
+                      <span className={styles.catalogTitle}>{formTitleForCode("6C")}</span>
                     </div>
-                    <div className={styles.catalogTitle}>{catalogFormLabel("6C")}</div>
-                    <div className={styles.catalogMeta}>Continuation of inpatient treatment order.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="good">
+                        {rows.filter((m) => m.legalForm?.code === "6C").length}
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                   <button
                     type="button"
                     className={`${styles.catalogItem} ${authorityFilter === "reviews" ? styles.catalogItemActive : ""}`}
                     onClick={() => setAuthorityFilter("reviews")}
+                    title="Periodic review dates (demo) — Recorded review reminders only"
                   >
-                    <div className={styles.catalogTop}>
-                      <span className={styles.catalogCode}>REVIEW DATES</span>
-                      <div className={styles.catalogRightWrap}>
-                        <span className={styles.badge} data-tone="accent">
-                          0
-                        </span>
-                        <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                      </div>
+                    <div className={styles.catalogMain}>
+                      <span className={styles.catalogCode}>REV</span>
+                      <span className={styles.catalogTitle}>Periodic review dates</span>
                     </div>
-                    <div className={styles.catalogTitle}>Periodic review dates (demo)</div>
-                    <div className={styles.catalogMeta}>Recorded review reminders only — not a hearings register.</div>
+                    <div className={styles.catalogRightWrap}>
+                      <span className={styles.badge} data-tone="accent">
+                        0
+                      </span>
+                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
+                    </div>
                   </button>
                 </aside>
                 {canScrollRight && <div className={styles.scrollFadeRight} aria-hidden="true" />}
@@ -772,11 +744,13 @@ export function LegalFormsScreen() {
                             >
                               <div className={styles.breakdownHeader}>
                                 <span className={styles.breakdownCode}>{form.code ?? "FORM"}</span>
-                                <span className={styles.breakdownFormName}>{form.name}</span>
+                                <span className={styles.breakdownFormName}>
+                                  {form.name.replace(/\s*\([^)]*\)/g, "")}
+                                </span>
                               </div>
                               <div className={styles.breakdownMeta}>
                                 <span className={styles.breakdownCount}>
-                                  {form.openCount} {openWord}
+                                  {form.openCount} {form.openCount === 1 ? "movement" : "movements"}
                                 </span>
                                 {form.breachedCount > 0 && (
                                   <span className={styles.breakdownBreachPill}>{form.breachedCount} passed</span>
@@ -1244,6 +1218,7 @@ export function LegalFormsScreen() {
                           </select>
                         </div>
                         <p
+                          id={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
                           className={styles.confirmNote}
                           data-testid={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
                         >
@@ -1264,6 +1239,12 @@ export function LegalFormsScreen() {
                           className={`${styles.btn} ${styles.btnPrimary} ${styles.actionBlockBtn}`}
                           data-testid={`ward-legal-forms-written-confirm-${selectedMovement.id}`}
                           aria-disabled={typedWrittenAt === undefined ? "true" : undefined}
+                          aria-describedby={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
+                          title={
+                            typedWrittenAt === undefined
+                              ? "Enter the time written on the form to enable saving"
+                              : undefined
+                          }
                           onClick={typedWrittenAt === undefined ? ignoreUnavailableActivation : undefined}
                         >
                           Save time written
