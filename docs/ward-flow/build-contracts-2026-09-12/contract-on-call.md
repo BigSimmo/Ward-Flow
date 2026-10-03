@@ -3,6 +3,24 @@
 Drawing: `docs/ward-flow/mockups/on-call-third-edition.html` (8,627 lines)
 Route measured: does not exist under `src/app` — this is a genuine new build, not a reskin.
 
+## Current interface — owner-requested simplification, 3 October 2026
+
+The current Movements design remains the visual baseline. On-call uses the Capacity-style header placement: a compact top-right directory island with derived role, consultant and ED counts. The page has three sections: on-call roles, a full-width ED directory, and three routing cards in one desktop row. Tables retain all source records, service filters and search; filtered counts and a clear-filters action show the current scope.
+
+The owner requested removal of the two yellow coverage banners and the data/governance section. Services without roles now receive a neutral, explicit empty state when selected. A brief visible synthetic-data statement remains beside the roster; no real contacts or live coverage are asserted. The Tier 3 button and modal were removed from this directory: they only recorded an escalation against a movement and sent nothing. Redundant level/status columns, non-functional Connect buttons and hard-coded ED handover/liaison assignments were removed. Reach-via links scroll to the corresponding current-directory guidance.
+
+The follow-up refinement adds purpose-based role guidance, a statewide service filter, a roster-only role filter, and shared-route links to each ED workspace. Role and facility share a cell to keep the decision-making columns in view. Search also matches role purpose. A short contact preparation checklist sits with routing guidance. Horizontal-scroll hints appear only when browser measurements show a table overflows. None of these additions asserts a real contact, current role-holder or live shift coverage.
+
+The uploaded standing design brief was applied in the next visual pass: the island uses Capacity-style restrained material, separated metrics and explicit whole-network scope. It retains derived values and neutral synthetic status. Panel corners, inset table/card corners and control spacing form a consistent hierarchy. Small screens give the island a scope row above three visible metrics, avoiding concealed horizontal overflow. The changes remain confined to this page; the shared island and Capacity are unchanged.
+
+The revised standing brief prompted a further curvature pass: a 24px desktop island capsule with inset dividers, a 20px mobile island surface, and 14px filter-bar corners. Title/island alignment and header rhythm were balanced; the search field now shares the established 10px control radius. Island and filters remain in document flow so they cannot cover table rows or controls. No sticky or floating behaviour was added without a workflow need.
+
+The final workflow pass remembers only the selected service in browser-local preferences, validates restored values, and keeps selection usable when storage is unavailable. Search text and patient data are not persisted. Clear filters resets the saved preference. The desktop filter bar stays below the 56px app header with an 8px gap; small screens retain normal document flow. Guidance targets have additional desktop clearance so navigation does not land behind the anchored controls.
+
+The next additions provide browser-local favourite roles and a roster-only favourites filter. Clear filters preserves saved favourites. Each role can reveal compact coverage/handover details: current cover is not verified, confirmation/maintainer and next contact are not recorded, and shift end is derived from the explicitly illustrative window. No staff, timestamps or approved procedures are invented. Fallback guidance directs users to confirm the approved local route through the current directory or switchboard. Storage failures clearly limit favourite persistence to the current visit.
+
+The original research below is historical evidence, not a requirement to restore the removed panels or controls.
+
 ## 0. Design or reproduction?
 
 **Design, not reproduction — with one explicit exception the drawing itself names.**

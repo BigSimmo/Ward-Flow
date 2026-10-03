@@ -192,11 +192,13 @@ describe("PR15 recorded facts and unavailable data", () => {
     expect(push).toHaveBeenCalledExactlyOnceWith(communityStatisticsHref(next));
   });
 
-  it("names incomplete prototype roles without asserting live network coverage", () => {
+  it("names the synthetic directory without asserting live network coverage", () => {
     renderFlow(<OnCallScreen />);
     const hud = screen.getByTestId("ward-on-call-hud-island");
     expect(
-      within(hud).getByRole("status", { name: "Synthetic status: Incomplete recorded roles: 9 of 14" }),
+      within(hud).getByRole("status", {
+        name: "Synthetic status: Synthetic role directory; live coverage not verified",
+      }),
     ).toBeTruthy();
     expect(hud.textContent).not.toMatch(/networks active|On Standby|EDs active/);
   });
