@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+
 import { bedReleases } from "@/components/ward-management/ward-movements";
 
 /**
@@ -391,5 +394,59 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
         ).toEqual([]);
       }
     }
+  });
+});
+
+test.describe("@mockup WA disposition pathways", () => {
+  const seed = seedWardFlowState();
+  const release = seed.bedReleases.find((row) => {
+    const admission = seed.admissions.find((stay) => stay.id === row.admissionId);
+    const patient = seed.patients.find((person) => person.id === admission?.patientId);
+    return row.state === "expected" && row.blocker === null && patient?.legalStatus?.startsWith("Voluntary");
+  });
+  if (!release) throw new Error("A voluntary linked release is required for disposition journeys");
+  const admission = seed.admissions.find((row) => row.id === release.admissionId)!;
+  const patient = seed.patients.find((person) => person.id === admission.patientId)!;
+  const name = `${patient.familyName}, ${patient.givenName}`;
+
+  for (const destination of LEAVING_DESTINATIONS) {
+    test(`records ${destination.id}, retains history and shows the same destination across screens`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 1024 });
+      await page.goto(`/mockups/ward-flow/ward/${release.unitId}?tab=departure-planning`);
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
+      await page.getByTestId(`ward-bed-release-release-${release.id}`).click();
+      const picker = page.getByTestId(`ward-bed-release-discharge-destination-${release.id}`);
+      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length + 1);
+      await picker.selectOption(destination.id);
+      await page.getByTestId(`ward-bed-release-discharge-submit-${release.id}`).click();
+      await expect(page.getByTestId(`ward-bed-release-${release.id}`)).toHaveCount(0);
+      await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/discharges"]').click();
+      await page.getByRole("button", { name: /Admission records/ }).click();
+      await page.locator("#discharges-filter-destination").selectOption(destination.id);
+      await page.getByRole("button", { name, exact: true }).click();
+      const detail = page.getByRole("region", { name: "Selected discharge details" });
+      await expect(detail).toContainText(destination.label);
+      if (destination.id === "died-on-the-ward") {
+        await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
+      } else {
+        await detail.getByRole("combobox", { name: "Arrangement status" }).selectOption("arranged");
+        await detail.getByRole("button", { name: "Record follow-up status" }).click();
+        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText(
+          "Arranged · Flow coordinator",
+        );
+      }
+    });
+  }
+
+  test("Plan departure leads to the chosen ward's Decisions tab", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/discharges");
+    await page.getByTestId("ward-discharge-plan-departure").click();
+    await page.getByRole("combobox", { name: "Ward for departure planning" }).selectOption(release.unitId);
+    await page.getByRole("link", { name: "Open ward departure planning" }).click();
+    await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("ward-bed-release-admission")).toBeVisible();
   });
 });

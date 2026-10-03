@@ -282,46 +282,12 @@ const BLANK_INTAKE_DRAFT: IntakeDraft = {
  *
  * The design spec asks for four lists. **This screen builds three of them, states in plain words
  * what the fourth cannot be built from, and says on itself what the three it does build are not.**
- * That is not caution for its own sake: this is the one screen in the prototype whose emptiness is
- * read as a safety statement, and the spec was written before anybody had established that the
- * follow-up fact it turns on — which does exist on the record — is written by nothing and read by
- * nothing.
+ * The discharged list covers recorded community departures, independently of follow-up status.
+ * `INSTANT_FIELDS` NAMES `recordedAt` explicitly, including nested follow-up records.
  *
- * ⚠️ **THE FOUR THINGS THIS SCREEN SAYS ABOUT ITSELF, and why each is on the page rather than in a
- * document.**
- *
- *  1. **Whether follow-up has been arranged IS recorded on the admission, and NOTHING IN THE APP
- *     READS IT.** The spec's list 1 is "discharged, NO FOLLOW-UP ARRANGED".
- *
- *     ⚠️ **THIS PARAGRAPH AND THE SENTENCE IT DESCRIBES BOTH SAID SOMETHING FALSE UNTIL 2026-09-01,
- *     IN BOLD, ON A PAGE WHOSE WHOLE PURPOSE IS BEING BELIEVED.** They said the model held no
- *     follow-up field, event or vocabulary. It does: `Admission.followUp` is a
- *     `FollowUpRecord | null` (`ward-admissions.ts`, around `:452`, and in the field-presence map
- *     around `:484`), `FollowUpRecord` carries a `state`, a `recordedAt` and a `recordedBy` role, the
- *     vocabulary is `FOLLOW_UP_STATES` (`ward-admissions.ts`, around `:159`) =
- *     `["arranged", "not_arranged"]`, and the seed sets a real record on two departed admissions.
- *
- *     What is true — and it is a sharper statement than the false one, not a weaker one — is that
- *     the field has **no producer and no consumer**. No screen, derivation or reducer consumer reads
- *     it. The only mention in `ward-flow-reducer.ts` writes `followUp: null` (around `:941`, inside
- *     `case "PULL_PATIENT"` around `:811`) when it creates an admission, so no action available in
- *     this prototype can put a record there. `ward-reanchor.ts` moves the record's `recordedAt`
- *     because `INSTANT_FIELDS` NAMES `recordedAt`, explicitly and deliberately, with its own comment
- *     saying that a nested instant is exactly the kind that set loses track of and is therefore
- *     named rather than left for a reader to notice. It is not a side effect of the shift recursing,
- *     which is what this paragraph claimed until 2026-09-01 — an inverted mechanism under a sound
- *     conclusion, and the inversion mattered: "it happens to be reached" invites somebody to stop
- *     naming nested fields, which is the failure that set exists to prevent.
- *     A field nothing writes and nothing reads passes every gate and renders as a perfectly ordinary
- *     empty state, which is exactly why the wrong version of this sentence survived.
- *
- *     So the list here is "discharged to the community", and **the sentence saying the follow-up
- *     half is unavailable sits inside the section, above the list, at the same weight as the
- *     heading.** An empty list under the spec's own heading would assert that everybody discharged
- *     to this team's care is being followed up, which is the worst claim available on this screen
- *     and the one nothing else in Ward Flow could contradict. That conclusion is unchanged by the
- *     correction — only its reason is. The wording is pinned by an assertion in
- *     `tests/ward-community-index.test.ts` so the false version cannot come back.
+ *  1. Follow-up arrangements can be recorded on the discharge board (2026-10-03) through
+ *     RECORD_ADMISSION_FOLLOW_UP. The community list does not filter on that fact: neither an
+ *     empty list nor an arrangement recorded elsewhere proves that contact happened.
  *  2. **The count of admissions this hub cannot place with any team.** See
  *     `admissionsWithNoCommunityTeam`. Under the owner's 2026-08-31 ruling a person belongs to the
  *     team NAMED ON THEIR REFERRAL, so anyone whose referral named no community team — and anyone
@@ -3075,9 +3041,8 @@ export function CommunityScreen({
                    * Point 1. INSIDE the section and ABOVE the list, so it cannot be read past on the way to
                    * an empty list, and worded as a statement about the record rather than as a caveat.
                    *
-                   * ⚠️ Corrected 2026-09-01: this said "not recorded anywhere in this prototype… no field
-                   * for it", which was false — see point 1 in this file's header for what was measured. The
-                   * field exists; nothing writes it and nothing reads it. The conclusion below is unchanged.
+                   * Arrangements are recorded on the discharge board; this list remains all community
+                   * departures rather than a follow-up completion measure.
                    */}
                   <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
                     Follow-up status is not shown or editable here. This list shows recorded discharges into the

@@ -452,6 +452,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_NO_REFERRAL: false,
     // Both discharge paths record that somebody LEFT a ward. They refuse nobody — each is the end
     // of a stay, not a decision about a named referral or placement.
+    RECORD_ADMISSION_FOLLOW_UP: false,
     RECORD_PATIENT_DISCHARGE: false,
     RECORD_LEAVING: false,
     RECORD_LEFT_DEPARTMENT: false,

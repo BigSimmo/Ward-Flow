@@ -122,7 +122,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 
-type WardScreenProps = { unitId: string; presentation?: "overview" | "answer" };
+type WardScreenProps = { departurePlanning?: boolean; unitId: string; presentation?: "overview" | "answer" };
 
 /**
  * `ACCEPT_IN_PRINCIPLE` and `DECLINE` refuse for exactly the same reasons in
@@ -283,11 +283,18 @@ const DAILY_RETURN_QUESTIONS = ["empty", "allocatable", "constraints"] as const;
  *  it, so there is no second list to keep in step. */
 type DailyReturnQuestion = (typeof DAILY_RETURN_QUESTIONS)[number];
 
-export function WardScreen({ unitId, presentation = "overview" }: WardScreenProps) {
+export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
     return <WardAnswerView unitId={unitId} />;
   }
-  return <WardOverviewScreen key={unitId} unitId={unitId} presentation={presentation} />;
+  return (
+    <WardOverviewScreen
+      key={`${unitId}:${departurePlanning}`}
+      unitId={unitId}
+      presentation={presentation}
+      departurePlanning={departurePlanning}
+    />
+  );
 }
 // Fail closed for older provider adapters/test doubles without the identity projection.
 // Never reconstruct the missing lookup by reaching for the full referral array here.
@@ -298,7 +305,7 @@ const unavailablePatientIdentity = (): ResolvedPatientInfo => ({
   initials: "UP",
 });
 
-function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenProps) {
+function WardOverviewScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   const {
     movements,
     resolvePatientIdentity = unavailablePatientIdentity,
@@ -407,7 +414,9 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
   // leak into each other.
   const [leaveDay, setLeaveDay] = useState<ReleaseDay>("today");
   const [answerIndex, setAnswerIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">("attn");
+  const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">(
+    departurePlanning ? "return" : "attn",
+  );
   const [dischargeSubTab, setDischargeSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
   const [selectedPod, setSelectedPod] = useState<string>("all");
   const [selectedBed, setSelectedBed] = useState<number | null>(null);

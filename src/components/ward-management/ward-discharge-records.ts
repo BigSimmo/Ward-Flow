@@ -29,6 +29,7 @@ export type DischargeRecord = Readonly<
     | "blockReason"
     | "leftAt"
     | "leavingDestination"
+    | "followUp"
   >
 >;
 
@@ -91,6 +92,7 @@ function project(state: WardFlowState, admission: Admission): DischargeRecord {
     blockReason: admission.blockReason,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
+    followUp: admission.followUp,
   });
 }
 

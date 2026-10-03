@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -472,59 +470,28 @@ describe("community hub — an empty list must never read as an all-clear", () =
     // Non-vacuity: the scan must actually have text to search.
     expect(page.length).toBeGreaterThan(500);
   });
-  /**
-   * 🔴 **THE BAN ABOVE IS A LIST OF WORDINGS. THIS IS THE FACT THAT MAKES IT LEGITIMATE, AND UNTIL
-   * NOW NOTHING HELD IT.**
-   *
-   * The page must never claim a patient's follow-up is arranged because `Admission.followUp` has no
-   * producer: it exists, it carries the vocabulary ["arranged", "not_arranged"], the seed writes it
-   * — and **no reducer event can set one**, so a value on screen would be describing fixture data as
-   * though a ward had done something. A ban on sentences cannot see that premise change: a rewrite
-   * that gave the field a producer would leave every spelling above green while the ban quietly
-   * became wrong.
-   *
-   * ⚠️ **AND THE NEAREST EXISTING GUARD PINS THE PROSE ABOUT THIS, NOT THE PROPERTY.**
-   * `ward-community-corrected-claims.test.ts` asserts that the explanatory comment still contains
-   * "no producer and no consumer" — which is true of a sentence, and stays true when the code stops
-   * matching it. This asserts the code.
-   *
-   * Comments are dropped before the scan, because the comment explaining this very rule names the
-   * field and would otherwise satisfy the check that describes it.
-   */
-  it("no reducer event gives Admission.followUp a value, which is why the wordings above are banned", () => {
-    const reducer = readFileSync("src/components/ward-management/ward-flow-reducer.ts", "utf8");
-    const executable = reducer.split("\n").filter((line) => {
-      const trimmed = line.trim();
-      return trimmed !== "" && !trimmed.startsWith("//") && !trimmed.startsWith("*") && !trimmed.startsWith("/*");
-    });
-
-    const FIELD = "followUp:";
-    const writes = executable
-      .filter((line) => line.includes(FIELD))
-      .map((line) =>
-        line
-          .slice(line.indexOf(FIELD) + FIELD.length)
-          .split(",")[0]
-          .trim(),
+  it.each(["arranged", "not_arranged"] as const)(
+    "a recorded %s arrangement does not turn the catchment list into a contact-completion claim",
+    (state) => {
+      const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
+      const departed = admission({
+        id: "AD-FOLLOW-UP",
+        referralId: toA.id,
+        state: "departed",
+        leavingDestination: "discharged-to-the-community",
+        leftAt: NOW_ANCHOR - 10,
+        followUp: { state, recordedAt: NOW_ANCHOR, recordedBy: "Flow coordinator" },
+      });
+      renderTeam(TEAM_A.id, [departed], [toA]);
+      expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
+        "Follow-up status is not shown or editable here",
       );
-
-    // ⚠️ FLOORED ON THE POPULATION WALKED, NEVER ON THE FINDINGS. Renaming the field takes this to
-    // zero writes, and "every write is null" is trivially true of no writes — the vacuous green.
-    // A rename must go RED here, because it means the ban above is guarding a premise that moved.
-    expect(
-      writes.length,
-      "no `followUp:` write found anywhere in the reducer. Either the field was renamed — in which " +
-        "case the follow-up wording ban above is guarding a premise that has moved and must be " +
-        "re-derived — or this scan is broken. Neither is evidence that nothing writes one.",
-    ).toBeGreaterThan(0);
-
-    expect(
-      writes.filter((value) => value !== "null"),
-      "a reducer event now writes a non-null `Admission.followUp`. The field has gained a producer, " +
-        "so 'nothing can arrange follow-up' has stopped being true — take the wording ban above back " +
-        "to the owner rather than widening it.",
-    ).toEqual([]);
-  });
+      expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
+        "does not establish that everybody is being followed up",
+      );
+      expect(screen.queryByRole("button", { name: "Record follow-up status" })).not.toBeInTheDocument();
+    },
+  );
 
   it("accounts for the departures that are not on list 1 rather than dropping them", () => {
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");

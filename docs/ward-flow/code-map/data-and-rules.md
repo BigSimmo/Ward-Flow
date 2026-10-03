@@ -1,5 +1,9 @@
 # Data, seeds and domain rules
 
+## WA pathway audit update — 3 October 2026
+
+`LEAVING_DESTINATIONS` now contains eleven operational choices, including new/usual residential aged-care residence and other health care. Legacy residential care remains distinct; statistical type change is excluded from physical departure. The shared `isLeavingDestination` guard validates commands and storage. `DischargeRecord` projects attributed `followUp` without exposing additional patient fields. The [WA report](../reports/wa-health-pathway-audit-2026-10-03.md) separates these choices from the ten official separation codes.
+
 This part covers Ward Flow's synthetic seed fixtures, the read-only reference-data lookups, and
 every root-level `src/components/ward-management/*.ts` domain/selector file that the other parts
 of this map do not own (engine, roles, nav, clock, configuration, scenarios, audit and persistence

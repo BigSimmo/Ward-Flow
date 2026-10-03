@@ -1,5 +1,9 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## WA pathway audit update — 3 October 2026
+
+The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
 in `src/components/ward-management/{coordinator,ed,ward,referrals,community,search,statistics}/`.

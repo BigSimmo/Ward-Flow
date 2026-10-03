@@ -1,4 +1,11 @@
-import { ADMISSION_STATES, LEAVING_DESTINATIONS, type Admission, type LeavingDestination } from "./ward-admissions";
+import {
+  ADMISSION_STATES,
+  FOLLOW_UP_STATES,
+  LEAVING_DESTINATIONS,
+  type FollowUpState,
+  type Admission,
+  type LeavingDestination,
+} from "./ward-admissions";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -106,6 +113,7 @@ export type BedReleaseAuditRequest =
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
   | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
 export type DischargeDetails =
+  | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
   | {
       kind: "departure";
       before: Admission["state"] | null;
@@ -155,7 +163,11 @@ export type AuditEvent = AuditBase &
       }
     | {
         category: "discharge";
-        action: BedReleaseAuditRequest["action"] | "RECORD_LEAVING" | "RECORD_PATIENT_DISCHARGE";
+        action:
+          | BedReleaseAuditRequest["action"]
+          | "RECORD_LEAVING"
+          | "RECORD_PATIENT_DISCHARGE"
+          | "RECORD_ADMISSION_FOLLOW_UP";
         details: DischargeDetails;
       }
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
@@ -213,6 +225,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "SET_BED_PREPARATION":
     case "RELEASE_BED":
     case "RECORD_LEAVING":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "RECORD_PATIENT_DISCHARGE":
       return "discharge";
     case "OPEN_DISCHARGE_RECORD":
@@ -325,7 +338,8 @@ export function appendAudit(
   const mayResolveSubject =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
-    event.type === "RECORD_PATIENT_DISCHARGE"
+    event.type === "RECORD_PATIENT_DISCHARGE" ||
+    event.type === "RECORD_ADMISSION_FOLLOW_UP"
       ? safeCounter(event.expectedGeneration) && event.expectedGeneration === before.worldGeneration
       : true;
   let subject = mayResolveSubject ? auditSubject(before, event) : ({ kind: "unresolved" } as const);
@@ -470,6 +484,22 @@ export function appendAudit(
         details: {
           reason: enumValue(LEGAL_FORM_RECEIPT_CORRECTION_REASONS, event.reason),
           correctedReceivedAt: finiteInstant(correctedReceivedAt),
+        },
+      };
+      break;
+    }
+    case "RECORD_ADMISSION_FOLLOW_UP": {
+      const prior = mayResolveSubject ? uniqueRecord(before.admissions, event.admissionId) : undefined;
+      const next = prior ? uniqueRecord(after.admissions, prior.id) : undefined;
+      captured = {
+        ...base,
+        category: "discharge",
+        action: event.type,
+        details: {
+          kind: "follow-up",
+          before: enumValue(FOLLOW_UP_STATES, prior?.followUp?.state),
+          requested: enumValue(FOLLOW_UP_STATES, event.followUpState),
+          after: enumValue(FOLLOW_UP_STATES, next?.followUp?.state),
         },
       };
       break;

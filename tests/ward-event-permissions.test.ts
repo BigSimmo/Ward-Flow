@@ -393,6 +393,7 @@ describe("who may raise which event", () => {
     RECORD_REFERRER_WITHDRAWAL: ["coordinator"],
     // Q004 Task 3: ward-owned patient discharge; bounded record access; coordinator audit review.
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
+    RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
     RECORD_PATIENT_DISCHARGE: ["ward"],
     OPEN_DISCHARGE_RECORD: ["coordinator", "ward"],
     REVIEW_AUDIT_EVENT: ["coordinator"],

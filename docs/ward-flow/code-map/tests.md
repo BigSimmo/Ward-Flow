@@ -1,5 +1,15 @@
 # Tests
 
+## WA pathway audit update — 3 October 2026
+
+- `ward-disposition-pathways.test.ts` exercises every operational destination through both departure commands, checks one bed return and preserved records, refuses repeats/invalid payloads and proves older admissions cannot decide the current departure.
+- `ward-follow-up-pathway.test.ts` checks arrangement attribution, unchanged capacity, protected scope/identity/generation/revision, persistence and excluded transitions.
+- `ward-discharge-follow-up.dom.test.tsx` drives real provider updates for both arrangement states. Community tests retain the distinction between arrangements and completed contact.
+- `ui-ward-discharges.spec.ts` adds one real ward-to-board journey for each of eleven destinations, including the arrangement action or death exclusion, and a planning-link journey.
+- Existing permission, history, referral contract and legal-figure sweeps classify the added event. Bed-accounting/gender fixtures use a hospital transfer rather than bypass an involuntary community-discharge refusal.
+
+Evidence and limits are in the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+
 ## Rules-repair update — 2 October 2026
 
 - `ward-selector-default-base.test.ts`: isolated Git fixtures prove both selectors default to

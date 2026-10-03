@@ -234,6 +234,20 @@ export function candidateEvents(
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
+    case "RECORD_ADMISSION_FOLLOW_UP":
+      return state.admissions
+        .filter((admission) => admission.patientId !== null && admission.state === "occupied")
+        .map((admission) => ({
+          type,
+          role: "ward",
+          now,
+          actingUnitId: admission.unitId,
+          admissionId: admission.id,
+          patientId: admission.patientId!,
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[admission.id] ?? 0,
+          followUpState: "arranged",
+        }));
     case "RECORD_PATIENT_DISCHARGE":
       // A protected linked departure: use only a uniquely linked occupied admission, carry the
       // current world/revision guards, and cross the same closed destination vocabulary as the

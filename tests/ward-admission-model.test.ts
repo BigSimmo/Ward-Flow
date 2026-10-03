@@ -145,6 +145,9 @@ describe("admission vocabulary", () => {
       ["transferred-to-another-psychiatric-ward", false],
       ["transferred-to-a-general-hospital", true],
       ["moved-to-residential-care", true],
+      ["moved-to-residential-aged-care", true],
+      ["returned-to-residential-aged-care", true],
+      ["transferred-to-other-health-care", true],
       ["left-against-advice", true],
       // Added 2026-09-01 by owner ruling. All three `true`: the semantic is "does the STATE gain a
       // psychiatric bed", not "did the person leave the system", and none of these leaves the person

@@ -1,4 +1,4 @@
-import type { DischargeBarrier, LeavingDestination } from "@/components/ward-management/ward-admissions";
+import type { DischargeBarrier, LeavingDestination, FollowUpState } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -150,6 +150,17 @@ export type ReferralDraft = {
  * before anything else happens) and `now` (the reducer never reads a clock itself).
  */
 export type WardFlowEvent =
+  | {
+      type: "RECORD_ADMISSION_FOLLOW_UP";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      admissionId: string;
+      patientId: PatientId;
+      expectedGeneration: number;
+      expectedRevision: number;
+      followUpState: FollowUpState;
+    }
   | {
       type: "RECORD_PATIENT_DISCHARGE";
       role: WardFlowRole;
@@ -2012,6 +2023,7 @@ export type OverridableWardFlowEvent = Extract<
  * the same shape, so the table is widened here rather than special-cased per event.
  */
 export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> = {
+  RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
   RECORD_PATIENT_DISCHARGE: ["ward"],
   UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
   OPEN_DISCHARGE_RECORD: ["coordinator", "ward"],

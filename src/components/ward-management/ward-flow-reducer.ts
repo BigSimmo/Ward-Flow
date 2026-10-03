@@ -16,7 +16,7 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { isLeavingDestination, daysInBed, type LeavingDestination } from "./ward-admissions";
+import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -734,6 +734,7 @@ export function seedWardFlowStateAt(offsetMinutes: number, scenario: WardScenari
 function subjectId(event: WardFlowEvent): string {
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
     case "SET_CONFIGURATION":
@@ -1573,7 +1574,7 @@ function departAdmission(
 
 type ProtectedRecordEvent = Extract<
   WardFlowEvent,
-  { type: "OPEN_DISCHARGE_RECORD" | "REVIEW_AUDIT_EVENT" | "RECORD_PATIENT_DISCHARGE" }
+  { type: "OPEN_DISCHARGE_RECORD" | "REVIEW_AUDIT_EVENT" | "RECORD_PATIENT_DISCHARGE" | "RECORD_ADMISSION_FOLLOW_UP" }
 >;
 
 function protectedRefusal(
@@ -1699,8 +1700,13 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   }
 
   if (!safeCounter(event.expectedRevision)) return deny("invalid-payload");
-  const unit = uniqueRecord(state.units, event.actingUnitId);
   const admission = uniqueRecord(state.admissions, event.admissionId);
+  const unit = uniqueRecord(
+    state.units,
+    event.type === "RECORD_ADMISSION_FOLLOW_UP" && event.role === "coordinator"
+      ? admission?.unitId
+      : event.actingUnitId,
+  );
   if (!unit || !admission || !uniqueRecord(state.units, admission.unitId)) return deny("missing-or-inaccessible");
   if (admission.unitId !== unit.id) return deny("scope");
   const identity = dischargeIdentity(state, admission);
@@ -1708,6 +1714,29 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
   if (revision !== event.expectedRevision) return deny("revision", "stale");
+  if (event.type === "RECORD_ADMISSION_FOLLOW_UP") {
+    if (typeof event.followUpState !== "string" || !isFollowUpState(event.followUpState))
+      return deny("invalid-payload");
+    if (
+      (admission.state !== "occupied" && admission.state !== "departed") ||
+      admission.leavingDestination === "died-on-the-ward"
+    )
+      return deny("transition");
+    if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
+    const next = replaceAdmission(state, admission.id, {
+      ...admission,
+      followUp: { state: event.followUpState, recordedAt: event.now, recordedBy: WARD_FLOW_ROLE_LABELS[event.role] },
+    });
+    return appendAudit(
+      state,
+      {
+        ...next,
+        dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 },
+      },
+      event,
+      { outcome: "accepted", reasonCode: "none" },
+    );
+  }
   if (!isLeavingDestination(event.leavingDestination)) return deny("invalid-payload");
   if (admission.state !== "occupied") return deny("transition");
   if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
@@ -1766,7 +1795,8 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   const protectedEvent =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
-    event.type === "RECORD_PATIENT_DISCHARGE";
+    event.type === "RECORD_PATIENT_DISCHARGE" ||
+    event.type === "RECORD_ADMISSION_FOLLOW_UP";
   if (
     classifyAuditEvent(event) &&
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
@@ -1827,6 +1857,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
       return state;
@@ -4786,7 +4817,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event.leavingDestination === "discharged-to-the-community" ||
           event.leavingDestination === "left-against-advice"
         ) {
-          return reject(state, event, "Cannot discharge an involuntary patient without an explicit revocation order.");
+          return reject(
+            state,
+            event,
+            `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
+          );
         }
       }
 

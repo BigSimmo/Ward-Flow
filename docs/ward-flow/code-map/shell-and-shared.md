@@ -1,5 +1,9 @@
 # Routes, shell, navigation and shared UI
 
+## WA pathway audit update — 3 October 2026
+
+The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
 under `src/app/mockups/ward-flow/`, `src/app/mockups/ward-flow-sign-in/`,
