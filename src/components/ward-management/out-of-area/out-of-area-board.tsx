@@ -350,6 +350,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const patientInfo = selected ? resolvePatient(selected.admission) : undefined;
   const profileHref = patientInfo ? getPatientProfileHref(patientInfo) : null;
   const site = selected ? siteByCode(selected.unit.siteCode) : undefined;
+  const selectedStayDays = selected ? daysInBed(selected.admission, now) : null;
   const longestPatientInfo = maxDaysEntry ? resolvePatient(maxDaysEntry.admission) : undefined;
 
   return (
@@ -756,10 +757,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                     data-ward-type-floor="badge"
                                   >
                                     <PlacementStatusGlyph tone={tone} />
-                                    <span aria-hidden="true">
-                                      {entry.band === "air_transport_only" ? "Air only" : "Road travel"}
-                                    </span>
-                                    <span className="sr-only">{TRAVEL_BAND_LABELS[entry.band]}</span>
+                                    <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
                                   </span>
                                 </td>
                                 <td className={`${pageStyles.mono} ${pageStyles.stayCell}`}>
@@ -857,10 +855,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               data-testid="ward-out-of-area-subject"
             >
               <div className={pageStyles.inspectorHead}>
-                <div>
-                  <span className={pageStyles.eyebrow}>{selected ? "Selected placement" : "Statewide overview"}</span>
-                  <h2>{selected ? "Case inspector" : "Repatriation overview"}</h2>
-                </div>
+                <h2>{selected ? "Case inspector" : "Repatriation"}</h2>
                 {selected ? (
                   <button
                     type="button"
@@ -882,43 +877,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     </svg>
                   </button>
                 ) : (
-                  <span className={pageStyles.overviewCount}>{entries.length}</span>
+                  <span className={pageStyles.overviewCount}>{entries.length} placements</span>
                 )}
               </div>
               {!selected || !patientInfo ? (
                 <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.overviewBody}>
-                  <div className={pageStyles.overviewIntro}>
-                    <h3>Closer to home</h3>
-                    <p>
-                      {entries.length} {entries.length === 1 ? "inpatient" : "inpatients"} outside their home catchment.
-                    </p>
-                  </div>
-                  <div className={pageStyles.transportSplit} aria-label="Travel bands across all placements">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setTransportFilter(transportFilter === "air_transport_only" ? "all" : "air_transport_only")
-                      }
-                      aria-pressed={transportFilter === "air_transport_only"}
-                    >
-                      <span>
-                        <PlacementStatusGlyph tone="danger" /> Air only
-                      </span>
-                      <strong>{airCount}</strong>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
-                      }
-                      aria-pressed={transportFilter === "three_hours_or_more"}
-                    >
-                      <span>
-                        <PlacementStatusGlyph tone="warn" /> Road travel
-                      </span>
-                      <strong>{roadCount}</strong>
-                    </button>
-                  </div>
                   <div className={pageStyles.catchmentSection}>
                     <div className={pageStyles.sectionHeading}>
                       <h3>Home catchments</h3>
@@ -949,22 +912,36 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <h3>Longest current stay</h3>
                         <span className={pageStyles.stayPill}>{longestDays}</span>
                       </div>
-                      <strong className={pageStyles.spotlightName}>{longestPatientInfo.displayName}</strong>
-                      <span className={pageStyles.spotlightMeta}>
-                        {maxDaysEntry.unit.name} · {maxDaysEntry.admission.homeRegion}
-                      </span>
                       <button
                         type="button"
                         className={pageStyles.spotlightAction}
                         onClick={(event) => selectPlacement(maxDaysEntry.admission.id, event.currentTarget)}
+                        aria-label={`Inspect longest case: ${longestPatientInfo.displayName}`}
                       >
-                        Inspect longest case <span aria-hidden="true">→</span>
+                        <span>
+                          <strong className={pageStyles.spotlightName}>{longestPatientInfo.displayName}</strong>
+                          <span className={pageStyles.spotlightMeta}>
+                            {maxDaysEntry.admission.homeRegion} ·{" "}
+                            {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
+                          </span>
+                        </span>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M7 17 17 7M7 7h10v10" />
+                        </svg>
                       </button>
                     </div>
                   )}
-                  <p className={pageStyles.selectionHint}>
-                    Select a patient in the register to review their placement and arrange a return.
-                  </p>
+                  <p className={pageStyles.selectionHint}>Select a patient to review their return.</p>
                 </div>
               ) : (
                 <div className={pageStyles.caseBody}>
@@ -996,61 +973,80 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     </div>
                   </div>
                   <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.patientHero}>
-                    <h3>{patientInfo.displayName}</h3>
-                    <div className={pageStyles.patientIdentifiers}>
-                      {profileHref ? (
-                        <Link href={profileHref} className={pageStyles.inspectorUmrnLink}>
-                          {patientInfo.umrn}
-                        </Link>
-                      ) : (
-                        <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
-                      )}
-                      <span className={pageStyles.admissionIdText}>{selected.admission.id}</span>
-                    </div>
-                    <div className={pageStyles.staySummary}>
-                      <strong>{sinceArrivalLabel(selected, now)}</strong>
-                      <span>since arrival</span>
-                    </div>
-                    <div className={pageStyles.placementRoute}>
-                      <div>
-                        <span className={pageStyles.routeDot} aria-hidden="true" />
-                        <span className={pageStyles.eyebrow}>Current placement</span>
-                        <strong>{selected.unit.name}</strong>
-                        <span>{site?.name ?? "Site not recorded"}</span>
+                    <div className={pageStyles.patientHeading}>
+                      <div className={pageStyles.patientIdentity}>
+                        <h3>{patientInfo.displayName}</h3>
+                        <div className={pageStyles.patientIdentifiers}>
+                          {profileHref ? (
+                            <Link href={profileHref} className={pageStyles.inspectorUmrnLink}>
+                              {patientInfo.umrn}
+                            </Link>
+                          ) : (
+                            <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                          )}
+                          <span className={pageStyles.admissionIdText}>{selected.admission.id}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className={pageStyles.routeDot} aria-hidden="true" />
-                        <span className={pageStyles.eyebrow}>Home catchment</span>
-                        <strong>{selected.admission.homeRegion}</strong>
+                      <div className={pageStyles.staySummary}>
+                        <strong>{selectedStayDays === null ? "—" : `${selectedStayDays}d`}</strong>
+                        <span>in this bed</span>
+                        <span className="sr-only">{sinceArrivalLabel(selected, now)}</span>
                       </div>
                     </div>
-                    <div
-                      className={pageStyles.travelRequirement}
-                      data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
-                    >
-                      <PlacementStatusGlyph tone={selected.band === "air_transport_only" ? "danger" : "warn"} />
+                    <dl className={pageStyles.placementFacts}>
                       <div>
-                        <span className={pageStyles.eyebrow}>Travel band</span>
-                        <strong>{TRAVEL_BAND_LABELS[selected.band]}</strong>
+                        <dt>Current placement</dt>
+                        <dd>
+                          <strong>{selected.unit.name}</strong>
+                          <span>{site?.name ?? "Site not recorded"}</span>
+                        </dd>
                       </div>
-                    </div>
+                      <div>
+                        <dt>Home catchment</dt>
+                        <dd>{selected.admission.homeRegion}</dd>
+                      </div>
+                      <div>
+                        <dt>Travel band</dt>
+                        <dd
+                          className={pageStyles.travelRequirement}
+                          data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                        >
+                          <PlacementStatusGlyph tone={selected.band === "air_transport_only" ? "danger" : "warn"} />
+                          <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
                   <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.returnPlanning}>
-                    <h3>Arrange the return</h3>
-                    <p>Choose the receiving hospital and confirm ward agreement when recording repatriation.</p>
+                    <p>Choose a receiving hospital and confirm ward agreement.</p>
                   </div>
-                  <button
-                    type="button"
-                    className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.wFull}`}
-                    onClick={(event) => openRepatriation(event.currentTarget)}
-                  >
-                    Initiate repatriation <span aria-hidden="true">→</span>
-                  </button>
-                  {profileHref && (
-                    <Link className={pageStyles.profileAction} href={profileHref}>
-                      Open patient profile <span aria-hidden="true">↗</span>
-                    </Link>
-                  )}
+                  <div className={pageStyles.caseActions}>
+                    <button
+                      type="button"
+                      className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
+                      onClick={(event) => openRepatriation(event.currentTarget)}
+                    >
+                      Initiate repatriation <span aria-hidden="true">→</span>
+                    </button>
+                    {profileHref && (
+                      <Link className={pageStyles.profileAction} href={profileHref} aria-label="Open patient profile">
+                        Profile{" "}
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M7 17 17 7M7 7h10v10" />
+                        </svg>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               )}
             </section>

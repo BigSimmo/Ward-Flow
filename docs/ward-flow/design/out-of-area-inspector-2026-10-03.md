@@ -6,12 +6,14 @@ Base: `d8c1a05c24a55282c90547725ae9f397cf2ef284`, the provided main merge snapsh
 Branch: `codex/out-of-area-inspector`.
 
 The out-of-area register now uses a single floating summary island, a naturally
-scrolling table and an inspector that fits its content. The overview groups
-catchments into clickable rows with proportional bars. The longest current stay
+scrolling table and an inspector that fits its content. The compact overview groups
+catchments into clickable rows with proportional bars. It avoids duplicating the
+summary strip and presents the longest stay as one compact, actionable record. The longest current stay
 is labelled as duration, without asserting clinical priority.
 
-Selecting a patient shows their identity, elapsed stay, current placement, home
-catchment and travel band. Previous/next controls follow the visible register;
+Selecting a patient shows their identity and elapsed stay in one header, followed
+by a compact definition list for current placement, home catchment and travel band.
+The arrangement and profile actions share one footer row. Previous/next controls follow the visible register;
 selection outside the active filters is explicitly labelled. Closing returns
 focus to the original row or card. Profile links retain their keyboard behaviour.
 An explicit patient selection is required before initiating repatriation, avoiding

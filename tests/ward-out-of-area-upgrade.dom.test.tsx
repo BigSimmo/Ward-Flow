@@ -108,6 +108,8 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(facts).toHaveTextContent(first.admission.homeRegion as string);
     expect(facts).toHaveTextContent(first.unit.name);
     expect(facts).toHaveTextContent(TRAVEL_BAND_LABELS[first.band]);
+    const travelCell = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`).children[3];
+    expect(travelCell.textContent?.trim()).toBe(TRAVEL_BAND_LABELS[first.band]);
     expect(facts).toHaveTextContent(sinceArrivalLabel(first, NOW_ANCHOR));
     expect(facts).toHaveTextContent("Current placement");
     expect(facts).toHaveTextContent("Home catchment");
