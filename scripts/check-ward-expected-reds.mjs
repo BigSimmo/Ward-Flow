@@ -52,6 +52,8 @@ import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs"
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = path.join(projectRoot, "tests", "ward-expected-reds.json");
+const MIN_FILE_SECONDS = 0.1;
+const UNIT_DURATIONS = path.join(projectRoot, "scripts", "ward-flow", "unit-durations.json");
 
 /**
  * Floors, deliberately well below the real population rather than at it.
@@ -357,12 +359,49 @@ export function parseGateShard(value) {
 }
 
 /**
- * The shard's files: every count-th file of the sorted population, starting at index - 1. Every
- * shard of the same population is disjoint and together they are exactly the population, so the
- * manifest entries each shard checks (those for its own files) also cover the manifest exactly once.
+ * The shard's files. With measured durations (scripts/ward-flow/unit-durations.json), files are
+ * dealt longest first onto whichever shard has the least measured time so far, so the shards finish
+ * at about the same moment; an unmeasured file counts as the median. Without measurements, every
+ * count-th file of the sorted population. Either way the deal depends only on the population, the
+ * durations and the count, so every runner computes the same split: the shards are disjoint and
+ * together exactly the population, and the manifest entries each shard checks (those for its own
+ * files) also cover the manifest exactly once.
  */
-export function selectGateShard(population, { index, count }) {
-  return [...population].sort().filter((_, position) => position % count === index - 1);
+export function selectGateShard(population, { index, count }, durations = {}) {
+  const files = [...population].sort();
+  const measured = files
+    .map((file) => durations[file])
+    .filter((seconds) => Number.isFinite(seconds) && seconds >= 0)
+    .sort((a, b) => a - b);
+  if (measured.length === 0) return files.filter((_, position) => position % count === index - 1);
+  const median = measured[Math.floor(measured.length / 2)];
+  const shards = Array.from({ length: count }, () => ({ seconds: 0, files: [] }));
+  const weighted = files
+    .map((file) => {
+      const seconds = durations[file];
+      // The record is rounded to tenths, so a file recorded as 0 still costs a worker something; the
+      // floor keeps such files spread across the shards instead of piling onto one.
+      const measuredSeconds = Number.isFinite(seconds) && seconds >= 0 ? seconds : median;
+      return { file, seconds: Math.max(measuredSeconds, MIN_FILE_SECONDS) };
+    })
+    .sort((a, b) => b.seconds - a.seconds || (a.file < b.file ? -1 : 1));
+  for (const { file, seconds } of weighted) {
+    let lightest = shards[0];
+    for (const shard of shards) if (shard.seconds < lightest.seconds) lightest = shard;
+    lightest.files.push(file);
+    lightest.seconds += seconds;
+  }
+  return shards[index - 1].files.sort();
+}
+
+/** Measured seconds per unit test file, or {} when the record is missing or unreadable. */
+export function readUnitDurations(file = UNIT_DURATIONS) {
+  try {
+    const seconds = JSON.parse(readFileSync(file, "utf8")).seconds;
+    return seconds && typeof seconds === "object" ? seconds : {};
+  } catch {
+    return {};
+  }
 }
 
 function fail(lines) {
@@ -485,13 +524,15 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
   } catch (error) {
     fail([error.message]);
   }
-  const runFloors = shard
-    ? { files: Math.floor(FLOOR_FILES / shard.count), tests: Math.floor(FLOOR_TESTS / shard.count) }
-    : undefined;
+  let runFloors;
   if (shard) {
     if (process.env.WARD_FULL_GATE_RECHECK) fail(["WARD_GATE_SHARD cannot be combined with WARD_FULL_GATE_RECHECK."]);
     const wholeCount = population.length;
-    population = selectGateShard(population, shard);
+    population = selectGateShard(population, shard, readUnitDurations());
+    // Duration-balanced shards hold different numbers of files, so each shard's floors are the
+    // whole-suite floors scaled by its share of the files (an equal split gives FLOOR / count).
+    const share = population.length / wholeCount;
+    runFloors = { files: Math.floor(FLOOR_FILES * share), tests: Math.floor(FLOOR_TESTS * share) };
     for (const file of [...expected.keys()]) if (!population.includes(file)) expected.delete(file);
     console.log(
       `Shard ${shard.index}/${shard.count}: ${population.length} of ${wholeCount} files, ${expected.size} manifest entr(y/ies).`,
@@ -606,6 +647,9 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         skippedTooling: skippedTooling.length > 0,
         environmentFingerprint,
         stateDir,
+        // A CI shard is one runner's whole share: one vitest process (still split by the command
+        // length limit) avoids a second start-up and a second slowest-file tail.
+        ...(shard ? { maxFiles: Number.POSITIVE_INFINITY } : {}),
         runBatch: ({ files, reportPath: batchReport }) => {
           try {
             execFileSync(
