@@ -153,52 +153,56 @@
 /* KPI Strip */
 .kpiStrip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 .kpiCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-bottom: 1px solid var(--line-strong);
-  border-radius: var(--r2, 6px);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 4px;
-  box-shadow: none;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease,
-    background-color 0.15s ease;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
   min-width: 0;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 12px 16px;
+  color: var(--ink);
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
-  font-family: inherit;
-  width: 100%;
   box-sizing: border-box;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
-
 .kpiCard:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--lift);
   background: var(--surface-2);
 }
-
 .kpiCard:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
-
 .kpiCardActive {
-  background: var(--surface-2) !important;
-  border-color: var(--accent) !important;
-  box-shadow:
-    0 0 0 1px var(--accent),
-    var(--lift) !important;
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
+}
+.kpiCard .kpiLabelRow {
+  grid-column: 1 / -1;
+}
+.kpiCard .kpiVal {
+  font-size: 28px;
+  line-height: 1;
+}
+.kpiCard .kpiSub {
+  max-width: 18rem;
+  line-height: 1.45;
 }
 
 .kpiLabelRow {
@@ -331,9 +335,9 @@
 .boardGrid,
 .ledgerGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(18.75rem, 20vw, 22.5rem);
-  gap: 14px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) clamp(20rem, 25vw, 23.5rem);
+  gap: 20px;
+  align-items: start;
   min-width: 0;
 }
 
@@ -343,22 +347,21 @@
   border: 1px solid var(--line);
   border-bottom-color: var(--line-strong);
   border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
-  overflow: hidden;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 4%, transparent);
+  overflow: visible;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding: 0;
+  gap: 0;
 }
 
 .ph {
-  padding: 10px 16px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--line);
   border-top-left-radius: var(--r1i, 9px);
   border-top-right-radius: var(--r1i, 9px);
-  background: var(--surface-2);
-  box-shadow:
-    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
-    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -391,8 +394,8 @@
 }
 
 .tableToolbar {
-  padding: 8px 12px;
-  background: var(--surface-2);
+  padding: 12px 20px;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -549,9 +552,9 @@
   margin: 0;
   font-size: var(--t-2, 13.5px);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 .panelBody {
@@ -567,7 +570,7 @@
 
 /* Table */
 .tableWrap {
-  overflow-x: auto;
+  overflow: visible;
   background: var(--surface);
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -575,18 +578,21 @@
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  --ward-table-min-width: 0;
   font-size: var(--t-1, 13px);
   font-family: var(--body);
 }
 
 .table thead th {
   text-align: left;
-  padding: 8px 10px;
+  padding: 12px 16px;
   font-size: var(--t-0, 12px);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: var(--muted);
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
@@ -594,28 +600,28 @@
 }
 
 .table thead th:nth-child(1) {
-  min-width: 9.5rem;
-  width: 22%;
+  min-width: 0;
+  width: 25%;
 }
 
 .table thead th:nth-child(2) {
-  min-width: 6.5rem;
-  width: 15%;
+  min-width: 0;
+  width: 16%;
 }
 
 .table thead th:nth-child(3) {
-  min-width: 8.5rem;
-  width: 21%;
+  min-width: 0;
+  width: 27%;
 }
 
 .table thead th:nth-child(4) {
-  min-width: 8.5rem;
-  width: 21%;
+  min-width: 0;
+  width: 20%;
 }
 
 .table thead th:nth-child(5) {
-  min-width: 6.5rem;
-  width: 21%;
+  min-width: 0;
+  width: 12%;
   text-align: right;
   white-space: nowrap;
 }
@@ -627,7 +633,7 @@
 }
 
 .table tbody td {
-  padding: 10px 10px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   vertical-align: middle;
@@ -638,10 +644,10 @@
 }
 
 .homeRegionText {
-  font-weight: 700;
-  color: var(--ink);
+  font-weight: 500;
+  color: var(--ink-soft);
   font-size: var(--t-1, 13px);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .unitNameText {
@@ -669,7 +675,7 @@
 }
 
 .rowSelected td {
-  background: var(--sunk) !important;
+  background: var(--accent-soft) !important;
 }
 
 .rowSelected {
@@ -1759,59 +1765,440 @@
   font-size: var(--t-0, 12px);
 }
 
+/* Content-sized inspector: overview first, selected placement second. */
+.inspectorPanel {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.inspectorHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.inspectorHead h2 {
+  margin: 5px 0 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.eyebrow {
+  display: block;
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.overviewCount {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 12px;
+  font: 600 21px var(--mono);
+}
+.overviewBody,
+.caseBody {
+  display: grid;
+  gap: 22px;
+  padding: 22px;
+}
+.overviewIntro h3 {
+  margin: 0 0 5px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.overviewIntro p,
+.selectionHint,
+.returnPlanning p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1, 13px);
+  line-height: 1.55;
+}
+.transportSplit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.transportSplit button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+.transportSplit button > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+}
+.transportSplit button strong {
+  font: 600 23px var(--mono);
+}
+.transportSplit button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sectionHeading h3,
+.returnPlanning h3 {
+  margin: 0;
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+}
+.sectionHeading > span {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+}
+.catchmentList {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+}
+.catchmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 60px 22px;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 7px 8px;
+  margin-inline: -8px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  text-align: left;
+  font-size: var(--t-1, 13px);
+  cursor: pointer;
+}
+.catchmentRow:hover {
+  background: var(--surface-2);
+}
+.catchmentRow[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--line-strong);
+}
+.catchmentRow strong {
+  text-align: right;
+  font: 600 13px var(--mono);
+}
+.catchmentBar {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--sunk);
+}
+.catchmentBar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  opacity: 0.65;
+}
+.longestSpotlight {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.stayPill {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-family: var(--mono);
+  color: var(--accent) !important;
+}
+.spotlightName {
+  font-size: 15px;
+  font-weight: 600;
+}
+.spotlightMeta {
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  line-height: 1.45;
+}
+.spotlightAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+  padding: 7px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.selectionHint {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.iconButton {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 17px;
+  cursor: pointer;
+}
+.iconButton:hover {
+  background: var(--surface-2);
+}
+.iconButton:disabled {
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: default;
+}
+.caseNavigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+}
+.caseNavigation > div {
+  display: flex;
+  gap: 6px;
+}
+.patientHero h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+.patientIdentifiers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.patientIdentifiers .admissionIdText {
+  font-family: var(--mono);
+}
+.staySummary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 0;
+  margin-top: 3px;
+  border-bottom: 1px solid var(--line);
+}
+.staySummary strong {
+  font: 600 23px var(--mono);
+  color: var(--accent);
+}
+.staySummary span {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+}
+.placementRoute {
+  display: grid;
+  gap: 22px;
+  margin: 22px 0;
+}
+.placementRoute > div {
+  display: grid;
+  gap: 4px;
+  position: relative;
+  padding-left: 24px;
+  min-width: 0;
+}
+.placementRoute > div:first-child::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 15px;
+  bottom: -19px;
+  width: 1px;
+  background: var(--line-strong);
+}
+.routeDot {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.placementRoute > div:last-child .routeDot {
+  background: var(--accent);
+}
+.placementRoute strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.placementRoute > div > span:last-child {
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  line-height: 1.5;
+}
+.travelRequirement {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.travelRequirement[data-tone="danger"] > svg {
+  color: var(--danger);
+}
+.travelRequirement[data-tone="warn"] > svg {
+  color: var(--warn);
+}
+.travelRequirement strong {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.returnPlanning {
+  display: grid;
+  gap: 6px;
+}
+.caseBody .btn {
+  height: auto;
+  min-height: 42px;
+  justify-content: space-between;
+}
+.profileAction {
+  display: flex;
+  justify-content: space-between;
+  color: var(--accent);
+  font-size: var(--t-1, 13px);
+  padding: 0 2px;
+  text-decoration: none;
+}
+.profileAction:hover {
+  text-decoration: underline;
+}
+.filterContext {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+}
+.textButton {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  cursor: pointer;
+}
+.registerTableScroll {
+  overflow: visible;
+}
+.table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
+}
+.table thead th:last-child {
+  white-space: normal;
+}
+.table tbody td {
+  overflow-wrap: anywhere;
+}
+.table .homeRegionText strong {
+  font-weight: 500;
+}
+.patientMetaCell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 5px;
+  line-height: 1.5;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn:disabled:hover {
+  background: var(--accent);
+}
+.catchmentRow:focus-visible,
+.transportSplit button:focus-visible,
+.spotlightAction:focus-visible,
+.iconButton:focus-visible,
+.profileAction:focus-visible,
+.textButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .iconButton {
+    min-width: 44px;
+    height: 44px;
+  }
+  .catchmentRow,
+  .spotlightAction,
+  .profileAction,
+  .textButton {
+    min-height: 44px;
+  }
+}
+
 /* Responsive Breakpoints & Desktop Workspace Bounds */
 @media (min-width: 62.5625rem) {
-  .boardGrid,
-  .ledgerGrid {
-    align-items: stretch;
-  }
-
-  .registerColumn,
-  .detailColumn {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .registerColumn .panel,
-  .detailColumn .panel {
-    height: clamp(32rem, calc(100dvh - 16rem), 54rem);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .ph {
-    flex: 0 0 auto;
-  }
-
-  .panelBody {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-  }
-
-  .tableWrap {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-
   .table thead th {
     position: sticky;
     top: 0;
     z-index: 2;
   }
+}
 
-  .secondaryGrid {
-    align-items: stretch;
-  }
-
-  .groupSummary,
-  .provenancePanel {
-    height: 100%;
+@media (min-width: 62.5625rem) and (min-height: 56.25rem) {
+  .detailColumn {
+    position: sticky;
+    top: 16px;
+    align-self: start;
   }
 }
 
@@ -1825,7 +2212,7 @@
   .table thead th:nth-child(n),
   .table tbody td {
     min-width: 0;
-    padding-inline: 4px;
+    padding-inline: 10px;
     white-space: normal;
     overflow-wrap: anywhere;
   }
@@ -1873,7 +2260,34 @@
   }
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+  .kpiCard {
+    padding: 10px;
     gap: 8px;
+  }
+  .kpiCard .kpiVal {
+    font-size: 25px;
+  }
+  .kpiCard .kpiSub {
+    grid-column: 1 / -1;
+  }
+  .ph {
+    padding: 16px;
+  }
+  .phRight,
+  .phRight .btn {
+    width: 100%;
+  }
+  .tableToolbar {
+    padding: 12px 16px;
+  }
+  .overviewBody,
+  .caseBody {
+    padding: 20px;
+  }
+  .recordPatientRow {
+    flex-wrap: wrap;
   }
   .tableWrap {
     display: none;
@@ -1922,5 +2336,12 @@
   .cardList,
   .recordList {
     display: none !important;
+  }
+  .detailColumn {
+    position: static;
+  }
+  .kpiStrip,
+  .inspectorPanel {
+    break-inside: avoid;
   }
 }
