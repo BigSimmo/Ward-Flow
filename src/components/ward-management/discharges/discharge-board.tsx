@@ -399,12 +399,18 @@ function DischargeWorkspace() {
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const clearSelection = () => {
+  const closeDrawer = () => {
     setSelected(null);
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
     (triggerRef.current ?? listRef.current)?.focus();
+  };
+  const clearSelection = () => {
+    setSelected(null);
+    setReleaseId(null);
+    setOpenError(false);
+    setShowUpdateDate(false);
   };
   const clearAllFilters = () => {
     setService("all");
@@ -418,7 +424,7 @@ function DischargeWorkspace() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
-        clearSelection();
+        closeDrawer();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -432,7 +438,8 @@ function DischargeWorkspace() {
       (first ?? detailRef.current)?.focus();
     });
   };
-  const openRecord = (record: DischargeRecord) => {
+  const openRecord = (record: DischargeRecord, opener?: HTMLElement | null) => {
+    if (opener) triggerRef.current = opener;
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
@@ -874,11 +881,11 @@ function DischargeWorkspace() {
                           <tr
                             key={record.id}
                             data-selected={selected?.admissionId === record.admissionId}
-                            onClick={() => openRecord(record)}
+                            onClick={(e) => openRecord(record, e.currentTarget)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
-                                openRecord(record);
+                                openRecord(record, e.currentTarget);
                               }
                             }}
                             className={pageStyles.interactiveRow}
@@ -891,7 +898,7 @@ function DischargeWorkspace() {
                                 aria-pressed={selected?.admissionId === record.admissionId}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  openRecord(record);
+                                  openRecord(record, e.currentTarget);
                                 }}
                               >
                                 {recordName(record)}
@@ -991,7 +998,8 @@ function DischargeWorkspace() {
                               <tr
                                 key={release.id}
                                 data-selected={releaseId === release.id}
-                                onClick={() => {
+                                onClick={(e) => {
+                                  triggerRef.current = e.currentTarget;
                                   setSelected(null);
                                   setReleaseId(release.id);
                                   focusDetail();
@@ -999,6 +1007,7 @@ function DischargeWorkspace() {
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
+                                    triggerRef.current = e.currentTarget;
                                     setSelected(null);
                                     setReleaseId(release.id);
                                     focusDetail();
@@ -1014,6 +1023,7 @@ function DischargeWorkspace() {
                                     aria-pressed={releaseId === release.id}
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      triggerRef.current = e.currentTarget;
                                       setSelected(null);
                                       setReleaseId(release.id);
                                       focusDetail();
@@ -1095,10 +1105,7 @@ function DischargeWorkspace() {
           {Boolean(selected || releaseId) && (
             <div
               className={`${styles.scrim} ${pageStyles.scrim}`}
-              onClick={() => {
-                clearSelection();
-                listRef.current?.focus();
-              }}
+              onClick={closeDrawer}
               aria-hidden="true"
               data-testid="ward-discharge-scrim"
             />
@@ -1111,10 +1118,13 @@ function DischargeWorkspace() {
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 event.preventDefault();
-                clearSelection();
+                closeDrawer();
                 return;
               }
               if (event.key === "Tab") {
+                if (typeof window !== "undefined" && window.matchMedia("(min-width: 40rem)").matches) {
+                  return;
+                }
                 const focusable = Array.from(
                   detailRef.current?.querySelectorAll<HTMLElement>(
                     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -1140,7 +1150,7 @@ function DischargeWorkspace() {
                   {activeRecord || detailRelease ? "Discharge Trajectory & Logistics" : "Record detail"}
                 </h2>
                 {(selected || releaseId) && (
-                  <button type="button" className={pageStyles.closeBtn} aria-label="Close" onClick={clearSelection}>
+                  <button type="button" className={pageStyles.closeBtn} aria-label="Close" onClick={closeDrawer}>
                     <X size={16} aria-hidden="true" />
                   </button>
                 )}
@@ -1577,9 +1587,9 @@ function DischargeWorkspace() {
                       <button
                         type="button"
                         className={pageStyles.viewPatientRecordBtn}
-                        onClick={() => {
+                        onClick={(e) => {
                           setPopulation("records");
-                          openRecord(linkedReleaseRecord);
+                          openRecord(linkedReleaseRecord, e.currentTarget);
                         }}
                       >
                         View patient discharge record →

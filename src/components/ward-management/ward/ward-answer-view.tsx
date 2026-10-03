@@ -95,6 +95,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const [holdDuration, setHoldDuration] = useState("120");
   const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   // A response belongs to the attempt that preceded it, without reading a mutable ref in render.
@@ -115,7 +116,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       if (event.key === "Escape") {
         event.preventDefault();
         setAcceptModalOpen(false);
-        triggerRef.current?.focus();
+        (openerRef.current ?? triggerRef.current)?.focus();
         return;
       }
       if (event.key === "Tab" && modalRef.current) {
@@ -349,8 +350,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             type="button"
             className={`${styles.btn} ${styles.btnGood}`}
             disabled={!activeMovement}
-            onClick={() => {
+            onClick={(e) => {
               if (activeMovement) {
+                openerRef.current = e.currentTarget;
                 setAcceptModalOpen(true);
               }
             }}
@@ -848,8 +850,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                       type="button"
                       key={bedNum}
                       className={cellClass}
-                      onClick={() => {
+                      onClick={(e) => {
                         if (isVacant && activeMovement) {
+                          openerRef.current = e.currentTarget;
                           setAcceptModalOpen(true);
                         }
                       }}
@@ -1041,7 +1044,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={`${styles.btn} ${styles.btnSm}`}
                 onClick={() => {
                   setAcceptModalOpen(false);
-                  triggerRef.current?.focus();
+                  (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
                 Cancel
@@ -1104,7 +1107,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 className={styles.btn}
                 onClick={() => {
                   setAcceptModalOpen(false);
-                  triggerRef.current?.focus();
+                  (openerRef.current ?? triggerRef.current)?.focus();
                 }}
               >
                 Cancel
@@ -1113,7 +1116,13 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 type="button"
                 className={`${styles.btn} ${styles.btnGood}`}
                 onClick={() => {
+                  const opener = openerRef.current;
                   handleAccept(activeMovement.id);
+                  if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
+                    opener.focus();
+                  } else {
+                    triggerRef.current?.focus();
+                  }
                 }}
               >
                 Confirm Acceptance in Principle
