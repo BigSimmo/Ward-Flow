@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+
 import { bedReleases } from "@/components/ward-management/ward-movements";
 
 /**
@@ -391,5 +394,92 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
         ).toEqual([]);
       }
     }
+  });
+});
+
+test.describe("@mockup WA disposition pathways", () => {
+  const seed = seedWardFlowState();
+  const release = seed.bedReleases.find((row) => {
+    const admission = seed.admissions.find((stay) => stay.id === row.admissionId);
+    const patient = seed.patients.find((person) => person.id === admission?.patientId);
+    return row.state === "expected" && row.blocker === null && patient?.legalStatus?.startsWith("Voluntary");
+  });
+  if (!release) throw new Error("A voluntary linked release is required for disposition journeys");
+  const admission = seed.admissions.find((row) => row.id === release.admissionId)!;
+  const patient = seed.patients.find((person) => person.id === admission.patientId)!;
+  const name = `${patient.familyName}, ${patient.givenName}`;
+
+  for (const destination of LEAVING_DESTINATIONS) {
+    test(`records ${destination.id}, retains history and shows the same destination across screens`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 1024 });
+      await page.goto(`/mockups/ward-flow/ward/${release.unitId}?tab=departure-planning`);
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
+      await page.getByTestId(`ward-bed-release-release-${release.id}`).click();
+      const picker = page.getByTestId(`ward-bed-release-discharge-destination-${release.id}`);
+      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length + 1);
+      await picker.selectOption(destination.id);
+      await page.getByTestId(`ward-bed-release-discharge-submit-${release.id}`).click();
+      await expect(page.getByTestId(`ward-bed-release-${release.id}`)).toHaveCount(0);
+      await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/discharges"]').click();
+      await page.getByRole("button", { name: /Admission records/ }).click();
+      await page.locator("#discharges-filter-destination").selectOption(destination.id);
+      await page.getByRole("button", { name, exact: true }).click();
+      const detail = page.getByRole("region", { name: "Selected discharge details" });
+      await expect(detail).toContainText(destination.label);
+      await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+      if (destination.id === "died-on-the-ward") {
+        await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
+      } else {
+        await detail.getByRole("combobox", { name: "Arrangement status" }).selectOption("arranged");
+        await detail.getByRole("button", { name: "Record follow-up status" }).click();
+        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText(
+          "Arranged · Flow coordinator",
+        );
+      }
+    });
+  }
+
+  test("Plan departure leads to the chosen ward's Decisions tab", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/discharges");
+    await page.getByTestId("ward-discharge-plan-departure").click();
+    await page.getByRole("combobox", { name: "Ward for departure planning" }).selectOption(release.unitId);
+    await page.getByRole("link", { name: "Open ward departure planning" }).click();
+    await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("ward-bed-release-admission")).toBeVisible();
+  });
+});
+
+test.describe("@mockup complete care dossier", () => {
+  test("records planning, clinician responsibility and an appointment at phone width", async ({ page }) => {
+    const seed = seedWardFlowState();
+    const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
+    const p = seed.patients.find((p) => p.id === a.patientId)!;
+    await page.goto("/mockups/ward-flow/discharges");
+    await page.getByRole("button", { name: /Admission records/ }).click();
+    await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
+    const detail = page.getByRole("region", { name: "Selected discharge details" });
+    await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+    const care = detail.getByRole("region", { name: "Care journey" });
+    await care.locator("summary", { hasText: "Planning item" }).click();
+    await care.getByRole("combobox", { name: "Planning item", exact: true }).selectOption("crisis_plan");
+    await care.getByRole("combobox", { name: "Planning status" }).selectOption("completed");
+    await care.getByRole("button", { name: "Record planning item" }).click();
+    await expect(care).toContainText("crisis plan: completed");
+    await care.locator("summary", { hasText: "Appointment" }).first().click();
+    await care.getByRole("combobox", { name: "Responsible clinician" }).selectOption("demo-adult-clinician");
+    await care.getByRole("combobox", { name: "Responsible community service" }).selectOption({ index: 1 });
+    await care.getByRole("combobox", { name: "Appointment mode" }).selectOption("telephone");
+    const when = new Date();
+    when.setMinutes(when.getMinutes() + 1);
+    const local = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}-${String(when.getDate()).padStart(2, "0")}T${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+    await care.getByLabel("Appointment date and time").fill(local);
+    await care.getByRole("button", { name: "Record appointment", exact: true }).click();
+    await expect(care).toContainText("Dr Alex Taylor");
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await care.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await expect(care.getByRole("alert")).toHaveCount(0);
   });
 });

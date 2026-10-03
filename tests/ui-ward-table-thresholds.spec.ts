@@ -266,8 +266,7 @@ test.describe("@mockup every ward table's threshold still describes the table it
                   sentinelWidthPx: Math.round(sentinelWidth),
                 },
               ];
-            },
-          ),
+            }),
         SENTINEL_PX,
       );
       seen[route] = measured;
@@ -641,4 +640,30 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
       );
     }
   });
+});
+
+test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
+  await page.goto("/mockups/ward-flow/referrals");
+  await page.waitForLoadState("networkidle");
+  await page.emulateMedia({ media: "print" });
+  for (const id of ["ward-referral-board-queued-table", "ward-referral-board-decided-table"]) {
+    const table = page.getByTestId(id).locator("table");
+    await expect(table).toBeVisible();
+    const measured = await table.evaluate((node) => {
+      const element = node as HTMLTableElement;
+      const before = element.style.cssText;
+      const pin = Number.parseFloat(getComputedStyle(element).minWidth);
+      element.style.setProperty("transition-property", "none", "important");
+      element.style.setProperty("min-width", "0px", "important");
+      element.style.setProperty("width", "min-content", "important");
+      const min = element.getBoundingClientRect().width;
+      element.style.setProperty("width", "max-content", "important");
+      const max = element.getBoundingClientRect().width;
+      element.style.cssText = before;
+      return { pin, min, max };
+    });
+    expect(measured.min).toBeGreaterThan(0);
+    expect(measured.max).toBeGreaterThanOrEqual(measured.min);
+    console.log(`[print table threshold] ${id}`, measured);
+  }
 });

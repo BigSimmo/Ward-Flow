@@ -144,9 +144,9 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByTestId("rejections")).toHaveTextContent("1");
     const reason = screen.getByTestId("last-rejection").textContent ?? "";
     expect(reason).toMatch(/involuntary/iu);
-    expect(reason, "the engine's reason quotes the record code").toContain(patientId);
+    expect(reason, "the protected engine refusal does not expose identifiers").not.toContain(patientId);
     // Josh, 26 Sept 2026: the message on screen names the person, as the success message does.
-    const shown = reason.split(patientId).join(name).split(release.admissionId).join(name);
+    const shown = `${name}: ${reason}`;
     expect(screen.getByText(`Not recorded: ${shown}. Nothing was changed.`)).toBeInTheDocument();
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
     expect(screen.getByTestId("others").textContent).toBe(othersBefore);

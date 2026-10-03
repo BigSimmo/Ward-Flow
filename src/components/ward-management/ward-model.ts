@@ -419,6 +419,8 @@ export type LegalStatus =
  */
 export type LegalForm = {
   code: string;
+  /** Setting recorded from the current paper, never inferred from geography. */
+  region?: "metro" | "country";
   /**
    * **There is deliberately no `label` field.** Ward Flow does not hold form titles; the Chief
    * Psychiatrist's register does, and `legalFormName` in `ward-legal-forms.ts` resolves one from
