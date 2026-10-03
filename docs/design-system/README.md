@@ -2,6 +2,11 @@
 
 > **Current scope.** This document set was inherited from PsychSift. Apply shared design rules only within the [Ward Flow repository boundary](../../AGENTS.md). PsychSift project state, hosted CI and historical measured figures are not current Ward Flow evidence.
 
+> [!NOTE]
+> **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
+> This document set describes the historical PsychSift design system and token migration layer.
+> For Ward Flow (`BigSimmo/Ward-Flow`), the owner reconfirmed the current local `main` rendered UI as the authoritative visual and behavioral baseline. Historical drawings and token prescriptions do not authorise restyling it; preserve understandable status and accessible controls.
+
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →
 committed tests → `.design-sync/conventions.md` → this set. Where this set contradicts a

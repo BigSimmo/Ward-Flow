@@ -194,7 +194,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  height: 2rem;
+  min-height: 44px;
   padding: 0 0.875rem;
   border-radius: var(--r2);
   border: 1px solid var(--line-strong);
@@ -216,7 +216,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  height: 2rem;
+  min-height: 44px;
   padding: 0 0.875rem;
   border-radius: var(--r2);
   border: 1px solid var(--accent);
@@ -1457,7 +1457,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.75rem;
+  min-height: 44px;
   min-width: 44px;
   padding: 0 0.625rem;
   font-size: 0.75rem;
@@ -1559,8 +1559,7 @@
 }
 
 .actionButton {
-  min-height: 2.25rem;
-  height: 2.25rem;
+  min-height: 44px;
   min-width: 44px;
   box-sizing: border-box;
   padding: 0 0.75rem;

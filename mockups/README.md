@@ -328,11 +328,11 @@ permanently pre-authorising a deletion nobody has looked at again.
 | Retired    | Route                                     | Approved by             | Superseded by                           | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ---------- | ----------------------------------------- | ----------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-03 | `/mockups/ward-flow/patients/[patientId]` | Repository owner        | `/mockups/ward-flow/people/[patientId]` | The address was misnamed: it looked a **movement** up by id while calling it a patient, and its inbound links passed movement ids through a variable called `patient`. Split into `/people/[patientId]` for the person and `/movements/[movementId]` for the movement, so both names now match what they show. A redirect was considered and rejected — the ids that reached the old address were movement ids, so forwarding them into the person screen would show the wrong record. |
-| 2026-09-17 | `/mockups/ward-flow/morning`              | Repository owner (Josh) | `/mockups/ward-flow/capacity`           | Owner answer 41 in [`docs/ward-flow/owner-answers-2026-09-17.md`](../docs/ward-flow/owner-answers-2026-09-17.md): "Retire the Morning screen; its tests move to Capacity."                                                                                                                                                                                                                                                                                                             |
+| 2026-09-17 | `/mockups/ward-flow/morning`              | Repository owner (Josh) | `/mockups/ward-flow/capacity`           | Owner answer 41 in [`docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md`](../docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md): "Retire the Morning screen; its tests move to Capacity."                                                                                                                                                                                                                                                                     |
 
 ## Design tokens
 
-Mockups use the Clinical White / Sky Graphite role tokens (`--command`, `--clinical-accent`, `--success`) from [`docs/redesign/02-design-direction.md`](../docs/redesign/02-design-direction.md). Older design-exploration mockups were removed in July 2026 so stale palettes do not mislead future design review.
+Mockups use the Clinical White / Sky Graphite role tokens (`--command`, `--clinical-accent`, `--success`) from `docs/redesign/02-design-direction.md` (historical PsychSift doc). Older design-exploration mockups were removed in July 2026 so stale palettes do not mislead future design review.
 
 ## Global search shell
 
@@ -341,7 +341,7 @@ Mockups use the Clinical White / Sky Graphite role tokens (`--command`, `--clini
 
 ## Calculators Show all chip (2026-08-24)
 
-Three phone homes at [`/mockups/calculators-show-all`](../src/app/mockups/calculators-show-all/page.tsx). The page is
+Three phone homes at `/mockups/calculators-show-all` (historical PsychSift study). The page is
 the Tools launcher with Calculators copy. Only the **Show all** chip changes.
 
 | Style           | Chip                                                             |
@@ -375,13 +375,13 @@ Some document-search mockups include live handoff routes (for example `document-
 
 ## Privacy page redesign study (2026-08)
 
-- Selected perfected direction: [`/mockups/privacy-live-signal-perfected`](../src/app/mockups/privacy-live-signal-perfected/page.tsx)
-- Full three-direction study: [`/mockups/privacy-page-directions`](../src/app/mockups/privacy-page-directions/page.tsx)
-- Static comps: [`public/mockups/privacy-page-redesign-2026-08/`](../public/mockups/privacy-page-redesign-2026-08/README.md)
+- Selected perfected direction: `/mockups/privacy-live-signal-perfected` (historical PsychSift study)
+- Full three-direction study: `/mockups/privacy-page-directions` (historical PsychSift study)
+- Static comps: `public/mockups/privacy-page-redesign-2026-08/` (historical PsychSift assets)
 
 ## Dictionary Browse header study (2026-08-18)
 
-Runnable study at [`/mockups/dictionary-browse-header`](../src/app/mockups/dictionary-browse-header/page.tsx). The
+Runnable study at `/mockups/dictionary-browse-header` (historical PsychSift study). The
 brief was to drop the description line under **Browse terms** and the orphaned A–Z / Z–A sort pill that floats on its
 own row, then rebuild the header for the phone. All three directions move sort into the Filters sheet, where the other
 modes already keep it; they differ in how much letter navigation stays on screen.
@@ -397,7 +397,7 @@ because each frame draws its own top bar, mode nav and composer.
 
 ## Dictionary Browse header, round two (2026-08-18)
 
-Runnable study at [`/mockups/dictionary-browse-header-compact`](../src/app/mockups/dictionary-browse-header-compact/page.tsx),
+Runnable study at `/mockups/dictionary-browse-header-compact` (historical PsychSift study),
 a follow-up to the round-one study above. Every version replaces the 27-chip horizontal letter rail with a **letter
 dropdown on phones** and moves **Abbreviations out of the header into the Filters sheet** beside sort.
 
@@ -421,7 +421,7 @@ to one column.
 
 ## Favourites, phone-first (2026-08-26, arrangement chosen 2026-08-27)
 
-Runnable study at [`/mockups/favourites-phone-perfected`](../src/app/mockups/favourites-phone-perfected/page.tsx).
+Runnable study at `/mockups/favourites-phone-perfected` (historical PsychSift study).
 One perfected direction rather than a set of alternatives — the six earlier favourites studies
 (`favourites-command-desk`, `-command-console`, `-library-view`, `-review-console`, `-set-board`,
 `-set-navigator`) already covered the option space.
@@ -488,7 +488,7 @@ that holds depends on what else lands in the sheet. Pin unusual geometry inline.
 
 ## Dictionary — condensing the phone control row (2026-08-21)
 
-Runnable study at [`/mockups/dictionary-control-row`](../src/app/mockups/dictionary-control-row/page.tsx).
+Runnable study at `/mockups/dictionary-control-row` (historical PsychSift study).
 Deliberately the narrowest of the Dictionary header rounds: the page keeps its kicker, title, summary line, desktop
 sort/view/Filter, letter rail, result rows and the site-wide bottom composer exactly as they are. Only the **phone
 control row** changes — today two viewport-sized dotted pills for Terms / Abbrev plus an A-Z dropdown, on a second
@@ -511,11 +511,11 @@ merged into one destination, with the site-wide composer as the mode’s only se
 
 ## Phone Choose mode sheet YES comps
 
-Runnable study at [`/mockups/phone-mode-sheet-yes`](../src/app/mockups/phone-mode-sheet-yes/page.tsx): design review of the shipping phone mode sheet plus **YES 01 perfected** (sectioned clinical list — shipping recommendation) and YES 02 (icon deck alternate). Shared mockup chrome is suppressed so only the in-frame sheet is judged.
+Runnable study at `/mockups/phone-mode-sheet-yes` (historical PsychSift study): design review of the shipping phone mode sheet plus **YES 01 perfected** (sectioned clinical list — shipping recommendation) and YES 02 (icon deck alternate). Shared mockup chrome is suppressed so only the in-frame sheet is judged.
 
 ## Mode-page redesign comps (2026-07-31)
 
-Static desktop/phone comps for the pages that need redesign (not ModeHome mockups for Favourites) live under [`public/mockups/mode-page-redesign-2026-07/`](../public/mockups/mode-page-redesign-2026-07/README.md):
+Static desktop/phone comps for the pages that need redesign (not ModeHome mockups for Favourites) live under `public/mockups/mode-page-redesign-2026-07/` (historical PsychSift assets):
 
 | Page                                                | Recommended direction             | Issue  |
 | --------------------------------------------------- | --------------------------------- | ------ |
@@ -525,7 +525,7 @@ Static desktop/phone comps for the pages that need redesign (not ModeHome mockup
 
 These are PNGs for design review only. Runnable `/mockups/*` routes are a separate implementation step.
 
-**Perfected combined comps** (desktop + phone in one image, recommended directions only) live in [`public/mockups/mode-page-redesign-2026-07/perfected-combined/`](../public/mockups/mode-page-redesign-2026-07/perfected-combined/README.md).
+**Perfected combined comps** (desktop + phone in one image, recommended directions only) live in `public/mockups/mode-page-redesign-2026-07/perfected-combined/` (historical PsychSift assets).
 
 ## Perfected Tools search mode
 
@@ -547,7 +547,7 @@ Three sticky header directions for record pages that use `InformationPageBreadcr
 
 ## Services filter surface (2026-08-11)
 
-Runnable study at [`/mockups/services-filter-refined`](../src/app/mockups/services-filter-refined/page.tsx): three
+Runnable study at `/mockups/services-filter-refined` (historical PsychSift study): three
 directions for the sheet reached from the **Filter** control in the services results band, each shown at desktop and
 phone, plus a reproduction of what ships today with its defects annotated.
 
@@ -576,7 +576,7 @@ deliberately rather than inherited.
 
 ### Round two — three options along the recommended path (2026-08-11)
 
-Runnable study at [`/mockups/services-filter-options`](../src/app/mockups/services-filter-options/page.tsx).
+Runnable study at `/mockups/services-filter-options` (historical PsychSift study).
 Round one offered three _directions_; asked which to build, the answer was a sequence rather than a
 winner, plus one bolder move flagged as a product judgement. This study draws those three threads so
 they can be compared directly.
@@ -600,7 +600,7 @@ budget, and two studies quoting different numbers for the same catalogue would d
 
 ### Round three — restyle, and a job for the segment bar (2026-08-12)
 
-Runnable study at [`/mockups/filter-sheet-restyle`](../src/app/mockups/filter-sheet-restyle/page.tsx). Rounds one and
+Runnable study at `/mockups/filter-sheet-restyle` (historical PsychSift study). Rounds one and
 two settled the information architecture; this one is about craft, drawn on the **formulation** sheet because that is
 the specimen that stresses the layout hardest — four domain themes, twelve domains, twelve mechanisms, four presets, thirteen domain chips, and the longest title in the app.
 

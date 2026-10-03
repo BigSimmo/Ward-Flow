@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Clock, FileUp, FileText, AlertCircle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -163,6 +163,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
+  const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceConfirmed, setClearanceConfirmed] = useState(false);
   const [clearanceUrgent, setClearanceUrgent] = useState(true);
   const [transportCadDraft, setTransportCadDraft] = useState("");
@@ -171,6 +173,47 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus>("involuntary");
   const [transportEscortDraft, setTransportEscortDraft] = useState(false);
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
+
+  const closeClearanceModal = useCallback(() => {
+    setShowClearanceModal(false);
+    clearanceTriggerRef.current?.focus();
+  }, [setShowClearanceModal]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!showClearanceModal) return;
+      if (event.key === "Escape") {
+        closeClearanceModal();
+        return;
+      }
+      if (event.key === "Tab" && clearanceModalRef.current) {
+        const focusable = clearanceModalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!first || !last) return;
+        if (event.shiftKey && document.activeElement === first) {
+          last.focus();
+          event.preventDefault();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          first.focus();
+          event.preventDefault();
+        }
+      }
+    }
+    if (showClearanceModal) {
+      window.addEventListener("keydown", handleKeyDown);
+      queueMicrotask(() => {
+        const first = clearanceModalRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        first?.focus();
+      });
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showClearanceModal, closeClearanceModal]);
 
   // Synchronize document title
   useEffect(() => {
@@ -685,6 +728,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                         </button>
                       ) : (
                         <button
+                          ref={clearanceTriggerRef}
                           type="button"
                           className={styles.barrierActionBtn}
                           onClick={() => setShowClearanceModal(true)}
@@ -1536,9 +1580,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                         const isCurrent = Boolean(p.current);
                         const isSelected = selectedEpisodeIndex === i;
                         return (
-                          <button
+                          <g
                             key={i}
-                            type="button"
+                            role="button"
+                            tabIndex={0}
                             className={styles.cmark}
                             aria-label={`${p.date}, ${p.where} to ${p.to}, ${p.los}. Open this presentation.`}
                             aria-pressed={isSelected}
@@ -1549,7 +1594,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                                 setSelectedEpisodeIndex(i);
                               }
                             }}
-                            style={{ cursor: "pointer", background: "none", border: "none", padding: 0 }}
+                            style={{ cursor: "pointer" }}
                           >
                             <circle className={styles.chalo} cx={px} cy={baseY} r={13} />
                             <circle
@@ -1561,7 +1606,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                               stroke={isSelected ? "var(--gilt)" : undefined}
                               strokeWidth={isSelected ? 2 : undefined}
                             />
-                          </button>
+                          </g>
                         );
                       })}
 
@@ -1761,10 +1806,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           aria-modal="true"
           aria-labelledby="clearanceModalTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowClearanceModal(false);
+            if (e.target === e.currentTarget) closeClearanceModal();
           }}
         >
-          <div className={styles.clearanceModalBox}>
+          <div className={styles.clearanceModalBox} ref={clearanceModalRef}>
             <div className={styles.clearanceModalHead}>
               <h2 id="clearanceModalTitle" className={styles.clearanceModalTitle}>
                 Request Emergency Department Medical Clearance
@@ -1772,7 +1817,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
               <button
                 type="button"
                 className={styles.clearanceModalClose}
-                onClick={() => setShowClearanceModal(false)}
+                onClick={closeClearanceModal}
                 aria-label="Close dialog"
               >
                 &times;

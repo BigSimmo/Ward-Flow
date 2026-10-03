@@ -117,10 +117,10 @@ run individually per file; nothing here was executed. Back to [the code map inde
   against the current tree and reports STILL TRUE / EXPIRED per claim, using the command each claim
   names. Written after that errata sheet itself went stale within an hour and would have damaged a
   working guard if followed blindly.
-- **`scripts/ward-flow/check-live-state.mjs`** (223 lines) — Report-only: reads
-  `docs/ward-flow/live-state.json` and compares its recorded git assertions against the current
-  machine. Refuses any arguments (`process.argv.length !== 2`, exit 2). Never fetches, writes,
-  stages, commits or contacts a provider. Not npm-wired.
+- **`scripts/ward-flow/check-live-state.mjs`** (223 lines) — Historical audit tool: reads
+  `docs/ward-flow/live-state.json` and compares its recorded git assertions from the 31 August 2026
+  Database worktree untangling against the current machine. Refuses any arguments (`process.argv.length !== 2`, exit 2).
+  Never fetches, writes, stages, commits or contacts a provider. Preserved as a historical audit snapshot; not npm-wired.
 - **`scripts/ward-flow/check-source-control-chars.mjs`** (341 lines) — npm:
   `check:ward-source-control-chars`. Fails if any file under `src/`, `tests/` or `docs/ward-flow/`
   contains a C0 control character other than tab/newline/CR. Written after two literal NUL bytes
