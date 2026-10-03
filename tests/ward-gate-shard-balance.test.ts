@@ -42,6 +42,12 @@ describe("unit gate shards", () => {
     expectExactCover(shards, [...population, "tests/brand-new.test.ts"]);
   });
 
+  it("spreads files recorded as zero seconds instead of piling them onto one shard", () => {
+    const durations = Object.fromEntries(population.map((file, index) => [file, index < 5 ? 10 : 0]));
+    const sizes = allShards(population, 5, durations).map((files) => files.length);
+    expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThanOrEqual(1);
+  });
+
   it("does not depend on the order the population was discovered in", () => {
     const durations = Object.fromEntries(population.map((file, index) => [file, (index * 13) % 11]));
     expect(allShards([...population].reverse(), 3, durations)).toEqual(allShards(population, 3, durations));

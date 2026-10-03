@@ -52,6 +52,7 @@ import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs"
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = path.join(projectRoot, "tests", "ward-expected-reds.json");
+const MIN_FILE_SECONDS = 0.1;
 const UNIT_DURATIONS = path.join(projectRoot, "scripts", "ward-flow", "unit-durations.json");
 
 /**
@@ -378,7 +379,10 @@ export function selectGateShard(population, { index, count }, durations = {}) {
   const weighted = files
     .map((file) => {
       const seconds = durations[file];
-      return { file, seconds: Number.isFinite(seconds) && seconds >= 0 ? seconds : median };
+      // The record is rounded to tenths, so a file recorded as 0 still costs a worker something; the
+      // floor keeps such files spread across the shards instead of piling onto one.
+      const measuredSeconds = Number.isFinite(seconds) && seconds >= 0 ? seconds : median;
+      return { file, seconds: Math.max(measuredSeconds, MIN_FILE_SECONDS) };
     })
     .sort((a, b) => b.seconds - a.seconds || (a.file < b.file ? -1 : 1));
   for (const { file, seconds } of weighted) {

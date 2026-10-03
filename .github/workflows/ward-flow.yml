@@ -75,14 +75,15 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
-      # Fast signal: only the tests that import the files this PR changed, so a likely red shows in
-      # about two minutes. It runs here rather than on a runner of its own, which keeps two PRs' runs
-      # inside the account's concurrent-runner limit. The unit shards still run every file.
+      # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
+      # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
+      # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
+      # concurrent-runner limit.
       - name: Run the tests related to this PR's changes
         if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD
+        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .
       - name: Check maintained policy contracts
         if: ${{ !cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/check-policy-contracts.mjs
