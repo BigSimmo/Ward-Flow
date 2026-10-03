@@ -116,7 +116,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         role: "coordinator",
         now,
         unitId: unit.id,
-        message: "Please confirm your morning bed discharges",
+        message: "Please review and confirm ward capacity.",
         urgent: true,
       });
 
@@ -127,7 +127,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         unitId: unit.id,
         at: now,
         byRole: "coordinator",
-        message: "Please confirm your morning bed discharges",
+        message: "Please review and confirm ward capacity.",
         urgent: true,
       });
     });
@@ -141,7 +141,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         role: "bed_manager",
         now,
         unitId: unit.id,
-        message: "Bed manager checking ICU step-downs",
+        message: "Please review and confirm ward capacity.",
       });
 
       expect(next.rejections).toHaveLength(state.rejections.length);
@@ -150,7 +150,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         unitId: unit.id,
         at: now,
         byRole: "bed_manager",
-        message: "Bed manager checking ICU step-downs",
+        message: "Please review and confirm ward capacity.",
         urgent: undefined,
       });
     });
@@ -164,7 +164,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         role: "executive",
         now,
         unitId: unit.id,
-        message: "Executive escalation: site capacity threshold breached",
+        message: "Please review and confirm ward capacity.",
         urgent: true,
       });
 
@@ -174,7 +174,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         unitId: unit.id,
         at: now,
         byRole: "executive",
-        message: "Executive escalation: site capacity threshold breached",
+        message: "Please review and confirm ward capacity.",
         urgent: true,
       });
     });
@@ -187,7 +187,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         role: "coordinator",
         now,
         unitId: "non-existent-unit",
-        message: "Ping",
+        message: "Please review and confirm ward capacity.",
       });
 
       expect(next.rejections).toHaveLength(state.rejections.length + 1);
@@ -205,7 +205,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         role: "ward",
         now,
         unitId: unit.id,
-        message: "Ward buzz",
+        message: "Please review and confirm ward capacity.",
       });
 
       expect(next.rejections).toHaveLength(state.rejections.length + 1);

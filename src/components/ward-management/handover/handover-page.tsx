@@ -359,6 +359,7 @@ export function HandoverPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+  const scoreDrawerRef = useRef<HTMLElement | null>(null);
 
   // Global / or Ctrl+K shortcut to focus search input
   useEffect(() => {
@@ -389,15 +390,36 @@ export function HandoverPage() {
     }
   }, [selectedMovement]);
 
-  // Close drawer on Escape and restore focus
+  // Tab containment and Escape dismissal for scoreDrawer
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedMovement !== null) {
+    if (selectedMovement === null) return;
+    const handleDrawerKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
         closeMovementDetail();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const drawer = scoreDrawerRef.current;
+      if (!drawer) return;
+      const focusable = Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", handleDrawerKeyDown);
+    return () => window.removeEventListener("keydown", handleDrawerKeyDown);
   }, [selectedMovement, closeMovementDetail]);
 
   const toggleTask = (taskId: string) => {
@@ -3156,6 +3178,7 @@ export function HandoverPage() {
         onClick={closeMovementDetail}
       >
         <aside
+          ref={scoreDrawerRef}
           className={pageStyles.scoreDrawer}
           role="dialog"
           aria-modal="true"

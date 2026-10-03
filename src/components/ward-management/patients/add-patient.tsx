@@ -798,6 +798,10 @@ export function AddPatientForm() {
                         placeholder="Enter clinical presentation, risk assessment notes, collateral information, or special nursing requirements..."
                         value={clinicalNotes}
                         onChange={(e) => setClinicalNotes(e.target.value)}
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
+                        autoComplete="off"
                       />
                     </div>
                   </div>

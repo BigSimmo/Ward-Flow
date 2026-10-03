@@ -66,7 +66,7 @@ The complete catalog with file line numbers, defect mechanisms, clinical risks, 
 
 ## 3. Active Blocking Questions (13 Decisions)
 
-Detailed clinical impacts, options, and recommendations are in **[`docs/ward-flow/PROJECT-ISSUES.md#section-2`](../PROJECT-ISSUES.md#section-2)**.
+Detailed clinical impacts, options, and recommendations are in **[`docs/ward-flow/archive/dated-notes/PROJECT-ISSUES.md#2-for-the-owner`](../archive/dated-notes/PROJECT-ISSUES.md#2-for-the-owner)**.
 
 ### ① Clinical & Statutory Decisions
 

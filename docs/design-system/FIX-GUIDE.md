@@ -6,7 +6,7 @@ product UI, `globals.css`, or `ckb-v2-tokens.css`.
 
 - **Date:** 27 August 2026
 - **Companions:** [README.md](README.md) · [TOKENS.md](TOKENS.md) · [GATES.md](GATES.md) ·
-  [COMPONENTS.md](COMPONENTS.md) · [`docs/design-system-contract.md`](../design-system-contract.md) ·
+  [COMPONENTS.md](COMPONENTS.md) · `docs/design-system-contract.md` (retired historical doc) ·
   `docs/design-system.md` (retired with PsychSift, 26 September 2026) (live-layer Geist notes)
 
 Statuses: **Fixed** (code in this sweep) · **Documented** (intentional or already true; no
@@ -72,7 +72,7 @@ Do **not** map them to `--clinical-accent` (that role is `--primary-500` and wou
 medication records). The contract exemption is **scoped to those accent defaults**, not a
 whole-file blank cheque on either module. Enumerated in `RAW_COLOR_EXEMPTIONS` in
 `scripts/design-system-contract-utils.mjs`; described for operators in
-[`docs/design-system-contract.md`](../design-system-contract.md).
+`docs/design-system-contract.md` (retired historical doc).
 
 ---
 

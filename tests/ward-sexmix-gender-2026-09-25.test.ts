@@ -129,7 +129,7 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
       now: NOW,
       admissionId: occupant.id,
       actingUnitId: occupant.unitId,
-      leavingDestination: "discharged-to-the-community",
+      leavingDestination: "transferred-to-a-general-hospital",
     });
 
     expect(after.rejections).toHaveLength(0);
@@ -153,7 +153,7 @@ describe("sexMix follows gender, never raw sex (owner ruling 2026-09-25)", () =>
       now: NOW,
       admissionId: occupant.id,
       actingUnitId: occupant.unitId,
-      leavingDestination: "discharged-to-the-community",
+      leavingDestination: "transferred-to-a-general-hospital",
     });
 
     expect(after.rejections).toHaveLength(0);
