@@ -1377,7 +1377,7 @@ test.describe("@mockup Ward Flow design system showcase", () => {
 test("@mockup on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
   await page.goto("/mockups/ward-flow/on-call");
   const rows = page.locator('tr[id^="ward-coverage-"]');
-  const toggles = page.getByRole("button", { name: "Coverage & handover" });
+  const toggles = page.getByRole("button", { name: /^Coverage and handover for /, includeHidden: true });
   const count = await rows.count();
   expect(count).toBeGreaterThan(1);
   for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
