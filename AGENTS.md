@@ -133,7 +133,7 @@ For the `bug-hunter` targeted defect-discovery shortcut, its execution rules, an
 
 ## Codex review throttling and routing
 
-For Codex review throttling, branch routing, and review thread resolution guidance, see [`docs/agents/codex-review-throttling.md`](docs/agents/codex-review-throttling.md) and [`docs/codex-review-protocol.md`](docs/codex-review-protocol.md).
+For Codex review throttling, branch routing, and review thread resolution guidance, see [`docs/agents/codex-review-throttling.md`](docs/agents/codex-review-throttling.md) and the historical [`docs/codex-review-protocol.md`](docs/codex-review-protocol.md) (background only, not an active workflow).
 
 <!-- END:codex-review-throttling -->
 

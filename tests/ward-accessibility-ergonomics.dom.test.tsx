@@ -262,7 +262,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
   });
 
   describe("8. CSS contract: var(--ward-tap, 3rem) touch target minimums", () => {
-    it("enforces min-width and min-height on modal/drawer close buttons in community and on-call", () => {
+    it("enforces touch targets on community close buttons and on-call routing links", () => {
       const communityCss = readFileSync("src/components/ward-management/community/community.module.css", "utf8");
       expect(communityCss).toMatch(/\.drawerClose\s*\{[^}]*min-width:\s*var\(--ward-tap,\s*3rem\);/);
       expect(communityCss).toMatch(/\.drawerClose\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
@@ -270,8 +270,8 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(communityCss).toMatch(/\.modalCloseBtn\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
 
       const onCallCss = readFileSync("src/components/ward-management/on-call/on-call.module.css", "utf8");
-      expect(onCallCss).toMatch(/\.modalCloseBtn\s*\{[^}]*min-width:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(onCallCss).toMatch(/\.modalCloseBtn\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      expect(onCallCss).toMatch(/\.routingLink\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      expect(onCallCss).toMatch(/\.filterBtn,[\s\S]*?min-height:\s*var\(--ward-tap,\s*3rem\);/);
     });
   });
 

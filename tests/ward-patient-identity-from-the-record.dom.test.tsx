@@ -98,12 +98,12 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    const rows = [...container.querySelectorAll("li")].filter((li) => li.textContent?.includes("• Patient:"));
+    const rows = [...container.querySelectorAll("li")].filter((li) => li.hasAttribute("data-movement-id"));
     expect(rows.length).toBeGreaterThan(3);
     for (const row of rows) {
-      // The detail line opens with the movement id; the owner's name runs straight into it in
-      // textContent, so no word boundary is anchored here.
-      const movementId = row.textContent!.match(/(WF-[A-Z0-9-]+) ·/)?.[1];
+      // The refined alert row no longer prints the movement id in its visible text, so the row
+      // carries it as data-movement-id; the patient shown must still be the one recorded for it.
+      const movementId = row.getAttribute("data-movement-id") ?? undefined;
       expect(movementId, row.textContent!).toBeDefined();
       const recorded = expectedFor(movementId!);
       const strong = [...row.querySelectorAll("strong")].map((el) => el.textContent);

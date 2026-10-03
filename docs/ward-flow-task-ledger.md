@@ -1,5 +1,7 @@
 # Ward Flow — the task ledger
 
+> **Current task navigation — 3 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The [3 October pathway audit](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) is a later audit than the September record below, covering its own scope. The WF-RULES completion update at the end supersedes that task's earlier pending-integration/reconciliation entry.
+
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
 > 🟢 **STATUS AS OF 25 SEPTEMBER 2026, ESTATE RESOLUTION & ELEVATION: read this first.** The latest session closeout,
@@ -7942,3 +7944,11 @@ Additional review repairs, same task ID: `f2cbcfd` fixes physical-capacity trans
 Compatibility checkpoint, same task ID: `0149df3` preserves the existing owner-approved 5B fallback, validates missing country-expiry payloads before eligibility and updates the continuation-only form inventory without weakening expiry provenance. Initial broad run: seven failed files/eleven tests; all are diagnosed, with unchanged skips. Focused compatibility checks precede publication; the fresh complete reconciled run will be the normal current-head GitHub CI population, without repeating it serially in a second local broad run. Production browser/full-TypeScript verification remains separate. Review findings are repaired in code; replies/thread-resolution are deferred under the repository's explicit-authority rule. No merge or deployment.
 
 Final legal compatibility verification on `0149df3`: **75 tests passed in eight files**, zero failures, including all four provenance sweeps and the unchanged owner-approved 5B behaviour tests. Evidence: `.local/wa-audit/review-repairs-legal-compatibility.log`. Normal correction commit hooks passed scoped lint/typecheck. The initial broad failure is retained as historical evidence; the complete current-head hosted suite is the subsequent full regression surface.
+
+## WF-RULES-20261002 — documentation follow-up, 3 October 2026
+
+This supersedes the earlier WF-RULES pending-integration/reconciliation next action while preserving its dated evidence. The original technical repairs were published in [Ward PR14](https://github.com/BigSimmo/Ward-Flow/pull/14), merged at `3950980f43b898d5a2db9c84701923446371c179` on 2 October 2026 at 16:40:52 UTC. The [existing canonical task](https://app.notion.com/p/3ed7889e8a2281948826cbcf6c9da2b1) received the original Completed record; this is separate from later local follow-up delivery.
+
+The follow-up against public main `2220bde5f606c79681d9167e1e5b0b10ec2d8ed2` repairs six remaining documentation ambiguities: current design/status navigation; owner-ruling source edits rather than hand edits to the generated index; manual Ward review handling; dated task-state supersession; checkout-based client loading; and the compact receipt route for simple tasks. The [same checkpoint](ward-flow/plans/2026-10-02-rules-repair.md) records the isolated task branch and focused evidence. Josh approved the seven-file scoped takeover; command, relative-link, formatting and ownership checks passed against the actual edits. No application, clinical, storage or visual change was made.
+
+Shared mirror delivery, native GUI/cloud loading, missing historical clinical evidence/sign-offs and deployed runtime/provider checks remain separate gaps. The previously malformed historical patient mockup passed its focused formatting check on the reviewed main. The new follow-up is implemented and checked locally; its publication, merge and canonical delivery must each be reported from actual evidence.
