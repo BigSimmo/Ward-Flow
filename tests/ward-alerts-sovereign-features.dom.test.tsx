@@ -24,6 +24,50 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
     expect(screen.getByRole("tab", { name: /Tier 3: Administrative/i })).toBeInTheDocument();
   });
 
+  it("includes each visible tier label in its accessible name", () => {
+    renderScreen();
+    for (const label of ["All alerts", "Clinical risk", "Capacity & delay", "Admin & transfer"]) {
+      const tab = screen.getByRole("tab", { name: new RegExp(label) });
+      expect(within(tab).getByText(label)).toBeVisible();
+      expect(tab).toHaveAccessibleName(new RegExp(label));
+    }
+  });
+
+  it.each([
+    [27 * 60, "1d 3h overdue"],
+    [48 * 60, "2d overdue"],
+    [3 * 60 + 5, "3h 05m overdue"],
+    [5, "5m overdue"],
+  ] as const)("preserves the full recorded overdue duration of %s minutes", (elapsed, expected) => {
+    function SetExpiry() {
+      const { movements, dispatch } = useWardFlow();
+      const movement = movements.find((m) => !m.closure && m.legalForm)!;
+      return (
+        <button
+          onClick={() =>
+            dispatch({
+              type: "RECORD_LEGAL_FORM_EXPIRY",
+              role: "coordinator",
+              now: NOW,
+              movementId: movement.id,
+              dueAt: NOW - elapsed,
+            })
+          }
+        >
+          Set recorded expiry
+        </button>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <SetExpiry />
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Set recorded expiry" }));
+    expect(screen.getByText(expected, { exact: true })).toBeVisible();
+  });
+
   it("supports keyboard navigation and focus return in the alert action menu", () => {
     renderScreen();
     const trigger = screen.getAllByRole("button", { name: /More actions for/ })[0]!;
