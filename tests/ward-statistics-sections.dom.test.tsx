@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -847,5 +847,46 @@ describe("one emergency department in detail", () => {
           `will go false silently the next time the seed is edited.`,
       ).not.toContain(quantifier);
     }
+  });
+});
+
+describe("StatisticsScreen interactive controls and table sorting accessibility", () => {
+  it("renders export button with aria-disabled, describedby and linked hint span", () => {
+    renderInProvider(<StatisticsScreen />);
+    const exportBtn = screen.getByRole("button", { name: /Export the figures/i });
+    expect(exportBtn).toHaveAttribute("aria-disabled", "true");
+    expect(exportBtn).toHaveAttribute("aria-describedby", "exportBtnHint");
+    const hint = document.getElementById("exportBtnHint");
+    expect(hint).toBeInTheDocument();
+    expect(hint?.textContent).toContain("Not wired in this prototype");
+  });
+
+  it("renders 17 sortable table headers as semantic buttons with aria-sort, and toggles sort direction on click", () => {
+    const { container } = renderInProvider(<StatisticsScreen />);
+
+    // Query all th elements with aria-sort
+    const sortableThs = container.querySelectorAll("th[aria-sort]");
+    expect(sortableThs.length).toBe(17);
+
+    // Each sortable th must contain a <button type="button">
+    for (const th of Array.from(sortableThs)) {
+      const btn = th.querySelector("button");
+      expect(btn).not.toBeNull();
+      expect(btn).toHaveAttribute("type", "button");
+    }
+
+    // Test sorting on the Hospital column in the Ward table
+    const hospTh = container.querySelector("th[aria-sort]:has(button)") as HTMLElement;
+    const hospBtn = hospTh.querySelector("button")!;
+    const initialSort = hospTh.getAttribute("aria-sort");
+    expect(initialSort).toBe("none");
+
+    // Click to sort ascending
+    fireEvent.click(hospBtn);
+    expect(hospTh.getAttribute("aria-sort")).toBe("ascending");
+
+    // Click to sort descending
+    fireEvent.click(hospBtn);
+    expect(hospTh.getAttribute("aria-sort")).toBe("descending");
   });
 });

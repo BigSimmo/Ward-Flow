@@ -1239,12 +1239,12 @@ describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", 
     // Non-vacuity: the one legitimate exit must still be there, or this test would also pass on a
     // sidebar with no links at all. The href is now a named constant shared by the rail and the
     // drawer, so both its value and its use are asserted.
-    expect(WARD_DEVELOPER_HUB_HREF).toBe("/mockups/development");
+    expect(WARD_DEVELOPER_HUB_HREF).toBe("/mockups/ward-flow");
     expect(source).toContain("WARD_DEVELOPER_HUB_HREF");
     // Comments are stripped before this one: a mutation proved on 2026-09-04 that splitting the
-    // real literal into a concatenation (`"/mockups/" + "development"`, same runtime value) and
+    // real literal into a concatenation (`"/mockups/" + "ward-flow"`, same runtime value) and
     // leaving a `//` comment with the whole literal satisfied the unstripped check.
-    expect(strippedSource).toContain('"/mockups/development"');
+    expect(strippedSource).toContain('"/mockups/ward-flow"');
   });
 });
 
@@ -1363,6 +1363,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // redirect stubs, `morning/page.tsx` was deleted outright, so the filesystem scan no longer
     // finds it at all — it needs no exclusion here, redirect-only or otherwise.
     const redirectOnlyRoutes = new Set([
+      `${ROUTE_PREFIX}/command`,
       `${ROUTE_PREFIX}/constellation`,
       `${ROUTE_PREFIX}/transport`,
       `${ROUTE_PREFIX}/queue`,
