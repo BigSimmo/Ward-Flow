@@ -331,7 +331,7 @@ describe("community hub — the cohort that appears on no team's page", () => {
 });
 
 describe("community hub — an empty list must never read as an all-clear", () => {
-  it("says follow-up is not recorded, inside the discharged section, on a team whose list is empty", () => {
+  it("states the recording path and the absence of an all-clear on an empty team list", () => {
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
     renderTeam(TEAM_A.id, [admission({ id: "AD-A", referralId: toA.id, state: "occupied" })], [toA]);
 
@@ -361,7 +361,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
       "reads it",
       "nothing reads",
       "no screen or figure reads",
-      "not shown or editable",
+      "can be recorded",
     ]);
     /*
      * ⚠️ **THIS BANNED ONE EXACT SENTENCE UNTIL 2026-09-06, AND THE CLAIM IT GUARDS IS TRIVIAL TO
@@ -435,7 +435,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
     expect(within(section).getByTestId("ward-community-discharged-list")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-discharged-AD-HOME")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-follow-up-not-recorded").textContent).toContain(
-      "Follow-up status is not shown or editable here",
+      "Follow-up arrangements and contact outcomes can be recorded for this team",
     );
   });
 
@@ -484,7 +484,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
       });
       renderTeam(TEAM_A.id, [departed], [toA]);
       expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
-        "Follow-up status is not shown or editable here",
+        "Follow-up arrangements and contact outcomes can be recorded for this team",
       );
       expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
         "does not establish that everybody is being followed up",
@@ -818,7 +818,7 @@ describe("community hub — an unrecorded departure time is an absence, never a 
 });
 
 describe("community hub — what it must never grow", () => {
-  it("has no writable control anywhere: no handover note, no free text of any kind", () => {
+  it("keeps the new follow-up filter chosen and introduces no free narrative", () => {
     // FD-13 permits exactly one story field and it is on the referral. This is the screen where a
     // second one feels obviously necessary, so the absence is asserted rather than intended.
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
@@ -826,7 +826,7 @@ describe("community hub — what it must never grow", () => {
 
     expect(document.querySelectorAll("textarea")).toHaveLength(0);
     expect(document.querySelectorAll("input")).toHaveLength(0);
-    expect(document.querySelectorAll("select")).toHaveLength(0);
+    expect(screen.getByRole("combobox", { name: "Community follow-up filter" })).toBeTruthy();
     expect(document.querySelectorAll("[contenteditable]")).toHaveLength(0);
   });
 

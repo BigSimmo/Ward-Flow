@@ -393,9 +393,10 @@ describe("who may raise which event", () => {
     RECORD_REFERRER_WITHDRAWAL: ["coordinator"],
     // Q004 Task 3: ward-owned patient discharge; bounded record access; coordinator audit review.
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
+    RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
     RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
     RECORD_PATIENT_DISCHARGE: ["ward"],
-    OPEN_DISCHARGE_RECORD: ["coordinator", "ward"],
+    OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
     REVIEW_AUDIT_EVENT: ["coordinator"],
     // Settings wiring (2026-09-16, the owner's "wire some up for real"): the ED access target, the
     // parallel referral cap and the pulled-bed hold are coordinator settings. The reducer refuses

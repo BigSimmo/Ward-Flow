@@ -191,6 +191,7 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   SET_BED_PREPARATION: "Update bed preparation",
   RELEASE_BED: "Release bed",
   RECORD_LEAVING: "Record departure",
+  RECORD_ADMISSION_CARE: "Care journey fact",
   RECORD_ADMISSION_FOLLOW_UP: "Record follow-up arrangement",
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",
   OPEN_DISCHARGE_RECORD: "Open discharge record",
@@ -383,7 +384,9 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
         />
       );
     case "discharge":
-      return event.details.kind === "follow-up" ? (
+      return event.details.kind === "care" ? (
+        <FactList facts={[["Care operation", display(event.details.operation)]]} />
+      ) : event.details.kind === "follow-up" ? (
         <FactList
           facts={[
             ["Before", display(event.details.before)],

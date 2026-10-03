@@ -73,6 +73,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     leavingDestination: null,
     leftAt: null,
     followUp: null,
+    careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
     stepDownCandidate: false,
     ...overrides,
@@ -587,6 +588,7 @@ describe("Admission privacy — structural", () => {
     "leavingDestination",
     "leftAt",
     "followUp",
+    "careJourney",
   ].sort();
 
   it("declares exactly the permitted field set at runtime", () => {
@@ -635,6 +637,7 @@ describe("Admission privacy — structural", () => {
       // field indistinguishable from an absent one, which is exactly what this fixture exists to tell
       // apart.
       followUp: { state: "arranged", recordedAt: 10 * 60, recordedBy: "Ward manager" },
+      careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
       dischargeBarrier: "Accommodation / Housing",
       stepDownCandidate: true,
     };

@@ -1,3 +1,4 @@
+import { validCareJourney } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isLeavingDestination } from "./ward-admissions";
 import {
@@ -361,6 +362,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       )
     )
       return false;
+    if (admission.careJourney !== undefined && !validCareJourney(admission.careJourney)) return false;
     if (!("followUp" in admission) || !nullable(object)(admission.followUp)) return false;
     if (
       object(admission.followUp) &&

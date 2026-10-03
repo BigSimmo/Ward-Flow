@@ -284,7 +284,7 @@ test.describe("@mockup Transport officer screen", () => {
    * under a narrower-width override) explains why print specifically, and only this one element
    * of two nearby, loses visibility. Left failing rather than guessed at.
    */
-  test.fixme("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
+  test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });

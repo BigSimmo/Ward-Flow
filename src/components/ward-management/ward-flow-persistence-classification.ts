@@ -193,6 +193,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // human-typed field, the same shape `RECORD_LEGAL_FORM_EXPIRY` above carries.
   "RECORD_MOVEMENT_GENDER",
   "RECORD_NO_REFERRAL",
+  "RECORD_ADMISSION_CARE",
   "RECORD_ADMISSION_FOLLOW_UP",
   "RECORD_PATIENT_DISCHARGE",
   "RECORD_REFERRER_WITHDRAWAL",
@@ -340,6 +341,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "referralId"
   | "releaseId"
   | "leaveBedId"
+  // Own-team community scope, resolved against the fixed service directory and referral link.
+  | "actingTeamId"
   | "actingUnitId"
   | "inboxItemId"
   | "eventId"

@@ -234,6 +234,19 @@ export function candidateEvents(
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
+    case "RECORD_ADMISSION_CARE":
+      return state.admissions
+        .filter((a) => a.patientId !== null && a.state === "occupied")
+        .map((a) => ({
+          type,
+          role: "coordinator",
+          now,
+          admissionId: a.id,
+          patientId: a.patientId!,
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[a.id] ?? 0,
+          change: { kind: "plan", item: "crisis_plan", status: "in_progress" },
+        }));
     case "RECORD_ADMISSION_FOLLOW_UP":
       return state.admissions
         .filter((admission) => admission.patientId !== null && admission.state === "occupied")

@@ -1,4 +1,5 @@
 "use client";
+import type { LeavingDestination } from "./ward-admissions";
 
 import {
   createContext,
@@ -77,6 +78,7 @@ import {
  */
 type WardFlowContextValue = {
   worldGeneration: number;
+  recordWardDeparture(admissionId: string, actingUnitId: string, leavingDestination: LeavingDestination): void;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
   readDischargeRecord(
@@ -355,6 +357,7 @@ function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, sa
       version: WARD_FLOW_DEMO_STORAGE_VERSION,
       dayZero: dayZero.getTime(),
       worldGeneration: state.worldGeneration,
+
       now,
       savedAtAbsolute,
       // Refusal records are never stored (Josh, D-18, 25 Sept 2026): a refusal can quote a
@@ -709,6 +712,24 @@ function WardFlowWorld({
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
+      recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
+        const admission = state.admissions.find((a) => a.id === admissionId);
+        if (admission?.patientId === null) {
+          dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
+          return;
+        }
+        dispatch({
+          type: "RECORD_PATIENT_DISCHARGE",
+          role: "ward",
+          now,
+          admissionId,
+          actingUnitId,
+          leavingDestination,
+          patientId: admission?.patientId ?? "PT-unresolved",
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
+        });
+      },
       readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
       readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
       readAuditEvents: (actor) => readAuditEvents(state, actor),

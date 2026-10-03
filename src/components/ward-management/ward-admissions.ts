@@ -1,3 +1,4 @@
+import type { CareJourney } from "./ward-care-journey";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -667,6 +668,8 @@ export type Admission = {
    * for them from any other field would hide them behind a fact nobody established.
    */
   followUp: FollowUpRecord | null;
+  /** Closed workflow facts; absent on legacy saves, never inferred during restoration. */
+  careJourney?: CareJourney;
   /**
    * Primary discharge barrier for long-stay patients (length of stay >= 7 days).
    * Chosen from DISCHARGE_BARRIERS fixed vocabulary, never typed or free text.
@@ -716,6 +719,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   leavingDestination: true,
   leftAt: true,
   followUp: true,
+  careJourney: true,
 };
 
 export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_PRESENCE);

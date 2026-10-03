@@ -1,3 +1,5 @@
+import { communityTeamById } from "./community/community-derivations";
+import { validCareChange } from "./ward-care-journey";
 import {
   ADMISSION_STATES,
   FOLLOW_UP_STATES,
@@ -51,6 +53,7 @@ export type AuditReason =
 export type AuditActor = {
   role: WardFlowRole | null;
   actingUnitId: string | null;
+  actingTeamId?: string;
   attribution: "declared-prototype-role";
 };
 export type AuditSubject =
@@ -113,6 +116,7 @@ export type BedReleaseAuditRequest =
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
   | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
 export type DischargeDetails =
+  | { kind: "care"; operation: string | null }
   | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
   | {
       kind: "departure";
@@ -167,7 +171,8 @@ export type AuditEvent = AuditBase &
           | BedReleaseAuditRequest["action"]
           | "RECORD_LEAVING"
           | "RECORD_PATIENT_DISCHARGE"
-          | "RECORD_ADMISSION_FOLLOW_UP";
+          | "RECORD_ADMISSION_FOLLOW_UP"
+          | "RECORD_ADMISSION_CARE";
         details: DischargeDetails;
       }
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
@@ -225,6 +230,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "SET_BED_PREPARATION":
     case "RELEASE_BED":
     case "RECORD_LEAVING":
+    case "RECORD_ADMISSION_CARE":
     case "RECORD_ADMISSION_FOLLOW_UP":
     case "RECORD_PATIENT_DISCHARGE":
       return "discharge";
@@ -245,6 +251,12 @@ export function auditActor(state: WardFlowState, event: WardFlowEvent): AuditAct
     role,
     actingUnitId:
       role === "ward" && "actingUnitId" in event ? (uniqueRecord(state.units, event.actingUnitId)?.id ?? null) : null,
+    ...("actingTeamId" in event &&
+    role === "community" &&
+    typeof event.actingTeamId === "string" &&
+    communityTeamById(event.actingTeamId)
+      ? { actingTeamId: event.actingTeamId }
+      : {}),
     attribution: "declared-prototype-role",
   };
 }
@@ -339,7 +351,8 @@ export function appendAudit(
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
     event.type === "RECORD_PATIENT_DISCHARGE" ||
-    event.type === "RECORD_ADMISSION_FOLLOW_UP"
+    event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
+    event.type === "RECORD_ADMISSION_CARE"
       ? safeCounter(event.expectedGeneration) && event.expectedGeneration === before.worldGeneration
       : true;
   let subject = mayResolveSubject ? auditSubject(before, event) : ({ kind: "unresolved" } as const);
@@ -485,6 +498,15 @@ export function appendAudit(
           reason: enumValue(LEGAL_FORM_RECEIPT_CORRECTION_REASONS, event.reason),
           correctedReceivedAt: finiteInstant(correctedReceivedAt),
         },
+      };
+      break;
+    }
+    case "RECORD_ADMISSION_CARE": {
+      captured = {
+        ...base,
+        category: "discharge",
+        action: event.type,
+        details: { kind: "care", operation: validCareChange(event.change) ? event.change.kind : null },
       };
       break;
     }

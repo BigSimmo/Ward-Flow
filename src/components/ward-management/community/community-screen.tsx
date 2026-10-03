@@ -1,4 +1,5 @@
 "use client";
+import { CommunityFollowUp } from "./community-follow-up";
 
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode } from "react";
 
@@ -440,6 +441,7 @@ export function CommunityScreen({
     dispatch,
   } = useWardFlow();
   const now = useWardFlowClock();
+  const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
   const [transportBookFor, setTransportBookFor] = useState<string | undefined>(undefined);
@@ -3045,11 +3047,19 @@ export function CommunityScreen({
                    * departures rather than a follow-up completion measure.
                    */}
                   <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
-                    Follow-up status is not shown or editable here. This list shows recorded discharges into the
-                    community, not people missing follow-up; an empty list does not establish that everybody is being
-                    followed up.
+                    Follow-up arrangements and contact outcomes can be recorded for this team. An arrangement does not
+                    establish that contact occurred. All community departures shows recorded discharges into the
+                    community; an empty list does not establish that everybody is being followed up.
                   </p>
 
+                  <label>
+                    Community follow-up filter
+                    <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
+                      <option value="all">All community departures</option>
+                      <option value="missing_arrangement">Missing arrangements</option>
+                      <option value="missing_contact">No completed contact recorded</option>
+                    </select>
+                  </label>
                   {lists.dischargedIntoTheArea.length === 0 ? (
                     <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
                       {cannotResolve ? (
@@ -3063,16 +3073,29 @@ export function CommunityScreen({
                     </p>
                   ) : (
                     <ul className={styles.cardList} data-testid="ward-community-discharged-list">
-                      {lists.dischargedIntoTheArea.map((admission) => (
-                        <li
-                          key={admission.id}
-                          className={styles.card}
-                          data-testid={`ward-community-discharged-${admission.id}`}
-                        >
-                          <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
-                          <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
-                        </li>
-                      ))}
+                      {lists.dischargedIntoTheArea
+                        .filter(
+                          (a) =>
+                            followUpFilter === "all" ||
+                            (followUpFilter === "missing_arrangement"
+                              ? a.followUp?.state !== "arranged"
+                              : !a.careJourney?.contacts.some((c) => c.outcome === "completed")),
+                        )
+                        .map((admission) => (
+                          <li
+                            key={admission.id}
+                            className={styles.card}
+                            data-testid={`ward-community-discharged-${admission.id}`}
+                          >
+                            <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
+                            <p className={styles.cardDetail}>{departureLabel(admission, now)}</p>
+                            <p>
+                              Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
+                              {admission.careJourney?.contacts.at(-1)?.outcome?.replaceAll("_", " ") ?? "Not recorded"}
+                            </p>
+                            <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
+                          </li>
+                        ))}
                     </ul>
                   )}
 

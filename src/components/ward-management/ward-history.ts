@@ -41,6 +41,7 @@ export interface WardHistoryEntry {
  */
 export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistoryConfig> = {
   // 2.1 Discharge, admission records, audit access
+  RECORD_ADMISSION_CARE: { category: "patient", plainWording: "Care journey fact recorded" },
   RECORD_ADMISSION_FOLLOW_UP: { category: "patient", plainWording: "Follow-up arrangement recorded" },
   RECORD_PATIENT_DISCHARGE: { category: "neither", plainWording: "Patient discharged from ward" },
   UPDATE_EXPECTED_DISCHARGE: { category: "patient", plainWording: "Expected discharge date updated" },

@@ -937,6 +937,7 @@ export function WardBoard({
     admissions,
     leaveBeds,
     dispatch,
+    recordWardDeparture,
     movements,
     bedReleases: liveBedReleases,
     patients,
@@ -1586,14 +1587,16 @@ export function WardBoard({
       if (!admissionId) return;
       dispatchAndReport(
         () =>
-          dispatch({
-            type: "RECORD_LEAVING",
-            role: "ward",
-            now,
-            admissionId,
-            actingUnitId: unit.id,
-            leavingDestination,
-          }),
+          recordWardDeparture
+            ? recordWardDeparture(admissionId, unit.id, leavingDestination)
+            : dispatch({
+                type: "RECORD_LEAVING",
+                role: "ward",
+                now,
+                admissionId: admissionId,
+                actingUnitId: unit.id,
+                leavingDestination,
+              }),
         `Recorded departure: ${pendingConfirm.who} has left the ward.`,
         "Recorded departure: this patient has left the ward.",
       );
@@ -1622,14 +1625,16 @@ export function WardBoard({
       const executeLeaving = () => {
         dispatchAndReport(
           () =>
-            dispatch({
-              type: "RECORD_LEAVING",
-              role: "ward",
-              now,
-              admissionId: item.selectableKey!,
-              actingUnitId: unit.id,
-              leavingDestination,
-            }),
+            recordWardDeparture
+              ? recordWardDeparture(item.selectableKey!, unit.id, leavingDestination)
+              : dispatch({
+                  type: "RECORD_LEAVING",
+                  role: "ward",
+                  now,
+                  admissionId: item.selectableKey!,
+                  actingUnitId: unit.id,
+                  leavingDestination,
+                }),
           `Recorded departure: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           "Recorded departure: this patient has left the ward.",
         );
@@ -3134,14 +3139,16 @@ export function WardBoard({
                               const executeLeaving = () => {
                                 dispatchAndReport(
                                   () =>
-                                    dispatch({
-                                      type: "RECORD_LEAVING",
-                                      role: "ward",
-                                      now,
-                                      admissionId: selectedTile.key,
-                                      actingUnitId: unit.id,
-                                      leavingDestination,
-                                    }),
+                                    recordWardDeparture
+                                      ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
+                                      : dispatch({
+                                          type: "RECORD_LEAVING",
+                                          role: "ward",
+                                          now,
+                                          admissionId: selectedTile.key,
+                                          actingUnitId: unit.id,
+                                          leavingDestination,
+                                        }),
                                   `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
                                   "Recorded departure: this patient has left the ward.",
                                 );

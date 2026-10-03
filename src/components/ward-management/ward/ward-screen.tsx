@@ -314,6 +314,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     leaveBeds,
     refreshRequests,
     dispatch,
+    recordWardDeparture,
     rejections,
     admissions,
     notices,
@@ -1589,14 +1590,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       who,
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
     };
-    dispatch({
-      type: "RECORD_LEAVING",
-      role: "ward",
-      now,
-      admissionId,
-      actingUnitId: unitId,
-      leavingDestination: dischargeDestination,
-    });
+    if (recordWardDeparture) recordWardDeparture(admissionId, unitId, dischargeDestination);
+    else
+      dispatch({
+        type: "RECORD_LEAVING",
+        role: "ward",
+        now,
+        admissionId,
+        actingUnitId: unitId,
+        leavingDestination: dischargeDestination,
+      });
     setDischargeOpenFor(undefined);
     setDischargeDestination(undefined);
     setDischargeToken((token) => token + 1);

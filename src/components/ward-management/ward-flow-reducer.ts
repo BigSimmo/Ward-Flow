@@ -1,3 +1,4 @@
+import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import {
   appendAudit,
   classifyAuditEvent,
@@ -734,6 +735,7 @@ export function seedWardFlowStateAt(offsetMinutes: number, scenario: WardScenari
 function subjectId(event: WardFlowEvent): string {
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_CARE":
     case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
@@ -1574,7 +1576,14 @@ function departAdmission(
 
 type ProtectedRecordEvent = Extract<
   WardFlowEvent,
-  { type: "OPEN_DISCHARGE_RECORD" | "REVIEW_AUDIT_EVENT" | "RECORD_PATIENT_DISCHARGE" | "RECORD_ADMISSION_FOLLOW_UP" }
+  {
+    type:
+      | "OPEN_DISCHARGE_RECORD"
+      | "REVIEW_AUDIT_EVENT"
+      | "RECORD_PATIENT_DISCHARGE"
+      | "RECORD_ADMISSION_FOLLOW_UP"
+      | "RECORD_ADMISSION_CARE";
+  }
 >;
 
 function protectedRefusal(
@@ -1676,7 +1685,11 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   }
 
   const actor = (
-    "actingUnitId" in event ? { role: event.role, actingUnitId: event.actingUnitId } : { role: event.role }
+    "actingUnitId" in event
+      ? { role: event.role, actingUnitId: event.actingUnitId }
+      : "actingTeamId" in event
+        ? { role: event.role, actingTeamId: event.actingTeamId }
+        : { role: event.role }
   ) as WardRecordActor;
   if (!validRecordActor(actor)) return deny("scope");
   if (event.type === "OPEN_DISCHARGE_RECORD") {
@@ -1703,7 +1716,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const admission = uniqueRecord(state.admissions, event.admissionId);
   const unit = uniqueRecord(
     state.units,
-    event.type === "RECORD_ADMISSION_FOLLOW_UP" && event.role === "coordinator"
+    (event.type === "RECORD_ADMISSION_FOLLOW_UP" || event.type === "RECORD_ADMISSION_CARE") &&
+      (event.role === "coordinator" || event.role === "community")
       ? admission?.unitId
       : event.actingUnitId,
   );
@@ -1714,6 +1728,136 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
   if (revision !== event.expectedRevision) return deny("revision", "stale");
+  if (event.type === "RECORD_ADMISSION_CARE") {
+    if (selectDischargeRecord(state, actor, admission.id).status === "denied") return deny("scope");
+    if (!validCareChange(event.change)) return deny("invalid-payload");
+    if (event.role === "community" && !["follow_up", "contact", "plan", "document"].includes(event.change.kind))
+      return deny("role");
+    if (
+      (admission.state !== "occupied" && admission.state !== "departed") ||
+      (admission.arrivedAt !== null && event.now < admission.arrivedAt)
+    )
+      return deny("transition");
+    if (
+      event.role === "community" &&
+      ((event.change.kind === "follow_up" && event.change.serviceId !== event.actingTeamId) ||
+        (event.change.kind === "contact" &&
+          admission.careJourney?.followUp &&
+          admission.careJourney.followUp.serviceId !== event.actingTeamId))
+    )
+      return deny("scope");
+    const refusal = careChangeRefusal(admission, event.change, event.now);
+    if (refusal) return deny("transition", "denied", refusal);
+    if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))
+      return deny("missing-or-inaccessible");
+    if (
+      event.change.kind === "transport" &&
+      event.change.authority === "none" &&
+      ["ambulance", "service_vehicle", "police", "rfds"].includes(event.change.mode)
+    ) {
+      const movement = dischargeMovement(state, admission);
+      const patient = uniqueRecord(state.patients, admission.patientId);
+      if (patientRecordIsInvoluntary(patient?.legalStatus) || (movement && movement.legalStatus !== "Voluntary"))
+        return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
+    }
+    const careJourney = applyCareChange(
+      admission.careJourney ?? emptyCareJourney(),
+      event.change,
+      event.now,
+      WARD_FLOW_ROLE_LABELS[event.role],
+    );
+    let next = replaceAdmission(state, admission.id, {
+      ...admission,
+      careJourney,
+      ...(event.change.kind === "follow_up"
+        ? {
+            followUp: {
+              state: "arranged" as const,
+              recordedAt: event.now,
+              recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
+            },
+          }
+        : {}),
+    });
+    if (event.change.kind === "transfer" && event.change.step === "arrived") {
+      if (event.role !== "coordinator" || admission.state !== "occupied") return deny("role");
+      const receiving = uniqueRecord(state.units, event.change.receivingUnitId);
+      const movement = dischargeMovement(state, admission);
+      if (!receiving || !movement || !eligibility(movement, receiving, event.now).eligible)
+        return deny(
+          "transition",
+          "denied",
+          "The receiving ward must have a suitable available bed and a linked placement record.",
+        );
+      const bedKind =
+        movement.legalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
+      if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
+      const id = `transfer-${admission.id}-${revision + 1}`;
+      const movementId: MovementId = `WF-${id}`;
+      if (state.admissions.some((a) => a.id === id) || state.movements.some((m) => m.id === movementId))
+        return deny("invalid-payload");
+      next = departAdmission(
+        next,
+        { ...admission, careJourney },
+        unit,
+        event.now,
+        "transferred-to-another-psychiatric-ward",
+      );
+      next = replaceUnit(next, receiving.id, {
+        ...receiving,
+        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
+        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+        allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
+        sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
+      });
+      next = {
+        ...next,
+        admissions: [
+          ...next.admissions,
+          {
+            ...admission,
+            id,
+            unitId: receiving.id,
+            movementId,
+            state: "occupied",
+            bedKind,
+            pulledAt: event.now,
+            arrivedAt: event.now,
+            leftAt: null,
+            leavingDestination: null,
+            expectedDischargeAt: null,
+            dischargeConfirmedAt: null,
+            dischargeDateSetAt: null,
+            dischargeDateSetBy: null,
+            dischargeConfirmedBy: null,
+            dischargeDateMoves: 0,
+            blockReason: null,
+            awayAtEmergencyDepartmentSince: null,
+            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
+          },
+        ],
+        movements: [
+          ...next.movements,
+          {
+            ...movement,
+            id: movementId,
+            admissionId: id,
+            acceptedUnitId: receiving.id,
+            stage: "arrived",
+            transport: undefined,
+            closure: undefined,
+          },
+        ],
+        dischargeRevisions: { ...next.dischargeRevisions, [id]: 0 },
+      };
+    }
+    return appendAudit(
+      state,
+      { ...next, dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 } },
+      event,
+      { outcome: "accepted", reasonCode: "none" },
+    );
+  }
   if (event.type === "RECORD_ADMISSION_FOLLOW_UP") {
     if (typeof event.followUpState !== "string" || !isFollowUpState(event.followUpState))
       return deny("invalid-payload");
@@ -1752,11 +1896,16 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       event.leavingDestination === "discharged-to-the-community" ||
       event.leavingDestination === "left-against-advice"
     ) {
-      return deny(
-        "transition",
-        "denied",
-        "Cannot discharge an involuntary patient without an explicit revocation order.",
-      );
+      if (
+        !admission.careJourney?.legal ||
+        (admission.careJourney.legal.authority !== "revocation" && event.leavingDestination === "left-against-advice")
+      ) {
+        return deny(
+          "transition",
+          "denied",
+          "Cannot discharge an involuntary patient without an explicit revocation order or recorded community treatment order transition.",
+        );
+      }
     }
   }
 
@@ -1796,7 +1945,8 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
     event.type === "RECORD_PATIENT_DISCHARGE" ||
-    event.type === "RECORD_ADMISSION_FOLLOW_UP";
+    event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
+    event.type === "RECORD_ADMISSION_CARE";
   if (
     classifyAuditEvent(event) &&
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
@@ -1857,6 +2007,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_CARE":
     case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
@@ -4194,6 +4345,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         leavingDestination: null,
         leftAt: null,
         followUp: null,
+        careJourney: emptyCareJourney(),
         dischargeBarrier: null,
         stepDownCandidate: false,
       };
@@ -4817,11 +4969,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event.leavingDestination === "discharged-to-the-community" ||
           event.leavingDestination === "left-against-advice"
         ) {
-          return reject(
-            state,
-            event,
-            `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
-          );
+          if (
+            !admission.careJourney?.legal ||
+            (admission.careJourney.legal.authority !== "revocation" &&
+              event.leavingDestination === "left-against-advice")
+          ) {
+            return reject(
+              state,
+              event,
+              `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
+            );
+          }
         }
       }
 
@@ -7011,7 +7169,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       // A booked (uncollected) transport job must not be silently deleted by releasing the pull —
       // cancel it explicitly first so the officer and receiving ward are told, never left believing.
-      if (movement.transport !== undefined) {
+      if (movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
           state,
           event,
@@ -7168,7 +7326,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       // A second booking would replace a job a provider may already have accepted, and the
       // acceptance timestamps would vanish with it. Cancel first (`CANCEL_TRANSPORT`), then rebook.
-      if (movement.transport) {
+      if (movement.transport && movement.transport.cancelledAt === undefined) {
         return reject(state, event, `transport for movement ${movement.id} is already booked`);
       }
       if (!TRANSPORT_PROVIDERS.includes(event.provider)) {
@@ -8434,18 +8592,30 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COUNTRY_EXTENSION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // No statutory window is computed, so there is nothing to extend. The clinician records the
-      // new expiry written on the form as a typed value.
-      return reject(
+      if (movement.closure || event.paperExpiresAt === undefined || !Number.isFinite(event.paperExpiresAt))
+        return reject(
+          state,
+          event,
+          "Country extensions are recorded as a typed expiry. Enter the new expiry written on the country extension form.",
+        );
+      const next = reduceClinicalEvent(
         state,
-        event,
-        `country extensions are recorded as a typed expiry — use RECORD_LEGAL_FORM_EXPIRY with the new expiry written on the form`,
+        {
+          type: "RECORD_LEGAL_FORM_EXPIRY",
+          role: event.role,
+          now: event.now,
+          movementId: event.movementId,
+          dueAt: event.paperExpiresAt,
+        },
+        decision,
       );
+      return next;
     }
 
     case "RECORD_LEGAL_FORM_CONTINUATION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
       if (
         !Number.isFinite(event.startedAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
@@ -8506,6 +8676,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "EVALUATE_ARRIVAL_LATENESS": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (movement.arrivalLateNotifiedAt !== undefined) return state;
       if (!isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, event.now)) {
         return state;
@@ -8550,7 +8721,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot release and reopen at the movement's current stage (${stageCopy[movement.stage].label})`,
         );
       }
-      if (movement.transport !== undefined) {
+      if (movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
           state,
           event,
@@ -8601,6 +8772,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CLEAR_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (!movement.expectFlag || movement.expectFlag.clearedAt !== undefined) {
         return reject(state, event, `movement ${movement.id} has no open expect flag to clear`);
       }
@@ -8614,6 +8786,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RAISE_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
         return reject(state, event, `movement ${movement.id} already has an open expect flag`);
       }
@@ -8631,6 +8804,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "FLAG_LEGAL_MISMATCH": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       const involuntary = movement.legalStatus !== "Voluntary";
@@ -8640,7 +8814,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           : movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
             ? ("voluntary_on_locked_ward" as const)
             : null;
-      const kind = derived ?? event.kind;
+      if (!derived || event.kind !== derived)
+        return reject(state, event, "The selected legal mismatch must match the current ward and patient status.");
+      const kind = derived;
       const updated: Movement = {
         ...movement,
         legalMismatch: { at: event.now, unitId: event.unitId, kind },
@@ -8704,6 +8880,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "SEND_WARD_BUZZ": {
+      if (
+        typeof event.message !== "string" ||
+        !event.message.trim() ||
+        event.message.length > 160 ||
+        (event.urgent !== undefined && typeof event.urgent !== "boolean")
+      )
+        return reject(state, event, "Choose a valid ward refresh message.");
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {

@@ -1,4 +1,5 @@
 "use client";
+import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -1521,6 +1522,7 @@ function DischargeWorkspace() {
                       </dd>
                     </dl>
                     <DischargeFollowUp key={activeRecord.id} record={activeRecord} actor={RECORD_ACTOR} />
+                    <DischargeCareJourney key={`care-${activeRecord.id}`} record={activeRecord} actor={RECORD_ACTOR} />
                   </div>
                 </>
               ) : detailRelease ? (
