@@ -82,3 +82,17 @@ Ward candidate: 194 focused Vitest tests and 11 documentation-boundary tests pas
 Read-only GitHub evidence now confirms Ward Actions enabled and Ward Flow CI active. No deployed runtime or Azure/Railway mutation was tested. Current accepted app and clinical/storage/API behaviour are preserved. The legacy hook explanation and ownership guide now correctly scope former Database history; executable permission decisions and preservation/deletion safeguards are unchanged, with 4 parity fixtures passing.
 
 Canonical task: https://app.notion.com/p/3ed7889e8a2281948826cbcf6c9da2b1 (stable WF-RULES-20261002). Codex fresh offline instruction rendering passed. Same-identity Library replacement is unavailable through this client; GUI loading, unavailable historical clinical evidence and specialist sign-offs remain external prerequisites. No competing ledger or substitute Library identity was created.
+
+## Current-main documentation follow-up — 3 October 2026
+
+Original objective: WF-RULES-20261002. Josh requested resolution of the six remaining documentation findings. Worktree: `D:/Temp/ward-docs-followup-20261003`; branch: `codex/docs-followup-20261003`; verified public-main base: `2220bde5f606c79681d9167e1e5b0b10ec2d8ed2`. Fetch and push destinations are BigSimmo/Ward-Flow; active feature and earlier task worktrees remain intact.
+
+The earlier PR14 repairs are merged at `3950980f43b898d5a2db9c84701923446371c179`. Original canonical Completed delivery was separately confirmed for the existing task. This supersedes earlier pending-integration/reconciliation statements for that completed phase; the new local follow-up has its own delivery state under the same identity.
+
+Implemented scope: code-map navigation and dated inventory; source-qualified owner-ruling maintenance; current manual review handling; ledger current-status navigation and dated completion; current-checkout instruction loading; compact simple-task receipt wording in completion and task guidance. Historical source records and clinical/privacy/ownership/provider safeguards are retained. No app, API, storage, clinical rule, dependency or appearance change.
+
+Josh explicitly approved the prepared seven-file scoped takeover. All target originals matched the saved hashes before application; other owners' branches/worktrees remain intact. The manual review repair was committed with normal hooks at `212f80316beb5414b5dee6b3968ec43bcc468fce` before applying the seven cleared proposals.
+
+Focused checks against this base plus the eight owned document edits: maintained commands passed (229 references); repository-wide relative file/heading links passed (1,300 Markdown files), with two historical file URLs reported and external web URLs untested; all eight documents passed Prettier 3.9.6; diff whitespace passed; the exact-file checker accepted all seven takeovers. The dated inventory, original ledger body and earlier checkpoint text were preserved. Generated-record inputs, application source and dependencies are unchanged, so the earlier five generator checks at the same base remain relevant; full application/browser tests were not selected for this documentation-only scope.
+
+Primary proposals and evidence: `D:/Temp/docs-current-audit-20261003-1259/repair-proposals/`. The final receipt records the resulting commit and delivery state under WF-RULES-20261002. Publication, canonical follow-up delivery, native loading, clinical sign-offs and deployment remain separate stages; no evidence of those stages follows from these local checks.

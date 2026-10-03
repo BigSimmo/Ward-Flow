@@ -56,9 +56,16 @@ conservative; a skipped or deferred check is never a pass.
 
 ## Continue one task record
 
-Reuse the task's existing checkpoint or handover; otherwise keep one checkpoint
-in its private workspace. The [task ledger](../ward-flow-task-ledger.md) remains
-the product task index; link relevant IDs without creating another status ledger.
+Follow the [task/receipt workflow](../task-receipts.md). For a simple uninterrupted
+task, contribute a brief update to its existing receipt; no separate checkpoint is
+needed. Substantial work reuses one canonical checkpoint or handover under the
+original task identity, keeping private evidence in its existing workspace. The
+[local task index](../ward-flow-task-ledger.md) links task detail; the canonical
+source owns current status. Do not create another status ledger.
+
+The compact route requires the receipt workflow's ownership, provider/publication
+and recovery conditions. A pause, blocker, transfer or scope change still needs a
+prompt update; file claims and project gates remain binding.
 
 ```text
 objective/task ID | repo/worktree/branch/base/HEAD | owned files + diff hash
