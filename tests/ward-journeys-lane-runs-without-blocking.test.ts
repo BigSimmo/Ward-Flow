@@ -58,10 +58,10 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("requires a successful browser result in the always-running aggregate", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
-    expect(required).toContain("needs: [static, unit, browser, secret-scan, build]");
+    expect(required).toContain("needs: [static, unit, browser, secret-scan, build, coverage]");
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain(
-      'run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success',
+      'run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success',
     );
   });
 

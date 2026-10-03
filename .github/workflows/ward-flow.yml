@@ -74,15 +74,11 @@ jobs:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
       # Whole-tree ESLint (errors only) on pushes to main and other non-PR runs, which have no PR
-      # diff for the changed-file check above. ADVISORY for now: on 3 October 2026 the tree had 15
-      # pre-existing ESLint errors in 7 files, so an enforcing step would turn main red. It reports
-      # them as a workflow warning; make it enforcing (drop the `if !`) once the tree is clean.
-      - name: Lint the whole tree (advisory)
+      # diff for the changed-file check above. Enforcing since 4 October 2026, when the 15
+      # pre-existing errors were fixed.
+      - name: Lint the whole tree
         if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'pull_request' }}
-        run: |
-          if ! node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern; then
-            echo "::warning title=Full-tree lint (advisory)::ESLint reported errors in the whole tree. Changed-file lint still blocks new errors on pull requests."
-          fi
+        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern
       - name: Check maintained policy contracts
         if: ${{ !cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/check-policy-contracts.mjs
@@ -265,7 +261,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24.15.0"
+          # Railway builds with Node 24.19.0 (docs/hosting.md, RAILPACK_NODE_VERSION); match it here.
+          node-version: "24.19.0"
           cache: npm
       - name: Plan Ward scope
         id: plan
@@ -280,10 +277,40 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
 
+  coverage:
+    # Enforces the vitest.config.mts coverage thresholds over the whole unit suite. On 4 October 2026
+    # a local run met them (all files 61.59% statements, 62.64% branches, 67.14% functions, 62.62%
+    # lines, plus the scoped core thresholds). One job, because per-shard coverage cannot be judged
+    # against a whole-suite threshold.
+    name: Ward Flow coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
+        run: npm ci --ignore-scripts
+      - name: Run unit suite with coverage thresholds
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run test:coverage
+
   required:
     name: Ward Flow required
     if: always()
-    needs: [static, unit, browser, secret-scan, build]
+    needs: [static, unit, browser, secret-scan, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -294,4 +321,5 @@ jobs:
           BROWSER_RESULT: ${{ needs.browser.result }}
           SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
           BUILD_RESULT: ${{ needs.build.result }}
-        run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+        run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success

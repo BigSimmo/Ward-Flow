@@ -15,10 +15,13 @@ function requireWorkflow(source) {
     /persist-credentials: false/u,
     /name: Ward Flow required/u,
     /if: always\(\)/u,
-    /needs: \[static, unit, browser, secret-scan, build\]/u,
-    /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$BUILD_RESULT" = success/u,
+    /needs: \[static, unit, browser, secret-scan, build, coverage\]/u,
+    /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$BUILD_RESULT" = success && test "\$COVERAGE_RESULT" = success/u,
     /SECRET_SCAN_RESULT: \$\{\{ needs\.secret-scan\.result \}\}/u,
     /BUILD_RESULT: \$\{\{ needs\.build\.result \}\}/u,
+    /COVERAGE_RESULT: \$\{\{ needs\.coverage\.result \}\}/u,
+    // Coverage thresholds (vitest.config.mts) are enforced over the whole unit suite.
+    /^ {8}run: npm run test:coverage$/mu,
     // Secret scan: a pinned gitleaks release verified against a pinned SHA-256, over full history,
     // honouring the reviewed fingerprints.
     /GITLEAKS_SHA256: [0-9a-f]{64}\n/u,
@@ -84,6 +87,15 @@ function requireWorkflow(source) {
   assert.ok(buildJob, "the production build job is required");
   assert.doesNotMatch(buildJob, /^(?!\s*#).*WARD_GATE_BUILD/mu);
   assert.match(buildJob, /next\/dist\/bin\/next build --webpack/u);
+  // Railway builds with Node 24.19.0 (docs/hosting.md); the deploy build must use the same.
+  assert.match(buildJob, /node-version: "24\.19\.0"/u);
+  // Whole-tree lint on non-PR runs is enforcing: the eslint command is the step's whole `run:`,
+  // not wrapped in an `if !` that downgrades failure to a warning.
+  assert.match(
+    source,
+    /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--quiet[^\n]*\n/u,
+  );
+  assert.doesNotMatch(source, /if ! node[^\n]*eslint/u);
 }
 
 requireWorkflow(workflow);
@@ -93,12 +105,14 @@ for (const bad of [
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
   workflow.replace(
-    "needs: [static, unit, browser, secret-scan, build]",
+    "needs: [static, unit, browser, secret-scan, build, coverage]",
     "needs: [static, browser, secret-scan, build]",
   ),
-  workflow.replace("needs: [static, unit, browser, secret-scan, build]", "needs: [static, unit, browser]"),
+  workflow.replace("needs: [static, unit, browser, secret-scan, build, coverage]", "needs: [static, unit, browser]"),
   workflow.replace(' && test "$SECRET_SCAN_RESULT" = success', ""),
   workflow.replace(' && test "$BUILD_RESULT" = success', ""),
+  workflow.replace(' && test "$COVERAGE_RESULT" = success', ""),
+  workflow.replace("run: npm run test:coverage", "run: npm test"),
   workflow.replace("  push:\n    branches: [main]\n", ""),
   workflow.replace(/\| sha256sum -c -/u, "| cat"),
   workflow.replace("--gitleaks-ignore-path .gitleaksignore", ""),
@@ -112,6 +126,11 @@ for (const bad of [
   workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),
   workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
   workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
+  workflow.replace('node-version: "24.19.0"', 'node-version: "24.15.0"'),
+  workflow.replace(
+    "        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
+    "        run: |\n          if ! node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js",
+  ),
 ])
   assert.throws(() => requireWorkflow(bad));
 
