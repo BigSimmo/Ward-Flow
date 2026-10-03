@@ -12,7 +12,6 @@ import { edHealthService, healthServiceAcronym } from "@/components/ward-managem
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
 import styles from "./coordinator.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 type PressureStripProps = {
   now: Instant;
@@ -112,7 +111,6 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
         </h2>
         <div className={styles.pressureHeaderActions}>
           <span className={styles.regionCount}>{scopedPressure.length} departments</span>
-          <LegalLimitsNotChecked variant="tag" />
           <div className={styles.pressureNavButtons}>
             <button
               type="button"
@@ -141,7 +139,7 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
         {scopedPressure.map((row) => {
           const selected = row.ed.id === selectedEdId;
           const shortName = edShortName(row.ed);
-          const rawService = siteByCode(row.ed.siteCode)?.service;
+          const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
           const serviceAcronym = healthServiceAcronym(rawService);
 
           const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])

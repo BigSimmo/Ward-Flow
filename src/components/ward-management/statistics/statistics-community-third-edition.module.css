@@ -2,21 +2,96 @@
   display: grid;
   min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "identity discharges"
-    "figures hospital"
-    "unsupported unsupported"
-    "comparison comparison"
-    "provenance provenance"
-    "limits limits";
-  gap: 0.875rem;
+  gap: 1rem;
   align-items: start;
 }
 
-.pageGrid > :global([data-testid="ward-statistics-community-identity"]),
-.pageGrid > :global([data-testid="ward-statistics-community-provenance"]),
-.pageGrid > :global([data-testid="ward-statistics-community-unresolved"]) {
+.dashboardCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.fullWidthCol {
   grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.statCalloutStack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.statCallout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+
+.statCalloutVal {
+  font-family: var(--mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.statCalloutText {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+.unsupportedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+
+.unsupportedItem {
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+}
+
+.unsupportedItem h3 {
+  margin: 0 0 0.35rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.unsupportedItem p {
+  margin: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+}
+
+@media (max-width: 960px) {
+  .pageGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media print {
@@ -27,45 +102,6 @@
   .pageGrid > * {
     margin-bottom: 0.75rem;
   }
-}
-
-/* Third-edition drawing flow: identity and the primary measured panels lead. */
-.pageGrid > :global([data-testid="ward-statistics-community-identity"]) {
-  grid-column: auto;
-  order: 1;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
-  order: 2;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-followup"]) {
-  order: 3;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
-  order: 4;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referrals"]) {
-  order: 5;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
-  order: 6;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-first-contact"]) {
-  order: 7;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-contacts"]) {
-  order: 8;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
-  order: 9;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-comparison"]) {
-  order: 10;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-provenance"]) {
-  order: 11;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
-  order: 12;
 }
 
 .kpiBand {

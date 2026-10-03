@@ -184,6 +184,7 @@ type ReferralMatchViewProps = {
   dispatch: Dispatch<WardFlowEvent>;
   rejections: Rejection[];
   patientInfo?: { displayName: string; umrn: string };
+  hideDossierHeader?: boolean;
 };
 
 /**
@@ -311,7 +312,15 @@ export function ReferralHistoryAndCorrections({
  * selected always remounts fresh local state here (the decline-reason draft, the rejection banner)
  * rather than carrying one referral's leftover UI state onto the next.
  */
-export function ReferralMatchView({ referral, units, now, dispatch, rejections, patientInfo }: ReferralMatchViewProps) {
+export function ReferralMatchView({
+  referral,
+  units,
+  now,
+  dispatch,
+  rejections,
+  patientInfo,
+  hideDossierHeader = false,
+}: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -925,56 +934,71 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
 
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-      <div className={styles.matchDossierHeader}>
-        <div className={styles.matchDossierTop}>
-          <div className={styles.matchIdCluster}>
-            <h2 className={styles.matchHeading}>
-              {patientInfo ? (
-                <>
-                  <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
-                  <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-                  <span className="sr-only">{referral.id}</span>
-                </>
-              ) : (
-                referral.id
-              )}
-            </h2>
-            <div className={styles.matchTierRow}>
-              <span
-                className={styles.priorityBadge}
-                data-priority={getReferralPriority(referral, now)}
-                data-testid="ward-referral-match-priority"
-              >
-                <PriorityGlyph priority={getReferralPriority(referral, now)} />
-                <span className={styles.priorityText}>{referralPriorityLabel(getReferralPriority(referral, now))}</span>
-              </span>
-              <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
-                {urgencyTierLabel(referral.urgency)}
-              </p>
+      {!hideDossierHeader ? (
+        <div className={styles.matchDossierHeader}>
+          <div className={styles.matchDossierTop}>
+            <div className={styles.matchIdCluster}>
+              <h2 className={styles.matchHeading}>
+                {patientInfo ? (
+                  <>
+                    <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+                    <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+                    <span className="sr-only">{referral.id}</span>
+                  </>
+                ) : (
+                  referral.id
+                )}
+              </h2>
+              <div className={styles.matchTierRow}>
+                <span
+                  className={styles.priorityBadge}
+                  data-priority={getReferralPriority(referral, now)}
+                  data-testid="ward-referral-match-priority"
+                >
+                  <PriorityGlyph priority={getReferralPriority(referral, now)} />
+                  <span className={styles.priorityText}>{referralPriorityLabel(getReferralPriority(referral, now))}</span>
+                </span>
+                <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+                  {urgencyTierLabel(referral.urgency)}
+                </p>
+              </div>
             </div>
+            <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
+              {referralWaitLine(referral, now)}
+            </p>
           </div>
-          <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
-            {referralWaitLine(referral, now)}
-          </p>
+
+          <div className={styles.matchDemographicsStrip}>
+            <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
+              {referralPersonFacts(referral).join(" · ")}
+            </p>
+            <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
+              {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
+            </p>
+          </div>
+
+          {gpSourceNotice}
         </div>
-
-        <div className={styles.matchDemographicsStrip}>
-          <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
-            {referralPersonFacts(referral).join(" · ")}
-          </p>
-          <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
-            {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
-          </p>
+      ) : (
+        <div className={styles.matchCompactNoticeWrap}>
+          <div className="sr-only">
+            <span>{referral.id}</span>
+            <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+              {urgencyTierLabel(referral.urgency)}
+            </span>
+            <span data-testid="ward-referral-match-wait">
+              {referralWaitLine(referral, now)}
+            </span>
+            <span data-testid="ward-referral-match-summary">
+              {referralPersonFacts(referral).join(" · ")}
+            </span>
+            <span data-testid="ward-referral-match-suburb">
+              {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
+            </span>
+          </div>
+          {gpSourceNotice}
         </div>
-
-        {gpSourceNotice}
-
-        <p className={styles.matchGovernance} data-testid="ward-referral-match-governance">
-          <strong>Not a medical device.</strong> Every unit below is listed in the network&apos;s own fixed order. This
-          view places nobody: a coordinator decides every placement, one at a time, and nothing is accepted until they
-          record it.
-        </p>
-      </div>
+      )}
 
       {!hasCohort ? (
         <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
@@ -991,17 +1015,68 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
       ) : null}
 
       {hasCohort ? (
-        <p
-          className={accepting.length > 0 ? styles.acceptingCountBannerPositive : styles.acceptingCountBannerZero}
-          data-testid="ward-referral-match-accepting-count"
-        >
-          {accepting.length} of {candidates.length} units accept this referral right now.
-        </p>
-      ) : null}
-
-      <p className={styles.syntheticNotice} data-testid="ward-referral-match-synthetic-notice">
-        {SYNTHETIC_TRAVEL_TIMES_NOTICE}
-      </p>
+        <div className={styles.unifiedTriageBanner}>
+          <div className={styles.triageSummaryRow}>
+            <div className={styles.triageLeadText}>
+              <span
+                className={styles.triageLargeCount}
+                data-testid="ward-referral-match-accepting-count"
+              >
+                {accepting.length} of {candidates.length} units accept this referral right now.
+              </span>
+            </div>
+            <div className={styles.triagePillGroup}>
+              <span className={`${styles.triageMiniPill} ${styles.pillGood}`}>
+                ● {tier1Candidates.length} Immediate Vacancies
+              </span>
+              <span className={`${styles.triageMiniPill} ${styles.pillWarn}`}>
+                ▲ {tier2Candidates.length} Blocked (No Bed)
+              </span>
+              <span className={`${styles.triageMiniPill} ${styles.pillMuted}`}>
+                ✕ {tier3Candidates.length} Excluded
+              </span>
+            </div>
+          </div>
+          <div className={styles.governanceDisclosure}>
+            <p className={styles.governanceNoticeText} data-testid="ward-referral-match-governance">
+              <svg
+                className={styles.infoIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>
+                <strong>Not a medical device.</strong> Every unit is listed in fixed network order — this view places nobody: a coordinator decides each placement, one at a time, and nothing is accepted until recorded ·{" "}
+                <span
+                  className={styles.syntheticNoticeInline}
+                  data-testid="ward-referral-match-synthetic-notice"
+                >
+                  {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+                </span>
+              </span>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.matchCompactNoticeWrap}>
+          <p className={styles.matchGovernance} data-testid="ward-referral-match-governance">
+            <strong>Not a medical device.</strong> Every unit below is listed in the network&apos;s own fixed order. This
+            view places nobody: a coordinator decides every placement, one at a time, and nothing is accepted until they
+            record it.
+          </p>
+          <p className={styles.syntheticNotice} data-testid="ward-referral-match-synthetic-notice">
+            {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+          </p>
+        </div>
+      )}
 
       {everyCandidateUnrecorded ? (
         <p className={styles.allNotRecorded} data-testid="ward-referral-match-all-not-recorded">
@@ -1009,20 +1084,6 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
           region and these sites. That is a gap in the invented data, not a statement that these beds are far away.
         </p>
       ) : null}
-
-      {/* Alternative 2: 3-Tier Clinical Status Matrix */}
-      <div className={styles.alt2Banner} data-testid="ward-referral-alt2-banner">
-        <div>
-          <strong className={styles.alt2BannerTitle}>Alternative 2: 3-Tier Clinical Status Matrix</strong>
-          <div className={styles.alt2BannerSubtitle}>
-            Units are clustered by placement feasibility. Click any unit&apos;s criteria gate dropdown to inspect all
-            clinical and statutory verification points.
-          </div>
-        </div>
-        <span className={styles.bandAvailableBadge} style={{ fontWeight: 700 }}>
-          {candidates.length} Units Evaluated
-        </span>
-      </div>
 
       {/* TIER 1: READY TO PLACE NOW */}
       <div style={{ marginBottom: "14px" }}>

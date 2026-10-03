@@ -41,6 +41,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsSubNav } from "./statistics-sub-nav";
 
 /**
@@ -1406,87 +1407,119 @@ export function StatisticsScreen({
             </WardPanel>
           </div>
 
-          {/* Referrals for a bed */}
-          <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
-            <div className={pageStyles.pb}>
-              <p className={pageStyles.scopeNote}>
-                Every referral asking a ward for a bed today, and what has happened to it so far. Raised equals accepted
-                plus declined plus still open.
+          {/* Right column: Referrals & Health Services */}
+          <div className={pageStyles.sideCol}>
+            {/* Referrals for a bed */}
+            <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
+              <div className={pageStyles.pb}>
+                <p className={pageStyles.scopeNote}>
+                  Every referral asking a ward for a bed today, and what has happened to it so far. Raised equals
+                  accepted plus declined plus still open.
+                </p>
+              </div>
+
+              <dl className={pageStyles.band} id="refBand">
+                <div className={pageStyles.kpi}>
+                  <dt>Raised today</dt>
+                  <dd>
+                    {refRaised}
+                    <small>asking a ward for a bed</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Accepted today</dt>
+                  <dd>
+                    {refAccepted}
+                    <small>a bed confirmed or on the way</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Declined today</dt>
+                  <dd>
+                    {refDeclined}
+                    <small>each with a recorded reason</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi} data-tone="warn">
+                  <dt>Still open</dt>
+                  <dd>
+                    {refOpen}
+                    <small>raised today, not yet answered</small>
+                  </dd>
+                </div>
+              </dl>
+
+              <p className={pageStyles.panelFoot}>
+                <strong>A decline is a recorded decision, not a failure.</strong> Every decline counted here carries one
+                of the same recorded reasons a ward gives on its own screen, so a refusal is captured and never hidden.{" "}
+                <strong>Still open means nobody has answered yet</strong>, not that the answer was no.
               </p>
+
+              {/* Referrals article for test suite */}
+              <details className={`${pageStyles.measurementDetails} source-print`}>
+                <summary>Referral to bed joining detail</summary>
+                <div className={styles.panelBody}>
+                  <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
+                    <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
+
+                    <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
+                      <strong>No referral-to-bed duration is published.</strong> An exact referral link does not
+                      establish that the referral started the wait that ended with this admission. The counts below
+                      report coherent linked records without turning them into a duration.
+                    </p>
+
+                    <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
+                      <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
+                        {join.chronologicallyCoherentCount}
+                      </span>{" "}
+                      of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
+                      {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
+                      arrived no earlier than the referral was raised.
+                    </p>
+                    <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
+                      Matched from{" "}
+                      <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
+                      {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
+                      <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
+                      {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
+                    </p>
+                    <p className={styles.figureNote}>
+                      Counts are recalculated from the current referral and admission records.
+                    </p>
+                  </article>
+                </div>
+              </details>
+            </WardPanel>
+
+            {/* Choose a health service */}
+            <div id={STATISTICS_SERVICE_CHOOSER_ID}>
+              <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
+                <div className={pageStyles.pb}>
+                  <p className={pageStyles.scopeNote}>
+                    Select a health service to view dedicated ward capacities, ED demands and community allocations.
+                  </p>
+                </div>
+                <div className={styles.panelBody}>
+                  <ul className={pageStyles.serviceGrid} data-testid="ward-statistics-service-list">
+                    {HEALTH_SERVICES.map((svc) => (
+                      <li key={svc} className={pageStyles.serviceCardItem}>
+                        <Link
+                          href={serviceStatisticsHref(svc)}
+                          className={pageStyles.serviceCardLink}
+                          data-testid={`ward-statistics-service-link-${svc}`}
+                        >
+                          <div className={pageStyles.serviceCardContent}>
+                            <span className={pageStyles.serviceCardTitle}>{svc}</span>
+                            <span className={pageStyles.serviceCardSubtitle}>View service measures →</span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </WardPanel>
             </div>
-
-            <dl className={pageStyles.band} id="refBand">
-              <div className={pageStyles.kpi}>
-                <dt>Raised today</dt>
-                <dd>
-                  {refRaised}
-                  <small>asking a ward for a bed</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Accepted today</dt>
-                <dd>
-                  {refAccepted}
-                  <small>a bed confirmed or on the way</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Declined today</dt>
-                <dd>
-                  {refDeclined}
-                  <small>each with a recorded reason</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi} data-tone="warn">
-                <dt>Still open</dt>
-                <dd>
-                  {refOpen}
-                  <small>raised today, not yet answered</small>
-                </dd>
-              </div>
-            </dl>
-
-            <p className={pageStyles.panelFoot}>
-              <strong>A decline is a recorded decision, not a failure.</strong> Every decline counted here carries one
-              of the same recorded reasons a ward gives on its own screen, so a refusal is captured and never hidden.{" "}
-              <strong>Still open means nobody has answered yet</strong>, not that the answer was no.
-            </p>
-
-            {/* Referrals article for test suite */}
-            <details className={`${pageStyles.measurementDetails} source-print`}>
-              <summary>Referral to bed joining detail</summary>
-              <div className={styles.panelBody}>
-                <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
-                  <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
-
-                  <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
-                    <strong>No referral-to-bed duration is published.</strong> An exact referral link does not establish
-                    that the referral started the wait that ended with this admission. The counts below report coherent
-                    linked records without turning them into a duration.
-                  </p>
-
-                  <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
-                    <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
-                      {join.chronologicallyCoherentCount}
-                    </span>{" "}
-                    of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
-                    {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
-                    arrived no earlier than the referral was raised.
-                  </p>
-                  <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
-                    Matched from{" "}
-                    <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
-                    {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
-                    <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
-                    {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
-                  </p>
-                  <p className={styles.figureNote}>
-                    Counts are recalculated from the current referral and admission records.
-                  </p>
-                </article>
-              </div>
-            </details>
-          </WardPanel>
+          </div>
         </div>
 
         {/* ══════════ THE HONESTY FOOT ══════════ */}
@@ -1600,37 +1633,16 @@ export function StatisticsScreen({
               </li>
             </ul>
           </div>
-
-          <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-            <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-              <div className={styles.panelBody}>
-                <ul className={styles.indexList} data-testid="ward-statistics-service-list">
-                  {HEALTH_SERVICES.map((svc) => (
-                    <li key={svc} className={styles.indexItem}>
-                      <Link
-                        href={serviceStatisticsHref(svc)}
-                        className={styles.indexLink}
-                        data-testid={`ward-statistics-service-link-${svc}`}
-                      >
-                        <span className={styles.indexLabel}>{svc}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </WardPanel>
-          </div>
         </WardPanel>
 
-        <div
-          className={`${styles.governanceBanner} ${pageStyles.provenanceFooter}`}
-          data-testid="ward-statistics-governance"
-        >
-          <span className={styles.prototypeBadge}>Synthetic prototype</span>
-          <p>
-            <SyntheticFiguresDisclaimer />
-          </p>
-        </div>
+        <WardPrototypeFooter
+          testId="ward-statistics-governance"
+          note={
+            <p style={{ margin: 0, display: "inline" }}>
+              <SyntheticFiguresDisclaimer />
+            </p>
+          }
+        />
       </main>
     </div>
   );

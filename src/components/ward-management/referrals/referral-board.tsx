@@ -480,83 +480,94 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     >
       <main id="main-content" className={styles.main}>
         <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Referral board</h1>
-          <p className="sr-only" data-testid="ward-referral-board-order-note">
-            Urgency tier first; longest wait first within each tier.
-          </p>
-        </header>
+          <div className={styles.pageTitleBlock}>
+            <div className={styles.pageTitleRow}>
+              <h1 className={styles.pageTitle}>Referral board</h1>
+              <span className={styles.liveBadge} title="Real-time triage telemetry">
+                <span className={styles.liveDot} aria-hidden="true" />
+                Live triage
+              </span>
+            </div>
+            <p className={styles.pageSubtitle}>
+              Statewide psychiatric triage &amp; bed placement · Western Australia
+            </p>
+            <p className="sr-only" data-testid="ward-referral-board-order-note">
+              Urgency tier first; longest wait first within each tier.
+            </p>
+          </div>
 
-        <WardDynamicIsland
-          testId="ward-referral-kpis"
-          title="Referral Queue"
-          status={tier1Count > 0 ? "alarm" : pendingCount > 5 ? "warning" : "nominal"}
-          statusText={
-            tier1Count > 0
-              ? `${tier1Count} Tier 1 critical referrals requiring triage`
-              : `${pendingCount} awaiting triage · ${decidedTotal} decided today`
-          }
-          ariaLabel="Referral queue summary filters"
-          className={styles.hudWrapper}
-          metrics={[
-            {
-              id: "kpi-awaiting-triage",
-              label: "Awaiting Triage",
-              value: pendingCount,
-              subtext: oldestQueuedWait ? `Oldest: ${oldestQueuedWait}` : undefined,
-              tone: "accent",
-              active: chipFilter === "all" && statusFilter === "pending",
-              onClick: () => {
-                setStatusFilter("pending");
-                setChipFilter("all");
+          <WardDynamicIsland
+            testId="ward-referral-kpis"
+            title="Referral Queue"
+            status={tier1Count > 0 ? "alarm" : pendingCount > 5 ? "warning" : "nominal"}
+            statusText={
+              tier1Count > 0
+                ? `${tier1Count} Tier 1 critical referrals requiring triage`
+                : `${pendingCount} awaiting triage · ${decidedTotal} decided today`
+            }
+            ariaLabel="Referral queue summary filters"
+            className={styles.headerTelemetry}
+            metrics={[
+              {
+                id: "kpi-awaiting-triage",
+                label: "Awaiting Triage",
+                value: pendingCount,
+                subtext: oldestQueuedWait ? `Oldest: ${oldestQueuedWait}` : undefined,
+                tone: "accent",
+                active: chipFilter === "all" && statusFilter === "pending",
+                onClick: () => {
+                  setStatusFilter("pending");
+                  setChipFilter("all");
+                },
               },
-            },
-            {
-              id: "kpi-tier1",
-              label: "Tier 1 Critical",
-              value: tier1Count,
-              tone: "critical",
-              active: chipFilter === "tier1",
-              onClick: () => {
-                setStatusFilter("pending");
-                setChipFilter(chipFilter === "tier1" ? "all" : "tier1");
+              {
+                id: "kpi-tier1",
+                label: "Tier 1 Critical",
+                value: tier1Count,
+                tone: "critical",
+                active: chipFilter === "tier1",
+                onClick: () => {
+                  setStatusFilter("pending");
+                  setChipFilter(chipFilter === "tier1" ? "all" : "tier1");
+                },
               },
-            },
-            {
-              id: "kpi-beds",
-              label: "Inpatient Beds",
-              value: bedRequestsCount,
-              tone: "warn",
-              active: chipFilter === "beds",
-              onClick: () => {
-                setStatusFilter("pending");
-                setChipFilter(chipFilter === "beds" ? "all" : "beds");
+              {
+                id: "kpi-beds",
+                label: "Inpatient Beds",
+                value: bedRequestsCount,
+                tone: "warn",
+                active: chipFilter === "beds",
+                onClick: () => {
+                  setStatusFilter("pending");
+                  setChipFilter(chipFilter === "beds" ? "all" : "beds");
+                },
               },
-            },
-            {
-              id: "kpi-older-adult",
-              label: "Older Adult",
-              value: olderAdultCount,
-              tone: "normal",
-              active: chipFilter === "older",
-              onClick: () => {
-                setStatusFilter("pending");
-                setChipFilter(chipFilter === "older" ? "all" : "older");
+              {
+                id: "kpi-older-adult",
+                label: "Older Adult",
+                value: olderAdultCount,
+                tone: "normal",
+                active: chipFilter === "older",
+                onClick: () => {
+                  setStatusFilter("pending");
+                  setChipFilter(chipFilter === "older" ? "all" : "older");
+                },
               },
-            },
-            {
-              id: "kpi-decided",
-              label: "Decided Today",
-              value: decidedTotal,
-              subtext: `${acceptedTotal} acc · ${declinedTotal} dec`,
-              tone: "good",
-              active: statusFilter === "accepted" || statusFilter === "declined",
-              onClick: () => {
-                setStatusFilter(statusFilter === "all" ? "accepted" : "all");
-                setChipFilter("all");
+              {
+                id: "kpi-decided",
+                label: "Decided Today",
+                value: decidedTotal,
+                subtext: `${acceptedTotal} acc · ${declinedTotal} dec`,
+                tone: "good",
+                active: statusFilter === "accepted" || statusFilter === "declined",
+                onClick: () => {
+                  setStatusFilter(statusFilter === "all" ? "accepted" : "all");
+                  setChipFilter("all");
+                },
               },
-            },
-          ]}
-        />
+            ]}
+          />
+        </header>
 
         <div className={styles.registerToolbar} aria-label="Referral register controls">
           <div className={styles.toolbarTopRow}>
@@ -774,40 +785,47 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           >
             {selectedReferral ? (
               <>
-                {/* Executive Patient Dossier Banner */}
+                {/* Executive Patient Master Header */}
                 <div className={styles.patientBanner}>
-                  <div className={styles.bannerIdentityRow}>
-                    <div className={styles.nameGroup}>
-                      <span className={styles.ptUmrn}>{formatUmrn(selectedPatientInfo.umrn)}</span>
-                      <h1 className={styles.ptName}>{selectedPatientInfo.displayName}</h1>
-                      <span
-                        className={styles.priorityBadge}
-                        data-priority={getReferralPriority(selectedReferral, now)}
-                        data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
-                      >
-                        <PriorityGlyph priority={getReferralPriority(selectedReferral, now)} />
-                        <span className={styles.priorityText}>
-                          {referralPriorityLabel(getReferralPriority(selectedReferral, now))}
+                  <div className={styles.masterTopRow}>
+                    <div className={styles.identityCluster}>
+                      <div className={styles.identityHeaderRow}>
+                        <span className={styles.ptUmrn}>{formatUmrn(selectedPatientInfo.umrn)}</span>
+                        <h1 className={styles.ptName}>{selectedPatientInfo.displayName}</h1>
+                      </div>
+                      <div className={styles.identityBadgeRow}>
+                        <span
+                          className={styles.priorityBadge}
+                          data-priority={getReferralPriority(selectedReferral, now)}
+                          data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
+                        >
+                          <PriorityGlyph priority={getReferralPriority(selectedReferral, now)} />
+                          <span className={styles.priorityText}>
+                            {referralPriorityLabel(getReferralPriority(selectedReferral, now))}
+                          </span>
                         </span>
-                      </span>
-                      <span className={styles.inspectorTier} data-tier={selectedReferral.urgency}>
-                        {urgencyTierLabel(selectedReferral.urgency)}
-                      </span>
+                        <span className={styles.inspectorTier} data-tier={selectedReferral.urgency}>
+                          {urgencyTierLabel(selectedReferral.urgency)}
+                        </span>
+                      </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>Elapsed Wait:</span>
-                        <span
-                          style={{
-                            fontFamily: "var(--mono)",
-                            fontWeight: 700,
-                            fontSize: "var(--t-2, 13.5px)",
-                            color: "var(--warn)",
-                          }}
+                    <div className={styles.masterActionCluster}>
+                      <div className={styles.elapsedWaitChip} title="Time elapsed since referral raised">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          aria-hidden="true"
                         >
-                          {referralWaitLine(selectedReferral, now)}
-                        </span>
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>{referralWaitLine(selectedReferral, now)}</span>
                       </div>
 
                       {(() => {
@@ -884,31 +902,36 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     const showGender =
                       gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
                     const demographicLabel = showGender
-                      ? `${selectedReferral.ageBand} · Sex: ${sex} · Gender: ${gender}`
+                      ? `${selectedReferral.ageBand} · ${sex} (${gender})`
                       : `${selectedReferral.ageBand} · ${sex}`;
 
                     const originHospital =
                       siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
 
                     return (
-                      <div className={styles.demographicRow}>
-                        <span className={styles.demoItem}>
-                          <strong>{demographicLabel} · Legal status not recorded</strong>
-                        </span>
-                        <span className={styles.demoDot}>·</span>
-                        <span className={styles.demoItem}>
-                          Origin:{" "}
-                          <strong>
-                            {originHospital} ({selectedReferral.homeRegion})
-                          </strong>
-                        </span>
-                        <span className={styles.demoDot}>·</span>
-                        <span className={styles.demoItem}>
-                          Cohort Sought:{" "}
-                          <strong>
-                            {selectedReferral.ageBand} Acute {isSecureBed ? "Secure" : "Open"} Bed
-                          </strong>
-                        </span>
+                      <div className={styles.clinicalMetaGrid}>
+                        <div className={styles.metaCell}>
+                          <span className={styles.metaLabel}>Demographics</span>
+                          <span className={styles.metaValue}>{demographicLabel}</span>
+                        </div>
+                        <div className={styles.metaCell}>
+                          <span className={styles.metaLabel}>Origin Facility</span>
+                          <span className={styles.metaValue} title={`${originHospital} (${selectedReferral.homeRegion})`}>
+                            {originHospital}
+                          </span>
+                        </div>
+                        <div className={styles.metaCell}>
+                          <span className={styles.metaLabel}>Cohort Sought</span>
+                          <span className={styles.metaValue}>
+                            {selectedReferral.ageBand} Acute {isSecureBed ? "Secure" : "Open"}
+                          </span>
+                        </div>
+                        <div className={styles.metaCell}>
+                          <span className={styles.metaLabel}>Legal Status</span>
+                          <span className={styles.metaValue} style={{ color: "var(--muted)" }}>
+                            Legal status not recorded
+                          </span>
+                        </div>
                       </div>
                     );
                   })()}
@@ -921,14 +944,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     role="tab"
                     id="tabBtnPlacement"
                     aria-selected={inspectorTab === "placement"}
+                    aria-label="Bed Placement & Network Triage"
                     className={inspectorTab === "placement" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("placement")}
                   >
                     <svg
                       className={styles.tabIcon}
                       viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
+                      width="15"
+                      height="15"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
@@ -938,21 +962,23 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     >
                       <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
                     </svg>
-                    <span>Bed Placement & Network Triage</span>
+                    <span>Bed Placement</span>
+                    <span className="sr-only"> &amp; Network Triage</span>
                   </button>
                   <button
                     type="button"
                     role="tab"
                     id="tabBtnDossier"
                     aria-selected={inspectorTab === "dossier"}
+                    aria-label="Clinical Dossier & Referrer Letter"
                     className={inspectorTab === "dossier" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("dossier")}
                   >
                     <svg
                       className={styles.tabIcon}
                       viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
+                      width="15"
+                      height="15"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
@@ -964,21 +990,23 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
                       <path d="M9 12h6M9 16h6" />
                     </svg>
-                    <span>Clinical Dossier & Referrer Letter</span>
+                    <span>Clinical Dossier</span>
+                    <span className="sr-only"> &amp; Referrer Letter</span>
                   </button>
                   <button
                     type="button"
                     role="tab"
                     id="tabBtnMHA"
                     aria-selected={inspectorTab === "mha"}
+                    aria-label="Recorded legal forms"
                     className={inspectorTab === "mha" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("mha")}
                   >
                     <svg
                       className={styles.tabIcon}
                       viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
+                      width="15"
+                      height="15"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
@@ -988,7 +1016,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     >
                       <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h18" />
                     </svg>
-                    <span>Recorded legal forms</span>
+                    <span>Recorded Legal Forms</span>
                   </button>
                 </div>
 
@@ -1002,6 +1030,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     dispatch={dispatch}
                     rejections={rejections}
                     patientInfo={selectedPatientInfo}
+                    hideDossierHeader
                   />
                 ) : null}
 

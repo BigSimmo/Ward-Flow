@@ -38,6 +38,7 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import {
+  edHealthService,
   movementBelongsToService,
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
@@ -45,7 +46,7 @@ import {
 import { WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { allEmergencyDepartments, edById, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import {
   DELAY_CAUSE_COPY,
   DELAY_CAUSE_ORDER,
@@ -156,8 +157,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       ? allMovements
       : allMovements.filter((movement: Movement) => movementBelongsToService(movement, service, units));
 
-  // Interactive View Modes: "cards" | "radar" | "both"
-  const [viewMode, setViewMode] = useState<"cards" | "radar" | "both">("both");
+  // Interactive View Modes: "runway" | "catchment" | "cards" | "radar" | "both"
+  const [viewMode, setViewMode] = useState<"runway" | "catchment" | "cards" | "radar" | "both">("runway");
+  const [catchmentFilter, setCatchmentFilter] = useState<HealthService | null>(null);
 
   // Selection & Marking State
   const [markedOwner, setMarkedOwner] = useState<DelayOwnerId | null>(null);
@@ -541,8 +543,81 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     return l !== undefined && l >= 0 && l <= 60;
   }).length;
 
+  const breachedMovements = open.filter((m) => {
+    const l = legalDeadlineMinutes(m, now);
+    return l !== undefined && l < 0;
+  });
+
+  const expiringSoonMovements = open.filter((m) => {
+    const l = legalDeadlineMinutes(m, now);
+    return l !== undefined && l >= 0 && l <= 60;
+  });
+
   const filteredHolds =
     systemicFilter === "all" ? SYSTEMIC_HOLDS : SYSTEMIC_HOLDS.filter((h) => h.category === systemicFilter);
+
+  const catchmentStats = [
+    {
+      service: "South Metro" as HealthService,
+      title: "South Metropolitan Health Service (FSH, Rockingham)",
+      eds: ["FSH ED", "Rockingham ED"],
+    },
+    {
+      service: "North Metro" as HealthService,
+      title: "North Metropolitan Health Service (SCGH, Joondalup)",
+      eds: ["SCGH ED", "Joondalup ED"],
+    },
+    {
+      service: "East Metro" as HealthService,
+      title: "East Metropolitan Health Service (RPH, Midland)",
+      eds: ["RPH ED", "Midland ED"],
+    },
+    {
+      service: "WACHS" as HealthService,
+      title: "WA Country Health Service (Bunbury, Albany, Kalgoorlie)",
+      eds: ["Country regional transfers awaiting metro bed"],
+    },
+  ].map((cat) => {
+    const svcMovements = open.filter((m) => {
+      const s = edHealthService(m.originEdId);
+      return s === cat.service || movementBelongsToService(m, cat.service, units);
+    });
+
+    const total = svcMovements.length;
+    const breached = svcMovements.filter((m) => {
+      const l = legalDeadlineMinutes(m, now);
+      return l !== undefined && l < 0;
+    }).length;
+    const imminent = svcMovements.filter((m) => {
+      const l = legalDeadlineMinutes(m, now);
+      return l !== undefined && l >= 0 && l <= 60;
+    }).length;
+
+    const over24 = svcMovements.filter((m) => now - m.openedAt >= 1440 * 60 * 1000).length;
+    const eightTo24 = svcMovements.filter((m) => {
+      const w = now - m.openedAt;
+      return w >= 480 * 60 * 1000 && w < 1440 * 60 * 1000;
+    }).length;
+    const under8 = svcMovements.filter((m) => now - m.openedAt < 480 * 60 * 1000).length;
+
+    const pBreach = total > 0 ? Math.round((breached / total) * 100) : 0;
+    const p8to24 = total > 0 ? Math.round((eightTo24 / total) * 100) : 0;
+    const pUnder8 = total > 0 ? Math.max(100 - pBreach - p8to24, 0) : 100;
+
+    return {
+      ...cat,
+      total,
+      breached,
+      imminent,
+      over24,
+      eightTo24,
+      under8,
+      pBreach,
+      p8to24,
+      pUnder8,
+      svcMovements,
+    };
+  });
 
   return (
     <div
@@ -559,27 +634,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               <span className={styles.liveDot} aria-hidden="true" />
               Delays &amp; Bottleneck Control
             </h1>
-            <span className={styles.pageSubtitle}>Statewide Psychiatric Bed Coordination Desk · Western Australia</span>
-          </div>
-
-          <div className={styles.mastheadMeta}>
-            <div className={styles.statPill}>
-              <span className={styles.statPillLabel}>Active Open:</span>
-              <span className={styles.statPillValue}>{open.length}</span>
-            </div>
-            {breachedCount > 0 && (
-              <div className={styles.breachedSentinelPill}>
-                <span className={styles.sentinelDot} />
-                <span>{breachedCount} past recorded legal time</span>
-              </div>
-            )}
-            <div className={styles.liveClockPill}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>{formatInstantWithDay(now, now)}</span>
-            </div>
           </div>
         </header>
 
@@ -632,9 +686,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             <div className={styles.viewSwitcherSeg} role="group" aria-label="Executive Overview Mode">
               <button
                 type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "cards" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("cards")}
-                aria-pressed={viewMode === "cards"}
+                className={`${styles.viewSwitchBtn} ${viewMode === "runway" ? styles.viewSwitchBtnActive : ""}`}
+                onClick={() => setViewMode("runway")}
+                aria-pressed={viewMode === "runway"}
               >
                 <svg
                   width="13"
@@ -645,12 +699,28 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   strokeWidth="2"
                   aria-hidden="true"
                 >
-                  <rect x="3" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="14" width="7" height="7" rx="1" />
-                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-                Summary Cards
+                Action Runway
+              </button>
+              <button
+                type="button"
+                className={`${styles.viewSwitchBtn} ${viewMode === "catchment" ? styles.viewSwitchBtnActive : ""}`}
+                onClick={() => setViewMode("catchment")}
+                aria-pressed={viewMode === "catchment"}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Catchment Pressure
               </button>
               <button
                 type="button"
@@ -675,6 +745,28 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               </button>
               <button
                 type="button"
+                className={`${styles.viewSwitchBtn} ${viewMode === "cards" ? styles.viewSwitchBtnActive : ""}`}
+                onClick={() => setViewMode("cards")}
+                aria-pressed={viewMode === "cards"}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Summary Cards
+              </button>
+              <button
+                type="button"
                 className={`${styles.viewSwitchBtn} ${viewMode === "both" ? styles.viewSwitchBtnActive : ""}`}
                 onClick={() => setViewMode("both")}
                 aria-pressed={viewMode === "both"}
@@ -695,9 +787,278 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           </div>
 
-          {/* CRISIS RADAR MATRIX */}
+          {/* DUAL-HORIZON ACTION RUNWAY (Option 1) */}
+          {viewMode === "runway" && (
+            <div className={styles.runwayPanel} aria-label="Action Runway Matrix">
+              {/* Tier 1: Statutory Sentinel Strip */}
+              {breachedMovements.length > 0 || expiringSoonMovements.length > 0 ? (
+                <div className={styles.runwaySentinelStrip}>
+                  <div className={styles.runwaySentinelHeader}>
+                    <div className={styles.runwaySentinelTitle}>
+                      <span className={styles.sentinelDot} />
+                      <span>Statutory &amp; Safety Sentinel · Immediate Detention / Legal Jeopardy</span>
+                    </div>
+                    <span className={styles.runwaySentinelBadge}>
+                      {breachedMovements.length} Breached · {expiringSoonMovements.length} Expiring &lt;60m
+                    </span>
+                  </div>
+
+                  <div className={styles.runwayPatientGrid}>
+                    {breachedMovements.map((m) => {
+                      const dl = legalDeadlineMinutes(m, now);
+                      const identity = resolvePatientIdentity(m);
+                      const ed = edById(m.originEdId)?.name ?? m.originEdId;
+                      const form = m.legalForm ? legalFormName(m.legalForm) : "Detention Form";
+                      const waitStr = splitDuration(Math.max(now - m.openedAt, 0));
+                      const overdueStr = dl !== undefined ? `${splitDuration(Math.abs(dl))} ago` : "expired";
+
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={styles.runwayPatientCard}
+                          onClick={() => selectMovement(m.id)}
+                          aria-label={`Select patient ${identity.displayName}, Form breached ${overdueStr}`}
+                        >
+                          <div className={styles.runwayPatientTop}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span className={styles.runwayTagBreached}>Breached</span>
+                              <span className={styles.runwayPatientName}>{identity.displayName}</span>
+                            </div>
+                            <span className={styles.runwayTimeTag}>-{overdueStr}</span>
+                          </div>
+                          <div className={styles.runwayPatientMid}>
+                            <span>{ed}</span>
+                            <span className={styles.runwayPatientForm}>{form}</span>
+                          </div>
+                          <div className={styles.runwayPatientBottom}>
+                            <span className={styles.runwayPatientWait}>Wait: {waitStr} in ED</span>
+                            <span className={styles.runwayReviewLink}>Review Drawer →</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {expiringSoonMovements.map((m) => {
+                      const dl = legalDeadlineMinutes(m, now);
+                      const identity = resolvePatientIdentity(m);
+                      const ed = edById(m.originEdId)?.name ?? m.originEdId;
+                      const form = m.legalForm ? legalFormName(m.legalForm) : "Detention Form";
+                      const waitStr = splitDuration(Math.max(now - m.openedAt, 0));
+                      const dueStr = dl !== undefined ? `due in ${splitDuration(dl)}` : "due soon";
+
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={`${styles.runwayPatientCard} ${styles.runwayPatientCardImminent}`}
+                          onClick={() => selectMovement(m.id)}
+                          aria-label={`Select patient ${identity.displayName}, Form ${dueStr}`}
+                        >
+                          <div className={styles.runwayPatientTop}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span className={styles.runwayTagImminent}>Due &lt;60m</span>
+                              <span className={styles.runwayPatientName}>{identity.displayName}</span>
+                            </div>
+                            <span className={styles.runwayTimeTagImminent}>+{splitDuration(dl ?? 0)}</span>
+                          </div>
+                          <div className={styles.runwayPatientMid}>
+                            <span>{ed}</span>
+                            <span className={styles.runwayPatientForm}>{form}</span>
+                          </div>
+                          <div className={styles.runwayPatientBottom}>
+                            <span className={styles.runwayPatientWait}>Wait: {waitStr} in ED</span>
+                            <span className={styles.runwayReviewLink}>Review Drawer →</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.runwayCleanSentinel}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>All recorded statutory detention forms and legal authorities are current within time limits.</span>
+                </div>
+              )}
+
+              {/* Tier 2: Blocker Ownership Pipeline Cards */}
+              <div className={styles.runwayBlockersGrid}>
+                {ownerCounts.map((owner) => {
+                  const isActive = markedOwner === owner.id;
+                  const isYours = owner.id === "yours";
+                  const isWards = owner.id === "wards";
+                  const isTransport = owner.id === "transport";
+
+                  const roleLabel = isYours
+                    ? "Pending bed match & allocation"
+                    : isWards
+                      ? "Waiting on ward doctor / bed clean"
+                      : isTransport
+                        ? "Secure transit vehicle / police escort"
+                        : "Other external factors";
+
+                  return (
+                    <button
+                      key={owner.id}
+                      type="button"
+                      className={`${styles.runwayOwnerCard} ${isActive ? styles.runwayOwnerCardActive : ""}`}
+                      onClick={() => {
+                        setMarkedCause(null);
+                        setMarkedOwner(isActive ? null : owner.id);
+                        setDelayFilterId("waiting");
+                      }}
+                      aria-pressed={isActive}
+                      aria-label={`Filter by ${owner.name}: ${owner.people} patients`}
+                    >
+                      <div className={styles.runwayOwnerHeader}>
+                        <span className={styles.runwayOwnerTitle}>{owner.name}</span>
+                        <span className={styles.runwayOwnerCount}>{owner.people}</span>
+                      </div>
+                      {owner.severe > 0 ? (
+                        <span className={styles.runwayOwnerCritical}>
+                          {owner.severe} critical blocker{owner.severe > 1 ? "s" : ""}
+                        </span>
+                      ) : (
+                        <span className={styles.runwayOwnerAllClear}>
+                          0 critical · Normal processing
+                        </span>
+                      )}
+                      <div className={styles.runwayOwnerFooter}>
+                        <span>{roleLabel}</span>
+                        <span style={{ color: "var(--accent)", fontWeight: 700 }}>
+                          {isActive ? "Filtered ✓" : "Filter list →"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Tier 3: Macro ED Duration Breakdown Strip */}
+              <div className={styles.runwayMacroStrip}>
+                <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+                  Emergency Department Wait Durations:
+                </span>
+                <div className={styles.runwayMacroLegend}>
+                  {[...split].reverse().map((band, idx) => (
+                    <span
+                      key={band.label}
+                      className={styles.runwayMacroItem}
+                      style={{
+                        color:
+                          idx === 0
+                            ? "var(--muted)"
+                            : idx === 1
+                              ? "var(--warn-ink, var(--warn))"
+                              : "var(--danger)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background:
+                            idx === 0
+                              ? "var(--muted)"
+                              : idx === 1
+                                ? "var(--warn)"
+                                : "var(--danger)",
+                        }}
+                      />
+                      {band.label}: <strong style={{ color: "var(--ink)" }}>{band.value}</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── OPTION 4: CATCHMENT & HOSPITAL PRESSURE STRIP ────────── */}
+          {viewMode === "catchment" && (
+            <div className={styles.catchmentPanel} aria-label="Catchment Hospital Pressure">
+              <div className={styles.catchmentHeader}>
+                <div className={styles.catchmentTitleCluster}>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <h3 className={styles.catchmentTitle}>
+                    Statewide Delays by Health Service &amp; Emergency Department
+                  </h3>
+                  <span className={styles.catchmentTotalBadge}>{open.length} waiting across 4 services</span>
+                </div>
+                <span className={styles.catchmentHint}>Click catchment to filter worklist</span>
+              </div>
+
+              <div className={styles.catchmentGrid}>
+                {catchmentStats.map((cat) => {
+                  const isFiltered = catchmentFilter === cat.service;
+                  return (
+                    <button
+                      key={cat.service}
+                      type="button"
+                      className={`${styles.catchmentCard} ${isFiltered ? styles.catchmentCardActive : ""}`}
+                      onClick={() => setCatchmentFilter(isFiltered ? null : cat.service)}
+                      aria-pressed={isFiltered}
+                      aria-label={`Filter by ${cat.title}: ${cat.total} waiting`}
+                    >
+                      <div className={styles.catchmentCardHeader}>
+                        <strong className={styles.catchmentServiceName}>{cat.title}</strong>
+                        <div className={styles.catchmentBadgeGroup}>
+                          {cat.breached > 0 ? (
+                            <span className={styles.catchmentBreachBadge}>
+                              {cat.breached} Legal Breach{cat.breached > 1 ? "es" : ""}
+                            </span>
+                          ) : cat.imminent > 0 ? (
+                            <span className={styles.catchmentImminentBadge}>
+                              {cat.imminent} Imminent (&lt;60m)
+                            </span>
+                          ) : (
+                            <span className={styles.catchmentValidBadge}>All Authorities Valid</span>
+                          )}
+                          <strong className={styles.catchmentCount}>{cat.total} waiting</strong>
+                        </div>
+                      </div>
+
+                      <div className={styles.catchmentMeterTrack} aria-hidden="true">
+                        {cat.pBreach > 0 && (
+                          <div className={styles.catchmentSegBreach} style={{ width: `${cat.pBreach}%` }} />
+                        )}
+                        {cat.p8to24 > 0 && (
+                          <div className={styles.catchmentSegWarn} style={{ width: `${cat.p8to24}%` }} />
+                        )}
+                        {cat.pUnder8 > 0 && (
+                          <div className={styles.catchmentSegNormal} style={{ width: `${cat.pUnder8}%` }} />
+                        )}
+                      </div>
+
+                      <div className={styles.catchmentFootRow}>
+                        <span className={styles.catchmentEds}>{cat.eds.join(" · ")}</span>
+                        <span className={styles.catchmentBands}>
+                          {cat.over24} &gt;24h · {cat.eightTo24} 8–24h · {cat.under8} &lt;8h
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* CRISIS RADAR MATRIX (Image 4 Enhanced Presentation) */}
           {(viewMode === "radar" || viewMode === "both") && (
-            <div className={styles.radarPanel} aria-label="Urgency & Statutory Expiry Radar" style={{ marginTop: 12 }}>
+            <div className={styles.radarStandaloneBox} aria-label="Urgency & Statutory Expiry Radar">
               <div className={styles.radarHeader}>
                 <div className={styles.radarTitleCluster}>
                   <h3 className={styles.radarTitle}>
@@ -1024,9 +1385,18 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           )}
 
-          {/* THREE STRATEGIC PILLARS */}
+          {/* THREE STRATEGIC PILLARS (Image 4: Separated from the radar graph) */}
           {(viewMode === "cards" || viewMode === "both") && (
-            <div className={styles.pillarsGrid} style={{ marginTop: 14 }}>
+            <div className={styles.separatedPillarsSection}>
+              {viewMode === "both" && (
+                <div className={styles.pillarsSectionHeader}>
+                  <h4 className={styles.pillarsSectionTitle}>Strategic Overview Pillars</h4>
+                  <span className={styles.pillarsSectionSubtitle}>
+                    Separated analysis of statutory orders, wait times, and blocker ownership
+                  </span>
+                </div>
+              )}
+              <div className={styles.pillarsGrid}>
               {/* Pillar 1: Statutory Sentinel */}
               <div className={styles.pillarCard}>
                 <div className={styles.pillarHeader}>
@@ -1188,6 +1558,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                 </div>
               </div>
             </div>
+          </div>
           )}
         </WardPanel>
 
@@ -1279,7 +1650,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               </div>
 
               {/* Active Filter Banner */}
-              {(delayFilterId !== "waiting" || markedOwner !== null || markedCause !== null || searchQuery !== "") && (
+              {(delayFilterId !== "waiting" || markedOwner !== null || markedCause !== null || catchmentFilter !== null || searchQuery !== "") && (
                 <div className={styles.activeFilterBanner} role="status" aria-atomic="true">
                   {/* The matching count below is announced; this sentence travels with it
                       (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
@@ -1287,15 +1658,17 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   <span>
                     Showing:{" "}
                     <strong>
-                      {delayFilterId === "locked"
-                        ? "Needs locked bed"
-                        : delayFilterId === "escalated"
-                          ? "Escalated"
-                          : markedOwner !== null
-                            ? `Owner: ${markedOwner.toUpperCase()}`
-                            : markedCause !== null
-                              ? (DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause)
-                              : "Filtered results"}
+                      {catchmentFilter !== null
+                        ? `Catchment: ${catchmentFilter}`
+                        : delayFilterId === "locked"
+                          ? "Needs locked bed"
+                          : delayFilterId === "escalated"
+                            ? "Escalated"
+                            : markedOwner !== null
+                              ? `Owner: ${markedOwner.toUpperCase()}`
+                              : markedCause !== null
+                                ? (DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause)
+                                : "Filtered results"}
                     </strong>{" "}
                     ({markedCount} matching)
                   </span>
@@ -1306,6 +1679,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       setDelayFilterId("waiting");
                       setMarkedOwner(null);
                       setMarkedCause(null);
+                      setCatchmentFilter(null);
                       setSearchQuery("");
                     }}
                   >
@@ -1318,6 +1692,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                 const filteredItems = groups.flatMap((group) =>
                   group.movements
                     .filter((movement) => {
+                      if (catchmentFilter !== null) {
+                        const s = edHealthService(movement.originEdId);
+                        if (s !== catchmentFilter && !movementBelongsToService(movement, catchmentFilter, units)) {
+                          return false;
+                        }
+                      }
                       if (searchQuery.trim() !== "") {
                         const q = searchQuery.toLowerCase();
                         const ed = edById(movement.originEdId);
@@ -1465,11 +1845,22 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       (owner) => {
                         const ownerGroups = groups.filter((group) => ownerOf(group.cause) === owner.id);
                         const people = ownerGroups.reduce((sum, group) => sum + group.movements.length, 0);
+                        const ownerDisplayName =
+                          owner.id === "yours"
+                            ? "Coordinator Domain (Yours)"
+                            : owner.id === "wards"
+                              ? "Inpatient Wards Domain"
+                              : owner.id === "transport"
+                                ? "Transport & Escort Domain"
+                                : `${owner.name} Domain`;
+
                         return (
                           <div key={owner.id} className={styles.grp}>
                             <div className={styles.grpHead}>
-                              <span className={styles.grpDot} data-owner={owner.id} aria-hidden="true" />
-                              <span className={styles.grpName}>{owner.name}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span className={styles.grpDot} data-owner={owner.id} aria-hidden="true" />
+                                <span className={styles.grpName}>{ownerDisplayName}</span>
+                              </div>
                               <span className={styles.grpN}>{people}</span>
                             </div>
                             {ownerGroups.map((group) => (
@@ -1489,7 +1880,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                               >
                                 <span className={styles.causeN}>{group.movements.length}</span>
                                 <span className={styles.causeMain}>
-                                  <span className={styles.causeName}>{group.title}</span>
+                                  <span className={styles.causeTopLine}>
+                                    <span className={styles.causeName}>{group.title}</span>
+                                    {isSevere(group.cause) && (
+                                      <span className={styles.causeSevereAlertBadge}>CRITICAL</span>
+                                    )}
+                                  </span>
                                   <span className={styles.causeTrack} aria-hidden="true">
                                     <span
                                       className={styles.causeTrackFill}
@@ -2281,7 +2677,12 @@ function PersonRow({
 
         {/* Location & Demographics Row */}
         <div className={styles.cardLocRow}>
-          <span className={styles.cardFacility}>{originName}</span>
+          <span className={styles.cardFacility}>
+            {edHealthService(movement.originEdId) ? (
+              <span className={styles.cardServiceTag}>{edHealthService(movement.originEdId)}</span>
+            ) : null}
+            {originName}
+          </span>
           <span data-ward-type-floor="delays-profile" className={styles.cardDemographics}>
             {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} ·{" "}
             {movement.legalStatus}

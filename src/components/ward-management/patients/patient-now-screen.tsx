@@ -23,7 +23,7 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -432,7 +432,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 <h1 className={styles.nameWho}>
                   {displayName} {preferredName && <span className={styles.knownPill}>known as {preferredName}</span>}
                 </h1>
-                <LegalLimitsNotChecked />
                 {livePatient?.confidential && (
                   <span className={styles.confidentialPill} data-testid="ward-patient-confidential-pill">
                     CONFIDENTIAL
@@ -1914,6 +1913,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           />
         </>
       )}
+      <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );
 }

@@ -20,6 +20,7 @@ import { DEMONSTRATION_DAY_LABEL, JURISDICTION_LABEL } from "@/components/ward-m
 import { GovernanceWorkbench } from "@/components/ward-management/governance-registers";
 
 import styles from "./ward-management-modes.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 // Second-edition classes for the three views this file still owns (QueueView, ExceptionsView,
 // GovernanceView) plus their exclusive sub-components (DecisionPanel, EffectivenessValue). See
 // that file's own header comment for why it is a separate module rather than an edit to the
@@ -529,6 +530,7 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
       <main id="main-content" className={styles.modeContent}>
         {mode !== "governance" && <RoleFocus role={role} />}
         <ModeBody mode={mode} />
+        <WardPrototypeFooter testId={mode === "governance" ? "ward-mode-governance" : "ward-mode-network"} />
       </main>
     </div>
   );

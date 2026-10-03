@@ -189,8 +189,6 @@
     display: flex;
     min-height: 0;
     flex-direction: column;
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    overflow: hidden;
   }
 }
 

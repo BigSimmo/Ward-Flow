@@ -7,7 +7,6 @@ import {
   BookOpen,
   Check,
   ChevronDown,
-  Clock,
   FileText,
   ListChecks,
   Plus,
@@ -380,18 +379,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
-
-  const currentCalendarDate = useMemo(() => calendarDateOf(now, dayZero), [now, dayZero]);
-  const fullDateStr = useMemo(() => {
-    return currentCalendarDate.toLocaleDateString("en-AU", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      timeZone: "Australia/Perth",
-    });
-  }, [currentCalendarDate]);
-  const clockTimeStr = formatInstant(now);
   const { role, placeId } = useWardNavCounts();
   const checksPublication = useWardChecks();
 
@@ -999,17 +986,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 </p>
               </div>
             ) : null}
-          </div>
-
-          <div
-            className={styles.barClockPill}
-            data-testid="ward-bar-clock"
-            title={`Hospital calendar date: ${fullDateStr} · Live hospital clock: ${clockTimeStr} AWST`}
-            aria-label={`Hospital date ${fullDateStr}, live time ${clockTimeStr} AWST`}
-          >
-            <Clock aria-hidden="true" className={styles.barClockIcon} />
-            <span className={styles.clockTime}>{clockTimeStr}</span>
-            <span className={styles.clockTz}>AWST</span>
           </div>
         </div>
 
