@@ -10,19 +10,27 @@ The checks run as parallel jobs, so a typical PR finishes in about four minutes 
 job it replaced took about seventeen). No test is dropped: each job runs everything in its part, and a
 PR skips a job only when its changes cannot affect it (see [Scope by change](#scope-by-change)).
 
-| Job                                | Runners | What it runs                                                                                                                                                                     | Typical time |
-| ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `Ward Flow quick feedback`         | 1       | Only the tests that import the files the PR changed (`scripts/ward-flow/related-tests.mjs`). A fast signal, not a gate.                                                          | under 1 min  |
-| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, backend tests, reference data, legal wording, and one type check of source and route types. | about 1 min  |
-| `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.                                              | 2 to 3 min   |
-| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                | about 3 min  |
-| `Ward Flow required`               | 1       | Passes only when the static, unit and browser jobs all succeed. This is the check the default-branch ruleset requires.                                                           | seconds      |
+| Job                                | Runners | What it runs                                                                                                                                                                                             | Typical time |
+| ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types. | 1 to 2 min   |
+| `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.                                                       | 2 to 3 min   |
+| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                        | about 3 min  |
+| `Ward Flow required`               | 1       | Passes only when the static, unit and browser jobs all succeed. This is the check the default-branch ruleset requires.                                                                                   | seconds      |
 
 Details that keep the split sound:
 
-- **Unit shards.** The discovery floor is checked on the whole population before splitting. Each shard
-  is compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once.
+- **Unit shards.** The discovery floor is checked on the whole population before splitting. Files are
+  dealt longest first onto the lightest shard using `scripts/ward-flow/unit-durations.json` (each
+  file's measured cost; an unmeasured file counts as the median, and with no record the split falls back
+  to every fifth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
+  floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
+  compared only with the expected-reds manifest entries for its own files, so the shards cover every
+  file and every entry exactly once. Refresh the cost record when the shards drift apart.
+- **Related tests.** The static job also runs only the tests that import the files the PR changed
+  (`scripts/ward-flow/related-tests.mjs --root .`), as a fast signal. In `--root` mode it judges reds
+  against the expected-reds manifest the same way the unit shards do, so it fails only where a shard
+  would also fail. It used to have its own runner; sharing the static runner keeps two PR runs inside
+  the account's concurrent-runner limit.
 - **Browser groups.** Each group runs with one worker on a runner of its own. Three browsers sharing
   one runner made timing-sensitive journeys fail (28 September 2026). Failing groups upload traces and
   screenshots for three days.
