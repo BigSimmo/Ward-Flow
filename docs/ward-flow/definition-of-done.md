@@ -26,7 +26,7 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       its ownership, publication and recovery conditions hold; pauses and blockers need prompt updates.
 - [ ] **The decision log is updated if a choice was made.** If the task settled a question of scope,
       direction or how the work is run, add an entry to [`decisions.md`](decisions.md). Record
-      clinical/product rulings in their maintained owner source document, with the owner attribution
+      clinical/product rulings in a maintained owner source document placed directly in `docs/ward-flow/` or in `docs/ward-flow/archive/dated-notes/` (the only paths the index generator scans; nested files such as `design/` are not indexed), with the owner attribution
       and evidence; distinguish confirmed decisions from unresolved questions. Regenerate and check
       the [owner-rulings index](OWNER-RULINGS.md) with
       `node scripts/ward-flow/owner-rulings-index.mjs` and its `--check` mode. Never edit the generated

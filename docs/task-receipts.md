@@ -8,7 +8,7 @@ Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task chec
 
 At start, reuse the original objective/task ID. At checkpoint, blocker, resume and completion, update that same record; retries and terminal assistant turns are not new tasks or proof of completion. One project owns each task. Link dependencies as project plus task ID instead of copying them into other project lists. Keep Completed/Cancelled history; open views hide those states.
 
-A single uninterrupted scoped reversible task with no unresolved ownership, new provider/publication action or substantial recovery need may contribute one brief final receipt covering start and completion. Substantial work also uses one canonical checkpoint. A pause, blocker, transfer or scope change still needs a prompt update; the compact route preserves file claims and project gates.
+A single uninterrupted scoped reversible task with no unresolved ownership, new provider/publication action or substantial recovery need may collapse its checkpoint updates into one brief final receipt, but still persists a minimal start receipt (or has one created automatically) so a hard interruption leaves a record to resume. Substantial work also uses one canonical checkpoint. A pause, blocker, transfer or scope change still needs a prompt update; the compact route preserves file claims and project gates.
 
 Status is In progress, Blocked, Needs you, Paused, Completed or Cancelled. Record Task/title, Blocker, Next action, Owner and source/evidence links in the canonical source where authorised. Preserve Last verified unless new evidence actually verifies the state. Completion needs evidence of the task's acceptance; completion, user acceptance, merge, release and deployment remain separate.
 
