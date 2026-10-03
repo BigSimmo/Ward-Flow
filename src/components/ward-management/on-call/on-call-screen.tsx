@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Building2, Clock, Layers, Radio, Search } from "lucide-react";
+import { ArrowRight, Building2, Clock, Layers, Radio, Search, Star } from "lucide-react";
 import { NETWORK_ON_CALL_ROLES, roleRecordCounts, SERVICE_ON_CALL_ROLES } from "./on-call-roster";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
@@ -29,6 +29,11 @@ const SERVICE_FACILITIES: Record<string, [string, string]> = {
   "East Metro": ["Royal Perth Hospital", "Royal Perth / Bentley"],
   Private: ["Private Facilities Liaison", "Private Facilities Liaison"],
 };
+
+const FAVOURITES_KEY = "ward-flow:on-call:favourites";
+const ROLE_IDS = new Set(
+  [...NETWORK_ON_CALL_ROLES, ...Object.values(SERVICE_ON_CALL_ROLES).flat()].map((role) => role.id),
+);
 
 const SERVICE_PREFERENCE_KEY = "ward-flow:on-call:service";
 
@@ -68,6 +73,35 @@ export function OnCallScreen() {
   const [selectedService, setSelectedService] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("all");
+  const [favourites, setFavourites] = useState<string[]>([]);
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
+  const [preferenceNotice, setPreferenceNotice] = useState("");
+  const favouritesChangedRef = useRef(false);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (favouritesChangedRef.current) return;
+      try {
+        const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
+        if (Array.isArray(saved))
+          setFavourites([...new Set(saved.filter((id): id is string => typeof id === "string" && ROLE_IDS.has(id)))]);
+      } catch {
+        // Invalid or unavailable preferences never prevent use of the directory.
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  function toggleFavourite(id: string) {
+    favouritesChangedRef.current = true;
+    const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
+    setFavourites(next);
+    try {
+      window.localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next));
+      setPreferenceNotice("");
+    } catch {
+      setPreferenceNotice("Favourites are available for this visit only; browser storage is unavailable.");
+    }
+  }
   const serviceChangedRef = useRef(false);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -95,7 +129,9 @@ export function OnCallScreen() {
   const departments = allEmergencyDepartments();
   const counts = roleRecordCounts();
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const [rosterTableRef, rosterOverflowing] = useTableOverflow(`${selectedService}:${normalizedQuery}:${selectedRole}`);
+  const [rosterTableRef, rosterOverflowing] = useTableOverflow(
+    `${selectedService}:${normalizedQuery}:${selectedRole}:${favouritesOnly}:${favourites.join(",")}:${expandedRole}`,
+  );
   const [edTableRef, edOverflowing] = useTableOverflow(`${selectedService}:${normalizedQuery}`);
 
   const roster = useMemo<RosterItem[]>(
@@ -121,6 +157,7 @@ export function OnCallScreen() {
   const filteredRoster = roster.filter(
     (item) =>
       (selectedService === "all" || item.service === selectedService) &&
+      (!favouritesOnly || favourites.includes(item.id)) &&
       (selectedRole === "all" ||
         (selectedRole === "coordinator" && item.role.toLowerCase().includes("coordinator")) ||
         (selectedRole === "consultant" && item.role === "Duty consultant") ||
@@ -145,7 +182,7 @@ export function OnCallScreen() {
     );
   });
   const hasDirectoryFilters = selectedService !== "all" || Boolean(normalizedQuery);
-  const hasFilters = hasDirectoryFilters || selectedRole !== "all";
+  const hasFilters = hasDirectoryFilters || selectedRole !== "all" || favouritesOnly;
   const serviceHasNoRoles =
     selectedService !== "all" &&
     HEALTH_SERVICES.includes(selectedService as keyof typeof SERVICE_ON_CALL_ROLES) &&
@@ -155,6 +192,8 @@ export function OnCallScreen() {
     selectService("all");
     setSearchQuery("");
     setSelectedRole("all");
+    setFavouritesOnly(false);
+    setExpandedRole(null);
   }
 
   return (
@@ -240,6 +279,14 @@ export function OnCallScreen() {
                 On-call roles
               </h2>
               <div className={styles.sectionHeaderMetaGroup}>
+                <button
+                  type="button"
+                  className={`${styles.filterBtn} ${favouritesOnly ? styles.activeFilter : ""}`}
+                  aria-pressed={favouritesOnly}
+                  onClick={() => setFavouritesOnly(!favouritesOnly)}
+                >
+                  Favourites ({favourites.length})
+                </button>
                 <select
                   className={styles.roleSelect}
                   aria-label="Filter on-call roles"
@@ -266,6 +313,11 @@ export function OnCallScreen() {
                 Roles and shifts are invented. Contact details are not held. Confirm current cover through the site
                 directory.
               </p>
+              {preferenceNotice && (
+                <p className={styles.note} role="status">
+                  {preferenceNotice}
+                </p>
+              )}
               <div ref={rosterTableRef} className={styles.tableRegion}>
                 <WardTable
                   overflowing={rosterOverflowing}
@@ -284,41 +336,96 @@ export function OnCallScreen() {
                   </thead>
                   <tbody>
                     {filteredRoster.map((item) => (
-                      <tr key={item.id} data-testid={`ward-on-call-role-${item.id}`}>
-                        <td className={styles.serviceCell}>{item.service}</td>
-                        <td>
-                          <div className={styles.roleCellTitle}>{item.role}</div>
-                          <div className={styles.cellDetail}>{item.facility}</div>
-                        </td>
-                        <td className={styles.purposeCell}>
-                          {item.service === "Private"
-                            ? "Private placement enquiries"
-                            : (ROLE_PURPOSES[item.role] ?? "Confirm role scope with service")}
-                        </td>
-                        <td className={styles.shiftCell}>
-                          {item.shift
-                            .replace("On call from home,", "From home,")
-                            .replace("Business hours only,", "Business hours,")
-                            .replaceAll(" to ", "–")}
-                        </td>
-                        <td>
-                          <a
-                            className={styles.routingLink}
-                            href={`#ward-reach-${item.route}`}
-                            aria-label={`How to reach ${item.role} for ${item.service}`}
-                          >
-                            {item.route === "bed" ? "Bed desk" : "Switchboard"}
-                            <ArrowRight size={14} aria-hidden="true" />
-                          </a>
-                        </td>
-                      </tr>
+                      <Fragment key={item.id}>
+                        <tr data-testid={`ward-on-call-role-${item.id}`}>
+                          <td className={styles.serviceCell}>{item.service}</td>
+                          <td>
+                            <div className={styles.roleTitleRow}>
+                              <div className={styles.roleCellTitle}>{item.role}</div>
+                              <button
+                                type="button"
+                                className={styles.favouriteButton}
+                                aria-label={`Favourite ${item.role} for ${item.service}`}
+                                aria-pressed={favourites.includes(item.id)}
+                                onClick={() => toggleFavourite(item.id)}
+                              >
+                                <Star
+                                  size={16}
+                                  aria-hidden="true"
+                                  fill={favourites.includes(item.id) ? "currentColor" : "none"}
+                                />
+                              </button>
+                            </div>
+                            <div className={styles.cellDetail}>{item.facility}</div>
+                          </td>
+                          <td className={styles.purposeCell}>
+                            {item.service === "Private"
+                              ? "Private placement enquiries"
+                              : (ROLE_PURPOSES[item.role] ?? "Confirm role scope with service")}
+                          </td>
+                          <td className={styles.shiftCell}>
+                            {item.shift
+                              .replace("On call from home,", "From home,")
+                              .replace("Business hours only,", "Business hours,")
+                              .replaceAll(" to ", "–")}
+                            <button
+                              type="button"
+                              className={styles.detailButton}
+                              aria-label={`Coverage and handover for ${item.role} for ${item.service}`}
+                              aria-expanded={expandedRole === item.id}
+                              aria-controls={`ward-coverage-${item.id}`}
+                              onClick={() => setExpandedRole(expandedRole === item.id ? null : item.id)}
+                            >
+                              Coverage &amp; handover
+                            </button>
+                          </td>
+                          <td>
+                            <a
+                              className={styles.routingLink}
+                              href={`#ward-reach-${item.route}`}
+                              aria-label={`How to reach ${item.role} for ${item.service}`}
+                            >
+                              {item.route === "bed" ? "Bed desk" : "Switchboard"}
+                              <ArrowRight size={14} aria-hidden="true" />
+                            </a>
+                          </td>
+                        </tr>
+                        <tr hidden={expandedRole !== item.id} id={`ward-coverage-${item.id}`}>
+                          <td colSpan={5} className={styles.coverageCell}>
+                            <dl className={styles.coverageGrid}>
+                              <div>
+                                <dt>Current cover</dt>
+                                <dd>Not verified</dd>
+                              </div>
+                              <div>
+                                <dt>Last confirmed / maintained by</dt>
+                                <dd>Not recorded</dd>
+                              </div>
+                              <div>
+                                <dt>Illustrative shift ends · AWST</dt>
+                                <dd>{item.shift.match(/to (\d{2}:\d{2})$/)?.[1] ?? "Not recorded"}</dd>
+                              </div>
+                              <div>
+                                <dt>Next confirmed contact</dt>
+                                <dd>Not recorded</dd>
+                              </div>
+                            </dl>
+                            <p className={styles.note}>
+                              Confirm the current role-holder, handover time and incoming contact through the service’s
+                              current directory. This page has no live roster source.
+                            </p>
+                          </td>
+                        </tr>
+                      </Fragment>
                     ))}
                     {filteredRoster.length === 0 && (
                       <tr>
                         <td colSpan={5} className={styles.emptyTableState}>
                           {serviceHasNoRoles
                             ? `No on-call roles recorded for ${selectedService} in this prototype. Use the current site directory to confirm cover.`
-                            : "No on-call roles match your search."}
+                            : favouritesOnly
+                              ? "No favourite roles match. Star a role in All roles, or clear filters to see the directory."
+                              : "No on-call roles match your search."}
                         </td>
                       </tr>
                     )}
@@ -430,7 +537,7 @@ export function OnCallScreen() {
                     <h3 className={styles.protocolTitle}>Hospital switchboard</h3>
                   </div>
                   <p className={styles.protocolDesc}>
-                    Ask the facility switchboard for the on-call psychiatry role. Confirm who is covering the shift.
+                    Ask the facility switchboard for the required on-call role. Confirm who is covering the shift.
                   </p>
                 </div>
                 <div id="ward-reach-bed" tabIndex={-1} className={styles.protocolCard}>
@@ -453,6 +560,14 @@ export function OnCallScreen() {
                     responsible role.
                   </p>
                 </div>
+              </div>
+              <div className={styles.contactPrep}>
+                <h3>If the first team cannot be reached</h3>
+                <p>
+                  Ask the facility switchboard or current service directory to confirm the covering role and the
+                  approved local fallback route. Follow the facility’s urgent escalation procedure when needed. No
+                  service-specific fallback procedure is recorded here.
+                </p>
               </div>
               <div className={styles.contactPrep}>
                 <h3>Before you contact a team</h3>

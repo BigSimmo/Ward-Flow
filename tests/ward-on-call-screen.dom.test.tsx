@@ -29,6 +29,7 @@ function renderOnCall() {
 
 beforeEach(() => {
   window.localStorage.removeItem("ward-flow:on-call:service");
+  window.localStorage.removeItem("ward-flow:on-call:favourites");
 });
 
 describe("the on-call screen", () => {
@@ -253,5 +254,80 @@ describe("the on-call screen", () => {
           "a call or a message, and this screen holds nobody to start one with",
       ).toBe(false);
     }
+  });
+});
+
+describe("on-call favourites and coverage details", () => {
+  it("persists favourites, filters only the roster and retains them when clearing filters", async () => {
+    const first = renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
+    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["em-consultant"]);
+    first.unmount();
+    renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    expect(screen.getByTestId("ward-on-call-role-em-consultant")).toBeVisible();
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(11);
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+    expect(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Favourites (0)" }));
+    expect(screen.getByText(/No favourite roles match/)).toBeVisible();
+  });
+
+  it("rejects unknown saved role ids and malformed preferences", async () => {
+    localStorage.setItem(
+      "ward-flow:on-call:favourites",
+      JSON.stringify(["em-consultant", "obsolete", 42, "em-consultant"]),
+    );
+    const first = renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
+    first.unmount();
+    localStorage.setItem("ward-flow:on-call:favourites", "broken");
+    renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (0)" })).toBeVisible());
+  });
+
+  it("keeps favourites usable and reports visit-only persistence when storage fails", () => {
+    renderOnCall();
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Favourite Bed coordinator for Statewide Network" }));
+      expect(screen.getByText(/Favourites are available for this visit only/)).toHaveAttribute("role", "status");
+      fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    } finally {
+      storage.mockRestore();
+    }
+  });
+
+  it("reveals truthful coverage gaps and illustrative handover, and closes the previous role", () => {
+    renderOnCall();
+    const bed = screen.getByRole("button", { name: "Coverage and handover for Bed coordinator for Statewide Network" });
+    expect(bed).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(bed);
+    const details = document.getElementById(bed.getAttribute("aria-controls")!)!;
+    expect(details).toBeVisible();
+    expect(within(details).getByText("Not verified")).toBeVisible();
+    expect(within(details).getByText("08:00")).toBeVisible();
+    expect(within(details).getByText("Next confirmed contact")).toBeVisible();
+    expect(within(details).getAllByText("Not recorded")).toHaveLength(2);
+    const privateRole = screen.getByRole("button", {
+      name: "Coverage and handover for Coordinator on call for Private",
+    });
+    fireEvent.click(privateRole);
+    expect(details).not.toBeVisible();
+    const privateDetails = document.getElementById(privateRole.getAttribute("aria-controls")!)!;
+    expect(within(privateDetails).getByText("17:00")).toBeVisible();
+    fireEvent.click(privateRole);
+    expect(privateDetails).not.toBeVisible();
+    expect(screen.getByText(/No service-specific fallback procedure is recorded here/)).toBeVisible();
   });
 });

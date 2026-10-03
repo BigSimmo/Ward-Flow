@@ -17,6 +17,8 @@ The revised standing brief prompted a further curvature pass: a 24px desktop isl
 
 The final workflow pass remembers only the selected service in browser-local preferences, validates restored values, and keeps selection usable when storage is unavailable. Search text and patient data are not persisted. Clear filters resets the saved preference. The desktop filter bar stays below the 56px app header with an 8px gap; small screens retain normal document flow. Guidance targets have additional desktop clearance so navigation does not land behind the anchored controls.
 
+The next additions provide browser-local favourite roles and a roster-only favourites filter. Clear filters preserves saved favourites. Each role can reveal compact coverage/handover details: current cover is not verified, confirmation/maintainer and next contact are not recorded, and shift end is derived from the explicitly illustrative window. No staff, timestamps or approved procedures are invented. Fallback guidance directs users to confirm the approved local route through the current directory or switchboard. Storage failures clearly limit favourite persistence to the current visit.
+
 The original research below is historical evidence, not a requirement to restore the removed panels or controls.
 
 ## 0. Design or reproduction?
