@@ -40,7 +40,7 @@ To prevent procedural friction and development gridlock, the following exemption
 3. **Streamlined Git & Push Workflows:**
    - The in-flight CI push blocker in `scripts/guard-push.mjs` is advisory during interactive work; pushes do not need to wait for previous background CI runs unless explicitly requested.
    - The file sign-out clash check (`sign-out.md`) is optional and bypassed for interactive single-user development sessions: the pre-commit guard is skipped by default (`PRECOMMIT_SIGNOUT_STRICT=1` restores it). Concurrent multi-agent work still signs out files as described under "Where work happens".
-   - Diff-integrity test floors (`check:diff-integrity`) are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor); truncation artefacts and an unreadable before-state still fail. Dead code deletion refusals (`check:dead-code-candidate`) still run, but with Josh's approval a legitimate dead-export cleanup may proceed despite a refusal, recorded in the PR.
+   - Diff-integrity test floors (`check:diff-integrity`) are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor); truncation artefacts and an unreadable before-state still fail. Dead code deletion refusals (`check:dead-code-candidate`) still run and fail closed by default; with Josh's approval a legitimate dead-export cleanup may proceed despite a refusal (`DEAD_CODE_ADVISORY=1`), recorded in the PR.
 4. **Historical Checklist & Lesson Retirement:**
    - `docs/ward-flow-safety-checklist.md` and `docs/ward-flow/RULES.md` are **historical post-mortem archives**, not mandatory per-task checklists. Agents must not spend context or turns running through 2,100 lines of checklist rules for everyday coding tasks.
 5. **Multi-Agent Swarm Usage:**
