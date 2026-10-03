@@ -13,14 +13,14 @@
  */
 
 import { chromium } from "playwright";
-import { stableProjectPort } from "../../src/lib/local-server-utils.mjs";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 import { PAIRS } from "./screen-pairs.mjs";
 
 const __wardProjectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const BASE_URL = (process.env.WARD_FLOW_URL || `http://localhost:${stableProjectPort(__wardProjectRoot)}`).replace(/\/$/, "");
+const BASE_URL = (await resolveAuditTarget({ root: __wardProjectRoot })).url;
 const ARTIFACT_DIR = path.join(process.cwd(), ".audit-reports");
 
 const VIEWPORTS = [

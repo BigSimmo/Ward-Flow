@@ -2419,6 +2419,15 @@
   }
 }
 
+/* Give the contained brand a full row in the tablet navigation stream. */
+@media (min-width: 769px) and (max-width: 1000px) {
+  .rail .brand {
+    flex: 0 0 100%;
+    order: 0;
+    box-sizing: border-box;
+  }
+}
+
 @media (forced-colors: active) {
   .rail {
     border-right-color: CanvasText;

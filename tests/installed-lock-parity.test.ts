@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { selectedScripts } from "../scripts/verify-pr-local.mjs";
 import {
   criticalInstalledPackages,
   installedLockParity,
@@ -147,9 +148,20 @@ describe("installedLockParity", () => {
       expect(parityIndex, scriptName).toBeGreaterThan(-1);
       expect(parityIndex, scriptName).toBeLessThan(firstTestIndex);
     }
-    expect(readFileSync(path.resolve("scripts/verify-pr-local.mjs"), "utf8")).toContain(
-      '"check:runtime", "check:installed-lock-parity"',
-    );
+    for (const file of ["AGENTS.md", "src/app/page.tsx"]) {
+      const selected = selectedScripts({ entries: [{ status: "M", file }] });
+      const parity = selected.indexOf("check:installed-lock-parity");
+      expect(parity).toBeGreaterThan(-1);
+      for (const expensive of [
+        "check:ward-policy-contracts",
+        "lint",
+        "typecheck",
+        "check:ward-expected-reds",
+        "test:e2e:ward-journeys",
+      ]) {
+        if (selected.includes(expensive)) expect(parity).toBeLessThan(selected.indexOf(expensive));
+      }
+    }
     if (ci) expect(ci).toContain("run: npm run check:installed-lock-parity");
   });
 

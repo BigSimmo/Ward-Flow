@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { globSync } from "node:fs";
-import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { childProcessExitCode } from "./child-process-result.mjs";
@@ -9,6 +8,7 @@ import { consultGateReceipt, recordGateReceipt } from "./gate-receipts.mjs";
 import { offlineTestEnvironment } from "./test-environment.mjs";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
 import { vitestLeaseMode } from "./test-run-selection.mjs";
+import { runOwnedChild } from "./owned-child.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const vitestBin = path.join(projectRoot, "node_modules", "vitest", "vitest.mjs");
@@ -154,16 +154,13 @@ export async function main() {
     ...(mode === "shared" ? { VITEST_MAX_WORKERS: String(sharedWorkers) } : {}),
   });
 
-  function runVitest() {
-    const child = spawn(process.execPath, [vitestBin, ...args], {
+  async function runVitest() {
+    const result = await runOwnedChild(process.execPath, [vitestBin, ...args], {
       cwd: projectRoot,
       env: environment,
       stdio: "inherit",
     });
-    return new Promise((resolve, reject) => {
-      child.on("error", reject);
-      child.on("close", (status, signal) => resolve(childProcessExitCode({ status, signal })));
-    });
+    return childProcessExitCode(result);
   }
 
   let exitCode = 1;

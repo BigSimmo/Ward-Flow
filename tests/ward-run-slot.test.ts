@@ -1,13 +1,62 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
-import { admissionRoom, defaultWaitMinutes, slotUnavailable, spawnCommand } from "../scripts/ward-flow/run-slot.mjs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  admissionRoom,
+  defaultWaitMinutes,
+  slotUnavailable,
+  spawnCommand,
+  syncBoard,
+} from "../scripts/ward-flow/run-slot.mjs";
+import { removePathSync } from "../scripts/retryable-fs.mjs";
+const roots: string[] = [];
+const temp = () => {
+  const root = mkdtempSync(path.join(tmpdir(), "ward-run-slot-"));
+  roots.push(root);
+  return root;
+};
+const environment = (logs: string) => {
+  const env: NodeJS.ProcessEnv = { ...process.env, WARD_FLOW_LOGS: logs, TEMP: logs, TMP: logs };
+  delete env.CLINICAL_KB_HEAVY_LOCK_PATH;
+  delete env.CLINICAL_KB_HEAVY_LOCK_TOKEN;
+  return env;
+};
+afterEach(() => roots.splice(0).forEach((root) => removePathSync(root, { recursive: true })));
 
 const script = path.resolve(__dirname, "../scripts/ward-flow/run-slot.mjs");
 
 describe("run-slot", () => {
+  it("status is read-only even when stale owners and foreign board lines exist", () => {
+    const logs = temp(),
+      slot = path.join(logs, "slots", "wide-1");
+    mkdirSync(slot, { recursive: true });
+    const owner = JSON.stringify({ pid: 2147483647, kind: "wide", who: "stale", at: "2000-01-01" });
+    writeFileSync(path.join(slot, "owner.json"), owner);
+    writeFileSync(path.join(logs, "gate-running.md"), "foreign owner\n");
+    const result = spawnSync(process.execPath, [script, "status"], { encoding: "utf8", env: environment(logs) });
+    expect(result.status).toBe(0);
+    expect(readFileSync(path.join(slot, "owner.json"), "utf8")).toBe(owner);
+    expect(readFileSync(path.join(logs, "gate-running.md"), "utf8")).toBe("foreign owner\n");
+    expect(existsSync(path.join(logs, "slots", "board.lock"))).toBe(false);
+  });
+  it("board reconciliation preserves foreign lines and derives both owned holders", () => {
+    const logs = temp();
+    writeFileSync(path.join(logs, "gate-running.md"), "foreign owner\nold (run-slot, pid 99)\n");
+    for (const [name, line] of [
+      ["narrow-1", "one (run-slot, pid 1)"],
+      ["narrow-2", "two (run-slot, pid 2)"],
+    ]) {
+      const dir = path.join(logs, "slots", name);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, "owner.json"), JSON.stringify({ pid: process.pid, line }));
+    }
+    syncBoard(logs);
+    expect(readFileSync(path.join(logs, "gate-running.md"), "utf8")).toBe(
+      "foreign owner\none (run-slot, pid 1)\ntwo (run-slot, pid 2)\n",
+    );
+  });
   it("bounds routine waits while giving fold gates time to acquire the shared slot", () => {
     expect(defaultWaitMinutes(false)).toBe(5);
     expect(defaultWaitMinutes(true)).toBe(30);
@@ -54,7 +103,7 @@ describe("run-slot", () => {
   });
 
   it("refuses a busy slot without starting the command or changing its owner", () => {
-    const logs = mkdtempSync(path.join(tmpdir(), "ward-run-slot-busy-"));
+    const logs = temp();
     const slot = path.join(logs, "slots", "wide-1");
     mkdirSync(slot, { recursive: true });
     const owner = JSON.stringify({ kind: "wide", pid: process.pid, at: new Date().toISOString() });
@@ -62,7 +111,7 @@ describe("run-slot", () => {
     const result = spawnSync(
       process.execPath,
       [script, "run", "narrow", "blocked-test", "--wait", "0", "--", "node", "-e", "process.exit(99)"],
-      { encoding: "utf8", timeout: 5000, env: { ...process.env, WARD_FLOW_LOGS: logs } },
+      { encoding: "utf8", timeout: 5000, env: environment(logs) },
     );
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(3);
@@ -71,16 +120,16 @@ describe("run-slot", () => {
   });
 
   it.each(["-1", "NaN", "Infinity"])("rejects invalid wait %s before claiming a slot", (wait) => {
-    const logs = mkdtempSync(path.join(tmpdir(), "ward-run-slot-arguments-"));
+    const logs = temp();
     const result = spawnSync(
       process.execPath,
       [script, "run", "narrow", "invalid", "--wait", wait, "--", "node", "-e", "process.exit(99)"],
-      { encoding: "utf8", timeout: 5000, env: { ...process.env, WARD_FLOW_LOGS: logs } },
+      { encoding: "utf8", timeout: 5000, env: environment(logs) },
     );
     expect(result.status).toBe(2);
   });
   it("passes arguments through without a shell, so bash -c '...' arrives intact", () => {
-    const logs = mkdtempSync(path.join(tmpdir(), "ward-run-slot-"));
+    const logs = temp();
     const out = path.join(logs, "out.txt");
     const result = spawnSync(
       process.execPath,
@@ -97,7 +146,7 @@ describe("run-slot", () => {
         "-e",
         `require("fs").writeFileSync(${JSON.stringify(out)}, "a b 'c' \\"d\\" & e")`,
       ],
-      { encoding: "utf8", timeout: 15000, env: { ...process.env, WARD_FLOW_LOGS: logs } },
+      { encoding: "utf8", timeout: 15000, env: environment(logs) },
     );
     expect(result.status).toBe(0);
     expect(readFileSync(out, "utf8")).toBe(`a b 'c' "d" & e`);
@@ -106,14 +155,14 @@ describe("run-slot", () => {
   });
 
   it("returns the command's own exit code", () => {
-    const logs = mkdtempSync(path.join(tmpdir(), "ward-run-slot-"));
+    const logs = temp();
     const result = spawnSync(
       process.execPath,
       [script, "run", "narrow", "test", "--gate", "--", "node", "-e", "process.exit(7)"],
       {
         encoding: "utf8",
         timeout: 15000,
-        env: { ...process.env, WARD_FLOW_LOGS: logs },
+        env: environment(logs),
       },
     );
     expect(result.status).toBe(7);

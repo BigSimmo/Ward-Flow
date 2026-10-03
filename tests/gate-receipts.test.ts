@@ -8,7 +8,7 @@ import {
   OUTCOME_AFFECTING_ENV_VARS,
   parseRawDiff,
   computeInputSignature,
-  consultGateReceipt,
+  consultGateReceipt as consultGateReceiptImpl,
   environmentSignature,
   fileInScope,
   loadStore,
@@ -17,7 +17,7 @@ import {
   receiptsEnabled,
   recordGateReceipt,
   typecheckScopeAlias,
-  withGateReceipt,
+  withGateReceipt as withGateReceiptImpl,
 } from "../scripts/gate-receipts.mjs";
 
 const temporaryRoots: string[] = [];
@@ -32,6 +32,13 @@ const temporaryRoots: string[] = [];
  * the CI-refusal itself is asserted separately in "reuse boundaries".
  */
 const RECEIPTS_ENABLED: Record<string, string | undefined> = {};
+// Explicit offline fixture identity. Production callers fail closed when the
+// installed dependency bytes cannot be reliably identified.
+const fixtureDependencies = () => "controlled-fixture-dependency-bytes";
+const consultGateReceipt = (options: Parameters<typeof consultGateReceiptImpl>[0]) =>
+  consultGateReceiptImpl({ dependencyIdentity: fixtureDependencies, ...options });
+const withGateReceipt = (options: Parameters<typeof withGateReceiptImpl>[0]) =>
+  withGateReceiptImpl({ dependencyIdentity: fixtureDependencies, ...options });
 
 /** A throwaway git worktree, so signature behaviour is proven against real git plumbing. */
 function gitFixture(files: Record<string, string>) {

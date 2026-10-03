@@ -35,9 +35,10 @@ repository belong to the earlier shared-history arrangement; do not use them as 
 whiteboard, a spreadsheet or a phone round. The screens keep the current folded design, and the behaviour
 is truthful: nothing is shown that the data does not hold.
 
-**A task is done** when its required checks pass and its change reaches the intended Ward Flow
-destination through the authorised integration process (see HOW-WE-WORK §4). A local commit alone
-does not prove publication or deployment. The full offline suite is selected for broad changes,
+**A task is done** when the requested stage and its required evidence are complete. A delivered
+audit or verified local change does not require integration, publication or deployment. When
+integration is requested, follow the authorised process in HOW-WE-WORK §4 and verify that stage
+separately. A local commit alone does not prove publication or deployment. The full offline suite is selected for broad changes,
 rather than every task. A screen is done when it also meets
 [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION-OF-DONE.md).
 

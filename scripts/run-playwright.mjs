@@ -20,6 +20,7 @@ import { assertPlaywrightBrowsersReady } from "./playwright-browser-preflight.mj
 import { removePathSync } from "./retryable-fs.mjs";
 import { offlineTestEnvironment } from "./test-environment.mjs";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
+import { runOwnedChild } from "./owned-child.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 import { journeyRunVerdict, requestedProjects } from "./ward-flow/journey-run-verdict.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
@@ -171,6 +172,23 @@ try {
   }
   console.error(message);
   process.exit(1);
+}
+
+if (process.env.WARD_OWNED_PLAYWRIGHT !== "1") {
+  try {
+    const result = await runOwnedChild(process.execPath, [fileURLToPath(import.meta.url), ...process.argv.slice(2)], {
+      cwd: projectRoot,
+      env: { ...lock.environment, WARD_OWNED_PLAYWRIGHT: "1" },
+    });
+    process.exitCode = childProcessExitCode(result);
+  } finally {
+    lock.release();
+  }
+  process.exit(process.exitCode);
+}
+if (!lock.reentrant) {
+  lock.release();
+  throw new Error("Owned Playwright collector requires validated inherited admission");
 }
 
 function sleep(ms) {

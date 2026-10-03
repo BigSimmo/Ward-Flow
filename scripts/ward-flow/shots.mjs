@@ -21,6 +21,7 @@
 // rail. Run it through the slot script (it is a wide run):
 //   node scripts/ward-flow/run-slot.mjs run wide "<thread>" -- node scripts/ward-flow/shots.mjs ...
 import { spawn, execFileSync } from "node:child_process";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import net from "node:net";
@@ -32,7 +33,7 @@ const { chromium } = require("playwright");
 const sharp = require("sharp");
 
 const LOGS = process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs";
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const LINE = "origin/main";
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const args = process.argv.slice(2);
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -118,6 +119,13 @@ if (!base) {
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
+}
+
+try {
+  base = (await resolveAuditTarget({ root, url: base })).url;
+} catch (error) {
+  server?.kill();
+  throw error;
 }
 
 // The Playwright client here can ask for a browser build that is not installed; fall back to the

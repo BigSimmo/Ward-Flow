@@ -14,6 +14,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { removePathSync } from "./retryable-fs.mjs";
 import { redactSensitiveText } from "./sensitive-text.mjs";
+import { registeredWorkIsActive } from "./owned-child.mjs";
 
 const tokenEnvironmentKey = "CLINICAL_KB_HEAVY_LOCK_TOKEN";
 const pathEnvironmentKey = "CLINICAL_KB_HEAVY_LOCK_PATH";
@@ -23,7 +24,6 @@ const queueDirectoryName = "queue";
 const gateDirectoryName = "gate.lock";
 const incompleteLockGraceMs = 30_000;
 const staleLockHeartbeatMs = 60_000;
-const staleLockReclaimMs = 30 * 60 * 1000;
 const defaultSharedWaitTimeoutMs = 30_000;
 const defaultExclusiveWaitTimeoutMs = 15 * 60_000;
 const sharedLeaseLimit = 2;
@@ -157,11 +157,12 @@ function pathIsOldEnough(filePath, ageMs, now = Date.now()) {
   }
 }
 
-function ownerDirectoryIsStale(directory) {
+function ownerDirectoryIsStale(directory, isAlive = processIsAlive) {
   const owner = readOwner(directory);
+  if (registeredWorkIsActive(directory, owner?.token)) return false;
   if (!owner) return pathIsOldEnough(directory, incompleteLockGraceMs);
-  if (!processIsAlive(owner.pid)) return true;
-  return pathIsOldEnough(path.join(directory, "owner.json"), staleLockReclaimMs);
+  // An old heartbeat is diagnostic, never permission to reclaim a live owner.
+  return !isAlive(owner.pid);
 }
 
 function coordinatorPaths(lockPath) {
@@ -244,7 +245,9 @@ function ensureCoordinator(lockPath, bootstrapOwner, forceLockRelease) {
 
       const legacyOwner = readOwner(lockPath);
       const stale = ownerDirectoryIsStale(lockPath);
-      if (forceLockRelease || stale) {
+      if (forceLockRelease && !stale)
+        throw new Error("Forced recovery cannot replace a live or unknown heavyweight owner");
+      if (stale) {
         console.warn(
           `[AUDIT] Breaking ${stale ? "stale" : "forced"} heavyweight lock at ${lockPath} (was PID ${legacyOwner?.pid || "unknown"})`,
         );
@@ -265,7 +268,7 @@ function queueRecords(lockPath) {
 function leaseRecords(lockPath) {
   return listDirectories(coordinatorPaths(lockPath).leases)
     .map((directory) => ({ directory, record: readOwner(directory) }))
-    .filter((item) => item.record);
+    .map((item) => ({ ...item, record: item.record ?? { mode: "unknown", pid: null, worktree: "unknown" } }));
 }
 
 function cleanupCoordinator(lockPath) {
@@ -300,6 +303,18 @@ function updateSentinel(lockPath) {
 
 function canAdmit(lockPath, ticket) {
   const leases = leaseRecords(lockPath).map((item) => item.record);
+  // Every surviving directory occupies admission, even if its owner record is
+  // unreadable. Cleanup alone may retire proved-dead work; parsing failure cannot.
+  if (
+    leases.some(
+      (lease) =>
+        !["shared", "exclusive"].includes(lease.mode) ||
+        typeof lease.worktree !== "string" ||
+        !Number.isInteger(lease.pid) ||
+        !lease.token,
+    )
+  )
+    return false;
   const tickets = orderedTickets(lockPath);
   const ticketIndex = tickets.findIndex((item) => item.record.token === ticket.token);
   if (ticketIndex < 0) return false;
@@ -390,17 +405,29 @@ export function acquireHeavyRunLock({
   const inheritedPath = environment[pathEnvironmentKey];
 
   if (inheritedToken || inheritedPath) {
-    const expectedLeaseParent = normalizeIdentity(coordinatorPaths(lockPath).leases);
-    if (!inheritedToken || !inheritedPath || normalizeIdentity(path.dirname(inheritedPath)) !== expectedLeaseParent) {
+    const allowedPaths = [
+      lockPath,
+      lockPathFor(explicitRepositoryIdentity ?? resolveRepositoryIdentity(projectRoot), baseDirectory),
+    ];
+    if (
+      !inheritedToken ||
+      !inheritedPath ||
+      !allowedPaths.some(
+        (candidate) =>
+          normalizeIdentity(path.dirname(inheritedPath)) === normalizeIdentity(coordinatorPaths(candidate).leases),
+      )
+    ) {
       throw new Error("The inherited Database heavyweight-run lease does not match this repository.");
     }
     const owner = readOwner(inheritedPath);
     if (owner?.token !== inheritedToken || !processIsAlive(owner.pid)) {
       throw new Error("The inherited Database heavyweight-run lease is no longer owned by a live parent process.");
     }
+    if (mode === "exclusive" && owner.mode !== "exclusive")
+      throw new Error("A focused run lease cannot admit nested exclusive work.");
     return {
       path: inheritedPath,
-      coordinatorPath: lockPath,
+      coordinatorPath: path.dirname(path.dirname(inheritedPath)),
       owner,
       environment: { ...environment },
       reentrant: true,
@@ -448,12 +475,15 @@ export function acquireHeavyRunLock({
       cleanupCoordinator(lockPath);
       const paths = coordinatorPaths(lockPath);
       if (forceLockRelease) {
+        const remaining = listDirectories(paths.leases);
+        if (remaining.some((directory) => !ownerDirectoryIsStale(directory)))
+          throw new Error("Forced recovery cannot replace live or unfinished child work");
         const owners = leaseRecords(lockPath).map((item) => item.record);
         console.warn(
           `[AUDIT] Breaking forced heavyweight coordinator leases at ${lockPath} (owners ${owners.map((owner) => owner.pid).join(", ") || "unknown"})`,
         );
-        for (const directory of listDirectories(paths.leases)) removePathSync(directory, { recursive: true });
-        for (const filePath of listJsonFiles(paths.queue)) removePathSync(filePath);
+        for (const directory of remaining) removePathSync(directory, { recursive: true });
+        // Live queued callers retain their tickets; force never steals their admission.
       }
       const ticketPath = path.join(paths.queue, `${token}.json`);
       if (!ticketCreated || !existsSync(ticketPath)) {
@@ -502,6 +532,7 @@ export function acquireHeavyRunLock({
         },
         release() {
           if (released) return;
+          if (registeredWorkIsActive(leasePath, token)) return;
           released = true;
           clearInterval(heartbeatInterval);
           if (!isCoordinator(lockPath)) return;
@@ -545,4 +576,5 @@ export const testRunLockInternals = {
   sharedLeaseLimit,
   tokenEnvironmentKey,
   pathEnvironmentKey,
+  ownerDirectoryIsStale,
 };

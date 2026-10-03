@@ -56,7 +56,12 @@ retain conservative full selection; inspect the actual planner output and requir
   reused versus newly executed evidence. Unknown validity requires a run or blocker.
 
 `npm run verify:pr-local -- --base <task-base> --dry-run` previews the shared classifier's
-local commands. The Ward gate arbiter still runs locally when required; a declared workflow
+local commands; omit `--dry-run` for the normal selected local readiness stage. Source, tooling,
+unknown, deleted or renamed inputs retain the full unit population and production Ward journeys.
+The legacy `ready-check.mjs` runs exact merged-snapshot static/policy/backend compatibility checks
+only. Its broad READY route is retired with exit 75; it cannot approve source-code or queued READY,
+or consume later FULL/browser receipts. A compatibility pass supplies only its stated scope.
+The Ward gate arbiter still runs locally when required; a declared workflow
 does not supply an observed equivalent CI verdict or authorise implicit provider reads.
 When browser work is selected, the local planner uses `test:e2e:ward-journeys`; `--extended`
 is retained for compatibility and does not change its coverage.

@@ -17,14 +17,17 @@
 //     just the age. A slot over 60 minutes old whose process is alive is reported, not broken.
 // Exit code is the command's, or 3 if it could not get a slot within --wait minutes.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { commitLogs } from "./logs-commit.mjs";
+import { removePathSync } from "../retryable-fs.mjs";
+import { acquireHeavyRunLock } from "../test-run-lock.mjs";
+import { runOwnedChild, registeredWorkIsActive } from "../owned-child.mjs";
+import { childProcessExitCode } from "../child-process-result.mjs";
 
 const LOGS = process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs";
 const SLOTS = path.join(LOGS, "slots");
-const BOARD = path.join(LOGS, "gate-running.md");
 const LIMIT = { wide: 1, narrow: 2 };
 const POLL_MS = 20_000;
 export const defaultWaitMinutes = (gate) => (gate ? 30 : 5);
@@ -39,38 +42,77 @@ const alive = (pid) => {
   }
 };
 
-function holders() {
-  if (!existsSync(SLOTS)) return [];
+export function inspectHolders(logs = LOGS) {
+  const slots = path.join(logs, "slots");
+  if (!existsSync(slots)) return [];
   const list = [];
-  for (const name of readdirSync(SLOTS)) {
-    const dir = path.join(SLOTS, name);
+  for (const name of readdirSync(slots)) {
+    if (!/^(wide-\d+|narrow-\d+|gate-waiting-\d+)$/.test(name)) continue;
+    const dir = path.join(slots, name);
     let owner = null;
     try {
       owner = JSON.parse(readFileSync(path.join(dir, "owner.json"), "utf8"));
     } catch {
       // a folder still being written, or broken
     }
-    if (owner && !alive(owner.pid)) {
-      rmSync(dir, { recursive: true, force: true });
-      removeBoardLine(owner.line);
-      console.log(`run-slot: cleared a stale ${owner.kind} slot left by "${owner.who}" (process gone).`);
-      continue;
-    }
     list.push({ name, dir, owner });
   }
   return list;
 }
+const holders = inspectHolders;
 
-function boardLines() {
-  return existsSync(BOARD) ? readFileSync(BOARD, "utf8").split(/\r?\n/).filter(Boolean) : [];
+export function recoverDeadSlots(logs = LOGS) {
+  for (const slot of inspectHolders(logs)) {
+    const { owner, dir } = slot;
+    if (!owner || alive(owner.pid) || (owner.leasePath && registeredWorkIsActive(owner.leasePath, owner.leaseToken)))
+      continue;
+    const current = JSON.parse(readFileSync(path.join(dir, "owner.json"), "utf8"));
+    if (JSON.stringify(current) === JSON.stringify(owner)) removePathSync(dir, { recursive: true });
+  }
+  syncBoard(logs);
 }
-function removeBoardLine(line) {
-  if (!line) return;
-  const kept = boardLines().filter((entry) => entry !== line);
-  writeFileSync(BOARD, kept.length ? `${kept.join("\n")}\n` : "");
-}
-function addBoardLine(line) {
-  writeFileSync(BOARD, `${[...boardLines(), line].join("\n")}\n`);
+
+export function syncBoard(logs = LOGS) {
+  const board = path.join(logs, "gate-running.md");
+  const mutex = path.join(logs, "slots", "board.lock");
+  mkdirSync(path.dirname(mutex), { recursive: true });
+  const deadline = Date.now() + 3000;
+  const token = randomUUID();
+  for (;;) {
+    try {
+      mkdirSync(mutex);
+      writeFileSync(path.join(mutex, "owner.json"), JSON.stringify({ pid: process.pid, token }));
+      break;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      let owner;
+      try {
+        owner = JSON.parse(readFileSync(path.join(mutex, "owner.json"), "utf8"));
+      } catch {
+        /* a writer is publishing */
+      }
+      if (owner && !alive(owner.pid)) {
+        removePathSync(mutex, { recursive: true });
+        continue;
+      }
+      if (Date.now() >= deadline) throw new Error("run-slot board transaction is busy; no board overwrite attempted");
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
+    }
+  }
+  try {
+    const prior = existsSync(board) ? readFileSync(board, "utf8").split(/\r?\n/).filter(Boolean) : [];
+    const foreign = prior.filter((line) => !/\(run-slot, pid \d+\)$/.test(line));
+    const owned = inspectHolders(logs)
+      .map((slot) => slot.owner?.line)
+      .filter(Boolean);
+    const temporary = `${board}.${token}.tmp`;
+    const lines = [...foreign, ...owned];
+    writeFileSync(temporary, lines.length ? `${lines.join("\n")}\n` : "");
+    renameSync(temporary, board);
+  } finally {
+    const owner = JSON.parse(readFileSync(path.join(mutex, "owner.json"), "utf8"));
+    if (owner.token === token) removePathSync(mutex, { recursive: true });
+  }
 }
 
 function machineHasRoom() {
@@ -121,9 +163,9 @@ function tryClaim(kind, who, gate) {
     const line = `${gate ? "GATE RUNNING" : `RUN | ${kind}`} | ${who} | ${at} (run-slot, pid ${process.pid})`;
     writeFileSync(
       path.join(dir, "owner.json"),
-      JSON.stringify({ kind, who, gate, pid: process.pid, at, line }, null, 2),
+      JSON.stringify({ kind, who, gate, pid: process.pid, token: randomUUID(), at, line }, null, 2),
     );
-    addBoardLine(line);
+    syncBoard();
     return { dir, line };
   }
   return null;
@@ -149,6 +191,7 @@ export function spawnCommand(command, spawnImpl = spawn) {
 
 async function run(kind, who, gate, waitMinutes, command) {
   mkdirSync(SLOTS, { recursive: true });
+  recoverDeadSlots();
   const deadline = Date.now() + waitMinutes * 60_000;
   let marker = null;
   if (gate && kind === "wide") {
@@ -184,31 +227,46 @@ async function run(kind, who, gate, waitMinutes, command) {
       await sleep(Math.min(POLL_MS, Math.max(0, deadline - Date.now())));
     }
   } finally {
-    if (marker) rmSync(marker, { recursive: true, force: true });
+    if (marker) removePathSync(marker, { recursive: true });
   }
+  let lease;
   const release = () => {
-    rmSync(slot.dir, { recursive: true, force: true });
-    removeBoardLine(slot.line);
+    if (lease && registeredWorkIsActive(lease.path, lease.owner.token)) return;
+    removePathSync(slot.dir, { recursive: true });
+    syncBoard();
+    lease?.release();
   };
-  process.on("SIGINT", () => {
-    release();
-    process.exit(130);
-  });
-  const child = spawnCommand(command);
-  const started = Date.now();
-  const heartbeat = setInterval(() => {
-    console.log(`run-slot: "${who}" still running after ${Math.round((Date.now() - started) / 60_000)} minute(s).`);
-  }, 60_000);
-  const code = await new Promise((resolve) => {
-    child.on("error", (error) => {
-      console.log(`run-slot: could not start the command: ${error.message}`);
-      resolve(1);
+  try {
+    lease = acquireHeavyRunLock({
+      projectRoot: process.cwd(),
+      mode: kind === "wide" ? "exclusive" : "shared",
+      command: `run-slot ${kind}`,
+      waitTimeoutMs: Math.max(0, deadline - Date.now()),
     });
-    child.on("close", (status) => resolve(status ?? 1));
-  });
-  clearInterval(heartbeat);
-  release();
-  return code;
+    const ownerFile = path.join(slot.dir, "owner.json");
+    const owner = JSON.parse(readFileSync(ownerFile, "utf8"));
+    writeFileSync(ownerFile, JSON.stringify({ ...owner, leasePath: lease.path, leaseToken: lease.owner.token }));
+    // Reuse the existing literal argv conversion, without launching a process.
+    let invocation;
+    spawnCommand(command, (program, args, options) => {
+      invocation = { program, args, options };
+    });
+    const started = Date.now();
+    const heartbeat = setInterval(() => {
+      console.log(`run-slot: "${who}" still running after ${Math.round((Date.now() - started) / 60_000)} minute(s).`);
+    }, 60_000);
+    try {
+      const result = await runOwnedChild(invocation.program, invocation.args, {
+        ...invocation.options,
+        env: lease.environment,
+      });
+      return result.signal === "SIGINT" ? 130 : childProcessExitCode(result);
+    } finally {
+      clearInterval(heartbeat);
+    }
+  } finally {
+    release();
+  }
 }
 
 const isMain =
@@ -241,11 +299,5 @@ if (isMain) {
     process.exit(2);
   }
   const code = await run(kind, who, gate, waitMinutes, argv.slice(dashDash + 1));
-  // Save any change to the shared notes (fold queue, sign-outs, this board) into their history.
-  try {
-    commitLogs(`after ${kind} run by ${who}`);
-  } catch {
-    // Never fail the caller over the notes history.
-  }
   process.exit(code);
 }

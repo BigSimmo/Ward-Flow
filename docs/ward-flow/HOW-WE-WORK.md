@@ -100,12 +100,16 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 
 **While editing.**
 
-- Run the changed tests and useful direct importers while editing. Before READY, use the selected
-  `node scripts/ward-flow/ready-check.mjs --onto origin/main` result; it checks the merged tree without making static changes pay for a full
-  type check. It requires verified Ward Flow fetch and push destinations and the worktree’s own
-  locked dependencies. Retired fold-lock and fold-preflight commands remain unavailable in linked
-  repositories. Remote-less scratch tests require `WARD_FOLD_TEST_FIXTURE=1`.
-  Reuse still-valid results at integration.
+- Run the changed tests and useful direct importers while editing. For the normal local readiness
+  stage, use `npm run verify:pr-local -- --base <actual-base>` in this dedicated repository. Its shared
+  classifier selects the full unit population and production Ward journeys for source, tooling,
+  unknown, deleted or renamed inputs; a related-test pass cannot supply that broader verdict.
+  The legacy `ready-check.mjs` executes selected static/policy/backend compatibility checks on an
+  exact merged snapshot only. Its broad READY route is retired with exit 75; it neither approves
+  source-code or queued READY nor accepts later FULL/browser receipts. Existing compatibility
+  checks still require verified Ward Flow destinations and this worktree's locked dependencies;
+  remote-less scratch fixtures require `WARD_FOLD_TEST_FIXTURE=1`. Reuse only still-valid evidence
+  for its actual scope at integration.
 - No mutation proofs unless your brief names one. This overrides the per-task mutation lines in the
   16 and 17 September plans.
 - "focused-test capacity is full" is a shared lock held by someone else. Wait and retry. It is never a
@@ -134,12 +138,15 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   rename, add the explicit rename record. Missing exact targets block acceptance; empty wildcard
   locations may remain registered for future work. Keep representative system mappings and checkpoint
   regressions in `tests/ward-organisation-core.test.ts` when changing organisation behaviour.
-- Select STATIC, FOCUSED or FULL with `node scripts/ward-flow/select-fold-gate.mjs --head <batch>`.
+- Preview STATIC, FOCUSED or FULL with `node scripts/ward-flow/select-fold-gate.mjs --head <batch>`.
   The default comparison base is the local `origin/main` ref; `--base <ref>` chooses an explicit
   reviewed base. The selector never fetches a remote. Missing refs fail without selecting a gate.
-  The full offline suite runs when FULL is selected or a separately authorised full check is required. Read its summary: files
-  handed in must equal files that ran. FOCUSED uses related tests and selected journeys. Reuse an
-  identical passing ready-check verdict; do not pay for a second type check on the same tree.
+  The selector is a plan, not executed acceptance. Use the normal local readiness command above
+  against the actual candidate inputs. The full offline suite runs when FULL is selected or a
+  separately authorised full check is required. Read its summary: files handed in must equal files
+  that ran. Related tests and selected journeys provide focused diagnosis; they do not approve
+  broad source work through the retired READY route. Reuse matching executed evidence only for
+  its verified scope; a compatibility ready-check pass is not a FULL/browser verdict.
 - For FULL, follow [`full-gate-recheck.md`](full-gate-recheck.md). Keep its per-chunk findings and
   receipt, resume a stopped run only against unchanged inputs, and rerun only the changed failing
   test files when its bounded recheck conditions hold. Source or shared-helper changes need a new
