@@ -23,7 +23,7 @@ verdict it names that document.
 | [Screens B](screens-b.md)                            | Board, capacity, movements, delays, handover, patients, alerts and the rest                     |
 | [Tests](tests.md)                                    | Every ward test file, how the suites run, which tests to run for a change                       |
 | [Scripts and tooling](scripts-and-tooling.md)        | Every script, generator, check, git hook and npm script; fold gates in order                    |
-| [Docs and mockups](docs-and-mockups.md)              | Every top-level doc and drawing, with status; what each history folder holds                    |
+| [Docs and mockups](docs-and-mockups.md)              | Dated 25 September inventory of documents/drawings; its classifications are historical          |
 | [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository                 |
 
 ## Key concepts in ten lines
@@ -53,21 +53,21 @@ verdict it names that document.
 
 ## Where to find things
 
-| You want…                             | Look in                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| What an action does and who may do it | `ward-flow-events.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                |
-| A type (Movement, Referral, Unit…)    | `ward-model.ts`, `ward-patients.ts`, `ward-admissions.ts`                                         |
-| A figure shown on a screen            | The selector in `ward-derivations.ts` or a domain file — [Data and rules](data-and-rules.md)      |
-| Seed patients, wards, sites           | `ward-sites.ts`, `ward-movements.ts` (seed fixtures despite the name), `ward-*-seed.ts`           |
-| Which component a URL renders         | `src/app/mockups/ward-flow/**/page.tsx` — [Routes, shell and shared UI](shell-and-shared.md)      |
-| The left rail, top bar, drawers       | `src/components/ward-management/shell/`                                                           |
-| Nav links and route titles            | `ward-nav.ts` (single source, tested both ways)                                                   |
-| A screen's code                       | `src/components/ward-management/<screen>/` — [Screens A](screens-a.md), [Screens B](screens-b.md) |
-| A screen's design                     | `docs/ward-flow/mockups/` — [Docs and mockups](docs-and-mockups.md)                               |
-| Tests for an area                     | [Tests](tests.md), "Which tests to run for a change"                                              |
-| Generated docs and their generators   | [Scripts and tooling](scripts-and-tooling.md)                                                     |
-| Status, open work, rulings            | `docs/ward-flow/STATUS.md`, `docs/ward-flow-task-ledger.md`, `docs/ward-flow/OWNER-RULINGS.md`    |
-| How to branch, check and integrate    | Repository [AGENTS.md](../../../AGENTS.md), then `docs/ward-flow/HOW-WE-WORK.md`                  |
+| You want…                             | Look in                                                                                                                                                           |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What an action does and who may do it | `ward-flow-events.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                                                                                |
+| A type (Movement, Referral, Unit…)    | `ward-model.ts`, `ward-patients.ts`, `ward-admissions.ts`                                                                                                         |
+| A figure shown on a screen            | The selector in `ward-derivations.ts` or a domain file — [Data and rules](data-and-rules.md)                                                                      |
+| Seed patients, wards, sites           | `ward-sites.ts`, `ward-movements.ts` (seed fixtures despite the name), `ward-*-seed.ts`                                                                           |
+| Which component a URL renders         | `src/app/mockups/ward-flow/**/page.tsx` — [Routes, shell and shared UI](shell-and-shared.md)                                                                      |
+| The left rail, top bar, drawers       | `src/components/ward-management/shell/`                                                                                                                           |
+| Nav links and route titles            | `ward-nav.ts` (single source, tested both ways)                                                                                                                   |
+| A screen's code                       | `src/components/ward-management/<screen>/` — [Screens A](screens-a.md), [Screens B](screens-b.md)                                                                 |
+| A screen's design                     | Accepted rendered app and [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md); drawings are historical background                                          |
+| Tests for an area                     | [Tests](tests.md), "Which tests to run for a change"                                                                                                              |
+| Generated docs and their generators   | [Scripts and tooling](scripts-and-tooling.md)                                                                                                                     |
+| Status, open work, rulings            | [Current task/receipt workflow](../../task-receipts.md), [local task index](../../ward-flow-task-ledger.md), generated [owner-rulings index](../OWNER-RULINGS.md) |
+| How to branch, check and integrate    | Repository [AGENTS.md](../../../AGENTS.md), then `docs/ward-flow/HOW-WE-WORK.md`                                                                                  |
 
 ## How to run and test
 

@@ -17,12 +17,20 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       test to make it pass. Report any failure honestly, with the one line that shows it.
 - [ ] **It is committed locally.** Small commits on your own branch in your own worktree. Nothing
       finished is left uncommitted. Publication is a separately authorised stage.
-- [ ] **The current task checkpoint and receipt are updated with verified results.** Record what
-      changed, which checks ran, their result, and the commit they ran on. Only results you actually
-      saw go in; anything not run is written as "not run".
+- [ ] **The existing task receipt is updated with verified results.** A simple uninterrupted task
+      needs a brief update to its existing record, not a separate checkpoint. Substantial work also
+      updates one canonical checkpoint under the same task identity. Record what changed, which
+      checks ran, their results and the checked revision, including dirty inputs where relevant.
+      Only results actually observed go in; anything not run is written as "not run".
+      The [compact receipt route](../task-receipts.md#update-at-lifecycle-events) applies only when
+      its ownership, publication and recovery conditions hold; pauses and blockers need prompt updates.
 - [ ] **The decision log is updated if a choice was made.** If the task settled a question of scope,
-      direction or how the work is run, add an entry to [`decisions.md`](decisions.md). Clinical or
-      product behaviour rulings also go in [`OWNER-RULINGS.md`](OWNER-RULINGS.md).
+      direction or how the work is run, add an entry to [`decisions.md`](decisions.md). Record
+      clinical/product rulings in a maintained owner source document placed directly in `docs/ward-flow/` or in `docs/ward-flow/archive/dated-notes/` (the only paths the index generator scans; nested files such as `design/` are not indexed), with the owner attribution
+      and evidence; distinguish confirmed decisions from unresolved questions. Regenerate and check
+      the [owner-rulings index](OWNER-RULINGS.md) with
+      `node scripts/ward-flow/owner-rulings-index.mjs` and its `--check` mode. Never edit the generated
+      index by hand or manufacture clinical approval.
 
 ## Integration is a separate stage
 

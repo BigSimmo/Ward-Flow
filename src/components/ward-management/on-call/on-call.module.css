@@ -583,6 +583,18 @@
 }
 
 @media print {
+  /* Tailwind's base-layer hidden rule is important; match that layer for print only. */
+  @layer base {
+    .coverageRow[hidden] {
+      display: table-row !important;
+    }
+  }
+
+  .main .detailButton,
+  .main .favouriteButton {
+    display: none;
+  }
+
   .main {
     max-width: none;
     padding: 0;
