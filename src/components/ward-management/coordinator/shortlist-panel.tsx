@@ -1049,7 +1049,11 @@ export function ShortlistPanel({
                     data-testid={`ward-shortlist-withdraw-form-${id}`}
                     onSubmit={submitWithdrawWardRequest}
                   >
-                    <label className={styles.shortlistOverrideLabel} htmlFor={`ward-shortlist-withdraw-reason-${id}`}>
+                    <label
+                      id={`ward-shortlist-withdraw-label-${id}`}
+                      className={styles.shortlistOverrideLabel}
+                      htmlFor={`ward-shortlist-withdraw-reason-${id}`}
+                    >
                       Why is this request being withdrawn?
                     </label>
                     <select
@@ -1072,6 +1076,8 @@ export function ShortlistPanel({
                       className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                       data-testid={`ward-shortlist-withdraw-submit-${id}`}
                       aria-disabled={withdrawReason === "" ? "true" : undefined}
+                      aria-describedby={`ward-shortlist-withdraw-label-${id}`}
+                      title={withdrawReason === "" ? "Choose a reason to withdraw this request" : undefined}
                       onClick={withdrawReason === "" ? ignoreUnavailableActivation : undefined}
                     >
                       Withdraw this request

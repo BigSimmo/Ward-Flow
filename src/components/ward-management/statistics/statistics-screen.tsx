@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 
 import {
   bedsBeingPrepared,
@@ -507,14 +508,13 @@ export function StatisticsScreen({
                 className={pageStyles.exportBtn}
                 id="exportBtn"
                 aria-disabled="true"
-                onClick={() => {
-                  /* Not wired in this prototype */
-                }}
+                aria-describedby="exportBtnHint"
+                onClick={ignoreUnavailableActivation}
                 title="Export every figure on this page as a sheet, with the reconciliation line. Not wired in this prototype."
               >
                 Export the figures
               </button>
-              <span className={pageStyles.ctlHint}>
+              <span id="exportBtnHint" className={pageStyles.ctlHint}>
                 As a sheet, every figure on this page with the reconciliation line above it. Not wired in this
                 prototype.
               </span>
@@ -781,68 +781,98 @@ export function StatisticsScreen({
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${wardSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("name")}
                       aria-sort={wardSortCol === "name" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Ward{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("name")}
+                      >
+                        Ward{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${wardSortCol === "hosp" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("hosp")}
                       aria-sort={wardSortCol === "hosp" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Hospital{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("hosp")}
+                      >
+                        Hospital{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "beds" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("beds")}
                       aria-sort={wardSortCol === "beds" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Beds{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("beds")}
+                      >
+                        Beds{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ready" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("ready")}
                       aria-sort={wardSortCol === "ready" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Ready{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("ready")}
+                      >
+                        Ready{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "occ" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("occ")}
                       aria-sort={wardSortCol === "occ" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Occupancy{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("occ")}
+                      >
+                        Occupancy{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ref" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("ref")}
                       aria-sort={wardSortCol === "ref" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Referred, awaiting answer{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleWardSort("ref")}
+                      >
+                        Referred, awaiting answer{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                   </tr>
                 </thead>
@@ -1025,68 +1055,98 @@ export function StatisticsScreen({
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${edSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("name")}
                       aria-sort={edSortCol === "name" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Site{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("name")}
+                      >
+                        Site{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "waiting" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("waiting")}
                       aria-sort={edSortCol === "waiting" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Waiting{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("waiting")}
+                      >
+                        Waiting{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "longest" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("longest")}
                       aria-sort={edSortCol === "longest" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Longest wait{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("longest")}
+                      >
+                        Longest wait{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "median" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("median")}
                       aria-sort={edSortCol === "median" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Median wait{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("median")}
+                      >
+                        Median wait{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over8" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("over8")}
                       aria-sort={edSortCol === "over8" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Over 8 hours{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("over8")}
+                      >
+                        Over 8 hours{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over24" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("over24")}
                       aria-sort={edSortCol === "over24" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Over 24 hours{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => handleEdSort("over24")}
+                      >
+                        Over 24 hours{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                   </tr>
                 </thead>
@@ -1285,57 +1345,82 @@ export function StatisticsScreen({
                       <th
                         scope="col"
                         className={`${pageStyles.sortable} ${teamSortCol === "name" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("name")}
                         aria-sort={teamSortCol === "name" ? (teamSortAsc ? "ascending" : "descending") : "none"}
                       >
-                        Team{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "name" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
+                        <button
+                          type="button"
+                          className={pageStyles.sortBtn}
+                          onClick={() => handleTeamSort("name")}
+                        >
+                          Team{" "}
+                          <span className={pageStyles.sortIcon} aria-hidden="true">
+                            {teamSortCol === "name" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                          </span>
+                        </button>
                       </th>
                       <th
                         scope="col"
                         className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "suburbs" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("suburbs")}
                         aria-sort={teamSortCol === "suburbs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
                       >
-                        Suburbs covered{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "suburbs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
+                        <button
+                          type="button"
+                          className={pageStyles.sortBtn}
+                          onClick={() => handleTeamSort("suburbs")}
+                        >
+                          Suburbs covered{" "}
+                          <span className={pageStyles.sortIcon} aria-hidden="true">
+                            {teamSortCol === "suburbs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                          </span>
+                        </button>
                       </th>
                       <th
                         scope="col"
                         className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "caseload" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("caseload")}
                         aria-sort={teamSortCol === "caseload" ? (teamSortAsc ? "ascending" : "descending") : "none"}
                       >
-                        Caseload{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "caseload" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
+                        <button
+                          type="button"
+                          className={pageStyles.sortBtn}
+                          onClick={() => handleTeamSort("caseload")}
+                        >
+                          Caseload{" "}
+                          <span className={pageStyles.sortIcon} aria-hidden="true">
+                            {teamSortCol === "caseload" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                          </span>
+                        </button>
                       </th>
                       <th
                         scope="col"
                         className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "newRefs" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("newRefs")}
                         aria-sort={teamSortCol === "newRefs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
                       >
-                        New referrals{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "newRefs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
+                        <button
+                          type="button"
+                          className={pageStyles.sortBtn}
+                          onClick={() => handleTeamSort("newRefs")}
+                        >
+                          New referrals{" "}
+                          <span className={pageStyles.sortIcon} aria-hidden="true">
+                            {teamSortCol === "newRefs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                          </span>
+                        </button>
                       </th>
                       <th
                         scope="col"
                         className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "discharges" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("discharges")}
                         aria-sort={teamSortCol === "discharges" ? (teamSortAsc ? "ascending" : "descending") : "none"}
                       >
-                        Discharged to community{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "discharges" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
+                        <button
+                          type="button"
+                          className={pageStyles.sortBtn}
+                          onClick={() => handleTeamSort("discharges")}
+                        >
+                          Discharged to community{" "}
+                          <span className={pageStyles.sortIcon} aria-hidden="true">
+                            {teamSortCol === "discharges" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                          </span>
+                        </button>
                       </th>
                     </tr>
                   </thead>

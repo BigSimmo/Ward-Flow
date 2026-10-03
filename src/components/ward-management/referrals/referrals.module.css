@@ -6145,3 +6145,128 @@ input.historyField:focus-visible {
 .btnDangerAction:hover {
   background: var(--ward-fixed-danger-border);
 }
+
+.historyCorrectionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+}
+
+.historyCard,
+.correctionsCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+}
+
+.historySectionHeading {
+  margin: 0;
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.historyTextContainer {
+  font-size: var(--t-1, 13px);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.historyText {
+  margin: 0;
+}
+
+.correctionsEmpty {
+  margin: 0;
+  font-size: var(--t-1, 13px);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.correctionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.correctionItem {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+}
+
+.correctionNoteText {
+  margin: 0 0 4px 0;
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.correctionMetaText {
+  margin: 0;
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.correctionControlsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin-top: var(--ward-space-8);
+  padding-top: var(--ward-space-10);
+  border-top: 1px dashed var(--line);
+}
+
+.correctionActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.addCorrectionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ward-border);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.addCorrectionBtn:hover:not([aria-disabled="true"]) {
+  background: var(--surface-subtle);
+  border-color: var(--ink-soft);
+}
+
+.addCorrectionBtn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.correctionDisclaimer {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 200px;
+}
+

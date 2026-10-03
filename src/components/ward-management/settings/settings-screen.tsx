@@ -997,17 +997,16 @@ export function SettingsScreen() {
                     ) : (
                       <div className={styles.searchFeedbackZeroWrap}>
                         <span className={styles.searchFeedbackZero}>No settings match &ldquo;{searchQuery}&rdquo;</span>
-                        <a
-                          href="#clear-filter"
+                        <button
+                          type="button"
                           className={styles.searchFeedbackClearLink}
-                          onClick={(e) => {
-                            e.preventDefault();
+                          onClick={() => {
                             setSearchQuery("");
                             searchInputRef.current?.focus();
                           }}
                         >
                           Clear filter
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1995,7 +1994,11 @@ export function SettingsScreen() {
                                 <span className={styles.unwiredPill}>Not wired (Demo)</span>
                                 <span className={styles.rowTag}>{statutoryWarningHours} Hours</span>
                               </span>
-                              <span className={styles.rowDesc} data-testid="setting-form4a-warn-desc">
+                              <span
+                                id="setting-form4a-warn-desc"
+                                className={styles.rowDesc}
+                                data-testid="setting-form4a-warn-desc"
+                              >
                                 Would set how far ahead of a recorded Form 4A transport-form expiry a warning appears.
                                 Not wired in this prototype.
                               </span>
@@ -2006,6 +2009,8 @@ export function SettingsScreen() {
                                   type="button"
                                   className={styles.stepperBtn}
                                   aria-disabled="true"
+                                  aria-describedby="setting-form4a-warn-desc"
+                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
                                   aria-label="Decrease recorded Form 4A expiry warning"
                                   onClick={() => {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
@@ -2021,6 +2026,8 @@ export function SettingsScreen() {
                                   type="button"
                                   className={styles.stepperBtn}
                                   aria-disabled="true"
+                                  aria-describedby="setting-form4a-warn-desc"
+                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
                                   aria-label="Increase recorded Form 4A expiry warning"
                                   onClick={() => {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");

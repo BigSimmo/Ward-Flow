@@ -1220,6 +1220,7 @@ export function LegalFormsScreen() {
                           </select>
                         </div>
                         <p
+                          id={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
                           className={styles.confirmNote}
                           data-testid={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
                         >
@@ -1240,6 +1241,12 @@ export function LegalFormsScreen() {
                           className={`${styles.btn} ${styles.btnPrimary} ${styles.actionBlockBtn}`}
                           data-testid={`ward-legal-forms-written-confirm-${selectedMovement.id}`}
                           aria-disabled={typedWrittenAt === undefined ? "true" : undefined}
+                          aria-describedby={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
+                          title={
+                            typedWrittenAt === undefined
+                              ? "Enter the time written on the form to enable saving"
+                              : undefined
+                          }
                           onClick={typedWrittenAt === undefined ? ignoreUnavailableActivation : undefined}
                         >
                           Save time written

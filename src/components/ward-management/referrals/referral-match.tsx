@@ -240,62 +240,76 @@ export function ReferralHistoryAndCorrections({
   }
 
   return (
-    <section data-testid="ward-referral-history-and-corrections">
-      <h3>Written history</h3>
-      <p data-testid="ward-referral-history-text">{referral.history === "" ? "Not written yet." : referral.history}</p>
-      <h3>Corrections</h3>
-      {referral.corrections === undefined || referral.corrections.length === 0 ? (
-        <p data-testid="ward-referral-corrections-empty">No corrections have been added.</p>
-      ) : (
-        <ul data-testid="ward-referral-corrections-list">
-          {referral.corrections.map((correction, index) => (
-            // Index key: corrections are append-only and never reordered or removed (see the type's
-            // own doc comment), so position is a stable identity for this read-only list.
-            <li key={index}>
-              <p>{correction.note}</p>
-              <p>
-                {/* Corrections are append-only over the referral's whole life, so one added days
-                    ago must say which day, not just the bare clock face — the same reason
-                    ward-instant-display.test.ts moved history surfaces onto this helper. */}
-                {WARD_FLOW_ROLE_LABELS[correction.by]} at {formatInstantWithDay(correction.at, now)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className={styles.declineControls} data-testid="ward-referral-correction-controls">
-        <label className={styles.fieldLegend} htmlFor="ward-referral-correction-note">
-          Correction note
-        </label>
-        <textarea
-          id="ward-referral-correction-note"
-          data-testid="ward-referral-correction-note"
-          className={styles.correctionNote}
-          value={note}
-          maxLength={REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS}
-          onChange={(event) => setNote(event.target.value)}
-          rows={3}
-        />
-        <button
-          type="button"
-          className={styles.localBedButton}
-          data-testid="ward-referral-add-correction"
-          aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
-          aria-describedby={trimmedNote.length === 0 ? "ward-referral-correction-blocked" : undefined}
-          title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
-          onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
-        >
-          Add a correction
-        </button>
-        {trimmedNote.length === 0 ? (
-          <span id="ward-referral-correction-blocked" className="sr-only">
-            Write a note before adding a correction.
-          </span>
-        ) : null}
+    <section className={styles.historyCorrectionsSection} data-testid="ward-referral-history-and-corrections">
+      <div className={styles.historyCard}>
+        <h3 className={styles.historySectionHeading}>Written history</h3>
+        <div className={styles.historyTextContainer}>
+          <p data-testid="ward-referral-history-text" className={styles.historyText}>
+            {referral.history === "" ? "Not written yet." : referral.history}
+          </p>
+        </div>
       </div>
-      <p className={styles.matchGovernance}>
-        Corrections are added as new notes. The history sent with the referral is never changed.
-      </p>
+
+      <div className={styles.correctionsCard}>
+        <h3 className={styles.historySectionHeading}>Corrections</h3>
+        {referral.corrections === undefined || referral.corrections.length === 0 ? (
+          <p data-testid="ward-referral-corrections-empty" className={styles.correctionsEmpty}>
+            No corrections have been added.
+          </p>
+        ) : (
+          <ul data-testid="ward-referral-corrections-list" className={styles.correctionsList}>
+            {referral.corrections.map((correction, index) => (
+              // Index key: corrections are append-only and never reordered or removed (see the type's
+              // own doc comment), so position is a stable identity for this read-only list.
+              <li key={index} className={styles.correctionItem}>
+                <p className={styles.correctionNoteText}>{correction.note}</p>
+                <p className={styles.correctionMetaText}>
+                  {/* Corrections are append-only over the referral's whole life, so one added days
+                      ago must say which day, not just the bare clock face — the same reason
+                      ward-instant-display.test.ts moved history surfaces onto this helper. */}
+                  {WARD_FLOW_ROLE_LABELS[correction.by]} at {formatInstantWithDay(correction.at, now)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className={styles.correctionControlsWrap} data-testid="ward-referral-correction-controls">
+          <label className={styles.fieldLegend} htmlFor="ward-referral-correction-note">
+            Add a correction note
+          </label>
+          <textarea
+            id="ward-referral-correction-note"
+            data-testid="ward-referral-correction-note"
+            className={styles.correctionNote}
+            value={note}
+            maxLength={REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS}
+            placeholder="Document clinical addendum or update..."
+            onChange={(event) => setNote(event.target.value)}
+            rows={2}
+          />
+          <div className={styles.correctionActionRow}>
+            <button
+              type="button"
+              className={styles.addCorrectionBtn}
+              data-testid="ward-referral-add-correction"
+              aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
+              aria-describedby={trimmedNote.length === 0 ? "ward-referral-correction-blocked" : undefined}
+              title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
+              onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
+            >
+              Add a correction
+            </button>
+            <span className={styles.correctionDisclaimer}>
+              Corrections are added as new notes. The history sent with the referral is never changed.
+            </span>
+          </div>
+          {trimmedNote.length === 0 ? (
+            <span id="ward-referral-correction-blocked" className="sr-only">
+              Write a note before adding a correction.
+            </span>
+          ) : null}
+        </div>
+      </div>
     </section>
   );
 }
@@ -1553,7 +1567,9 @@ export function ReferralMatchView({
           recorded: {lastRejection.reason}
         </p>
       ) : null}
-      <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+      {!hideDossierHeader ? (
+        <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+      ) : null}
     </section>
   );
 }

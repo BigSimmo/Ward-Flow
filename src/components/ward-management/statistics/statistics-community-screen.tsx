@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 
 import {
   admissionsWithNoCommunityTeam,
@@ -248,7 +249,9 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           <button
             type="button"
             className={pageStyles.pillBtn}
-            disabled
+            aria-disabled="true"
+            tabIndex={0}
+            onClick={ignoreUnavailableActivation}
             title="Not recorded: this prototype keeps no seven-day history"
           >
             7 Days
@@ -256,7 +259,9 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           <button
             type="button"
             className={pageStyles.pillBtn}
-            disabled
+            aria-disabled="true"
+            tabIndex={0}
+            onClick={ignoreUnavailableActivation}
             title="Not recorded: this prototype keeps no thirty-day history"
           >
             30 Days

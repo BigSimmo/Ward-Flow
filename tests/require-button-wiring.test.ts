@@ -74,4 +74,14 @@ describe("require-button-wiring", () => {
       "redundantDisabledPair",
     ]);
   });
+
+  it("flags empty function handlers (() => {}) as unwired / ineffective", () => {
+    expect(messageIds('<button type="button" onClick={() => {}}>x</button>')).toEqual(["unwired"]);
+    expect(
+      messageIds('<button type="button" aria-disabled="true" onClick={() => {}}>x</button>'),
+    ).toEqual(["ariaDisabledNeedsHandler"]);
+    expect(
+      messageIds('<button type="button" aria-disabled="true" onClick={function() {}}>x</button>'),
+    ).toEqual(["ariaDisabledNeedsHandler"]);
+  });
 });

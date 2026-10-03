@@ -1088,32 +1088,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             </div>
                           </div>
 
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span
-                              style={{
-                                fontSize: "var(--t-0, 12px)",
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                                color: "var(--muted)",
-                              }}
-                            >
-                              Written Clinical Referral Note
-                            </span>
-                            <div
-                              style={{
-                                padding: "12px 14px",
-                                background: "var(--surface)",
-                                border: "1px solid var(--line)",
-                                borderRadius: "var(--r2, 6px)",
-                                fontSize: "var(--t-1, 13px)",
-                                lineHeight: 1.6,
-                                color: "var(--ink-soft)",
-                              }}
-                            >
-                              <p>{clinicalInfo.synopsis}</p>
-                            </div>
-                          </div>
-
                           <div className={styles.clinicalBadges}>
                             {isHighAcuity ? (
                               <span className={styles.acuityBadge}>High-acuity nursing requested</span>
