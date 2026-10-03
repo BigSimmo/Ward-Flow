@@ -588,7 +588,7 @@
   font-family: var(--body);
 }
 
-.table thead th {
+.screen[data-ward-design="third-edition"] .table thead th {
   text-align: left;
   padding: 11px 16px;
   font-size: var(--t-0, 12px);
@@ -634,7 +634,7 @@
   min-height: 48px;
 }
 
-.table tbody td {
+.screen[data-ward-design="third-edition"] .table tbody td {
   padding: 11px 16px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
