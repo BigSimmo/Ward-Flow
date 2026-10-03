@@ -11,6 +11,8 @@ The owner requested removal of the two yellow coverage banners and the data/gove
 
 The follow-up refinement adds purpose-based role guidance, a statewide service filter, a roster-only role filter, and shared-route links to each ED workspace. Role and facility share a cell to keep the decision-making columns in view. Search also matches role purpose. A short contact preparation checklist sits with routing guidance. Horizontal-scroll hints appear only when browser measurements show a table overflows. None of these additions asserts a real contact, current role-holder or live shift coverage.
 
+The uploaded standing design brief was applied in the next visual pass: the island uses Capacity-style restrained material, separated metrics and explicit whole-network scope. It retains derived values and neutral synthetic status. Panel corners, inset table/card corners and control spacing form a consistent hierarchy. Small screens give the island a scope row above three visible metrics, avoiding concealed horizontal overflow. The changes remain confined to this page; the shared island and Capacity are unchanged.
+
 The original research below is historical evidence, not a requirement to restore the removed panels or controls.
 
 ## 0. Design or reproduction?

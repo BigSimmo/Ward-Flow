@@ -139,15 +139,15 @@ export function OnCallScreen() {
           <div className={styles.headerTitleBlock}>
             <p className={styles.eyebrow}>Statewide specialist coordination</p>
             <h1 className={styles.pageTitle}>On-call and contacts</h1>
-            <p className={styles.pageSubtitle}>Find a role, its service and how to reach it.</p>
+            <p className={styles.pageSubtitle}>Role directory · WA mental health services</p>
           </div>
           <WardDynamicIsland
             testId="ward-on-call-hud-island"
             className={styles.headerIsland}
-            title="Directory"
+            title="Whole network"
             status="neutral"
             statusText="Synthetic role directory; live coverage not verified"
-            ariaLabel="On-call directory summary"
+            ariaLabel="Whole-network on-call directory summary"
             align="end"
             metrics={[
               { label: "Roles", value: counts.recorded },
