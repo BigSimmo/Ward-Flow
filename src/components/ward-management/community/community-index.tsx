@@ -2,19 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  BookOpen,
-  ChevronRight,
-  Download,
-  FileText,
-  Layers,
-  Search,
-  ShieldCheck,
-  Users,
-  X,
-} from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronRight, FileText, Search, X } from "lucide-react";
 
 import {
   COMMUNITY_TEAM_PAGES,
@@ -312,8 +300,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <div className={styles.topActionBar}>
           <div className={styles.topActionContext}>
-            <span className={styles.contextPill}>Statewide Directory</span>
-            <span className={styles.contextSub}>Mental Health Catchment</span>
+            <h1 className={styles.pageTitle}>All community teams</h1>
           </div>
           <div className={styles.topActionButtons}>
             <Link
@@ -344,95 +331,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <BookOpen aria-hidden="true" className={styles.btnIcon} />
               <span>Catchment Guide</span>
             </button>
-            <button
-              type="button"
-              className={styles.btnActionSecondary}
-              onClick={() => showToast("Not wired in this prototype.")}
-              data-testid="community-action-export"
-            >
-              <Download aria-hidden="true" className={styles.btnIcon} />
-              <span>Export Directory</span>
-            </button>
           </div>
         </div>
 
-        <h1 className="sr-only">All community teams</h1>
         <p className="sr-only">
           These are recorded <strong>names</strong>, not verified services; possible aliases remain separate.
         </p>
-
-        <div className={styles.glanceStrip} role="region" aria-label="Directory statistics summary">
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <Users aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>DIRECTORY TEAMS</span>
-              </div>
-              <span className={styles.glancePillNeutral}>Reachability not recorded</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{allTeams.length}</span>
-              <span className={styles.glanceSub}>All derived catchment destinations</span>
-            </div>
-          </div>
-
-          <div
-            className={`${styles.glanceCard} ${styles.glanceCardInteractive} ${alikeOnly ? styles.glanceCardActive : ""}`}
-            onClick={() => setAlikeOnly(!alikeOnly)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAlikeOnly(!alikeOnly);
-              }
-            }}
-            aria-pressed={alikeOnly}
-            title={alikeOnly ? "Show all names" : "Filter names that read alike"}
-          >
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <AlertTriangle aria-hidden="true" className={styles.glanceIconWarn} />
-                <span className={styles.glanceLabel}>NAMES READING ALIKE</span>
-              </div>
-              <span className={styles.glancePillWarn}>Verification check</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{namesInCollisionsAmongAll}</span>
-              <span className={styles.glanceSub}>
-                In {familyGroups.length} spelling groups · {alikeOnly ? "Active filter" : "Click to toggle"}
-              </span>
-            </div>
-          </div>
-
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <Layers aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>ALPHABET REACH</span>
-              </div>
-              <span className={styles.glancePill}>A–Z Index</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>{grouped.size} of 26</span>
-              <span className={styles.glanceSub}>Active initial letters populated</span>
-            </div>
-          </div>
-
-          <div className={styles.glanceCard}>
-            <div className={styles.glanceCardHead}>
-              <div className={styles.glanceCardTitleWrap}>
-                <ShieldCheck aria-hidden="true" className={styles.glanceIcon} />
-                <span className={styles.glanceLabel}>PROVENANCE</span>
-              </div>
-              <span className={styles.glancePillNeutral}>Single Source</span>
-            </div>
-            <div className={styles.glanceCardMetric}>
-              <span className={styles.glanceValue}>Synthetic</span>
-              <span className={styles.glanceSub}>WA Health Mental Health Catchment</span>
-            </div>
-          </div>
-        </div>
 
         <div className={styles.toolbar}>
           <div className={styles.searchRow}>
@@ -621,7 +525,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   Names that read alike — <strong>{communityNamesInCollisions()}</strong> names in{" "}
                   <strong>{familyGroups.length}</strong> groups
                 </span>
-                <span className={styles.familyWhy}>Check before you open one</span>
+                <span className={styles.familyWhy}>View details</span>
               </summary>
               <div className={styles.familyBody}>
                 <p>
