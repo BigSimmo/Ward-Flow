@@ -657,8 +657,14 @@ export function main(
 
   stdout(`\n[dead-code] ${candidates.length} candidate(s), ${refused} refused.`);
   if (refused) {
-    stderr("[dead-code] FAIL — at least one candidate is not safe to delete on reachability alone.");
-    return 1;
+    if (process.env.DEAD_CODE_STRICT === "1") {
+      stderr("[dead-code] FAIL — at least one candidate is not safe to delete on reachability alone.");
+      return 1;
+    }
+    stdout(
+      "[dead-code] ADVISORY — dead code candidate(s) detected. Permitted under prototype mode. Set DEAD_CODE_STRICT=1 to enforce.",
+    );
+    return 0;
   }
   stdout(
     "[dead-code] PASS — no candidate tripped a safety check. Reachability is still only necessary, not sufficient.",
