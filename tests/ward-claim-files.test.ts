@@ -10,6 +10,7 @@ describe("exact-file claim administration", () => {
     "../outside.ts",
     "src/",
     "src/**",
+    "src/a?.ts",
     "src/a.ts,src/b.ts",
     "src/../a.ts",
     "src/a.ts\nRELEASED",
@@ -35,16 +36,36 @@ describe("exact-file claim administration", () => {
       }),
     ).toThrow(/cannot encode takeover/);
   });
+  it("rejects protected branches and accepts literal bracketed route filenames", () => {
+    expect(() =>
+      claimFiles({
+        root: process.cwd(),
+        branch: "main",
+        currentBranch: "main",
+        owner: "fixture",
+        files: ["package.json"],
+        log: "unused",
+      }),
+    ).toThrow(/protected branch/);
+    expect(() => validateClaimPaths(process.cwd(), ["src/app/mockups/ward-flow/ward/[unitId]/page.tsx"])).not.toThrow();
+  });
   it("keeps another writer's lock and log intact", () => {
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-    const branch = execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim();
+    const branch = "codex/claim-fixture"; // CI checks out a detached HEAD, so the branch is injected.
     const folder = mkdtempSync(path.join(tmpdir(), "ward-claim-proof-"));
     const log = path.join(folder, "sign-out.md");
     writeFileSync(log, "Open sign-outs only\n");
     writeFileSync(`${log}.claim-lock`, "peer");
     try {
       expect(() =>
-        claimFiles({ root, branch, owner: "fixture", files: ["tests/ward-claim-files.test.ts"], log }),
+        claimFiles({
+          root,
+          branch,
+          currentBranch: branch,
+          owner: "fixture",
+          files: ["tests/ward-claim-files.test.ts"],
+          log,
+        }),
       ).toThrow();
       expect(readFileSync(log, "utf8")).toBe("Open sign-outs only\n");
       expect(readFileSync(`${log}.claim-lock`, "utf8")).toBe("peer");
@@ -54,14 +75,21 @@ describe("exact-file claim administration", () => {
   });
   it("never turns an active peer claim into a takeover", () => {
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-    const branch = execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim();
+    const branch = "codex/claim-fixture"; // CI checks out a detached HEAD, so the branch is injected.
     const folder = mkdtempSync(path.join(tmpdir(), "ward-claim-proof-"));
     const log = path.join(folder, "sign-out.md");
     const text = `Open sign-outs only\n- 2026-10-03 | Peer | codex/peer | ${folder} | tests/ward-claim-files.test.ts. repo=BigSimmo/Ward-Flow.\n`;
     writeFileSync(log, text);
     try {
       expect(() =>
-        claimFiles({ root, branch, owner: "fixture", files: ["tests/ward-claim-files.test.ts"], log }),
+        claimFiles({
+          root,
+          branch,
+          currentBranch: branch,
+          owner: "fixture",
+          files: ["tests/ward-claim-files.test.ts"],
+          log,
+        }),
       ).toThrow(/ownership conflict/);
       expect(readFileSync(log, "utf8")).toBe(text);
     } finally {
@@ -70,16 +98,18 @@ describe("exact-file claim administration", () => {
   });
   it("appends exact claims once and reuses the same owner without another inspection", () => {
     const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-    const branch = execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim();
+    const branch = "codex/claim-fixture"; // CI checks out a detached HEAD, so the branch is injected.
     const folder = mkdtempSync(path.join(tmpdir(), "ward-claim-proof-"));
     const log = path.join(folder, "sign-out.md");
     writeFileSync(log, "Open sign-outs only\n");
     const files = [`.local/claim-fixture-${process.pid}.ts`];
     try {
-      expect(claimFiles({ root, branch, owner: "fixture", files, log }).claimed).toEqual(files);
+      expect(claimFiles({ root, branch, currentBranch: branch, owner: "fixture", files, log }).claimed).toEqual(files);
       const text = readFileSync(log, "utf8");
       expect(text).toContain("repo=BigSimmo/Ward-Flow");
-      expect(claimFiles({ root, branch, owner: "fixture", files, log }).alreadyOwned).toEqual(files);
+      expect(claimFiles({ root, branch, currentBranch: branch, owner: "fixture", files, log }).alreadyOwned).toEqual(
+        files,
+      );
       expect(readFileSync(log, "utf8")).toBe(text);
     } finally {
       rmSync(folder, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });

@@ -22,6 +22,7 @@ export function referencedTestChanges({ root, population, changed }) {
     const id = key(file);
     if (graph.has(id)) return;
     const imports = new Set();
+    const requireAliases = new Set();
     graph.set(id, imports);
     let source;
     try {
@@ -47,12 +48,23 @@ export function referencedTestChanges({ root, population, changed }) {
         if (expression && ts.isStringLiteralLike(expression)) resolve(expression.text);
         else uncertain = true;
       }
+      // eval/new Function keep the full gate only when their code text itself loads modules; running
+      // opaque code (e.g. a theme bootstrap script) is not a module load. A createRequire result is
+      // tracked as a require alias so literal loads resolve and non-literal ones stay uncertain.
       if (
         (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
         ts.isIdentifier(node.expression) &&
-        ["eval", "Function", "createRequire"].includes(node.expression.text)
+        ["eval", "Function"].includes(node.expression.text) &&
+        (node.arguments ?? []).some(
+          (argument) => ts.isStringLiteralLike(argument) && /\b(?:import|require)\b/u.test(argument.text),
+        )
       )
         uncertain = true;
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "createRequire") {
+        if (ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name))
+          requireAliases.add(node.parent.name.text);
+        else uncertain = true;
+      }
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
         if (ts.isStringLiteralLike(node.moduleSpecifier)) resolve(node.moduleSpecifier.text);
         else uncertain = true;
@@ -60,7 +72,8 @@ export function referencedTestChanges({ root, population, changed }) {
       if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-          (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+          (ts.isIdentifier(node.expression) &&
+            (node.expression.text === "require" || requireAliases.has(node.expression.text))))
       ) {
         const argument = node.arguments[0];
         if (node.arguments.length === 1 && argument && ts.isStringLiteralLike(argument)) resolve(argument.text);
