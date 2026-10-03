@@ -150,6 +150,49 @@ describe("the on-call screen", () => {
     }
   });
 
+  it("filters role types without changing the ED directory and resets both filters", () => {
+    renderOnCall();
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter on-call roles" }), {
+      target: { value: "consultant" },
+    });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
+    const roster = within(screen.getByTestId("ward-on-call-service-table"));
+    expect(roster.getAllByText("Duty consultant")).toHaveLength(3);
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
+      allEmergencyDepartments().length + 1,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByRole("combobox", { name: "Filter on-call roles" })).toHaveValue("all");
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+  });
+
+  it("finds statewide roles and searches by the reason for contact", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "Statewide" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    expect(screen.getByText("Statewide bed placement")).toBeVisible();
+    expect(screen.getByText("Senior operational escalation")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "specialist psychiatry advice" } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
+  });
+
+  it("links every department to its own ED workspace and keeps contact preparation visible", () => {
+    renderOnCall();
+    for (const department of allEmergencyDepartments()) {
+      expect(screen.getByRole("link", { name: `Open ${department.name} workspace` })).toHaveAttribute(
+        "href",
+        `/mockups/ward-flow/ed/${encodeURIComponent(department.id)}`,
+      );
+    }
+    expect(screen.getByRole("heading", { name: "Before you contact a team" })).toBeVisible();
+    expect(
+      screen.getByText(/Have the movement reference, referring site, reason for contact and urgency ready/),
+    ).toBeVisible();
+  });
+
   /**
    * 🔴 **THE ONE THAT MATTERS AT THREE IN THE MORNING.** The static guard reads the FILES; this reads
    * what was actually painted, which is what a person acts on.

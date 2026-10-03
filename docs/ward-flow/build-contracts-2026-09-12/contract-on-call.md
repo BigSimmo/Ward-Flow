@@ -9,6 +9,8 @@ The current Movements design remains the visual baseline. On-call uses the Capac
 
 The owner requested removal of the two yellow coverage banners and the data/governance section. Services without roles now receive a neutral, explicit empty state when selected. A brief visible synthetic-data statement remains beside the roster; no real contacts or live coverage are asserted. The Tier 3 button and modal were removed from this directory: they only recorded an escalation against a movement and sent nothing. Redundant level/status columns, non-functional Connect buttons and hard-coded ED handover/liaison assignments were removed. Reach-via links scroll to the corresponding current-directory guidance.
 
+The follow-up refinement adds purpose-based role guidance, a statewide service filter, a roster-only role filter, and shared-route links to each ED workspace. Role and facility share a cell to keep the decision-making columns in view. Search also matches role purpose. A short contact preparation checklist sits with routing guidance. Horizontal-scroll hints appear only when browser measurements show a table overflows. None of these additions asserts a real contact, current role-holder or live shift coverage.
+
 The original research below is historical evidence, not a requirement to restore the removed panels or controls.
 
 ## 0. Design or reproduction?

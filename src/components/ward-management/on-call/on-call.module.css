@@ -122,6 +122,8 @@
   color: var(--accent-ink);
 }
 
+.roleSelect:focus-visible,
+.workspaceLink:focus-visible,
 .filterBtn:focus-visible,
 .clearBtn:focus-visible,
 .routingLink:focus-visible,
@@ -246,8 +248,7 @@
   --ward-table-min-width: 48rem;
 }
 
-.serviceCell,
-.roleCellTitle {
+.serviceCell {
   color: var(--ink);
   font-weight: 600;
   white-space: nowrap;
@@ -257,6 +258,86 @@
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.roleCellTitle {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.cellDetail {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.purposeCell {
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.tableRegion {
+  min-width: 0;
+}
+
+.scrollHint {
+  margin: 0;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  line-height: 1.45;
+}
+
+.roleSelect {
+  min-height: 2rem;
+  max-width: 100%;
+  padding: 0.375rem 0.625rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  font: var(--t-0) var(--body);
+}
+
+.workspaceLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, 3rem);
+  padding-inline: 0.625rem;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.workspaceLink:hover {
+  border-color: var(--accent);
+}
+
+.contactPrep {
+  display: grid;
+  gap: 0.375rem;
+  border-top: 1px solid var(--line);
+  padding-top: var(--ward-space-12);
+}
+
+.contactPrep h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.contactPrep p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
 }
 
 .siteCell {
@@ -361,17 +442,14 @@
   .filterBtn,
   .clearBtn,
   .searchInput,
-  .routingLink {
+  .routingLink,
+  .workspaceLink {
     min-height: 2rem;
   }
 
   .rosterTable td,
   .edDirectoryTable td {
     vertical-align: middle;
-  }
-
-  .edDirectoryTable .siteCell {
-    white-space: nowrap;
   }
 }
 
@@ -386,6 +464,10 @@
 
   .reachProtocolGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .roleSelect {
+    min-height: var(--ward-tap, 3rem);
   }
 
   .searchWrap {

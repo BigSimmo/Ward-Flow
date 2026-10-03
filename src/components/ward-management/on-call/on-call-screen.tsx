@@ -1,13 +1,16 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
-import { ArrowUpRight, Building2, Clock, Layers, Radio, Search } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Building2, Clock, Layers, Radio, Search } from "lucide-react";
 import { NETWORK_ON_CALL_ROLES, roleRecordCounts, SERVICE_ON_CALL_ROLES } from "./on-call-roster";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
+
+import { edHref } from "@/components/ward-management/shell/ward-facade";
 
 import styles from "./on-call.module.css";
 
@@ -27,6 +30,33 @@ const SERVICE_FACILITIES: Record<string, [string, string]> = {
   Private: ["Private Facilities Liaison", "Private Facilities Liaison"],
 };
 
+type RoleFilter = "all" | "coordinator" | "consultant" | "governance";
+
+const ROLE_PURPOSES: Record<string, string> = {
+  "Bed coordinator": "Statewide bed placement",
+  "Governance lead": "Senior operational escalation",
+  "Coordinator on call": "Service placement & transfers",
+  "Duty consultant": "Specialist psychiatry advice",
+};
+
+function useTableOverflow(contentKey: string) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  useEffect(() => {
+    const scroller = ref.current?.firstElementChild;
+    if (!(scroller instanceof HTMLElement)) return;
+    const measure = () => setOverflowing(scroller.scrollWidth > scroller.clientWidth + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    const table = scroller.querySelector("table");
+    if (table) observer.observe(table);
+    return () => observer.disconnect();
+  }, [contentKey]);
+  return [ref, overflowing] as const;
+}
+
 /**
  * Role directory only: roles and shifts are synthetic, while EDs come from the shared site directory.
  * No staff identity or contact method is held or rendered. Routing links open guidance on this page;
@@ -35,10 +65,13 @@ const SERVICE_FACILITIES: Record<string, [string, string]> = {
 export function OnCallScreen() {
   const [selectedService, setSelectedService] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState<RoleFilter>("all");
   const searchInputId = useId();
   const departments = allEmergencyDepartments();
   const counts = roleRecordCounts();
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const [rosterTableRef, rosterOverflowing] = useTableOverflow(`${selectedService}:${normalizedQuery}:${selectedRole}`);
+  const [edTableRef, edOverflowing] = useTableOverflow(`${selectedService}:${normalizedQuery}`);
 
   const roster = useMemo<RosterItem[]>(
     () => [
@@ -63,8 +96,12 @@ export function OnCallScreen() {
   const filteredRoster = roster.filter(
     (item) =>
       (selectedService === "all" || item.service === selectedService) &&
+      (selectedRole === "all" ||
+        (selectedRole === "coordinator" && item.role.toLowerCase().includes("coordinator")) ||
+        (selectedRole === "consultant" && item.role === "Duty consultant") ||
+        (selectedRole === "governance" && item.role === "Governance lead")) &&
       (!normalizedQuery ||
-        [item.service, item.role, item.facility, item.shift].some((value) =>
+        [item.service, item.role, item.facility, item.shift, ROLE_PURPOSES[item.role] ?? ""].some((value) =>
           value.toLowerCase().includes(normalizedQuery),
         )),
   );
@@ -78,14 +115,17 @@ export function OnCallScreen() {
         ))
     );
   });
-  const hasFilters = selectedService !== "all" || Boolean(normalizedQuery);
+  const hasDirectoryFilters = selectedService !== "all" || Boolean(normalizedQuery);
+  const hasFilters = hasDirectoryFilters || selectedRole !== "all";
   const serviceHasNoRoles =
     selectedService !== "all" &&
+    HEALTH_SERVICES.includes(selectedService as keyof typeof SERVICE_ON_CALL_ROLES) &&
     SERVICE_ON_CALL_ROLES[selectedService as keyof typeof SERVICE_ON_CALL_ROLES]?.length === 0;
 
   function clearFilters() {
     setSelectedService("all");
     setSearchQuery("");
+    setSelectedRole("all");
   }
 
   return (
@@ -122,6 +162,14 @@ export function OnCallScreen() {
               onClick={() => setSelectedService("all")}
             >
               All services
+            </button>
+            <button
+              type="button"
+              className={`${styles.filterBtn} ${selectedService === "Statewide Network" ? styles.activeFilter : ""}`}
+              aria-pressed={selectedService === "Statewide Network"}
+              onClick={() => setSelectedService("Statewide Network")}
+            >
+              Statewide
             </button>
             {HEALTH_SERVICES.map((service) => (
               <button
@@ -163,6 +211,17 @@ export function OnCallScreen() {
                 On-call roles
               </h2>
               <div className={styles.sectionHeaderMetaGroup}>
+                <select
+                  className={styles.roleSelect}
+                  aria-label="Filter on-call roles"
+                  value={selectedRole}
+                  onChange={(event) => setSelectedRole(event.target.value as RoleFilter)}
+                >
+                  <option value="all">All roles</option>
+                  <option value="coordinator">Coordinators</option>
+                  <option value="consultant">Duty consultants</option>
+                  <option value="governance">Governance lead</option>
+                </select>
                 <span className={styles.rosterCountBadge} data-testid="ward-on-call-count" aria-live="polite">
                   {filteredRoster.length} {filteredRoster.length === 1 ? "role" : "roles"}
                   {hasFilters ? ` of ${counts.recorded}` : " recorded"}
@@ -178,55 +237,68 @@ export function OnCallScreen() {
                 Roles and shifts are invented. Contact details are not held. Confirm current cover through the site
                 directory.
               </p>
-              <WardTable
-                testId="ward-on-call-service-table"
-                className={styles.rosterTable}
-                wrapperClassName={styles.tableScroll}
-              >
-                <thead>
-                  <tr>
-                    <th scope="col">Service</th>
-                    <th scope="col">Role</th>
-                    <th scope="col">Facility / desk</th>
-                    <th scope="col">Shift (AWST)</th>
-                    <th scope="col">Reach via</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRoster.map((item) => (
-                    <tr key={item.id} data-testid={`ward-on-call-role-${item.id}`}>
-                      <td className={styles.serviceCell}>{item.service}</td>
-                      <td className={styles.roleCellTitle}>{item.role}</td>
-                      <td>{item.facility}</td>
-                      <td className={styles.shiftCell}>
-                        {item.shift
-                          .replace("On call from home,", "From home,")
-                          .replace("Business hours only,", "Business hours,")
-                          .replaceAll(" to ", "–")}
-                      </td>
-                      <td>
-                        <a
-                          className={styles.routingLink}
-                          href={`#ward-reach-${item.route}`}
-                          aria-label={`How to reach ${item.role} for ${item.service}`}
-                        >
-                          {item.route === "bed" ? "Bed desk" : "Switchboard"}
-                          <ArrowUpRight size={14} aria-hidden="true" />
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredRoster.length === 0 && (
+              <div ref={rosterTableRef} className={styles.tableRegion}>
+                <WardTable
+                  overflowing={rosterOverflowing}
+                  testId="ward-on-call-service-table"
+                  className={styles.rosterTable}
+                  wrapperClassName={styles.tableScroll}
+                >
+                  <thead>
                     <tr>
-                      <td colSpan={5} className={styles.emptyTableState}>
-                        {serviceHasNoRoles
-                          ? `No on-call roles recorded for ${selectedService} in this prototype. Use the current site directory to confirm cover.`
-                          : "No on-call roles match your search."}
-                      </td>
+                      <th scope="col">Service</th>
+                      <th scope="col">Role / facility</th>
+                      <th scope="col">Contact for</th>
+                      <th scope="col">Shift (AWST)</th>
+                      <th scope="col">Reach via</th>
                     </tr>
-                  )}
-                </tbody>
-              </WardTable>
+                  </thead>
+                  <tbody>
+                    {filteredRoster.map((item) => (
+                      <tr key={item.id} data-testid={`ward-on-call-role-${item.id}`}>
+                        <td className={styles.serviceCell}>{item.service}</td>
+                        <td>
+                          <div className={styles.roleCellTitle}>{item.role}</div>
+                          <div className={styles.cellDetail}>{item.facility}</div>
+                        </td>
+                        <td className={styles.purposeCell}>
+                          {item.service === "Private"
+                            ? "Private placement enquiries"
+                            : (ROLE_PURPOSES[item.role] ?? "Confirm role scope with service")}
+                        </td>
+                        <td className={styles.shiftCell}>
+                          {item.shift
+                            .replace("On call from home,", "From home,")
+                            .replace("Business hours only,", "Business hours,")
+                            .replaceAll(" to ", "–")}
+                        </td>
+                        <td>
+                          <a
+                            className={styles.routingLink}
+                            href={`#ward-reach-${item.route}`}
+                            aria-label={`How to reach ${item.role} for ${item.service}`}
+                          >
+                            {item.route === "bed" ? "Bed desk" : "Switchboard"}
+                            <ArrowRight size={14} aria-hidden="true" />
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredRoster.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className={styles.emptyTableState}>
+                          {serviceHasNoRoles
+                            ? `No on-call roles recorded for ${selectedService} in this prototype. Use the current site directory to confirm cover.`
+                            : "No on-call roles match your search."}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </WardTable>
+              </div>
+              {rosterOverflowing && (
+                <p className={styles.scrollHint}>Scroll the table sideways to see shift times and routing guidance.</p>
+              )}
             </div>
           </section>
 
@@ -237,56 +309,76 @@ export function OnCallScreen() {
               </h2>
               <span className={styles.sectionMeta} aria-live="polite">
                 {filteredDepartments.length} {filteredDepartments.length === 1 ? "department" : "departments"}
-                {hasFilters ? ` of ${departments.length}` : ""}
+                {hasDirectoryFilters ? ` of ${departments.length}` : ""}
               </span>
             </div>
             <div className={styles.sectionBody}>
-              <WardTable
-                testId="ward-on-call-ed-table"
-                className={styles.edDirectoryTable}
-                wrapperClassName={styles.tableScroll}
-              >
-                <thead>
-                  <tr>
-                    <th scope="col">Hospital / emergency department</th>
-                    <th scope="col">Health service</th>
-                    <th scope="col">Reach via</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDepartments.map((department) => {
-                    const site = siteByCode(department.siteCode);
-                    return (
-                      <tr key={department.id} data-testid={`ward-on-call-ed-row-${department.id}`}>
-                        <td className={styles.siteCell} title={department.name}>
-                          <strong>{site?.name ?? department.name}</strong>
-                          <span className={styles.siteCode}>{department.siteCode} ED</span>
-                        </td>
-                        <td>
-                          <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
-                        </td>
-                        <td>
-                          <a
-                            className={styles.routingLink}
-                            href="#ward-reach-ed"
-                            aria-label={`How to reach ${department.name}`}
-                          >
-                            Local ED liaison
-                            <ArrowUpRight size={14} aria-hidden="true" />
-                          </a>
+              <div ref={edTableRef} className={styles.tableRegion}>
+                <WardTable
+                  overflowing={edOverflowing}
+                  testId="ward-on-call-ed-table"
+                  className={styles.edDirectoryTable}
+                  wrapperClassName={styles.tableScroll}
+                >
+                  <thead>
+                    <tr>
+                      <th scope="col">Hospital / emergency department</th>
+                      <th scope="col">Health service</th>
+                      <th scope="col">Reach via</th>
+                      <th scope="col">Workspace</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDepartments.map((department) => {
+                      const site = siteByCode(department.siteCode);
+                      return (
+                        <tr key={department.id} data-testid={`ward-on-call-ed-row-${department.id}`}>
+                          <td className={styles.siteCell} title={department.name}>
+                            <strong>{site?.name ?? department.name}</strong>
+                            <span className={styles.siteCode}>{department.siteCode} ED</span>
+                          </td>
+                          <td>
+                            <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
+                          </td>
+                          <td>
+                            <a
+                              className={styles.routingLink}
+                              href="#ward-reach-ed"
+                              aria-label={`How to reach ${department.name}`}
+                            >
+                              Local ED liaison
+                              <ArrowRight size={14} aria-hidden="true" />
+                            </a>
+                          </td>
+                          <td>
+                            <Link
+                              className={styles.workspaceLink}
+                              href={edHref(department.id)}
+                              prefetch={false}
+                              aria-label={`Open ${department.name} workspace`}
+                            >
+                              Open ED
+                              <ArrowRight size={14} aria-hidden="true" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredDepartments.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className={styles.emptyTableState}>
+                          No emergency departments match the current filter or search.
                         </td>
                       </tr>
-                    );
-                  })}
-                  {filteredDepartments.length === 0 && (
-                    <tr>
-                      <td colSpan={3} className={styles.emptyTableState}>
-                        No emergency departments match the current filter or search.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </WardTable>
+                    )}
+                  </tbody>
+                </WardTable>
+              </div>
+              {edOverflowing && (
+                <p className={styles.scrollHint}>
+                  Scroll the table sideways to see health services, routing and ED workspaces.
+                </p>
+              )}
             </div>
           </section>
 
@@ -332,6 +424,14 @@ export function OnCallScreen() {
                     responsible role.
                   </p>
                 </div>
+              </div>
+              <div className={styles.contactPrep}>
+                <h3>Before you contact a team</h3>
+                <p>
+                  Have the movement reference, referring site, reason for contact and urgency ready. Include the
+                  receiving ward if agreed. Confirm the person’s role and the next action; record the outcome in the
+                  movement record.
+                </p>
               </div>
             </div>
           </section>
