@@ -1381,7 +1381,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                 }
 
                 return (
-                  <ul className={styles.patientCardsList} data-testid="delays-waiting-list" data-ward-primitive="list">
+                  <ul
+                    className={styles.patientCardsList}
+                    data-testid="delays-waiting-list"
+                    data-ward-primitive="list"
+                    onKeyDown={handlePersonListKeyDown}
+                  >
                     {sortedItems.map(({ movement, cause }) => (
                       <PersonRow
                         key={movement.id}

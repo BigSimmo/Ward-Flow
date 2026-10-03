@@ -153,7 +153,7 @@ describe("installedLockParity", () => {
     if (ci) expect(ci).toContain("run: npm run check:installed-lock-parity");
   });
 
-  it("keeps brace-expansion on CVE-2026-14257-patched maintenance releases", () => {
+  it("keeps brace-expansion constraints and installed releases above the patched floors", () => {
     const packageJson = JSON.parse(readFileSync(path.resolve("package.json"), "utf8")) as {
       overrides: Record<string, string>;
     };
@@ -165,17 +165,30 @@ describe("installedLockParity", () => {
       options?: { max?: number; maxLength?: number },
     ) => string[];
 
-    expect(packageJson.overrides).toMatchObject({
-      "brace-expansion@1": "^1.1.18",
-      "brace-expansion@2": "^2.1.4",
-      "brace-expansion@5": "^5.0.9",
-    });
-    expect(lock.packages["node_modules/brace-expansion"]?.version).toBe("1.1.18");
-    expect(
-      Object.entries(lock.packages)
-        .filter(([name]) => name.endsWith("node_modules/brace-expansion"))
-        .map(([, entry]) => entry.version),
-    ).toEqual(expect.arrayContaining(["1.1.18", "5.0.9"]));
+    const patchedFloors: Record<number, readonly [number, number]> = {
+      1: [1, 21],
+      2: [1, 4],
+      5: [0, 12],
+    };
+    const isPatched = (version: string | undefined): boolean => {
+      const match = version?.match(/^(\d+)\.(\d+)\.(\d+)$/);
+      if (!match) return false;
+      const [major, minor, patch] = match.slice(1).map(Number);
+      const floor = patchedFloors[major];
+      return Boolean(floor && (minor > floor[0] || (minor === floor[0] && patch >= floor[1])));
+    };
+
+    for (const major of Object.keys(patchedFloors)) {
+      const constraint = packageJson.overrides[`brace-expansion@${major}`];
+      expect(constraint).toMatch(new RegExp(`^\\^${major}\\.\\d+\\.\\d+$`));
+      expect(isPatched(constraint.slice(1)), `override ${major} must exclude vulnerable releases`).toBe(true);
+    }
+    const installedVersions = Object.entries(lock.packages)
+      .filter(([name]) => name.endsWith("node_modules/brace-expansion"))
+      .map(([, entry]) => entry.version);
+    expect(installedVersions.some((version) => version?.startsWith("1."))).toBe(true);
+    expect(installedVersions.some((version) => version?.startsWith("5."))).toBe(true);
+    expect(installedVersions.every(isPatched), "every installed brace-expansion copy must be patched").toBe(true);
 
     const maxLength = 40_000;
     const adversarial = expand("{a,b}".repeat(100), { max: 100_000, maxLength });

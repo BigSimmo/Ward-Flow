@@ -2288,3 +2288,25 @@
   color: var(--muted);
   border: 1px solid var(--line);
 }
+
+/* Care controls must stay inside the dossier at phone widths. */
+.careJourney {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.careJourney .filterField {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 12rem;
+}
+.careJourney select,
+.careJourney input {
+  min-width: 0;
+  max-width: 100%;
+}
+.careJourney details {
+  margin-block: 0.75rem;
+}
+.careJourney summary {
+  cursor: pointer;
+}

@@ -1,5 +1,15 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## WA remediation update — 3 October 2026
+
+The discharge Dossier mounts `DischargeCareJourney` beside `DischargeFollowUp`. Its forms record attributed planning/document milestones, named synthetic responsibility and appointments, contact outcomes, coding handoff, episode changes, transport assessment, transfer handshake and checked legal-paper facts. Community uses `CommunityFollowUp` with its own scoped actor and explicit referral link; filters distinguish missing arrangements from missing current-appointment contact. `MovementWorkflowActions` exposes expectation, lateness/leave reviews, mismatch, ward request, release/reopen and typed legal expiry controls. The officer footer now receives its existing print-hide CSS class.
+
+The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
+
+## WA pathway audit update — 3 October 2026
+
+The ward route accepts only `tab=departure-planning` to open the existing Decisions tab; other query values retain the normal starting tab. The coordinator discharge board's planning link uses this route. Community departure lists remain independent of follow-up arrangement state and do not imply contact completion; their comments now acknowledge the board's arrangement writer. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
 in `src/components/ward-management/{coordinator,ed,ward,referrals,community,search,statistics}/`.

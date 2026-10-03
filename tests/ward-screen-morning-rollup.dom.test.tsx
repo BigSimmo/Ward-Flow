@@ -56,7 +56,7 @@ function SendBuzzHelper() {
           role: "coordinator",
           now,
           unitId: UNIT_ID,
-          message: "Urgent bed census needed",
+          message: "Please review and confirm ward capacity.",
           urgent: true,
         })
       }

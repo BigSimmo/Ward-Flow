@@ -1,9 +1,9 @@
-import type { DischargeBarrier, LeavingDestination } from "@/components/ward-management/ward-admissions";
+import type { CareChange } from "./ward-care-journey";
+import type { DischargeBarrier, LeavingDestination, FollowUpState } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
-  BroadcastAlert,
   BroadcastCategory,
   BroadcastSeverity,
   BroadcastTargetScope,
@@ -149,7 +149,36 @@ export type ReferralDraft = {
  * One variant per row of spec §6. Every event carries `role` (checked against `EVENT_ROLE`
  * before anything else happens) and `now` (the reducer never reads a clock itself).
  */
+export const WARD_BUZZ_MESSAGES = [
+  "Please review and confirm ward capacity.",
+  "Please review the current placement request.",
+  "Synthetic ward count request",
+] as const;
+
 export type WardFlowEvent =
+  | {
+      type: "RECORD_ADMISSION_CARE";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      actingTeamId?: string;
+      admissionId: string;
+      patientId: PatientId;
+      expectedGeneration: number;
+      expectedRevision: number;
+      change: CareChange;
+    }
+  | {
+      type: "RECORD_ADMISSION_FOLLOW_UP";
+      role: WardFlowRole;
+      now: Instant;
+      actingUnitId?: string;
+      admissionId: string;
+      patientId: PatientId;
+      expectedGeneration: number;
+      expectedRevision: number;
+      followUpState: FollowUpState;
+    }
   | {
       type: "RECORD_PATIENT_DISCHARGE";
       role: WardFlowRole;
@@ -171,6 +200,7 @@ export type WardFlowEvent =
     }
   | {
       type: "OPEN_DISCHARGE_RECORD";
+      actingTeamId?: string;
       role: WardFlowRole;
       now: Instant;
       actingUnitId?: string;
@@ -1823,6 +1853,7 @@ export type WardFlowEvent =
   | {
       /** Recorded country extension for Form 1A — never automatic. */
       type: "RECORD_COUNTRY_EXTENSION";
+      paperExpiresAt?: Instant;
       role: WardFlowRole;
       now: Instant;
       movementId: string;
@@ -1894,7 +1925,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       unitId: string;
-      message: string;
+      message: (typeof WARD_BUZZ_MESSAGES)[number];
       urgent?: boolean;
     }
   | {
@@ -2012,9 +2043,11 @@ export type OverridableWardFlowEvent = Extract<
  * the same shape, so the table is widened here rather than special-cased per event.
  */
 export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> = {
+  RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
+  RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
   RECORD_PATIENT_DISCHARGE: ["ward"],
   UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
-  OPEN_DISCHARGE_RECORD: ["coordinator", "ward"],
+  OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
   REVIEW_AUDIT_EVENT: ["coordinator"],
   /**
    * Owner ruling FD-25, 2026-08-30: a referral is raised by whoever is with the patient, and that

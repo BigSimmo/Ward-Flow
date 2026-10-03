@@ -30,7 +30,18 @@ export async function generateMetadata({ params }: { params: Promise<{ unitId: s
   };
 }
 
-export default async function WardUnitPage({ params }: { params: Promise<{ unitId: string }> }) {
+export default async function WardUnitPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ unitId: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
   const { unitId } = await params;
-  return <WardScreen unitId={decodeURIComponent(unitId)} />;
+  return (
+    <WardScreen
+      unitId={decodeURIComponent(unitId)}
+      departurePlanning={(await searchParams).tab === "departure-planning"}
+    />
+  );
 }

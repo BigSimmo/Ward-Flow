@@ -86,7 +86,6 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "RECORD_REPATRIATION",
   "SET_ARRIVAL_DETAILS",
   "UPLOAD_PATIENT_FORM",
-  "SEND_WARD_BUZZ",
   "DISPATCH_BROADCAST_ALERT",
 ]);
 
@@ -193,6 +192,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // human-typed field, the same shape `RECORD_LEGAL_FORM_EXPIRY` above carries.
   "RECORD_MOVEMENT_GENDER",
   "RECORD_NO_REFERRAL",
+  // Closed preset message vocabulary; never a typed message or a name.
+  "SEND_WARD_BUZZ",
+  "RECORD_ADMISSION_CARE",
+  "RECORD_ADMISSION_FOLLOW_UP",
   "RECORD_PATIENT_DISCHARGE",
   "RECORD_REFERRER_WITHDRAWAL",
   "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
@@ -339,6 +342,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "referralId"
   | "releaseId"
   | "leaveBedId"
+  // Own-team community scope, resolved against the fixed service directory and referral link.
+  | "actingTeamId"
   | "actingUnitId"
   | "inboxItemId"
   | "eventId"
