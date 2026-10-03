@@ -227,13 +227,52 @@ describe("dead-code candidate CLI", () => {
   });
 
   it("runs the default gate path instead of exiting silently", () => {
+    // Exercise the real no-argument CLI against one controlled removal, not
+    // every concurrent task's diff. The committed pin requires a real refusal.
+    const root = createFixture();
+    writeFileSync(
+      join(root, "src", "candidate.ts"),
+      "export const candidate = 1;\nexport const removedForFixture = 2;\n",
+    );
+    writeFileSync(
+      join(root, "tests", "pin.test.ts"),
+      'import { removedForFixture } from "../src/candidate";\ntest("pin", () => removedForFixture);\n',
+    );
+    const environment = { ...process.env };
+    for (const name of Object.keys(environment)) if (name.toUpperCase().startsWith("GIT_")) delete environment[name];
+    const git = (...args: string[]) =>
+      execFileSync(
+        "git",
+        ["-c", `core.hooksPath=${join(root, "fixture-hooks")}`, "-c", "commit.gpgsign=false", ...args],
+        { cwd: root, env: environment, encoding: "utf8", timeout: 10_000 },
+      );
+    git("init", "--quiet", "-b", "main");
+    git("add", "--", "src/candidate.ts", "tests/pin.test.ts");
+    git(
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "Seed controlled deletion",
+    );
+    git("update-ref", "refs/remotes/origin/main", "HEAD");
+    writeFileSync(join(root, "src", "candidate.ts"), "export const candidate = 1;\n");
     const result = spawnSync(process.execPath, [SCRIPT], {
-      cwd: REPOSITORY_ROOT,
+      cwd: root,
+      env: environment,
       encoding: "utf8",
+      timeout: 10_000,
     });
 
-    expect([0, 1]).toContain(result.status);
-    expect(result.stdout).toContain("[dead-code]");
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("[dead-code] 1 candidate(s), 1 refused.");
+    expect(result.stdout).toContain("removedForFixture");
+    expect(result.stdout).toContain("pinned by committed test(s): tests/pin.test.ts");
+    expect(result.stdout).toContain("remove the symbol, never the file");
   });
 
   it("refuses when git diff fails instead of reporting zero candidates", () => {

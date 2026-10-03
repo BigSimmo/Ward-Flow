@@ -10,6 +10,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, matchesGlob } from "node:path";
 import { describe, expect, it } from "vitest";
+import { DOM_UNIT_TEST_GLOBS } from "../scripts/unit-test-population.mjs";
 
 const ROOT = "src/components/ward-management";
 const TOKEN_FILE = join(ROOT, "ward-tokens.module.css");
@@ -789,9 +790,16 @@ describe("the ground is not merely painted — it has to be visible", () => {
 });
 
 describe("no Ward Flow test file is invisible to the runner", () => {
-  const include = readFileSync("vitest.config.mts", "utf8").match(/name: "jsdom",[\s\S]*?include: \[([^\]]+)\],/);
-  if (!include) throw new Error("Cannot read jsdom include patterns; update the extraction");
-  const jsdomIncludes = [...include[1]!.matchAll(/"([^"]+)"/g)].map((match) => match[1]!);
+  const config = readFileSync("vitest.config.mts", "utf8");
+  const populationImport = config.match(/import\s*\{([^}]+)\}\s*from\s+["']\.\/scripts\/unit-test-population\.mjs["']/);
+  const names = populationImport?.[1]?.split(",").map((name) => name.trim()) ?? [];
+  if (
+    !names.includes("DOM_UNIT_TEST_GLOBS") ||
+    !/name:\s*"jsdom",[\s\S]*?include:\s*DOM_UNIT_TEST_GLOBS/.test(config)
+  ) {
+    throw new Error("Cannot verify shared jsdom collection binding; update the extraction");
+  }
+  const jsdomIncludes = DOM_UNIT_TEST_GLOBS;
   it("uses the actual DOM and contract include patterns without admitting arbitrary TSX tests", () => {
     expect(jsdomIncludes).toEqual(["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"]);
     expect(jsdomIncludes.some((pattern) => matchesGlob("tests/ward-example.contract.test.tsx", pattern))).toBe(true);

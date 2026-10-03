@@ -17,14 +17,16 @@ import { selectFoldGate } from "./select-fold-gate.mjs";
 
 // A hook's inherited index/repository controls must never redirect snapshot writes.
 const cleanGitEnvironment = { ...process.env };
-for (const name of Object.keys(cleanGitEnvironment)) if (name.startsWith("GIT_")) delete cleanGitEnvironment[name];
+for (const name of Object.keys(cleanGitEnvironment))
+  if (name.toUpperCase().startsWith("GIT_")) delete cleanGitEnvironment[name];
 const localGitControls = execFileSync("git", ["rev-parse", "--local-env-vars"], {
   encoding: "utf8",
   env: cleanGitEnvironment,
 })
   .trim()
   .split(/\r?\n/u);
-if (localGitControls.some((name) => process.env[name] !== undefined)) {
+const localGitControlNames = new Set(localGitControls.map((name) => name.toUpperCase()));
+if (Object.keys(process.env).some((name) => localGitControlNames.has(name.toUpperCase()))) {
   console.error(
     "Refusing readiness with inherited repository-local Git controls. Run from the verified checkout directly.",
   );
@@ -137,7 +139,8 @@ const unlinkModules = () => {
 };
 let code = 0;
 const snapshotEnvironment = offlineTestEnvironment(admission.environment);
-for (const name of Object.keys(snapshotEnvironment)) if (name.startsWith("GIT_")) delete snapshotEnvironment[name];
+for (const name of Object.keys(snapshotEnvironment))
+  if (name.toUpperCase().startsWith("GIT_")) delete snapshotEnvironment[name];
 try {
   const archive = execFileSync("git", ["archive", "--format=tar", tree], {
     env: cleanGitEnvironment,
