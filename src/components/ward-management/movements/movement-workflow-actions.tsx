@@ -42,17 +42,17 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             type="button"
             onClick={() => {
               before();
-              dispatch(
-                movement.expectFlag && movement.expectFlag.clearedAt === undefined
-                  ? { type: "CLEAR_EXPECT_FLAG", role: "coordinator", now, movementId: movement.id }
-                  : {
-                      type: "RAISE_EXPECT_FLAG",
-                      role: "coordinator",
-                      now,
-                      movementId: movement.id,
-                      kind: movement.legalStatus === "Voluntary" ? "voluntary_48h" : "involuntary_7d",
-                    },
-              );
+              if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
+                dispatch({ type: "CLEAR_EXPECT_FLAG", role: "coordinator", now, movementId: movement.id });
+              } else {
+                dispatch({
+                  type: "RAISE_EXPECT_FLAG",
+                  role: "coordinator",
+                  now,
+                  movementId: movement.id,
+                  kind: movement.legalStatus === "Voluntary" ? "voluntary_48h" : "involuntary_7d",
+                });
+              }
             }}
           >
             {movement.expectFlag && movement.expectFlag.clearedAt === undefined

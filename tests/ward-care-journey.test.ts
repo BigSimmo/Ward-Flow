@@ -9,6 +9,7 @@ import {
   type CareChange,
   CARE_PLAN_ITEMS,
   CARE_DOCUMENTS,
+  SEPARATION_CODES,
 } from "@/components/ward-management/ward-care-journey";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { selectDischargeRecord } from "@/components/ward-management/ward-discharge-records";
@@ -208,6 +209,61 @@ describe("complete guarded local care journey", () => {
       leftAt: null,
       careJourney: { episodes: [{ episodeType: "rehabilitation" }] },
     });
+  });
+  it.each([
+    ["transferred-to-a-general-hospital", "acute_hospital", "10", false],
+    ["transferred-to-another-psychiatric-ward", "acute_hospital", "10", false],
+    ["transferred-to-another-psychiatric-ward", "psychiatric_hospital", "30", false],
+    ["moved-to-residential-aged-care", "aged_care_new", "21", false],
+    ["returned-to-residential-aged-care", "aged_care_usual", "22", false],
+    ["transferred-to-other-health-care", "other_health_care", "40", false],
+    ["left-against-advice", "not_applicable", "60", false],
+    ["did-not-return", "community_or_custody", "70", true],
+    ["discharged-to-the-community", "community_or_custody", "70", true],
+    ["died-on-the-ward", "not_applicable", "80", false],
+    ["discharged-to-the-community", "community_or_custody", "90", false],
+    ["transferred-to-custody", "community_or_custody", "90", false],
+    ["did-not-return", "community_or_custody", "90", false],
+    ["did-not-return", "not_applicable", "90", false],
+    ["did-not-return", "not_applicable", "70", true],
+  ] as const)(
+    "validates %s as %s / %s (from leave %s) and refuses incompatible codes",
+    (destination, receivingClass, code, dischargedFromLeave) => {
+      const { state, admission } = fixture();
+      admission.state = "departed";
+      admission.leftAt = NOW_ANCHOR;
+      admission.leavingDestination = destination;
+      for (const separationCode of SEPARATION_CODES) {
+        const change: CareChange = { kind: "coding", receivingClass, separationCode, dischargedFromLeave };
+        const next = wardFlowReducer(state, command(state, admission.id, change));
+        if (separationCode === code) {
+          expect(next.rejections).toEqual([]);
+          expect(separationHandoff(next.admissions.find((a) => a.id === admission.id)!)).toMatchObject({
+            separationCode: code,
+            receivingClass,
+            externalSubmission: "not_connected",
+          });
+        } else expect(next.admissions).toBe(state.admissions);
+      }
+    },
+  );
+  it("does not code an incompatible receiver or death-on-ward as discharge from leave", () => {
+    const { state, admission } = fixture();
+    admission.state = "departed";
+    admission.leftAt = NOW_ANCHOR;
+    for (const destination of ["died-on-the-ward", "discharged-to-the-community"] as const) {
+      admission.leavingDestination = destination;
+      const next = wardFlowReducer(
+        state,
+        command(state, admission.id, {
+          kind: "coding",
+          receivingClass: "acute_hospital",
+          separationCode: "70",
+          dischargedFromLeave: true,
+        }),
+      );
+      expect(next.admissions).toBe(state.admissions);
+    }
   });
   it("resolves a legacy residential record explicitly without rewriting its original destination", () => {
     const { state, admission } = fixture();

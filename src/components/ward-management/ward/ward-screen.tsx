@@ -442,7 +442,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const reason = refused
       ? check.codes.reduce((text, code) => text.split(code).join(check.who), refused.reason)
       : undefined;
-    setToastMessage(reason !== undefined ? `Not recorded: ${reason}. Nothing was changed.` : check.success);
+    // Protected refusals deliberately omit identifiers; retain the name already shown on this scoped card.
+    const namedReason =
+      reason !== undefined && check.codes.length > 0 && !reason.includes(check.who)
+        ? `${check.who}: ${reason}`
+        : reason;
+    setToastMessage(namedReason !== undefined ? `Not recorded: ${namedReason}. Nothing was changed.` : check.success);
   }, [dischargeToken, rejections]);
 
   useEffect(() => {

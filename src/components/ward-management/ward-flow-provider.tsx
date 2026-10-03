@@ -18,6 +18,7 @@ import {
 import {
   readOpenedDischargeRecord,
   selectDischargeRecords,
+  selectDischargeRecord,
   safeCounter,
   validRecordActor,
   type DischargeOpenHandle,
@@ -713,8 +714,8 @@ function WardFlowWorld({
     () => ({
       worldGeneration: state.worldGeneration,
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
-        const admission = state.admissions.find((a) => a.id === admissionId);
-        if (admission?.patientId === null) {
+        const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
+        if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
           dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
           return;
         }
@@ -725,7 +726,10 @@ function WardFlowWorld({
           admissionId,
           actingUnitId,
           leavingDestination,
-          patientId: admission?.patientId ?? "PT-unresolved",
+          patientId:
+            read.status === "allowed" && read.value.identity.kind === "linked"
+              ? read.value.identity.patient.id
+              : "PT-unresolved",
           expectedGeneration: state.worldGeneration,
           expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
         });

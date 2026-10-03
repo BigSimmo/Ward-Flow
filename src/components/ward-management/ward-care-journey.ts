@@ -37,6 +37,7 @@ export const RECEIVING_CLASSES = [
   "aged_care_usual",
   "other_health_care",
   "community_or_custody",
+  "not_applicable",
 ] as const;
 export const EPISODE_TYPES = ["mental_health", "general_care", "rehabilitation", "palliative_care"] as const;
 export const SEPARATION_CODES = ["10", "21", "22", "30", "40", "50", "60", "70", "80", "90"] as const;
@@ -244,18 +245,19 @@ export function codingCode(
   dischargedFromLeave = false,
 ): string | null {
   if (admission.state !== "departed") return null;
-  if (
-    dischargedFromLeave &&
-    ["did-not-return", "discharged-to-the-community"].includes(admission.leavingDestination ?? "")
-  )
-    return "70";
+  if (dischargedFromLeave)
+    return ["did-not-return", "discharged-to-the-community"].includes(admission.leavingDestination ?? "") &&
+      (receivingClass === "community_or_custody" ||
+        (admission.leavingDestination === "did-not-return" && receivingClass === "not_applicable"))
+      ? "70"
+      : null;
   switch (admission.leavingDestination) {
     case "died-on-the-ward":
-      return "80";
+      return receivingClass === "not_applicable" ? "80" : null;
     case "left-against-advice":
       return "60";
     case "did-not-return":
-      return receivingClass === "community_or_custody" ? "90" : null;
+      return receivingClass === "community_or_custody" || receivingClass === "not_applicable" ? "90" : null;
     case "discharged-to-the-community":
     case "transferred-to-custody":
       return receivingClass === "community_or_custody" ? "90" : null;
