@@ -33,7 +33,7 @@ The Windows shared sign-out file is unavailable in this Linux environment; local
 claims and release status are held under `/workspace/shared/ward-flow-alerts-sign-out.md`.
 Desktop concurrent claims could not be verified. All changes stay in the isolated worktree.
 
-Local acceptance: 32 focused tests passed across six test files. Changed-file ESLint
+Local acceptance: 33 focused tests passed across six test files. Changed-file ESLint
 and the pre-commit scoped TypeScript checks passed. Browser checks passed for tier
 keyboard navigation, role filtering and counts, action menus, drawer and modal
 Escape/focus return, and access to the final rows. Layouts were inspected at 1440,
