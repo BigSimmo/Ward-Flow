@@ -115,6 +115,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
 
     for (const destination of DESTINATIONS) {
       await page.goto(HUB, { waitUntil: "load" });
+      await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
       await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
