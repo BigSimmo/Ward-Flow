@@ -230,7 +230,7 @@ test.describe("@mockup Ward shell bar", () => {
    * the count of ZERO catches a second mount of a DIFFERENT component doing the same job, which
    * is what actually happened.
    */
-  for (const width of [1440, 375]) {
+  for (const width of [1440, 800, 375]) {
     test(`exactly one of each shell control, and none of the retired chrome, on every route shape at ${width}px`, async ({
       page,
     }) => {
@@ -276,6 +276,16 @@ test.describe("@mockup Ward shell bar", () => {
           await expect(reconciliation, "the published reconciliation verdict must appear once").toHaveCount(1);
           await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
           await expect(reconciliation).toHaveAttribute("data-tone", "good");
+          if (width === 800) {
+            await page.getByRole("button", { name: "Menu", exact: true }).focus();
+            await page.keyboard.press("Enter");
+            await expect(reconciliation).toHaveCount(1);
+            await expect(reconciliation).toBeVisible();
+            await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
+            await expect(reconciliation).toHaveAttribute("data-tone", "good");
+            await page.keyboard.press("Escape");
+            await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
+          }
         } else {
           await expect(reconciliation, "the unpublished status must appear once").toHaveCount(1);
           await expect(reconciliation).toHaveText("Reconciliation not published");
@@ -286,10 +296,15 @@ test.describe("@mockup Ward shell bar", () => {
         );
       }
 
-      // The phone keeps shift context in Menu; measure the status where users read it.
+      // Compact layouts keep shift context in Menu; measure the status where users read it.
+      // Tablet coverage uses keyboard activation: its existing Menu pointer target sits outside the viewport.
       await gotoWardChrome(page, DELAYS_ROUTE);
       const menu = page.getByRole("button", { name: "Menu", exact: true });
-      if (width === 375) await menu.click();
+      if (width === 800) {
+        await menu.focus();
+        await page.keyboard.press("Enter");
+      } else if (width === 375) await menu.click();
+      await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
       const visibleStatus = page.getByTestId("ward-reconciliation-line").filter({ visible: true });
       await expect(visibleStatus).toHaveCount(1);
       await expect(visibleStatus).toHaveText("Reconciliation not published");
@@ -314,10 +329,12 @@ test.describe("@mockup Ward shell bar", () => {
         );
       });
       expect(fits, "the reconciliation sentence must wrap within its line and remain unobscured").toBe(true);
-      if (width === 375) {
+      if (width <= 1000) {
         await page.keyboard.press("Escape");
         await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
         await expect(menu).toBeFocused();
+        await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
+        await expect(visibleStatus).toHaveCount(width === 800 ? 1 : 0);
       }
     });
   }

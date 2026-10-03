@@ -1011,7 +1011,9 @@ export function WardRail({ asAt }: WardRailProps) {
         </div>
       ) : null}
 
-      <WardReconciliationLine publication={publication} asAt={asAt} compact={!open} className={styles.railCheck} />
+      {!moreOpen ? (
+        <WardReconciliationLine publication={publication} asAt={asAt} compact={!open} className={styles.railCheck} />
+      ) : null}
 
       <div className={styles.railFoot}>
         <div className={styles.utilityLinks}>
