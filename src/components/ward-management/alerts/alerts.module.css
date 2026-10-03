@@ -2189,6 +2189,7 @@
 }
 
 .contextDetails {
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: var(--r2);
   background: var(--surface);
@@ -2228,6 +2229,18 @@
   .screen,
   .screen :global([data-ward-primitive="panel"]) {
     --ward-tap: 2.25rem;
+  }
+  .screen .btn,
+  .screen .btnSm,
+  .screen .tierTab,
+  .screen .filterBtn,
+  .screen .resetFilterBtn,
+  .screen .quickActionTrigger,
+  .screen .contextDetails > summary {
+    min-height: 2.25rem;
+  }
+  .screen .quickActionTrigger {
+    width: 2.25rem;
   }
   .pageHeader {
     padding-block: 0.55rem;
