@@ -199,8 +199,8 @@ function ConditionContext({
   );
 }
 
-function extractOverdue(detail: string): string | null {
-  const match = detail.match(/(\d+\s*[hm]\s*(?:\d+\s*m)?\s*overdue)/i);
+export function extractOverdue(detail: string): string | null {
+  const match = detail.match(/(\d+\s*d(?:\s*\d+\s*h)?\s*overdue|\d+\s*[hm]\s*(?:\d+\s*m)?\s*overdue)/i);
   return match ? match[1] : null;
 }
 
@@ -1017,7 +1017,7 @@ function AlertsWorkspace() {
               role="tab"
               id="alerts-tier-all"
               aria-controls="alerts-results"
-              aria-label={`All Active Tiers (${totalActive})`}
+              aria-label={`All alerts, all active tiers (${totalActive})`}
               tabIndex={tierFilter === "all" ? 0 : -1}
               aria-selected={tierFilter === "all"}
               className={`${styles.tierTab} ${tierFilter === "all" ? styles.tierTabActive : ""}`}
@@ -1032,7 +1032,7 @@ function AlertsWorkspace() {
               role="tab"
               id="alerts-tier-emergency"
               aria-controls="alerts-results"
-              aria-label={`Tier 1: Clinical Emergency / High Risk (${tier1Count})`}
+              aria-label={`Clinical risk, Tier 1: Clinical Emergency / High Risk (${tier1Count})`}
               tabIndex={tierFilter === "emergency" ? 0 : -1}
               aria-selected={tierFilter === "emergency"}
               className={`${styles.tierTab} ${tierFilter === "emergency" ? styles.tierTabActive : ""}`}
@@ -1049,7 +1049,7 @@ function AlertsWorkspace() {
               role="tab"
               id="alerts-tier-capacity"
               aria-controls="alerts-results"
-              aria-label={`Tier 2: Capacity Pressure / Delay (${tier2Count})`}
+              aria-label={`Capacity & delay, Tier 2: Capacity Pressure / Delay (${tier2Count})`}
               tabIndex={tierFilter === "capacity" ? 0 : -1}
               aria-selected={tierFilter === "capacity"}
               className={`${styles.tierTab} ${tierFilter === "capacity" ? styles.tierTabActive : ""}`}
@@ -1066,7 +1066,7 @@ function AlertsWorkspace() {
               role="tab"
               id="alerts-tier-admin"
               aria-controls="alerts-results"
-              aria-label={`Tier 3: Administrative & Transfer (${tier3Count})`}
+              aria-label={`Admin & transfer, Tier 3: Administrative & Transfer (${tier3Count})`}
               tabIndex={tierFilter === "admin" ? 0 : -1}
               aria-selected={tierFilter === "admin"}
               className={`${styles.tierTab} ${tierFilter === "admin" ? styles.tierTabActive : ""}`}
