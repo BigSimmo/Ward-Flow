@@ -12,11 +12,13 @@ enter real patient information.
 ## In one paragraph
 
 Ward Flow is a working browser prototype for coordinating psychiatric beds across Western Australian
-mental health services. All of its screens run on invented data, held only in each user's browser.
-Since moving to this repository on 27 September, 36 pull requests have been opened and 35 merged
-(one, #4, was closed as replaced). There are no open GitHub issues. Every merged pull request
-passed the Ward Flow checks on GitHub; the most recent (#36) passed static checks, five unit-test
-shards, three browser-journey groups and the GitGuardian secret scan. Nothing is broken or urgent.
+mental health services. Patients, beds, referrals and other scenario data are invented and held only
+in each user's browser. Some reference content is real public information: the community directory
+shows published contact details and catchment counts for real WA services, which are not call-tested
+and may be out of date. Since moving to this repository on 27 September, pull requests #1 to #37
+have been opened: 35 merged, #4 closed as replaced, and #37 still open. There are no open GitHub
+issues. The most recent merge (#36) passed static checks, five unit-test shards, three
+browser-journey groups and the GitGuardian secret scan. Nothing is known to be broken or urgent.
 The main gaps are a shared backend with proper log-in, and the outside reviews that must happen
 before any real patient.
 
@@ -55,9 +57,10 @@ before any real patient.
 
 ## What is not done
 
-1. **Shared backend and log-in.** Data lives only in each browser (refresh-safe through
-   `sessionStorage`). The Azure backend is code-complete but deliberately not connected to the UI;
-   that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
+1. **Shared backend and log-in.** Data lives only in each browser. It survives a page refresh
+   through `sessionStorage` until someone types free text (for example adding a patient); from then
+   on nothing is saved for the rest of the session, by design (owner decision D-18). The Azure
+   backend is code-complete but deliberately not connected to the UI; that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
    "ready" until an authenticated shared save, reload and conflict case are proven.
 2. **Live site not rechecked.** The Railway site (https://ward-flow-production.up.railway.app/) has
    not been looked at since the recent merges. Several pull requests (#25, #27) say the hosted page
