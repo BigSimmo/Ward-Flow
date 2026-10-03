@@ -46,3 +46,10 @@ These require separate behavioural implementation and are not claimed complete h
 
 User refinement: avoid a long full-width stack. Group related content into columns,
 reduce repeated row labels and timing, and keep touch targets and identification.
+
+Clinical-summary refinement: use four equal metric cells with aligned values and
+consistent supporting lines; keep the legal limitation beside the heading. Move
+monitoring scope into a compact disclosure under notices, rather than the operational
+queue footer. Use 36-pixel controls for desktop mouse input, retaining 48-pixel targets
+for touch and smaller viewports. Preserve all seven condition scopes and recorded
+counts, including unavailable handover monitoring.

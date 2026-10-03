@@ -935,12 +935,14 @@ function AlertsWorkspace() {
               id: "kpi-ed-wait",
               label: "Prolonged ED Wait",
               value: prolongedEdCount,
+              subtext: "24 hours or more in ED",
               tone: prolongedEdCount > 0 ? "warn" : "good",
             },
             {
               id: "kpi-active-monitored",
               label: "Active Monitored",
               value: totalActive,
+              subtext: "Current inbox alerts",
               tone: "accent",
             },
           ]}
@@ -1188,6 +1190,83 @@ function AlertsWorkspace() {
                 </ul>
               )}
             </section>
+            <details className={`${styles.contextDetails} source-print`}>
+              <summary>
+                <Info className={styles.btnIcon} aria-hidden="true" />
+                Monitoring scope &amp; limitations
+                <ChevronDown className={styles.disclosureChevron} aria-hidden="true" />
+              </summary>
+              <div className={styles.contextGrid}>
+                <ConditionContext
+                  title="Form expiry passed"
+                  watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
+                  none={`No recorded form expiry has passed. ${withDeadline.length} ${
+                    withDeadline.length === 1 ? "movement carries" : "movements carry"
+                  } one and none is overdue — that is a count, not a gap.`}
+                  items={legal}
+                />
+                <ConditionContext
+                  title="Every ward asked has declined"
+                  watches="Watches movements where every ward approached has refused and none has accepted."
+                  none="No movement has been refused by every ward it asked."
+                  items={declined}
+                />
+                <ConditionContext
+                  title="Destination no longer suitable"
+                  watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
+                  none="No accepted destination has failed an authorised-hospital check."
+                  items={unlawful}
+                />
+                <ConditionContext
+                  title="Bed hold expired"
+                  watches="Watches bed pulls against the time they were held until."
+                  none="No bed hold has lapsed."
+                  items={pullExpired}
+                />
+                <ConditionContext
+                  title="Transport waiting to leave"
+                  watches="Watches accepted transport legs that have not departed."
+                  none="No accepted transport leg is still waiting to leave."
+                  items={transport}
+                />
+                <section className={styles.condition} aria-label="Referral awaiting triage">
+                  <h3 className={styles.conditionTitle}>Referral awaiting triage</h3>
+                  <p className={styles.watches}>
+                    Watches referrals that have never been triaged. Read from the referrals themselves, not from the
+                    action inbox — no inbox category covers triage.
+                  </p>
+                  {untriaged.length === 0 ? (
+                    <p className={styles.none}>Every referral has been triaged.</p>
+                  ) : (
+                    <p className={styles.count}>
+                      <strong>
+                        {untriaged.length} of {(state.referrals ?? []).length}
+                      </strong>{" "}
+                      referrals have never been triaged.
+                    </p>
+                  )}
+                </section>
+                <section className={styles.condition} aria-label="Override recorded">
+                  <h3 className={styles.conditionTitle}>Override recorded</h3>
+                  <p className={styles.watches}>
+                    Watches referrals made by override. {overrides.length === 0 ? "None has been recorded." : null}
+                  </p>
+                  <p className={styles.gap}>
+                    <strong>This screen cannot identify a prior gate verdict.</strong> The record keeps who, when, which
+                    fixed reason and which wards; it does not retain a prior gate verdict.
+                  </p>
+                </section>
+                <section className={styles.condition} aria-label="What this screen does not watch">
+                  <h3 className={styles.conditionTitle}>What this screen does not watch</h3>
+                  <p className={styles.gap}>
+                    <strong>Handover sheets.</strong> The design for this screen carries a &ldquo;handover sheet
+                    due&rdquo; alert. Nothing in this system records when a shift hands over, so there is no deadline to
+                    measure and this screen cannot tell you whether one is due. It is listed here rather than left out,
+                    because a screen that silently drops a condition reads as though it checked it.
+                  </p>
+                </section>
+              </div>
+            </details>
           </div>
 
           <WardPanel title="For other roles" count={`${filteredOtherRoles.length} elsewhere`}>
@@ -1209,79 +1288,6 @@ function AlertsWorkspace() {
                   setRoleFilter("all");
                 }}
               />
-              <details className={`${styles.contextDetails} source-print`}>
-                <summary>What this group checks and cannot check</summary>
-                <div className={styles.contextGrid}>
-                  <ConditionContext
-                    title="Form expiry passed"
-                    watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
-                    none={`No recorded form expiry has passed. ${withDeadline.length} ${
-                      withDeadline.length === 1 ? "movement carries" : "movements carry"
-                    } one and none is overdue — that is a count, not a gap.`}
-                    items={legal}
-                  />
-                  <ConditionContext
-                    title="Every ward asked has declined"
-                    watches="Watches movements where every ward approached has refused and none has accepted."
-                    none="No movement has been refused by every ward it asked."
-                    items={declined}
-                  />
-                  <ConditionContext
-                    title="Destination no longer suitable"
-                    watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
-                    none="No accepted destination has failed an authorised-hospital check."
-                    items={unlawful}
-                  />
-                  <ConditionContext
-                    title="Bed hold expired"
-                    watches="Watches bed pulls against the time they were held until."
-                    none="No bed hold has lapsed."
-                    items={pullExpired}
-                  />
-                  <ConditionContext
-                    title="Transport waiting to leave"
-                    watches="Watches accepted transport legs that have not departed."
-                    none="No accepted transport leg is still waiting to leave."
-                    items={transport}
-                  />
-                  <section className={styles.condition} aria-label="Referral awaiting triage">
-                    <h3 className={styles.conditionTitle}>Referral awaiting triage</h3>
-                    <p className={styles.watches}>
-                      Watches referrals that have never been triaged. Read from the referrals themselves, not from the
-                      action inbox — no inbox category covers triage.
-                    </p>
-                    {untriaged.length === 0 ? (
-                      <p className={styles.none}>Every referral has been triaged.</p>
-                    ) : (
-                      <p className={styles.count}>
-                        <strong>
-                          {untriaged.length} of {(state.referrals ?? []).length}
-                        </strong>{" "}
-                        referrals have never been triaged.
-                      </p>
-                    )}
-                  </section>
-                  <section className={styles.condition} aria-label="Override recorded">
-                    <h3 className={styles.conditionTitle}>Override recorded</h3>
-                    <p className={styles.watches}>
-                      Watches referrals made by override. {overrides.length === 0 ? "None has been recorded." : null}
-                    </p>
-                    <p className={styles.gap}>
-                      <strong>This screen cannot identify a prior gate verdict.</strong> The record keeps who, when,
-                      which fixed reason and which wards; it does not retain a prior gate verdict.
-                    </p>
-                  </section>
-                  <section className={styles.condition} aria-label="What this screen does not watch">
-                    <h3 className={styles.conditionTitle}>What this screen does not watch</h3>
-                    <p className={styles.gap}>
-                      <strong>Handover sheets.</strong> The design for this screen carries a &ldquo;handover sheet
-                      due&rdquo; alert. Nothing in this system records when a shift hands over, so there is no deadline
-                      to measure and this screen cannot tell you whether one is due. It is listed here rather than left
-                      out, because a screen that silently drops a condition reads as though it checked it.
-                    </p>
-                  </section>
-                </div>
-              </details>
             </div>
           </WardPanel>
         </div>
