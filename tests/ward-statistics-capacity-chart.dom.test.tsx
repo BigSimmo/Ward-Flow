@@ -125,7 +125,7 @@ import { StatisticsScreen } from "@/components/ward-management/statistics/statis
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { REFERRAL_DECLINE_REASONS, type Movement, type Referral } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 it("derives the network ED median from individual waits, including an even population", () => {
@@ -155,7 +155,7 @@ it("derives the network ED median from individual waits, including an even popul
 
 it("counts today's bed referrals once across parallel bed criteria, with recorded outcomes", () => {
   const base = seedWardFlowState().referrals[0];
-  const ward = (state: "accepted" | "declined" | "queued", sex: "Female" | "Male") => ({
+  const ward = (state: "accepted" | "declined" | "queued", sex: "Female" | "Male", reason = true) => ({
     destination: {
       kind: "psychiatric_ward" as const,
       sex,
@@ -164,6 +164,7 @@ it("counts today's bed referrals once across parallel bed criteria, with recorde
       highAcuityNursingNeeded: false,
     },
     state,
+    ...(state === "declined" && reason ? { declineReason: REFERRAL_DECLINE_REASONS[0] } : {}),
   });
   const referrals: Referral[] = [
     {
@@ -179,6 +180,7 @@ it("counts today's bed referrals once across parallel bed criteria, with recorde
       destinations: [ward("queued", "Female"), ward("queued", "Male")],
     },
     { ...base, id: "stat-declined", raisedAt: NOW_ANCHOR, destinations: [ward("declined", "Female")] },
+    { ...base, id: "stat-declined-no-reason", raisedAt: NOW_ANCHOR, destinations: [ward("declined", "Male", false)] },
     { ...base, id: "stat-old", raisedAt: (NOW_ANCHOR - 1440) as Instant, destinations: [ward("queued", "Female")] },
   ];
   const { container } = render(
@@ -187,5 +189,5 @@ it("counts today's bed referrals once across parallel bed criteria, with recorde
     </WardFlowProvider>,
   );
   const counts = [...container.querySelectorAll("#refBand dd")].map((node) => node.firstChild?.textContent);
-  expect(counts).toEqual(["3", "1", "1", "1"]);
+  expect(counts).toEqual(["4", "1", "1", "1"]);
 });
