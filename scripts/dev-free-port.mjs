@@ -4,6 +4,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { selectedStartupPort } from "./local-server-startup.mjs";
 import {
   appName,
   buildIdleShutdownCommand,
@@ -136,10 +137,16 @@ async function findFreePort(preferredPort) {
 }
 
 const parsedCommand = parseCommand(process.argv.slice(2));
-const forwardedArgs = parsedCommand.args;
+const strictPort = parsedCommand.args.includes("--strict-port");
+const forwardedArgs = parsedCommand.args.filter((argument) => argument !== "--strict-port");
 const preferred = parsePreferredPort(forwardedArgs);
 const preferredPort = preferred.port;
-const freePort = await findFreePort(preferredPort);
+const freePort = await selectedStartupPort(preferredPort, {
+  strict: strictPort,
+  canListen,
+  isReserved: isReservedDevPort,
+  findFree: findFreePort,
+});
 const nextBin = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
 const url = `http://localhost:${freePort}`;
 

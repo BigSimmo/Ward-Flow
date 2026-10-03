@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 /**
+ * Maintained Ward Flow behavior: ward-flow.yml is a declaration, not observed
+ * equivalent coverage. Ward gates always run locally and make no provider read.
+ * The design notes below describe the inherited ci.yml adapter, retained only
+ * for historical fixture compatibility; its measurements are not Ward evidence.
+ *
  * gate-arbiter.mjs — decide whether an expensive local gate is still worth running.
  *
  * `gate-receipts.mjs` removed the local-versus-local duplication: the same gate
@@ -316,6 +321,19 @@ export function guardsForStep(lines, lineIndex) {
  * @returns {{ covered: boolean, via: string | null, reason: string, assumed: string[] }}
  */
 export function deriveCiCoverage(projectRoot, gate, { scope = null, readFile = readFileSync } = {}) {
+  // Ward's changed lint, route type generation and reconciled unit shards are
+  // declarations, not proven equivalents of these inherited local gates.
+  try {
+    readFile(path.join(projectRoot, ".github", "workflows", "ward-flow.yml"), "utf8");
+    return {
+      covered: false,
+      via: null,
+      assumed: [],
+      reason: "Ward Flow CI declared; local gate equivalence and observed exact-head result remain unknown",
+    };
+  } catch {
+    /* Pure legacy fixtures may still exercise the historical adapter. */
+  }
   let ci;
   let scripts;
   try {
@@ -640,6 +658,10 @@ export function arbitrate({ projectRoot, gate, args = [], env = process.env, now
   const evidence = [];
   const mode = arbiterMode(env);
   const run = (reason) => finalise({ action: "run", gate, changeClass: "n/a", reason, evidence, mode });
+  if (existsSync(path.join(projectRoot, ".github", "workflows", "ward-flow.yml")))
+    return run(
+      "Ward adapter equivalence unproven; ordinary iteration has no compulsory yield/CI consultation or deferral",
+    );
 
   if (!mode.enabled) return run(mode.reason);
   if (NARROWED_GATES.has(gate)) {

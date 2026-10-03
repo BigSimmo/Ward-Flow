@@ -21,6 +21,31 @@ changes intact. Do not create Ward Flow worktrees from a Database or PsychSift c
 old local Ward line, or link dependencies from that checkout. Use this repository's lockfile for
 dependencies. Publication to GitHub or a provider still needs the authority stated below.
 
+# Requested stage, decisions and startup context
+
+Complete the stage Josh requested: an audit is complete when its usable findings/evidence are delivered; Fast Preview when its affected appearance/interactions are evidenced; local engineering when the change and required local gates are verified. Integration, publication, CI observation, merge and deployment require their applicable authority and separate evidence. Local completion does not require a coordinator or provider action that was not requested.
+
+Ask only when material uncertainty changes scope, meaning, safety, ownership or consequential authority; resolve accessible facts and ordinary reversible choices yourself and continue independent authorised work. Preserve direct owner decisions for clinical, privacy, product-sensitive or true ownership conflicts. At startup/resume, read the current entry point, relevant rules, exact task row/canonical checkpoint and scoped code-map section; retain the full ledger/history and primary evidence without reading it all routinely. Follow the existing receipt contract and compact-route qualifications; a timestamp alone is not new verification.
+
+# Prototype Operating Mode & Policy Exemptions (Approved 3 October 2026)
+
+Ward Flow is an engineering demonstration prototype for psychiatric bed flow in Western Australia, executing exclusively on **100% synthetic data** with zero live EHR connections, zero real patient information, and no autonomous clinical decision-making.
+
+To prevent procedural friction and development gridlock, the following exemptions and softenings are permanently enacted:
+
+1. **PsychSift & Database Policy Exemption:**
+   - Skills `/clinical`, `/sources`, and `/api` (Database/PsychSift versions), along with references to `workflow:clinical-proof`, live Supabase checks, RAG citations, and `.github/pull_request_template.md`, are **wholly inapplicable** to Ward Flow. Agents must not attempt to execute these workflows or demand clinical proofs for prototype changes.
+2. **Clinical Safety Officer & Legal Sign-off Decoupling:**
+   - Simulated CSO, Cultural, or Legal JSON approval files (`clinical-safety-officer-signed.json`, etc.) are **not required** for local development, builds, or PR merges. The Clinical Safety Case (`docs/ward-flow/governance/CLINICAL-SAFETY-CASE.md`) and Cultural Safety Charter serve as presentation reference materials for WA Health stakeholders, not blocking technical gates.
+3. **Streamlined Git & Push Workflows:**
+   - The in-flight CI push check in `scripts/guard-push.mjs` is a blocking check, not an advisory one: run directly, it refuses a push while a required run is active on the branch (bypass per push with `SKIP_IN_FLIGHT_CI_GUARD=1`). The installed `.githooks/pre-push` exports that bypass by default for fast iteration (`PREPUSH_CI_STRICT=1` restores the block); that hook default is a separate, pre-existing choice and does not change the guard.
+   - The file sign-out clash check (`sign-out.md`) stays on by default in the pre-commit hook. A single-user interactive session may bypass it only as an explicit per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`); the hook never sets that variable itself. Concurrent multi-agent work does not use the bypass and still signs out files as described under "Where work happens".
+   - Diff-integrity test floors (`check:diff-integrity`) are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor); truncation artefacts and an unreadable before-state still fail. Dead code deletion refusals (`check:dead-code-candidate`) still run and fail closed by default; only with Josh's explicit approval for that run may a legitimate dead-export cleanup proceed despite a refusal, by setting `DEAD_CODE_OWNER_APPROVED=1` on that single invocation (never as a default or in a script), recorded in the PR.
+4. **Historical Checklist & Lesson Retirement:**
+   - `docs/ward-flow-safety-checklist.md` and `docs/ward-flow/RULES.md` are **historical post-mortem archives**, not mandatory per-task checklists. Agents must not spend context or turns running through 2,100 lines of checklist rules for everyday coding tasks.
+5. **Multi-Agent Swarm Usage:**
+   - Swarms (`/review-swarm`, `/evaluator-optimizer-swarm`) are reserved for explicit milestone reviews prior to client demonstrations, not routine feature or bug fix iterations.
+
 # How these rules are organised
 
 Read and follow [task lifecycle and receipt handoff](docs/task-receipts.md) at task start, checkpoint, blocker, resume and completion. Reuse the original task identity; local receipt export is a handoff, not canonical reconciliation.
@@ -72,7 +97,8 @@ the separately required clinical, privacy and legal reviews.
   Verify `git remote get-url origin` and the push URL identify `BigSimmo/Ward-Flow` before writing.
   A checkout inside the former Database/PsychSift repository is the wrong project, even if its
   folder name mentions Ward Flow. Do not change that repository's shared Git configuration.
-- Before editing an exact file, check the shared sign-out at `D:/Repos/ward-flow-logs/sign-out.md`.
+- Before editing an exact file, check the shared sign-out at `D:/Repos/ward-flow-logs/sign-out.md`
+  (optional for interactive single-user sessions; see Prototype Operating Mode above).
   An active overlap needs the other owner's release or Josh's scoped takeover approval for that
   exact file. Sign out every file on every task branch, including `codex/*` and files outside the
   old Ward directories. Include `repo=BigSimmo/Ward-Flow` in each new sign-out and `RELEASED` line
@@ -85,8 +111,11 @@ the separately required clinical, privacy and legal reviews.
 ### Checks and shared run slots
 
 Use the smallest focused checks while editing and the selected public-repository gate before
-publication. One wide run at a time across the PC; narrow checks use the shared run slots. Do not
-run old Ward Flow scripts that hard-code the former Database worktree or local ward line. Confirm
+publication. One wide run at a time across the PC; narrow checks use the shared run slots. For fast
+local unit testing during development, run `npx vitest run <path/to/test.ts>` directly (~250ms). It
+executes in isolation without waiting on machine-wide heavy locks or `test:focused` selector
+restrictions. Reserve `npm run test` (full suite) and `npm run verify:pr-local` for pre-push readiness.
+Do not run old Ward Flow scripts that hard-code the former Database worktree or local ward line. Confirm
 that a script's checkout, base and provider effects fit this repository before running it. A test
 pass in the old checkout does not prove this public repository or a deployed service.
 Stop servers, browsers and other processes you started when the task no longer needs them. Check
@@ -127,7 +156,7 @@ For the `bug-hunter` targeted defect-discovery shortcut, its execution rules, an
 
 ## Codex review throttling and routing
 
-For Codex review throttling, branch routing, and review thread resolution guidance, see [`docs/agents/codex-review-throttling.md`](docs/agents/codex-review-throttling.md) and [`docs/codex-review-protocol.md`](docs/codex-review-protocol.md).
+For Codex review throttling, branch routing, and review thread resolution guidance, see [`docs/agents/codex-review-throttling.md`](docs/agents/codex-review-throttling.md) and the historical [`docs/codex-review-protocol.md`](docs/codex-review-protocol.md) (background only, not an active workflow).
 
 <!-- END:codex-review-throttling -->
 
@@ -175,9 +204,9 @@ When the user says `open PR`, `create PR`, or `publish PR` without also requesti
 - If a local commit hook or a readiness-only push guard (format or static) is the only blocker, publish with `git commit --no-verify` and that guard's own scoped override (`SKIP_FORMAT_GUARD=1` or `SKIP_STATIC_GUARD=1`, as applicable) instead of `git push --no-verify`; do not spend time preparing dependencies or formatting solely to satisfy the hook. Never skip the push hook wholesale — the auto-merge ownership guard has no override and must never be bypassed, even for a bare-publication request. This exception is limited to the explicit bare-publication request and does not weaken normal-push safeguards.
 - Create the PR immediately after the push, using the repository PR template where its policy fields apply. Report the URL and identify all local and hosted checks as unrun by request. Do not babysit CI, amend, or perform follow-up readiness work unless the user asks. This route overrides generic branch-bundling, handover, review, and babysit instructions.
 
-- **For normal engineering pushes, run `npm run format` and commit the result before push.** This rule does not apply to the explicit bare PR publication route above. Formatting is in neither `npm run test`, `npm run typecheck`, nor `npm run lint`, so the ordinary loop can report green while the changed-file CI check or exact-commit pre-push guard fails. Three CI failures on 2026-07-30 came from exactly this (two of them on `ci/circleci: verify`, since removed from the repo by PR #1412). Two traps beyond simply running it:
+- **For normal engineering pushes, run `npm run format -- --files <exact-owned-paths>` for every owned candidate/pushed file, including docs/config, and commit the result before push.** This rule does not apply to the explicit bare PR publication route above. Formatting is in neither `npm run test`, `npm run typecheck`, nor `npm run lint`, so the ordinary loop can report green while the changed-file CI check or exact-commit pre-push guard fails. Three CI failures on 2026-07-30 came from exactly this (two of them on `ci/circleci: verify`, since removed from the repo by PR #1412). Two traps beyond simply running it:
   - **Formatting without committing does nothing for the push.** A push sends commits, not your working tree, so formatting after committing leaves the unformatted blob on the branch. Amend or add a follow-up commit.
-  - **A per-file check is not the repository-wide check.** `prettier --check <file>` on the source file you edited passes while a doc or ledger edit in the same push fails; that was the missed file twice out of three.
+  - **Cover every owned candidate file.** A source-only check misses docs/config in the same push. Use the maintained literal-file formatter contract; `npm run format:all` is a separate whole-tree write requiring explicit scope and ownership. Policy changes also need the applicable explicit tree check. Never format or stage another owner's files to satisfy a gate.
 
   `.githooks/pre-push` contains the local push guard. Before relying on it, verify that
   `core.hooksPath` points to `.githooks` in this checkout and that the guard checks the actual
@@ -214,9 +243,7 @@ For the three `bundle-budget.json` safeguards, how chunks are attributed, and ho
 
 # Search chrome behaviour
 
-This heading remains for tools that locate repository policy sections. PsychSift search chrome and
-clinical UI instructions do not apply to Ward Flow. Follow Ward Flow's approved design and screen
-verification documents for interface work.
+PsychSift search chrome and clinical UI instructions do not apply to Ward Flow. Follow Ward Flow's approved design and screen verification documents for interface work.
 
 <!-- END:search-chrome-behaviour -->
 
@@ -268,21 +295,15 @@ For the `upload` safe Git handoff workflow — protected branches, required insp
 
 ## Open PR branch sync (anti-churn)
 
-The inherited branch-sync procedure targets PsychSift and is disabled for Ward Flow. Verify this
-repository and the named PR before any separate authorised sync.
+Inherited PsychSift PR branch sync and sweep automation are retired for Ward Flow.
 <!-- END:pr-branch-sync -->
 
-## Run PR shortcut
+## Run PR and Babysit shortcuts
 
-Disabled for Ward Flow. Do not use the inherited PsychSift PR sweep or treat it as GitHub authority.
+The inherited PsychSift PR sweeps are disabled. Use only specifically authorised Ward Flow PR tasks; do not babysit CI without user request.
 <!-- END:run-pr-shortcut -->
 
-## Babysit the pull request, then stop
-
-The inherited PsychSift PR observation procedure is disabled for Ward Flow. Use only a specifically
-authorised Ward Flow PR task, with its exact repository and head verified.
-
-## Automated review coverage (owner decision, 2026-08-22)
+## Automated review coverage
 
 The inherited PsychSift review workflow does not establish Ward Flow review or publication authority.
 
@@ -354,11 +375,9 @@ connector guidance, see [`docs/agents/cursor-cloud.md`](docs/agents/cursor-cloud
 
 # Commit as you go — the thing that loses work here is interruption, not carelessness
 
-Work sitting uncommitted is the only work this repository can lose. Commit when a change becomes
-coherent, **not when the task ends** — a task in this project routinely spans hours, several agents,
-a blocked gate and four other conversations.
+Preserve coherent work when it becomes ready, at an actual pause/transfer/end, before changing checkout/branch or before risky restoration. When local commits are within the current task authority, commit each coherent owned unit rather than waiting for the whole task. Otherwise keep exact recoverable evidence and report the owned uncommitted paths at that boundary. Ordinary conversation within the same task does not require a half-commit or repeated disclaimer.
 
-**The trigger to watch is being interrupted, and it does not feel like risk at the time.** The
+**Historical recovery incident — 29 August 2026; evidence for the current boundary-based rule below.** The
 observed failure, 2026-08-29: seven files were formatted, the verifying test run was refused because
 another worktree held the machine-wide lock, and attention moved to answering other sessions. The
 files sat uncommitted for an hour, through a dozen unrelated commits, and were found only because an
@@ -367,17 +386,12 @@ work was finished and the mind had moved on — that combination is the hazard.*
 
 ## The rule
 
-**Before you turn from your own work to anything else — answering another session, waiting on a lock,
-investigating a tangent, reporting to the user — either commit what you have, or state in your next
-message exactly what is uncommitted and why.** Saying it out loud is what makes it recoverable; a
-silent working tree is not a memory.
+**At coherent completion, a real pause or transfer, task end, checkout/branch change or risky restoration, preserve your owned work and identify any uncommitted paths and blocker in the handoff/checkpoint.** A status answer or ordinary conversation inside the task is not a new recovery boundary. Keep one original task identity and canonical checkpoint; never imply that an unverified commit has passed its gates.
 
 - **Commit each coherent unit** — a module and its test, a fix and its proof, a document. Not the
   whole task.
-- **A formatting pass is a commit**, not a loose end to tidy later. It is the change most often
-  orphaned, because it feels finished the moment it is written.
-- **Waiting is not a reason to hold a commit.** If a gate is blocked, commit the work and record the
-  gate as unrun. An unverified commit is recoverable; an unwritten one is not.
+- **Formatting belongs to the coherent owned unit.** Include all intended formatting in the reviewed candidate and recoverable commit/handoff; do not create a separate commit solely because a formatter ran.
+- **A blocked gate stays blocked.** Preserve coherent owned work under the current commit authority and report the exact blocker, unrun/failed evidence and next safe action. Never bypass an ownership guard or label unverified work passing.
 - **Never `git add -A`** — another agent may share this worktree, and the wildcard commits their
   in-flight edits under your message.
 - **Mutation testing requires committing first.** Restoring a tracked file with `git checkout --`
@@ -393,9 +407,6 @@ costs nothing but a fresh checkout. **An uncommitted file is the only thing that
 
 ## When you genuinely cannot commit
 
-The pre-commit hook refuses whenever other unstaged or untracked files exist under `src/components/`
-or `tests/` — so while a concurrent agent is mid-write, you cannot commit even work of your own that
-is entirely disjoint. That is correct behaviour and must not be worked around.
+Pre-commit checks the proposed index: staged source roots plus their imported dependencies/config from the same disposable index snapshot, using installed package resolution. Generated-document checks observe that snapshot with `--check`; they do not rewrite working-tree files or stage outputs automatically. Their default advisory or explicit strict result must be reported accurately. Unknown inputs, genuine staged-file/ownership conflicts and required gates still block as their contract requires.
 
-**When it blocks you, say so in your next message and name the files.** Then commit the moment the
-tree is yours again. The failure mode is not the block; it is forgetting that the block happened.
+Unrelated dirty or untracked component/test files alone do not freeze every commit. Stage named owned files only; never stage, move, discard or overwrite a peer's changes to clear a hook. If an actual guard blocks your coherent unit, name its exact paths/reason at the recovery boundary and coordinate release or an authorised scoped takeover. Keep the blocker and next action in the existing checkpoint.

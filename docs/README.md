@@ -1,27 +1,39 @@
-# PsychSift Documentation Index
+# Ward Flow documentation index
 
 > **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
 > [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
 > retains historical PsychSift-era entries; its old local-prototype and provider descriptions are
 > not current Ward Flow instructions. Verify the Ward Flow remote before Git writes.
 
-Categorised map of every tracked Markdown document under `docs/`: the load-bearing docs lead
-each category, and an "Also catalogued" list completes it. Categories distinguish **maintained** documents (keep these current when
-behavior changes) from **point-in-time records** (historical; do not update, supersede with a
-new dated doc instead). No automated check currently reports an untracked document or a broken
-path referenced from a maintained doc — keep this index current by hand.
+Start with the maintained entry points below. The inherited catalogue preserves historical
+discovery; it is not a complete current inventory or proof that every listed procedure applies.
+The [task contract](task-receipts.md) preserves one original objective and existing task IDs.
+
+`npm run check:ward-doc-links` checks relative paths in `docs/ward-flow`, including history.
+For maintained Markdown elsewhere, use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
+(repeat `--file` for each owned file); `--anchors` additionally checks supported Markdown headings.
+Explicit selection excludes paired historical sections. Web URLs, reference-style links and
+renderer extensions are not validated. `npm run docs:check-scripts` checks maintained npm
+references; generated inventory/index checks do not prove architectural truth or prose freshness.
 
 ## Start here
 
-| Doc                                                                                                       | What it is                                                                                                 |
-| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [codebase-index.md](codebase-index.md)                                                                    | Structured architecture map: layout, module map, Supabase schema, scripts, domain concepts                 |
-| [README.md](README.md)                                                                                    | This index — every tracked document under `docs/`, categorised                                             |
-| [site-map.md](site-map.md)                                                                                | **Generated** route map — regenerate with `npm run docs:update`, verify with `npm run sitemap:check`       |
-| [agents-guide.md](agents-guide.md)                                                                        | Human onboarding pointer; Cursor MCP default read path (Supabase, Railway, Context7); rules in `AGENTS.md` |
-| [ward-flow/README.md](ward-flow/README.md) · [ward-flow/LOCAL-FIRST-RUN.md](ward-flow/LOCAL-FIRST-RUN.md) | **Ward Flow** local bed-flow prototype — product entry + UI boot on this machine                           |
-| [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                        |
-| [scripts-index.md](scripts-index.md)                                                                      | Curated map of `scripts/` and the `package.json` command surface by purpose                                |
+| Doc                                                                                                       | What it is                                                                                           |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [codebase-index.md](codebase-index.md)                                                                    | Maintained Ward orientation followed by preserved historical architecture                            |
+| [README.md](README.md)                                                                                    | Maintained entry pointers and inherited discovery catalogue                                          |
+| [site-map.md](site-map.md)                                                                                | **Generated** route map — regenerate with `npm run docs:update`, verify with `npm run sitemap:check` |
+| [agents-guide.md](agents-guide.md)                                                                        | Ward agent entry points; historical foreign configuration is not current authority                   |
+| [ward-flow/README.md](ward-flow/README.md) · [ward-flow/LOCAL-FIRST-RUN.md](ward-flow/LOCAL-FIRST-RUN.md) | **Ward Flow** local bed-flow prototype — product entry + UI boot on this machine                     |
+| [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                  |
+| [scripts-index.md](scripts-index.md)                                                                      | Curated map of `scripts/` and the `package.json` command surface by purpose                          |
+
+## Historical discovery catalogue
+
+Entries below include inherited and dated material. Open a document's boundary and current
+consumers before applying its advice; keep original incident commands/results as evidence.
+
+<!-- docs-script-refs:historical-start -->
 
 ## Architecture
 
@@ -57,7 +69,7 @@ Every remaining tracked document in this category (architecture and design, plus
 - [ward-flow-phase-6-7-kickoff-prompt.md](ward-flow-phase-6-7-kickoff-prompt.md) — paste-in prompt to open the Phase 6 and 7 design conversation
 - [phone-chrome-physical-acceptance.md](phone-chrome-physical-acceptance.md) — labelled Safari and cold-launch PWA acceptance matrix
 - [productivity-workflows.md](productivity-workflows.md) — repo workflow planners (flightplan, triage, rag-lab, …)
-- [codex-review-protocol.md](codex-review-protocol.md) — shared review protocol for all review skills
+- [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in [agents/codex-github-review.md](agents/codex-github-review.md)
 - [branch-cleanup-guide.md](branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
@@ -200,3 +212,5 @@ Every remaining tracked document in this category (dated records and the `superp
 - When a maintained doc is superseded, mark it historical in place or replace
   it with a new dated document — there is no `archive/` folder on this line,
   and no automated check for inbound links, so update or remove them by hand.
+
+<!-- docs-script-refs:historical-end -->

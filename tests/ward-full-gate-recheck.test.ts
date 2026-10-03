@@ -3,11 +3,13 @@ import path from "node:path";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import {
+  executedAssertionCount,
   mergeGateReports,
   planFullGateRecheck,
   runFullGateBatches,
   splitFullGateBatches,
   validateBatchReport,
+  validatePolicyReport,
 } from "../scripts/ward-flow/full-gate-recheck.mjs";
 
 const root = "/work";
@@ -18,7 +20,7 @@ const suite = (name: string, status = "passed") => ({
   assertionResults: [{ status: status === "failed" ? "failed" : "passed" }],
 });
 const receipt = () => ({
-  version: 1,
+  version: 2,
   commit: "a".repeat(40),
   population: names,
   skippedTooling: false,
@@ -38,6 +40,46 @@ const input = () => ({
 });
 
 describe("a bounded full gate recheck", () => {
+  it("floors executed assertions rather than skipped, pending, todo or unknown assertions", () => {
+    const report = {
+      numTotalTests: 2500,
+      testResults: [
+        {
+          ...suite(names[0]),
+          assertionResults: [
+            { status: "passed" },
+            { status: "failed" },
+            { status: "pending" },
+            { status: "skipped" },
+            { status: "todo" },
+            { status: "unknown" },
+          ],
+        },
+      ],
+    };
+    expect(executedAssertionCount(report)).toBe(2);
+    const prior = receipt();
+    prior.report.numTotalTests = 2500;
+    prior.report.testResults[0].assertionResults = [{ status: "pending" }];
+    expect(planFullGateRecheck({ ...input(), receipt: prior }).eligible).toBe(false);
+  });
+
+  it("requires each selected policy suite to execute a passed assertion while permitting legitimate skips", () => {
+    const report = {
+      numTotalTests: 2,
+      testResults: [{ ...suite(names[0]), assertionResults: [{ status: "pending" }, { status: "skipped" }] }],
+    };
+    expect(validateBatchReport(report, [names[0]], root).valid).toBe(true);
+    expect(validatePolicyReport(report, [names[0]], root).valid).toBe(false);
+    report.testResults[0].assertionResults.push({ status: "passed" });
+    expect(validatePolicyReport(report, [names[0]], root)).toEqual({ valid: true, failing: [] });
+    report.testResults[0].assertionResults.push({ status: "unknown" });
+    expect(validatePolicyReport(report, [names[0]], root).valid).toBe(false);
+    report.testResults[0].assertionResults.pop();
+    report.testResults.push({ ...suite(names[1]), assertionResults: [{ status: "pending" }] });
+    expect(validatePolicyReport(report, names.slice(0, 2), root).valid).toBe(false);
+  });
+
   it("selects a changed failing test and reuses only complete earlier results", () => {
     expect(planFullGateRecheck(input())).toEqual({ eligible: true, selected: [names[1]] });
   });
@@ -126,7 +168,15 @@ describe("crash-resumable FULL batches", () => {
 
   it("keeps completed batches and findings after a crash, then runs only the missing batch", () => {
     const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-test-"));
-    const options = { population: names, root, commit: "a".repeat(40), skippedTooling: false, stateDir, maxFiles: 2 };
+    const options = {
+      population: names,
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-fixture-input",
+      stateDir,
+      maxFiles: 2,
+    };
     const calls: number[] = [];
     const runBatch = ({ files, index, reportPath }: { files: string[]; index: number; reportPath: string }) => {
       calls.push(index);
@@ -141,6 +191,9 @@ describe("crash-resumable FULL batches", () => {
     };
     try {
       expect(() => runFullGateBatches({ ...options, runBatch })).toThrow("simulated crash");
+      expect(() => runFullGateBatches({ ...options, environmentFingerprint: "", runBatch })).toThrow(
+        /reliable outcome/,
+      );
       expect(readFileSync(path.join(stateDir, "findings.log"), "utf8")).toContain("batch 1/");
       const report = runFullGateBatches({ ...options, runBatch });
       expect(calls).toEqual([0, 1, 1]);

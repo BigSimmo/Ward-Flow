@@ -2,19 +2,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import {
   seedWardFlowState,
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
-import {
-  DECLINE_REASONS,
-  MOVEMENT_STAGES,
-  type LegalForm,
-  type LegalStatus,
-} from "../src/components/ward-management/ward-model";
+import { CONTINUATION_LEGAL_FORMS, SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
+import { type LegalForm, type LegalStatus } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { legalFormReadinessLine } from "../src/components/ward-management/movements/movement-workspace-derivations";
@@ -25,7 +19,6 @@ import {
   suppliedDueAt,
   SWEEP_CODES,
   ALL_EVENT_TYPES,
-  STRUCTURALLY_IMPOSSIBLE_FOR_CODE,
   offendingFormsIn,
 } from "./helpers/ward-legal-figure-sweep";
 /**
@@ -882,14 +875,27 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     expect(authoredCodesIn(source), "the reducer authors a legal form again").toEqual([]);
 
     // 2. The declared list, in source order. Adding a code fails here until Part 1 drives it.
-    expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
+    expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A", "5B"]);
+    // 5B is continuation-only. Its paper expiry behaviour is independently pinned in
+    // ward-legal-form-5b-continues-5a.test.ts; the vocabulary itself may carry no expiry.
+    expect(CONTINUATION_LEGAL_FORMS.map((form) => form.code)).toEqual([
+      "1A",
+      "3A",
+      "3B",
+      "3D",
+      "4A",
+      "4C",
+      "5A",
+      "6A",
+      "5B",
+    ]);
     expect(SELECTABLE_LEGAL_FORMS.map((form) => form.code)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
 
     // 3. NO entry carries a title. Since 2026-08-24 titles come from the Chief Psychiatrist's
     //    register at render time, and a stored one is exactly how "Inpatient treatment order" —
     //    the title of a Form 6A — came to be printed on every Form 3B. `label` is gone from the
     //    type, so this reads the runtime object: any key beyond `code`/`kind`/`dueAt` fails.
-    for (const form of SELECTABLE_LEGAL_FORMS) {
+    for (const form of CONTINUATION_LEGAL_FORMS) {
       expect(
         Object.keys(form).filter((key) => !["code", "kind", "dueAt"].includes(key)),
         `Form ${form.code} carries a field this model may not hold`,
@@ -1105,7 +1111,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // writes a number down; its value is a string discriminant, and as an `EVENT_ROLE` key its
     // value is an array of role strings. Excluded by checking membership in `ALL_EVENT_TYPES` —
     // the REAL declared union of `WardFlowEvent["type"]` values, derived from the same
-    // `EVENT_ROLE` this test already imports, never a second hand-maintained list.
+    // `EVENT_ROLE` used by the shared sweep, never a second hand-maintained list.
     //
     // 🔴 **T2r fix round, finding 9 (2026-09-17) — WHY THE EXEMPTION CANNOT HIDE A FABRICATION,
     // PROVEN RATHER THAN ARGUED.** The exemption admits an identifier by NAME alone, so the

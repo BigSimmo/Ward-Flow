@@ -1,4 +1,8 @@
 const STORAGE_ACCOUNT = "wflowdev7273a083aue";
+// Fixed allowlist of approved Ward Flow storage accounts. Agreement between the two environment
+// variables is not resource verification: a mistaken account set in both would otherwise be trusted.
+// Add an account here, in a reviewed change, only after verifying it is a Ward Flow resource.
+export const APPROVED_STORAGE_ACCOUNTS = Object.freeze([STORAGE_ACCOUNT]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLACEHOLDER_IDS = new Set([
   "00000000-0000-0000-0000-000000000000",
@@ -25,7 +29,9 @@ export function readConfig(env = process.env) {
     throw new Error("Invalid identity configuration");
   if (env.WARD_API_AUDIENCE !== "9b7b160d-9bc7-4712-b748-17ff3e70b706")
     throw new Error("Unapproved backend identity configuration");
-  if (env.AzureWebJobsStorage__accountName !== STORAGE_ACCOUNT) throw new Error("Unapproved storage account");
+  const storageAccount = env.AZURE_STORAGE_ACCOUNT?.trim() || STORAGE_ACCOUNT;
+  if (!APPROVED_STORAGE_ACCOUNTS.includes(storageAccount) || env.AzureWebJobsStorage__accountName !== storageAccount)
+    throw new Error("Unapproved storage account");
   const origin = env.WARD_ALLOWED_ORIGIN || null;
   if (origin) {
     const url = new URL(origin);
@@ -38,13 +44,15 @@ export function readConfig(env = process.env) {
   }
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
+  const allowTenantUsers = env.WARD_ALLOW_TENANT_USERS === "true";
   return {
     tenant,
     audience: env.WARD_API_AUDIENCE,
     allowedObjectId,
+    allowTenantUsers,
     origin,
     host: env.HOST || "127.0.0.1",
     port,
-    storage: { account: STORAGE_ACCOUNT, container: "ward-flow-sessions" },
+    storage: { account: storageAccount, container: "ward-flow-sessions" },
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import {
@@ -337,6 +337,13 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const cohortDropdownRef = useRef<HTMLDivElement>(null);
+  const profileTriggerRef = useRef<HTMLElement | null>(null);
+  const profileModalRef = useRef<HTMLDivElement | null>(null);
+
+  const closeProfileModal = useCallback(() => {
+    setProfileWardId(null);
+    profileTriggerRef.current?.focus();
+  }, [setProfileWardId]);
 
   // Outside click & keyboard navigation listener
   useEffect(() => {
@@ -352,7 +359,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
       if (e.key === "Escape") {
         setStatusDropdownOpen(false);
         setCohortDropdownOpen(false);
-        setProfileWardId(null);
       }
       if (
         e.key === "/" &&
@@ -371,16 +377,44 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     };
   }, []);
 
-  // Keyboard dismissal for modal
+  // Keyboard dismissal and focus containment for modal
   useEffect(() => {
+    if (!profileWardId) return;
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setProfileWardId(null);
+        closeProfileModal();
+        return;
+      }
+      if (e.key === "Tab" && profileModalRef.current) {
+        const focusable = Array.from(
+          profileModalRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => !el.hasAttribute("disabled"));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!first || !last) return;
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
       }
     }
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    queueMicrotask(() => {
+      const first = profileModalRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      first?.focus();
+    });
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileWardId, closeProfileModal]);
 
   // Compute canonical service groups via wardServiceOrder
   const serviceGroups: { service: HealthService; units: Unit[] }[] = useMemo(() => {
@@ -1287,7 +1321,10 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                     <button
                       type="button"
                       className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
-                      onClick={() => setProfileWardId(unit.id)}
+                      onClick={(e) => {
+                        profileTriggerRef.current = e.currentTarget;
+                        setProfileWardId(unit.id);
+                      }}
                       title="View ward criteria and NUM contact"
                     >
                       <svg
@@ -1357,16 +1394,16 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           aria-modal="true"
           aria-labelledby="modalWardTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setProfileWardId(null);
+            if (e.target === e.currentTarget) closeProfileModal();
           }}
         >
-          <div className={styles.modalDialog}>
+          <div className={styles.modalDialog} ref={profileModalRef}>
             <div className={styles.modalHead}>
               <h3 id="modalWardTitle">{profileUnit.name} · Clinical Profile</h3>
               <button
                 type="button"
                 className={styles.modalCloseBtn}
-                onClick={() => setProfileWardId(null)}
+                onClick={closeProfileModal}
                 aria-label="Close dialog"
               >
                 <svg

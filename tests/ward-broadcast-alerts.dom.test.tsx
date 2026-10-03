@@ -4,14 +4,13 @@
 // never through this file's own import graph, so the hook cannot see it register jest-dom's
 // matcher types otherwise. This import makes this file typecheck on its own.
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WA_BROADCAST_TEMPLATES } from "@/components/ward-management/alerts/ward-broadcast-model";
 
 const NOW = NOW_ANCHOR;
 
@@ -30,9 +29,13 @@ function renderAlertsScreen() {
 }
 
 describe("Ward Flow Statewide Broadcast Alerts", () => {
+  afterEach(() => {
+    cleanup();
+    window.sessionStorage.clear();
+  });
   it("renders the broadcast trigger button and opens the modal", () => {
     renderAlertsScreen();
-    const trigger = screen.getByText("+ Broadcast Network Alert");
+    const trigger = screen.getByRole("button", { name: "Broadcast Network Alert" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -42,7 +45,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("populates form fields when changing the WA Mental Health template", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const templateSelect = screen.getByLabelText(/WA Clinical Protocol & Flow Template/i);
     // Switch to Graylands Forensic Surge template
@@ -57,7 +60,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("requires clinical confirmation safeguard before enabling dispatch", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const confirmBtn = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirmBtn).toBeDisabled();
@@ -72,7 +75,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
     fireEvent.click(safeguard);
@@ -101,7 +104,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen();
 
     // Dispatch alert first
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
     fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 

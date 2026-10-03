@@ -1,5 +1,7 @@
 # Documents and design drawings
 
+> **Historical inventory — classifications measured 25 September 2026.** Counts, document descriptions and CURRENT labels below describe that snapshot. They do not establish current authority. For current work, use the [product entry point](../README.md), [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md), [task/receipt workflow](../../task-receipts.md) and each document's current banner. STATUS and UNIVERSAL-MOCKUP-SPECIFICATION are now historical; generated owner rulings include decisions.md as well as owner source files. Preserve the inventory below as evidence.
+
 This part covers `docs/ward-flow/` (measured at 1,284 files: 65 top-level files, 27 history/tooling
 subfolders, and `mockups/` at 135 files) and `docs/ward-flow-task-ledger.md` (7,867 lines). Tip
 `ace8e9ee8d` (this part's own commits sit on top, on `ward/extend-ward-flow-code-map`), date

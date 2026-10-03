@@ -27,6 +27,11 @@ where nothing can be dated — run `git fetch --deepen=2000` first rather than p
 the weaker signal. It also warns when the symbol is mentioned in any doc, and when its file
 still exports other symbols, because deleting the file is then wrong even if the symbol is not.
 
+A refusal exits 1 by default. The only exception is an explicit per-run override,
+`DEAD_CODE_OWNER_APPROVED=1`, which is permitted only when Josh has approved that specific
+cleanup for that run; set it on the single invocation, never as a default, never inside a
+script or hook, and record the approval in the PR.
+
 Do not tune the threshold or the refusal list to make an existing diff pass. The sweep's
 own diff was cut back to satisfy this gate, not the other way round.
 

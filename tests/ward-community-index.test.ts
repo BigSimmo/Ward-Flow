@@ -423,7 +423,7 @@ describe("Community team index — an empty list explains itself instead of look
     expect(linkedTeamIdsIn(markup)).toEqual([]);
     expect(linkCountIn(markup)).toBe(0);
     expect(main, "the empty page rendered no section at all — it did not render an empty state").toContain(
-      "Community teams",
+      "A–Z directory",
     );
   });
 });
@@ -476,8 +476,8 @@ describe("The community HUB's follow-up notice — the corrected claim, pinned s
     expect(markup, "the hub did not render its follow-up notice at all").toContain(
       'data-testid="ward-community-follow-up-not-recorded"',
     );
-    expect(markup).toContain("Follow-up status is not shown or editable here");
-    expect(markup).toContain("recorded discharges into the community, not people missing follow-up");
+    expect(markup).toContain("Follow-up arrangements and contact outcomes can be recorded for this team");
+    expect(markup).toContain("recorded discharges into the community");
 
     // The negative pins are the guard. Each is a phrase from the false version, and each returning
     // is a claim a reader cannot check going back on the page.
@@ -490,9 +490,7 @@ describe("The community HUB's follow-up notice — the corrected claim, pinned s
   it("keeps the conclusion the correction does not touch: an empty list is never an all-clear", () => {
     // Both halves are required: this is a discharge list rather than a missing-follow-up list, and
     // an empty result therefore establishes no all-clear.
-    expect(markup, "the discharge list must still read as NOT the missing-follow-up list").toContain(
-      "not people missing follow-up",
-    );
+    expect(markup, "the new filter must expose missing arrangements explicitly").toContain("Missing arrangements");
     expect(markup).toContain("does not establish that everybody is being followed up");
   });
 

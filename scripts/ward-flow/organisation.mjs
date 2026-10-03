@@ -462,6 +462,7 @@ export function main(args = process.argv.slice(2)) {
             "usage: --check|--write-report --source working-tree|index [--root repository]; or --show-report",
           );
       }
+      if (!options["--source"]) options["--source"] = "working-tree";
       if (
         !options.action ||
         (options.action !== "--show-report" && !["working-tree", "index"].includes(options["--source"]))

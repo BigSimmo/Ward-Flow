@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -181,5 +181,46 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED");
+  });
+
+  describe("sign-out clash check is on by default and bypassed only by explicit opt-in", () => {
+    function signOutFixture() {
+      const root = repoFixture("ward/signout-fixture");
+      mkdirSync(join(root, "scripts"), { recursive: true });
+      copyFileSync(
+        join(process.cwd(), "scripts", "pre-commit-checks.mjs"),
+        join(root, "scripts", "pre-commit-checks.mjs"),
+      );
+      stageWardFile(root);
+      return {
+        root,
+        env: {
+          SKIP_DOCS_SYNC_HOOK: "1",
+          SKIP_PRECOMMIT_LINT: "1",
+          SKIP_PRECOMMIT_TYPECHECK: "1",
+          SKIP_SIGNOUT_GUARD: undefined,
+          WARD_SIGNOUT_FILE: join(root, "sign-out.md"),
+        } as Record<string, string | undefined>,
+      };
+    }
+
+    it("never defaults SKIP_SIGNOUT_GUARD inside the hook", () => {
+      const source = readFileSync(HOOK_PATH, "utf8");
+      expect(source).not.toMatch(/export\s+SKIP_SIGNOUT_GUARD/);
+      expect(source).not.toContain("PRECOMMIT_SIGNOUT_STRICT");
+    });
+
+    it("blocks an unsigned Ward file by default", { timeout: 90_000 }, () => {
+      const { root, env } = signOutFixture();
+      const result = runFullHook(root, env);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("without your sign-out");
+    });
+
+    it("allows the commit only when SKIP_SIGNOUT_GUARD=1 is set explicitly", { timeout: 90_000 }, () => {
+      const { root, env } = signOutFixture();
+      const result = runFullHook(root, { ...env, SKIP_SIGNOUT_GUARD: "1" });
+      expect(result.status, result.stderr).toBe(0);
+    });
   });
 });

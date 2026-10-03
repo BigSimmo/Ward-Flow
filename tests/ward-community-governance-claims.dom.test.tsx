@@ -112,8 +112,8 @@ const TEAM_CLAIMS = [
     clause: "an empty list does not establish that everybody is being followed up",
   },
   {
-    protects: "that follow-up status is unavailable from this view",
-    clause: "Follow-up status is not shown or editable here",
+    protects: "that follow-up is recorded for the explicitly linked team",
+    clause: "can be recorded for this team",
   },
   {
     protects: "that a refusal never removes somebody from this page",

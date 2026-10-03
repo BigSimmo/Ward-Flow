@@ -80,7 +80,7 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
     const needsYou = screen.getByRole("region", { name: "Needs you alerts" });
-    expect(within(needsYou).getByText(/WF-014/u)).toBeInTheDocument();
+    expect(within(needsYou).getByText("Legal due time passed")).toBeInTheDocument();
 
     const summaryList = screen.getByLabelText("Alert summary");
     expect(
@@ -96,7 +96,7 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
     const needsYou = screen.getByRole("region", { name: "Needs you alerts" });
     expect(
-      within(needsYou).queryByText(/WF-014/u),
+      within(needsYou).queryByText("Legal due time passed"),
       "WF-014 still renders an alert after closing — buildActionInbox is still being called on every movement",
     ).not.toBeInTheDocument();
 

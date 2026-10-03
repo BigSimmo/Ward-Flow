@@ -1,4 +1,11 @@
 import {
+  validCareChange,
+  careChangeRefusal,
+  applyCareChange,
+  emptyCareJourney,
+  recordedCommunityTransition,
+} from "./ward-care-journey";
+import {
   appendAudit,
   classifyAuditEvent,
   enumValue,
@@ -16,7 +23,7 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { LEAVING_DESTINATIONS, daysInBed, type LeavingDestination } from "./ward-admissions";
+import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -27,6 +34,8 @@ import {
   isAlertActive,
   type BroadcastAlert,
 } from "./alerts/ward-broadcast-model";
+import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
+import { reduceInboxEvent } from "./ward-inbox-reducer";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -64,6 +73,7 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
+  WARD_BUZZ_MESSAGES,
   REPATRIATION_MODES,
   WARD_FLOW_ROLE_LABELS,
   type RepatriationMode,
@@ -71,7 +81,7 @@ import {
   type OverridableWardFlowEvent,
   type WardFlowRole,
 } from "@/components/ward-management/ward-flow-events";
-import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { SELECTABLE_LEGAL_FORMS, countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import {
   form3CRefusedAfter3D,
   isLegalClockFormCode,
@@ -556,103 +566,13 @@ export type InboxCompletionEntry = {
   kind: "completed" | "reopened";
 };
 
-/**
- * WHETHER AN ACTION-INBOX ROW IS CURRENTLY TICKED OFF, DERIVED FROM ITS HISTORY RATHER THAN A
- * STORED FLAG — see `InboxCompletionEntry`'s own doc comment for why there is no flag to read
- * instead. No entries (`undefined` or `[]`) means "never completed", the same default every
- * sequence-derived record in this file already uses for "nothing recorded yet".
- */
-export function inboxItemCompletionState(entries: readonly InboxCompletionEntry[] | undefined): "complete" | "open" {
-  if (!entries || entries.length === 0) return "open";
-  return entries[entries.length - 1].kind === "completed" ? "complete" : "open";
-}
-
-/**
- * WHAT KIND OF THING AN ACTION-INBOX ROW IS — ward-lead task, 2026-09-06, the half deliberately
- * left out when `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` landed.
- *
- * - **`"fact"`** — a live clinical or legal truth the inbox COMPUTES from `movements` and `units`
- *   (`buildActionInbox`, `ward-derivations.ts`). It leaves the list when the underlying situation
- *   changes, and **never because somebody ticked it**. It may be acknowledged: a coordinator saying
- *   "I am on this" records who is answerable, which is a different act from the fact resolving.
- * - **`"commitment"`** — a human undertaking. It leaves when the person who took it on says they
- *   finished, recording who and when, and the tick is undoable.
- *
- * 🔴 **THE SAFETY PROPERTY THIS TYPE EXISTS FOR: nobody may silence a live legal breach by ticking
- * a box.** The distinction is enforced in `COMPLETE_INBOX_ITEM`'s own reducer case below — refused
- * structurally, not by hiding a button, because a hidden button is a convention and the next screen
- * to render these rows will not know about it.
- */
-export type InboxItemKind = "fact" | "commitment";
-
-/**
- * EVERY CATEGORY `buildActionInbox` CAN EMIT, AND WHAT KIND OF THING EACH ONE IS.
- *
- * ⚠️ **THIS LIVES HERE, NOT BESIDE `buildActionInbox`, ONLY TO AVOID A MODULE CYCLE.**
- * `ward-derivations.ts` already imports `SUITABILITY_GATES` and `REFERRABLE_MOVEMENT_STAGES` from
- * this file, so the edge derivations → reducer exists and this table travels along it. The reverse
- * edge does not exist and must not be created: the reducer's refusal below reads this table, never
- * `buildActionInbox` itself.
- *
- * `idPrefix` is the whole coupling. `InboxItem.id` is `${idPrefix}${movement.id}`, built from these
- * same entries, so the row a coordinator sees and the row the reducer refuses are classified by one
- * declaration rather than by two lists that agree today. **No prefix here may be a prefix of
- * another** — `tests/ward-inbox-probe.test.ts` is that guard, because "declines-" and
- * "destination-unlawful-" already share their first two characters and a future category could
- * close the gap.
- *
- * ✅ **RULED BY THE OWNER, 2026-09-06: NEITHER. THE PANEL IS ACKNOWLEDGE-ONLY.**
- *
- * `destinations_declined` and `transport_awaiting_departure` were the two a reasonable clinician
- * could read either way, and both were put to him with the argument on each side. He chose neither.
- * **A coordinator may put their name on a row — "I am dealing with this" — and nothing on this
- * panel can be marked done.** Every row stays until the situation itself changes.
- *
- * **His reasoning, and it is the same on both:** ticking "three wards have declined" removes the
- * standing signal that a patient nobody will take still has nowhere to go; ticking "transport has
- * not departed" removes the only thing tracking a patient still waiting. **In both cases the row
- * would leave the board while the situation had not moved at all.**
- *
- * ⚠️ **SO ALL FIVE ARE `"fact"` BY DECISION, NOT BY DEFAULT — DO NOT "COMPLETE" THIS TABLE.** A
- * later reader will see five facts, no commitments, and an unused `COMPLETE_INBOX_ITEM`, and the
- * tempting inference is that somebody stopped halfway. They did not. **`buildActionInbox` is an
- * exception list, deliberately, and the tick stays unused until a genuinely task-shaped category
- * exists** — a human undertaking that leaves when a person says it is done. That would be new work
- * with its own ruling, not a reclassification of one of these.
- */
-export const INBOX_CATEGORIES = {
-  /** An accepted destination that is not authorised to hold this patient's legal status. A live
-   *  unlawful placement; it stops being true when the acceptance or the status changes. */
-  destination_unlawful: { idPrefix: "destination-unlawful-", kind: "fact" },
-  /** A statutory form past its recorded deadline. The breach is the fact; ticking it is exactly the
-   *  act this whole classification exists to make impossible. */
-  legal_timing_breached: { idPrefix: "legal-", kind: "fact" },
-  /** A bed hold that has lapsed. True until the movement's stage moves or the hold is renewed. */
-  bed_pull_expired: { idPrefix: "bed-pull-", kind: "fact" },
-  /** SETTLED 2026-09-06 — the owner was asked whether this should become a commitment and answered
-   *  "Neither — acknowledge only". It was PROVISIONAL until then and the word is removed rather than
-   *  left standing, because a stale "with the owner" reads as a live question and gets re-asked.
-   *  The reasoning he ruled on: a count of refusals cannot decrease while the movement is open, so
-   *  as a fact it is a standing row; as a commitment it would be tickable while a patient nobody
-   *  will take still has nowhere to go. */
-  destinations_declined: { idPrefix: "declines-", kind: "fact" },
-  /** SETTLED 2026-09-06 by the same ruling as `destinations_declined` above — "Neither — acknowledge
-   *  only". Transport accepted and not yet departed. Self-resolving the moment `enRouteAt` is
-   *  recorded, which is what makes it read as a fact rather than the "book transport" commitment it
-   *  is easily mistaken for. */
-  transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
-} as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
-
-/**
- * WHAT KIND OF ROW AN `InboxItem.id` NAMES, OR `undefined` IF NOTHING IN `INBOX_CATEGORIES` CLAIMS
- * IT. The `undefined` is load-bearing: the caller must decide, and `COMPLETE_INBOX_ITEM` below
- * treats it as "not a commitment" — an id this model cannot classify is never tickable. Failing
- * closed is the only reading that survives a sixth category being added without being classified.
- */
-export function inboxItemKindOf(inboxItemId: string): InboxItemKind | undefined {
-  const category = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
-  return category?.kind;
-}
+export {
+  inboxItemCompletionState,
+  type InboxItemKind,
+  INBOX_CATEGORIES,
+  inboxItemKindOf,
+  reduceInboxEvent,
+} from "./ward-inbox-reducer";
 
 /**
  * Deep-copies the frozen fixture so tests (and later, screens) never alias or mutate it.
@@ -734,6 +654,8 @@ export function seedWardFlowStateAt(offsetMinutes: number, scenario: WardScenari
 function subjectId(event: WardFlowEvent): string {
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_CARE":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
     case "SET_CONFIGURATION":
@@ -1573,7 +1495,14 @@ function departAdmission(
 
 type ProtectedRecordEvent = Extract<
   WardFlowEvent,
-  { type: "OPEN_DISCHARGE_RECORD" | "REVIEW_AUDIT_EVENT" | "RECORD_PATIENT_DISCHARGE" }
+  {
+    type:
+      | "OPEN_DISCHARGE_RECORD"
+      | "REVIEW_AUDIT_EVENT"
+      | "RECORD_PATIENT_DISCHARGE"
+      | "RECORD_ADMISSION_FOLLOW_UP"
+      | "RECORD_ADMISSION_CARE";
+  }
 >;
 
 function protectedRefusal(
@@ -1601,7 +1530,6 @@ function protectedRefusal(
   return appendAudit(state, rejected, event, decision);
 }
 
-
 /**
  * Whether a PATIENT RECORD's free-text legal status is involuntary, for the two discharge guards
  * below. `Patient.legalStatus` is free text: the seed writes "Involuntary patient (recorded)" (and
@@ -1614,6 +1542,20 @@ function protectedRefusal(
 function patientRecordIsInvoluntary(legalStatus: string | undefined): boolean {
   if (legalStatus === undefined) return false;
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
+}
+
+/** A previous stay must never decide this admission's discharge or transport state. */
+function dischargeMovement(state: WardFlowState, admission: Admission): Movement | undefined {
+  return (
+    state.movements.find((movement) => movement.admissionId === admission.id) ??
+    state.movements.find(
+      (movement) =>
+        admission.patientId !== null &&
+        movement.patientId === admission.patientId &&
+        movement.admissionId === undefined &&
+        movement.closure === undefined,
+    )
+  );
 }
 
 function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): WardFlowState {
@@ -1662,7 +1604,11 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   }
 
   const actor = (
-    "actingUnitId" in event ? { role: event.role, actingUnitId: event.actingUnitId } : { role: event.role }
+    "actingUnitId" in event
+      ? { role: event.role, actingUnitId: event.actingUnitId }
+      : "actingTeamId" in event
+        ? { role: event.role, actingTeamId: event.actingTeamId }
+        : { role: event.role }
   ) as WardRecordActor;
   if (!validRecordActor(actor)) return deny("scope");
   if (event.type === "OPEN_DISCHARGE_RECORD") {
@@ -1686,8 +1632,14 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   }
 
   if (!safeCounter(event.expectedRevision)) return deny("invalid-payload");
-  const unit = uniqueRecord(state.units, event.actingUnitId);
   const admission = uniqueRecord(state.admissions, event.admissionId);
+  const unit = uniqueRecord(
+    state.units,
+    (event.type === "RECORD_ADMISSION_FOLLOW_UP" || event.type === "RECORD_ADMISSION_CARE") &&
+      (event.role === "coordinator" || event.role === "community")
+      ? admission?.unitId
+      : event.actingUnitId,
+  );
   if (!unit || !admission || !uniqueRecord(state.units, admission.unitId)) return deny("missing-or-inaccessible");
   if (admission.unitId !== unit.id) return deny("scope");
   const identity = dischargeIdentity(state, admission);
@@ -1695,15 +1647,203 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
   if (revision !== event.expectedRevision) return deny("revision", "stale");
-  if (!LEAVING_DESTINATIONS.some((destination) => destination.id === event.leavingDestination))
-    return deny("invalid-payload");
+  if (event.type === "RECORD_ADMISSION_CARE") {
+    if (selectDischargeRecord(state, actor, admission.id).status === "denied") return deny("scope");
+    if (!validCareChange(event.change)) return deny("invalid-payload");
+    if (event.role === "community" && !["follow_up", "contact", "plan", "document"].includes(event.change.kind))
+      return deny("role");
+    if (
+      (admission.state !== "occupied" && admission.state !== "departed") ||
+      (admission.arrivedAt !== null && event.now < admission.arrivedAt)
+    )
+      return deny("transition");
+    if (
+      event.role === "community" &&
+      ((event.change.kind === "follow_up" && event.change.serviceId !== event.actingTeamId) ||
+        (event.change.kind === "contact" &&
+          admission.careJourney?.followUp &&
+          admission.careJourney.followUp.serviceId !== event.actingTeamId))
+    )
+      return deny("scope");
+    const refusal = careChangeRefusal(admission, event.change, event.now);
+    if (refusal) return deny("transition", "denied", refusal);
+    if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))
+      return deny("missing-or-inaccessible");
+    if (
+      event.change.kind === "transport" &&
+      event.change.authority === "none" &&
+      ["ambulance", "service_vehicle", "police", "rfds"].includes(event.change.mode)
+    ) {
+      const movement = dischargeMovement(state, admission);
+      const patient = uniqueRecord(state.patients, admission.patientId);
+      if (patientRecordIsInvoluntary(patient?.legalStatus) || (movement && movement.legalStatus !== "Voluntary"))
+        return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
+    }
+    if (event.change.kind === "legal" && event.change.authority === "5B") {
+      const previous = admission.careJourney?.legal?.authority ?? dischargeMovement(state, admission)?.legalForm?.code;
+      if (previous !== "5A" && previous !== "5B")
+        return deny(
+          "transition",
+          "denied",
+          "A Form 5B continuation needs a recorded Form 5A or earlier Form 5B for this stay.",
+        );
+    }
+    const careJourney = applyCareChange(
+      admission.careJourney ?? emptyCareJourney(),
+      event.change,
+      event.now,
+      WARD_FLOW_ROLE_LABELS[event.role],
+    );
+    let next = replaceAdmission(state, admission.id, {
+      ...admission,
+      careJourney,
+      ...(event.change.kind === "follow_up"
+        ? {
+            followUp: {
+              state: "arranged" as const,
+              recordedAt: event.now,
+              recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
+            },
+          }
+        : {}),
+    });
+    if (event.change.kind === "transfer" && event.change.step === "arrived") {
+      if (event.role !== "coordinator" || admission.state !== "occupied") return deny("role");
+      const receiving = uniqueRecord(state.units, event.change.receivingUnitId);
+      const movement = dischargeMovement(state, admission);
+      if (
+        !receiving ||
+        !safeCounter(receiving.empty.value) ||
+        receiving.empty.value <= 0 ||
+        !movement ||
+        !eligibility(movement, receiving, event.now).eligible
+      )
+        return deny(
+          "transition",
+          "denied",
+          "The receiving ward must have a suitable available bed and a linked placement record.",
+        );
+      if (
+        state.admissions.some(
+          (a) =>
+            a.id !== admission.id &&
+            a.patientId === admission.patientId &&
+            (a.state === "occupied" || a.state === "pulled"),
+        )
+      )
+        return deny("transition", "denied", "The patient already has another occupied or held bed.");
+      if (
+        (admission.specialling && remainingSpeciallingCapacity(receiving, state.admissions) <= 0) ||
+        (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
+      )
+        return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
+      const bedKind =
+        movement.legalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
+      if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
+      const id = `transfer-${admission.id}-${revision + 1}`;
+      const movementId: MovementId = `WF-${id}`;
+      if (state.admissions.some((a) => a.id === id) || state.movements.some((m) => m.id === movementId))
+        return deny("invalid-payload");
+      next = departAdmission(
+        next,
+        { ...admission, careJourney },
+        unit,
+        event.now,
+        "transferred-to-another-psychiatric-ward",
+      );
+      next = replaceUnit(next, receiving.id, {
+        ...receiving,
+        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
+        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+        allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
+        sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
+      });
+      next = {
+        ...next,
+        admissions: [
+          ...next.admissions,
+          {
+            ...admission,
+            id,
+            unitId: receiving.id,
+            movementId,
+            state: "occupied",
+            bedKind,
+            pulledAt: event.now,
+            arrivedAt: event.now,
+            leftAt: null,
+            leavingDestination: null,
+            expectedDischargeAt: null,
+            dischargeConfirmedAt: null,
+            dischargeDateSetAt: null,
+            dischargeDateSetBy: null,
+            dischargeConfirmedBy: null,
+            dischargeDateMoves: 0,
+            blockReason: null,
+            awayAtEmergencyDepartmentSince: null,
+            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
+          },
+        ],
+        movements: [
+          ...next.movements,
+          {
+            ...movement,
+            id: movementId,
+            admissionId: id,
+            acceptedUnitId: receiving.id,
+            stage: "arrived",
+            openedAt: event.now,
+            referredAt: undefined,
+            acceptedAt: undefined,
+            referredUnitIds: [receiving.id],
+            arrivalDetails: undefined,
+            arrivalLateNotifiedAt: undefined,
+            expectFlag: undefined,
+            stageChanges: [{ at: event.now, to: "arrived", by: event.role, reason: "Recorded ward transfer arrival" }],
+            transport: undefined,
+            closure: { at: event.now, outcome: "arrived", reason: "Recorded ward transfer arrival" },
+          },
+        ],
+        dischargeRevisions: { ...next.dischargeRevisions, [id]: 0 },
+      };
+    }
+    return appendAudit(
+      state,
+      { ...next, dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 } },
+      event,
+      { outcome: "accepted", reasonCode: "none" },
+    );
+  }
+  if (event.type === "RECORD_ADMISSION_FOLLOW_UP") {
+    if (typeof event.followUpState !== "string" || !isFollowUpState(event.followUpState))
+      return deny("invalid-payload");
+    if (
+      (admission.state !== "occupied" && admission.state !== "departed") ||
+      admission.leavingDestination === "died-on-the-ward"
+    )
+      return deny("transition");
+    if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
+    const next = replaceAdmission(state, admission.id, {
+      ...admission,
+      followUp: { state: event.followUpState, recordedAt: event.now, recordedBy: WARD_FLOW_ROLE_LABELS[event.role] },
+    });
+    return appendAudit(
+      state,
+      {
+        ...next,
+        dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 },
+      },
+      event,
+      { outcome: "accepted", reasonCode: "none" },
+    );
+  }
+  if (!isLeavingDestination(event.leavingDestination)) return deny("invalid-payload");
   if (admission.state !== "occupied") return deny("transition");
+  if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
 
   // Involuntary patient discharge boundary (WA Mental Health Act 2014)
   const fullPatient = uniqueRecord(state.patients, identity.patient.id);
-  const linkedMovement = state.movements.find(
-    (m) => m.admissionId === admission.id || (admission.patientId && m.patientId === admission.patientId),
-  );
+  const linkedMovement = dischargeMovement(state, admission);
   if (
     patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
     (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
@@ -1712,11 +1852,13 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
       event.leavingDestination === "discharged-to-the-community" ||
       event.leavingDestination === "left-against-advice"
     ) {
-      return deny(
-        "transition",
-        "denied",
-        "Cannot discharge an involuntary patient without an explicit revocation order.",
-      );
+      if (!recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)) {
+        return deny(
+          "transition",
+          "denied",
+          "Cannot discharge an involuntary patient without an explicit revocation order or recorded community treatment order transition.",
+        );
+      }
     }
   }
 
@@ -1755,7 +1897,9 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   const protectedEvent =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
-    event.type === "RECORD_PATIENT_DISCHARGE";
+    event.type === "RECORD_PATIENT_DISCHARGE" ||
+    event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
+    event.type === "RECORD_ADMISSION_CARE";
   if (
     classifyAuditEvent(event) &&
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
@@ -1816,6 +1960,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
   switch (event.type) {
     case "RECORD_PATIENT_DISCHARGE":
+    case "RECORD_ADMISSION_CARE":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "OPEN_DISCHARGE_RECORD":
     case "REVIEW_AUDIT_EVENT":
       return state;
@@ -4152,6 +4298,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         leavingDestination: null,
         leftAt: null,
         followUp: null,
+        careJourney: emptyCareJourney(),
         dischargeBarrier: null,
         stepDownCandidate: false,
       };
@@ -4715,6 +4862,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
      * the discharge dates and the community hub still see that they went, and where.
      */
     case "RECORD_LEAVING": {
+      if (finiteInstant(event.now) === null || !isLeavingDestination(event.leavingDestination)) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Departure needs a finite time and a listed destination");
+      }
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
@@ -4739,12 +4890,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can leave one`,
         );
       }
+      if (admission.arrivedAt !== null && event.now < admission.arrivedAt) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Departure cannot precede this admission's arrival");
+      }
 
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
-      const linkedMovement = state.movements.find(
-        (m) => m.admissionId === admission.id || (admission.patientId && m.patientId === admission.patientId),
-      );
+      const linkedMovement = dischargeMovement(state, admission);
       if (
         linkedMovement &&
         (linkedMovement.stage === "moving" ||
@@ -4761,16 +4914,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       // Involuntary patient discharge boundary (WA Mental Health Act 2014)
       const linkedPatient = admission.patientId ? state.patients.find((p) => p.id === admission.patientId) : undefined;
-      if (linkedPatient && patientRecordIsInvoluntary(linkedPatient.legalStatus)) {
+      if (
+        patientRecordIsInvoluntary(linkedPatient?.legalStatus) ||
+        (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
+      ) {
         if (
           event.leavingDestination === "discharged-to-the-community" ||
           event.leavingDestination === "left-against-advice"
         ) {
-          return reject(
-            state,
-            event,
-            `cannot record leaving for involuntary patient ${linkedPatient.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
-          );
+          if (
+            !recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)
+          ) {
+            return reject(
+              state,
+              event,
+              `cannot record leaving for involuntary patient ${linkedPatient?.id ?? admission.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
+            );
+          }
         }
       }
 
@@ -5497,7 +5657,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the unit's figures. See `departAdmission`'s own comment.
       const releasedAdmission = findAdmission(state, release.admissionId);
       if (!releasedAdmission) {
-        return reject(state, event, `release ${release.id} names admission ${release.admissionId}, which does not exist`);
+        return reject(
+          state,
+          event,
+          `release ${release.id} names admission ${release.admissionId}, which does not exist`,
+        );
       }
       if (releasedAdmission.state !== "departed") {
         return reject(
@@ -6956,7 +7120,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       // A booked (uncollected) transport job must not be silently deleted by releasing the pull —
       // cancel it explicitly first so the officer and receiving ward are told, never left believing.
-      if (movement.transport !== undefined) {
+      if (movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
           state,
           event,
@@ -7113,7 +7277,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       // A second booking would replace a job a provider may already have accepted, and the
       // acceptance timestamps would vanish with it. Cancel first (`CANCEL_TRANSPORT`), then rebook.
-      if (movement.transport) {
+      if (movement.transport && movement.transport.cancelledAt === undefined) {
         return reject(state, event, `transport for movement ${movement.id} is already booked`);
       }
       if (!TRANSPORT_PROVIDERS.includes(event.provider)) {
@@ -7999,139 +8163,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
      * already-complete row — so a caller cannot overwrite an earlier `readAt`/`readBy` pair with a
      * later one claimed under a different role.
      */
-    case "MARK_NOTICE_READ": {
-      const notice = findNotice(state, event.noticeId);
-      if (!notice) return reject(state, event, `no notice found for id ${event.noticeId}`);
-      if (notice.to.role !== event.role || notice.to.placeId !== event.actingPlaceId) {
-        return reject(
-          state,
-          event,
-          `MARK_NOTICE_READ role/actingPlaceId (${event.role}/${event.actingPlaceId ?? "none"}) must match notice ${event.noticeId}'s own addressee (${notice.to.role}/${notice.to.placeId ?? "none"})`,
-        );
-      }
-      if (notice.readAt !== undefined) {
-        return reject(state, event, `notice ${event.noticeId} is already marked read`);
-      }
-      const updated: Notice = { ...notice, readAt: event.now, readBy: event.role };
-      return {
-        ...state,
-        notices: state.notices.map((candidate) => (candidate.id === notice.id ? updated : candidate)),
-      };
-    }
-
-    /**
-     * "I AM ON THIS." See `ACKNOWLEDGE_INBOX_ITEM`'s own doc comment in `ward-flow-events.ts` for
-     * why this may never remove or hide the row it acknowledges.
-     *
-     * 🔴 **TOUCHES `state.inboxAcknowledgements` AND NOTHING ELSE.** In particular, never
-     * `state.movements` or `state.units` — the only two inputs `buildActionInbox`
-     * (`ward-derivations.ts`) reads — so this case cannot change what that function returns.
-     */
-    case "ACKNOWLEDGE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
-      if (inboxItemId.length === 0) {
-        return reject(state, event, "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
-      }
-      // Opus adversarial review, 2026-09-17, P2 finding 1: a non-blank `inboxItemId` used to be
-      // stored unchecked, so a caller could acknowledge a row naming no real movement at all.
-      // `InboxItem.id` is `${idPrefix}${movement.id}` for every one of the five categories
-      // (`ward-derivations.ts`'s `buildActionInbox`, every push site) — never a referral id or
-      // anything else — so a real id's prefix must be one of `INBOX_CATEGORIES`'s own and its
-      // remainder a movement genuinely in this state.
-      const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
-      const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      if (!inboxCategory || !state.movements.some((movement) => movement.id === inboxMovementId)) {
-        return reject(
-          state,
-          event,
-          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id`,
-        );
-      }
-      const acknowledgement: InboxAcknowledgement = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role] };
-      const existing = state.inboxAcknowledgements[inboxItemId] ?? [];
-      return {
-        ...state,
-        inboxAcknowledgements: { ...state.inboxAcknowledgements, [inboxItemId]: [...existing, acknowledgement] },
-      };
-    }
-
-    /**
-     * THE ROW IS TICKED OFF. See `COMPLETE_INBOX_ITEM`'s own doc comment in `ward-flow-events.ts`.
-     *
-     * 🔴 **TOUCHES `state.inboxCompletions` AND NOTHING ELSE** — never `movements`, `units`, or
-     * `state.inboxAcknowledgements`. A completion recorded here must never be able to erase or
-     * shadow an acknowledgement of the same row: the two tracks are kept independent on purpose,
-     * so that ticking a box can never read as un-acknowledging a fact somebody is on record as
-     * having seen. This is the property `tests/ward-inbox-events.test.ts` proves by mutation.
-     */
-    case "COMPLETE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
-      if (inboxItemId.length === 0) {
-        return reject(state, event, "COMPLETE_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
-      }
-      /*
-       * 🔴 **THE ROW MUST BE A COMMITMENT, AND THIS IS THE WHOLE SAFETY PROPERTY: nobody may
-       * silence a live legal breach by ticking a box.** A `"fact"` row — a breached statutory form,
-       * an accepted destination that is not lawful — leaves this inbox when the fact resolves and
-       * never because a person said they were done with it. `ACKNOWLEDGE_INBOX_ITEM` is what a
-       * coordinator has for a fact: it records who is answerable without pretending the fact ended.
-       *
-       * ⚠️ **REFUSED HERE, NOT BY HIDING THE BUTTON.** A screen that only renders a tick control on
-       * commitment rows is a convention, and the next screen to render these rows will not know
-       * about it; this refusal binds every caller there will ever be.
-       *
-       * ⚠️ **FAILS CLOSED ON AN ID `INBOX_CATEGORIES` DOES NOT CLAIM** (`inboxItemKindOf` returns
-       * `undefined`), so a sixth category added without being classified is un-tickable rather than
-       * silently tickable — the direction that degrades conservatively. `tests/ward-inbox-*.ts`
-       * hold both halves: that the classification covers every category the inbox emits, and that
-       * this refusal actually fires.
-       */
-      const kind = inboxItemKindOf(inboxItemId);
-      if (kind !== "commitment") {
-        return reject(
-          state,
-          event,
-          kind === "fact"
-            ? `inbox row ${inboxItemId} states a live fact, not a commitment — a fact leaves this list when it stops being true, never because it was ticked off`
-            : `inbox row ${inboxItemId} is not a classified inbox category, so it cannot be ticked off`,
-        );
-      }
-      const history = state.inboxCompletions[inboxItemId];
-      if (inboxItemCompletionState(history) === "complete") {
-        return reject(state, event, `inbox row ${inboxItemId} is already complete`);
-      }
-      const entry: InboxCompletionEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "completed" };
-      return {
-        ...state,
-        inboxCompletions: { ...state.inboxCompletions, [inboxItemId]: [...(history ?? []), entry] },
-      };
-    }
-
-    /**
-     * THE UNDO. See `REOPEN_INBOX_ITEM`'s own doc comment in `ward-flow-events.ts` — this appends a
-     * new entry rather than deleting the completion it reverses, so the fact that the row was once
-     * marked done is never lost from the history.
-     *
-     * ⚠️ **NO `InboxItemKind` CHECK HERE, DELIBERATELY.** Reopening only ever UN-ticks a row, which
-     * is the safe direction in every case; refusing it on a fact row would be a guard that can only
-     * make a wrongly-ticked row harder to correct. The "not currently complete" precondition below
-     * already means a fact can never be reopened in practice — `COMPLETE_INBOX_ITEM` above refuses
-     * it, so no fact row can ever reach the complete state this needs.
-     */
+    case "MARK_NOTICE_READ":
+    case "ACKNOWLEDGE_INBOX_ITEM":
+    case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
-      if (inboxItemId.length === 0) {
-        return reject(state, event, "REOPEN_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
-      }
-      const history = state.inboxCompletions[inboxItemId];
-      if (inboxItemCompletionState(history) !== "complete") {
-        return reject(state, event, `inbox row ${inboxItemId} is not complete, so there is nothing to reopen`);
-      }
-      const entry: InboxCompletionEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "reopened" };
-      return {
-        ...state,
-        inboxCompletions: { ...state.inboxCompletions, [inboxItemId]: [...(history ?? []), entry] },
-      };
+      const next = reduceInboxEvent(state, event, decision, reject);
+      if (next) return next;
+      return state;
     }
 
     case "SET_ARRIVAL_DETAILS": {
@@ -8330,6 +8368,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
       }
       if (
+        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
         !Number.isFinite(event.writtenAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -8361,6 +8400,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         legalForm: {
           code: event.formCode,
           kind,
+          ...(event.region
+            ? { region: event.region }
+            : sameFormTimeEdit && movement.legalForm?.region
+              ? { region: movement.legalForm.region }
+              : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
         },
         legalClock: undefined,
@@ -8379,19 +8423,42 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COUNTRY_EXTENSION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      // No statutory window is computed, so there is nothing to extend. The clinician records the
-      // new expiry written on the form as a typed value.
-      return reject(
+      if (movement.closure || event.paperExpiresAt === undefined || !Number.isFinite(event.paperExpiresAt))
+        return reject(
+          state,
+          event,
+          "Country extensions are recorded as a typed expiry. Enter the new expiry written on the country extension form.",
+        );
+      if (!countryExtensionEligible(movement))
+        return reject(
+          state,
+          event,
+          "A country extension requires a current Form 1A with its paper setting recorded as country.",
+        );
+      const next = reduceClinicalEvent(
         state,
-        event,
-        `country extensions are recorded as a typed expiry — use RECORD_LEGAL_FORM_EXPIRY with the new expiry written on the form`,
+        {
+          type: "RECORD_LEGAL_FORM_EXPIRY",
+          role: event.role,
+          now: event.now,
+          movementId: event.movementId,
+          dueAt: event.paperExpiresAt,
+        },
+        decision,
       );
+      if (next.rejections.length === state.rejections.length) {
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
+      }
+      return next;
     }
 
     case "RECORD_LEGAL_FORM_CONTINUATION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
       if (
+        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
         !Number.isFinite(event.startedAt) ||
         (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
       ) {
@@ -8431,6 +8498,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           legalClock: undefined,
           legalFormExpiryHistory: expiryHistory,
         };
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
         return replaceMovement(state, movement.id, continued);
       }
       // Any other continuation replaces current paper facts while retaining the earlier expiry history.
@@ -8439,18 +8508,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         formedAt: event.startedAt,
         legalForm: {
           code: event.formCode,
+          ...(event.region ? { region: event.region } : {}),
           ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
         },
         legalClock: undefined,
         legalFormReceivedAt: undefined,
         legalFormExpiryHistory: expiryHistory,
       };
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       return replaceMovement(state, movement.id, updated);
     }
 
     case "EVALUATE_ARRIVAL_LATENESS": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (movement.arrivalLateNotifiedAt !== undefined) return state;
       if (!isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, event.now)) {
         return state;
@@ -8495,7 +8568,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `cannot release and reopen at the movement's current stage (${stageCopy[movement.stage].label})`,
         );
       }
-      if (movement.transport !== undefined) {
+      if (movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
           state,
           event,
@@ -8546,6 +8619,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CLEAR_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (!movement.expectFlag || movement.expectFlag.clearedAt !== undefined) {
         return reject(state, event, `movement ${movement.id} has no open expect flag to clear`);
       }
@@ -8559,6 +8633,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RAISE_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
         return reject(state, event, `movement ${movement.id} already has an open expect flag`);
       }
@@ -8576,6 +8651,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "FLAG_LEGAL_MISMATCH": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "This movement is closed.");
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       const involuntary = movement.legalStatus !== "Voluntary";
@@ -8585,7 +8661,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           : movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
             ? ("voluntary_on_locked_ward" as const)
             : null;
-      const kind = derived ?? event.kind;
+      if (!derived || event.kind !== derived)
+        return reject(state, event, "The selected legal mismatch must match the current ward and patient status.");
+      const kind = derived;
       const updated: Movement = {
         ...movement,
         legalMismatch: { at: event.now, unitId: event.unitId, kind },
@@ -8649,6 +8727,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "SEND_WARD_BUZZ": {
+      if (
+        !WARD_BUZZ_MESSAGES.includes(event.message) ||
+        (event.urgent !== undefined && typeof event.urgent !== "boolean")
+      )
+        return reject(state, event, "Choose a valid ward refresh message.");
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
       return {
@@ -8795,128 +8878,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return { ...state, clinicalContacts: [...existing, recorded] };
     }
 
-    case "DISPATCH_BROADCAST_ALERT": {
-      if (!event.title.trim() || !event.message.trim()) {
-        return reject(state, event, "DISPATCH_BROADCAST_ALERT requires a non-empty title and message");
-      }
-      // Audit follow-up 2026-09-25: `severity`/`category`/`targetScope` are union-typed
-      // (compile-time only), and `durationMinutes` used to silently fall back to 240 for any
-      // value <= 0. Both shapes let an untyped or malformed dispatch through unchecked; refused
-      // outright now, matching how the rest of this reducer treats a union-typed field.
-      const severity = enumValue(BROADCAST_SEVERITIES, event.severity);
-      if (severity === null) {
-        return reject(state, event, "DISPATCH_BROADCAST_ALERT severity must be chosen from BROADCAST_SEVERITIES");
-      }
-      const category = enumValue(BROADCAST_CATEGORIES, event.category);
-      if (category === null) {
-        return reject(state, event, "DISPATCH_BROADCAST_ALERT category must be chosen from BROADCAST_CATEGORIES");
-      }
-      const targetScope = enumValue(BROADCAST_TARGET_SCOPES, event.targetScope);
-      if (targetScope === null) {
-        return reject(state, event, "DISPATCH_BROADCAST_ALERT targetScope must be chosen from BROADCAST_TARGET_SCOPES");
-      }
-      // finiteInstant rejects NaN and +/-Infinity as well as the <= 0 case `> 0` alone already
-      // caught -- a non-finite duration would otherwise reach `expiresAt` below.
-      if (finiteInstant(event.durationMinutes) === null || event.durationMinutes <= 0) {
-        return reject(state, event, "DISPATCH_BROADCAST_ALERT durationMinutes must be a finite positive number");
-      }
-      const nextSeq = (state.broadcastSequence ?? 0) + 1;
-      const alertId = `BCAST-${nextSeq}`;
-      const duration = event.durationMinutes;
-      const newAlert: BroadcastAlert = {
-        id: alertId,
-        title: event.title.trim(),
-        message: event.message.trim(),
-        severity,
-        category,
-        targetScope,
-        targetScopeLabel: event.targetScopeLabel,
-        durationMinutes: duration,
-        dispatchedAt: event.now,
-        expiresAt: (event.now + duration) as Instant,
-        dispatchedByRole: event.role,
-        dispatchedByName: event.dispatchedByName?.trim() || "State Bed Desk",
-        status: "active",
-        acknowledgedUnits: [],
-      };
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
-      return {
-        ...state,
-        broadcastAlerts: [newAlert, ...existingAlerts],
-        broadcastSequence: nextSeq,
-      };
-    }
-
-    case "ACKNOWLEDGE_BROADCAST_ALERT": {
-      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
-      const target = existingAlerts.find((a) => a.id === event.alertId);
-      if (!target) {
-        return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT alertId ${event.alertId} not found`);
-      }
-      // Audit follow-up 2026-09-25: three gaps closed together, all refusals rather than a
-      // silent no-op — `unitId` was never checked against `state.units`, an alert that had
-      // already expired or been stood down could still collect acknowledgements, and a repeat
-      // acknowledgement from the same unit silently returned the unchanged state instead of
-      // telling the caller why nothing happened.
-      //
-      // Owner ruling 2026-09-25: `WardBroadcastBanner`'s only real mount
-      // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
-      // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
-      // refusal exempts. Every other unrecognised unitId is still refused.
-      if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !findUnit(state, event.unitId)) {
-        return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
-      }
-      if (!isAlertActive(target, event.now)) {
-        return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT alertId ${event.alertId} is no longer active`);
-      }
-      if (target.acknowledgedUnits.includes(event.unitId)) {
-        return reject(
-          state,
-          event,
-          `ACKNOWLEDGE_BROADCAST_ALERT unit ${event.unitId} has already acknowledged alert ${event.alertId}`,
-        );
-      }
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const updatedAlerts = existingAlerts.map((a) =>
-        a.id === event.alertId ? { ...a, acknowledgedUnits: [...a.acknowledgedUnits, event.unitId] } : a,
-      );
-      return {
-        ...state,
-        broadcastAlerts: updatedAlerts,
-      };
-    }
-
+    case "DISPATCH_BROADCAST_ALERT":
+    case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT": {
-      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
-      const target = existingAlerts.find((a) => a.id === event.alertId);
-      if (!target) {
-        return reject(state, event, `STAND_DOWN_BROADCAST_ALERT alertId ${event.alertId} not found`);
-      }
-      // Audit follow-up 2026-09-25: standing down an already-stood-down alert used to silently
-      // overwrite `stoodDownAt`/`stoodDownBy` with the new caller's values, discarding the
-      // record of who actually stood it down and when.
-      if (target.status === "stood_down") {
-        return reject(state, event, `STAND_DOWN_BROADCAST_ALERT alertId ${event.alertId} is already stood down`);
-      }
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      const updatedAlerts = existingAlerts.map((a) =>
-        a.id === event.alertId
-          ? {
-              ...a,
-              status: "stood_down" as const,
-              stoodDownAt: event.now,
-              stoodDownBy: event.stoodDownByRole ?? event.role,
-            }
-          : a,
-      );
-      return {
-        ...state,
-        broadcastAlerts: updatedAlerts,
-      };
+      const next = reduceBroadcastAlertEvent(state, event, decision, reject);
+      if (next) return next;
+      return state;
     }
   }
   return state;

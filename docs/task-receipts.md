@@ -4,13 +4,29 @@ Owning repository: `BigSimmo/Ward-Flow`. These rules cover only this project. Th
 
 Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task checkpoint IDs. Do not add Ward tasks to the inherited PsychSift outstanding-issues system.
 
+> **Prototype Mode Note (3 October 2026):** For ordinary interactive pair-programming and development tasks, formal receipt export (`export-task-receipt.py`) and Notion reconciliation are optional and advisory. Standard Git commits and PR summaries provide sufficient task tracking.
+
 ## Update at lifecycle events
 
 At start, reuse the original objective/task ID. At checkpoint, blocker, resume and completion, update that same record; retries and terminal assistant turns are not new tasks or proof of completion. One project owns each task. Link dependencies as project plus task ID instead of copying them into other project lists. Keep Completed/Cancelled history; open views hide those states.
 
+A single uninterrupted scoped reversible task with no unresolved ownership, new provider/publication action or substantial recovery need may collapse its checkpoint updates into one brief final receipt, but still persists a minimal start receipt (or has one created automatically) so a hard interruption leaves a record to resume. Substantial work also uses one canonical checkpoint. A pause, blocker, transfer or scope change still needs a prompt update; the compact route preserves file claims and project gates.
+
 Status is In progress, Blocked, Needs you, Paused, Completed or Cancelled. Record Task/title, Blocker, Next action, Owner and source/evidence links in the canonical source where authorised. Preserve Last verified unless new evidence actually verifies the state. Completion needs evidence of the task's acceptance; completion, user acceptance, merge, release and deployment remain separate.
 
 When code/config/instructions change, refresh the relevant maintained document and same task receipt as part of the owned diff. Respect file claims; hand conflicting document updates to their owner. Do not regenerate unrelated docs. Changes to these rules need the same reviewed documentation process. Shared master/adapters are maintained separately; do not edit them from this project task.
+
+Complete the requested stage: a delivered audit, evidenced Fast Preview or verified local
+engineering task can complete without publication/deployment. Integration, publication,
+deployment and user acceptance require their own applicable authority and evidence.
+
+For one uninterrupted scoped reversible task with no unresolved ownership, new provider/
+publication boundary or substantial recovery need, one final compact contribution may carry
+start/completion metadata. A genuine pause, blocker, transfer or scope change needs an immediate
+update; substantial work retains meaningful checkpoints. Reuse the original task identity.
+
+Last verified requires newly checked evidence, including a new immutable run-evidence location
+within the same stable task when source/evidence otherwise match. Timestamp-only refresh is invalid.
 
 ## Local-only receipt bridge
 
@@ -28,4 +44,4 @@ Codex and Cursor Agent use the root AGENTS.md. Claude Code uses CLAUDE.md and it
 
 Use the supported global adapter for shared master preferences; the maintained source is the user's ai-rules/global-rules.md. Propose evidence-backed shared changes to that source's owner; update relevant owned project documentation and the same task receipt locally. Do not copy the master or create another ledger. A source change, a file sync and actual loaded context are separate evidence states.
 
-To activate these branch-only changes without touching active canonical work, select this prepared task worktree as the client's workspace and start a fresh session (or use a supported context reload and verify it). Canonical checkout activation requires its reviewed repository integration workflow. An existing chat can retain older context; file changes do not retroactively enforce instructions. No universal event capture is installed.
+Load instructions from the current checkout selected as the client's workspace. Record its repository, branch and revision, then start a fresh session or use a supported context reload and verify the loaded instructions. These documents are integrated into the dedicated Ward repository; they do not require a particular historical task worktree. Use reviewed repository integration for any new branch-only changes. An existing chat can retain older context; file changes do not retroactively enforce instructions. No universal event capture is installed.

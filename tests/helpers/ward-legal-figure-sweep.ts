@@ -47,7 +47,6 @@ import {
   type LegalStatus,
   type Notice,
 } from "../../src/components/ward-management/ward-model";
-import { wardMovements } from "../../src/components/ward-management/ward-movements";
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
@@ -234,6 +233,33 @@ export function candidateEvents(
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
+    case "RECORD_ADMISSION_CARE":
+      return state.admissions
+        .filter((a) => a.patientId !== null && a.state === "occupied")
+        .map((a) => ({
+          type,
+          role: "coordinator",
+          now,
+          admissionId: a.id,
+          patientId: a.patientId!,
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[a.id] ?? 0,
+          change: { kind: "plan", item: "crisis_plan", status: "in_progress" },
+        }));
+    case "RECORD_ADMISSION_FOLLOW_UP":
+      return state.admissions
+        .filter((admission) => admission.patientId !== null && admission.state === "occupied")
+        .map((admission) => ({
+          type,
+          role: "ward",
+          now,
+          actingUnitId: admission.unitId,
+          admissionId: admission.id,
+          patientId: admission.patientId!,
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[admission.id] ?? 0,
+          followUpState: "arranged",
+        }));
     case "RECORD_PATIENT_DISCHARGE":
       // A protected linked departure: use only a uniquely linked occupied admission, carry the
       // current world/revision guards, and cross the same closed destination vocabulary as the

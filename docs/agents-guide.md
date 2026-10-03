@@ -1,3 +1,13 @@
+# Ward Flow agents — current entry points
+
+Follow [AGENTS](../AGENTS.md), [Ward README](ward-flow/README.md),
+[builder workflow](ward-flow/HOW-WE-WORK.md) and the task's scoped source/checkpoint.
+Native client adapters and loading limits are described in [task receipts](task-receipts.md).
+File changes, loaded instructions and actual execution are separate evidence.
+Ward Flow uses synthetic data; foreign Supabase/RAG/MCP/workflow instructions below are
+history. Local connector configuration is not authority to contact any provider. Use only
+separately authorised Ward targets; the inherited Run PR sweep is disabled.
+
 > **Historical source boundary — 2 October 2026.** The preserved material below
 > describes the former Database/PsychSift workflow or a completed task. Its commands,
 > hosting and appearance claims are not current Ward instructions. Use the
@@ -47,15 +57,15 @@ This repo intentionally uses several AI systems; the overlap is by design, not
 accident. [`AGENTS.md`](../AGENTS.md) is the single source of truth — every system
 below defers to it, so rules live in one place and cannot drift.
 
-| System                    | Owns                                                       | Where it is configured                                                                                                                                                                                                          |
-| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **AGENTS.md** (canonical) | All agent rules, gates, safety boundaries                  | `AGENTS.md` — the always-loaded core plus an index of `docs/agents/**`, where the full text of the delegated rules lives; `CLAUDE.md` imports it with `@AGENTS.md` and adds orientation only — never a second copy of the rules |
-| **Codex** (OpenAI)        | Primary PR code-review + automatic resolve                 | AGENTS.md "Codex review" sections, `docs/codex-review-protocol.md`, `docs/codex-prompt-playbook.md`, `.github/workflows/codex-autofix-review-comments.yml`                                                                      |
-| **Claude Code**           | Interactive dev; scoped review subagents + workflow skills | `.claude/` (agents, skills, hooks), `.github/workflows/claude.yml`                                                                                                                                                              |
-| **Cursor**                | Editor skills + project MCP (Supabase, Context7, …)        | `.cursor/` (skills, `mcp.json`)                                                                                                                                                                                                 |
-| **Railway MCP**           | Desktop/CLI template; hosted app is separate               | Root `.mcp.json` / `.codex/config.toml` use `https://mcp.railway.com` with OAuth; hosted ChatGPT/Codex requires a workspace-installed app                                                                                       |
-| **CodeRabbit**            | Advisory PR review (never blocking)                        | `.coderabbit.yaml` (`commit_status: false`)                                                                                                                                                                                     |
-| **`.agents/`**            | Home-grown skill catalogue                                 | `.agents/skills/catalog.json`; list with `npm run skills`                                                                                                                                                                       |
+| System                    | Owns                                                                                    | Where it is configured                                                                                                                                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AGENTS.md** (canonical) | All agent rules, gates, safety boundaries                                               | `AGENTS.md` — the always-loaded core plus an index of `docs/agents/**`, where the full text of the delegated rules lives; `CLAUDE.md` imports it with `@AGENTS.md` and adds orientation only — never a second copy of the rules |
+| **Codex** (OpenAI)        | Historical PR code-review background; no automatic-resolve workflow exists in Ward Flow | AGENTS.md "Codex review" sections, `docs/codex-review-protocol.md`, `docs/codex-prompt-playbook.md`, `.github/workflows/codex-autofix-review-comments.yml` (absent here)                                                        |
+| **Claude Code**           | Interactive dev; scoped review subagents + workflow skills                              | `.claude/` (agents, skills, hooks), `.github/workflows/claude.yml`                                                                                                                                                              |
+| **Cursor**                | Editor skills + project MCP (Supabase, Context7, …)                                     | `.cursor/` (skills, `mcp.json`)                                                                                                                                                                                                 |
+| **Railway MCP**           | Desktop/CLI template; hosted app is separate                                            | Root `.mcp.json` / `.codex/config.toml` use `https://mcp.railway.com` with OAuth; hosted ChatGPT/Codex requires a workspace-installed app                                                                                       |
+| **CodeRabbit**            | Advisory PR review (never blocking)                                                     | `.coderabbit.yaml` (`commit_status: false`)                                                                                                                                                                                     |
+| **`.agents/`**            | Home-grown skill catalogue                                                              | `.agents/skills/catalog.json`; list with `npm run skills`                                                                                                                                                                       |
 
 Rule of thumb: change agent behaviour in `AGENTS.md` — or in the `docs/agents/` file its core
 points to for that rule — then let each system inherit it. A rule has exactly one home; do not

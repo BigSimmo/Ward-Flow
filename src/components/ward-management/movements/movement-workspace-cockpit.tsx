@@ -8,6 +8,7 @@
  */
 
 "use client";
+import { MovementWorkflowActions } from "./movement-workflow-actions";
 
 import { useState } from "react";
 import {
@@ -839,6 +840,7 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
               </div>
             </div>
 
+            <MovementWorkflowActions movement={patient} />
             {/* Legal and Forms Detail Panel */}
             <div data-testid="ward-console-legal-panel" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>

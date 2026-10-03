@@ -494,10 +494,10 @@ describe("static guard scope selection", () => {
 
 describe("in-flight CI push guard (#HSSHRG)", () => {
   it("recognizes active workflow runs for required CI only", () => {
-    expect(isRequiredCiWorkflow({ name: "CI" })).toBe(true);
-    expect(isRequiredCiWorkflow({ workflowName: "CI" })).toBe(true);
-    expect(isRequiredCiWorkflow({ path: ".github/workflows/ci.yml" })).toBe(true);
-    expect(isRequiredCiWorkflow({ path: ".github\\workflows\\ci.yml" })).toBe(true);
+    expect(isRequiredCiWorkflow({ name: "Ward Flow CI" })).toBe(true);
+    expect(isRequiredCiWorkflow({ workflowName: "Ward Flow CI" })).toBe(true);
+    expect(isRequiredCiWorkflow({ path: ".github/workflows/ward-flow.yml" })).toBe(true);
+    expect(isRequiredCiWorkflow({ path: ".github\\workflows\\ward-flow.yml" })).toBe(true);
     expect(isRequiredCiWorkflow({ name: "Nightly Security Scan" })).toBe(false);
 
     expect(ACTIVE_CI_RUN_STATES.has("in_progress")).toBe(true);
@@ -505,9 +505,9 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(ACTIVE_CI_RUN_STATES.has("completed")).toBe(false);
 
     const runs = [
-      { databaseId: 1, name: "CI", status: "in_progress", conclusion: null },
-      { databaseId: 2, name: "CI", status: "queued", conclusion: "" },
-      { databaseId: 3, name: "CI", status: "completed", conclusion: "success" },
+      { databaseId: 1, name: "Ward Flow CI", status: "in_progress", conclusion: null },
+      { databaseId: 2, name: "Ward Flow CI", status: "queued", conclusion: "" },
+      { databaseId: 3, name: "Ward Flow CI", status: "completed", conclusion: "success" },
       { databaseId: 4, name: "Deploy", status: "in_progress", conclusion: null },
     ];
     const inFlight = findInFlightCiRuns(runs);
@@ -516,8 +516,8 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
 
     const objPayload = {
       workflow_runs: [
-        { id: 10, path: ".github/workflows/ci.yml", status: "waiting", conclusion: null },
-        { id: 11, path: ".github/workflows/ci.yml", status: "completed", conclusion: "failure" },
+        { id: 10, path: ".github/workflows/ward-flow.yml", status: "waiting", conclusion: null },
+        { id: 11, path: ".github/workflows/ward-flow.yml", status: "completed", conclusion: "failure" },
       ],
     };
     expect(findInFlightCiRuns(objPayload).map((r: Record<string, unknown>) => r.id)).toEqual([10]);
@@ -525,7 +525,13 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
 
   it("blocks a push to an open PR when required CI is in-flight", () => {
     const runs = [
-      { databaseId: 101, name: "CI", status: "in_progress", conclusion: null, url: "https://github.com/run/101" },
+      {
+        databaseId: 101,
+        name: "Ward Flow CI",
+        status: "in_progress",
+        conclusion: null,
+        url: "https://github.com/run/101",
+      },
     ];
     const verdict = inFlightCiVerdict("claude/my-fix", { state: "OPEN", number: 123 }, runs);
     expect(verdict.block).toBe(true);
@@ -533,8 +539,21 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(verdict.runs).toHaveLength(1);
   });
 
+  it("is documented as blocking (not advisory) in AGENTS.md, matching the guard's behaviour", () => {
+    const agents = readFileSync(join(process.cwd(), "AGENTS.md"), "utf8");
+    const line = agents.split("\n").find((entry) => entry.includes("in-flight CI push check"));
+    expect(line).toBeDefined();
+    expect(line).toContain("is a blocking check, not an advisory one");
+    expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
+    expect(line).toContain("PREPUSH_CI_STRICT=1");
+    expect(line).not.toMatch(/is advisory during interactive work/);
+    // The guard itself still blocks, and the hook's default skip is a visible, separate choice.
+    expect(readFileSync(join(process.cwd(), "scripts", "guard-push.mjs"), "utf8")).toContain("SKIP_IN_FLIGHT_CI_GUARD");
+    expect(readFileSync(join(process.cwd(), ".githooks", "pre-push"), "utf8")).toContain("PREPUSH_CI_STRICT");
+  });
+
   it("allows push when CI has completed or no runs are in-flight", () => {
-    const completedRuns = [{ databaseId: 102, name: "CI", status: "completed", conclusion: "success" }];
+    const completedRuns = [{ databaseId: 102, name: "Ward Flow CI", status: "completed", conclusion: "success" }];
     const verdict = inFlightCiVerdict("claude/my-fix", { state: "OPEN", number: 123 }, completedRuns);
     expect(verdict.block).toBe(false);
     expect(verdict.reason).toBe("no-in-flight-ci");
@@ -573,7 +592,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
   });
 
   it("never blocks base branch pushes or closed PRs", () => {
-    const runs = [{ databaseId: 101, name: "CI", status: "in_progress", conclusion: null }];
+    const runs = [{ databaseId: 101, name: "Ward Flow CI", status: "in_progress", conclusion: null }];
     expect(inFlightCiVerdict("main", { state: "OPEN", number: 1 }, runs).block).toBe(false);
     expect(inFlightCiVerdict("release/2.0", { state: "OPEN", number: 2 }, runs).block).toBe(false);
     expect(inFlightCiVerdict("claude/my-fix", { state: "MERGED", number: 123 }, runs).block).toBe(false);
@@ -581,7 +600,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
   });
 
   it("inFlightCiGuard formats actionable blocked message with PR and run details", () => {
-    const runs = [{ databaseId: 555, name: "CI", status: "in_progress", url: "https://github.com/run/555" }];
+    const runs = [{ databaseId: 555, name: "Ward Flow CI", status: "in_progress", url: "https://github.com/run/555" }];
     const result = inFlightCiGuard(["claude/my-fix"], [], {
       prViewer: () => ({ state: "OPEN", number: 77 }),
       runFetcher: () => runs,
@@ -592,7 +611,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     });
     expect(result.ok).toBe(false);
     expect(result.message).toContain("PR #77 on claude/my-fix has required CI run(s) currently IN-FLIGHT");
-    expect(result.message).toContain("Run 555: CI (in_progress) https://github.com/run/555");
+    expect(result.message).toContain("Run 555: Ward Flow CI (in_progress) https://github.com/run/555");
     expect(result.message).toContain("SKIP_IN_FLIGHT_CI_GUARD=1 git push");
     expect(result.message).toContain("#HSSHRG");
   });
@@ -617,7 +636,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     try {
       const result = inFlightCiGuard(["claude/my-fix"], [], {
         prViewer: () => ({ state: "OPEN", number: 77 }),
-        runFetcher: () => [{ databaseId: 555, name: "CI", status: "in_progress" }],
+        runFetcher: () => [{ databaseId: 555, name: "Ward Flow CI", status: "in_progress" }],
       });
       expect(result.ok).toBe(true);
       expect(result.skipped).toBe("SKIP_IN_FLIGHT_CI_GUARD=1");
@@ -632,7 +651,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(pushedTipMatchesHead([{ localSha: "sha123", localRef: "HEAD" }], "sha456").ok).toBe(false);
   });
 
-  it("defaultRunsFetch scopes to ci.yml and pages past the default 10-run window (#HSSHRG)", () => {
+  it("defaultRunsFetch scopes to ward-flow.yml and pages past the default 10-run window (#HSSHRG)", () => {
     let capturedArgs: string[] = [];
     defaultRunsFetch("claude/my-fix", ((_cmd: string, args: string[]) => {
       capturedArgs = args;
@@ -644,7 +663,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(capturedArgs).toContain("--branch");
     expect(capturedArgs).toContain("claude/my-fix");
     expect(capturedArgs).toContain("--workflow");
-    expect(capturedArgs).toContain("ci.yml");
+    expect(capturedArgs).toContain("ward-flow.yml");
     const limitIndex = capturedArgs.indexOf("--limit");
     expect(limitIndex).not.toBe(-1);
     expect(Number(capturedArgs[limitIndex + 1])).toBeGreaterThan(10);

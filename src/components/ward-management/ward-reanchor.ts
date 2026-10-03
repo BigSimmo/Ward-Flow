@@ -109,6 +109,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // it takes — but a nested instant is exactly the kind this set loses track of, which is why it is
   // named here rather than left for the reader to notice.
   "recordedAt",
+  // Care appointments, contact facts and checked paper dates move with the same anchor.
+  "appointmentAt",
+  "contactedAt",
+  "writtenAt",
   // 2026-08-30, with `Referral.triagedAt`. Added because the guard test refused the commit
   // that introduced it, which is the whole point of that test: a triage instant left on the
   // old anchor would put a patient in the department for an extra day, beside a referral time

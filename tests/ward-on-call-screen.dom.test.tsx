@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
@@ -27,6 +27,11 @@ function renderOnCall() {
   return render(<OnCallScreen />);
 }
 
+beforeEach(() => {
+  window.localStorage.removeItem("ward-flow:on-call:service");
+  window.localStorage.removeItem("ward-flow:on-call:favourites");
+});
+
 describe("the on-call screen", () => {
   it("🔴 ANTI-VACUITY — the fixture has departments and at least one service with nobody recorded", () => {
     expect(allEmergencyDepartments().length, "no departments, so the ED table walks nothing").toBeGreaterThan(1);
@@ -50,14 +55,9 @@ describe("the on-call screen", () => {
     );
   });
 
-  it("renders all four operational and provenance sections", () => {
+  it("renders the three useful directory sections without the removed controls", () => {
     renderOnCall();
-    for (const heading of [
-      "On-call now",
-      "ED liaison, by department",
-      "Reaching a role",
-      "Data provenance and coverage",
-    ]) {
+    for (const heading of ["On-call roles", "ED liaison, by department", "Reaching a role"]) {
       expect(
         screen.getByRole("heading", { name: heading }),
         `"${heading}" is not a heading on this screen — it may have been renamed, or demoted to a ` +
@@ -66,22 +66,17 @@ describe("the on-call screen", () => {
     }
   });
 
-  it("🔴 names every service that has nobody recorded, rather than leaving a blank", () => {
+  it("explains unrecorded services when selected without showing default warning banners", () => {
     renderOnCall();
+    expect(screen.queryByText(/Coverage boundary note/iu)).not.toBeInTheDocument();
     for (const service of servicesWithNoRoleRecorded()) {
-      const said = screen.getByTestId(`ward-on-call-none-${service}`);
-      expect(said, `${service} has no role recorded and the screen says nothing about it`).toBeVisible();
-      /*
-       * 🔴 **BOTH HALVES.** "Nobody is recorded" and "nobody is on call" are opposite claims: the
-       * first is about this software, the second about the world, and only the first is knowable
-       * here. A screen that quietly makes the second would tell a coordinator there is nobody to ring.
-       */
-      expect(said.textContent ?? "", `the ${service} note does not say this is about the prototype`).toMatch(
-        /in this prototype/iu,
-      );
-      expect(said.textContent ?? "", `the ${service} note claims to know about the world`).toMatch(
-        /Nothing here knows whether/iu,
-      );
+      fireEvent.click(screen.getByRole("button", { name: service }));
+      expect(
+        screen.getByText(
+          `No on-call roles recorded for ${service} in this prototype. Use the current site directory to confirm cover.`,
+        ),
+      ).toBeVisible();
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("0 roles");
     }
   });
 
@@ -92,7 +87,7 @@ describe("the on-call screen", () => {
       screen.getByTestId("ward-on-call-count").textContent ?? "",
       "the count on screen is not the count the roster derives — a hand-typed figure goes stale the " +
         "moment a role is added, and this screen's figures are the thing a reader trusts",
-    ).toContain(`${counts.recorded} of ${counts.possible}`);
+    ).toContain(`${counts.recorded} roles recorded`);
   });
 
   it("lists every emergency department against its REAL site and service", () => {
@@ -101,12 +96,138 @@ describe("the on-call screen", () => {
     for (const department of departments) {
       const row = within(screen.getByTestId(`ward-on-call-ed-row-${department.id}`));
       const site = siteByCode(department.siteCode);
-      expect(row.getByText(department.name), `${department.id} is not listed`).toBeVisible();
+      expect(row.getByRole("link", { name: `How to reach ${department.name}` })).toHaveAttribute(
+        "href",
+        "#ward-reach-ed",
+      );
       if (site !== undefined) {
         // ✅ Real data, from the same source every other ward screen reads — asserted so that a
         // later "tidy" replacing it with invented site names goes red.
         expect(row.getByText(site.name), `${department.id} is not shown against its real site`).toBeVisible();
       }
+    }
+  });
+
+  it("removes misleading Connect, escalation, handover and provenance controls", () => {
+    renderOnCall();
+    expect(screen.queryByRole("button", { name: /Connect|Trigger Tier 3/iu })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data provenance and coverage" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Handover" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Active Duty Roster")).not.toBeInTheDocument();
+  });
+
+  it("filters both tables by service and clears the selection", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(screen.getByTestId("ward-on-call-service-table")).getAllByRole("row")).toHaveLength(3);
+    for (const row of within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row").slice(1)) {
+      expect(row).toHaveTextContent("East Metro");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent(`${roleRecordCounts().recorded} roles recorded`);
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
+      allEmergencyDepartments().length + 1,
+    );
+  });
+
+  it("searches sites and roles, shows no matches, and resets the search", () => {
+    renderOnCall();
+    const search = screen.getByRole("searchbox", { name: "Search roster and emergency departments" });
+    fireEvent.change(search, { target: { value: "  Royal Perth  " } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(2);
+    fireEvent.change(search, { target: { value: "no-such-site" } });
+    expect(screen.getByText("No on-call roles match your search.")).toBeVisible();
+    expect(screen.getByText("No emergency departments match the current filter or search.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(search).toHaveValue("");
+  });
+
+  it("every reach-via link has a focusable guidance destination", () => {
+    const { container } = renderOnCall();
+    const links = screen.getAllByRole("link", { name: /^How to reach/iu });
+    expect(links.length).toBe(roleRecordCounts().recorded + allEmergencyDepartments().length);
+    for (const link of links) {
+      const destination = container.querySelector(link.getAttribute("href")!);
+      expect(destination).toHaveAttribute("tabindex", "-1");
+      expect(destination).toBeVisible();
+    }
+  });
+
+  it("filters role types without changing the ED directory and resets both filters", () => {
+    renderOnCall();
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter on-call roles" }), {
+      target: { value: "consultant" },
+    });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
+    const roster = within(screen.getByTestId("ward-on-call-service-table"));
+    expect(roster.getAllByText("Duty consultant")).toHaveLength(3);
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
+      allEmergencyDepartments().length + 1,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByRole("combobox", { name: "Filter on-call roles" })).toHaveValue("all");
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+  });
+
+  it("finds statewide roles and searches by the reason for contact", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "Statewide" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    expect(screen.getByText("Statewide bed placement")).toBeVisible();
+    expect(screen.getByText("Senior operational escalation")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "specialist psychiatry advice" } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "enquiries" } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    expect(screen.getByText("Private placement enquiries")).toBeVisible();
+  });
+
+  it("links every department to its own ED workspace and keeps contact preparation visible", () => {
+    renderOnCall();
+    for (const department of allEmergencyDepartments()) {
+      expect(screen.getByRole("link", { name: `Open ${department.name} workspace` })).toHaveAttribute(
+        "href",
+        `/mockups/ward-flow/ed/${encodeURIComponent(department.id)}`,
+      );
+    }
+    expect(screen.getByRole("heading", { name: "Before you contact a team" })).toBeVisible();
+    expect(
+      screen.getByText(/Have the movement reference, referring site, reason for contact and urgency ready/),
+    ).toBeVisible();
+  });
+
+  it("remembers the service on remount and persists a clear-filters reset", async () => {
+    const first = renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("East Metro");
+    first.unmount();
+    renderOnCall();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true"),
+    );
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("all");
+  });
+
+  it("keeps filters usable when preference storage is unavailable", () => {
+    renderOnCall();
+    const writer = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "South Metro" }));
+      expect(screen.getByRole("button", { name: "South Metro" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+      fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+    } finally {
+      writer.mockRestore();
     }
   });
 
@@ -133,5 +254,90 @@ describe("the on-call screen", () => {
           "a call or a message, and this screen holds nobody to start one with",
       ).toBe(false);
     }
+  });
+});
+
+describe("on-call favourites and coverage details", () => {
+  it("persists favourites, filters only the roster and retains them when clearing filters", async () => {
+    const first = renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
+    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["em-consultant"]);
+    first.unmount();
+    renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    expect(screen.getByTestId("ward-on-call-role-em-consultant")).toBeVisible();
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(11);
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+    expect(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Favourites (0)" }));
+    expect(screen.getByText(/No favourite roles match/)).toBeVisible();
+  });
+
+  it("rejects unknown saved role ids and malformed preferences", async () => {
+    localStorage.setItem(
+      "ward-flow:on-call:favourites",
+      JSON.stringify(["em-consultant", "obsolete", 42, "em-consultant"]),
+    );
+    const first = renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
+    first.unmount();
+    localStorage.setItem("ward-flow:on-call:favourites", "broken");
+    renderOnCall();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (0)" })).toBeVisible());
+  });
+
+  it("keeps favourites usable and reports visit-only persistence when storage fails", () => {
+    renderOnCall();
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Favourite Bed coordinator for Statewide Network" }));
+      expect(screen.getByText(/Favourites are available for this visit only/)).toHaveAttribute("role", "status");
+      fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    } finally {
+      storage.mockRestore();
+    }
+  });
+
+  it("reveals truthful coverage gaps and illustrative handover, and closes the previous role", () => {
+    renderOnCall();
+    const bed = screen.getByRole("button", { name: "Coverage and handover for Bed coordinator for Statewide Network" });
+    expect(bed).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(bed);
+    const details = document.getElementById(bed.getAttribute("aria-controls")!)!;
+    expect(details).toBeVisible();
+    expect(within(details).getByText("Not verified")).toBeVisible();
+    expect(within(details).getByText("08:00")).toBeVisible();
+    expect(within(details).getByText("Next confirmed contact")).toBeVisible();
+    expect(within(details).getAllByText("Not recorded")).toHaveLength(2);
+    const privateRole = screen.getByRole("button", {
+      name: "Coverage and handover for Coordinator on call for Private",
+    });
+    fireEvent.click(privateRole);
+    expect(details).not.toBeVisible();
+    const privateDetails = document.getElementById(privateRole.getAttribute("aria-controls")!)!;
+    expect(within(privateDetails).getByText("17:00")).toBeVisible();
+    fireEvent.click(privateRole);
+    expect(privateDetails).not.toBeVisible();
+    expect(screen.getByText(/No service-specific fallback procedure is recorded here/)).toBeVisible();
+  });
+  it("reveals every collapsed coverage row for printing and restores them afterwards", () => {
+    renderOnCall();
+    const rows = () => [...document.querySelectorAll<HTMLElement>("tr[data-print-expand]")];
+    expect(rows().length, "no coverage rows, so the print reveal is vacuous").toBeGreaterThan(0);
+    expect(rows().every((row) => row.hidden)).toBe(true);
+    window.dispatchEvent(new Event("beforeprint"));
+    expect(rows().every((row) => !row.hidden)).toBe(true);
+    window.dispatchEvent(new Event("afterprint"));
+    expect(rows().every((row) => row.hidden)).toBe(true);
   });
 });

@@ -39,6 +39,7 @@
     "typecheck:ci": "node scripts/run-heavy.mjs --npm-script typecheck:ci:internal",
     "typecheck:ci:internal": "node ./node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false",
     "test": "node scripts/run-vitest.mjs run --reporter=dot",
+    "test:backend": "npm --prefix backend/ward-flow test",
     "test:related": "node scripts/ward-flow/related-tests.mjs",
     "test:focused": "node scripts/test-focused.mjs",
     "test:live": "node scripts/run-live-tests.mjs",
@@ -63,7 +64,7 @@
     "worktrees:report": "node scripts/clean-worktree.mjs",
     "worktrees:inventory": "node scripts/worktree-inventory.mjs",
     "clean:worktree": "npm run worktrees:report",
-    "verify:preflight": "npm run check:installed-lock-parity && npm run typecheck && npm run verify:cheap && npm run worktrees:report -- --self-test",
+    "verify:preflight": "npm run verify:cheap && npm run worktrees:report -- --self-test",
     "verify:cheap": "npm run verify:cheap:internal",
     "verify:cheap:internal": "npm run docs:check-scripts && npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
     "verify:pr-local": "node scripts/verify-pr-local.mjs",
@@ -82,7 +83,7 @@
     "sitemap:update": "node scripts/run-tsx.mjs scripts/generate-site-map.ts",
     "sitemap:check": "node scripts/run-tsx.mjs scripts/generate-site-map.ts --check",
     "check:installed-lock-parity": "node scripts/check-installed-lock-parity.mjs",
-    "format": "prettier --write .",
+    "format": "node scripts/check-format-changed.mjs --write",
     "format:check": "prettier --check .",
     "format:changed": "node scripts/check-format-changed.mjs",
     "flake:ledger": "node scripts/flake-ledger.mjs",
@@ -121,13 +122,16 @@
     "check:dev-drive-cache": "node scripts/check-dev-drive-cache.mjs --self-test && node scripts/check-dev-drive-cache.mjs",
     "design-system:token-divergence:update": "node scripts/token-layer-divergences.mjs --write",
     "check:design-system-contract": "node scripts/token-layer-divergences.mjs",
-    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts"
+    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts",
+    "format:all": "prettier --write .",
+    "check:ward-policy-contracts": "node scripts/ward-ci-public/check-policy-contracts.mjs",
+    "check:ward-backend": "npm --prefix backend/ward-flow test"
   },
   "dependencies": {
-    "@next/env": "16.3.3",
+    "@next/env": "16.3.6",
     "@supabase/supabase-js": "^2.112.2",
     "lucide-react": "^1.34.0",
-    "next": "^16.3.3",
+    "next": "^16.3.6",
     "postcss": "^8.5.18",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -138,17 +142,19 @@
   "overrides": {
     "postcss": "^8.5.18",
     "esbuild": "0.28.2",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "tmp": "^0.2.7",
     "uuid": "^11.1.1",
-    "brace-expansion@1": "^1.1.18",
+    "brace-expansion@1": "^1.1.21",
     "brace-expansion@2": "^2.1.4",
-    "brace-expansion@5": "^5.0.9",
-    "fast-uri": "^3.1.7"
+    "brace-expansion@5": "^5.0.12",
+    "fast-uri": "^3.1.7",
+    "js-yaml": "^4.3.2",
+    "undici": "^8.10.2"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",
-    "@next/bundle-analyzer": "^16.3.3",
+    "@next/bundle-analyzer": "^16.3.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
@@ -161,7 +167,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "0.28.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.3.3",
+    "eslint-config-next": "16.3.6",
     "jsdom": "^30.0.1",
     "knip": "^6.32.3",
     "playwright": "^1.62.1",
@@ -175,10 +181,10 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true,
-    "sharp@0.35.3": true,
     "unrs-resolver@1.12.2": true,
     "@eslint/eslintrc@3.3.6": true,
     "@humanwhocodes/module-importer@1.0.1": true,
-    "@humanfs/node@0.16.8": true
+    "@humanfs/node@0.16.8": true,
+    "sharp@0.35.4": true
   }
 }

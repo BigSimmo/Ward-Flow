@@ -55,6 +55,11 @@ const machines = read("machines.json");
    Actions that change a record WITHOUT moving it between states. Each must say
    what it writes; an action in neither this table nor a machine fails the build.
 --------------------------------------------------------------------------- */
+// RECORD_ADMISSION_CARE is deliberately NOT here. Its transfer-arrival branch (`kind: "transfer"`,
+// `step: "arrived"`) departs the source admission, creates an occupied admission and an arrived
+// movement at the receiving ward, and moves both wards' bed figures, so it is modelled as
+// transitions in the admission, movement and bed-release machines and as a mover of both bed counts
+// in machines.json. Listing it here would count it as write-only and clear completeness falsely.
 const WRITES = {
   // Added 2026-09-22 with the nineteen the completeness check found. Each records something true
   // while the journey carries on around it; none of them advances a patient to the next step.
@@ -66,7 +71,8 @@ const WRITES = {
   SET_DISCHARGE_BARRIER: "The one thing holding this discharge up, or that nothing is.",
   RELEASE_BED:
     "Nothing, in practice: recording the named patient leaving completes their release in the same write, so none is left for this to complete.",
-  UPDATE_EXPECTED_DISCHARGE: "When this admission is expected to leave, how many times that date has moved, and when it was set.",
+  UPDATE_EXPECTED_DISCHARGE:
+    "When this admission is expected to leave, how many times that date has moved, and when it was set.",
   RECORD_MOVEMENT_MEDICAL_CLEARANCE:
     "The medical-clearance answer on a MOVEMENT — the referral carries its own, separately.",
   UPLOAD_PATIENT_FORM: "That a file was attached to this movement, by name and size. The file itself is not modelled.",
@@ -123,6 +129,7 @@ const WRITES = {
   DISPATCH_BROADCAST_ALERT: "A network-wide alert, active, with nobody yet acknowledging it. Belongs to no patient.",
   ACKNOWLEDGE_BROADCAST_ALERT: "One more unit on the alert's acknowledged list.",
   STAND_DOWN_BROADCAST_ALERT: "The alert marked stood down, with the time and the role.",
+  RECORD_ADMISSION_FOLLOW_UP: "Follow-up contact arrangements recorded against an admission on the discharge board.",
 };
 
 /* ---------------------------- integrity checks ---------------------------- */
@@ -387,8 +394,29 @@ stages.edges.forEach((e, i) => {
  * agree.
  */
 {
-  const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+  const NUMBER_WORDS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+  ];
   const word = (n) => (n <= 20 ? NUMBER_WORDS[n] : n < 30 ? "twenty-" + NUMBER_WORDS[n - 20] : String(n));
   const model = fs.readFileSync(path.join(repoRoot, "src/components/ward-management/ward-model.ts"), "utf8");
   // Ends at the first member followed by ";" — comments inside the union carry semicolons of their own.
@@ -403,8 +431,9 @@ stages.edges.forEach((e, i) => {
       ["the map", JSON.stringify(stages)],
     ];
     for (const [where, text] of said) {
-      const stated = [...text.matchAll(/\b([a-z]+(?:-[a-z]+)?) kinds of (?:message|notice)|one of ([a-z]+(?:-[a-z]+)?) kinds/gi)]
-        .map((m) => (m[1] || m[2]).toLowerCase());
+      const stated = [
+        ...text.matchAll(/\b([a-z]+(?:-[a-z]+)?) kinds of (?:message|notice)|one of ([a-z]+(?:-[a-z]+)?) kinds/gi),
+      ].map((m) => (m[1] || m[2]).toLowerCase());
       for (const s of stated)
         if (s !== word(kinds))
           problems.push(`${where} says "${s}" kinds of notice; the engine's NoticeKind has ${kinds}`);

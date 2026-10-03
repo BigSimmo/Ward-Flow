@@ -1,6 +1,6 @@
 // Fast checks on the files a Ward Flow PR changes: Prettier, ESLint (errors only) and the
-// test-deletion guard. Each looks only at the PR's own diff, so pre-existing issues elsewhere in
-// the tree never block an unrelated PR, and the whole run takes seconds.
+// test-deletion guard. Source/lint checks use the PR diff. Formatting policy changes (including
+// removals) require a whole-tree read-only check because they affect existing files too.
 //
 //   WARD_BASE_SHA=<pr base> node scripts/ward-ci-public/changed-checks.mjs
 //   node scripts/ward-ci-public/changed-checks.mjs --base origin/main   (locally)
@@ -8,6 +8,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { formatPolicyChanged } from "../check-format-changed.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const LINTABLE = /\.(?:[cm]?[jt]sx?)$/u;
@@ -26,6 +27,12 @@ export function lintableFiles(files) {
   return files.filter((file) => LINTABLE.test(file));
 }
 
+export function prettierCheckArguments(changedPaths, { projectRoot = root, base = "origin/main" } = {}) {
+  return formatPolicyChanged(changedPaths, projectRoot, base)
+    ? ["--check", "--ignore-unknown", "."]
+    : ["--check", "--ignore-unknown", "--", ...changedPaths.filter((file) => existsSync(path.join(projectRoot, file)))];
+}
+
 function run(label, command, args) {
   console.log(`\n▶ ${label}`);
   const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
@@ -41,23 +48,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log("No PR base (merge group or manual run): changed-file checks have nothing to compare.");
     process.exit(0);
   }
-  const files = existingChangedFiles(
-    execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMR", `${base}...HEAD`], {
-      cwd: root,
-      encoding: "utf8",
-    }),
-  );
+  const changedPaths = execFileSync("git", ["diff", "--name-only", "-z", `${base}...HEAD`, "--"], {
+    cwd: root,
+    encoding: "utf8",
+    timeout: 30_000,
+  })
+    .split("\0")
+    .filter(Boolean);
+  const files = changedPaths.filter((file) => existsSync(path.join(root, file)));
   console.log(`Changed-file checks: ${files.length} changed file(s) against ${base.slice(0, 12)}.`);
 
   const results = [];
-  if (files.length > 0) {
+  if (files.length > 0 || formatPolicyChanged(changedPaths, root, base)) {
     results.push(
-      run("Prettier on changed files", process.execPath, [
+      run("Prettier on changed files (whole-tree check if formatting policy changed)", process.execPath, [
         path.join(root, "node_modules/prettier/bin/prettier.cjs"),
-        "--check",
-        "--ignore-unknown",
-        "--",
-        ...files,
+        ...prettierCheckArguments(changedPaths, { projectRoot: root, base }),
       ]),
     );
   }

@@ -1,5 +1,15 @@
 # Routes, shell, navigation and shared UI
 
+## WA remediation update — 3 October 2026
+
+`WardFlowProvider.recordWardDeparture` snapshots current patient identity, world generation and admission revision for protected departures; only explicitly anonymous legacy admissions use the legacy writer. Community record handles bind a validated acting team and are audited without impersonating a coordinator. Care projections are structured clones; denied care events retain no unvalidated payload. Fixed ward request presets avoid introducing free-text into synthetic persistence.
+
+The detailed map below retains its earlier line numbers and baseline counts; this update supersedes conflicting pathway claims.
+
+## WA pathway audit update — 3 October 2026
+
+The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the [WA report](../reports/wa-health-pathway-audit-2026-10-03.md).
+
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers every tracked file
 under `src/app/mockups/ward-flow/`, `src/app/mockups/ward-flow-sign-in/`,

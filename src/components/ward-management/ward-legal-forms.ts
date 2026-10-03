@@ -1,4 +1,4 @@
-import type { LegalForm } from "@/components/ward-management/ward-model";
+import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import { formTitleForCode } from "@/lib/form-register";
 
 /**
@@ -45,6 +45,16 @@ export const SELECTABLE_LEGAL_FORMS: readonly LegalForm[] = [
   { code: "5A" },
   { code: "6A" },
 ];
+
+/** Continuations have a separate vocabulary; 5B is not an initial intake form. */
+export const CONTINUATION_LEGAL_FORMS: readonly LegalForm[] = [...SELECTABLE_LEGAL_FORMS, { code: "5B" }];
+
+/** Requires explicit recorded country context on the current Form 1A. */
+export function countryExtensionEligible(movement: Movement): boolean {
+  const region =
+    movement.legalForm?.region ?? (movement.legalClock?.code === "1A" ? movement.legalClock.region : undefined);
+  return !movement.closure && movement.legalForm?.code === "1A" && region === "country";
+}
 
 /**
  * How a legal form names itself on screen, code first — "Form 1A (Referral for examination by a

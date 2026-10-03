@@ -1,4 +1,13 @@
-import { ADMISSION_STATES, LEAVING_DESTINATIONS, type Admission, type LeavingDestination } from "./ward-admissions";
+import { communityTeamById } from "./community/community-derivations";
+import { validCareChange, type CareChange } from "./ward-care-journey";
+import {
+  ADMISSION_STATES,
+  FOLLOW_UP_STATES,
+  LEAVING_DESTINATIONS,
+  type FollowUpState,
+  type Admission,
+  type LeavingDestination,
+} from "./ward-admissions";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -44,6 +53,7 @@ export type AuditReason =
 export type AuditActor = {
   role: WardFlowRole | null;
   actingUnitId: string | null;
+  actingTeamId?: string;
   attribution: "declared-prototype-role";
 };
 export type AuditSubject =
@@ -106,6 +116,8 @@ export type BedReleaseAuditRequest =
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
   | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
 export type DischargeDetails =
+  | { kind: "care"; operation: CareChange["kind"] | null; recorded: CareChange | null }
+  | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
   | {
       kind: "departure";
       before: Admission["state"] | null;
@@ -142,8 +154,13 @@ export type AuditEvent = AuditBase &
         // movement's legal form — see `RECORD_LEGAL_FORM_EXPIRY`'s own doc comment in
         // `ward-flow-events.ts` for why the two share one event and one audit shape.
         category: "legal-form";
-        action: "RECORD_LEGAL_FORM_EXPIRY";
-        details: { operation: "expiry-recorded" | "extension-recorded"; dueAt: Instant | null };
+        action: "RECORD_LEGAL_FORM_EXPIRY" | "RECORD_COUNTRY_EXTENSION" | "RECORD_LEGAL_FORM_CONTINUATION";
+        details: {
+          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded";
+          dueAt: Instant | null;
+          formCode?: string | null;
+          startedAt?: Instant | null;
+        };
       }
     | {
         // T4 (2026-09-17 build plan). A Form 1A receipt correction — the fixed reason given and
@@ -155,7 +172,12 @@ export type AuditEvent = AuditBase &
       }
     | {
         category: "discharge";
-        action: BedReleaseAuditRequest["action"] | "RECORD_LEAVING" | "RECORD_PATIENT_DISCHARGE";
+        action:
+          | BedReleaseAuditRequest["action"]
+          | "RECORD_LEAVING"
+          | "RECORD_PATIENT_DISCHARGE"
+          | "RECORD_ADMISSION_FOLLOW_UP"
+          | "RECORD_ADMISSION_CARE";
         details: DischargeDetails;
       }
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
@@ -203,6 +225,8 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "RAISE_REFERRAL":
       return event.draft?.legalFormCode !== undefined ? "legal-form" : null;
     case "RECORD_LEGAL_FORM_EXPIRY":
+    case "RECORD_COUNTRY_EXTENSION":
+    case "RECORD_LEGAL_FORM_CONTINUATION":
     case "CORRECT_LEGAL_FORM_RECEIPT":
       return "legal-form";
     case "FLAG_BED_RELEASE":
@@ -213,6 +237,8 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "SET_BED_PREPARATION":
     case "RELEASE_BED":
     case "RECORD_LEAVING":
+    case "RECORD_ADMISSION_CARE":
+    case "RECORD_ADMISSION_FOLLOW_UP":
     case "RECORD_PATIENT_DISCHARGE":
       return "discharge";
     case "OPEN_DISCHARGE_RECORD":
@@ -232,6 +258,12 @@ export function auditActor(state: WardFlowState, event: WardFlowEvent): AuditAct
     role,
     actingUnitId:
       role === "ward" && "actingUnitId" in event ? (uniqueRecord(state.units, event.actingUnitId)?.id ?? null) : null,
+    ...("actingTeamId" in event &&
+    role === "community" &&
+    typeof event.actingTeamId === "string" &&
+    communityTeamById(event.actingTeamId)
+      ? { actingTeamId: event.actingTeamId }
+      : {}),
     attribution: "declared-prototype-role",
   };
 }
@@ -325,7 +357,9 @@ export function appendAudit(
   const mayResolveSubject =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
-    event.type === "RECORD_PATIENT_DISCHARGE"
+    event.type === "RECORD_PATIENT_DISCHARGE" ||
+    event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
+    event.type === "RECORD_ADMISSION_CARE"
       ? safeCounter(event.expectedGeneration) && event.expectedGeneration === before.worldGeneration
       : true;
   let subject = mayResolveSubject ? auditSubject(before, event) : ({ kind: "unresolved" } as const);
@@ -438,6 +472,28 @@ export function appendAudit(
         },
       };
       break;
+    case "RECORD_COUNTRY_EXTENSION":
+    case "RECORD_LEGAL_FORM_CONTINUATION": {
+      captured = {
+        ...base,
+        category: "legal-form",
+        action: event.type,
+        details: {
+          operation: event.type === "RECORD_COUNTRY_EXTENSION" ? "extension-recorded" : "continuation-recorded",
+          dueAt: finiteInstant(event.paperExpiresAt),
+          ...(event.type === "RECORD_LEGAL_FORM_CONTINUATION"
+            ? {
+                formCode: enumValue(
+                  SELECTABLE_LEGAL_FORMS.map((f) => f.code),
+                  event.formCode,
+                ),
+                startedAt: finiteInstant(event.startedAt),
+              }
+            : {}),
+        },
+      };
+      break;
+    }
     case "RECORD_LEGAL_FORM_EXPIRY": {
       // Read from `before`, the same discipline `RECORD_LEGAL_FORM_RECEIVED`'s own "already
       // recorded" check uses in the reducer: whether this was the first typed expiry or an
@@ -470,6 +526,36 @@ export function appendAudit(
         details: {
           reason: enumValue(LEGAL_FORM_RECEIPT_CORRECTION_REASONS, event.reason),
           correctedReceivedAt: finiteInstant(correctedReceivedAt),
+        },
+      };
+      break;
+    }
+    case "RECORD_ADMISSION_CARE": {
+      captured = {
+        ...base,
+        category: "discharge",
+        action: event.type,
+        details: {
+          kind: "care",
+          operation: validCareChange(event.change) ? event.change.kind : null,
+          recorded:
+            decision.outcome === "accepted" && validCareChange(event.change) ? structuredClone(event.change) : null,
+        },
+      };
+      break;
+    }
+    case "RECORD_ADMISSION_FOLLOW_UP": {
+      const prior = mayResolveSubject ? uniqueRecord(before.admissions, event.admissionId) : undefined;
+      const next = prior ? uniqueRecord(after.admissions, prior.id) : undefined;
+      captured = {
+        ...base,
+        category: "discharge",
+        action: event.type,
+        details: {
+          kind: "follow-up",
+          before: enumValue(FOLLOW_UP_STATES, prior?.followUp?.state),
+          requested: enumValue(FOLLOW_UP_STATES, event.followUpState),
+          after: enumValue(FOLLOW_UP_STATES, next?.followUp?.state),
         },
       };
       break;

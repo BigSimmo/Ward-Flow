@@ -21,6 +21,7 @@
 // rail. Run it through the slot script (it is a wide run):
 //   node scripts/ward-flow/run-slot.mjs run wide "<thread>" -- node scripts/ward-flow/shots.mjs ...
 import { spawn, execFileSync } from "node:child_process";
+import { resolveAuditTarget } from "./local-audit-target.mjs";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import net from "node:net";
@@ -32,7 +33,7 @@ const { chromium } = require("playwright");
 const sharp = require("sharp");
 
 const LOGS = process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs";
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const LINE = "origin/main";
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const args = process.argv.slice(2);
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -69,14 +70,22 @@ if (set === "before" && routes.every((route) => fs.existsSync(path.join(setDir, 
   process.exit(0);
 }
 
+// The identity route only accepts Ward Flow's managed project port range, so an OS-assigned
+// ephemeral port would make the self-launched server fail verification. Probe that range instead.
 async function freePort() {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
-      server.close(() => resolve(port));
+  const utils = await import(pathToFileURL(path.join(root, "src/lib/local-server-utils.mjs")).href);
+  const span = utils.projectPortEnd - utils.projectPortStart + 1;
+  const start = utils.projectPortStart + Math.floor(Math.random() * span);
+  const available = (port) =>
+    new Promise((resolve) => {
+      const probe = net.createServer();
+      probe.once("error", () => resolve(false));
+      probe.listen(port, "127.0.0.1", () => probe.close(() => resolve(true)));
     });
-  });
+  for (const port of utils.circularProjectPortRange(start)) {
+    if (!utils.isReservedDevPort(port) && (await available(port))) return port;
+  }
+  throw new Error("shots: no free port in the managed project range.");
 }
 
 const { offlineTestEnvironment } = await import(pathToFileURL(path.join(root, "scripts/test-environment.mjs")).href);
@@ -118,6 +127,13 @@ if (!base) {
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
+}
+
+try {
+  base = (await resolveAuditTarget({ root, url: base })).url;
+} catch (error) {
+  server?.kill();
+  throw error;
 }
 
 // The Playwright client here can ask for a browser build that is not installed; fall back to the

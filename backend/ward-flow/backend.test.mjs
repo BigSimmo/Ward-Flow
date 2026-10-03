@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readConfig } from "./config.mjs";
+import { APPROVED_STORAGE_ACCOUNTS, readConfig } from "./config.mjs";
 import { createHandler } from "./server.mjs";
 import { createStore } from "./database.mjs";
 import { handleHttp } from "./function.mjs";
@@ -306,4 +306,66 @@ test("readiness contacts storage on every probe", async () => {
   await store.ready();
   healthy = false;
   await assert.rejects(store.ready(), /container unavailable/);
+});
+
+test("storage account must be on the fixed Ward Flow allowlist, not merely agree between the two variables", () => {
+  assert.deepEqual([...APPROVED_STORAGE_ACCOUNTS], ["wflowdev7273a083aue"]);
+  const approved = readConfig({
+    ...environment,
+    AZURE_STORAGE_ACCOUNT: "wflowdev7273a083aue",
+    AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
+  });
+  assert.equal(approved.storage.account, "wflowdev7273a083aue");
+  assert.throws(
+    () =>
+      readConfig({
+        ...environment,
+        AZURE_STORAGE_ACCOUNT: "customstorageacct",
+        AzureWebJobsStorage__accountName: "customstorageacct",
+      }),
+    /Unapproved storage account/,
+  );
+  assert.throws(
+    () =>
+      readConfig({
+        ...environment,
+        AZURE_STORAGE_ACCOUNT: "wflowdev7273a083aue",
+        AzureWebJobsStorage__accountName: "other",
+      }),
+    /Unapproved storage account/,
+  );
+});
+
+test("unapproved storage account is refused even if both env variables agree", () => {
+  assert.throws(
+    () =>
+      readConfig({
+        ...environment,
+        AZURE_STORAGE_ACCOUNT: "unapprovedstorageacct",
+        AzureWebJobsStorage__accountName: "unapprovedstorageacct",
+      }),
+    /Unapproved storage account/,
+  );
+});
+
+test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async () => {
+  const tenantConfig = readConfig({
+    ...environment,
+    WARD_ALLOW_TENANT_USERS: "true",
+  });
+  assert.equal(tenantConfig.allowTenantUsers, true);
+  const otherUserOid = "33333333-3333-4333-8333-333333333333";
+  const authenticate = await createAuthenticator(tenantConfig, {
+    keys: {},
+    jose: {
+      jwtVerify: async () => ({
+        payload: {
+          tid: environment.AZURE_TENANT_ID,
+          oid: otherUserOid,
+          scp: "WardFlow.Access",
+        },
+      }),
+    },
+  });
+  assert.equal(await authenticate("Bearer accepted"), otherUserOid);
 });

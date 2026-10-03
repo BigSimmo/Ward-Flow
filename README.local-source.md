@@ -1,3 +1,13 @@
+# Original source README — historical provenance
+
+This preserves the original local-only Ward/PsychSift source instructions. Ward Flow is now
+the dedicated public `BigSimmo/Ward-Flow` repository; "never pushed" and foreign setup
+instructions below are historical. Use [the current README](README.md),
+[Ward entry point](docs/ward-flow/README.md) and [task contract](docs/task-receipts.md).
+No Supabase/OpenAI credentials are needed for the synthetic Ward UI.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow
 
 > **Ward Flow (on this branch).** If you are working on wards, beds, referrals, movements or transport,
@@ -166,7 +176,7 @@ npm run test:e2e:accessibility
 npm run test:e2e:chromium
 npm run test:e2e:visual
 npm run check:deployment-readiness
-npm run format
+npm run format -- --files <exact-owned-paths>
 npm run format:check
 npm run build
 ```
@@ -236,3 +246,5 @@ and embedded licences, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for the signed
 assignment requirement that applies before an external contribution may be
 merged. The `"license": "UNLICENSED"` declaration in `package.json` is
 intentional.
+
+<!-- docs-script-refs:historical-end -->
