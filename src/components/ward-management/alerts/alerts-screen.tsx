@@ -972,7 +972,7 @@ function AlertsWorkspace() {
               id: "kpi-ed-wait",
               label: "Prolonged ED Wait",
               value: prolongedEdCount,
-              subtext: "24 hours or more in ED",
+              subtext: "A day or more in ED",
               tone: prolongedEdCount > 0 ? "warn" : "good",
             },
             {
@@ -1128,7 +1128,8 @@ function AlertsWorkspace() {
             </div>
             <div className={styles.filterSummary}>
               <span role="status" aria-live="polite" aria-atomic="true">
-                Showing {filteredNeedsYou.length + filteredOtherRoles.length} of {totalActive} alerts
+                Showing {filteredNeedsYou.length + filteredOtherRoles.length} of {totalActive} alerts from synthetic
+                records
               </span>
               {(tierFilter !== "all" || roleFilter !== "all") && (
                 <button
