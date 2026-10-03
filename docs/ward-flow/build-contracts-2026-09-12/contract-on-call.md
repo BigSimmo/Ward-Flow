@@ -13,6 +13,8 @@ The follow-up refinement adds purpose-based role guidance, a statewide service f
 
 The uploaded standing design brief was applied in the next visual pass: the island uses Capacity-style restrained material, separated metrics and explicit whole-network scope. It retains derived values and neutral synthetic status. Panel corners, inset table/card corners and control spacing form a consistent hierarchy. Small screens give the island a scope row above three visible metrics, avoiding concealed horizontal overflow. The changes remain confined to this page; the shared island and Capacity are unchanged.
 
+The revised standing brief prompted a further curvature pass: a 24px desktop island capsule with inset dividers, a 20px mobile island surface, and 14px filter-bar corners. Title/island alignment and header rhythm were balanced; the search field now shares the established 10px control radius. Island and filters remain in document flow so they cannot cover table rows or controls. No sticky or floating behaviour was added without a workflow need.
+
 The original research below is historical evidence, not a requirement to restore the removed panels or controls.
 
 ## 0. Design or reproduction?
