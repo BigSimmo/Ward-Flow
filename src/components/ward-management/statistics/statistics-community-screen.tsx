@@ -355,22 +355,22 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </StatisticsDetailPanel>
 
         <StatisticsDetailPanel
-            title="Post-Discharge Follow-up"
-            count="7-day follow-up"
-            testId="ward-statistics-community-followup"
+          title="Post-Discharge Follow-up"
+          count="7-day follow-up"
+          testId="ward-statistics-community-followup"
+        >
+          <div
+            id="community-stat-followup"
+            className={styles.panelBody}
+            role="group"
+            aria-label="Post-discharge follow-up content"
+            tabIndex={-1}
           >
-            <div
-              id="community-stat-followup"
-              className={styles.panelBody}
-              role="group"
-              aria-label="Post-discharge follow-up content"
-              tabIndex={-1}
-            >
-              <p className={styles.unmeasured}>
-                Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
-                writes it, so there is no follow-up percentage to show.
-              </p>
-            </div>
+            <p className={styles.unmeasured}>
+              Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
+              writes it, so there is no follow-up percentage to show.
+            </p>
+          </div>
         </StatisticsDetailPanel>
 
         <StatisticsDetailPanel

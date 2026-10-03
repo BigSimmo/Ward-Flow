@@ -230,7 +230,7 @@ describe("StatisticsInsightChart review fixes", () => {
         reader.onload = () => resolve(String(reader.result));
         reader.readAsText(exported!);
       });
-      expect(csv).toContain("\"'=HYPERLINK(1)\"");
+      expect(csv).toContain('"\'=HYPERLINK(1)"');
     } finally {
       click.mockRestore();
       vi.unstubAllGlobals();
