@@ -42,6 +42,15 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/ward-ci-public/plan.mjs
+      - name: Verify the scope plan against the diff
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_PLAN_FULL: ${{ steps.plan.outputs.full }}
+          WARD_PLAN_UNIT: ${{ steps.plan.outputs.unit }}
+          WARD_PLAN_BROWSER: ${{ steps.plan.outputs.browser }}
+          WARD_PLAN_POLICY: ${{ steps.plan.outputs.policy }}
+          WARD_PLAN_DEPENDENCY_REVIEW: ${{ steps.plan.outputs.dependency_review }}
+        run: node scripts/ward-ci-public/verify-plan.mjs
       - name: Check CI contracts
         run: node scripts/ward-ci-public/check-contracts.mjs
       - name: Check maintained document commands
