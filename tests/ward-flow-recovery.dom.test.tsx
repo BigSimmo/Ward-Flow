@@ -227,6 +227,47 @@ describe("conservative demo recovery", () => {
     movement.patientId = state.patients[1].id;
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(false);
   });
+  // Open item 5 (3 Oct 2026): adopting the saved session used to re-key the provider's world and
+  // remount every screen about a second after load, so a click or half-typed entry in that window
+  // landed on a discarded node. The same DOM node must survive adoption, with or without a restore.
+  it("restores a saved session into the same screen without remounting it", () => {
+    let mounts = 0;
+    function MountCounter() {
+      useEffect(() => {
+        mounts += 1;
+      }, []);
+      return <input data-testid="mount-probe" />;
+    }
+    const tree = () => (
+      <WardFlowProvider>
+        <Probe />
+        <MountCounter />
+      </WardFlowProvider>
+    );
+    const first = render(tree());
+    expect(mounts).toBe(1);
+    const unit = current.units.find((candidate) => candidate.empty.value < candidate.beds)!;
+    act(() =>
+      current.dispatch({
+        type: "CONFIRM_CAPACITY",
+        role: "ward",
+        now: current.now,
+        unitId: unit.id,
+        actingUnitId: unit.id,
+        expectedRevision: unit.allocatable.revision ?? 0,
+        value: unit.empty.value + 1,
+      }),
+    );
+    const accepted = current.units.find((candidate) => candidate.id === unit.id)!;
+    expect(accepted.allocatable.value).toBe(unit.empty.value + 1);
+    first.unmount();
+
+    mounts = 0;
+    render(tree());
+    expect(mounts).toBe(1);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(current.units.find((candidate) => candidate.id === unit.id)).toEqual(accepted);
+  });
   it("rejects a backward system clock", () => {
     const view = mount();
     view.unmount();
