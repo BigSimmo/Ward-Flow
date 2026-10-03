@@ -116,7 +116,7 @@ fsutil devdrv trust D:\.npm-cache
 
 **Refuted levers (do not revive):** persistent Actions cache for the Next webpack tree (~804 MB, evicts browser cache); transporting the critical job's 1.09 GB webpack cache to three shard runners (CI 31285952061 spent 19–67s downloading it and the slowest runner was slower than a cold build); splitting `ui-phone-scroll*` to rebalance `--shard` (siblings still co-land); renaming specs to game alphabetical shard order; Playwright `workers > 1` or blocking retries; dropping Production UI from ordinary UI PRs; Firefox/WebKit on every PR (main/weekly matrix only).
 
-**Remote / Cloud browser drift.** When `check:installed-lock-parity` fails on `playwright`, or `check:playwright-browser-revision` reports `/opt/pw-browsers` revision drift, do **not** point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at a mismatched shell and do **not** set `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` to force a run — a browser gate against the wrong revision is not evidence. `run-playwright.mjs` applies the same revision check in its launch preflight and refuses a mismatched override before acquiring the heavy lock or building. Delegating browser proof to CI Production UI is always valid. Restoring the gates locally is also possible; the recipe below was verified end to end on 2026-08-09 (`#255`). See also [codex-cloud.md](codex-cloud.md).
+**Remote / Cloud browser drift.** When `check:installed-lock-parity` fails on `playwright`, or `check:playwright-browser-revision` reports `/opt/pw-browsers` revision drift, do **not** point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at a mismatched shell and do **not** set `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` to force a run — a browser gate against the wrong revision is not evidence. `run-playwright.mjs` applies the same revision check in its launch preflight and refuses a mismatched override before acquiring the heavy lock or building. Delegating browser proof to CI Production UI is always valid. Restoring the gates locally is also possible; the recipe below was verified end to end on 2026-08-09 (`#255`). See also [codex-cloud-environment.md](agents/codex-cloud-environment.md).
 
 Two separate image faults produce this, and the second is why the obvious fix looks impossible:
 
@@ -236,7 +236,7 @@ The reason is runtime against the evidence in this repository. Each of these pro
 **entire** production journey suite on an emulated iPhone 14, the same shape as the Firefox and
 WebKit suites. The last recorded complete matrix (run 4012) took **38 minutes** for three such
 suites, the job carries a **70-minute** timeout, and a ~70-minute matrix run holding
-`CI-refs/heads/main` is the incident recorded in [ci-operations.md](ci-operations.md). Two more
+`CI-refs/heads/main` is the incident recorded in `ci-operations.md` (historical PsychSift doc). Two more
 full suites is roughly another 25 minutes on a job already sized to its ceiling — and on the
 blocking PR gate, which today runs sharded Chromium only, it would be the difference between a
 UI PR waiting minutes and waiting most of an hour. That cost is not repaid, because the phone
@@ -489,6 +489,6 @@ Before opening a UI PR, confirm:
 - **Tests.** Add a `.dom.test.tsx` for changed component behaviour (see "Component tests" above) and update the E2E journeys for changed flows.
 - **Unlayered CSS.** If the change adds a class rule outside `@layer` that sets a border, background, colour, shadow or outline, `tests/style-contract-registry.test.ts` will fail until it is registered. Add a rendered-effect contract rather than an exemption where the rule matters visually — see "Visual regression and style contracts".
 - **Verify** ([design-system](./design-system/README.md) and GATES): follow the risk tiers in root `AGENTS.md`. Prove changed component behaviour with the focused DOM test first; run `npm run ensure` before browser work and use the narrowest affected journey. Select one appropriate broad handoff gate when the diff crosses owners, cannot be bounded, or applicable PR/handoff policy requires it; do not routinely stack `verify:cheap`, `verify:pr-local`, and `verify:ui`. Add a manual dark-mode + forced-colors spot check when those rendered states can plausibly change.
-- Architecture and state-ownership conventions: [`docs/frontend-architecture.md`](./frontend-architecture.md).
+- Architecture and state-ownership conventions: `docs/frontend-architecture.md` (historical PsychSift doc).
 
 <!-- docs-script-refs:historical-end -->

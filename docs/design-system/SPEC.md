@@ -1,5 +1,10 @@
 # PsychSift design system — SPEC
 
+> [!NOTE]
+> **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
+> This document describes the historical PsychSift design system and token migration layer.
+> For Ward Flow (`BigSimmo/Ward-Flow`), the owner reconfirmed the current local `main` rendered UI as the authoritative visual and behavioral baseline. Historical drawings and token prescriptions do not authorise restyling it; preserve understandable status and accessible controls.
+
 **The complete design system: roles, rules, rationale. Never values.** Token values live in
 `src/app/ckb-v2-tokens.css` (branch copy) and `src/app/globals.css` (live layer) only — a value
 restated in prose here is a defect in this document.
@@ -17,7 +22,7 @@ restated in prose here is a defect in this document.
   [COMPONENTS.md](COMPONENTS.md) (public contracts, remaining specifications, maturity matrix) ·
   [DECISIONS.md](DECISIONS.md) (C1–C5, Q&A record, assumptions, blocked items) ·
   [GATES.md](GATES.md) (every rule paired with its enforcement status) ·
-  [ADOPTION.md](ADOPTION.md) (PR 13 registration: order, per-surface allowlists, exclusions, pins)
+  `ADOPTION.md` (uncommitted design plan)
 
 **Source of truth, ranked.** 1. `AGENTS.md` · 2. `ckb-v2-tokens.css` · 3. committed tests · 4. `.design-sync/conventions.md` · 5. this document set.
 
@@ -819,7 +824,7 @@ close this runtime concern; revisit before adoption puts them on a hot path.
 | PR 10 · Overlays               | One `OverlayRoot`; mandatory `Sheet` name; portal by default; `Tooltip` composes child handlers; `Toast` splits tone/priority/persistence, pauses on hover and focus                                                                     | **done** — component/publication contract and app-root mount; v2 style activation is unchanged                                                 |
 | PR 11 · Print and documents    | Print as a tokenised theme; `[data-print-hide]`; print primitives; `DocumentFrame`                                                                                                                                                       | open — COMPONENTS §6                                                                                                                           |
 | PR 12 · Design-sync integrity  | Declarations generated from real types; manifest parity; direct tests for every registered component; preview state matrices; `tailwind-merge` or slot props; split `ui-primitives.tsx`                                                  | **publication slice done** — deterministic props, parity, previews and direct contract proof; override policy and module split remain deferred |
-| PR 13 · Register, then adopt   | Register only after Phases 1–3 are green. Adopt one surface at a time behind `.ckb-v2`, visual diff each: isolated form → page header and actions → source-provenance block → **answer surface last**. Type-scale retirement last of all | **registration done locally; adoption remains compatibility-only** — see [ADOPTION.md](ADOPTION.md)                                            |
+| PR 13 · Register, then adopt   | Register only after Phases 1–3 are green. Adopt one surface at a time behind `.ckb-v2`, visual diff each: isolated form → page header and actions → source-provenance block → **answer surface last**. Type-scale retirement last of all | **registration done locally; adoption remains compatibility-only** — see `ADOPTION.md` (uncommitted design plan)                               |
 
 **Adoption invariants.** Every step reversible and diffable per surface · no adoption
 before the cascade port (dark evidence is void until then) · the most-read text ships

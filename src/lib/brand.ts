@@ -27,18 +27,12 @@ export const BRAND_NAME = "Ward Flow";
 /**
  * The catchphrase.
  *
- * It deliberately promises a *path*, not a verdict. "From question to source"
- * describes what the product actually does — take a clinical question and land
- * the reader on the passage in the original document — and claims nothing about
- * correctness, currency or sufficiency of the guidance found. That restraint is
- * the point: this is a clinical reference prototype, not validated decision
- * support (see CLAUDE.md), and a line like "the answers you can trust" would
- * assert exactly the thing the whole citation architecture exists to let a
- * clinician check for themselves.
- *
- * The wording is not new to the product — `guide-content.ts` already teaches the
- * "evidence-first workflow from question to source". This promotes the phrase
- * the app was already using to say what it is for.
+ * It deliberately promises a *path*, not a verdict. "From referral to bed"
+ * describes what Ward Flow actually does — track the patient journey from
+ * initial intake and triage through bed allocation in inpatient psychiatric wards.
+ * That restraint is the point: this is an operational coordination prototype,
+ * not automated placement authority, and claims nothing about clinical disposition
+ * beyond supporting the handover process.
  */
 export const BRAND_CATCHPHRASE = "From referral to bed.";
 
