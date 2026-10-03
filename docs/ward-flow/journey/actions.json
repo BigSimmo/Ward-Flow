@@ -2170,7 +2170,7 @@
     "roles": ["ward", "coordinator", "community"],
     "does": "Records a care journey fact (such as a transfer, transport, clinical plan or document) against an admission on the discharge board.",
     "needs": "An occupied or departed admission with linked identity matching the expected revision.",
-    "changes": "Appends or updates the care journey record. Moves no bed figure.",
+    "changes": "Appends or updates the care journey record. Moves no bed figure — except a transfer recorded as arrived, which also ends this admission as transferred, opens a new occupied admission and an arrived movement at the receiving ward, completes any live bed release for the leaver, and moves both wards' bed figures.",
     "reasons": [],
     "refuses": [],
     "screen": {

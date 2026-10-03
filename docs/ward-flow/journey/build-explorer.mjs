@@ -55,6 +55,11 @@ const machines = read("machines.json");
    Actions that change a record WITHOUT moving it between states. Each must say
    what it writes; an action in neither this table nor a machine fails the build.
 --------------------------------------------------------------------------- */
+// RECORD_ADMISSION_CARE is deliberately NOT here. Its transfer-arrival branch (`kind: "transfer"`,
+// `step: "arrived"`) departs the source admission, creates an occupied admission and an arrived
+// movement at the receiving ward, and moves both wards' bed figures, so it is modelled as
+// transitions in the admission, movement and bed-release machines and as a mover of both bed counts
+// in machines.json. Listing it here would count it as write-only and clear completeness falsely.
 const WRITES = {
   // Added 2026-09-22 with the nineteen the completeness check found. Each records something true
   // while the journey carries on around it; none of them advances a patient to the next step.
@@ -124,8 +129,6 @@ const WRITES = {
   DISPATCH_BROADCAST_ALERT: "A network-wide alert, active, with nobody yet acknowledging it. Belongs to no patient.",
   ACKNOWLEDGE_BROADCAST_ALERT: "One more unit on the alert's acknowledged list.",
   STAND_DOWN_BROADCAST_ALERT: "The alert marked stood down, with the time and the role.",
-  RECORD_ADMISSION_CARE:
-    "A care journey fact (transfer, transport, clinical plan or document) recorded against an admission.",
   RECORD_ADMISSION_FOLLOW_UP: "Follow-up contact arrangements recorded against an admission on the discharge board.",
 };
 
