@@ -192,3 +192,41 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
     }
   });
 });
+
+// These dynamic page families had no browser coverage. Exercise their actual scoped controls.
+test.describe("@mockup page-specific statistics insights", () => {
+  test("service capacity stays in scope and its graph opens ward statistics", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/statistics/service/North%20Metro", { waitUntil: "networkidle" });
+    const capacity = page.getByTestId("ward-statistics-capacity-chart");
+    await expect(capacity).toContainText("in North Metro");
+    await expect(capacity.getByLabel("Health service filter")).toHaveCount(0);
+    await capacity.getByRole("button", { name: /Mental Health Unit:.*ready/ }).click();
+    await expect(
+      page.getByTestId("capacity-details").getByRole("link", { name: /Mental Health Unit/ }),
+    ).toHaveAttribute("href", /statistics\/ward\//);
+    const placements = page.getByTestId("statistics-service-placement-chart");
+    await placements.getByRole("button", { name: /^Within service:/ }).click();
+    await expect(placements.getByRole("complementary", { name: "Within service details" })).toBeVisible();
+    await placements.getByRole("button", { name: "Close chart details" }).click();
+    await expect(placements.getByRole("complementary")).toHaveCount(0);
+  });
+  test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/mockups/ward-flow/statistics/community/bentley", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
+    const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
+    await detail.locator("summary").first().click();
+    const chart = page.getByTestId("statistics-community-comparison-chart");
+    await chart.getByLabel("Search Team comparison").fill("Bentley");
+    await expect(chart.locator("button[aria-pressed]")).toHaveCount(1);
+    await chart.getByLabel("Team comparison measure").selectOption("expected");
+    await chart.locator("button[aria-pressed]").click();
+    await expect(chart.getByRole("complementary", { name: "Bentley details" }).getByRole("link")).toHaveAttribute(
+      "href",
+      /statistics\/community\/bentley$/,
+    );
+    await chart.getByRole("button", { name: "Close chart details" }).click();
+    await expectNoPageOverflow(page, "community chart and comparison");
+    await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
+  });
+});
