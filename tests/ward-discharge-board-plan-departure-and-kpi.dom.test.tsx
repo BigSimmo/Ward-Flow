@@ -28,26 +28,21 @@ function renderBoard() {
   );
 }
 
-/**
- * Ward audit 2026-09-16, fix 2 (discharge-board.tsx): the "+ Plan departure" dialog dispatched
- * nothing — Save and Cancel both only closed it — while claiming to record a departure forecast
- * into the census and preserve invariant I-05, defaulting to a barrier
- * ("NDIS Accommodation") and offering a second ("State Administrative Tribunal (SAT)
- * Guardianship") that `BED_RELEASE_BLOCKERS` (ward-change-reasons.ts) does not accept. D4 applies:
- * the control stays visible but is marked `aria-disabled` with the exact "Not wired in this
- * prototype." sentence, and the dialog is gone.
- */
-describe("the '+ Plan departure' control no longer opens a false dialog", () => {
-  it("is aria-disabled, carries the D4 sentence, and opens nothing on click", () => {
+describe("departure planning connects to the ward form", () => {
+  it("opens a ward selector and links to the Decisions tab", () => {
     renderBoard();
-
     const trigger = screen.getByTestId("ward-discharge-plan-departure");
-    expect(trigger).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
-
+    expect(trigger).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(trigger);
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const select = screen.getByRole("combobox", { name: "Ward for departure planning" });
+    const option = within(select).getAllByRole("option")[1] as HTMLOptionElement;
+    fireEvent.change(select, { target: { value: option.value } });
+    expect(screen.getByRole("link", { name: "Open ward departure planning" })).toHaveAttribute(
+      "href",
+      `/mockups/ward-flow/ward/${option.value}?tab=departure-planning`,
+    );
+    fireEvent.click(trigger);
+    expect(screen.queryByRole("combobox", { name: "Ward for departure planning" })).not.toBeInTheDocument();
   });
 
   it("never renders the excluded barrier option or the false census/invariant claim", () => {

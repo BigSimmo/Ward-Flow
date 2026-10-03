@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -333,7 +331,7 @@ describe("community hub — the cohort that appears on no team's page", () => {
 });
 
 describe("community hub — an empty list must never read as an all-clear", () => {
-  it("says follow-up is not recorded, inside the discharged section, on a team whose list is empty", () => {
+  it("states the recording path and the absence of an all-clear on an empty team list", () => {
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
     renderTeam(TEAM_A.id, [admission({ id: "AD-A", referralId: toA.id, state: "occupied" })], [toA]);
 
@@ -363,7 +361,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
       "reads it",
       "nothing reads",
       "no screen or figure reads",
-      "not shown or editable",
+      "can be recorded",
     ]);
     /*
      * ⚠️ **THIS BANNED ONE EXACT SENTENCE UNTIL 2026-09-06, AND THE CLAIM IT GUARDS IS TRIVIAL TO
@@ -437,7 +435,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
     expect(within(section).getByTestId("ward-community-discharged-list")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-discharged-AD-HOME")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-follow-up-not-recorded").textContent).toContain(
-      "Follow-up status is not shown or editable here",
+      "Follow-up arrangements and contact outcomes can be recorded for this team",
     );
   });
 
@@ -472,59 +470,28 @@ describe("community hub — an empty list must never read as an all-clear", () =
     // Non-vacuity: the scan must actually have text to search.
     expect(page.length).toBeGreaterThan(500);
   });
-  /**
-   * 🔴 **THE BAN ABOVE IS A LIST OF WORDINGS. THIS IS THE FACT THAT MAKES IT LEGITIMATE, AND UNTIL
-   * NOW NOTHING HELD IT.**
-   *
-   * The page must never claim a patient's follow-up is arranged because `Admission.followUp` has no
-   * producer: it exists, it carries the vocabulary ["arranged", "not_arranged"], the seed writes it
-   * — and **no reducer event can set one**, so a value on screen would be describing fixture data as
-   * though a ward had done something. A ban on sentences cannot see that premise change: a rewrite
-   * that gave the field a producer would leave every spelling above green while the ban quietly
-   * became wrong.
-   *
-   * ⚠️ **AND THE NEAREST EXISTING GUARD PINS THE PROSE ABOUT THIS, NOT THE PROPERTY.**
-   * `ward-community-corrected-claims.test.ts` asserts that the explanatory comment still contains
-   * "no producer and no consumer" — which is true of a sentence, and stays true when the code stops
-   * matching it. This asserts the code.
-   *
-   * Comments are dropped before the scan, because the comment explaining this very rule names the
-   * field and would otherwise satisfy the check that describes it.
-   */
-  it("no reducer event gives Admission.followUp a value, which is why the wordings above are banned", () => {
-    const reducer = readFileSync("src/components/ward-management/ward-flow-reducer.ts", "utf8");
-    const executable = reducer.split("\n").filter((line) => {
-      const trimmed = line.trim();
-      return trimmed !== "" && !trimmed.startsWith("//") && !trimmed.startsWith("*") && !trimmed.startsWith("/*");
-    });
-
-    const FIELD = "followUp:";
-    const writes = executable
-      .filter((line) => line.includes(FIELD))
-      .map((line) =>
-        line
-          .slice(line.indexOf(FIELD) + FIELD.length)
-          .split(",")[0]
-          .trim(),
+  it.each(["arranged", "not_arranged"] as const)(
+    "a recorded %s arrangement does not turn the catchment list into a contact-completion claim",
+    (state) => {
+      const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
+      const departed = admission({
+        id: "AD-FOLLOW-UP",
+        referralId: toA.id,
+        state: "departed",
+        leavingDestination: "discharged-to-the-community",
+        leftAt: NOW_ANCHOR - 10,
+        followUp: { state, recordedAt: NOW_ANCHOR, recordedBy: "Flow coordinator" },
+      });
+      renderTeam(TEAM_A.id, [departed], [toA]);
+      expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
+        "Follow-up arrangements and contact outcomes can be recorded for this team",
       );
-
-    // ⚠️ FLOORED ON THE POPULATION WALKED, NEVER ON THE FINDINGS. Renaming the field takes this to
-    // zero writes, and "every write is null" is trivially true of no writes — the vacuous green.
-    // A rename must go RED here, because it means the ban above is guarding a premise that moved.
-    expect(
-      writes.length,
-      "no `followUp:` write found anywhere in the reducer. Either the field was renamed — in which " +
-        "case the follow-up wording ban above is guarding a premise that has moved and must be " +
-        "re-derived — or this scan is broken. Neither is evidence that nothing writes one.",
-    ).toBeGreaterThan(0);
-
-    expect(
-      writes.filter((value) => value !== "null"),
-      "a reducer event now writes a non-null `Admission.followUp`. The field has gained a producer, " +
-        "so 'nothing can arrange follow-up' has stopped being true — take the wording ban above back " +
-        "to the owner rather than widening it.",
-    ).toEqual([]);
-  });
+      expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
+        "does not establish that everybody is being followed up",
+      );
+      expect(screen.queryByRole("button", { name: "Record follow-up status" })).not.toBeInTheDocument();
+    },
+  );
 
   it("accounts for the departures that are not on list 1 rather than dropping them", () => {
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
@@ -851,7 +818,7 @@ describe("community hub — an unrecorded departure time is an absence, never a 
 });
 
 describe("community hub — what it must never grow", () => {
-  it("has no writable control anywhere: no handover note, no free text of any kind", () => {
+  it("keeps the new follow-up filter chosen and introduces no free narrative", () => {
     // FD-13 permits exactly one story field and it is on the referral. This is the screen where a
     // second one feels obviously necessary, so the absence is asserted rather than intended.
     const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
@@ -859,7 +826,7 @@ describe("community hub — what it must never grow", () => {
 
     expect(document.querySelectorAll("textarea")).toHaveLength(0);
     expect(document.querySelectorAll("input")).toHaveLength(0);
-    expect(document.querySelectorAll("select")).toHaveLength(0);
+    expect(screen.getByRole("combobox", { name: "Community follow-up filter" })).toBeTruthy();
     expect(document.querySelectorAll("[contenteditable]")).toHaveLength(0);
   });
 
@@ -1418,4 +1385,56 @@ describe("the KPI figures state absence in words, never a bare zero rendered as 
     expect(figure, "the Longest wait figure tile was not found").toBeTruthy();
     expect(figure?.textContent).toContain("None waiting");
   });
+});
+
+describe("community follow-up filters report real empty results", () => {
+  it.each(["missing_arrangement", "missing_contact"])(
+    "explains no matches for %s instead of leaving an empty list",
+    (filter) => {
+      const [referral] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
+      const departed = admission({
+        id: "AD-FILTER-COMPLETE",
+        referralId: referral.id,
+        state: "departed",
+        leavingDestination: "discharged-to-the-community",
+        leftAt: NOW_ANCHOR - 1,
+        followUp: { state: "arranged", recordedAt: NOW_ANCHOR - 1, recordedBy: "Flow coordinator" },
+      });
+      departed.careJourney = {
+        contacts: [
+          {
+            kind: "contact",
+            outcome: "completed",
+            contactedAt: NOW_ANCHOR,
+            appointmentVersion: 1,
+            recordedAt: NOW_ANCHOR,
+            recordedBy: "Community service",
+          },
+        ],
+        episodes: [],
+        plan: {},
+        documents: {},
+        followUp: {
+          kind: "follow_up",
+          contactId: "demo-adult-clinician",
+          serviceId: TEAM_A.id,
+          appointmentAt: NOW_ANCHOR,
+          appointmentVersion: 1,
+          mode: "telephone",
+          recordedAt: NOW_ANCHOR - 1,
+          recordedBy: "Flow coordinator",
+        },
+      };
+      renderTeam(TEAM_A.id, [departed], [referral]);
+      const section = screen.getByTestId("ward-community-discharged");
+      expect(within(section).getByTestId("ward-community-discharged-list")).toBeTruthy();
+      fireEvent.change(screen.getByRole("combobox", { name: "Community follow-up filter" }), {
+        target: { value: filter },
+      });
+      expect(within(section).queryByTestId("ward-community-discharged-list")).toBeNull();
+      expect(within(section).getByTestId("ward-community-discharged-empty").textContent).toContain(
+        "No community departures match this follow-up filter",
+      );
+    },
+  );
 });

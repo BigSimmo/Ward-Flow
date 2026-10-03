@@ -24,11 +24,11 @@
 
 ## 1. Executive Status at Session Save (2026-09-16)
 
-- **Total Owner Rulings Ruled Upon**: 16 decisions received, clinically grounded under the Mental Health Act 2014 (WA), and formally codified in [`docs/ward-flow/owner-decisions-2026-09-16-rulings.md`](file:///d:/Worktrees/Database/ward-lead/docs/ward-flow/owner-decisions-2026-09-16-rulings.md).
+- **Total Owner Rulings Ruled Upon**: 16 decisions received, clinically grounded under the Mental Health Act 2014 (WA), and formally codified in [owner decisions, 16 September 2026](../archive/dated-notes/owner-decisions-2026-09-16-rulings.md).
 - **Ruling 14 (Dual-Ledger Inbox Migration) COMPLETE**:
   - All 28 queued Ward Flow inbox JSON files in `docs/outstanding-issues-inbox/` have been processed, cross-referenced, and archived into `docs/outstanding-issues-inbox/applied/`.
-  - Added Section 6 to [`docs/ward-flow/PROJECT-ISSUES.md`](file:///d:/Worktrees/Database/ward-lead/docs/ward-flow/PROJECT-ISSUES.md) creating issues `ISSUE-P1-63` through `ISSUE-P2-82` (catalogue expanded to 82 issues).
-  - Added Section 5 to [`docs/ward-flow-task-ledger.md`](file:///d:/Worktrees/Database/ward-lead/docs/ward-flow-task-ledger.md) recording the migration audit table.
+  - Added Section 6 to [`docs/ward-flow/PROJECT-ISSUES.md`](../PROJECT-ISSUES.md) creating issues `ISSUE-P1-63` through `ISSUE-P2-82` (catalogue expanded to 82 issues).
+  - Added Section 5 to [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md) recording the migration audit table.
   - `docs/outstanding-issues.md` was strictly untouched.
   - Verified with `npm run check:outstanding-issues` and `tests/ward-ledger-stale-row-guard.test.ts` (all green).
 

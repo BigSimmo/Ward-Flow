@@ -33,12 +33,7 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import {
-  calendarDateOf,
-  formatInstantWithDay,
-  MINUTES_PER_DAY,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -937,6 +932,7 @@ export function WardBoard({
     admissions,
     leaveBeds,
     dispatch,
+    recordWardDeparture,
     movements,
     bedReleases: liveBedReleases,
     patients,
@@ -1408,7 +1404,6 @@ export function WardBoard({
    * when there is nothing to say cannot tell a reader that there is nothing to say.
    */
   const pulledIn = incoming.filter((person) => person.state === "pulled");
-  const waitingIn = incoming.filter((person) => person.state === "waitlisted");
   const figures: { key: string; label: string; value: number; led?: boolean }[] = [
     {
       key: "availableNow",
@@ -1443,53 +1438,6 @@ export function WardBoard({
     },
     { key: "onLeave", label: CAPACITY_FIGURE_LABELS.onLeave, value: breakdown.onLeave },
   ];
-  const longestBedGone = pulledIn.reduce<number | null>(
-    (longest, person) =>
-      person.bedGoneHours === null
-        ? longest
-        : longest === null
-          ? person.bedGoneHours
-          : Math.max(longest, person.bedGoneHours),
-    null,
-  );
-  const workBandItems: { key: string; count: number; summary: string; detail: string }[] = [
-    {
-      key: "blocked",
-      count: blockedTileCount,
-      summary: `${blockedTileCount} out of service`,
-      detail: `bed${blockedTileCount === 1 ? "" : "s"} out of service and not fillable`,
-    },
-    {
-      key: "held",
-      count: breakdown.held,
-      summary: `${breakdown.held} held`,
-      detail: `empty bed${breakdown.held === 1 ? "" : "s"} held back and not offered`,
-    },
-    {
-      key: "pulled",
-      count: pulledIn.length,
-      summary:
-        longestBedGone === null
-          ? `${pulledIn.length} travelling here`
-          : `${pulledIn.length} travelling here, longest ${longestBedGone}h`,
-      detail:
-        pulledIn.length === 1
-          ? "patient not arrived; bed already allocated"
-          : "patients not arrived; beds already allocated",
-    },
-    {
-      key: "waiting",
-      count: waitingIn.length,
-      summary: `${waitingIn.length} waiting on a bed here`,
-      detail: `${waitingIn.length === 1 ? "patient" : "patients"} waiting; no bed allocated yet`,
-    },
-    {
-      key: "outgoing",
-      count: outgoing.length,
-      summary: `${outgoing.length} due out`,
-      detail: `bed${outgoing.length === 1 ? "" : "s"} due out on the selected basis`,
-    },
-  ].filter((item) => item.count > 0);
 
   const shiftTiles: ShiftTileItem[] = [];
 
@@ -1586,14 +1534,16 @@ export function WardBoard({
       if (!admissionId) return;
       dispatchAndReport(
         () =>
-          dispatch({
-            type: "RECORD_LEAVING",
-            role: "ward",
-            now,
-            admissionId,
-            actingUnitId: unit.id,
-            leavingDestination,
-          }),
+          recordWardDeparture
+            ? recordWardDeparture(admissionId, unit.id, leavingDestination)
+            : dispatch({
+                type: "RECORD_LEAVING",
+                role: "ward",
+                now,
+                admissionId: admissionId,
+                actingUnitId: unit.id,
+                leavingDestination,
+              }),
         `Recorded departure: ${pendingConfirm.who} has left the ward.`,
         "Recorded departure: this patient has left the ward.",
       );
@@ -1622,14 +1572,16 @@ export function WardBoard({
       const executeLeaving = () => {
         dispatchAndReport(
           () =>
-            dispatch({
-              type: "RECORD_LEAVING",
-              role: "ward",
-              now,
-              admissionId: item.selectableKey!,
-              actingUnitId: unit.id,
-              leavingDestination,
-            }),
+            recordWardDeparture
+              ? recordWardDeparture(item.selectableKey!, unit.id, leavingDestination)
+              : dispatch({
+                  type: "RECORD_LEAVING",
+                  role: "ward",
+                  now,
+                  admissionId: item.selectableKey!,
+                  actingUnitId: unit.id,
+                  leavingDestination,
+                }),
           `Recorded departure: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           "Recorded departure: this patient has left the ward.",
         );
@@ -3134,14 +3086,16 @@ export function WardBoard({
                               const executeLeaving = () => {
                                 dispatchAndReport(
                                   () =>
-                                    dispatch({
-                                      type: "RECORD_LEAVING",
-                                      role: "ward",
-                                      now,
-                                      admissionId: selectedTile.key,
-                                      actingUnitId: unit.id,
-                                      leavingDestination,
-                                    }),
+                                    recordWardDeparture
+                                      ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
+                                      : dispatch({
+                                          type: "RECORD_LEAVING",
+                                          role: "ward",
+                                          now,
+                                          admissionId: selectedTile.key,
+                                          actingUnitId: unit.id,
+                                          leavingDestination,
+                                        }),
                                   `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
                                   "Recorded departure: this patient has left the ward.",
                                 );

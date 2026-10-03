@@ -23,6 +23,8 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import ts from "typescript";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
 
 import { describe, expect, it } from "vitest";
 
@@ -55,41 +57,54 @@ function assertStepAccepted(before: WardFlowState, after: WardFlowState, label: 
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Reads `ward-flow-reducer.ts` as text and returns every `case "EVENT_TYPE":` inside the main
- * `wardFlowReducer` switch whose body assigns a literal `stage: "..."` value. This is how the
- * plan requires the case list be produced — derived from source, never hand-listed — so a new
- * stage-assigning case added later is FOUND here even though nothing in this file named it.
- *
- * `stage: "` is a plain regex literal, not built from a template string or `new RegExp(...)`, so
- * it carries no risk of the escape-loss failure mode that produced silent zero-counts elsewhere on
- * this branch.
- *
- * Comments are blanked first (same length, newlines kept, so every index still lines up). A comment
- * quoting an old `stage: "handover_ready"` made CANCEL_TRANSPORT read as stage-assigning after the
- * 2026-09-16 fix removed its only real stage write; a guard derived from source must read the code.
+ * Derives literal stage assignments from syntax-tree ancestry: the nearest switch case or
+ * protected `event.type` branch owns the write. A preceding function's final switch case cannot
+ * acquire a later protected handler's assignment, and comments cannot become assignments.
+ * New stage-writing events require a driven fixture below, including transfer creation.
  */
 function deriveStageAssigningCases(rawSource: string): string[] {
-  const blank = (text: string) => text.replace(/[^\n]/g, " ");
-  const source = rawSource.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/\/\/[^\n]*/g, blank);
-  const caseHeaderPattern = /^ {4}case "([A-Z_]+)":/gm;
-  const headers: { name: string; index: number }[] = [];
-  let headerMatch: RegExpExecArray | null;
-  while ((headerMatch = caseHeaderPattern.exec(source)) !== null) {
-    headers.push({ name: headerMatch[1], index: headerMatch.index });
-  }
-
-  const stageAssignmentPattern = /stage: "/g;
+  const source = ts.createSourceFile("reducer.ts", rawSource, ts.ScriptTarget.Latest, true);
   const found = new Set<string>();
-  let assignmentMatch: RegExpExecArray | null;
-  while ((assignmentMatch = stageAssignmentPattern.exec(source)) !== null) {
-    const assignmentIndex = assignmentMatch.index;
-    let owner: string | undefined;
-    for (const header of headers) {
-      if (header.index <= assignmentIndex) owner = header.name;
-      else break;
-    }
-    if (owner) found.add(owner);
+  function eventType(node: ts.Node): string | undefined {
+    if (
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken &&
+      ts.isPropertyAccessExpression(node.left) &&
+      ts.isIdentifier(node.left.expression) &&
+      node.left.expression.text === "event" &&
+      node.left.name.text === "type" &&
+      ts.isStringLiteral(node.right)
+    )
+      return node.right.text;
+    let result: string | undefined;
+    ts.forEachChild(node, (child) => {
+      result ??= eventType(child);
+    });
+    return result;
   }
+  function visit(node: ts.Node) {
+    if (
+      ts.isPropertyAssignment(node) &&
+      node.name.getText(source) === "stage" &&
+      ts.isStringLiteral(node.initializer)
+    ) {
+      for (let owner: ts.Node | undefined = node.parent; owner; owner = owner.parent) {
+        if (ts.isCaseClause(owner) && ts.isStringLiteral(owner.expression)) {
+          found.add(owner.expression.text);
+          break;
+        }
+        if (ts.isIfStatement(owner)) {
+          const type = eventType(owner.expression);
+          if (type) {
+            found.add(type);
+            break;
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
   return [...found];
 }
 
@@ -386,7 +401,51 @@ function raiseNewReferral(state: WardFlowState, now: Instant) {
   return { before: state, after: next, created: next.movements[next.movements.length - 1] };
 }
 
+function recordCareTransfer() {
+  let state = seedWardFlowState();
+  const admission = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
+  const base = state.movements.find((m) => m.cohort === state.units.find((u) => u.id === admission.unitId)?.cohort)!;
+  base.admissionId = admission.id;
+  base.patientId = admission.patientId!;
+  base.stage = "arrived";
+  base.acceptedUnitId = admission.unitId;
+  admission.movementId = base.id;
+  state.units = state.units.map((u) => ({
+    ...u,
+    allocatable: { ...u.allocatable, confirmedAt: NOW_ANCHOR },
+    empty: { ...u.empty, confirmedAt: NOW_ANCHOR },
+  }));
+  const target = state.units.find(
+    (u) => u.id !== admission.unitId && eligibility(base, u, NOW_ANCHOR).eligible && u.allocatableLocked > 0,
+  )!;
+  expect(target).toBeDefined();
+  const original = state;
+  for (const step of ["accepted", "handover", "arrived"] as const) {
+    const before = state;
+    state = wardFlowReducer(state, {
+      type: "RECORD_ADMISSION_CARE",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: admission.id,
+      patientId: admission.patientId!,
+      expectedGeneration: state.worldGeneration,
+      expectedRevision: state.dischargeRevisions[admission.id] ?? 0,
+      change: { kind: "transfer", receivingUnitId: target.id, step },
+    });
+    assertStepAccepted(before, state, "RECORD_ADMISSION_CARE transfer " + step);
+  }
+  const created = state.movements.find((m) => !original.movements.some((old) => old.id === m.id));
+  if (!created) throw new Error("Transfer arrival did not create its receiving movement");
+  return created;
+}
+
 describe("the derived case list (Task 4, step 1's floor)", () => {
+  it("does not attribute a protected handler's stage assignment to a preceding unrelated switch", () => {
+    expect(
+      deriveStageAssigningCases(`function a(event) { switch (event.type) { case "UNRELATED": return {}; } }
+      function b(event) { if (event.type === "RECORD_ADMISSION_CARE") return { stage: "arrived" }; }`),
+    ).toEqual(["RECORD_ADMISSION_CARE"]);
+  });
   it("finds at least ten reducer cases that assign a stage, naming the number found", () => {
     expect(
       derivedStageAssigningCases.length,
@@ -405,6 +464,14 @@ describe("the derived case list (Task 4, step 1's floor)", () => {
           raised.created.stageChanges,
           `RAISE_REFERRAL must append exactly one stageChanges entry (the creation entry)`,
         ).toHaveLength(1);
+        continue;
+      }
+      if (caseName === "RECORD_ADMISSION_CARE") {
+        const created = recordCareTransfer();
+        expect(created.stageChanges).toEqual([
+          { at: NOW_ANCHOR, to: "arrived", by: "coordinator", reason: "Recorded ward transfer arrival" },
+        ]);
+        expect(created.closure?.at).toBe(NOW_ANCHOR);
         continue;
       }
       if (caseName === "RECORD_REPATRIATION") {

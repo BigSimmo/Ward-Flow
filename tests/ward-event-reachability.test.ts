@@ -121,24 +121,6 @@ const KNOWN_UNREACHABLE: Readonly<Record<string, string>> = {
    * different questions, and an entry removed for source-level reachability is not evidence that a
    * user can do the thing.
    */
-  CLEAR_EXPECT_FLAG:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  RAISE_EXPECT_FLAG:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  EVALUATE_ARRIVAL_LATENESS:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  EVALUATE_LEAVE_BED_WARNINGS:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  FLAG_LEGAL_MISMATCH:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  RECORD_COUNTRY_EXTENSION:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  RECORD_LEGAL_FORM_CONTINUATION:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  RELEASE_AND_REOPEN_SEARCH:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
-  SEND_WARD_BUZZ:
-    "built 22 Sept (ef1807cda1; SEND_WARD_BUZZ 1b1c5bb2ba) with no screen that dispatches it; whether to build a control or remove the event is an open owner decision (recorded 2026-09-25)",
 };
 
 /** A walk that reaches too few files would make every assertion below pass over nothing. */

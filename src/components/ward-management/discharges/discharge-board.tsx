@@ -1,4 +1,5 @@
 "use client";
+import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -41,6 +42,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
+import { DischargeFollowUp } from "./discharge-follow-up";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
 
@@ -319,6 +321,8 @@ function DischargeWorkspace() {
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
+  const [planningOpen, setPlanningOpen] = useState(false);
+  const [planningUnitId, setPlanningUnitId] = useState("");
   const [population, setPopulation] = useState<Population>("releases");
   const [status, setStatus] = useState<WorkStatus | "all">("all");
   const [service, setService] = useState("all");
@@ -537,31 +541,42 @@ function DischargeWorkspace() {
               <span className="sr-only">Live: </span>
               As of {formatSheetMoment(now, dayZero)}
             </time>
-            {/*
-             * D4: this button dispatched nothing — Save and Cancel both only closed a dialog that
-             * claimed to record a departure forecast into the census and preserve invariant I-05,
-             * defaulted to a barrier ("NDIS Accommodation") and offered a second ("State
-             * Administrative Tribunal (SAT) Guardianship") that BED_RELEASE_BLOCKERS
-             * (ward-change-reasons.ts) does not accept. Rather than fix a dialog that could still
-             * offer an excluded reason, the control stays visible (so a coordinator can see the
-             * feature exists) and states plainly that it is not wired, the same convention
-             * `ward-flow-sign-in-screen.tsx` and `ward-bar.tsx` already use elsewhere in this app.
-             */}
             <div className={pageStyles.planActionWrapper}>
               <button
                 type="button"
                 data-testid="ward-discharge-plan-departure"
                 className={pageStyles.planActionBtn}
-                aria-disabled="true"
-                aria-describedby="ward-discharge-plan-departure-note"
-                title="Not wired in this prototype."
-                onClick={ignoreUnavailableActivation}
+                aria-expanded={planningOpen}
+                onClick={() => setPlanningOpen(!planningOpen)}
               >
                 + Plan departure
               </button>
-              <span id="ward-discharge-plan-departure-note" className={pageStyles.planActionNote}>
-                Not wired in this prototype.
-              </span>
+              {planningOpen && (
+                <div className={pageStyles.filters}>
+                  <label className={pageStyles.filterField}>
+                    <span className={pageStyles.filterLabelText}>Ward for departure planning</span>
+                    <select value={planningUnitId} onChange={(event) => setPlanningUnitId(event.target.value)}>
+                      <option value="">Choose ward</option>
+                      {units.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unitLabel(unit, unit.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {planningUnitId && units.some((unit) => unit.id === planningUnitId) && (
+                    <Link
+                      className={pageStyles.quietButton}
+                      href={`/mockups/ward-flow/ward/${encodeURIComponent(planningUnitId)}?tab=departure-planning`}
+                    >
+                      Open ward departure planning
+                    </Link>
+                  )}
+                  <p className={pageStyles.planActionNote}>
+                    Choose the patient and departure time in the ward’s Decisions tab.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -1535,6 +1550,8 @@ function DischargeWorkspace() {
                           "Not recorded"}
                       </dd>
                     </dl>
+                    <DischargeFollowUp key={activeRecord.id} record={activeRecord} actor={RECORD_ACTOR} />
+                    <DischargeCareJourney key={`care-${activeRecord.id}`} record={activeRecord} actor={RECORD_ACTOR} />
                   </div>
                 </>
               ) : detailRelease ? (
