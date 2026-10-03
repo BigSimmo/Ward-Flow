@@ -41,4 +41,10 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  try {
+    window.sessionStorage.clear();
+    window.localStorage.clear();
+  } catch {
+    // ignore in environments without web storage
+  }
 });
