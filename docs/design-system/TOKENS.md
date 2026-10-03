@@ -1,5 +1,10 @@
 # PsychSift design system — TOKENS
 
+> [!NOTE]
+> **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
+> This document describes the historical PsychSift design system and token migration layer.
+> For Ward Flow (`BigSimmo/Ward-Flow`), the owner reconfirmed the current local `main` rendered UI as the authoritative visual and behavioral baseline. Historical drawings and token prescriptions do not authorise restyling it; preserve understandable status and accessible controls.
+
 **The reconciled token inventory (conflict C1 resolved): every role, its winning name, its
 owner, and what it replaces. Never values** — values live only in the owner file named per
 row. A value restated here is a defect in this document.
