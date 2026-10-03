@@ -1826,7 +1826,7 @@
 
 .directoryTitle {
   margin: 0;
-  flex: 1 0 9rem;
+  flex: 1 0 8rem;
   font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text-heading);
@@ -1842,7 +1842,12 @@
   flex-basis: 16rem;
 }
 
+.directoryHeader .filterSelect {
+  width: 100%;
+}
+
 .directoryHeader .nameFilter {
+  flex: 0 0 14rem;
   width: 14rem;
 }
 
