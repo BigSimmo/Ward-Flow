@@ -580,3 +580,27 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Content-led rows prevent empty named grid tracks when supporting measures are disclosed. */
+.pageGrid {
+  grid-template-areas: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pageGrid > * {
+  grid-area: auto !important;
+}
+.pageGrid > nav,
+.pageGrid > :global([data-testid="ward-statistics-ward-identity"]),
+.pageGrid > :global([data-testid="ward-statistics-ward-beds-now"]) {
+  grid-column: 1 / -1;
+}
+@media (max-width: 900px) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .capacityBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

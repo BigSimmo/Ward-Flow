@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { StatisticsInsightChart } from "./statistics-insight-chart";
+import { StatisticsDetailPanel } from "./statistics-detail-panel";
+
 import Link from "next/link";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
@@ -17,7 +19,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
 import chartStyles from "./statistics.module.css";
 import styles from "./statistics-sections.module.css";
@@ -119,15 +121,6 @@ export function StatisticsEdScreen({
   const now = useWardFlowClock();
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
-
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("all");
-
-  const triggerToast = useCallback((msg: string = "Not wired in this prototype.") => {
-    setToastMessage(msg);
-    const timer = setTimeout(() => setToastMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -333,7 +326,83 @@ export function StatisticsEdScreen({
       testId="ward-statistics-ed-screen"
       design="third-edition"
     >
-      <div className={pageStyles.pageGrid} data-active-tab={activeTab}>
+      <WardPanel
+        title={department.name}
+        count={`${onTheList} open ${onTheList === 1 ? "placement" : "placements"}`}
+        testId="ward-statistics-ed-identity"
+      >
+        <div className={styles.panelBody} role="group" aria-label="Emergency department identity content" tabIndex={0}>
+          <p className={styles.body} data-testid="ward-statistics-ed-site">
+            {site
+              ? `${department.name} is recorded at ${site.name}.`
+              : `${department.name} carries a site code this prototype has no site for, so it cannot be placed at a hospital here.`}
+          </p>
+        </div>
+        <dl className={pageStyles.kpiBand}>
+          <div>
+            <dt>Open placements</dt>
+            <dd>{onTheList}</dd>
+            <dd className={pageStyles.kpiCaption}>from this department</dd>
+          </div>
+          <div>
+            <dt>Longest elapsed</dt>
+            <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
+            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+            <dd className={pageStyles.kpiCaption}>
+              {longestWait
+                ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName
+                : "no open placement"}
+            </dd>
+          </div>
+          <div>
+            <dt>Marked urgent</dt>
+            <dd>{urgent}</dd>
+            <dd className={pageStyles.kpiCaption}>of the {onTheList} open placements</dd>
+          </div>
+          <div>
+            <dt>Over 24 hours</dt>
+            <dd>{over24h}</dd>
+            <dd className={pageStyles.kpiCaption}>elapsed since opening</dd>
+          </div>
+          <div>
+            <dt>No ward yet</dt>
+            <dd>{unplaced}</dd>
+            <dd className={pageStyles.kpiCaption}>no accepting ward recorded</dd>
+          </div>
+        </dl>
+      </WardPanel>
+      <StatisticsInsightChart
+        title="Open placement waits"
+        variant="timeline"
+        defaultSort="value"
+        testId="statistics-ed-waits-chart"
+        groups={[
+          { id: "urgent", label: "Marked urgent" },
+          { id: "unplaced", label: "No accepting ward" },
+        ]}
+        metrics={[
+          {
+            id: "hours",
+            label: "Elapsed since movement opened",
+            unit: "h",
+            note: "One dot per open placement. Elapsed placement time is separate from triage time and the ED access target.",
+          },
+        ]}
+        rows={waitingMovements.map(({ movement, waitMinutes }) => ({
+          id: movement.id,
+          name: resolveSubjectPatient(movement, { patients, referrals }).formalName,
+          context: `${movement.flaggedUrgent ? "Urgent · " : ""}${movement.acceptedUnitId ? "Ward accepted" : "No accepting ward"}`,
+          values: { hours: waitMinutes / 60 },
+          groups: [
+            ...(movement.flaggedUrgent ? ["urgent"] : []),
+            ...(movement.acceptedUnitId === undefined ? ["unplaced"] : []),
+          ],
+          detail: `Exact elapsed time: ${splitDuration(waitMinutes)}. A recorded ward acceptance does not establish arrival.`,
+          href: movementHref(movement.id),
+          linkLabel: "Open placement",
+        }))}
+      />
+      <div className={pageStyles.pageGrid}>
         <nav className={pageStyles.departmentSwitcher} aria-label="Emergency department statistics">
           {comparison.map(({ department: each, figures }) => (
             <Link
@@ -349,81 +418,7 @@ export function StatisticsEdScreen({
           ))}
         </nav>
 
-        <nav className={pageStyles.sovereignTabs} aria-label="ED View Navigation">
-          {[
-            { id: "all", label: "All Measures", badge: "All" },
-            { id: "queue", label: "Live Queue", badge: `${onTheList} waiting` },
-            { id: "distribution", label: "Wait Distribution", badge: `${urgent} urgent` },
-            { id: "weat", label: "WEAT Performance", badge: "Trend" },
-            { id: "comparison", label: "Cross-ED Comparison", badge: `${allEmergencyDepartments().length} EDs` },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`${pageStyles.sovereignTab}${activeTab === tab.id ? ` ${pageStyles.activeTab}` : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-              aria-pressed={activeTab === tab.id}
-            >
-              <span>{tab.label}</span>
-              <span className={pageStyles.tabBadge}>{tab.badge}</span>
-            </button>
-          ))}
-        </nav>
-        <WardPanel
-          title={department.name}
-          count={`${onTheList} open ${onTheList === 1 ? "placement" : "placements"}`}
-          testId="ward-statistics-ed-identity"
-        >
-          <div
-            className={styles.panelBody}
-            role="group"
-            aria-label="Emergency department identity content"
-            tabIndex={0}
-          >
-            <p className={styles.body} data-testid="ward-statistics-ed-site">
-              {site
-                ? `${department.name} is recorded at ${site.name}.`
-                : `${department.name} carries a site code this prototype has no site for, so it cannot be placed at a hospital here.`}
-            </p>
-            <p className={styles.note}>
-              The department name and hospital are network identities, not performance measures.
-            </p>
-          </div>
-          <dl className={pageStyles.kpiBand}>
-            <div>
-              <dt>Open placements</dt>
-              <dd>{onTheList}</dd>
-              <dd className={pageStyles.kpiCaption}>from this department</dd>
-            </div>
-            <div>
-              <dt>Longest elapsed</dt>
-              <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
-              {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-              <dd className={pageStyles.kpiCaption}>
-                {longestWait
-                  ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName
-                  : "no open placement"}
-              </dd>
-            </div>
-            <div>
-              <dt>Marked urgent</dt>
-              <dd>{urgent}</dd>
-              <dd className={pageStyles.kpiCaption}>of the {onTheList} open placements</dd>
-            </div>
-            <div>
-              <dt>Over 24 hours</dt>
-              <dd>{over24h}</dd>
-              <dd className={pageStyles.kpiCaption}>elapsed since opening</dd>
-            </div>
-            <div>
-              <dt>No ward yet</dt>
-              <dd>{unplaced}</dd>
-              <dd className={pageStyles.kpiCaption}>no accepting ward recorded</dd>
-            </div>
-          </dl>
-        </WardPanel>
-
-        <WardPanel
+        <StatisticsDetailPanel
           title="Urgency category wait times & benchmarks"
           count="Australasian Triage Scale"
           testId="ward-statistics-ed-urgency"
@@ -437,9 +432,9 @@ export function StatisticsEdScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <WardPanel
+        <StatisticsDetailPanel
           title="24-hour arrivals vs dispositions curve"
           count="Hourly pattern"
           testId="ward-statistics-ed-diurnal"
@@ -453,7 +448,7 @@ export function StatisticsEdScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         {/*
          * 🔴 **ADDED 2026-09-05: THE THREE FIGURES `Movement.originEdId` CAN ACTUALLY SUPPORT.**
@@ -462,7 +457,7 @@ export function StatisticsEdScreen({
          * `ED_COLUMNS` sets for itself. Nothing here is a bed measure: an emergency department has no
          * beds, no capacity and no length of stay in this model, and this section adds none of those.
          */}
-        <WardPanel title="What can be measured about this department" testId="ward-statistics-ed-measures">
+        <StatisticsDetailPanel title="What can be measured about this department" testId="ward-statistics-ed-measures">
           <details className={`${pageStyles.measurementDetails} source-print`}>
             <summary>Read how the headline figures are counted</summary>
             <div
@@ -488,7 +483,7 @@ export function StatisticsEdScreen({
               </p>
             </div>
           </details>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         {/*
          * ⚠️ **ADDED 2026-09-06: BUILT, NOT RESTYLED.** Before this the page had never computed a
@@ -724,7 +719,7 @@ export function StatisticsEdScreen({
           </div>
         </WardPanel>
 
-        <WardPanel title="Measures the record cannot support" testId="ward-statistics-ed-not-built">
+        <StatisticsDetailPanel title="Measures the record cannot support" testId="ward-statistics-ed-not-built">
           <div
             className={styles.panelBody}
             role="group"
@@ -831,7 +826,7 @@ export function StatisticsEdScreen({
               </Link>
             </p>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         {/*
          * 🔴 **THE DRAWING'S FINAL PANEL, AND ONE OF ITS FIVE SUB-SECTIONS IS DELIBERATELY NOT BUILT.**
@@ -879,7 +874,7 @@ export function StatisticsEdScreen({
          * network-wide trend exists that could be shown here.** 🔴 **None exists. There is no history for
          * any department, nor for the network.**
          */}
-        <WardPanel
+        <StatisticsDetailPanel
           title="30-day WEAT performance"
           count="Western Australia Emergency Access Target"
           testId="ward-statistics-ed-weat"
@@ -914,9 +909,9 @@ export function StatisticsEdScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <WardPanel title="Wait time over the last 30 days" testId="ward-stat-ed-trend">
+        <StatisticsDetailPanel title="Wait time over the last 30 days" testId="ward-stat-ed-trend">
           <div className={styles.panelBody} role="group" aria-label="Thirty day wait trend content" tabIndex={0}>
             <details className={`${pageStyles.measurementDetails} source-print`}>
               <summary>View historical wait record scope</summary>
@@ -926,9 +921,9 @@ export function StatisticsEdScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <WardPanel title="Where they went, last 7 days" testId="ward-stat-ed-destinations">
+        <StatisticsDetailPanel title="Where they went, last 7 days" testId="ward-stat-ed-destinations">
           <div className={styles.panelBody} role="group" aria-label="Recent destinations content" tabIndex={0}>
             <details className={`${pageStyles.measurementDetails} source-print`}>
               <summary>View recent destinations record scope</summary>
@@ -938,9 +933,9 @@ export function StatisticsEdScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <WardPanel title="Comparison across departments" testId="ward-stat-ed-comparison">
+        <StatisticsDetailPanel title="Comparison across departments" testId="ward-stat-ed-comparison">
           <div className={styles.panelBody} role="group" aria-label="Department comparison content" tabIndex={0}>
             <p className={styles.note} data-testid="ward-stat-ed-comparison-scope">
               Every department in scope is shown, including the ones with nobody waiting. A none in this table is a
@@ -991,9 +986,9 @@ export function StatisticsEdScreen({
               is applied here.
             </p>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <WardPanel title="Data provenance and limits" testId="ward-statistics-ed-about">
+        <StatisticsDetailPanel title="Data provenance and limits" testId="ward-statistics-ed-about">
           <details className={`${pageStyles.measureDetails} source-print`}>
             <summary>Data provenance, categories & disclaimer details</summary>
             <div
@@ -1076,12 +1071,7 @@ export function StatisticsEdScreen({
               </p>
             </div>
           </details>
-        </WardPanel>
-        {toastMessage && (
-          <div className={pageStyles.actionToast} role="status" aria-live="polite">
-            {toastMessage}
-          </div>
-        )}
+        </StatisticsDetailPanel>
       </div>
     </StatisticsSectionFrame>
   );

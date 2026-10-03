@@ -19,8 +19,18 @@ type CapacityRow = {
 };
 
 /** One current-state chart; React owns filters, aggregation, selection and bar geometry. */
-export function StatisticsCapacityChart({ units, bedReleases }: { units: Unit[]; bedReleases: BedRelease[] }) {
-  const [groupBy, setGroupBy] = useState<"hospital" | "ward">("hospital");
+export function StatisticsCapacityChart({
+  units,
+  bedReleases,
+  initialGroup = "hospital",
+  scopeLabel = "across the network",
+}: {
+  units: Unit[];
+  bedReleases: BedRelease[];
+  initialGroup?: "hospital" | "ward";
+  scopeLabel?: string;
+}) {
+  const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
   const [scale, setScale] = useState<"beds" | "share">("beds");
   const [service, setService] = useState("all");
   const [query, setQuery] = useState("");
@@ -84,7 +94,7 @@ export function StatisticsCapacityChart({ units, bedReleases }: { units: Unit[];
   function reset() {
     setService("all");
     setQuery("");
-    setGroupBy("hospital");
+    setGroupBy(initialGroup);
     setScale("beds");
     setSort("ready");
     setSelectedId(null);
@@ -114,7 +124,7 @@ export function StatisticsCapacityChart({ units, bedReleases }: { units: Unit[];
             type="button"
             aria-pressed={groupBy === "hospital"}
             onClick={() => {
-              setGroupBy("hospital");
+              setGroupBy(initialGroup);
               setSelectedId(null);
             }}
           >
@@ -152,17 +162,19 @@ export function StatisticsCapacityChart({ units, bedReleases }: { units: Unit[];
             placeholder="Find a hospital or ward"
           />
         </label>
-        <label>
-          <span className={styles.srOnly}>Health service filter</span>
-          <select value={service} onChange={(event) => setService(event.target.value)}>
-            <option value="all">All health services</option>
-            {services.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {services.length > 1 && (
+          <label>
+            <span className={styles.srOnly}>Health service filter</span>
+            <select value={service} onChange={(event) => setService(event.target.value)}>
+              <option value="all">All health services</option>
+              {services.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           <span className={styles.srOnly}>Sort capacity</span>
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
@@ -189,7 +201,7 @@ export function StatisticsCapacityChart({ units, bedReleases }: { units: Unit[];
               : rows.length === 1
                 ? "ward"
                 : "wards"}
-            {hasFilters ? " matched" : " across the network"}
+            {hasFilters ? " matched" : ` ${scopeLabel}`}
           </span>
         </div>
         <div className={styles.legend} aria-label="Bed status legend">

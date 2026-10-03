@@ -133,11 +133,11 @@ describe("PR15 recorded facts and unavailable data", () => {
       <StatisticsCompareScreen units={[available]} emergencyDepartments={[]} admissions={[]} />,
       { movements: [movement] },
     );
-    expect(screen.getByText("Placement matching")).toBeTruthy();
-    expect(screen.getByText("Not calculated")).toBeTruthy();
+    expect(screen.getByText(/Available beds and open movements are separate counts/)).toBeTruthy();
     expect(container.textContent).toContain("Bed eligibility is not matched to these movements");
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
-    expect(screen.getAllByText("Open movements")).toHaveLength(2);
+    expect(screen.getAllByText("Open movements")).toHaveLength(1);
+    expect(container.textContent).toContain(`${available.beds} beds`);
   });
 
   it("renders actual admission states and minute-based stays without inventing beds", () => {

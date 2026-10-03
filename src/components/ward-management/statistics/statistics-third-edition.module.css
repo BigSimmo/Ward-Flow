@@ -1226,3 +1226,15 @@
 .measureDetails[open] > summary {
   border-bottom: 1px solid var(--line);
 }
+/* Lower overview and directory modules follow the page, without height-driven inner scrollbars. */
+.overviewColumn > :global([data-ward-primitive="panel"]),
+.compareRegion > :global([data-ward-primitive="panel"]) {
+  max-height: none;
+  overflow: visible;
+}
+.overviewColumn .panelBody,
+.compareRegion > :global([data-ward-primitive="panel"]) > .panelBody {
+  overflow-y: visible;
+  max-height: none;
+  scrollbar-gutter: auto;
+}

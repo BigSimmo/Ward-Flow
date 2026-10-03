@@ -1,5 +1,10 @@
 "use client";
 
+import { StatisticsInsightChart } from "./statistics-insight-chart";
+import { StatisticsDetailPanel } from "./statistics-detail-panel";
+import family from "./statistics-family.module.css";
+import { StatisticsCapacityChart } from "./statistics-capacity-chart";
+
 import Link from "next/link";
 import { useRef, useState } from "react";
 
@@ -346,19 +351,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const { units: liveUnits, admissions, referrals, bedReleases } = useWardFlow();
   const now = useWardFlowClock();
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (msg: string) => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    setToastMessage(msg);
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
-
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
 
@@ -479,9 +471,52 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       testId="ward-statistics-service-screen"
       design="third-edition"
     >
+      <div className={family.modules}>
+        <div className={family.full}>
+          <WardPanel title="Ward capacity" count={`${totalReady} ready · ${serviceUnits.length} wards`}>
+            <StatisticsCapacityChart
+              units={serviceUnits}
+              bedReleases={bedReleases}
+              initialGroup="ward"
+              scopeLabel={`in ${service}`}
+            />
+          </WardPanel>
+        </div>
+        <div className={family.full}>
+          <StatisticsInsightChart
+            title="Referral placement destinations"
+            variant="distribution"
+            testId="statistics-service-placement-chart"
+            metrics={[
+              {
+                id: "count",
+                label: "Referrals",
+                unit: "referrals",
+                note: "Referrals originating in this service. Recorded ward acceptance does not mean the person has arrived.",
+              },
+            ]}
+            rows={[
+              { id: "within", name: "Within service", values: { count: placedWithinService } },
+              {
+                id: "elsewhere",
+                name: "Other services",
+                values: { count: placedElsewhereCount },
+                detail: [...placedElsewhereByService].map(([name, count]) => `${name}: ${count}`).join(" · "),
+              },
+              { id: "waiting", name: "No ward acceptance", values: { count: notYetAcceptedAtWard } },
+              {
+                id: "unresolved",
+                name: "Ward unresolved",
+                values: { count: placedAtUnresolvedWard },
+                detail: "A ward acceptance is recorded, but its health service cannot be resolved.",
+              },
+            ]}
+          />
+        </div>
+      </div>
       <div className={pageStyles.pageGrid}>
         <div className={pageStyles.leftColumn}>
-          <WardPanel
+          <StatisticsDetailPanel
             title={service}
             count={`${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`}
             testId="ward-statistics-service-identity"
@@ -503,22 +538,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dd>{serviceEds.length} emergency departments</dd>
                 </div>
               </dl>
-              <div className={pageStyles.ctlRow}>
-                <button
-                  type="button"
-                  className={`${pageStyles.ctl} ${pageStyles.ctlPrimary}`}
-                  onClick={() => showToast("Not wired in this prototype.")}
-                >
-                  View network bed occupancy
-                </button>
-                <button
-                  type="button"
-                  className={pageStyles.ctl}
-                  onClick={() => showToast("Not wired in this prototype.")}
-                >
-                  Export summary
-                </button>
-              </div>
               <details className={`${pageStyles.measureDetails} source-print`}>
                 <summary>Service scope & network definitions</summary>
                 <div className={pageStyles.measureDetailsBody}>
@@ -557,9 +576,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </div>
               </dl>
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
 
-          <WardPanel title="Ready beds, by ward and cohort" testId="ward-statistics-service-ready-beds">
+          <StatisticsDetailPanel title="Ready beds, by ward and cohort" testId="ward-statistics-service-ready-beds">
             <div className={styles.panelBody} role="group" aria-label="Ready beds content" tabIndex={0}>
               {serviceUnits.length > 0 ? (
                 <dl className={pageStyles.kpiBand}>
@@ -654,9 +673,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </WardTable>
               )}
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
 
-          <WardPanel
+          <StatisticsDetailPanel
             title="Where this service's own referrals were accepted"
             testId="ward-statistics-service-placement"
           >
@@ -733,7 +752,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </p>
               ) : null}
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
         </div>
 
         <div className={pageStyles.rightColumn}>
@@ -800,7 +819,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             </div>
           </WardPanel>
 
-          <WardPanel title="Sent and taken in, over the last 30 days" testId="ward-statistics-service-flow">
+          <StatisticsDetailPanel title="Sent and taken in, over the last 30 days" testId="ward-statistics-service-flow">
             <div className={styles.panelBody} role="group" aria-label="Thirty day service flow content" tabIndex={0}>
               <details className={`${pageStyles.measureDetails} source-print`}>
                 <summary>View historical referral flow records</summary>
@@ -809,7 +828,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </p>
               </details>
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
         </div>
 
         <div className={pageStyles.pageFoot}>
@@ -836,12 +855,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           </p>
         </div>
       </div>
-
-      {toastMessage && (
-        <div className={pageStyles.actionToast} role="status" aria-live="polite" aria-atomic="true">
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </StatisticsSectionFrame>
   );
 }

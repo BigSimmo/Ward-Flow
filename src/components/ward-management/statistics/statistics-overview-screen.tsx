@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { StatisticsInsightChart } from "./statistics-insight-chart";
+import { StatisticsDetailPanel } from "./statistics-detail-panel";
+import family from "./statistics-family.module.css";
+
 import Link from "next/link";
 
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
@@ -127,8 +130,6 @@ export function StatisticsOverviewScreen() {
   const refused = refusedAndNothingPending(movements, units, now);
   const capacity = networkCapacity(units, bedReleases);
 
-  const [selectedPipelineStage, setSelectedPipelineStage] = useState(0);
-
   const healthServicesData = [
     {
       id: "NMHS",
@@ -201,69 +202,6 @@ export function StatisticsOverviewScreen() {
       hy,
     };
   });
-
-  const LIFECYCLE_STAGES = [
-    {
-      id: "referrals",
-      name: "1. Referrals In",
-      count: refused.openMovementCount,
-      dwell: "Time in stage not recorded",
-      status: "Open",
-      tone: "var(--good)",
-      bg: "var(--good-soft)",
-      description: `${refused.openMovementCount} open movements are waiting for a bed.`,
-    },
-    {
-      id: "triage",
-      name: "2. Waiting for a bed",
-      count: stageTallies.find((t) => t.position === "no-bed-yet")?.count ?? 0,
-      dwell: "Time in stage not recorded",
-      status: "Waitlisted",
-      tone: "var(--good)",
-      bg: "var(--good-soft)",
-      description: `${stageTallies.find((t) => t.position === "no-bed-yet")?.count ?? 0} admissions are waitlisted with no bed given yet.`,
-    },
-    {
-      id: "allocated",
-      name: "3. Bed given",
-      count: stageTallies.find((t) => t.position === "bed-given-not-arrived")?.count ?? 0,
-      dwell: "Time in stage not recorded",
-      status: "Not arrived",
-      tone: "var(--warn)",
-      bg: "var(--warn-soft)",
-      description: `${stageTallies.find((t) => t.position === "bed-given-not-arrived")?.count ?? 0} admissions have a bed given and the person has not arrived yet.`,
-    },
-    {
-      id: "reserved",
-      name: "4. Bed being made ready",
-      count: preparingCount,
-      dwell: "Time in stage not recorded",
-      status: "Preparing",
-      tone: "var(--good)",
-      bg: "var(--good-soft)",
-      description: `${preparingCount} beds are still being made ready across the network.`,
-    },
-    {
-      id: "inpatient",
-      name: "5. In a bed",
-      count: stageTallies.find((t) => t.position === "in-the-bed")?.count ?? 0,
-      dwell: "Time in stage not recorded",
-      status: "In Bed",
-      tone: "var(--good)",
-      bg: "var(--good-soft)",
-      description: `${stageTallies.find((t) => t.position === "in-the-bed")?.count ?? 0} admissions have the person in a bed.`,
-    },
-    {
-      id: "ended",
-      name: "6. Ended",
-      count: stageTallies.find((t) => t.position === "ended")?.count ?? 0,
-      dwell: "Time in stage not recorded",
-      status: "Left the ward",
-      tone: "var(--accent)",
-      bg: "var(--accent-soft)",
-      description: `${stageTallies.find((t) => t.position === "ended")?.count ?? 0} admissions have ended. Whether follow-up was arranged is not shown here.`,
-    },
-  ];
 
   // Baseline anchored to today's real admission volume so the invented walk starts somewhere
   // plausible; the walk itself is still a deterministic pseudo-random draw, never a measurement —
@@ -384,9 +322,28 @@ export function StatisticsOverviewScreen() {
       {/* ══════════ HOSPITAL & INPATIENT UNIT CAPACITY MATRIX ══════════ */}
       <HospitalCapacityMatrix units={units} bedReleases={bedReleases} />
 
-      <div className={styles.overviewGrid}>
+      <StatisticsInsightChart
+        title="Admission stages"
+        variant="distribution"
+        testId="statistics-overview-stages-chart"
+        metrics={[
+          {
+            id: "count",
+            label: "Admissions",
+            unit: "admissions",
+            note: "Current recorded admission states, including ended admissions. Each admission appears once.",
+          },
+        ]}
+        rows={stageTallies.map((stage) => ({
+          id: stage.position,
+          name: stage.label,
+          values: { count: stage.count },
+          detail: "Admission states are separate from open ED movements and bed preparation records.",
+        }))}
+      />
+      <div className={`${styles.overviewGrid} ${family.modules}`}>
         <div className={styles.overviewColumn}>
-          <WardPanel
+          <StatisticsDetailPanel
             title="Across all services"
             count={`${refused.openMovementCount} open movements`}
             testId="ward-statistics-overview-scope"
@@ -399,9 +356,9 @@ export function StatisticsOverviewScreen() {
             >
               <span>Network-wide current state</span>
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
 
-          <WardPanel
+          <StatisticsDetailPanel
             title="Capacity across the network, right now"
             count={`${capacity.ready} ready`}
             testId="ward-statistics-overview-capacity"
@@ -452,61 +409,15 @@ export function StatisticsOverviewScreen() {
                 </div>
               </details>
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
 
-          <WardPanel
+          <StatisticsDetailPanel
             title="Where admissions sit in the bed lifecycle"
             count={`${admissions.length} admissions`}
             testId="ward-statistics-overview-stages"
           >
             <div className={styles.panelBody} role="group" aria-label="Admission bed lifecycle content" tabIndex={0}>
               {/* Interactive Bed Lifecycle Pipeline */}
-              <div
-                className={styles.lifecyclePipeline}
-                id="lifecyclePipeline"
-                role="tablist"
-                aria-label="Bed lifecycle pipeline stages"
-              >
-                {LIFECYCLE_STAGES.map((st, idx) => {
-                  const isSel = idx === selectedPipelineStage;
-                  return (
-                    <button
-                      key={st.id}
-                      type="button"
-                      className={`${styles.pipelineStep} ${isSel ? styles.pipelineStepSelected : ""}`}
-                      onClick={() => setSelectedPipelineStage(idx)}
-                      role="tab"
-                      aria-selected={isSel}
-                      aria-label={`${st.name}: ${st.count}`}
-                    >
-                      <div className={styles.stepHeader}>
-                        <span>{st.name}</span>
-                        <span
-                          className={styles.stepBadge}
-                          style={{
-                            background: st.bg,
-                            color: st.tone,
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {st.status}
-                        </span>
-                      </div>
-                      <div className={styles.stepCount}>{st.count}</div>
-                      <div className={styles.stepDwell}>{st.dwell}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className={styles.pipelineDetailCard}>
-                <p className={styles.pipelineDetailText}>
-                  <strong>{LIFECYCLE_STAGES[selectedPipelineStage].name}:</strong>{" "}
-                  {LIFECYCLE_STAGES[selectedPipelineStage].description}
-                </p>
-              </div>
-
               <WardTable className={styles.dtable} testId="ward-statistics-overview-stage-table">
                 <thead>
                   <tr>
@@ -540,7 +451,7 @@ export function StatisticsOverviewScreen() {
                 variant="overview"
               />
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
         </div>
         <div className={styles.overviewColumn}>
           <WardPanel
@@ -733,7 +644,11 @@ export function StatisticsOverviewScreen() {
            * things the page does not show, and rewriting it with live figures would be the paraphrase this
            * lane has already been bitten by. **Dropped openly; recorded for the owner to veto.**
            */}
-          <WardPanel title="Data provenance and limits" count="Scope" testId="ward-statistics-overview-invented">
+          <StatisticsDetailPanel
+            title="Data provenance and limits"
+            count="Scope"
+            testId="ward-statistics-overview-invented"
+          >
             <div className={styles.panelBody} role="group" aria-label="Data provenance and limits content" tabIndex={0}>
               {/*
                * 🔴 **THE DRAWING'S WORDING FAILS AN OWNER RULING AND SO IS ADAPTED, NOT QUOTED.** The owner's
@@ -760,7 +675,7 @@ export function StatisticsOverviewScreen() {
                 </div>
               </details>
             </div>
-          </WardPanel>
+          </StatisticsDetailPanel>
         </div>
       </div>
     </StatisticsSectionFrame>
