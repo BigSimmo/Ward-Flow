@@ -583,9 +583,11 @@
 }
 
 @media print {
-  /* Include the recorded detail for every printed role without changing screen expansion. */
-  .coverageRow[hidden] {
-    display: table-row;
+  /* Tailwind's base-layer hidden rule is important; match that layer for print only. */
+  @layer base {
+    .coverageRow[hidden] {
+      display: table-row !important;
+    }
   }
 
   .main .detailButton,
