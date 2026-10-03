@@ -104,7 +104,7 @@ import styles from "./ward-global-search.module.css";
  * THE SAME SHORTCUT EVERYWHERE: "/" or Ctrl/Cmd+K focuses this control from anywhere on the page,
  * unless the keypress is already headed for another field — matching the shortcut this app's own
  * `universal-search-command-surface.tsx` already uses for its global search, so a habit learned on
- * one Ward Flow screen is the same habit the rest of PsychSift already teaches.
+ * one Ward Flow screen is the same habit the rest of the app already teaches.
  */
 export type WardGlobalSearchProps = {
   movements: Movement[];

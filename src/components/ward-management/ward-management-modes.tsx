@@ -113,7 +113,7 @@ function ModeHeader({
   return (
     <header className={styles.modeHeader} hidden style={{ display: "none" }}>
       <div className={styles.modeIdentity}>
-        {/* Ward Flow's own identity, not the host application's. This read "PsychSift /
+        {/* Ward Flow's own identity, not the host application's. This read "<former app name> /
             Source-backed clinical search" on every board of a sandboxed synthetic prototype that
             does no searching and is not source-backed. Found by looking at a screenshot — every
             measurement run against this codebase missed it, because nothing was structurally
