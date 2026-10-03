@@ -130,29 +130,27 @@ function renderScreen(props: {
 
 describe("the statistics screen — six drawing panels, kept apart", () => {
   // Josh, 25 Sept 2026: made-up trends show "Not recorded"; targets stay, labelled as targets.
-  it("offers only the current state, and says the 7-day and 30-day history is not recorded", () => {
+  it("offers only the current state, with concise history and synthetic-data context", () => {
     renderScreen({ admissions: [], referrals: [], bedReleases: [] });
     const period = screen.getByTestId("ward-statistics-reporting-period");
     expect(period).toBeVisible();
     expect(period).not.toHaveAttribute("aria-hidden", "true");
     expect(period.textContent).toContain("Current state");
-    expect(period.textContent).toContain("7-day and 30-day history is not recorded.");
+    expect(period.textContent).toContain("history unavailable");
+    expect(period.textContent).toContain("Synthetic data");
     expect(screen.queryByText("Last 7 Days")).toBeNull();
     expect(screen.queryByText("Last 30 Days")).toBeNull();
     expect(within(period).queryByRole("radio")).toBeNull();
   });
 
-  it("shows no invented history: the flow chart says Not recorded and the gauge names no target", () => {
+  it("shows a current capacity chart without inventing history or a target", () => {
     const { container } = renderScreen({ admissions: [], referrals: [], bedReleases: [] });
-    const history = screen.getByTestId("ward-statistics-flow-history");
-    expect(history).toBeVisible();
-    expect(history.closest("details")).toBeNull();
-    expect(history.textContent).toContain("Not recorded");
-    expect(history.textContent).toContain("before today are not recorded in Ward Flow");
-    expect(history.querySelector("svg"), "no chart is drawn").toBeNull();
+    const capacity = screen.getByTestId("ward-statistics-capacity-chart");
+    expect(capacity).toBeVisible();
+    expect(capacity.closest("details")).toBeNull();
+    expect(capacity.textContent).toContain("Current snapshot");
+    expect(screen.queryByTestId("ward-statistics-flow-history")).toBeNull();
     expect(container.textContent).not.toContain("on yesterday");
-    // The 85% target came off until it has a source (Josh, 26 Sept 2026, question 14); the badge says so.
-    expect(screen.getByText("No target recorded")).toBeTruthy();
     for (const invented of ["Surge Pressure", "Nominal Target", ">95% Surge", "reconciled live", "85% target"]) {
       expect(container.textContent, invented).not.toContain(invented);
     }
@@ -166,7 +164,7 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
 
     const drawingPanels = [
       ["ward-statistics-system", "Across all services"],
-      ["ward-statistics-patients", "Flow over time"],
+      ["ward-statistics-patients", "Where beds are available"],
       ["ward-statistics-pressure", "Where the pressure is"],
       ["ward-statistics-emergency-departments", "Emergency departments"],
       ["ward-statistics-community-chooser", "Community teams"],
@@ -225,9 +223,7 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
     expect(rendered.length).toBeGreaterThan(0);
     expect([...rendered].sort()).toEqual([...PLACEMENT.map((entry) => entry.figure)].sort());
 
-    fireEvent.click(
-      within(screen.getByTestId("ward-statistics-system")).getByText("Bed measurements and what cannot be counted"),
-    );
+    fireEvent.click(within(screen.getByTestId("ward-statistics-system")).getByText("Bed data notes"));
     for (const { figure, belongsIn, notIn } of PLACEMENT) {
       const home = screen.getByTestId(`ward-statistics-${belongsIn}`);
       const other = screen.getByTestId(`ward-statistics-${notIn}`);

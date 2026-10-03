@@ -2010,6 +2010,35 @@
 }
 @media (max-width: 420px) {
   .band {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Referral outcomes belong to their compact card, rather than the six-metric network grid. */
+.referralBand {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  .main {
+    padding: 0.75rem 0.75rem 1rem;
+  }
+}
+.teamDirectory {
+  margin-top: 0.5rem;
+}
+.teamDirectory summary {
+  cursor: pointer;
+  min-height: var(--ward-tap, 3rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--accent);
+}
+.teamDirectory summary::before {
+  content: "›";
+}
+.teamDirectory[open] summary::before {
+  transform: rotate(90deg);
 }

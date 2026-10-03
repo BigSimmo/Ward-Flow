@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_UNIT_CHOOSER_HREF,
@@ -10,14 +10,7 @@ import {
 } from "./statistics-sections";
 import styles from "./statistics-nav.module.css";
 
-export type StatisticsNavSection =
-  | "hub"
-  | "overview"
-  | "compare"
-  | "service"
-  | "ward"
-  | "ed"
-  | "community";
+export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community";
 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
@@ -26,6 +19,7 @@ interface StatisticsNavProps {
 
 export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps) {
   const pathname = usePathname() || "";
+  const router = useRouter();
 
   // Auto-detect section if not provided explicitly
   const activeSection =
@@ -81,10 +75,18 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
   const NAV_ITEMS = [
     {
       id: "hub",
-      label: "Executive Hub",
+      label: "Summary",
       href: "/mockups/ward-flow/statistics",
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <rect x="2" y="2" width="5" height="5" rx="1" />
           <rect x="9" y="2" width="5" height="5" rx="1" />
           <rect x="2" y="9" width="5" height="5" rx="1" />
@@ -94,10 +96,18 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
     },
     {
       id: "overview",
-      label: "Statewide Overview",
+      label: "Network overview",
       href: "/mockups/ward-flow/statistics/overview",
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <circle cx="8" cy="8" r="6" />
           <path d="M2 8h12M8 2a10 10 0 0 1 0 12 10 10 0 0 1 0-12" />
         </svg>
@@ -105,50 +115,90 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
     },
     {
       id: "compare",
-      label: "Ward & ED Compare",
+      label: "Compare",
       href: "/mockups/ward-flow/statistics/compare",
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <path d="M3 13V9M8 13V4M13 13V7" />
         </svg>
       ),
     },
     {
       id: "service",
-      label: "Health Services",
+      label: "Health services",
       href: serviceHref,
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <path d="M2 14V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v11M6 6h4M8 4v4" />
         </svg>
       ),
     },
     {
       id: "ward",
-      label: "Ward Inpatient",
+      label: "Wards",
       href: wardHref,
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <path d="M2 13V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6M1 13h14M3 9h10" />
         </svg>
       ),
     },
     {
       id: "ed",
-      label: "Emergency Dept",
+      label: "Emergency departments",
       href: edHref,
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <path d="M8 2v12M2 8h12" />
         </svg>
       ),
     },
     {
       id: "community",
-      label: "Community Teams",
+      label: "Community teams",
       href: communityHref,
       icon: (
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
           <path d="M3 13V7l5-4 5 4v6H3zM6 13V9h4v4" />
         </svg>
       ),
@@ -157,6 +207,23 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
 
   return (
     <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+      <label className={styles.mobileSelect}>
+        <span>Statistics</span>
+        <select
+          aria-label="Statistics section"
+          value={activeSection}
+          onChange={(event) => {
+            const item = NAV_ITEMS.find((item) => item.id === event.target.value);
+            if (item) router.push(item.href);
+          }}
+        >
+          {NAV_ITEMS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className={styles.scrollTrack}>
         {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.id;

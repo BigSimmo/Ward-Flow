@@ -41,7 +41,9 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
-import { StatisticsSubNav } from "./statistics-sub-nav";
+import { StatisticsCapacityChart } from "./statistics-capacity-chart";
+import { isAwaitingAnswer } from "../ward-referrals";
+import { wardReferralTally } from "./statistics-ward-referrals";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
@@ -65,52 +67,6 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: "Australia/Perth" });
   return `${weekday} ${day} ${month}`;
 }
-
-function words(n: number): string {
-  const W = [
-    "no",
-    "one",
-    "two",
-    "three",
-    "four",
-    "five",
-    "six",
-    "seven",
-    "eight",
-    "nine",
-    "ten",
-    "eleven",
-    "twelve",
-    "thirteen",
-    "fourteen",
-    "fifteen",
-    "sixteen",
-    "seventeen",
-    "eighteen",
-    "nineteen",
-    "twenty",
-  ];
-  return W[n] || String(n);
-}
-
-const COMMUNITY_TEAMS_STATISTICS = [
-  { id: "midland", name: "Midland", suburbs: 70 },
-  { id: "bunbury", name: "Bunbury", suburbs: 48 },
-  { id: "joondalup", name: "Joondalup", suburbs: 36 },
-  { id: "bentley", name: "Bentley", suburbs: 32 },
-  { id: "peel", name: "Peel", suburbs: 27 },
-  { id: "rockingham", name: "Rockingham", suburbs: 23 },
-  { id: "osborne", name: "Osborne", suburbs: 19 },
-  { id: "subiaco", name: "Subiaco", suburbs: 17 },
-  { id: "mead-centre", name: "Mead Centre (Kelmscott)", suburbs: 17 },
-  { id: "kwinana", name: "Kwinana", suburbs: 16 },
-  { id: "inner-city", name: "Inner City", suburbs: 16 },
-  { id: "mirrabooka", name: "Mirrabooka", suburbs: 15 },
-  { id: "alma-cockburn", name: "Alma Street (Cockburn)", suburbs: 15 },
-  { id: "clarkson", name: "Clarkson", suburbs: 13 },
-  { id: "alma-melville", name: "Alma Street (Melville)", suburbs: 13 },
-  { id: "alma-central", name: "Alma Street (Central)", suburbs: 12 },
-];
 
 export function StatisticsScreen({
   admissions,
@@ -155,8 +111,6 @@ export function StatisticsScreen({
   const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, sourceBedReleases), 0);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   const availablePct = totalBeds > 0 ? Math.round((availableNow / totalBeds) * 100) : 0;
-  const heldBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).held, 0);
-  const blockedBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).blocked, 0);
   const waitingCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
@@ -173,8 +127,15 @@ export function StatisticsScreen({
       .map((ed) => {
         const figures = edWaitFigures(sourceMovements, ed.id, now);
         const longestHours = figures.longestWait ? Math.round(figures.longestWait.waitMinutes / 60) : 0;
-        const waitHours = figures.waitingMovements.map((w) => Math.round(w.waitMinutes / 60));
-        const medianHours = waitHours.length > 0 ? waitHours[Math.floor(waitHours.length / 2)] : 0;
+        const waitMinutes = figures.waitingMovements.map((w) => w.waitMinutes);
+        const middle = Math.floor(waitMinutes.length / 2);
+        const medianHours =
+          waitMinutes.length === 0
+            ? 0
+            : Math.round(
+                (waitMinutes.length % 2 ? waitMinutes[middle] : (waitMinutes[middle - 1] + waitMinutes[middle]) / 2) /
+                  60,
+              );
         const over8 = figures.waitingMovements.filter((w) => w.waitMinutes >= 8 * 60).length;
         return {
           id: ed.id,
@@ -192,12 +153,20 @@ export function StatisticsScreen({
 
   const totalEdWaiting = emergencyDepts.reduce((s, d) => s + d.waiting, 0);
   const networkLongestWait = Math.max(...emergencyDepts.map((d) => d.longest), 0);
-  const longestAtDept = emergencyDepts.find((d) => d.longest === networkLongestWait);
-  const networkMedianWait = 9;
+  const networkWaits = emergencyDepts
+    .flatMap((ed) => edWaitFigures(sourceMovements, ed.id, now).waitingMovements.map((entry) => entry.waitMinutes))
+    .sort((a, b) => a - b);
+  const networkMiddle = Math.floor(networkWaits.length / 2);
+  const networkMedianWait =
+    networkWaits.length === 0
+      ? 0
+      : Math.round(
+          (networkWaits.length % 2
+            ? networkWaits[networkMiddle]
+            : (networkWaits[networkMiddle - 1] + networkWaits[networkMiddle]) / 2) / 60,
+        );
   const totalEdOver8 = emergencyDepts.reduce((s, d) => s + d.over8, 0);
   const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
-
-  const SHOWN_WARDS = 8;
 
   // Ward Table interactive state
   const [wardSearchQuery, setWardSearchQuery] = useState("");
@@ -209,12 +178,8 @@ export function StatisticsScreen({
   const [edSortCol, setEdSortCol] = useState<"name" | "waiting" | "longest" | "median" | "over8" | "over24">("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
 
-  // Community Table interactive state
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
-  const [teamSortCol, setTeamSortCol] = useState<"name" | "suburbs" | "caseload" | "newRefs" | "discharges">(
-    "caseload",
-  );
-  const [teamSortAsc, setTeamSortAsc] = useState(false);
+  const [showTeams, setShowTeams] = useState(false);
 
   // Flow chart interactive hover state
 
@@ -236,31 +201,12 @@ export function StatisticsScreen({
     }
   };
 
-  const handleTeamSort = (col: "name" | "suburbs" | "caseload" | "newRefs" | "discharges") => {
-    if (teamSortCol === col) {
-      setTeamSortAsc((prev) => !prev);
-    } else {
-      setTeamSortCol(col);
-      setTeamSortAsc(col === "name");
-    }
-  };
-
   // Pressure Wards (all 23 wards available, ranked by ready asc, occupancy desc, name)
   const allPressureWards = useMemo(() => {
-    const MOCK_REFERRED: Record<string, number> = {
-      "fsh-older": 0,
-      "graylands-older": 0,
-      "mabu-liyan": 0,
-      "scgh-older": 1,
-      "rgh-adult-secure": 1,
-      "bty-older": 1,
-      dabakarn: 1,
-      emyu: 1,
-    };
     return units.map((u) => {
       const capInfo = unitCapacity(u, sourceBedReleases);
       const occupancyRate = u.beds > 0 ? capInfo.occupied / u.beds : 0;
-      const referredCount = MOCK_REFERRED[u.id] ?? (u.beds % 3 === 0 ? 0 : 1);
+      const referredCount = wardReferralTally(sourceMovements, u.id).askedAndWaiting;
       return {
         id: u.id,
         name: u.name,
@@ -271,7 +217,7 @@ export function StatisticsScreen({
         referred: referredCount,
       };
     });
-  }, [units, sourceBedReleases]);
+  }, [units, sourceBedReleases, sourceMovements]);
 
   const filteredAndSortedWards = useMemo(() => {
     let list = allPressureWards.slice();
@@ -312,8 +258,6 @@ export function StatisticsScreen({
     return list;
   }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
 
-  const pressureWards = filteredAndSortedWards;
-
   const filteredAndSortedEds = useMemo(() => {
     let list = emergencyDepts.slice();
     const q = edSearchQuery.trim().toLowerCase();
@@ -353,72 +297,33 @@ export function StatisticsScreen({
     return list;
   }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
-  // Community teams
-  const communityTeams = useMemo(() => {
-    return COMMUNITY_TEAMS_STATISTICS.map((t) => {
-      const caseload = Math.round(t.suburbs * 2.6);
-      const newRefs = Math.round(caseload / 16);
-      const discharges = Math.round(caseload / 20);
-      return {
-        ...t,
-        caseload,
-        newRefs,
-        discharges,
-      };
-    }).sort((a, b) => b.suburbs - a.suburbs || a.name.localeCompare(b.name));
-  }, []);
+  const communityTeams = COMMUNITY_TEAM_PAGES;
+  const filteredAndSortedTeams = communityTeams.filter((team) =>
+    team.name.toLowerCase().includes(teamSearchQuery.trim().toLowerCase()),
+  );
 
-  const totalTeamSuburbs = communityTeams.reduce((s, t) => s + t.suburbs, 0);
-  const totalTeamCaseload = communityTeams.reduce((s, t) => s + t.caseload, 0);
-  const totalTeamNewRefs = communityTeams.reduce((s, t) => s + t.newRefs, 0);
-  const totalTeamDischarges = communityTeams.reduce((s, t) => s + t.discharges, 0);
-
-  const filteredAndSortedTeams = useMemo(() => {
-    let list = communityTeams.slice();
-    const q = teamSearchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((t) => t.name.toLowerCase().includes(q));
-    }
-    list.sort((a, b) => {
-      let vA: number | string;
-      let vB: number | string;
-      if (teamSortCol === "name") {
-        vA = a.name;
-        vB = b.name;
-      } else if (teamSortCol === "suburbs") {
-        vA = a.suburbs;
-        vB = b.suburbs;
-      } else if (teamSortCol === "caseload") {
-        vA = a.caseload;
-        vB = b.caseload;
-      } else if (teamSortCol === "newRefs") {
-        vA = a.newRefs;
-        vB = b.newRefs;
-      } else if (teamSortCol === "discharges") {
-        vA = a.discharges;
-        vB = b.discharges;
-      } else {
-        vA = a.caseload;
-        vB = b.caseload;
-      }
-
-      if (vA < vB) return teamSortAsc ? -1 : 1;
-      if (vA > vB) return teamSortAsc ? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-    return list;
-  }, [communityTeams, teamSearchQuery, teamSortCol, teamSortAsc]);
-
-  const shownCommunityTeams = useMemo(() => {
-    return filteredAndSortedTeams.slice(0, 8);
-  }, [filteredAndSortedTeams]);
-  const shownTeamCaseload = shownCommunityTeams.reduce((s, t) => s + t.caseload, 0);
-
-  // Referrals today (mockup figures matching Third Edition specification)
-  const refAccepted = 9;
-  const refDeclined = declinesReadout.ok ? declinesReadout.value.totalCount : 4;
-  const refOpen = 9;
-  const refRaised = refAccepted + refDeclined + refOpen;
+  // A referral can have multiple destinations; count the referral once using its derived outcome.
+  const todayBedReferrals = sourceReferrals.filter(
+    (referral) =>
+      dayOf(referral.raisedAt) === dayOf(now) &&
+      referral.destinations.some((addressing) => addressing.destination.kind === "psychiatric_ward"),
+  );
+  const refAccepted = todayBedReferrals.filter((referral) =>
+    referral.destinations.some(
+      (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.state === "accepted",
+    ),
+  ).length;
+  const refDeclined = todayBedReferrals.filter((referral) =>
+    referral.destinations
+      .filter((addressing) => addressing.destination.kind === "psychiatric_ward")
+      .every((addressing) => addressing.state === "declined"),
+  ).length;
+  const refOpen = todayBedReferrals.filter((referral) =>
+    referral.destinations.some(
+      (addressing) => addressing.destination.kind === "psychiatric_ward" && isAwaitingAnswer(addressing),
+    ),
+  ).length;
+  const refRaised = todayBedReferrals.length;
 
   usePrintableDisclosures();
 
@@ -437,8 +342,8 @@ export function StatisticsScreen({
         {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
         <div data-testid="ward-statistics-reporting-period" className={pageStyles.reportingContext}>
           <span>Current state</span>
-          <span>7-day and 30-day history is not recorded.</span>
-          <span>No target recorded</span>
+          <span>Synthetic data</span>
+          <span>{formatReportDay(now, dayZero)} · history unavailable</span>
         </div>
 
         {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
@@ -455,70 +360,6 @@ export function StatisticsScreen({
               </Link>
             </p>
           )}
-
-          <StatisticsSubNav
-            activeTab="overview"
-            isRouteNav={true}
-            counts={{
-              wards: units.length,
-              emergency: emergencyDepts.length,
-              community: communityTeams.length,
-              referrals: refOpen,
-            }}
-          />
-
-          <div className={pageStyles.pb}>
-            <div className={pageStyles.facts}>
-              <span className={pageStyles.chip}>
-                <b>{totalBeds}</b>
-                <span>beds across the network</span>
-              </span>
-              <span className={pageStyles.chip}>
-                <b>{units.length}</b>
-                <span>wards,</span>
-                <b>{hospitalsCount}</b>
-                <span>hospitals</span>
-              </span>
-              <span className={pageStyles.chip}>
-                <b>{emergencyDepts.length}</b>
-                <span>emergency departments</span>
-              </span>
-              <span className={pageStyles.chip}>
-                <b>{communityTeams.length}</b>
-                <span>community teams</span>
-              </span>
-              <span className={pageStyles.chip}>
-                <span>Freshness not recorded</span>
-              </span>
-            </div>
-
-            <div className={pageStyles.recon} data-ok="true">
-              <span>
-                Reconciled. The {units.length} wards sum to {totalBeds} beds, the {emergencyDepts.length} departments to{" "}
-                {totalEdWaiting} people waiting, and the {refRaised} referrals raised today to their accepted, declined
-                and still open counts.
-              </span>
-            </div>
-
-            <div className={pageStyles.exportRow}>
-              <button
-                type="button"
-                className={pageStyles.exportBtn}
-                id="exportBtn"
-                aria-disabled="true"
-                onClick={() => {
-                  /* Not wired in this prototype */
-                }}
-                title="Export every figure on this page as a sheet, with the reconciliation line. Not wired in this prototype."
-              >
-                Export the figures
-              </button>
-              <span className={pageStyles.ctlHint}>
-                As a sheet, every figure on this page with the reconciliation line above it. Not wired in this
-                prototype.
-              </span>
-            </div>
-          </div>
 
           {/* 6-Card KPI Headline Band */}
           <dl className={pageStyles.band} id="headline" tabIndex={-1} aria-label="Across all services headline figures">
@@ -543,7 +384,7 @@ export function StatisticsScreen({
               <dd>
                 {availableNow}
                 <small>
-                  {availablePct}% of all beds, the ready count; {pendingPreparation} being made ready
+                  {availablePct}% of beds · {pendingPreparation} pending preparation
                 </small>
               </dd>
             </div>
@@ -551,7 +392,7 @@ export function StatisticsScreen({
               <dt>Waiting for a bed</dt>
               <dd>
                 {waitingCount}
-                <small>in an emergency department, by department below</small>
+                <small>open movements</small>
               </dd>
             </div>
             <div className={pageStyles.kpi}>
@@ -576,30 +417,33 @@ export function StatisticsScreen({
 
           {/* Bed measurements & Coordinator Access disclosure (Preserving contract & test assertions) */}
           {/* Always-visible navigation to statistics sections */}
-          <nav
-            className={styles.index}
-            aria-labelledby="ward-statistics-index-heading"
-            data-testid="ward-statistics-index"
-          >
-            <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
-              Where to look
-            </h2>
-            <ul className={styles.indexList}>
-              {STATISTICS_SECTIONS.map((sec) => (
-                <li key={sec.id} className={styles.indexItem}>
-                  <Link
-                    href={sec.href}
-                    className={styles.indexLink}
-                    data-testid={`ward-statistics-index-entry-${sec.id}`}
-                  >
-                    <span className={styles.indexLabel}>{sec.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <details className={pageStyles.measurementDetails}>
+            <summary>Browse detailed statistics</summary>
+            <nav
+              className={styles.index}
+              aria-labelledby="ward-statistics-index-heading"
+              data-testid="ward-statistics-index"
+            >
+              <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
+                Where to look
+              </h2>
+              <ul className={styles.indexList}>
+                {STATISTICS_SECTIONS.map((sec) => (
+                  <li key={sec.id} className={styles.indexItem}>
+                    <Link
+                      href={sec.href}
+                      className={styles.indexLink}
+                      data-testid={`ward-statistics-index-entry-${sec.id}`}
+                    >
+                      <span className={styles.indexLabel}>{sec.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </details>
           <details className={`${pageStyles.measurementDetails} source-print`}>
-            <summary>Bed measurements and what cannot be counted</summary>
+            <summary>Bed data notes</summary>
             <div className={styles.panelBody}>
               <p className={styles.sectionAudience} data-testid="ward-statistics-system-audience">
                 Network and ward measures. No person-level measure is shown here.
@@ -638,26 +482,12 @@ export function StatisticsScreen({
         </WardPanel>
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
-        <WardPanel title="Flow over time" count="Current state" testId="ward-statistics-patients">
-          <div className={pageStyles.historyUnavailable} data-testid="ward-statistics-flow-history">
-            <strong>Not recorded</strong>
-            <p>Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.</p>
-            <dl>
-              <div>
-                <dt>Admissions today</dt>
-                <dd>{admissionsCount}</dd>
-              </div>
-              <div>
-                <dt>Discharges today</dt>
-                <dd>{dischargesCount}</dd>
-              </div>
-            </dl>
-            <p>{reportDayCaption} · synthetic records</p>
-          </div>
+        <WardPanel title="Where beds are available" count="Current capacity" testId="ward-statistics-patients">
+          <StatisticsCapacityChart units={units} bedReleases={sourceBedReleases} />
 
           {/* Patients audience contract and pull-to-arrival article */}
           <details className={`${pageStyles.measurementDetails} source-print`}>
-            <summary>How this range is measured and what it excludes</summary>
+            <summary>Admission timing and data notes</summary>
             <div className={styles.panelBody}>
               <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
                 Waiting-time measures from admission records; no ward score.
@@ -737,10 +567,7 @@ export function StatisticsScreen({
           >
             <div className={pageStyles.pb}>
               <p className={pageStyles.scopeNote}>
-                Wards ranked by fewest beds ready, then highest occupancy, then by name. “Referred, awaiting an answer”
-                counts referrals addressed to that named ward that nobody has yet accepted or declined, of any age. That
-                is a different count from the emergency department waits opposite, which are people currently in an
-                emergency department rather than referred to a named ward, so the two are never added together.
+                Fewest ready beds first. Open ward requests and ED waits are separate measures.
               </p>
             </div>
 
@@ -873,17 +700,7 @@ export function StatisticsScreen({
             </div>
 
             <p className={pageStyles.panelFoot}>
-              <strong>
-                {filteredAndSortedWards.length < allPressureWards.length
-                  ? `${allPressureWards.length - filteredAndSortedWards.length} wards filtered out by query.`
-                  : `All ${allPressureWards.length} wards shown, ranked by pressure.`}
-              </strong>{" "}
-              Every ward has its own board with the bed by bed picture, opened from the ward switcher on any ward
-              screen. Across all {units.length} wards the network holds <b>{availableNow}</b> beds ready,{" "}
-              <b>{heldBeds}</b> held and <b>{blockedBeds}</b> out of service.{" "}
-              <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>, so every one of
-              its beds has somebody in it. The ward by ward figures are on{" "}
-              <Link href="/mockups/ward-flow/statistics/ward/scgh-adult-open">Ward statistics</Link>.
+              <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit">Compare wards and departments ↗</Link>
             </p>
 
             {/* Pressure articles (preserved for test suite) */}
@@ -982,9 +799,7 @@ export function StatisticsScreen({
           >
             <div className={pageStyles.pb}>
               <p className={pageStyles.scopeNote}>
-                People currently in an emergency department waiting for a mental health inpatient bed, by department.
-                Longest and median are how long they have waited so far, not a target time, and both are given to the
-                hour because this is a period figure rather than a live clock.
+                Current waits for a mental health bed. Durations are rounded to hours.
               </p>
             </div>
 
@@ -1124,15 +939,7 @@ export function StatisticsScreen({
             </div>
 
             <p className={pageStyles.panelFoot}>
-              <strong>The totals row is not a column sum for the longest and the median wait.</strong> Longest is the
-              single longest wait anywhere in the network, <b>{networkLongestWait}h</b> at{" "}
-              {longestAtDept?.site ?? "PEEL"}, {longestAtDept?.name ?? "Peel Health Campus ED"}. Median is the middle
-              wait across all <b>{totalEdWaiting}</b> people waiting, not an average of the{" "}
-              {words(emergencyDepts.length)} departments&apos; own medians. Waiting, extended waits and prolonged waits
-              are true sums, and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
-              <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged
-              waits genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
-              <Link href="/mockups/ward-flow/statistics/ed/scgh">Emergency department statistics</Link>.
+              Wait bands overlap: 24h+ is included in 8h+. Median is across people, not department averages.
             </p>
 
             {/* Declines articles (preserved for test suite) */}
@@ -1228,168 +1035,33 @@ export function StatisticsScreen({
               count={`${filteredAndSortedTeams.length} of ${communityTeams.length} teams`}
               testId="ward-statistics-community-chooser"
             >
-              <div className={pageStyles.pb}>
-                <p className={pageStyles.scopeNote}>
-                  Caseload, new referrals and discharges back to community, by team, over the last seven days. The three
-                  figures below are every team, not only the {words(communityTeams.length)} drawn.
-                </p>
-                <div className={pageStyles.facts}>
-                  <span className={pageStyles.chip}>
-                    <b>{totalTeamCaseload.toLocaleString()}</b> people in community care
-                  </span>
-                  <span className={pageStyles.chip}>
-                    <b>{totalTeamNewRefs.toLocaleString()}</b> new referrals
-                  </span>
-                  <span className={pageStyles.chip}>
-                    <b>{totalTeamDischarges.toLocaleString()}</b> discharges to community
-                  </span>
-                </div>
-              </div>
-
-              {/* Table Controls Bar with live search and counter */}
               <div className={pageStyles.tableControlsBar}>
                 <div className={pageStyles.tableSearchBox}>
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <circle cx="7" cy="7" r="4.5" />
-                    <path d="M10.5 10.5L14 14" />
-                  </svg>
                   <input
                     type="search"
                     className={pageStyles.tableSearchInput}
-                    id="teamSearchInput"
-                    placeholder="Filter community teams..."
-                    value={teamSearchQuery}
-                    onChange={(e) => setTeamSearchQuery(e.target.value)}
+                    placeholder="Find a community team"
                     aria-label="Filter community teams"
+                    value={teamSearchQuery}
+                    onChange={(event) => {
+                      setTeamSearchQuery(event.target.value);
+                      setShowTeams(true);
+                    }}
                   />
                 </div>
-                <span className={pageStyles.tableFilterCount} id="teamFilterCount">
-                  Showing {filteredAndSortedTeams.length} of {communityTeams.length} teams
-                </span>
               </div>
-
-              <div
-                className={pageStyles.tableWrap}
-                data-wrap
-                tabIndex={0}
-                role="group"
-                aria-label="Community team caseload, scrolls sideways when the panel is narrow"
-              >
-                <table className={pageStyles.dataTable} id="teamDataTable">
-                  <caption className="srOnly">
-                    Community mental health team caseload and referrals, last seven days
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th
-                        scope="col"
-                        className={`${pageStyles.sortable} ${teamSortCol === "name" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("name")}
-                        aria-sort={teamSortCol === "name" ? (teamSortAsc ? "ascending" : "descending") : "none"}
-                      >
-                        Team{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "name" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </th>
-                      <th
-                        scope="col"
-                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "suburbs" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("suburbs")}
-                        aria-sort={teamSortCol === "suburbs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
-                      >
-                        Suburbs covered{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "suburbs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </th>
-                      <th
-                        scope="col"
-                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "caseload" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("caseload")}
-                        aria-sort={teamSortCol === "caseload" ? (teamSortAsc ? "ascending" : "descending") : "none"}
-                      >
-                        Caseload{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "caseload" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </th>
-                      <th
-                        scope="col"
-                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "newRefs" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("newRefs")}
-                        aria-sort={teamSortCol === "newRefs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
-                      >
-                        New referrals{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "newRefs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </th>
-                      <th
-                        scope="col"
-                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "discharges" ? pageStyles.sortActive : ""}`}
-                        onClick={() => handleTeamSort("discharges")}
-                        aria-sort={teamSortCol === "discharges" ? (teamSortAsc ? "ascending" : "descending") : "none"}
-                      >
-                        Discharged to community{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {teamSortCol === "discharges" ? (teamSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedTeams.map((t) => (
-                      <tr key={t.id}>
-                        <th scope="row">{t.name}</th>
-                        <td className={pageStyles.n}>{t.suburbs}</td>
-                        <td className={pageStyles.n}>{t.caseload.toLocaleString()}</td>
-                        <td className={pageStyles.n}>
-                          {t.newRefs === 0 ? <span className={pageStyles.zero}>none</span> : t.newRefs}
-                        </td>
-                        <td className={pageStyles.n}>
-                          {t.discharges === 0 ? <span className={pageStyles.zero}>none</span> : t.discharges}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="total">
-                      <th scope="row">All {communityTeams.length} teams</th>
-                      <td className={pageStyles.n}>{totalTeamSuburbs}</td>
-                      <td className={pageStyles.n}>{totalTeamCaseload.toLocaleString()}</td>
-                      <td className={pageStyles.n}>{totalTeamNewRefs.toLocaleString()}</td>
-                      <td className={pageStyles.n}>{totalTeamDischarges.toLocaleString()}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              <p className={pageStyles.panelFoot}>
-                <strong>
-                  {filteredAndSortedTeams.length < communityTeams.length
-                    ? `${communityTeams.length - filteredAndSortedTeams.length} teams filtered out by query.`
-                    : `All ${communityTeams.length} teams shown.`}
-                </strong>{" "}
-                The teams drawn hold <b>{totalTeamCaseload.toLocaleString()}</b> people in community care.{" "}
-                <strong>Team names and suburb counts are real</strong>, taken from the approved community hub screen,
-                which counts them from the repository&apos;s catchment table. A team the catchment document does not
-                name is not a team that does not exist. Each team&apos;s own figures are on{" "}
-                <Link href="/mockups/ward-flow/statistics/community/bentley">Community team statistics</Link>.
-              </p>
-
-              {/* Community team chooser list (for test suite) */}
-              <details className={`${pageStyles.measurementDetails} source-print`}>
-                <summary>Choose a community team</summary>
-                <div className={styles.panelBody}>
-                  <p className={styles.absence} data-testid="ward-statistics-community-landing-absence">
-                    No network-wide community total. Each team&apos;s current caseload is measured on its own page.
-                  </p>
-                  <p className={styles.figureNote} data-testid="ward-statistics-community-chooser-rationale">
-                    Select a team. All referral-form teams are listed in recorded order, without ranking.
-                  </p>
+              <div className={styles.panelBody}>
+                <p className={pageStyles.scopeNote} data-testid="ward-statistics-community-landing-absence">
+                  Community activity totals are not recorded.
+                </p>
+                <details
+                  className={pageStyles.teamDirectory}
+                  open={showTeams}
+                  onToggle={(event) => setShowTeams(event.currentTarget.open)}
+                >
+                  <summary>Choose a community team</summary>
                   <ul className={styles.indexList} data-testid="ward-statistics-community-list">
-                    {COMMUNITY_TEAM_PAGES.map((team) => (
+                    {filteredAndSortedTeams.map((team) => (
                       <li key={team.id} className={styles.indexItem}>
                         <Link
                           href={communityStatisticsHref(team.id)}
@@ -1401,8 +1073,9 @@ export function StatisticsScreen({
                       </li>
                     ))}
                   </ul>
-                </div>
-              </details>
+                </details>
+                {filteredAndSortedTeams.length === 0 && <p className={pageStyles.scopeNote}>No matching teams.</p>}
+              </div>
             </WardPanel>
           </div>
 
@@ -1410,12 +1083,11 @@ export function StatisticsScreen({
           <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
             <div className={pageStyles.pb}>
               <p className={pageStyles.scopeNote}>
-                Every referral asking a ward for a bed today, and what has happened to it so far. Raised equals accepted
-                plus declined plus still open.
+                Referrals raised today with a ward destination. Each referral is counted once in each measure.
               </p>
             </div>
 
-            <dl className={pageStyles.band} id="refBand">
+            <dl className={`${pageStyles.band} ${pageStyles.referralBand}`} id="refBand">
               <div className={pageStyles.kpi}>
                 <dt>Raised today</dt>
                 <dd>
@@ -1427,7 +1099,7 @@ export function StatisticsScreen({
                 <dt>Accepted today</dt>
                 <dd>
                   {refAccepted}
-                  <small>a bed confirmed or on the way</small>
+                  <small>accepted outcome</small>
                 </dd>
               </div>
               <div className={pageStyles.kpi}>
@@ -1441,15 +1113,14 @@ export function StatisticsScreen({
                 <dt>Still open</dt>
                 <dd>
                   {refOpen}
-                  <small>raised today, not yet answered</small>
+                  <small>ward answer pending</small>
                 </dd>
               </div>
             </dl>
 
             <p className={pageStyles.panelFoot}>
-              <strong>A decline is a recorded decision, not a failure.</strong> Every decline counted here carries one
-              of the same recorded reasons a ward gives on its own screen, so a refusal is captured and never hidden.{" "}
-              <strong>Still open means nobody has answered yet</strong>, not that the answer was no.
+              <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link> · Withdrawn referrals remain in the
+              raised total.
             </p>
 
             {/* Referrals article for test suite */}
@@ -1490,137 +1161,25 @@ export function StatisticsScreen({
         </div>
 
         {/* ══════════ THE HONESTY FOOT ══════════ */}
-        <WardPanel title="What is invented and what is real">
-          <p>These figures are invented prototype data, not observed hospital activity.</p>
-          <div className={pageStyles.footSec}>
-            <h3>Every figure here is invented</h3>
-            <p>The invented figures illustrate the prototype and are not clinical measurements.</p>
-            <ul className={pageStyles.footList}>
-              <li>
-                <b>Every bed&apos;s state:</b> occupied, ready, held and out of service, on every one of the{" "}
-                {units.length} wards, including the {words(pressureWards.length)} drawn. They were chosen so the{" "}
-                {units.length} wards sum exactly to this page&apos;s own totals,{" "}
-                <span className={pageStyles.num}>{availableNow}</span> ready,{" "}
-                <span className={pageStyles.num}>{heldBeds}</span> held,{" "}
-                <span className={pageStyles.num}>{blockedBeds}</span> out of service and{" "}
-                <span className={pageStyles.num}>{occupiedBeds}</span> occupied out of the{" "}
-                <span className={pageStyles.num}>{totalBeds}</span> real beds. The arrangement across individual wards
-                is invented. Only the {totalBeds} bed ceiling is real.
-              </li>
-              <li>
-                <b>Every wait, admission, discharge, referral and caseload figure:</b> today&apos;s{" "}
-                <span className={pageStyles.num}>{admissionsCount}</span> admissions and{" "}
-                <span className={pageStyles.num}>{dischargesCount}</span> discharges, all{" "}
-                <span className={pageStyles.num}>{totalEdWaiting}</span> people waiting in an emergency department and
-                every wait time including the <span className={pageStyles.num}>{networkLongestWait}h</span> longest and
-                the <span className={pageStyles.num}>{networkMedianWait}h</span> median, the{" "}
-                <span className={pageStyles.num}>{refRaised}</span> referrals raised today and their{" "}
-                <span className={pageStyles.num}>{refAccepted}</span> accepted,{" "}
-                <span className={pageStyles.num}>{refDeclined}</span> declined and{" "}
-                <span className={pageStyles.num}>{refOpen}</span> still open, and every community team&apos;s caseload,
-                new referral and discharge figure including the{" "}
-                <span className={pageStyles.num}>{totalTeamCaseload.toLocaleString()}</span>,{" "}
-                <span className={pageStyles.num}>{totalTeamNewRefs.toLocaleString()}</span> and{" "}
-                <span className={pageStyles.num}>{totalTeamDischarges.toLocaleString()}</span> totals. The community
-                figures follow one stated rule: a caseload of 2.6 people a suburb, new referrals at a sixteenth of it
-                and discharges at a twentieth.
-              </li>
-              <li>
-                <b>The referred, awaiting an answer counts</b> in Where the pressure is are a separate invented figure
-                from the emergency department waits opposite. The two are different populations, said so in the
-                panel&apos;s own words, precisely so a reader does not add them together.
-              </li>
-              <li>
-                <b>The rail, the bar and their drawers</b> carry Command&apos;s own invented movements, referrals and
-                overrides, unchanged, so this screen&apos;s chrome says exactly what Command&apos;s says.
-              </li>
-            </ul>
-          </div>
-
-          <div className={pageStyles.footSec}>
-            <h3>What is real</h3>
-            <ul className={pageStyles.footList}>
-              <li>
-                <b>
-                  {units.length} wards across {hospitalsCount} hospitals, and their exact bed counts.
-                </b>{" "}
-                Every ward name, hospital name and bed count on this page, including the {words(pressureWards.length)}{" "}
-                in Where the pressure is, is read from <code>ward-sites.ts</code>. <b>{totalBeds} beds</b> is the
-                arithmetic sum of those {units.length} real counts, not an invented figure.
-              </li>
-              <li>
-                <b>{emergencyDepts.length} emergency departments</b>, also from <code>ward-sites.ts</code>. SJGM and
-                PEEL each run one and hold no mental health bed of their own, which is why neither appears in the ward
-                table. With the {hospitalsCount} hospitals that hold wards, that is {hospitalsCount + 2} sites in the
-                collection.
-              </li>
-              <li>
-                <b>The {communityTeams.length} community team names and their suburb counts</b>, Midland at 70 down to
-                Alma Street (Central) at 12, are the list the approved community hub screen carries, counted from{" "}
-                <code>ward-catchment.ts</code>. They were taken from that screen rather than re-derived here, so the two
-                screens cannot disagree.
-              </li>
-              <li>
-                <b>The shared visual language</b>: every colour, size, panel, table, band, chart and chip rule above the
-                screen&apos;s own comment in this file is the Ward Flow third edition stylesheet, copied unedited from
-                the Command build.
-              </li>
-              <li>
-                <b>The day and the clock</b>: Saturday 15 August 2026, 10:42 AWST, day shift, handover at 14:00, the
-                same day Command shows.
-              </li>
-            </ul>
-          </div>
-
-          <div className={pageStyles.footSec}>
-            <h3>What this screen deliberately does not do</h3>
-            <ul className={pageStyles.footList}>
-              <li>
-                <b>It has no switcher, and no per-ward, per-department or per-team action.</b> This is the top of the
-                hierarchy the ward, department and community switchers route out of. Every figure here belongs to a
-                service that answers for it on its own screen, and this page only totals what has been recorded there.
-                The three statistics pages beneath it, for wards, for emergency departments and for community teams, are
-                linked from the foot of the panel each one details.
-              </li>
-              <li>
-                <b>It does not claim the per-ward split is a measurement.</b> The headline figures and the totals rows
-                are arithmetic on invented per-ward numbers, not a live feed. It is stated once here rather than
-                repeated beside every figure, and the reconciliation line above says whether that arithmetic holds.
-              </li>
-              <li>
-                <b>A nought is a figure where it is measured and none where it is a state.</b> A count of people
-                waiting, or of referrals awaiting an answer, reads none in italic where there are none, because none is
-                a state. A measured quantity such as beds ready keeps its 0 as a figure, so it can be compared down the
-                column. Neither ever stands for not tracked. Where a figure could not be taken at all, the caption
-                beside it says so.
-              </li>
-              <li>
-                <b>It draws no verdict about a person.</b> Every judgement on this screen is about a ward, a department,
-                a team or a bed.
-              </li>
-            </ul>
-          </div>
-
-          <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-            <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-              <div className={styles.panelBody}>
-                <ul className={styles.indexList} data-testid="ward-statistics-service-list">
-                  {HEALTH_SERVICES.map((svc) => (
-                    <li key={svc} className={styles.indexItem}>
-                      <Link
-                        href={serviceStatisticsHref(svc)}
-                        className={styles.indexLink}
-                        data-testid={`ward-statistics-service-link-${svc}`}
-                      >
-                        <span className={styles.indexLabel}>{svc}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </WardPanel>
-          </div>
-        </WardPanel>
+        <div id={STATISTICS_SERVICE_CHOOSER_ID}>
+          <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
+            <div className={styles.panelBody}>
+              <ul className={styles.indexList} data-testid="ward-statistics-service-list">
+                {HEALTH_SERVICES.map((svc) => (
+                  <li key={svc} className={styles.indexItem}>
+                    <Link
+                      href={serviceStatisticsHref(svc)}
+                      className={styles.indexLink}
+                      data-testid={`ward-statistics-service-link-${svc}`}
+                    >
+                      <span className={styles.indexLabel}>{svc}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </WardPanel>
+        </div>
 
         <div
           className={`${styles.governanceBanner} ${pageStyles.provenanceFooter}`}
