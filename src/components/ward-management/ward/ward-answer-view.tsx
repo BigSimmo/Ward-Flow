@@ -108,16 +108,43 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       ? newestRejection
       : undefined;
 
-  // Escape key handler for modal
+  // Escape and Tab key containment handler for modal
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && acceptModalOpen) {
+      if (!acceptModalOpen) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
         setAcceptModalOpen(false);
         triggerRef.current?.focus();
+        return;
+      }
+      if (event.key === "Tab" && modalRef.current) {
+        const focusable = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => !el.hasAttribute("disabled"));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!first || !last) return;
+        if (event.shiftKey && document.activeElement === first) {
+          last.focus();
+          event.preventDefault();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          first.focus();
+          event.preventDefault();
+        }
       }
     }
     if (acceptModalOpen) {
       window.addEventListener("keydown", handleKeyDown);
+      queueMicrotask(() => {
+        const first = modalRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        first?.focus();
+      });
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [acceptModalOpen]);
@@ -228,6 +255,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       unitId: currentUnit.id,
     });
     setAcceptModalOpen(false);
+    queueMicrotask(() => {
+      triggerRef.current?.focus();
+    });
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
     triggerToast("Acceptance requested.");
   }
