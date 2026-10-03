@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "../scripts/unit-test-population.mjs";
 
 /**
  * A file under `tests/` is only actually tested if SOME runner's include/testMatch pattern
@@ -89,20 +90,29 @@ describe("no file under tests/ is invisible to every runner", () => {
 
   const vitestSource = readConfigSource("vitest.config.mts");
 
-  const nodeIncludeMatch = vitestSource.match(/include: liveProviderTests \? \["([^"]+)"\] : \["([^"]+)"\],/);
-  if (!nodeIncludeMatch) {
-    throw new Error("vitest.config.mts: could not read the node project's include globs — update this extraction.");
+  const populationImport = vitestSource.match(
+    /import\s*\{([^}]+)\}\s*from\s+["']\.\/scripts\/unit-test-population\.mjs["']/,
+  );
+  const populationNames = populationImport?.[1]?.split(",").map((name) => name.trim()) ?? [];
+  if (
+    ["NODE_UNIT_TEST_GLOBS", "DOM_UNIT_TEST_GLOBS", "LIVE_UNIT_TEST_GLOBS"].some(
+      (name) => !populationNames.includes(name),
+    )
+  ) {
+    throw new Error("vitest.config.mts: shared population import changed — update this extraction.");
   }
-  // The ternary's TRUE branch (ALLOW_PROVIDER_TESTS=true) and FALSE/default branch, in source order.
-  const NODE_LIVE_INCLUDE_GLOB = nodeIncludeMatch[1]!; // "tests/**/*.live.test.ts"
-  const NODE_DEFAULT_INCLUDE_GLOB = nodeIncludeMatch[2]!; // "tests/**/*.test.ts"
-
-  const jsdomIncludeMatch = vitestSource.match(/name: "jsdom",[\s\S]*?include: \[([^\]]+)\],/);
-  if (!jsdomIncludeMatch) {
-    throw new Error("vitest.config.mts: could not read the jsdom project's include glob — update this extraction.");
+  if (!/include:\s*liveProviderTests\s*\?\s*LIVE_UNIT_TEST_GLOBS\s*:\s*NODE_UNIT_TEST_GLOBS/.test(vitestSource)) {
+    throw new Error("vitest.config.mts: node/live collection binding changed — update this extraction.");
   }
-  const JSDOM_INCLUDE_GLOBS = [...jsdomIncludeMatch[1]!.matchAll(/"([^"]+)"/g)].map((match) => match[1]!);
-  if (JSDOM_INCLUDE_GLOBS.length === 0) throw new Error("jsdom include patterns parsed as empty");
+  if (!/name:\s*"jsdom",[\s\S]*?include:\s*DOM_UNIT_TEST_GLOBS/.test(vitestSource)) {
+    throw new Error("vitest.config.mts: jsdom collection binding changed — update this extraction.");
+  }
+  const NODE_DEFAULT_INCLUDE_GLOBS = NODE_UNIT_TEST_GLOBS;
+  const NODE_LIVE_INCLUDE_GLOBS = LIVE_UNIT_TEST_GLOBS;
+  const JSDOM_INCLUDE_GLOBS = DOM_UNIT_TEST_GLOBS;
+  if ([NODE_DEFAULT_INCLUDE_GLOBS, NODE_LIVE_INCLUDE_GLOBS, JSDOM_INCLUDE_GLOBS].some((globs) => globs.length === 0)) {
+    throw new Error("shared collection patterns parsed as empty");
+  }
 
   // The caring-contacts-db project left with PsychSift (26 September 2026). If a conditional
   // project comes back, extract its files here and union them into isVisible below.
@@ -110,8 +120,8 @@ describe("no file under tests/ is invisible to every runner", () => {
     throw new Error("vitest.config.mts: a caring-contacts-db file list is back — extract it here again.");
   }
 
-  const nodeDefaultIncludeRe = globToRegExp(NODE_DEFAULT_INCLUDE_GLOB);
-  const nodeLiveIncludeRe = globToRegExp(NODE_LIVE_INCLUDE_GLOB);
+  const nodeDefaultIncludeRes = NODE_DEFAULT_INCLUDE_GLOBS.map(globToRegExp);
+  const nodeLiveIncludeRes = NODE_LIVE_INCLUDE_GLOBS.map(globToRegExp);
   const jsdomIncludeRes = JSDOM_INCLUDE_GLOBS.map(globToRegExp);
 
   // ---- 2. Playwright: discover which projects exist and which named pattern each one uses ----
@@ -145,18 +155,20 @@ describe("no file under tests/ is invisible to every runner", () => {
   }
 
   function isVisible(relPath: string): boolean {
-    const nodeDefaultVisible = nodeDefaultIncludeRe.test(relPath) && !nodeLiveIncludeRe.test(relPath);
+    const nodeDefaultVisible =
+      nodeDefaultIncludeRes.some((pattern) => pattern.test(relPath)) &&
+      !nodeLiveIncludeRes.some((pattern) => pattern.test(relPath));
     return (
       nodeDefaultVisible ||
       jsdomIncludeRes.some((pattern) => pattern.test(relPath)) ||
-      nodeLiveIncludeRe.test(relPath) || // visible under ALLOW_PROVIDER_TESTS=true
+      nodeLiveIncludeRes.some((pattern) => pattern.test(relPath)) || // visible under ALLOW_PROVIDER_TESTS=true
       playwrightMainPatterns.some((re) => re.test(relPath))
     );
   }
 
   it("reads the real patterns from every runner's config, not a remembered copy of two globs", () => {
-    expect(NODE_DEFAULT_INCLUDE_GLOB).toBe("tests/**/*.test.ts");
-    expect(NODE_LIVE_INCLUDE_GLOB).toBe("tests/**/*.live.test.ts");
+    expect(NODE_DEFAULT_INCLUDE_GLOBS).toEqual(["tests/**/*.test.ts"]);
+    expect(NODE_LIVE_INCLUDE_GLOBS).toEqual(["tests/**/*.live.test.ts"]);
     expect(JSDOM_INCLUDE_GLOBS).toEqual(["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"]);
     // Playwright: two distinct named patterns across the projects (production browsers, the
     // mockup projects).

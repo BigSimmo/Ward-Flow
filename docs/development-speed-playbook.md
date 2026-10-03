@@ -243,9 +243,9 @@ and make the filter match failure signatures as well as success ones.
   itself** when a Prettier policy file changed (`.prettierrc*`, `prettier.config.*`,
   `.prettierignore`, `.editorconfig`, or a `package.json` carrying a `prettier` field) — because a
   policy change re-decides the verdict for files the push never touched.
-- **There is no changed-files-only `--write`.** Fixing formatting is whole-tree `npm run format`,
-  which has been measured past seven minutes and past tool timeouts. Background it, and check
-  changed files in the foreground.
+- **Write mode is owned-paths only.** Fix formatting with `npm run format -- --files <exact-owned-paths>`;
+  a bare `npm run format` refuses to run, and the old whole-tree rewrite (measured past seven minutes
+  and past tool timeouts) is not implied. Check changed files in the foreground.
 - **Formatting is in none of `test`, `typecheck` or `lint`.** Run it _and commit the result_ — a
   push sends commits, not your working tree.
 - The pre-push guard checks the **pushed commit**, not your working copy, in a scratch worktree. A

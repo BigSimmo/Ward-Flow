@@ -108,21 +108,24 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(facts).toHaveTextContent(first.admission.homeRegion as string);
     expect(facts).toHaveTextContent(first.unit.name);
     expect(facts).toHaveTextContent(TRAVEL_BAND_LABELS[first.band]);
+    const travelCell = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`).children[3];
+    expect(travelCell.textContent?.trim()).toBe(TRAVEL_BAND_LABELS[first.band]);
     expect(facts).toHaveTextContent(sinceArrivalLabel(first, NOW_ANCHOR));
-    // Every selectable row came from `entries` — the ledger's own out-of-area list — so this
-    // sentence is true for every possible selection, not a default guess.
-    expect(facts).toHaveTextContent("In a bed far from home");
+    expect(facts).toHaveTextContent("Current placement");
+    expect(facts).toHaveTextContent("Home catchment");
 
     expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
   });
 
-  it("renders functional clinical repatriation assessment without explanatory caveats", () => {
+  it("shows the next arrangement step without inventing clinical readiness or a receiving bed", () => {
     renderBoard();
     const first = entries[0];
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
 
     const caveat = screen.getByTestId("ward-out-of-area-subject-caveat");
-    expect(caveat.textContent).toContain("ready for repatriation transfer");
+    expect(caveat).toHaveTextContent("confirm ward agreement");
+    const inspector = screen.getByTestId("ward-out-of-area-subject");
+    expect(inspector).not.toHaveTextContent(/clinically stable|ready for repatriation transfer|awaiting bed vacancy/i);
   });
 
   it("keeps the inspector clean of explanatory disclaimers when selection changes", () => {
@@ -148,8 +151,9 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     const first = entries[0];
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
 
-    // Click "Execute Repatriation Transfer Order"
-    fireEvent.click(screen.getByText(/Execute Repatriation Transfer Order/i));
+    fireEvent.click(
+      within(screen.getByTestId("ward-out-of-area-subject")).getByRole("button", { name: /Initiate repatriation/i }),
+    );
 
     // Fill form
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-home-hospital"), { target: { value: "RPH" } });
@@ -285,5 +289,84 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
         expect(screen.queryByTestId(`ward-out-of-area-row-${other.admission.id}`)).not.toBeInTheDocument();
       }
     }
+  });
+});
+
+describe("out-of-area inspector — navigation and explicit patient choice", () => {
+  it("sorts the displayed register alphabetically and navigates in that order, retaining ledger order by default", () => {
+    renderBoard();
+    const register = screen.getByTestId("ward-out-of-area-table");
+    const rows = () => within(register).getAllByTestId(/^ward-out-of-area-row-/);
+    const originalIds = rows().map((row) => row.getAttribute("data-testid"));
+    expect(originalIds).toEqual(entries.map((entry) => `ward-out-of-area-row-${entry.admission.id}`));
+    const originalLabels = rows().map((row) => row.getAttribute("aria-label") ?? "");
+    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "patient" } });
+    expect(rows().map((row) => row.getAttribute("aria-label"))).toEqual(
+      [...originalLabels].sort((a, b) => a.localeCompare(b, "en-AU")),
+    );
+    const sortedRows = rows();
+    fireEvent.click(sortedRows[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
+    expect(sortedRows[1]).toHaveAttribute("aria-selected", "true");
+    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "ledger" } });
+    expect(rows().map((row) => row.getAttribute("data-testid"))).toEqual(originalIds);
+  });
+
+  it("requires patient selection before opening the arrangement form", () => {
+    renderBoard();
+    const action = screen.getByRole("button", { name: /Initiate Repatriation/i });
+    expect(action).toBeDisabled();
+    fireEvent.click(action);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("navigates within the filtered register and keeps its row selection in sync", () => {
+    renderBoard();
+    const region = entries[0].admission.homeRegion as string;
+    const cohort = entries.filter((entry) => entry.admission.homeRegion === region);
+    expect(cohort.length).toBeGreaterThan(1);
+    fireEvent.change(screen.getByTestId("ward-out-of-area-catchment-filter"), { target: { value: region } });
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${cohort[0].admission.id}`));
+    expect(screen.getByRole("button", { name: "Inspect previous patient" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toHaveTextContent(cohort[1].admission.id);
+    expect(screen.getByTestId(`ward-out-of-area-row-${cohort[1].admission.id}`)).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Inspect previous patient" }));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toHaveTextContent(cohort[0].admission.id);
+  });
+
+  it("explains a selection outside the current filters and restores the full register", () => {
+    renderBoard();
+    const first = entries[0];
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
+    fireEvent.change(screen.getByLabelText("Filter out-of-area placements"), {
+      target: { value: "no matching patient" },
+    });
+    expect(screen.getByTestId("ward-out-of-area-subject")).toHaveTextContent("Outside current filters");
+    expect(screen.getByRole("button", { name: "Inspect next patient" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("returns focus to the selected row when the inspector closes", () => {
+    renderBoard();
+    const row = screen.getByTestId(`ward-out-of-area-row-${entries[0].admission.id}`);
+    row.focus();
+    fireEvent.keyDown(row, { key: "Enter" });
+    const close = screen.getByRole("button", { name: "Return to cohort overview" });
+    close.focus();
+    fireEvent.click(close);
+    expect(row).toHaveFocus();
+  });
+
+  it("leaves profile-link keyboard activation to the link", () => {
+    renderBoard();
+    const row = screen.getByTestId(`ward-out-of-area-row-${entries[0].admission.id}`);
+    const link = within(row).getByRole("link");
+    fireEvent.keyDown(link, { key: "Enter" });
+    expect(screen.queryByTestId("ward-out-of-area-subject-facts")).not.toBeInTheDocument();
   });
 });

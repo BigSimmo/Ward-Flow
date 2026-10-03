@@ -423,7 +423,7 @@ describe("Community team index — an empty list explains itself instead of look
     expect(linkedTeamIdsIn(markup)).toEqual([]);
     expect(linkCountIn(markup)).toBe(0);
     expect(main, "the empty page rendered no section at all — it did not render an empty state").toContain(
-      "Community teams",
+      "A–Z directory",
     );
   });
 });

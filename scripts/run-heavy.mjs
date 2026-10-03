@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +7,7 @@ import { arbitrate, recordGateOutcome } from "./gate-arbiter.mjs";
 import { consultGateReceipt, recordGateReceipt } from "./gate-receipts.mjs";
 import { typescriptBuildInfoPath } from "./test-cache-path.mjs";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
+import { runOwnedChild } from "./owned-child.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -81,20 +81,20 @@ try {
   throw error;
 }
 
-function runNpmScript() {
+async function runNpmScript() {
   const npmExecPath = process.env.npm_execpath;
   // Always forward effectiveForwarded (includes injected --tsBuildInfoFile for
   // shared typechecks). The pre-push hook invokes this via plain `node`, so
   // npm_execpath is usually unset — dropping the injection there would share
   // the base config's in-repo buildinfo across different include graphs.
   const npmArgs = effectiveForwarded.length ? ["--", ...effectiveForwarded] : [];
-  const child = npmExecPath
-    ? spawn(process.execPath, [npmExecPath, "run", script, ...npmArgs], {
+  const result = npmExecPath
+    ? await runOwnedChild(process.execPath, [npmExecPath, "run", script, ...npmArgs], {
         cwd: projectRoot,
         env: lock.environment,
         stdio: "inherit",
       })
-    : spawn(
+    : await runOwnedChild(
         process.platform === "win32" ? "cmd.exe" : "npm",
         process.platform === "win32"
           ? [
@@ -107,12 +107,7 @@ function runNpmScript() {
         { cwd: projectRoot, env: lock.environment, stdio: "inherit" },
       );
 
-  return new Promise((resolve, reject) => {
-    child.on("error", reject);
-    child.on("close", (status, signal) => {
-      resolve(childProcessExitCode({ status, signal }));
-    });
-  });
+  return childProcessExitCode(result);
 }
 
 let exitCode = 1;

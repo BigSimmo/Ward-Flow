@@ -18,8 +18,8 @@ This is the public source snapshot of the main local Ward Flow branch, published
 
 - Source snapshot: `f31140455260178209ca21e6fad05d046fd193a6`.
 - Project entry point: [Ward Flow documentation](docs/ward-flow/README.md).
-- Architecture: [code map](docs/ward-flow/code-map/README.md).
-- Product status and limitations: [status](docs/ward-flow/STATUS.md).
+- Architecture: [current orientation](docs/codebase-index.md); the [dated code map](docs/ward-flow/code-map/README.md) preserves detailed source history.
+- Current task scope and evidence: [task lifecycle](docs/task-receipts.md). [Historical status](docs/ward-flow/STATUS.md) preserves dated decisions and limitations; verify them against current source before commissioning work.
 - Original source README: [local source README](README.local-source.md).
 
 ## Local development

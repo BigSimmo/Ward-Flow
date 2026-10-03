@@ -21,6 +21,9 @@ import {
 } from "../scripts/gate-arbiter.mjs";
 
 const projectRoot = process.cwd();
+// Pure inherited decision fixtures are evaluated outside the maintained Ward
+// adapter; actual Ward no-deferral assertions live in ward-verification-plan.
+const inheritedFixtureRoot = path.join(projectRoot, "tmp", "inherited-arbiter-fixture");
 
 /** A miss, i.e. no local receipt covers this content — the ordinary case. */
 const noReceipt = { reuse: false, reason: "no receipt" };
@@ -43,7 +46,7 @@ function ledgerWith(gate: string, changeClass: string, outcomes: boolean[]) {
 
 function decide(overrides: Record<string, unknown>, env: Record<string, string | undefined> = {}) {
   return arbitrate({
-    projectRoot,
+    projectRoot: inheritedFixtureRoot,
     gate: "test",
     env: { ...env, CI: undefined },
     overrides: { receipt: noReceipt, coverage: ciCovers, ciVerdict: noCiVerdict, ...overrides },
@@ -141,7 +144,7 @@ describe("gate arbiter — CI coverage is derived, not assumed", () => {
 
   it("prints every assumed precondition with the decision", () => {
     const decision = arbitrate({
-      projectRoot,
+      projectRoot: inheritedFixtureRoot,
       gate: "test",
       env: { CI: undefined },
       overrides: {
