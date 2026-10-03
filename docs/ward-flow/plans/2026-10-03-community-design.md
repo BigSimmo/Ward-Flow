@@ -10,3 +10,5 @@ Removed circular border-token aliases that suppressed separators. Similar-name d
 Verification: 23 focused tests passed across gateway, index and alphabet accessibility suites. The existing scope suite has five skipped tests. Changed-component ESLint and git diff --check passed. Local Community route visually inspected; searching Albany showed 1 of 64, clear restored the directory, letter C focused its heading, and the bottom strip expanded and collapsed (50px closed). No responsive breakpoint rules changed. Full suite, hosting and deployment unverified; no provider calls or publication.
 
 Owner correction: removed the boxed, scrolling alphabet rail. Retained a plain vertical rail with a small gap between letters. Josh approved scoped takeover of community-index.tsx. Browser confirmed alphabet rail has no border or internal scrolling, with 20px letters and 4px gaps.
+
+Follow-up: matched the header search with a recessed surface, rounded corners, inset depth, soft outer elevation and an accent focus ring. Results use separated rounded rows with soft elevation instead of a bordered grid. Alphabet rail remains plain and non-scrolling.
