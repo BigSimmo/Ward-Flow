@@ -3,14 +3,19 @@
 > hosting and appearance claims are not current Ward instructions. Use the
 > [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
 
-<!-- docs-script-refs:historical-start -->
-
-# Scripts index
+# Ward Flow scripts inventory
 
 Curated map of `scripts/` (139 files) and the `package.json` script surface (113 entries),
-grouped by purpose. This is orientation, not an exhaustive per-file listing — the authoritative
-command list is `package.json`, and `npm run docs:check-scripts` verifies every `npm run <x>`
-referenced in docs resolves to a real script. `npm run docs:update` refreshes the exact counts above.
+with a maintained generated count header and a historical catalogue below. The current
+command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
+with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,
+excluding marked historical sections. Neither check establishes semantic freshness.
+
+<!-- docs-script-refs:historical-start -->
+
+## Historical scripts catalogue
+
+The preserved catalogue was grouped by purpose and is not an exhaustive current per-file listing.
 Every top-level `.mjs`/`.ts`/`.cjs` script is named below (the 44 the 2026-09-02 audit found
 uncatalogued were added the same day, in "Also catalogued" lists per section); the remaining files
 are fixtures, SQL, subfolder helpers, and small shared helpers grouped rather than itemised.

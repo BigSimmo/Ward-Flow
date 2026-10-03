@@ -12,9 +12,11 @@ this guide supersedes older process notes within that boundary. Start at [`READM
 
 ## 1. Picking up work
 
-1. Read [`README.md`](README.md), then [`STATUS.md`](STATUS.md), then the ledger
-   [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md), then the plan for your task in
-   [`plans/`](plans/README.md).
+1. Read [`README.md`](README.md), then the agreed task scope and existing task/checkpoint
+   under [`../task-receipts.md`](../task-receipts.md). Use the ledger
+   [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) and relevant [`plans/`](plans/README.md)
+   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md) is dated historical evidence,
+   not today's implementation state; verify current source before reviving an old task.
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
    touch are modified or staged, preserve them and resolve ownership before writes. Former
    Database fold-debt hooks are historical and are not part of this repository's startup.
@@ -22,8 +24,10 @@ this guide supersedes older process notes within that boundary. Start at [`READM
    the event names, strings and tests the plan names. If it is done, check it against the plan and fix
    gaps instead of rebuilding.
 4. Line numbers in a plan belong to the commit the plan names. Re-find them before editing.
-5. Build only what the plan and the owner's answers decide. Anything marked CLARIFY, "waits on the
-   owner" or deferred in `STATUS.md` is not built. If your task depends on one, stop and hand back.
+5. Build the authorised task and use judgement for routine reversible implementation choices.
+   Historical CLARIFY/deferred rows do not commission new work. Preserve unresolved clinical,
+   privacy, provider and ownership decisions; if the current task depends on one, record the
+   specific blocker and continue independent authorised work.
 6. Keep other tools' work. The owner's words: do not remove or significantly alter Antigravity's
    progress, design or builds; fix and perfect them.
 
@@ -53,6 +57,15 @@ this guide supersedes older process notes within that boundary. Start at [`READM
 - Scratch files go under `$TEMP`, never under `tests/` or `src/`. Never edit `.git/info/exclude`.
 
 ## 3. Commits
+
+Format only owned literal candidates with `npm run format -- --files <owned-path> ...`.
+The formatter validates ownership and refuses partial-staging overwrite; it does not stage.
+Whole-tree formatting is a separately requested operation. Formatter policy/config changes
+require a broader check, not implicit writes to other owners' files.
+
+Generated-document commit checks read an index snapshot using `scripts/check-staged-docs.mjs`;
+they do not rewrite working-tree generators. Mandatory Ward indexes fail on drift. General
+doc checks report their advisory/strict mode, so a warning or skipped check is not a pass.
 
 - Commit each coherent unit as you go, on your own branch only.
 - Stage explicit paths. **Never `git add -A` or `git add .`. Never `git stash`.** Verify the
@@ -165,15 +178,16 @@ would add overhead, and distinguish requested routing from observed execution.
 ## 8. Asking and recording owner questions
 
 - **Writing to the owner (25 September 2026, firm):** plain Australian English, answer first, short
-  sentences, as few lines as will do, and only what he needs to know, do or decide. No jargon, commit
-  ids, file paths or command names unless he asks. Give the result, not the process.
+  sentences, as few lines as will do, and only what he needs to know, do or decide. Include source,
+  paths, commands and uncertainty when they help him assess the result or act. Give the result first.
 - The thread that needs the answer asks, in its own thread, as **one numbered list**. Each question is one line in plain English with **one
   recommendation** and a one-word reply he can send. See [`how-to-write-to-the-owner.md`](how-to-write-to-the-owner.md).
 - Record his reply **verbatim** in a dated file, `owner-answers-YYYY-MM-DD.md`. A second round on the
   same day is appended under its own heading, numbered `R2-n`. The asking thread's reading of each answer
   follows, marked as a reading.
 - In the same commit, add a one-line "Superseded <date> by <file> item N" under every earlier ruling
-  it overrides, in that ruling's own file. Then update `STATUS.md` "Needs the owner".
+  it overrides, in that ruling's own maintained file. Update the existing task record/receipt;
+  preserve historical `STATUS.md` rather than treating it as a live question queue.
 - An item the owner has deferred and told us not to raise again is never re-asked.
 
 ## 9. Superseding a document
@@ -190,22 +204,30 @@ first. Back up before any cleanup or fold. "Nothing imports it" is never enough.
 
 ## 11. If your brief does not cover a decision
 
-Stop and ask the owner in your thread. Do not guess.
+Use judgement for routine reversible choices within the authorised outcome. Ask only when
+material uncertainty changes scope, product meaning, safety, ownership or authority. Prepare
+the concrete question and continue independent authorised work while the dependency waits.
+Never infer clinical/privacy/provider approval or an exact-file takeover from silence.
 
-## 12. Before a thread is resolved (owner rule, 25 September 2026)
+## 12. Completion and handoff by requested stage
 
-A thread is not finished, and must not be resolved, until all of this is true:
+Complete the requested stage with its acceptance evidence: a delivered audit, evidenced Fast
+Preview or verified local engineering change can complete without integration/publication.
+Integrate, publish or deploy only when that stage is authorised and separately verified.
+User acceptance, a local commit, hosted CI and deployed behaviour remain separate states.
 
-1. **Everything useful is committed** on the thread's own branch. The worktree shows no uncommitted
-   changes (`git -C <worktree> status --short` is empty).
-2. **Anything at risk is backed up first.** Preserve a recoverable point before replacing the
-   integration target. Before approved cleanup or replacing uncommitted or unclear work, run
-   `bash ~/.claude/scripts/backup-work.sh` and preserve those files in a backup commit, never a stash.
-3. **Useful work is integrated into its authorised Ward Flow destination** (§4), with the exact
-   resulting tree compared against the reviewed candidate.
-4. **Work that is not wanted is kept, not discarded**, on a named `backup/<date>-<topic>` branch.
-5. **Any integration lock is released** under the current repository rulebook.
-6. **The thread reports to the coordinator**: what was integrated (commit SHAs), the backup branch name,
-   and any open questions or suggested next steps.
+Preserve useful work and a recoverable point before any authorised replacement/cleanup.
+Commit coherent owned units through the current repository contract; coordinate a shared
+writer's final commit rather than claiming another owner's changes. If owned edits remain
+uncommitted, name them and the reason. Preserve other branches, worktrees, backups and processes.
+Release only the claims/locks this task owns when handing it back.
 
-If any of these cannot be done, say which and why in the thread, and leave the thread open.
+Update the same task identity under [the receipt contract](../task-receipts.md). One final compact
+contribution may include start/completion metadata for a single uninterrupted scoped reversible
+task with no unresolved ownership, new provider/publication boundary or substantial recovery need.
+A real pause, blocker, transfer or scope change needs an immediate update; substantial work keeps
+meaningful checkpoints. Newly checked evidence is required for Last verified; timestamp-only
+refresh does not establish freshness.
+
+Report the usable result, source identity, owned diff, checks and unverified stages. An actual
+remaining acceptance blocker keeps that stage incomplete; an unrequested later stage does not.

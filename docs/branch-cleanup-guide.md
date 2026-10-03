@@ -1,8 +1,17 @@
 # Branch Cleanup Guide
 
+> **Historical PsychSift procedure, not a Ward Flow cleanup runbook.** The preflight
+> `scripts/reconciliation-preflight.mjs` and `docs/reconciliation-playbook.md` named below
+> are absent here. Its fetch/refspec/deletion examples must not be executed as current
+> Ward instructions. Follow the [repository, ownership and provider boundaries](../AGENTS.md)
+> and [current builder workflow](ward-flow/HOW-WE-WORK.md). A Ward cleanup task needs its
+> own scoped authority and reviewed procedure; preserve dirty work and branch history.
+
+<!-- docs-script-refs:historical-start -->
+
 Last reviewed: 2026-08-23
 
-This guide defines the safe branch cleanup path for this repository. It is written for branch hygiene only: do not use it to discard source work, resolve merge conflicts, merge product changes, or rewrite history.
+The original guide defined the cleanup path for the former repository. It is retained as dated procedure evidence, including missing machinery; it is not operational authority in Ward Flow.
 
 For historical cleanup snapshots (frozen branch inventories and progress logs), see `docs/archive/`.
 
@@ -223,3 +232,5 @@ Expected invariant:
 - `main` remains unchanged unless you intentionally merge or push there.
 - The current dirty worktree remains untouched unless you explicitly choose to clean it.
 - No branch with patch-unique commits is deleted unless its content was explicitly rejected or safely ported first.
+
+<!-- docs-script-refs:historical-end -->

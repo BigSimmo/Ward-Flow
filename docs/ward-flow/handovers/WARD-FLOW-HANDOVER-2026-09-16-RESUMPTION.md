@@ -1,5 +1,10 @@
 # Ward Flow Handover & Resumption Plan — 2026-09-16
 
+> **Evidence availability.** Retired-worktree `file:` citations below are unavailable to
+> portable readers until their author supplies recoverable source. Their original meaning is
+> preserved. This superseded handover does not establish current work or runtime state;
+> start at the [current Ward entry](../README.md).
+
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/STATUS.md`.** Kept for history; do not follow.
 
 > **Updated 2026-09-16, evening:** read

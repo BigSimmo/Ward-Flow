@@ -7,11 +7,11 @@ only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-toke
 committed tests → `.design-sync/conventions.md` → this set. Where this set contradicts a
 higher source, the higher source wins and the contradiction is a defect here.
 
-**Picking the work up cold?** Start at
-[`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — its rows are the current
-source of truth for what is open, in what order, and what has already been measured. (The
-PsychSift outstanding-issues ledger this pointer used before 26 September 2026 was retired on
-the Ward Flow line at Josh's request; the PsychSift version remains on `origin/main`.)
+For current Ward work, start at the [Ward entry point](../ward-flow/README.md), agreed task
+scope and [receipt contract](../task-receipts.md); the [ledger](../ward-flow-task-ledger.md)
+indexes existing task IDs. The old PsychSift outstanding-issues source is foreign historical
+provenance; its current location is unverified. Ward Flow's `origin/main` is Ward Flow main.
+Historical design prescriptions do not override the latest approved Ward app.
 
 [HANDOVER-2026-08-07.md](HANDOVER-2026-08-07.md) is **superseded and must not be used to
 scope work** (`#277`). Nine open rows cite it as their Source, but four of its figures have

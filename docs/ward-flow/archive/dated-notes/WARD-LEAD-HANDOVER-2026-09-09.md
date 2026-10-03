@@ -185,7 +185,7 @@ Every anti-vacuity floor in this programme is currently written as a constant.
 
 **Eight probes across four chats returned a confident answer to a question they could not answer.**
 Not one was caught by a gate; every one surfaced by accident or because a result looked too good.
-The catalogue is [`probes-that-answer-a-neighbouring-question.md`](#removed-target-probes-that-answer-a-neighbouring-question).
+The original catalogue citation was `probes-that-answer-a-neighbouring-question.md`. Its target is unavailable in this preserved record; recoverable author evidence is needed before restoring the link.
 
 ⚠️ **And four instruments answered "whose worktree is this?" wrongly in one afternoon** — the branch
 name, a process filter that structurally could not return a hit, a session `cwd` that was correct

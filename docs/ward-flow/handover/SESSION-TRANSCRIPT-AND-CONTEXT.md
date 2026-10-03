@@ -1,5 +1,10 @@
 # Complete Session Transcript & Context Export
 
+> **Historical evidence availability.** The `file:` citations below point into a retired local
+> checkout and are unavailable to portable readers. Preserve the original author citations;
+> a recoverable author source is needed before restoring access. This transcript does not
+> establish current Ward design, runtime or provider authority. Use the [current entry](../README.md).
+
 ## End-to-End Log of Movements Redesign, Scoring, Adversarial Audit, Live Production Build, and Handover
 
 **Conversation ID**: `ca65cae8-55ce-43e1-b606-6d79107eccc2`

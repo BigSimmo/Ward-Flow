@@ -66,7 +66,7 @@ The complete catalog with file line numbers, defect mechanisms, clinical risks, 
 
 ## 3. Active Blocking Questions (13 Decisions)
 
-Detailed clinical impacts, options, and recommendations are in **[`docs/ward-flow/PROJECT-ISSUES.md#section-2`](../PROJECT-ISSUES.md#section-2)**.
+Detailed clinical impacts, options, and recommendations were cited as `docs/ward-flow/PROJECT-ISSUES.md#section-2`. The [preserved issue catalogue](../archive/dated-notes/PROJECT-ISSUES.md) contains that historical owner-question context; the original fragment does not exist in the current redirect stub. These dated recommendations do not commission current clinical work.
 
 ### ① Clinical & Statutory Decisions
 

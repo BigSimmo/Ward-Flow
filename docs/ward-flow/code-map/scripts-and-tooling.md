@@ -1,5 +1,12 @@
 # Scripts, generators, hooks and tooling
 
+Current doc-link checks: default `npm run check:ward-doc-links` checks relative paths in the
+Ward tree including history. Use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
+(repeat selections) for maintained root/other Markdown; paired historical sections are excluded.
+`--anchors` checks supported ATX/setext headings and explicit HTML IDs. Web URLs,
+reference-style links and renderer extensions are not validated; forensic file URLs are
+advisory. Missing/unreadable selected files fail. A pass does not establish semantic freshness.
+
 > Updated tooling contracts, 2 October 2026: both selectors default to the local `origin/main`
 > ref, retain explicit `--base`, never fetch and fail when refs cannot be compared. Owner-rulings
 > indexing includes `decisions.md` with source-qualified IDs and distinguishes decisions from
