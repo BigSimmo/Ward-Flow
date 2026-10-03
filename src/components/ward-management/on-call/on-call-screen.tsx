@@ -88,8 +88,7 @@ export function OnCallScreen() {
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
-  // Collapsed coverage and handover rows carry `hidden`, which print CSS cannot override; reveal them for
-  // printing and put each row back exactly as it was afterwards.
+  // Reveal collapsed coverage and handover rows for native printing and restore each row afterwards.
   useEffect(() => {
     let revealed: HTMLElement[] = [];
     const expand = () => {
@@ -425,7 +424,12 @@ export function OnCallScreen() {
                             </a>
                           </td>
                         </tr>
-                        <tr hidden={expandedRole !== item.id} data-print-expand="" id={`ward-coverage-${item.id}`}>
+                        <tr
+                          className={styles.coverageRow}
+                          hidden={expandedRole !== item.id}
+                          data-print-expand=""
+                          id={`ward-coverage-${item.id}`}
+                        >
                           <td colSpan={5} className={styles.coverageCell}>
                             <dl className={styles.coverageGrid}>
                               <div>
