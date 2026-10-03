@@ -98,6 +98,7 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  */
 
 const DELAYS_ROUTE = "/mockups/ward-flow/delays";
+const PUBLISHED_CHECKS_ROUTE = "/mockups/ward-flow/movements";
 
 /**
  * A spread of route SHAPES, not a sample of pages: the coordinator home (no place), the audit's
@@ -113,6 +114,7 @@ const COUNTED_ROUTES = [
   "/mockups/ward-flow/ward/rph-adult-secure",
   "/mockups/ward-flow/referrals/new",
   "/mockups/ward-flow/statistics/overview",
+  PUBLISHED_CHECKS_ROUTE,
 ] as const;
 
 /**
@@ -129,7 +131,6 @@ const EXACTLY_ONE: ReadonlyArray<readonly [string, string]> = [
   ["ward-bar-activity-trigger", "the Activity (figures) control"],
   ["ward-bar-tasks-trigger", "the Tasks control"],
   ["ward-bar-tools-trigger", "the Tools control"],
-  ["ward-reconciliation-line", "the reconciliation sentence"],
   ["ward-live-region", "the shell's polite announcer"],
 ];
 
@@ -267,6 +268,21 @@ test.describe("@mockup Ward shell bar", () => {
               "reverted this mount the first time",
           ).toHaveCount(0);
         }
+
+        // Josh requested removal of the unpublished status on 3 October 2026.
+        // Movements publishes actual checks: require its verdict once, and require
+        // silence on the other route shapes, rather than accepting a missing publisher.
+        const reconciliation = page.getByTestId("ward-reconciliation-line");
+        if (route === PUBLISHED_CHECKS_ROUTE) {
+          await expect(reconciliation, "the published reconciliation verdict must appear once").toHaveCount(1);
+          await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
+          await expect(reconciliation).toHaveAttribute("data-tone", "good");
+        } else {
+          await expect(reconciliation, "unpublished pages must omit the sidebar reconciliation status").toHaveCount(0);
+        }
+        await expect(page.getByText("No reconciliation is available for this page yet.", { exact: true })).toHaveCount(
+          0,
+        );
       }
     });
   }
