@@ -150,37 +150,39 @@
   }
 }
 
-/* KPI Strip */
+/* Compact segmented summary */
 .kpiStrip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  gap: 0;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
   background: var(--surface);
-  box-shadow: 0 3px 12px color-mix(in srgb, var(--ink) 5%, transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .kpiCard {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: 8px 12px;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
   min-width: 0;
   width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border: 0;
+  border-radius: 5px;
   background: transparent;
-  padding: 12px 16px;
+  padding: 8px 16px;
   color: var(--ink);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
   box-sizing: border-box;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  transition: background 0.15s ease;
+}
+.kpiCard + .kpiCard {
+  border-left: 1px solid var(--line);
 }
 .kpiCard:hover {
   background: var(--surface-2);
@@ -190,19 +192,19 @@
   outline-offset: -2px;
 }
 .kpiCardActive {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
-}
-.kpiCard .kpiLabelRow {
-  grid-column: 1 / -1;
+  background: var(--surface-2);
+  box-shadow: inset 0 -2px var(--accent);
 }
 .kpiCard .kpiVal {
-  font-size: 28px;
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1;
+  color: var(--ink) !important;
+  flex-shrink: 0;
 }
-.kpiCard .kpiSub {
-  max-width: 18rem;
-  line-height: 1.45;
+.kpiCard .kpiSub,
+.kpiCard .kpiToneBadge {
+  display: none;
 }
 
 .kpiLabelRow {
@@ -259,10 +261,10 @@
 .kpiLabel {
   font-size: var(--t-0, 12px);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  line-height: 1.25;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  line-height: 1.35;
 }
 
 .kpiVal {
@@ -357,7 +359,7 @@
 }
 
 .ph {
-  padding: 18px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--line);
   border-top-left-radius: var(--r1i, 9px);
   border-top-right-radius: var(--r1i, 9px);
@@ -588,12 +590,12 @@
 
 .table thead th {
   text-align: left;
-  padding: 12px 16px;
+  padding: 11px 16px;
   font-size: var(--t-0, 12px);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-soft);
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -633,7 +635,7 @@
 }
 
 .table tbody td {
-  padding: 14px 16px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   vertical-align: middle;
@@ -651,14 +653,14 @@
 }
 
 .unitNameText {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink);
   font-size: var(--t-1, 13px);
 }
 
 .stayCell {
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .table tbody tr:last-child td {
@@ -675,7 +677,7 @@
 }
 
 .rowSelected td {
-  background: var(--accent-soft) !important;
+  background: color-mix(in srgb, var(--accent-soft) 65%, var(--surface)) !important;
 }
 
 .rowSelected {
@@ -731,49 +733,39 @@
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
-/* Refined Clinical Travel Indicator Badge */
+/* Plain travel requirements: symbol and text, without a container. */
 .travelBadge {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--r2, 6px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
   font-family: var(--body);
   font-size: var(--t-0, 12px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
+  font-weight: 400;
+  line-height: 1.4;
   box-sizing: border-box;
-  white-space: nowrap;
+  white-space: normal;
   max-width: 100%;
 }
 
-.table td .travelBadge {
-  white-space: nowrap;
+.travelBadge[data-tone="danger"] > svg {
+  color: var(--danger);
 }
 
-.travelBadge[data-tone="danger"] {
-  background: var(--danger-soft);
-  color: var(--danger-ink, var(--danger));
-  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-}
-
-.travelBadge[data-tone="warn"] {
-  background: var(--warn-soft);
+.travelBadge[data-tone="warn"] > svg {
   color: var(--warn);
-  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
 }
 
-.travelBadge[data-tone="good"] {
-  background: var(--good-soft);
+.travelBadge[data-tone="good"] > svg {
   color: var(--good);
-  border: 1px solid color-mix(in srgb, var(--good) 40%, transparent);
 }
 
-.travelBadge[data-tone="accent"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+.travelBadge[data-tone="accent"] > svg {
+  color: var(--accent);
 }
 
 .placementGlyph {
@@ -1641,9 +1633,9 @@
   font-size: var(--t-0, 12px);
   font-variant-numeric: tabular-nums;
   color: var(--accent);
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 2px;
-  font-weight: 600;
+  font-weight: 500;
   transition: color 0.15s ease;
   display: inline-flex;
   align-items: center;
@@ -1652,6 +1644,7 @@
 
 .umrnLink:hover {
   color: var(--accent-ink);
+  text-decoration: underline;
 }
 
 .umrnLink:focus-visible {
@@ -1777,6 +1770,7 @@
   gap: 10px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
 }
 .inspectorHead h2 {
   margin: 0;
@@ -1870,10 +1864,8 @@
   padding-top: 14px;
 }
 .stayPill {
-  padding: 3px 6px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  font: 500 12px var(--mono);
+  padding: 0;
+  font: 600 13px var(--mono);
   color: var(--accent) !important;
 }
 .spotlightAction {
@@ -2014,7 +2006,7 @@
 }
 .placementFacts dt {
   margin: 0;
-  color: var(--muted);
+  color: var(--ink-soft);
   font-size: var(--t-0, 12px);
   line-height: 1.5;
 }
@@ -2200,12 +2192,18 @@
     overflow-wrap: anywhere;
   }
   .table td .travelBadge {
-    padding-inline: 3px;
-    gap: 3px;
+    padding-inline: 0;
+    gap: 4px;
   }
   /* 1000px / Tablet */
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .kpiCard:nth-child(odd) {
+    border-left: 0;
+  }
+  .kpiCard:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
   }
   .boardGrid,
   .ledgerGrid {
@@ -2237,14 +2235,14 @@
   }
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+    gap: 0;
   }
   .kpiCard {
     padding: 10px;
     gap: 8px;
   }
   .kpiCard .kpiVal {
-    font-size: 25px;
+    font-size: 20px;
   }
   .kpiCard .kpiSub {
     grid-column: 1 / -1;

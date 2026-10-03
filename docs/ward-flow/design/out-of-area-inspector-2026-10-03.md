@@ -5,7 +5,7 @@ Repository: `BigSimmo/Ward-Flow`.
 Base: `d8c1a05c24a55282c90547725ae9f397cf2ef284`, the provided main merge snapshot.
 Branch: `codex/out-of-area-inspector`.
 
-The out-of-area register now uses a single floating summary island, a naturally
+The out-of-area register now uses a slim segmented summary bar, a naturally
 scrolling table and an inspector that fits its content. The compact overview groups
 catchments into clickable rows with proportional bars. It avoids duplicating the
 summary strip and presents the longest stay as one compact, actionable record. The longest current stay
@@ -29,6 +29,13 @@ The inspector is sticky on sufficiently tall desktop viewports and rejoins norma
 page flow on shorter screens, tablets and phones. The table keeps all five columns
 on tablets and uses the existing patient cards on phones. No nested vertical
 scrolling or equal-height inspector is imposed.
+
+The visual refinement reduces the summary to one 52px desktop strip, with compact
+figures, subtle dividers and a clear active underline. Travel requirements use plain
+text and a small transport symbol, without a filled badge or border. The register
+uses quieter metadata links, clearer header contrast and tighter row spacing. The
+inspector retains its compact structure with a lightly tinted header and stronger
+field labels. All colours continue to use the existing light/dark theme tokens.
 
 Validation is local and synthetic. See the task receipt and browser report in the
 private review workspace for executed checks. This design preview does not assert
