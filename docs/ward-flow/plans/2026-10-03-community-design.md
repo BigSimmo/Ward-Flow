@@ -31,3 +31,7 @@ Cohesion verification: initial selected run found one obsolete heading-copy expe
 Search placement refinement: stop the field growing across the page; cap it at 22rem (352px), left-aligned beside the filter. It shrinks on narrow screens and the existing flexible row wraps the filter when needed. No shared chrome edits.
 
 Local browser check: desktop search width 352px; at 390px viewport search shrinks to 335px and filter wraps below with no horizontal overflow. Temporary viewport reset. Formatting and git diff --check passed.
+
+Directory integration: move existing search, native filter and live count into a local directory header. Preserve shared panel surface, routes, filter behaviour and focus. Cap desktop search at 18rem; adapt controls within the panel on phones. Remove the stale desktop internal-scroll sizing for this directory to keep a natural page scroll.
+
+Verification: 22 focused gateway/index tests passed; browser search Albany returned 1, Clear restored names, alike filter returned 22. At 390px viewport controls fit inside panel with no horizontal overflow. Desktop field refined to 16rem and filter 14rem to avoid early wrapping. No provider calls or release validation.

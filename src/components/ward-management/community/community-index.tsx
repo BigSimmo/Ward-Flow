@@ -15,7 +15,7 @@ import {
   communityNamesInCollisions,
   type CommunityNameCollision,
 } from "@/components/ward-management/community/community-vocabulary";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import panelStyles from "@/components/ward-management/ward-panel.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -329,70 +329,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           These are recorded <strong>names</strong>, not verified services; possible aliases remain separate.
         </p>
 
-        <div className={styles.toolbar}>
-          <div className={styles.searchRow}>
-            <div className={styles.searchBox}>
-              <label className={styles.searchField}>
-                <Search aria-hidden="true" className={styles.searchIcon} />
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  className={styles.searchInput}
-                  placeholder="Search team names"
-                  autoComplete="off"
-                  aria-label="Search team names"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape" && query) {
-                      event.stopPropagation();
-                      setQuery("");
-                    }
-                  }}
-                />
-              </label>
-              {query ? (
-                <button
-                  type="button"
-                  className={styles.clearButton}
-                  aria-label="Clear search"
-                  onClick={() => {
-                    setQuery("");
-                    searchInputRef.current?.focus();
-                  }}
-                >
-                  Clear
-                </button>
-              ) : null}
-              <kbd className={styles.kbdHint} aria-hidden="true">
-                /
-              </kbd>
-            </div>
-
-            <label className={styles.nameFilter}>
-              <span className="sr-only">Filter team names</span>
-              <select
-                className={styles.filterSelect}
-                value={nameFilter}
-                onChange={(event) => setNameFilter(event.target.value)}
-              >
-                <option value="all">All names ({allTeams.length})</option>
-                <option value="recent">
-                  Recently opened ({allTeams.filter((team) => recentNames.includes(team.name)).length})
-                </option>
-                <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
-              </select>
-              <ChevronDown aria-hidden="true" className={styles.filterChevron} />
-            </label>
-          </div>
-
-          <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-            <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
-            {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
-            {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
-          </p>
-        </div>
-
         <div className={styles.body}>
           <nav className={styles.azRail} aria-label="Jump to letter">
             {/*
@@ -461,7 +397,76 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </section>
             ) : null}
 
-            <WardPanel title="A–Z directory" testId="community-index-teams">
+            <section
+              className={`${panelStyles.panel} ${styles.directoryPanel}`}
+              aria-label="A–Z directory"
+              data-testid="community-index-teams"
+              data-ward-primitive="panel"
+            >
+              <header className={styles.directoryHeader} data-ward-primitive="panel-header">
+                <h2 className={styles.directoryTitle}>A–Z directory</h2>
+                <div className={styles.searchRow}>
+                  <div className={styles.searchBox}>
+                    <label className={styles.searchField}>
+                      <Search aria-hidden="true" className={styles.searchIcon} />
+                      <input
+                        ref={searchInputRef}
+                        type="search"
+                        className={styles.searchInput}
+                        placeholder="Search team names"
+                        autoComplete="off"
+                        aria-label="Search team names"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape" && query) {
+                            event.stopPropagation();
+                            setQuery("");
+                          }
+                        }}
+                      />
+                    </label>
+                    {query ? (
+                      <button
+                        type="button"
+                        className={styles.clearButton}
+                        aria-label="Clear search"
+                        onClick={() => {
+                          setQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                    <kbd className={styles.kbdHint} aria-hidden="true">
+                      /
+                    </kbd>
+                  </div>
+
+                  <label className={styles.nameFilter}>
+                    <span className="sr-only">Filter team names</span>
+                    <select
+                      className={styles.filterSelect}
+                      value={nameFilter}
+                      onChange={(event) => setNameFilter(event.target.value)}
+                    >
+                      <option value="all">All names ({allTeams.length})</option>
+                      <option value="recent">
+                        Recently opened ({allTeams.filter((team) => recentNames.includes(team.name)).length})
+                      </option>
+                      <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
+                    </select>
+                    <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                  </label>
+                </div>
+
+                <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
+                  <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
+                  {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
+                  {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
+                </p>
+              </header>
               {allTeams.length === 0 ? (
                 /*
                  * An empty SOURCE is rendered as a stated absence, never as an empty list. A blank
@@ -517,7 +522,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   ))}
                 </div>
               )}
-            </WardPanel>
+            </section>
 
             <details className={styles.familyPanel} ref={familyPanelRef} data-testid="community-gateway-family-panel">
               <summary className={styles.familySummary}>

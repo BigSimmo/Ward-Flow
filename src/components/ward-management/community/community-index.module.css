@@ -1812,3 +1812,64 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+
+/* The controls belong to the directory, with a compact field rather than a full-width band. */
+.directoryHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.directoryTitle {
+  margin: 0;
+  flex: 1 0 9rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.directoryHeader .searchRow {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.directoryHeader .searchBox {
+  width: 16rem;
+  flex-basis: 16rem;
+}
+
+.directoryHeader .nameFilter {
+  width: 14rem;
+}
+
+.directoryHeader .resultLine {
+  flex-basis: 100%;
+}
+
+.content {
+  display: flex;
+}
+
+.content > .directoryPanel {
+  height: auto;
+}
+
+.directoryPanel .letterGroups {
+  overflow: visible;
+  flex: none;
+}
+
+@media (max-width: 40rem) {
+  .directoryHeader .searchRow {
+    width: 100%;
+  }
+
+  .directoryHeader .searchBox {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+}
