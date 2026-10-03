@@ -3,6 +3,25 @@ import { appendFileSync } from "node:fs";
 
 const sha = /^[0-9a-f]{40}$/i;
 const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
+const maintainedPolicyRoots = new Set([
+  "AGENTS.md",
+  "CLAUDE.md",
+  "GEMINI.md",
+  "docs/ward-flow/HOW-WE-WORK.md",
+  "docs/DOCS-SYSTEM.md",
+  "README.local-source.md",
+  "docs/task-receipts.md",
+]);
+export const policyContractTests = [
+  "tests/bare-pr-publication-policy.test.ts",
+  "tests/pre-commit-ward-flow-main-guard.test.ts",
+  "tests/public-signout-boundary.test.ts",
+  "tests/docs-script-refs.test.ts",
+  "tests/ward-policy-scope.test.ts",
+];
+export function isMaintainedPolicy(file) {
+  return maintainedPolicyRoots.has(file) || /^docs\/agents\/[^/]+\.md$/u.test(file);
+}
 const dependencyManifest = (file) => /(^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json)$/u.test(file);
 
 // The separately packaged Azure backend: nothing under src/, tests/ or scripts/ imports it, and the
@@ -16,10 +35,19 @@ const unitTest = (file) => /^tests\/.+\.test\.tsx?$/u.test(file);
  * those jobs' work. Anything not positively recognised runs everything (fail closed).
  */
 export function classifyChanges(entries) {
-  const all = (reason) => ({ full: true, unit: true, browser: true, reason });
+  const all = (reason) => ({ full: true, unit: true, browser: true, policy: false, reason });
   if (!entries.length) return all("empty diff");
   if (entries.some(({ status }) => status !== "M" && status !== "A")) return all("deleted or renamed file");
   const files = entries.map(({ file }) => file);
+  if (files.some(isMaintainedPolicy) && files.every((file) => isMaintainedPolicy(file) || docsOnly(file))) {
+    return {
+      full: true,
+      unit: false,
+      browser: false,
+      policy: true,
+      reason: "maintained policy contracts and documentation only",
+    };
+  }
   if (files.every(docsOnly)) return { full: false, unit: false, browser: false, reason: "Ward documentation only" };
   if (files.every((file) => docsOnly(file) || backendOnly(file))) {
     return { full: true, unit: false, browser: false, reason: "backend and documentation only" };
@@ -78,6 +106,6 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
   if (process.env.GITHUB_OUTPUT)
     appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\ndependency_review=${dependencyReview}\n`,
+      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\npolicy=${plan.policy ?? false}\ndependency_review=${dependencyReview}\n`,
     );
 }

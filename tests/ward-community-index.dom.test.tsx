@@ -172,11 +172,12 @@ describe("Community team index — the empty state, driven by an injected list",
     const main = renderIndexMain([]);
 
     // Zero links is also what a crashed render produces, so it is only evidence once the page has
-    // been shown to be the page. The empty-state sentence and the heading here are that showing.
+    // been shown to be the page. The empty-state sentence and the directory section here are that showing.
     expect(teamLinksIn(main).length).toBe(0);
     expect(main.textContent, "the page rendered no empty-state notice").toContain("This list is empty.");
-    expect(main.textContent, "the page rendered no section — it did not render an empty state").toContain(
-      "Community teams",
-    );
+    expect(
+      main.querySelector('[data-testid="community-index-teams"]'),
+      "the page rendered no directory section",
+    ).not.toBeNull();
   });
 });

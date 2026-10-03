@@ -1,7 +1,6 @@
 #!/bin/sh
-# Keep generated documentation synchronized before relevant commits. The hook
-# writes generated outputs but never stages them: if anything changes, the
-# commit stops so the author can review and stage the exact diff.
+# Check generated documentation against staged inputs. The current adapter
+# uses a disposable index snapshot and never rewrites or stages working files.
 set -eu
 
 # --- Fast staged-file checks ------------------------------------------------------
@@ -40,13 +39,15 @@ working_files=$(
 # Fails open by design: a missing script, a missing node, or an older branch
 # without these tools skips silently rather than blocking a commit it cannot judge.
 ward_flow_index_check() {
+  # The current adapter batches these against one index snapshot below.
+  [ ! -f scripts/check-staged-docs.mjs ] || return 0
   ward_script="$1"
   ward_pattern="$2"
   [ -f "$ward_script" ] || return 0
   command -v node >/dev/null 2>&1 || return 0
   # Not during a merge commit: a merge stages both sides' generated files, and the rules index is
-  # compared with a lesson store outside git that grows whenever any session saves a lesson, so it
-  # blocked merges that changed nothing. The fold gate runs every generator --check on the result.
+  # older branches compared a machine-local lesson store; current lessons are versioned.
+  # The selected integration gate checks the result.
   [ -f "$(git rev-parse --git-path MERGE_HEAD)" ] && return 0
   printf '%s
 ' "$staged_files" | grep -Eq "$ward_pattern" || return 0
@@ -58,13 +59,16 @@ ward_flow_index_check() {
 }
 
 ward_flow_index_check "scripts/ward-flow/screen-map.mjs"   '^(docs/ward-flow/mockups/|src/app/mockups/ward-flow/|docs/ward-flow/SCREEN-MAP\.md$|scripts/ward-flow/screen-pairs\.mjs$)'
-ward_flow_index_check "scripts/ward-flow/rules-index.mjs"   '^docs/ward-flow/RULES\.md$'
+ward_flow_index_check "scripts/ward-flow/rules-index.mjs"   '^(docs/ward-flow/lessons/|docs/ward-flow/RULES\.md$|scripts/ward-flow/rules-index\.mjs$)'
 ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/ward-flow/(archive/dated-notes/)?owner-.*\.md$|docs/ward-flow/(decisions|OWNER-RULINGS)\.md$)'
 # Historical drawings do not govern current appearance. Keep their hash manifest accurate so
 # drawing changes remain visible, and retain verification records without treating hash freshness
 # as evidence of implementation fidelity. The current accepted app governs appearance.
 ward_flow_index_check "scripts/ward-flow/mockup-manifest.mjs"   '^docs/ward-flow/mockups/'
 ward_flow_index_check "scripts/ward-flow/screen-verification.mjs"   '^(docs/ward-flow/screen-verification\.json$|docs/ward-flow/SCREEN-VERIFICATION\.md$|scripts/ward-flow/screen-pairs\.mjs$|docs/ward-flow/mockups/MANIFEST\.json$)'
+if [ -f scripts/check-staged-docs.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/check-staged-docs.mjs --ward-indexes || exit 1
+fi
 
 # --- Ward Flow main commit confirmation guard -----------------------------------
 # The former Database ward integration line is retired. In this dedicated repository, main and
@@ -94,6 +98,10 @@ fi
 
 if [ "${SKIP_DOCS_SYNC_HOOK:-}" = "1" ]; then
   exit 0
+fi
+if [ -f scripts/check-staged-docs.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/check-staged-docs.mjs
+  exit $?
 fi
 
 matches_staged() {
@@ -226,4 +234,6 @@ if [ -n "$unstaged_docs" ]; then
   echo "[pre-commit] Warning: Documentation changed or remains unstaged, continuing commit (set PRECOMMIT_DOCS_SYNC_STRICT=1 to block)." >&2
 fi
 
-echo "[pre-commit] Documentation is synchronized."
+if [ -z "$unstaged_docs" ]; then
+  echo "[pre-commit] Documentation is synchronized."
+fi

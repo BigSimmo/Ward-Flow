@@ -15,16 +15,17 @@ repository belong to the earlier shared-history arrangement; do not use them as 
 
 - **Base:** the `main` branch in `BigSimmo/Ward-Flow`. Work in an isolated branch and worktree made
   from that repository. Verify `git remote get-url origin`, the branch and `git log -1` in your
-  checkout before making changes. A local branch is work in progress; the current published build is
-  the verified Ward Flow `main` tip.
-- **Read before any task:** [`code-map/README.md`](code-map/README.md), the file-by-file map of all
-  Ward Flow code and the shared code it loads.
+  checkout before making changes. The verified Ward Flow `main` tip identifies published source.
+  Confirm a deployed revision and its runtime separately before calling it the current hosted build.
+- **Find the affected source:** use the [current architecture orientation](../codebase-index.md)
+  and relevant source/tests. The [code map](code-map/README.md) preserves a dated detailed snapshot;
+  open only the sections needed for the task and verify relevant drift.
 - **Code:** the engine and screens are in `src/components/ward-management/`; routes are in
   `src/app/mockups/ward-flow/`; tests are `tests/ward-*` and `tests/ui-ward-*`.
-- **What has been done, and what is left:** [`STATUS.md`](STATUS.md) ("What is built", "Deferred",
-  "Needs the owner") and the ledger. As of 22 September 2026, design elevation and Round 2 owner rulings
-  were built on the former core line (tip `8d1c7c1e00` as of 2026-09-22). That is historical
-  status; inspect this repository's current tip and [`STATUS.md`](STATUS.md) for the present state.
+- **Current work:** use the agreed task scope, current source and existing task/checkpoint under
+  the [task-receipt contract](../task-receipts.md). [`STATUS.md`](STATUS.md) preserves dated
+  decisions, deferred work and former core-line observations; it does not establish today's
+  implementation state or authorise reviving old tasks.
 - **Old Ward folders under `D:/Worktrees/Database/` are history.** Start new work in the dedicated
   Ward Flow repository and follow [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
 
@@ -34,9 +35,10 @@ repository belong to the earlier shared-history arrangement; do not use them as 
 whiteboard, a spreadsheet or a phone round. The screens keep the current folded design, and the behaviour
 is truthful: nothing is shown that the data does not hold.
 
-**A task is done** when its required checks pass and its change reaches the intended Ward Flow
-destination through the authorised integration process (see HOW-WE-WORK §4). A local commit alone
-does not prove publication or deployment. The full offline suite is selected for broad changes,
+**A task is done** when the requested stage and its required evidence are complete. A delivered
+audit or verified local change does not require integration, publication or deployment. When
+integration is requested, follow the authorised process in HOW-WE-WORK §4 and verify that stage
+separately. A local commit alone does not prove publication or deployment. The full offline suite is selected for broad changes,
 rather than every task. A screen is done when it also meets
 [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION-OF-DONE.md).
 
@@ -146,7 +148,7 @@ Existing generated-document checks and relevant behaviour tests remain separate 
 
 ## The four documents
 
-1. [`STATUS.md`](STATUS.md) — where things stand: what is built, what is deferred, what needs the owner.
+1. [`../task-receipts.md`](../task-receipts.md) — current task identity, acceptance evidence and handoff; [`STATUS.md`](STATUS.md) preserves historical context.
 2. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — how any AI builder picks up, builds, tests, commits and hands back work.
 3. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — **the ledger**: every Ward Flow task and its state.
 4. [`OWNER-RULINGS.md`](OWNER-RULINGS.md) — generated index of the owner's rulings. Open the source file before relying on one.

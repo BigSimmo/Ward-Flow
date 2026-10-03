@@ -207,7 +207,7 @@ describe("Community gateway — live search narrows to exactly the matching set"
 
   it("narrows further to only colliding names when the reads-alike filter is also on", () => {
     renderGateway();
-    fireEvent.click(screen.getByRole("button", { name: /Names that read alike/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "alike" } });
 
     const collisions = collisionByName();
     const anchors = screen.getAllByTestId("community-index-link");
@@ -400,6 +400,26 @@ describe("Community gateway — a way in, not a caseload: no row carries anythin
         row.textContent ?? "",
         `a digit appears on the row for "${link.textContent}" outside the reads-alike marker`,
       ).not.toMatch(/\d/u);
+    }
+  });
+});
+
+describe("Community gateway — recently opened filter", () => {
+  it("shows only visited source teams and combines with search", () => {
+    const team = COMMUNITY_TEAM_PAGES[0]!;
+    window.localStorage.setItem("ward-community-gateway-recent", JSON.stringify([team.name, "Not a source team"]));
+    try {
+      renderGateway();
+      fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "recent" } });
+      expect(screen.getAllByTestId("community-index-link")).toHaveLength(1);
+      expect(screen.getByTestId("community-index-link")).toHaveTextContent(team.name);
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search team names" }), {
+        target: { value: "zzzz-no-match" },
+      });
+      expect(screen.queryAllByTestId("community-index-link")).toHaveLength(0);
+      expect(screen.getByText("No recently opened teams match this search.")).toBeInTheDocument();
+    } finally {
+      window.localStorage.removeItem("ward-community-gateway-recent");
     }
   });
 });

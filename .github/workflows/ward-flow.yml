@@ -52,7 +52,7 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Install locked Ward backend dependencies
         id: backend-install
-        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' && hashFiles('backend/ward-flow/package.json') != '' }}
+        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' && steps.plan.outputs.policy != 'true' && hashFiles('backend/ward-flow/package.json') != '' }}
         working-directory: backend/ward-flow
         run: npm ci --ignore-scripts
       - name: Run Ward backend tests
@@ -66,16 +66,19 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
+      - name: Check maintained policy contracts
+        if: ${{ !cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/check-policy-contracts.mjs
       - name: Check Ward reference data
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.plan.outputs.policy != 'true' }}
         run: npm run check:ward-reference
       - name: Check Ward legal wording
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.plan.outputs.policy != 'true' }}
         run: npm run check:ward-legal-language
       # next typegen writes the route types and validator that `next build` checks, so this one
       # type check covers source and route signatures. The browser builds then skip their own copy.
       - name: Typecheck source and route types
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.plan.outputs.policy != 'true' }}
         run: |
           node node_modules/next/dist/bin/next typegen
           node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
