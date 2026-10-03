@@ -54,6 +54,7 @@ const DESTINATIONS = [
     name: "Across all services",
     linkText: "Across all services",
     marker: "ward-statistics-overview-screen",
+    navValue: "overview",
     /** A figure this screen derives, so an empty shell cannot pass as a rendered page. */
     figure: "ward-statistics-overview-declines-population",
   },
@@ -61,6 +62,7 @@ const DESTINATIONS = [
     name: "One health service in detail",
     linkText: "One health service in detail",
     marker: "ward-statistics-service-chooser",
+    navValue: "service",
     figure: undefined,
   },
 ] as const;
@@ -115,8 +117,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       await page.goto(HUB, { waitUntil: "load" });
       await waitForStreamToSettle(page);
 
-      await page.getByText("Browse detailed statistics", { exact: true }).click();
-      await page.getByRole("link", { name: destination.linkText, exact: false }).first().click();
+      await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
