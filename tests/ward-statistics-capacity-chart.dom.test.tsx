@@ -74,6 +74,39 @@ describe("current-capacity explorer", () => {
     expect(screen.getByText("100% occupied")).toBeInTheDocument();
   });
 
+  it("can aggregate hospitals from a service ward view and reset to that view", () => {
+    render(
+      <StatisticsCapacityChart
+        units={units.slice(0, 2)}
+        bedReleases={[]}
+        initialGroup="ward"
+        scopeLabel="in this service"
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Reset view" })).toBeNull();
+    expect(screen.getByRole("button", { name: /Alpha: 3 ready/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hospitals" }));
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
+    expect(screen.getByRole("button", { name: "Wards" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("20 beds · 2 wards in this service")).toBeInTheDocument();
+  });
+
+  it("moves keyboard focus between capacity rows and returns it when details close", () => {
+    chart();
+    const perth = screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ });
+    const fiona = screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ });
+    perth.focus();
+    fireEvent.keyDown(perth, { key: "ArrowDown" });
+    expect(fiona).toHaveFocus();
+    fireEvent.click(fiona);
+    const close = screen.getByRole("button", { name: "Close capacity details" });
+    close.focus();
+    fireEvent.keyDown(close, { key: "Escape" });
+    expect(screen.queryByTestId("capacity-details")).toBeNull();
+    expect(fiona).toHaveFocus();
+  });
+
   it("recovers from an empty result and resets every view control", () => {
     chart();
     fireEvent.click(screen.getByRole("button", { name: "%" }));

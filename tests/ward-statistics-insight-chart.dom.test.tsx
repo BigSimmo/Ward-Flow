@@ -52,7 +52,7 @@ describe("interactive statistics insights", () => {
     const unknown = screen.getByRole("button", { name: "Gamma: Not linked" });
     expect(unknown.querySelector('[class*="bar"]')).toBeNull();
     const alpha = screen.getByRole("button", { name: "Alpha: 12 h" });
-    expect(alpha.querySelector<HTMLElement>('[class*="bar"]')?.style.width).toBe("100%");
+    expect(alpha.querySelector<HTMLElement>('[class*="bar"]')?.style.width).toBe("80%");
   });
   it("allows selection, close and a real detail route", () => {
     chart();
@@ -113,6 +113,58 @@ describe("interactive statistics insights", () => {
       click.mockRestore();
       vi.unstubAllGlobals();
     }
+  });
+  it("supports keyboard row navigation and returns focus after Escape or close", () => {
+    chart();
+    const alpha = screen.getByRole("button", { name: "Alpha: 12 h" });
+    const beta = screen.getByRole("button", { name: "Beta: 0 h" });
+    alpha.focus();
+    fireEvent.keyDown(alpha, { key: "ArrowDown" });
+    expect(beta).toHaveFocus();
+    fireEvent.keyDown(beta, { key: "Home" });
+    expect(alpha).toHaveFocus();
+    fireEvent.click(alpha);
+    const close = screen.getByRole("button", { name: "Close chart details" });
+    close.focus();
+    fireEvent.keyDown(close, { key: "Escape" });
+    expect(screen.queryByRole("complementary")).toBeNull();
+    expect(alpha).toHaveFocus();
+    fireEvent.click(alpha);
+    fireEvent.click(screen.getByRole("button", { name: "Close chart details" }));
+    expect(alpha).toHaveFocus();
+  });
+  it("offers reset only for changed controls and disables empty exports", () => {
+    chart();
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "absent" } });
+    expect(screen.getByRole("button", { name: "Export CSV" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+  });
+  it("shows operational guides only inside the measured scale and preserves urgent row meaning", () => {
+    render(
+      <StatisticsInsightChart
+        title="Waits"
+        testId="waits"
+        variant="timeline"
+        metrics={[
+          {
+            ...metrics[0],
+            references: [
+              { value: 24, label: "24h" },
+              { value: 48, label: "48h" },
+            ],
+          },
+        ]}
+        rows={[{ ...rows[0], values: { wait: 25 }, tone: "warning" }]}
+      />,
+    );
+    expect(screen.getByText("24h")).toBeInTheDocument();
+    expect(screen.queryByText("48h")).toBeNull();
+    const alpha = screen.getByRole("button", { name: "Alpha: 25 h" });
+    expect(alpha).toHaveAttribute("data-tone", "warning");
+    expect(alpha.querySelector<HTMLElement>('i[class*="reference"]')?.style.left).toBe("80%");
   });
   it("drops removed live records from the inspector", () => {
     const view = chart();

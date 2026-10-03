@@ -13,7 +13,9 @@
   font-weight: 600;
 }
 .disclosure > summary small {
-  float: right;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   margin-left: 0.75rem;
   font-family: var(--mono);
   font-weight: 400;

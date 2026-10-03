@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { unitCapacity } from "../ward-derivations";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, Unit } from "../ward-model";
+import { statisticsChartScale } from "./statistics-chart-scale";
 import styles from "./statistics-capacity-chart.module.css";
 
 type CapacityRow = {
@@ -30,6 +31,7 @@ export function StatisticsCapacityChart({
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
 }) {
+  const rowButtons = useRef(new Map<string, HTMLButtonElement>());
   const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
   const [scale, setScale] = useState<"beds" | "share">("beds");
   const [service, setService] = useState("all");
@@ -88,8 +90,16 @@ export function StatisticsCapacityChart({
     }),
     { beds: 0, ready: 0, occupied: 0, held: 0 },
   );
-  const maximum = Math.max(1, ...rows.map((row) => row.beds));
+  const { maximum, ticks } =
+    scale === "share"
+      ? { maximum: 100, ticks: [0, 25, 50, 75, 100] }
+      : statisticsChartScale(Math.max(0, ...rows.map((row) => row.beds)));
   const hasFilters = service !== "all" || query !== "";
+
+  function closeDetails() {
+    if (selected) rowButtons.current.get(selected.id)?.focus();
+    setSelectedId(null);
+  }
 
   function reset() {
     setService("all");
@@ -117,14 +127,24 @@ export function StatisticsCapacityChart({
   }
 
   return (
-    <section className={styles.chart} aria-label="Bed capacity explorer" data-testid="ward-statistics-capacity-chart">
+    <section
+      className={styles.chart}
+      aria-label="Bed capacity explorer"
+      data-testid="ward-statistics-capacity-chart"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && selected) {
+          event.preventDefault();
+          closeDetails();
+        }
+      }}
+    >
       <div className={styles.toolbar}>
         <div className={styles.switch} role="group" aria-label="Group capacity by">
           <button
             type="button"
             aria-pressed={groupBy === "hospital"}
             onClick={() => {
-              setGroupBy(initialGroup);
+              setGroupBy("hospital");
               setSelectedId(null);
             }}
           >
@@ -228,14 +248,17 @@ export function StatisticsCapacityChart({
         </div>
       </div>
 
-      <div className={`${styles.workspace} ${selected ? styles.withSelection : ""}`}>
+      <div className={styles.workspace}>
         <div className={styles.plot}>
           <div className={styles.axis} aria-hidden="true">
             <span>{groupBy === "hospital" ? "Hospital" : "Ward"}</span>
             <div>
-              <span>0</span>
-              <span>{scale === "share" ? "50%" : Math.round(maximum / 2)}</span>
-              <span>{scale === "share" ? "100%" : `${maximum} beds`}</span>
+              {ticks.map((tick) => (
+                <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
+                  {tick}
+                  {scale === "share" ? "%" : ""}
+                </span>
+              ))}
             </div>
             <span>Ready</span>
           </div>
@@ -247,12 +270,30 @@ export function StatisticsCapacityChart({
               </button>
             </div>
           ) : (
-            rows.map((row) => {
+            rows.map((row, index) => {
               const denominator = scale === "share" ? row.beds || 1 : maximum;
               const percent = row.beds ? Math.round((row.occupied / row.beds) * 100) : 0;
               return (
                 <button
                   key={row.id}
+                  ref={(node) => {
+                    if (node) rowButtons.current.set(row.id, node);
+                    else rowButtons.current.delete(row.id);
+                  }}
+                  title={`${row.ready} ready · ${row.occupied} occupied · ${row.held} held · ${row.beds} beds`}
+                  onKeyDown={(event) => {
+                    const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+                    if (direction || event.key === "Home" || event.key === "End") {
+                      event.preventDefault();
+                      const nextIndex =
+                        event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? rows.length - 1
+                            : (index + direction + rows.length) % rows.length;
+                      rowButtons.current.get(rows[nextIndex].id)?.focus();
+                    }
+                  }}
                   type="button"
                   className={styles.row}
                   aria-pressed={selected?.id === row.id}
@@ -264,6 +305,9 @@ export function StatisticsCapacityChart({
                     <small>{row.context}</small>
                   </span>
                   <span className={styles.barArea} aria-hidden="true">
+                    {ticks.map((tick) => (
+                      <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
+                    ))}
                     <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
                       {row.ready > 0 && (
                         <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
@@ -294,7 +338,7 @@ export function StatisticsCapacityChart({
           <aside className={styles.inspector} aria-label="Selected capacity details" data-testid="capacity-details">
             <div className={styles.inspectorHeading}>
               <span>{groupBy === "hospital" ? "Hospital detail" : "Ward detail"}</span>
-              <button type="button" aria-label="Close capacity details" onClick={() => setSelectedId(null)}>
+              <button type="button" aria-label="Close capacity details" onClick={closeDetails}>
                 ×
               </button>
             </div>
@@ -338,9 +382,9 @@ export function StatisticsCapacityChart({
         )}
       </div>
       <div className={styles.footer}>
-        <span>Current snapshot · synthetic data. Select a bar for ward details.</span>
+        <span>Current snapshot · synthetic data.</span>
         <div>
-          {(hasFilters || groupBy !== "hospital" || scale !== "beds" || sort !== "ready") && (
+          {(hasFilters || groupBy !== initialGroup || scale !== "beds" || sort !== "ready") && (
             <button type="button" onClick={reset}>
               Reset view
             </button>

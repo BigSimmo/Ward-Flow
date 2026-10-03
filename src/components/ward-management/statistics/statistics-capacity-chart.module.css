@@ -7,7 +7,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.625rem;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1.125rem;
   border-bottom: 1px solid var(--line);
 }
 .chart button,
@@ -18,7 +18,7 @@
 }
 .chart button,
 .chart select {
-  min-height: var(--ward-tap, 3rem);
+  min-height: 2.75rem;
   cursor: pointer;
 }
 .chart button:focus-visible,
@@ -38,7 +38,7 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  padding: 0.375rem 0.875rem;
+  padding: 0.25rem 0.75rem;
   border-radius: var(--r2);
 }
 .switch button[aria-pressed="true"] {
@@ -63,7 +63,7 @@
 .search input {
   min-width: 0;
   width: 100%;
-  min-height: var(--ward-tap, 3rem);
+  min-height: 2.75rem;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -81,7 +81,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1.125rem;
 }
 .summaryNumbers {
   display: flex;
@@ -141,9 +141,6 @@
   gap: 1rem;
   padding: 0 1.25rem 1rem;
 }
-.withSelection {
-  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.3fr);
-}
 .plot {
   min-width: 0;
 }
@@ -160,8 +157,19 @@
   font-size: var(--t-0);
 }
 .axis > div {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 1.25rem;
+  font-family: var(--mono);
+}
+.axis > div > span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.axis > div > span:first-child {
+  transform: none;
+}
+.axis > div > span:last-child {
+  transform: translateX(-100%);
 }
 .axis > :last-child {
   text-align: right;
@@ -200,19 +208,26 @@
   line-height: 1.3;
 }
 .barArea {
+  position: relative;
   display: grid;
   gap: 0.25rem;
   min-width: 0;
-  background-image: linear-gradient(
-    to right,
-    transparent calc(50% - 1px),
-    var(--line) 50%,
-    transparent calc(50% + 1px)
-  );
+}
+.guide {
+  position: absolute;
+  width: 1px;
+  top: -0.375rem;
+  bottom: -0.375rem;
+  background: var(--line);
+  pointer-events: none;
+}
+.barArea > small {
+  position: relative;
 }
 .bar {
+  position: relative;
   display: flex;
-  height: 1.125rem;
+  height: 0.875rem;
   overflow: hidden;
   border-radius: 3px;
 }
@@ -270,7 +285,7 @@
 }
 .detailsMetrics {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   margin: 1rem 0;
 }
@@ -352,11 +367,6 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-@media (max-width: 1050px) {
-  .withSelection {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 @media (max-width: 640px) {
   .toolbar,
   .summary {
@@ -370,7 +380,10 @@
     flex: 1;
   }
   .toolbar > label {
-    width: 100%;
+    min-width: 0;
+    flex: 1 1 8rem;
+  }
+  .toolbar > .search {
     flex-basis: 100%;
   }
   .toolbar select {
@@ -413,13 +426,19 @@
   .inspectorHeading button {
     display: none;
   }
-  .withSelection {
-    grid-template-columns: 1fr;
-  }
   .row {
     break-inside: avoid;
   }
   .bar {
     print-color-adjust: exact;
+  }
+}
+
+@media (max-width: 640px) {
+  .axis > div > span:nth-child(even) {
+    display: none;
+  }
+  .detailsMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

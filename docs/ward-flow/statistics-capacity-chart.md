@@ -17,7 +17,7 @@ filtered wards; a ward-name search includes only matching wards in that hospital
 Controls and selection use transient React state. No new persistence, URL state,
 backend, chart dependency or patient data export is introduced. There is one chart
 instance, with CSS bar geometry owned by React and native keyboard/touch controls.
-Mobile stacks selected detail below the plot and keeps one natural page scroll.
+All widths place selected detail below the plot and keeps one natural page scroll.
 
 The former empty trend panel and prototype provenance essay are removed. A concise
 history limitation and synthetic-data disclosure remain. Specialist measures stay
@@ -62,9 +62,30 @@ persistence changes. CSV exports contain the current filtered measure, units,
 availability and a synthetic-data header; ED exports include synthetic placement
 identities. A missing measure is a blank CSV value with its availability reason.
 
-Portrait layouts stack inspectors and use two columns for category distributions.
+Category distributions use a shared zero baseline and numerical guides at every width.
 Zero-only distributions use compact baseline marks. Native scrolling and touch
 selection need no gesture interception, hover or animation. Existing primary
 navigation remains shared across the family. Secondary measures are revealed using
 print-aware disclosures; required exception counts and operational actions remain
 visible. Preview validation is scoped and does not establish production deployment.
+
+## Chart review refinements
+
+Charts use readable zero-based ticks, whole-number count axes, subtle guides and
+lighter bars. Compact headers carry filtered counts and CSV export; Reset appears
+only after a control changes. Category distributions keep their meaningful record
+order without a redundant sorting control. Missing values and measured zero retain
+their existing meanings and exports.
+
+Inspectors open below plots so selection does not change comparison width or scale.
+Arrow keys move between rows; Home and End reach the ends. Enter or Space selects
+through native buttons. Close and Escape return focus to the selected row.
+Capacity hospital aggregation works from service pages, and Reset restores the
+page's initial grouping. ED wait charts mark operational 24h/48h guides when they
+fall within the measured scale, and urgent records keep both a text label and a
+warning-coloured dot. These defaults are separate from triage time and ED access
+targets; no forecast, target or historical data is inferred.
+
+The accepted Network overview top and existing exact tables, distance bands and
+labelled historical illustrations are retained. Disclosure counts can wrap without
+floating over their headings. There are no new chart libraries or dependencies.

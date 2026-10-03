@@ -386,12 +386,17 @@ export function StatisticsEdScreen({
             id: "hours",
             label: "Elapsed since movement opened",
             unit: "h",
-            note: "One dot per open placement. Elapsed placement time is separate from triage time and the ED access target.",
+            note: `One dot per open placement. ${LONG_WAIT_MINUTES / 60}h and ${VERY_LONG_WAIT_MINUTES / 60}h guides are operational defaults, separate from triage time and the ED access target.`,
+            references: [
+              { value: LONG_WAIT_MINUTES / 60, label: `${LONG_WAIT_MINUTES / 60}h` },
+              { value: VERY_LONG_WAIT_MINUTES / 60, label: `${VERY_LONG_WAIT_MINUTES / 60}h` },
+            ],
           },
         ]}
         rows={waitingMovements.map(({ movement, waitMinutes }) => ({
           id: movement.id,
           name: resolveSubjectPatient(movement, { patients, referrals }).formalName,
+          tone: movement.flaggedUrgent ? "warning" : undefined,
           context: `${movement.flaggedUrgent ? "Urgent · " : ""}${movement.acceptedUnitId ? "Ward accepted" : "No accepting ward"}`,
           values: { hours: waitMinutes / 60 },
           groups: [
