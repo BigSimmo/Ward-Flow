@@ -28,7 +28,11 @@ export type LoadScenarioResult =
   | { status: "unavailable"; message: string }
   | { status: "offline"; message: string };
 
-export type ReadinessResult = { status: "ready" } | { status: "unavailable"; message: string } | { status: "offline" };
+export type ReadinessResult =
+  | { status: "ready" }
+  | { status: "unauthorised"; message: string }
+  | { status: "unavailable"; message: string }
+  | { status: "offline" };
 
 export async function saveCloudScenario(
   endpoint: string,
@@ -155,12 +159,31 @@ export async function loadCloudScenario(
   }
 }
 
-export async function checkCloudReadiness(endpoint: string): Promise<ReadinessResult> {
+/**
+ * Readiness uses the authenticated `/readyz` path, which verifies the caller's token and probes blob
+ * storage on every call. `/healthz` is deliberately not used: it answers before authentication or any
+ * storage access, so it reports healthy during token-verifier or storage outages, exactly when saves
+ * and loads fail.
+ */
+export async function checkCloudReadiness(endpoint: string, token: string): Promise<ReadinessResult> {
+  const trimmedToken = token.trim();
+  if (!trimmedToken) {
+    return { status: "unauthorised", message: "Sign in to check cloud readiness." };
+  }
   const cleanEndpoint = endpoint.replace(/\/+$/, "");
   try {
-    const response = await fetch(`${cleanEndpoint}/healthz`, { method: "GET" });
+    const response = await fetch(`${cleanEndpoint}/readyz`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${trimmedToken}` },
+    });
     if (response.ok) {
       return { status: "ready" };
+    }
+    if (response.status === 401 || response.status === 403) {
+      return {
+        status: "unauthorised",
+        message: "Sign in with an authorised Microsoft health service account.",
+      };
     }
     return { status: "unavailable", message: `HTTP ${response.status}` };
   } catch {

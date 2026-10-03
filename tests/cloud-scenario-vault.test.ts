@@ -115,15 +115,42 @@ describe("cloud-scenario-vault", () => {
     expect(result.status).toBe("offline");
   });
 
-  it("checks readiness against healthz endpoint", async () => {
+  it("checks readiness against the authenticated readyz endpoint, never healthz", async () => {
     const mockFetch = vi.mocked(fetch);
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ service: "ward-flow-backend" }), {
-        status: 200,
-      }),
-    );
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ storage: "ready" }), { status: 200 }));
 
-    const result = await checkCloudReadiness("https://example.com/api");
+    const result = await checkCloudReadiness("https://example.com/api/", " token123 ");
+
     expect(result.status).toBe("ready");
+    const [url, init] = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+    expect(String(url)).toBe("https://example.com/api/readyz");
+    expect(String(url)).not.toContain("healthz");
+    expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer token123");
+  });
+
+  it("does not report ready when storage is unavailable behind a healthy host", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Storage unavailable" }), { status: 503 }));
+
+    expect(await checkCloudReadiness("https://example.com/api", "token123")).toEqual({
+      status: "unavailable",
+      message: "HTTP 503",
+    });
+  });
+
+  it("reports unauthorised for a rejected token and makes no call for a blank token", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 401 }));
+    expect((await checkCloudReadiness("https://example.com/api", "bad")).status).toBe("unauthorised");
+
+    const callsBefore = mockFetch.mock.calls.length;
+    expect((await checkCloudReadiness("https://example.com/api", "   ")).status).toBe("unauthorised");
+    expect(mockFetch.mock.calls.length).toBe(callsBefore);
+  });
+
+  it("reports offline when the readiness call cannot reach the endpoint", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    expect(await checkCloudReadiness("https://example.com/api", "token123")).toEqual({ status: "offline" });
   });
 });
