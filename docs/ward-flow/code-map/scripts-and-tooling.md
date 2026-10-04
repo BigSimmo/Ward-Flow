@@ -384,7 +384,7 @@ line.
   OUT of the required PR shards once Ward Flow moved behind the `/mockups/ward-flow` developer
   gate; it now runs only under the advisory `chromium-mockups` project.
 - **`scripts/list-database-skills.mjs`** (507 lines) — One-line reference to
-  `docs/ward-management-mode-map.md` in a list of catalogued skill docs; not Ward-Flow-specific
+  `docs/archive/ward-management-mode-map.md` in a list of catalogued skill docs; not Ward-Flow-specific
   tooling itself.
 - **`scripts/check-codebase-index-coverage.mjs`** (173 lines) and
   **`scripts/check-docs-script-refs.mjs`** (126 lines) — Both are general repo-hygiene gates

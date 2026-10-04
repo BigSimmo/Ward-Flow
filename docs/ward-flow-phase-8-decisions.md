@@ -3,7 +3,7 @@
 **Written 2026-08-28**, while the product owner was away and had authorised decisions to be made on
 his behalf, "grounded in the current repository". This file records what was decided, by whom, on
 what grounds, and what it costs to reverse. It is the companion to
-`docs/ward-flow-phase-8-9-questions.md`, which states the questions; this states the answers.
+`docs/archive/ward-flow-phase-8-9-questions.md`, which states the questions; this states the answers.
 
 **Only the owner's own answers are marked OWNER.** Everything marked SESSION was decided by the
 autonomous session from that document's own recommendations, and is reversible — each entry says
@@ -154,7 +154,7 @@ the synthetic label. Either would convert an invented number into an apparent me
 
 ## What I did not decide, and will not
 
-These need a fact neither of us has. Each is listed in `docs/ward-flow-phase-8-9-questions.md`
+These need a fact neither of us has. Each is listed in `docs/archive/ward-flow-phase-8-9-questions.md`
 section 3, and none is answerable by inference from the options that document offers.
 
 1. **How psychiatric patients actually move around WA by air.** Blocks anything beyond D8-4's band.
@@ -167,7 +167,7 @@ section 3, and none is answerable by inference from the options that document of
    explicit on-screen statement that its threshold is invented, precisely because of this.
 5. **The four-stage bed model**, still never put to a ward clinician. Phase 8 is designed the way
    Phase 7 was — it never asks what stage a bed is in, only whether a bed is free now — so being
-   wrong costs Phase 8 nothing. `docs/ward-flow-clinician-check.md` is the page that asks him.
+   wrong costs Phase 8 nothing. `docs/archive/ward-flow-clinician-check.md` is the page that asks him.
 6. **The real travel-time band for each country hospital.** D8-7 is the decision that lets Phase 8
    be built without it, and states what replacing it later costs: the fixture values, and nothing
    else.

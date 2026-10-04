@@ -69,7 +69,7 @@ pushes or contacts a provider.
 
 Ward Lead additionally reads:
 
-- [README.md](./README.md) Î“Ã‡Ã¶ measured legacy-source and branch recovery state;
+- [README.md](README.md) Î“Ã‡Ã¶ measured legacy-source and branch recovery state;
 - [live-state.json](../../live-state.json) Î“Ã‡Ã¶ machine-readable snapshot;
 - `node scripts/ward-flow/check-live-state.mjs` Î“Ã‡Ã¶ report-only drift checker.
 

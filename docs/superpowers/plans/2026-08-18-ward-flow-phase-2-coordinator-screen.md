@@ -15,7 +15,7 @@
 
 **Spec:** [`docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md`](../specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — §6 (roles and screens), §7 (how a movement travels), §8 (ordering the queue), §10 (failure behaviour), §11 (success criteria).
 
-**Read first:** [`docs/ward-flow-phase-handoff.md`](../../ward-flow-phase-handoff.md) — Phase 1's rulings, parked findings and repo traps. Several parked items land in files this phase touches.
+**Read first:** [`docs/archive/ward-flow-phase-handoff.md`](../../archive/ward-flow-phase-handoff.md) — Phase 1's rulings, parked findings and repo traps. Several parked items land in files this phase touches.
 
 ## Global Constraints
 
@@ -886,7 +886,7 @@ The spec folds Constellation into the coordinator screen. Retire it properly rat
 **Files:**
 
 - Delete: `src/app/ward-management/constellation/page.tsx`
-- Modify: `ward-management-navigation.tsx`, `ward-management-modes.tsx`, `tests/ui-ward-management.spec.ts`, `docs/design-system/adoption-contract.json`, `docs/ward-management-mode-map.md`
+- Modify: `ward-management-navigation.tsx`, `ward-management-modes.tsx`, `tests/ui-ward-management.spec.ts`, `docs/design-system/adoption-contract.json`, `docs/archive/ward-management-mode-map.md`
 
 - [ ] **Step 1: Remove the route and its navigation entry**
 
@@ -912,7 +912,7 @@ Expected: no source or test navigation references remain; route-reachability pas
 
 - [ ] **Step 5: Update the mode map**
 
-`docs/ward-management-mode-map.md` carries a superseded banner from Phase 1. Remove the Constellation row from its route table and note in the banner that Phase 2 has retired it and rebuilt Command as the coordinator screen.
+`docs/archive/ward-management-mode-map.md` carries a superseded banner from Phase 1. Remove the Constellation row from its route table and note in the banner that Phase 2 has retired it and rebuilt Command as the coordinator screen.
 
 - [ ] **Step 6: Commit**
 

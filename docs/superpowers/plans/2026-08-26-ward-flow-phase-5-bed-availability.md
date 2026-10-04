@@ -22,7 +22,7 @@ tokens, Vitest (`tests/**/*.test.ts`, `tests/**/*.dom.test.tsx`), Playwright (`t
 project `chromium-mockups`).
 
 **Spec:** `docs/superpowers/specs/2026-08-26-ward-flow-phase-5-bed-availability-design.md`
-**Direction and settled decisions:** `docs/ward-flow-roadmap.md`
+**Direction and settled decisions:** `docs/archive/ward-flow-roadmap.md`
 
 ## Global Constraints
 
