@@ -212,7 +212,7 @@ Related: [[ward-flow-changeable-data-rule]], [[checks-that-cannot-fail]], [[meas
 
 ## Owner rulings, 2026-08-31 — five at once, one of them not closed
 
-Recorded in-repo at `docs/ward-flow-owner-rulings-2026-08-31.md` (commit `0c94814a6`). He answered
+Recorded in-repo at `docs/archive/ward-flow-owner-rulings-2026-08-31.md` (commit `0c94814a6`). He answered
 five questions with **"Yes to all your recommendations."**
 
 - ⚠️ **The ten urgency reasons are STILL OPEN.** He approved a _process_ — read the placeholders,

@@ -475,7 +475,7 @@ in-page navigation work defaults to the DocumentViewer template above.
     landing wrapper); `DocumentClinicalSummary` must not reuse that id. The phone sheet lists only present sections —
     omit `source-images` when `visualCount === 0`, and do not require a "Tables and diagrams" sheet row in smoke for
     the empty-images lithium demo doc.
-23. Safari's status bar, collapsing address bar, and pixels outside `window.innerHeight` are native browser/system controls. Do not use negative safe-area overscan, a fixed app root, synthetic document padding, or an opaque viewport slab to make CSS appear to own those pixels. Acceptance is no contrasting **app-owned** band around the native controls, with a matching opaque root canvas. Use the labelled physical-device matrix in [phone-chrome-physical-acceptance.md](phone-chrome-physical-acceptance.md).
+23. Safari's status bar, collapsing address bar, and pixels outside `window.innerHeight` are native browser/system controls. Do not use negative safe-area overscan, a fixed app root, synthetic document padding, or an opaque viewport slab to make CSS appear to own those pixels. Acceptance is no contrasting **app-owned** band around the native controls, with a matching opaque root canvas. Use the labelled physical-device matrix in [phone-chrome-physical-acceptance.md](archive/phone-chrome-physical-acceptance.md).
 24. **A page fills the box it is in; it never subtracts a chrome estimate from `100dvh`.**
     At `sm`+ the shell's `#main-content` grows into `.phone-viewport-frame` (`sm:grow`), the
     `mobile-composer-reserve-pad` inside it is the fill box (`sm:flex sm:min-h-full sm:flex-col`),
@@ -952,7 +952,7 @@ Before changing search bar behaviour:
 - Update the reserve helper and CSS token together when changing clearances.
 - Add or update a focused static contract test for new constants or exceptions.
 - For visual/scroll changes, run the relevant phone-scroll/overlap Playwright coverage through `npm run ensure` and `npm run verify:ui` when the environment supports the repo runtime.
-- Complete [the physical iPhone checklist](phone-chrome-physical-acceptance.md) for shared safe-area/ownership changes; local Chromium cannot certify Safari or cold-launch PWA physical paint.
+- Complete [the physical iPhone checklist](archive/phone-chrome-physical-acceptance.md) for shared safe-area/ownership changes; local Chromium cannot certify Safari or cold-launch PWA physical paint.
 - For hide-on-scroll changes, re-read "Scroll hide/reveal" and prove the reveal at tablet and desktop, not just the hide.
 - If a new route has a page-owned composer, document it here and add it to the route/search coverage rather than relying on comments in a component.
 

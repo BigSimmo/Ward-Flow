@@ -6,7 +6,7 @@
 
 The former Database/PsychSift catalogue of 35 skills and its npm catalogue checks are unavailable
 in this dedicated Ward Flow repository. The planner descriptions in
-[`docs/productivity-workflows.md`](../productivity-workflows.md) are historical background.
+[`docs/archive/productivity-workflows.md`](../archive/productivity-workflows.md) are historical background.
 
 For current Ward work, use the on-demand [task brief and continuation convention](task-efficiency.md)
 and the root repository boundary. Apply a skill only when it is available in the current environment

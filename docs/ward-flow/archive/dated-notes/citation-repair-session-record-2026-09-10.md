@@ -4,7 +4,7 @@
 survives the session rather than only its output.**
 
 > **What this file is for.** The technical result lives in
-> [`citation-repair-handover-2026-09-08.md`](./citation-repair-handover-2026-09-08.md) — the numbers,
+> [`citation-repair-handover-2026-09-08.md`](citation-repair-handover-2026-09-08.md) — the numbers,
 > the exemption list, the re-derivation commands. **This file is the part that document cannot
 > carry: what was believed at each point, what turned out to be wrong, who corrected whom, and what
 > the whole thing taught.** Read the handover to act; read this to understand why it says what it
