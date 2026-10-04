@@ -839,7 +839,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activeService = isFixedJurisdiction ? fixedService : service;
   const activeSwatchKey = activeService ? (SERVICE_SWATCH_KEY[activeService] ?? "statewide") : "statewide";
   const activeServiceBadgeLabel = useMemo(() => {
-    if (!activeService) return pathname === "/mockups/ward-flow/delays" ? "All services" : "STATEWIDE";
+    if (!activeService)
+      return pathname === WARD_VIEWS.find((view) => view.id === "delays")?.href ? "All services" : "STATEWIDE";
     if (activeService === "East Metro") return "EAST METRO";
     if (activeService === "North Metro") return "NORTH METRO";
     if (activeService === "South Metro") return "SOUTH METRO";

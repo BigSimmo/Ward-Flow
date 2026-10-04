@@ -67,6 +67,45 @@ describe("the Delays waiting table keeps its type ranks after the table redesign
     expect(new Set(sizes.map((entry) => entry.size)).size, "the four columns no longer share one size").toBe(1);
   });
 
+  it("resolves the shared table size token in its workspace scope", () => {
+    const scope = /(?:^|\n)\.workspace,\s*\.timelinePanel\s*\{([^}]*)\}/u.exec(css);
+    expect(scope, "the table workspace and timeline lost their declared size scope").not.toBeNull();
+    expect(declaration(scope![1], "--t-1"), "the table size token is absent or no longer resolves to 13px").toBe(
+      "13px",
+    );
+    for (const name of ["cause", "profile", "wait", "update"]) {
+      expect(declaration(ruleBody(css, name), "font-size"), `.${name} no longer uses the resolved table step`).toBe(
+        "var(--t-1)",
+      );
+    }
+  });
+
+  it("keeps the eleven new supporting HTML text rules on the resolved 12px floor", () => {
+    const tokens = blankCssComments(readFileSync("src/app/ward-flow-shell-tokens.module.css", "utf8"));
+    expect(declaration(tokens, "--t-0"), "the canonical 12px floor token changed").toBe("0.75rem");
+    const selectors = [
+      ".tabs button > span",
+      '.layout[data-layout="workspace"] .table thead th',
+      '.layout[data-layout="workspace"] .update',
+      ".synthetic",
+      ".facts dt",
+      ".activity",
+      ".nextStep > div",
+      ".axis .reviewLabel",
+      ".trackCaption",
+      ".compactStrip small",
+      ".timelineLegend",
+    ];
+    for (const selector of selectors) {
+      const start = css.indexOf(`${selector} {`);
+      const rule = start === -1 ? null : /\{([^}]*)\}/u.exec(css.slice(start + selector.length));
+      expect(rule, `${selector} lost its HTML text rule`).not.toBeNull();
+      expect(declaration(rule![1], "font-size"), `${selector} must explicitly use the resolved 12px floor`).toBe(
+        "var(--t-0)",
+      );
+    }
+  });
+
   /**
    * 🔴 THE RANK ITSELF. `.personCause` is the blocker — the reason the row exists — and
    * `.personMeta` is the demographics line beneath it. They were one size and two colours before

@@ -280,7 +280,8 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           const prevId = selectedId;
           setSelectedId(null);
           window.requestAnimationFrame(() => {
-            const btn = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${prevId}"]`);
+            const prefix = inspectionSourceRef.current === "timeline" ? "delays-timeline-select" : "delays-select";
+            const btn = document.querySelector<HTMLButtonElement>(`[data-testid="${prefix}-${prevId}"]`);
             btn?.focus();
           });
           return;
@@ -305,6 +306,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
     const target = e.target as HTMLElement | null;
     const currentBtn = target?.closest<HTMLButtonElement>(`button[data-testid^="delays-select-"]`);
+    if (!currentBtn || !e.currentTarget.contains(currentBtn)) return;
     const buttons = Array.from(
       e.currentTarget.querySelectorAll<HTMLButtonElement>(`button[data-testid^="delays-select-"]`),
     );
@@ -550,7 +552,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               <span className={styles.statPillValue}>
                 {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
               </span>
-              <span className={styles.statPillLabel}>over 8h</span>
+              <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
             </div>
             <div className={styles.statPill} data-tone="escalated">
               <span className={styles.statPillValue}>

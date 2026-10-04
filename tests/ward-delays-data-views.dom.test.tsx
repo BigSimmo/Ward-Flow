@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 import { delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
 
 function renderDelays() {
@@ -105,5 +106,49 @@ describe("the selected delay data views", () => {
     fireEvent.keyDown(tab, { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: /Action workspace/u })).toHaveFocus();
     expect(screen.getByRole("tab", { name: /Action workspace/u })).toHaveAttribute("aria-selected", "true");
+  });
+  it.each(["ArrowDown", "ArrowUp", "Home", "End"])("leaves %s available to the inline patient details", (key) => {
+    renderDelays();
+    const list = screen.getByTestId("delays-waiting-list");
+    fireEvent.click(within(list).getAllByRole("button", { name: /^Select patient/u })[0]);
+    screen.getByText("Patient actions and full details").closest("details")?.setAttribute("open", "");
+    const details = screen.getByRole("region", { name: "Extended patient delay details" });
+    details.focus();
+    expect(fireEvent.keyDown(details, { key })).toBe(true);
+    expect(details).toHaveFocus();
+  });
+
+  it("keeps arrow and endpoint navigation between waiting patient buttons", () => {
+    renderDelays();
+    const patients = within(screen.getByTestId("delays-waiting-list")).getAllByRole("button", {
+      name: /^Select patient/u,
+    });
+    patients[0].focus();
+    fireEvent.keyDown(patients[0], { key: "ArrowDown" });
+    expect(patients[1]).toHaveFocus();
+    fireEvent.keyDown(patients[1], { key: "End" });
+    expect(patients[patients.length - 1]).toHaveFocus();
+    fireEvent.keyDown(patients[patients.length - 1], { key: "Home" });
+    expect(patients[0]).toHaveFocus();
+  });
+
+  it("returns phone focus to the selected timeline trigger on Escape, outside the waiting page", () => {
+    installMatchMediaStub(true);
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    renderDelays();
+    const timeline = screen.getByRole("region", { name: "Wait timeline" });
+    const next = within(timeline).getByRole("button", { name: "Next timeline page" });
+    fireEvent.click(next);
+    fireEvent.click(next);
+    const trigger = within(timeline).getAllByRole("button", { name: /^Inspect timeline/u })[0];
+    fireEvent.click(trigger);
+    const details = screen.getByRole("region", { name: "Selected timeline details" });
+    expect(details).toHaveFocus();
+    fireEvent.keyDown(details, { key: "Escape" });
+    expect(screen.queryByRole("region", { name: "Selected timeline details" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 });

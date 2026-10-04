@@ -2906,12 +2906,12 @@
   }
   :global(body:has([data-ward-page="delays"])) .rail .railLink[data-active="true"] {
     border-color: transparent;
-    border-left-color: #2e638d;
-    background: #e7f2ff;
-    color: #143b60;
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
   }
   :global(body:has([data-ward-page="delays"])) .rail .eyebrow {
-    color: #687e99;
+    color: var(--muted);
     font-size: var(--t-0);
   }
   :global(body:has([data-ward-page="delays"])) .rail .brandTitle {
@@ -2933,9 +2933,9 @@
     flex-direction: row;
     align-items: center;
     border: 0;
-    border-bottom: 1px solid #e0e7ef;
+    border-bottom: 1px solid var(--line);
     padding: 0 22px;
-    background: #fff;
+    background: var(--surface);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brand {
     position: fixed;
@@ -2943,24 +2943,24 @@
     top: 0;
     height: 56px;
     width: 225px;
-    color: #fff;
+    color: var(--on-accent);
     padding: 0;
     border: 0;
     z-index: 42;
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle {
     display: inline;
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--t-5);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brandStateText {
-    color: #ecb251;
+    color: var(--on-accent);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brandEmblem {
     width: 30px;
     height: 30px;
-    background: #fff;
-    color: #173c58;
+    background: var(--surface);
+    color: var(--accent-ink);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .railToggle,
   :global(body:has([data-delay-layout="workspace"])) .rail .mobileMenu,
@@ -3012,9 +3012,9 @@
     font-size: var(--t-1);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .railLink[data-active="true"] {
-    color: #193e60;
+    color: var(--accent-ink);
     background: transparent;
-    border-bottom: 3px solid #193e60;
+    border-bottom: 3px solid var(--accent-ink);
     font-weight: 700;
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .railText {
@@ -3052,9 +3052,9 @@
   :global(body:has([data-delay-layout="workspace"])) .rail .userAvatar {
     width: 36px;
     height: 36px;
-    border: 1px solid #c1cfda;
-    background: #234960;
-    color: #fff;
+    border: 1px solid var(--line-strong);
+    background: var(--accent);
+    color: var(--on-accent);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .userMeta,
   :global(body:has([data-delay-layout="workspace"])) .rail .userChevron {
@@ -3078,10 +3078,10 @@
     background: transparent;
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle b {
-    color: #fff;
+    color: var(--on-accent);
   }
   :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle .brandStateText {
-    color: #e8ae4b;
+    color: var(--on-accent);
   }
 }
 @media (min-width: 1001px) {

@@ -504,7 +504,7 @@ export function DelaysWaitTimeline({
                       </span>
                     ))}
                     <span className={styles.reviewLabel} style={{ left: `${reviewAt}%` }}>
-                      8h review marker
+                      {splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)} review marker
                     </span>
                   </div>
                 ) : (
@@ -526,6 +526,7 @@ export function DelaysWaitTimeline({
                       className={styles.patientButton}
                       onClick={() => onSelect(movement.id)}
                       aria-label={`Inspect timeline for ${patientOf(movement).formalName}`}
+                      data-testid={`delays-timeline-select-${movement.id}`}
                     >
                       {patientOf(movement).formalName} <Urgency movement={movement} />
                       <span className={`${styles.secondary} ${styles.patientMeta}`}>{shortOrigin(movement)}</span>
@@ -622,11 +623,11 @@ export function DelaysWaitTimeline({
           </span>
           <span title={OPERATIONAL_DEFAULT_LABEL}>
             <i className={styles.reviewKey} />
-            8h review · operational default
+            {splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)} review · operational default
           </span>
         </div>
         <span aria-live="polite">
-          Showing {shown.length} of {matching.length}
+          Showing {shown.length} of {matching.length} · Synthetic records
         </span>
         <PageControls page={currentPage} pages={pages} onChange={setPage} label="timeline" />
       </footer>
