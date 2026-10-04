@@ -409,11 +409,7 @@ export function LegalFormsScreen() {
           ]}
           actions={
             <div className={styles.islandActionsWrap}>
-              <button
-                type="button"
-                className={styles.recordFormPrimaryBtn}
-                onClick={handleOpenNewForm}
-              >
+              <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
                 + Record a form
               </button>
               {passed > 0 ? (
@@ -748,7 +744,9 @@ export function LegalFormsScreen() {
                             >
                               <div className={styles.breakdownHeader}>
                                 <span className={styles.breakdownCode}>{form.code ?? "FORM"}</span>
-                                <span className={styles.breakdownFormName}>{form.name.replace(/\s*\([^)]*\)/g, "")}</span>
+                                <span className={styles.breakdownFormName}>
+                                  {form.name.replace(/\s*\([^)]*\)/g, "")}
+                                </span>
                               </div>
                               <div className={styles.breakdownMeta}>
                                 <span className={styles.breakdownCount}>

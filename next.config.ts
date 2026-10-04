@@ -50,11 +50,11 @@ const nextConfig: NextConfig = {
     // there via NEXT_BUILD_CPUS without changing the local default.
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : 1,
     optimizePackageImports: ["lucide-react"],
-    // Proxy is on every API route. Bound its buffered client body so a
-    // chunked multipart upload cannot grow without limit before route code
-    // reaches request.formData(). MAX_UPLOAD_MB is capped at 150 below this
-    // 151 MiB transport envelope (1 MiB reserved for multipart framing).
-    proxyClientMaxBodySize: "151mb",
+    // Proxy is on every API route. Bound its buffered client body. The former
+    // "151mb" envelope served PsychSift's multipart document upload; Ward Flow has
+    // no upload route (its only API routes are GET /api/health and
+    // /api/local-project-id), so 3 October 2026 lowered it to a modest 1 MiB.
+    proxyClientMaxBodySize: "1mb",
   },
   poweredByHeader: false,
   images: {

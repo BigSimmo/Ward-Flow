@@ -39,6 +39,8 @@ test.describe("@mockup the comparisons screen keeps every row's identity on scre
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(COMPARE, { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
+    await page.getByText("Ward chart and recorded table", { exact: true }).click();
+    await page.getByText("ED chart and recorded table", { exact: true }).click();
 
     // The streamed-content guard the discharges spec uses, for the same reason: React leaves a
     // hidden staging copy of the screen in the document for a moment, so every testid resolves

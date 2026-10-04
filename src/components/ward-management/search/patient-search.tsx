@@ -1536,9 +1536,7 @@ Clinical Note: ${p.clinicalNote}`;
                       </span>
                       <span
                         className={`${styles.statutoryCountdown} ${
-                          selectedPatient.legalExpires === "No due time recorded"
-                            ? styles.statutoryCountdownMuted
-                            : ""
+                          selectedPatient.legalExpires === "No due time recorded" ? styles.statutoryCountdownMuted : ""
                         } mono`}
                       >
                         {selectedPatient.legalExpires === "No due time recorded"

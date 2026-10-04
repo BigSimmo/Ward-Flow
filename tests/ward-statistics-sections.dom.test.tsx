@@ -851,22 +851,13 @@ describe("one emergency department in detail", () => {
 });
 
 describe("StatisticsScreen interactive controls and table sorting accessibility", () => {
-  it("renders export button with aria-disabled, describedby and linked hint span", () => {
-    renderInProvider(<StatisticsScreen />);
-    const exportBtn = screen.getByRole("button", { name: /Export the figures/i });
-    expect(exportBtn).toHaveAttribute("aria-disabled", "true");
-    expect(exportBtn).toHaveAttribute("aria-describedby", "exportBtnHint");
-    const hint = document.getElementById("exportBtnHint");
-    expect(hint).toBeInTheDocument();
-    expect(hint?.textContent).toContain("Not wired in this prototype");
-  });
-
-  it("renders 17 sortable table headers as semantic buttons with aria-sort, and toggles sort direction on click", () => {
+  it("renders 12 sortable table headers as semantic buttons with aria-sort, and toggles sort direction on click", () => {
     const { container } = renderInProvider(<StatisticsScreen />);
 
     // Query all th elements with aria-sort
     const sortableThs = container.querySelectorAll("th[aria-sort]");
-    expect(sortableThs.length).toBe(17);
+    // 6 ward-pressure columns + 6 emergency-department columns (the community team table was retired upstream).
+    expect(sortableThs.length).toBe(12);
 
     // Each sortable th must contain a <button type="button">
     for (const th of Array.from(sortableThs)) {

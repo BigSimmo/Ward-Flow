@@ -3,12 +3,19 @@ name: Ward Flow CI
 on:
   pull_request:
     branches: [main]
+  # Railway auto-deploys main, so every commit that lands on main gets its own full run. A push has
+  # no PR base: the planner fails closed to the full scope, the PR-only steps (quick feedback,
+  # dependency review, changed-file checks) skip themselves, and the full-tree lint covers lint.
+  push:
+    branches: [main]
   merge_group:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Pull requests share one group per PR and cancel superseded runs. Every other event (including
+# each push to main) gets a group unique to its run, so a main run is never cancelled.
 concurrency:
   group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -35,6 +42,15 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/ward-ci-public/plan.mjs
+      - name: Verify the scope plan against the diff
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_PLAN_FULL: ${{ steps.plan.outputs.full }}
+          WARD_PLAN_UNIT: ${{ steps.plan.outputs.unit }}
+          WARD_PLAN_BROWSER: ${{ steps.plan.outputs.browser }}
+          WARD_PLAN_POLICY: ${{ steps.plan.outputs.policy }}
+          WARD_PLAN_DEPENDENCY_REVIEW: ${{ steps.plan.outputs.dependency_review }}
+        run: node scripts/ward-ci-public/verify-plan.mjs
       - name: Check CI contracts
         run: node scripts/ward-ci-public/check-contracts.mjs
       - name: Check maintained document commands
@@ -66,6 +82,21 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
+      # Whole-tree ESLint (errors only) on pushes to main and other non-PR runs, which have no PR
+      # diff for the changed-file check above. Enforcing since 4 October 2026, when the 15
+      # pre-existing errors were fixed.
+      - name: Lint the whole tree
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'pull_request' }}
+        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern
+      # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
+      # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
+      # shard would also fail. It shares this runner, which keeps two PRs' runs inside the
+      # concurrent-runner limit.
+      - name: Run the tests related to this PR's changes
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .
       - name: Check maintained policy contracts
         if: ${{ !cancelled() && steps.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/check-policy-contracts.mjs
@@ -82,37 +113,6 @@ jobs:
         run: |
           node node_modules/next/dist/bin/next typegen
           node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
-
-  quick:
-    # Fast signal, not a gate: only the tests that import the files this PR changed, so a red shows
-    # in about a minute. The unit shards below still run every file and decide the required check.
-    name: Ward Flow quick feedback
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24.15.0"
-          cache: npm
-      - name: Plan Ward scope
-        id: plan
-        env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/ward-ci-public/plan.mjs
-      - name: Install locked dependencies
-        id: install
-        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
-        run: npm ci --ignore-scripts
-      - name: Run the tests related to this PR's changes
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD
 
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
@@ -209,10 +209,95 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+  secret-scan:
+    # Full-history secret scan with a pinned, checksum-verified gitleaks release binary (no
+    # third-party action, licence key or token). It scans every commit reachable from the checked
+    # out commit and honours the reviewed fingerprints in .gitleaksignore. Findings are redacted.
+    name: Ward Flow secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install checksum-verified gitleaks
+        env:
+          GITLEAKS_VERSION: "8.28.0"
+          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+        run: |
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl -fsSL --retry 3 -o "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+      - name: Scan git history for secrets
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+
+  build:
+    # The deploy build: Railway's exact build command, without WARD_GATE_BUILD, so Next.js runs its
+    # own type and build checks. The browser jobs' WARD_GATE_BUILD builds ignore build errors.
+    name: Ward Flow production build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Railway builds with Node 24.19.0 (docs/hosting.md, RAILPACK_NODE_VERSION); match it here.
+          node-version: "24.19.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' && steps.plan.outputs.policy != 'true' }}
+        run: npm ci --ignore-scripts
+      - name: Build for production (Railway build command)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+
+  coverage:
+    # Enforces the vitest.config.mts coverage thresholds over the whole unit suite. On 4 October 2026
+    # a local run met them (all files 61.59% statements, 62.64% branches, 67.14% functions, 62.62%
+    # lines, plus the scoped core thresholds). One job, because per-shard coverage cannot be judged
+    # against a whole-suite threshold.
+    name: Ward Flow coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
+        run: npm ci --ignore-scripts
+      - name: Run unit suite with coverage thresholds
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run test:coverage
+
   required:
     name: Ward Flow required
     if: always()
-    needs: [static, unit, browser]
+    needs: [static, unit, browser, secret-scan, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -221,4 +306,7 @@ jobs:
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
-        run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success
+          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+        run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success

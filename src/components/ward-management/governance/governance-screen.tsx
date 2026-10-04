@@ -151,10 +151,12 @@ export function GovernanceScreen(props: GovernanceScreenProps = {}) {
                             <span className={governance.auditDot}>·</span>
                             {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                             <Link href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
-                              {resolveSubjectPatient(
-                                movements.find((candidate) => candidate.id === entry.movementId),
-                                { patients: flow.patients, referrals: flow.referrals, movements },
-                              ).displayName}
+                              {
+                                resolveSubjectPatient(
+                                  movements.find((candidate) => candidate.id === entry.movementId),
+                                  { patients: flow.patients, referrals: flow.referrals, movements },
+                                ).displayName
+                              }
                             </Link>
                             <span className={governance.auditDot}>·</span>
                             <span className={governance.badge} data-tone={tone}>

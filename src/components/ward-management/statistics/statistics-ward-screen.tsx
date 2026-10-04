@@ -1,5 +1,9 @@
 "use client";
 
+import { StatisticsInsightChart } from "./statistics-insight-chart";
+import { StatisticsDetailPanel } from "./statistics-detail-panel";
+import family from "./statistics-family.module.css";
+
 import { useState } from "react";
 import Link from "next/link";
 
@@ -15,7 +19,7 @@ import {
   STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
@@ -69,7 +73,6 @@ export function StatisticsWardScreen({
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  const [activeTab, setActiveTab] = useState<string>("all");
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
 
   const section = statisticsSectionById("units");
@@ -276,22 +279,6 @@ export function StatisticsWardScreen({
     );
   })();
 
-  const TABS = [
-    { id: "all", label: "All Sections", badge: "All" },
-    { id: "occ", label: "Beds & Occupancy", badge: `${capacity.occupied}/${unit.beds}` },
-    {
-      id: "los",
-      label: "Length of Stay",
-      badge:
-        statistics.averageLengthOfStayDays === null
-          ? "Not recorded"
-          : `${statistics.averageLengthOfStayDays.toFixed(0)}d`,
-    },
-    { id: "flow", label: "Admissions & Discharges", badge: "No 7d history" },
-    { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
-    { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
-  ] as const;
-
   return (
     <StatisticsSectionFrame
       section={section}
@@ -300,22 +287,91 @@ export function StatisticsWardScreen({
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
-      <nav className={pageStyles.sovereignTabs} aria-label="Ward Statistics Navigation">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`${pageStyles.sovereignTab}${activeTab === tab.id ? ` ${pageStyles.activeTab}` : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-            aria-pressed={activeTab === tab.id}
-          >
-            <span>{tab.label}</span>
-            <span className={pageStyles.tabBadge}>{tab.badge}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div className={pageStyles.pageGrid} data-active-tab={activeTab}>
+      <dl className={pageStyles.capacityBand} aria-label="Current bed figures">
+        <div>
+          <dt>Beds on the ward</dt>
+          <dd>{unit.beds}</dd>
+        </div>
+        <div>
+          <dt>Occupied</dt>
+          <dd>{capacity.occupied}</dd>
+        </div>
+        <div>
+          <dt>Occupancy</dt>
+          <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
+        </div>
+        <div>
+          <dt>Ready</dt>
+          <dd>{capacity.available}</dd>
+        </div>
+        <div>
+          <dt>Open now</dt>
+          <dd>{openBeds}</dd>
+        </div>
+      </dl>
+      <div className={family.modules}>
+        <StatisticsInsightChart
+          title="Discharge barriers"
+          defaultGroup="recorded"
+          emptyText="No recorded blockers."
+          groups={[{ id: "recorded", label: "With blockers" }]}
+          defaultSort="value"
+          testId="statistics-ward-barriers-chart"
+          metrics={[
+            {
+              id: "count",
+              label: "Recorded blockers",
+              unit: "people",
+              tone: "warning",
+              note: `${headlineTotal} of ${ready?.population ?? admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed").length} with a recorded blocker. Categories use the ward's current non-departed admissions.`,
+            },
+          ]}
+          rows={
+            ready
+              ? ready.tallies.map((tally) => ({
+                  id: tally.reason,
+                  group: tally.count > 0 ? "recorded" : "none",
+                  name: tally.reason.replaceAll("_", " "),
+                  values: { count: tally.count },
+                }))
+              : [
+                  {
+                    id: "unavailable",
+                    group: "recorded",
+                    name: "Breakdown unavailable",
+                    values: { count: null },
+                    unavailable: blockedByReasonError ?? "Not recorded",
+                  },
+                ]
+          }
+        />
+        <StatisticsInsightChart
+          title="Current length of stay"
+          variant="distribution"
+          testId="statistics-ward-stays-chart"
+          metrics={[
+            {
+              id: "count",
+              label: "People by stay band",
+              unit: "people",
+              note: `${admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed" && stayBand(admission, now) === null).length} current admissions have no recorded stay. Bands are display groupings, not clinical deadlines.`,
+            },
+          ]}
+          rows={STAY_BANDS.map((band) => ({
+            id: band.id,
+            name: band.label,
+            values: {
+              count: admissions.filter(
+                (admission) =>
+                  admission.unitId === unit.id &&
+                  admission.state !== "departed" &&
+                  stayBand(admission, now)?.id === band.id,
+              ).length,
+            },
+          }))}
+        />
+      </div>
+      <div className={pageStyles.pageGrid}>
         <WardPanel
           title={unit.name}
           count={`${unit.beds} beds`}
@@ -348,141 +404,123 @@ export function StatisticsWardScreen({
             aria-label="Beds now content"
             tabIndex={0}
           >
-            <dl className={pageStyles.capacityBand} aria-label="Current bed figures">
-              <div>
-                <dt>Beds on the ward</dt>
-                <dd>{unit.beds}</dd>
-              </div>
-              <div>
-                <dt>Occupied</dt>
-                <dd>{capacity.occupied}</dd>
-              </div>
-              <div>
-                <dt>Occupancy</dt>
-                <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
-              </div>
-              <div>
-                <dt>Ready</dt>
-                <dd>{capacity.available}</dd>
-              </div>
-              <div>
-                <dt>Open now</dt>
-                <dd>{openBeds}</dd>
-              </div>
-            </dl>
-
-            <WardTable className={pageStyles.bedTable} wrapperClassName={pageStyles.bedTableWrap}>
-              <caption className={pageStyles.srOnly}>
-                Empty, allocatable, ready, open and pending bed figures for this ward.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Bed figure</th>
-                  <th scope="col">Beds</th>
-                  <th scope="col">Recorded meaning</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">Empty</th>
-                  <td>{unit.empty.value}</td>
-                  <td>Physically empty</td>
-                </tr>
-                <tr>
-                  <th scope="row">Allocatable</th>
-                  <td>{unit.allocatable.value}</td>
-                  <td>Confirmed allocatable by the ward</td>
-                </tr>
-                <tr>
-                  <th scope="row">Ready</th>
-                  <td>{capacity.available}</td>
-                  <td>Smaller of empty and allocatable</td>
-                </tr>
-                <tr>
-                  <th scope="row">Open now</th>
-                  <td>{openBeds}</td>
-                  <td>Ready and not marked Pending</td>
-                </tr>
-                <tr>
-                  <th scope="row">Pending</th>
-                  <td>{pendingPreparation}</td>
-                  <td>Marked for cleaning, maintenance or repair, or with no reason stated</td>
-                </tr>
-              </tbody>
-            </WardTable>
-
-            <p className={styles.note}>
-              This roster records admission states. Numbered bed assignments are not recorded.
-            </p>
-            <div className={pageStyles.tableTools}>
-              <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
-                Search admissions by ID or recorded state
-              </label>
-              <input
-                id="bedMatrixSearch"
-                type="search"
-                className={pageStyles.tableSearch}
-                placeholder="Search admission ID or state..."
-                value={bedSearchQuery}
-                onChange={(e) => setBedSearchQuery(e.target.value)}
-                aria-label="Filter recorded admission roster"
-              />
-              <span className={styles.note}>
-                Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
-              </span>
-            </div>
-            <div className={pageStyles.tableWrap}>
-              <table className={pageStyles.dataTable}>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Bed readiness definitions</summary>{" "}
+              <WardTable className={pageStyles.bedTable} wrapperClassName={pageStyles.bedTableWrap}>
                 <caption className={pageStyles.srOnly}>
-                  Recorded admission roster; numbered bed assignments are not recorded
+                  Empty, allocatable, ready, open and pending bed figures for this ward.
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Assigned bed</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Admission / recorded sex</th>
-                    <th scope="col">Admitted</th>
-                    <th scope="col" className={pageStyles.n}>
-                      Length of stay
-                    </th>
-                    <th scope="col">Discharge Target</th>
+                    <th scope="col">Bed figure</th>
+                    <th scope="col">Beds</th>
+                    <th scope="col">Recorded meaning</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBedMatrix.length === 0 ? (
-                    <tr>
-                      <td colSpan={6}>
-                        {bedMatrixList.length === 0
-                          ? "No current admissions recorded"
-                          : "No admissions match this search"}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {filteredBedMatrix.map((b) => {
-                    let chipClass = pageStyles.chipMark;
-                    if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
-
-                    return (
-                      <tr key={b.id}>
-                        <td>
-                          <strong>{b.bed}</strong>
-                        </td>
-                        <td>
-                          <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
-                        </td>
-                        <td>
-                          <strong>{b.pt}</strong>
-                        </td>
-                        <td>{b.admitted}</td>
-                        <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
-                        <td>{b.target}</td>
-                      </tr>
-                    );
-                  })}
+                  <tr>
+                    <th scope="row">Empty</th>
+                    <td>{unit.empty.value}</td>
+                    <td>Physically empty</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Allocatable</th>
+                    <td>{unit.allocatable.value}</td>
+                    <td>Confirmed allocatable by the ward</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Ready</th>
+                    <td>{capacity.available}</td>
+                    <td>Smaller of empty and allocatable</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Open now</th>
+                    <td>{openBeds}</td>
+                    <td>Ready and not marked Pending</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Pending</th>
+                    <td>{pendingPreparation}</td>
+                    <td>Marked for cleaning, maintenance or repair, or with no reason stated</td>
+                  </tr>
                 </tbody>
-              </table>
-            </div>
+              </WardTable>
+            </details>
 
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Recorded admissions · {bedMatrixList.length}</summary>{" "}
+              <p className={styles.note}>
+                This roster records admission states. Numbered bed assignments are not recorded.
+              </p>
+              <div className={pageStyles.tableTools}>
+                <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
+                  Search admissions by ID or recorded state
+                </label>
+                <input
+                  id="bedMatrixSearch"
+                  type="search"
+                  className={pageStyles.tableSearch}
+                  placeholder="Search admission ID or state..."
+                  value={bedSearchQuery}
+                  onChange={(e) => setBedSearchQuery(e.target.value)}
+                  aria-label="Filter recorded admission roster"
+                />
+                <span className={styles.note}>
+                  Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
+                </span>
+              </div>
+              <div className={pageStyles.tableWrap}>
+                <table className={pageStyles.dataTable}>
+                  <caption className={pageStyles.srOnly}>
+                    Recorded admission roster; numbered bed assignments are not recorded
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Assigned bed</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Admission / recorded sex</th>
+                      <th scope="col">Admitted</th>
+                      <th scope="col" className={pageStyles.n}>
+                        Length of stay
+                      </th>
+                      <th scope="col">Discharge Target</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBedMatrix.length === 0 ? (
+                      <tr>
+                        <td colSpan={6}>
+                          {bedMatrixList.length === 0
+                            ? "No current admissions recorded"
+                            : "No admissions match this search"}
+                        </td>
+                      </tr>
+                    ) : null}
+                    {filteredBedMatrix.map((b) => {
+                      let chipClass = pageStyles.chipMark;
+                      if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
+
+                      return (
+                        <tr key={b.id}>
+                          <td>
+                            <strong>{b.bed}</strong>
+                          </td>
+                          <td>
+                            <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
+                          </td>
+                          <td>
+                            <strong>{b.pt}</strong>
+                          </td>
+                          <td>{b.admitted}</td>
+                          <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
+                          <td>{b.target}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </details>
             <details className={`${pageStyles.measureDetails} source-print`}>
               <summary>How these bed figures are measured</summary>
               <div className={pageStyles.measureDetailsBody}>
@@ -563,18 +601,26 @@ export function StatisticsWardScreen({
           </div>
         </WardPanel>
 
-        <WardPanel title="Occupancy history" testId="ward-statistics-ward-occupancy-trajectory" dataTabSection="occ">
+        <StatisticsDetailPanel
+          title="Occupancy history"
+          testId="ward-statistics-ward-occupancy-trajectory"
+          dataTabSection="occ"
+        >
           <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}>
             <p className={styles.note}>
               Not recorded. This prototype retains the ward&apos;s current bed state, but no daily occupancy history or
               operational benchmark.
             </p>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         <div className={pageStyles.measureColumns} data-testid="ward-statistics-ward-measures">
           <div className={pageStyles.measureColumn}>
-            <WardPanel title="Occupancy over the window" testId="ward-statistics-ward-occupancy" dataTabSection="occ">
+            <StatisticsDetailPanel
+              title="Occupancy over the window"
+              testId="ward-statistics-ward-occupancy"
+              dataTabSection="occ"
+            >
               <div
                 className={`${styles.panelBody} ${pageStyles.trendStack}`}
                 role="group"
@@ -584,15 +630,15 @@ export function StatisticsWardScreen({
                 <details className={`${pageStyles.measureDetails} source-print`}>
                   <summary>Technical trend disclosure</summary>
                   <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-                    Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
-                    ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
-                    trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+                    Neither trend below is recorded — both charts below are demonstration data, not a measurement of
+                    this ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so
+                    neither trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
                   </p>
                 </details>
                 <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
                 <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
               </div>
-            </WardPanel>
+            </StatisticsDetailPanel>
             <WardPanel title="Length of stay" testId="ward-statistics-ward-length-of-stay" dataTabSection="los">
               <div className={styles.panelBody} role="group" aria-label="Length of stay content" tabIndex={0}>
                 <h3 className={styles.subHeading}>Average length of stay</h3>
@@ -610,13 +656,13 @@ export function StatisticsWardScreen({
                 <details className={`${pageStyles.measureDetails} source-print`}>
                   <summary>Length of stay grouping disclosure</summary>
                   <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
-                    Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
-                    figure.
+                    The distribution above uses current non-departed admissions with a recorded stay. The average uses
+                    its own recorded-stay population.
                   </p>
                 </details>
               </div>
             </WardPanel>
-            <WardPanel
+            <StatisticsDetailPanel
               title="Admissions and discharges"
               testId="ward-statistics-ward-admissions-discharges"
               dataTabSection="flow"
@@ -714,7 +760,7 @@ export function StatisticsWardScreen({
                   </details>
                 </div>
               </div>
-            </WardPanel>
+            </StatisticsDetailPanel>
           </div>
           <div className={pageStyles.measureColumn}>
             <WardPanel
@@ -829,7 +875,7 @@ export function StatisticsWardScreen({
                 </p>
               </div>
             </WardPanel>
-            <WardPanel
+            <StatisticsDetailPanel
               title="Clinically ready, not yet gone"
               testId="ward-statistics-ward-ready"
               dataTabSection="ready"
@@ -964,7 +1010,7 @@ export function StatisticsWardScreen({
                   </p>
                 </details>
               </div>
-            </WardPanel>
+            </StatisticsDetailPanel>
             <WardPanel
               title="Referrals into this ward"
               testId="ward-statistics-ward-referrals-panel"
@@ -1027,7 +1073,11 @@ export function StatisticsWardScreen({
                 </section>
               </div>
             </WardPanel>
-            <WardPanel title="Long stays" testId="ward-statistics-ward-long-stays" dataTabSection="longStay">
+            <StatisticsDetailPanel
+              title="Long stays"
+              testId="ward-statistics-ward-long-stays"
+              dataTabSection="longStay"
+            >
               <div className={styles.panelBody} role="group" aria-label="Long stays content" tabIndex={0}>
                 <h3 className={styles.subHeading}>Long stays</h3>
                 <p className={styles.body} data-testid="ward-stat-long-stays">
@@ -1042,11 +1092,15 @@ export function StatisticsWardScreen({
                   )}
                 </p>
               </div>
-            </WardPanel>
+            </StatisticsDetailPanel>
           </div>
         </div>
 
-        <WardPanel title="Data provenance and limits" testId="ward-statistics-ward-governance" dataTabSection="common">
+        <StatisticsDetailPanel
+          title="Data provenance and limits"
+          testId="ward-statistics-ward-governance"
+          dataTabSection="common"
+        >
           <div
             className={styles.panelBody}
             role="group"
@@ -1070,7 +1124,7 @@ export function StatisticsWardScreen({
               </p>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
       </div>
     </StatisticsSectionFrame>
   );

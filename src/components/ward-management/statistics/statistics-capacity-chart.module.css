@@ -1,0 +1,444 @@
+.chart {
+  min-width: 0;
+  color: var(--ink);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.125rem;
+  border-bottom: 1px solid var(--line);
+}
+.chart button,
+.chart select,
+.chart input {
+  font: inherit;
+  font-size: var(--t-1);
+}
+.chart button,
+.chart select {
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.chart button:focus-visible,
+.chart select:focus-visible,
+.chart input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.switch {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+.switch button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--r2);
+}
+.switch button[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  box-shadow: var(--lift-sm);
+  font-weight: 600;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 13rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--muted);
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+}
+.toolbar select {
+  max-width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1.125rem;
+}
+.summaryNumbers {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  flex: 1 1 17rem;
+}
+.summaryNumbers > strong {
+  color: var(--good-ink, var(--good));
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.summaryNumbers > strong > span {
+  margin-left: 0.375rem;
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+.summaryNumbers > span {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.legend {
+  display: flex;
+  gap: 1rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.legend i {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+}
+.ready {
+  background: var(--good);
+}
+.occupied {
+  background: var(--accent);
+}
+.held {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--warn-soft) 0px,
+    var(--warn-soft) 3px,
+    var(--warn) 3px,
+    var(--warn) 4px
+  );
+}
+.workspace {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1.25rem 1rem;
+}
+.plot {
+  min-width: 0;
+}
+.axis,
+.row {
+  display: grid;
+  grid-template-columns: minmax(min(10rem, 100%), 0.65fr) minmax(0, 1fr) 4rem;
+  gap: 1rem;
+  align-items: center;
+}
+.axis {
+  padding: 0.5rem 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.axis > div {
+  position: relative;
+  height: 1.25rem;
+  font-family: var(--mono);
+}
+.axis > div > span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.axis > div > span:first-child {
+  transform: none;
+}
+.axis > div > span:last-child {
+  transform: translateX(-100%);
+}
+.axis > :last-child {
+  text-align: right;
+}
+.row {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-bottom-color: var(--line);
+  border-radius: var(--r2);
+  padding: 0.625rem 0.75rem;
+  background: transparent;
+  color: var(--ink);
+}
+.row:hover {
+  background: var(--surface-2);
+}
+.row[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.rowName {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.rowName strong {
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.rowName small,
+.barArea > small {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.3;
+}
+.barArea {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.guide {
+  position: absolute;
+  width: 1px;
+  top: -0.375rem;
+  bottom: -0.375rem;
+  background: var(--line);
+  pointer-events: none;
+}
+.barArea > small {
+  position: relative;
+}
+.bar {
+  position: relative;
+  display: flex;
+  height: 0.875rem;
+  overflow: hidden;
+  border-radius: 3px;
+}
+.bar > span {
+  height: 100%;
+}
+.readyCount {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  color: var(--good-ink, var(--good));
+}
+.readyCount[data-empty="true"] {
+  color: var(--muted);
+}
+.readyCount > span {
+  font-family: var(--body);
+  font-size: var(--t-3);
+  color: var(--muted);
+}
+.inspector {
+  align-self: start;
+  padding: 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+.inspectorHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+.inspectorHeading button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  min-width: var(--ward-tap, 3rem);
+  font-size: var(--t-3);
+}
+.inspector h3 {
+  margin: 0.5rem 0;
+  font-size: var(--t-3);
+}
+.inspector p {
+  margin: 0;
+  font-size: var(--t-1);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.detailsMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.detailsMetrics dt {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.detailsMetrics dd {
+  font: 500 var(--t-4) var(--mono);
+  margin: 0.25rem 0 0;
+}
+.detailsMetrics > :first-child dd {
+  color: var(--good-ink, var(--good));
+}
+.inspector .definition {
+  font-size: var(--t-0);
+}
+.wardList {
+  display: grid;
+  margin-top: 1rem;
+}
+.wardList a {
+  display: grid;
+  gap: 0.375rem;
+  border-top: 1px solid var(--line);
+  padding: 0.75rem 0;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--t-1);
+}
+.wardList a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.wardList a strong {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--accent);
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.footer > div {
+  display: flex;
+  gap: 0.5rem;
+}
+.footer button,
+.empty button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  padding: 0.5rem;
+}
+.footer button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.empty {
+  padding: 2rem;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .toolbar,
+  .summary {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  .toolbar > .switch {
+    width: 100%;
+  }
+  .toolbar > .switch > button {
+    flex: 1;
+  }
+  .toolbar > label {
+    min-width: 0;
+    flex: 1 1 8rem;
+  }
+  .toolbar > .search {
+    flex-basis: 100%;
+  }
+  .toolbar select {
+    width: 100%;
+  }
+  .workspace {
+    padding: 0 0.5rem 0.75rem;
+  }
+  .axis,
+  .row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) 2.75rem;
+    gap: 0.5rem;
+    padding: 0.625rem 0.5rem;
+  }
+  .rowName small {
+    display: none;
+  }
+  .rowName strong {
+    font-size: var(--t-1);
+  }
+  .readyCount {
+    gap: 0.375rem;
+  }
+  .summaryNumbers {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .legend {
+    flex: 1 1 auto;
+    gap: 0.625rem;
+  }
+  .footer {
+    padding: 0.5rem 0.75rem;
+  }
+}
+@media print {
+  .toolbar,
+  .switch,
+  .footer button,
+  .inspectorHeading button {
+    display: none;
+  }
+  .row {
+    break-inside: avoid;
+  }
+  .bar {
+    print-color-adjust: exact;
+  }
+}
+
+@media (max-width: 640px) {
+  .axis > div > span:nth-child(even):not(:last-child) {
+    display: none;
+  }
+  .detailsMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

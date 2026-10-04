@@ -565,7 +565,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   ],
   [
     "/mockups/ward-flow/statistics/ward/[unitId]",
-    "1 of 22 instances reachable without state — and unlike every other entry here, this one records " +
+    "0 of 22 instances reachable without state — and unlike every other entry here, this one records " +
       "a limit of the SCAN rather than a gap in the navigation. The comparisons page " +
       "(statistics-compare-screen.tsx) links every ward in the network, one row each, built inside a " +
       "map — so the scan classifies it as a BUILT site and counts nought concrete instances from it, " +
@@ -575,7 +575,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   ],
   [
     "/mockups/ward-flow/statistics/ed/[edId]",
-    "1 of 10 instances reachable without state — the same scan limit as the ward detail route above, " +
+    "0 of 10 instances reachable without state — the same scan limit as the ward detail route above, " +
       "and established the same way. The comparisons page lists every emergency department and links " +
       "each one; tests/ward-statistics-sections.dom.test.tsx pins that set against " +
       "allEmergencyDepartments() exactly.",
@@ -630,7 +630,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     // What the hub actually covers is established by rendering it and reading the links back out:
     // tests/ward-statistics-community-chooser.dom.test.tsx pins the linked set against
     // COMMUNITY_TEAM_PAGES exactly and fails on a single missing team.
-    "1 of 64 instances reachable without state — a limit of the SCAN rather than a gap in the " +
+    "0 of 64 instances reachable without state — a limit of the SCAN rather than a gap in the " +
       "navigation. communityStatisticsHref's own definition in shell/ward-facade.ts is a real built " +
       "site; the hub's own call site is a plain function call and registers as neither concrete nor " +
       "built. Unlike the health-service entry above, a concrete literal COULD register for this route " +
