@@ -948,6 +948,25 @@ with the placeholder said out loud.
 
 ## SETTLED AND NOT STARTED — the referral flow
 
+> **Superseded — checked 4 October 2026 at `a8583a5`: every rule below is now built.** This list is
+> the 30 August snapshot. The September work built it; read the code, not this heading.
+>
+> | Rule                                                           | Where it lives now                                                                                                                                  |
+> | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | Several destinations in one referral                           | `RECEIVE_REFERRAL` `destinations`, capped by `PARALLEL_REFERRAL_CAP` (FD-21); `ward-parallel-referral-cap-ui`, `ward-referral-destinations`         |
+> | Catchment flag, wait and stats per option                      | `referrals/referral-destination-options.ts` — shows the current queue's longest wait, deliberately not an invented "estimated" wait                 |
+> | First acceptance cancels the others                            | FD-22 in the reducer and `ward-referrals.ts` (`cancelledAddressings`); community follow-up arms are exempt by ruling RB5                            |
+> | Ward blindness guard                                           | `ward-referral-visibility.ts` (FD-23) — separate ward, community and coordinator projections; `ward-referral-visibility.test.ts`                    |
+> | Out-of-catchment greyed, not locked; decline does not lock out | `ward-referral-destinations.dom.test.tsx`; re-referral after a decline in `ward-re-referral-adds.test.ts`; later facts as `ADD_REFERRAL_CORRECTION` |
+> | Referral for someone who already has a bed; ends at acceptance | `referralState` in `ward-referrals.ts`; inpatient-to-community and ED arms in the reducer                                                           |
+> | Raise, accept and decline roles                                | `ward-flow-events.ts` role table (widened since: `ed` and `community` answer their own destination kind only, via `answerableBy`)                   |
+> | A referrer may withdraw                                        | `RECORD_REFERRER_WITHDRAWAL` (FD-5) and `WITHDRAW_REFERRAL`; `ward-referrer-withdrawal.test.ts`                                                     |
+>
+> **Still the owner's call, not a build gap:** recording a referrer's withdrawal is coordinator-only
+> (flagged in `ward-flow-events.ts` as a product question: should the community team or the ED also
+> record it?). The 57 referral test files plus `ward-referrer-withdrawal.test.ts` passed locally on
+> 4 October (1,036 tests).
+
 - **Multi-select destinations in ONE referral** — not repeat referrals
 - **The referral tool flags catchment** and shows **estimated wait time and useful stats per option**
 - **First acceptance cancels every other referral automatically** — no coordination step
