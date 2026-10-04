@@ -726,7 +726,7 @@ describe("Capacity's tables declare the scroll affordance they have earned", () 
 });
 
 describe("tomorrow's beds forecast", () => {
-  it("shows the 24 and 48 hour estimates from bedsForecast, with the working and its limits", () => {
+  it("shows the 24 and 48 hour estimates from bedsForecast cleanly in the network summary", () => {
     const seeded = seedWardFlowState();
     const forecast = bedsForecast(seeded.units, seeded.bedReleases, seeded.admissions, seeded.movements, NOW_ANCHOR);
     renderScreen();
@@ -736,7 +736,7 @@ describe("tomorrow's beds forecast", () => {
         forecastHeadline(entry.likely),
       );
     }
-    expect(within(panel).getAllByText("How this was worked out")).toHaveLength(2);
-    expect(within(panel).getByText(/not predicted/)).toBeInTheDocument();
+    expect(within(panel).queryByText("How this was worked out")).toBeNull();
+    expect(within(panel).queryByText(/not predicted/)).toBeNull();
   });
 });

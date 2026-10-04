@@ -521,8 +521,6 @@ export function CapacityScreen() {
             </p>
           ) : null}
 
-          <BedsForecastPanel forecast={forecast} />
-
           <div className={styles.capacityGrid}>
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>
               <div className={styles.capacityPanelBody} role="region" aria-label="Bed map details" tabIndex={0}>
@@ -565,6 +563,7 @@ export function CapacityScreen() {
                     scopedOpenReady={scopedOpenReady}
                     scopedPendingPreparation={scopedPendingPreparation}
                   />
+                  <BedsForecastPanel forecast={forecast} />
                   <CapacityTabs
                     id="capacity-network"
                     label="Network details"
