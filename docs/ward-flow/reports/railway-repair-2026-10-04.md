@@ -4,6 +4,10 @@ Fresh observations between 17:43 and 17:51 UTC, for task
 `01a0fe58-6434-7205-8baa-61d50d5540db` (Railway continuation). This record supplements
 the dated [hosting record](../../hosting.md). It does not certify every app workflow.
 
+For future diagnosis, use the [Railway operations guide](../RAILWAY-OPERATIONS.md).
+The CI-wait correction described as pending below was subsequently completed;
+keep this initial incident record as dated evidence.
+
 ## Verified target and delivery boundary
 
 - Repository: `BigSimmo/Ward-Flow`, verified fetch and push destination.
