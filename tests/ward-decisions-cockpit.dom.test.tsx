@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
 
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -135,5 +135,36 @@ describe("ward decisions cockpit", () => {
 
     // Draft is purged from sessionStorage
     expect(window.sessionStorage.getItem(`cockpit-barrier-${mockUnit.id}`)).toBeNull();
+  });
+
+  it("activates Gate Cards 1-4 via keyboard (Enter and Space)", () => {
+    const scrollMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollMock;
+
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
+
+    const gate1 = screen.getByRole("button", { name: /GATE 1 · 07:00–09:30/i });
+    const gate2 = screen.getByRole("button", { name: /GATE 2 · 09:30–13:00/i });
+    const gate3 = screen.getByRole("button", { name: /GATE 3 · 11:00–14:00/i });
+    const gate4 = screen.getByRole("button", { name: /GATE 4 · 14:00–18:00/i });
+
+    // Press Enter on Gate 1
+    fireEvent.keyDown(gate1, { key: "Enter" });
+    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+
+    // Press Space on Gate 2
+    scrollMock.mockClear();
+    fireEvent.keyDown(gate2, { key: " " });
+    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+
+    // Press Enter on Gate 3
+    scrollMock.mockClear();
+    fireEvent.keyDown(gate3, { key: "Enter" });
+    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+
+    // Press Space on Gate 4
+    scrollMock.mockClear();
+    fireEvent.keyDown(gate4, { key: " " });
+    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
   });
 });

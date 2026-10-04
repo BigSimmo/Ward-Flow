@@ -336,12 +336,10 @@ export function WardStatsToggle({
  * Grouped into Risk, Supply, and Demand clusters with high-contrast metric tiles,
  * live alert notices, and NSQHS/governance disclaimers.
  */
+// `chromeRole`, `placeName`, `now` and `onClose` are still passed by ward-bar.tsx but the redesigned
+// drawer body reads none of them (the drawer chrome owns closing and the title).
 export function WardStatsDrawerContent({
   figures,
-  chromeRole,
-  placeName,
-  now,
-  onClose,
 }: {
   figures: StandingFigure[];
   chromeRole: string;

@@ -28,7 +28,11 @@ export function currentReadyEntries(queueText) {
   return [...latest.values()]
     .filter(Boolean)
     .sort((a, b) => a.index - b.index)
-    .map(({ index, ...entry }) => entry);
+    .map((indexed) => {
+      const entry = { ...indexed };
+      delete entry.index;
+      return entry;
+    });
 }
 
 export function activeStewardClaims(queueText) {

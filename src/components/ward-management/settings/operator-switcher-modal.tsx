@@ -93,7 +93,6 @@ export interface OperatorSwitcherModalProps {
 
 function useSafeRouter(): { push: (path: string) => void } | null {
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     return useRouter();
   } catch {
     return null;
@@ -102,7 +101,6 @@ function useSafeRouter(): { push: (path: string) => void } | null {
 
 function useSafePathname(): string {
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     return usePathname() || "";
   } catch {
     return "";

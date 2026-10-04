@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { referralForMovement } from "../src/components/ward-management/ward-derivations";
-import {
-  seedWardFlowState,
-  wardFlowReducer,
-  type WardFlowState,
-} from "../src/components/ward-management/ward-flow-reducer";
-import { TRANSPORT_PROVIDERS, type Movement, type Referral } from "../src/components/ward-management/ward-model";
+import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;

@@ -34,37 +34,26 @@
   grid-column: 1 / -1;
 }
 
-.pageGrid > :global([data-testid="ward-statistics-ward-occupancy"]) {
-  grid-column: 1;
+.measureColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  align-items: start;
+  grid-column: 1 / -1;
+  min-width: 0;
 }
 
-.measureColumns,
+@media (max-width: 58rem) {
+  .measureColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .measureColumn {
-  display: contents;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-admissions-discharges"]) {
-  grid-column: 1;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-discharge-planning"]) {
-  grid-column: 2;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-ready"]) {
-  grid-column: 2;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-referrals-panel"]) {
-  grid-column: 2;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-length-of-stay"]) {
-  grid-column: 2;
-}
-
-.pageGrid :global([data-testid="ward-statistics-ward-long-stays"]) {
-  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
 }
 
 /* ══════════ TOP CONTROLS & WARD SELECTOR (UNIT SWITCHER) ══════════ */
@@ -212,43 +201,29 @@
 
 /* Tab filter state mappings for data-active-tab */
 .pageGrid[data-active-tab="occ"]
-  > :not([data-tab-section="occ"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ward-identity"])
-  ):not(:global([data-testid="ward-statistics-ward-occupancy-trajectory"])):not(
-    :global([data-testid="ward-statistics-ward-bed-matrix"])
-  ) {
-  display: none !important;
-}
-
+  :global([data-tab-section]:not([data-tab-section="occ"]):not([data-tab-section="common"])),
 .pageGrid[data-active-tab="los"]
-  > :not([data-tab-section="los"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ward-identity"])
-  ):not(:global([data-testid="ward-statistics-ward-length-of-stay"])) {
-  display: none !important;
-}
-
+  :global([data-tab-section]:not([data-tab-section="los"]):not([data-tab-section="common"])),
 .pageGrid[data-active-tab="flow"]
-  > :not([data-tab-section="flow"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ward-identity"])
-  ):not(:global([data-testid="ward-statistics-ward-admissions-discharges"])) {
-  display: none !important;
-}
-
+  :global([data-tab-section]:not([data-tab-section="flow"]):not([data-tab-section="common"])),
 .pageGrid[data-active-tab="ready"]
-  > :not([data-tab-section="ready"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ward-identity"])
-  ):not(:global([data-testid="ward-statistics-ward-ready"])):not(
-    :global([data-testid="ward-statistics-ward-discharge-planning"])
-  ) {
+  :global([data-tab-section]:not([data-tab-section="ready"]):not([data-tab-section="common"])),
+.pageGrid[data-active-tab="longStay"]
+  :global([data-tab-section]:not([data-tab-section="longStay"]):not([data-tab-section="common"])) {
   display: none !important;
 }
 
-.pageGrid[data-active-tab="longStay"]
-  > :not([data-tab-section="longStay"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ward-identity"])
-  ):not(:global([data-testid="ward-statistics-ward-long-stay-overview"])):not(
-    :global([data-testid="ward-statistics-ward-long-stay-roster"])
-  ):not(:global([data-testid="ward-statistics-ward-long-stays"])) {
+.pageGrid[data-active-tab="los"] > :global([data-testid="ward-statistics-ward-beds-now"]),
+.pageGrid[data-active-tab="flow"] > :global([data-testid="ward-statistics-ward-beds-now"]),
+.pageGrid[data-active-tab="ready"] > :global([data-testid="ward-statistics-ward-beds-now"]),
+.pageGrid[data-active-tab="longStay"] > :global([data-testid="ward-statistics-ward-beds-now"]) {
+  display: none !important;
+}
+
+.pageGrid[data-active-tab="los"] > :global([data-testid="ward-statistics-ward-occupancy-trajectory"]),
+.pageGrid[data-active-tab="flow"] > :global([data-testid="ward-statistics-ward-occupancy-trajectory"]),
+.pageGrid[data-active-tab="ready"] > :global([data-testid="ward-statistics-ward-occupancy-trajectory"]),
+.pageGrid[data-active-tab="longStay"] > :global([data-testid="ward-statistics-ward-occupancy-trajectory"]) {
   display: none !important;
 }
 

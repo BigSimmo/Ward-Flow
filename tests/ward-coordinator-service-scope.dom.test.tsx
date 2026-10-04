@@ -40,7 +40,6 @@ const SERVICE: HealthService = "South Metro";
 const CONFIG = defaultWardConfiguration();
 const MEMBER_OPEN = OPEN.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
 const EXCLUDED_OPEN = OPEN.filter((movement) => !movementBelongsToService(movement, SERVICE, UNITS));
-const URGENT_OUTSIDE = urgentMovementsOutsideService(OPEN, SERVICE, UNITS, NOW_ANCHOR, CONFIG);
 
 const ALL_REFERRALS = seedWardFlowState().referrals;
 const REFERRAL_QUEUE = referralQueueOrder(ALL_REFERRALS);
@@ -135,10 +134,9 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     // while the raw wardMovements array itself stayed at 60. Computed from the current seed, not
     // hand-derived.
     const wholeSeedMovementCount = seedWardFlowState().movements.length;
-    // Same reasoning as wholeSeedMovementCount above: the module-level URGENT_OUTSIDE (top of file)
-    // is derived from the raw wardMovements fixture array, not the full seeded (overlay-inclusive)
-    // population the screen actually renders from, so it undercounts since the 2026-09-25 seed
-    // growth. Recomputed here, locally, from the current full seed.
+    // Same reasoning as wholeSeedMovementCount above: urgent movements outside the service are
+    // derived from the full seeded (overlay-inclusive) population the screen actually renders from,
+    // not the raw wardMovements fixture array, which undercounts since the 2026-09-25 seed growth.
     const wholeSeedOpenMovements = seedWardFlowState().movements.filter(isOpen);
     const urgentOutside = urgentMovementsOutsideService(wholeSeedOpenMovements, SERVICE, UNITS, NOW_ANCHOR, CONFIG);
     expect(screen.getByTestId("ward-service-scope-bar")).toBeInTheDocument();

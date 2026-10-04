@@ -19,9 +19,9 @@ import { searchWardFlow } from "@/components/ward-management/search/ward-smart-s
 import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { CHROME_ROLE_LABELS, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowContext, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 
 export type WardChromeSearchProps = {
   movements?: Movement[];
@@ -77,9 +77,11 @@ export function WardChromeSearch({
   const router = useRouter();
   const context = useContext(WardFlowContext);
 
-  const movements = propsMovements ?? context?.movements ?? [];
-  const patients = propsPatients ?? context?.patients ?? [];
-  const units = propsUnits ?? context?.units ?? [];
+  // Memoised so the empty-array fallback keeps one identity across renders (the search memos below
+  // depend on these).
+  const movements = useMemo(() => propsMovements ?? context?.movements ?? [], [propsMovements, context?.movements]);
+  const patients = useMemo(() => propsPatients ?? context?.patients ?? [], [propsPatients, context?.patients]);
+  const units = useMemo(() => propsUnits ?? context?.units ?? [], [propsUnits, context?.units]);
 
   const role = wardChromeRole(pathname);
   const scope = propsScope ?? CHROME_ROLE_LABELS[role];
@@ -498,11 +500,7 @@ export function WardChromeSearch({
       </span>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {trimmed.length === 0
-          ? ""
-          : options.length === 0
-            ? "No matches."
-            : `${options.length} invented results found.`}
+        {trimmed.length === 0 ? "" : options.length === 0 ? "No matches." : `${options.length} invented results found.`}
       </p>
 
       {showPopup ? (

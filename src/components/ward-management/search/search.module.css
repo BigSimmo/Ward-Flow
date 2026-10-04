@@ -1854,19 +1854,19 @@
 .searchConsole {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: var(--r2);
   box-shadow: var(--lift);
-  padding: 10px 14px;
+  padding: 12px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   position: relative;
 }
 
 .searchForm {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -1879,7 +1879,7 @@
 
 .searchIcon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   width: 16px;
   height: 16px;
   color: var(--muted);
@@ -1894,9 +1894,9 @@
 
 .typeaheadSlot input {
   width: 100%;
-  height: 38px;
-  padding: 0 170px 0 38px;
-  background: var(--sunk);
+  height: 40px;
+  padding: 0 54px 0 40px;
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2);
   font-family: var(--body);
@@ -1912,7 +1912,7 @@
   outline: none;
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  box-shadow: 0 0 0 2.5px var(--accent-soft);
 }
 
 .typeaheadSlot input::placeholder {
@@ -1993,7 +1993,7 @@
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px solid var(--line);
 }
 
@@ -2016,13 +2016,16 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2);
-  padding: 4px 24px 4px 8px;
+  padding: 4px 22px 4px 8px;
   font-family: var(--body);
   font-size: var(--t-1);
   color: var(--ink-soft);
   cursor: pointer;
-  min-width: 95px;
   height: 28px;
+  max-width: 175px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
   line-height: 1;
   transition:
     border-color 0.12s,
@@ -2059,16 +2062,33 @@
   stroke-width: 2;
 }
 
-/* Quick Query Chips */
+/* Quick Query Chips Bar */
+.quickChipsBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.quickChipsLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 .quickChipsGroup {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .chip {
-  padding: 3px 8px;
+  padding: 2px 9px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -2164,7 +2184,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.85fr);
   gap: var(--ward-space-16);
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
   align-items: start;
 }
@@ -2183,6 +2203,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  align-self: start;
 }
 
 .panelHead {
@@ -2218,11 +2239,11 @@
   overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 40rem;
-  padding: 10px 14px;
+  max-height: calc(100vh - 230px);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 .inspectorPanel {
@@ -2233,6 +2254,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: sticky;
+  top: var(--ward-space-16);
+  max-height: calc(100vh - 230px);
+  align-self: start;
 }
 
 .inspectorContent {
@@ -2250,32 +2275,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
+  padding: 7px 16px;
   font-size: var(--t-0);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
   border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
   background: var(--surface-2);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.populationHeading:first-child {
+  border-top: none;
 }
 
 /* ─── Card View Styling (Sovereign Third Edition) ─────────────────── */
 .patientCard {
-  padding: 11px 14px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   background: var(--surface);
-  transition: background 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   text-decoration: none !important;
-  border-left: none;
-  border-right: none;
-  border-top: none;
   width: 100%;
   box-sizing: border-box;
+  border-left: 3px solid transparent;
 }
 
 .patientCard:hover {
@@ -2284,7 +2319,7 @@
 
 .patientCard.selected {
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
+  border-left-color: var(--accent);
 }
 
 .patientCardRow1 {
@@ -2298,27 +2333,53 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
   min-width: 0;
-}
-
-.patientIdentifier {
-  font-family: var(--mono);
-  font-size: var(--t-2);
-  font-weight: 600;
-  color: var(--accent-ink);
-  font-variant-numeric: tabular-nums;
 }
 
 .patientName {
   font-weight: 600;
   color: var(--ink);
   font-size: var(--t-3);
+  letter-spacing: -0.01em;
+}
+
+.patientCardRow2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-1);
+  color: var(--muted);
+}
+
+.patientIdentifier {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaDivider {
+  color: var(--line-strong);
+  font-weight: 400;
 }
 
 .patientDemographics {
   font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+
+.serviceMetaText {
+  font-size: var(--t-1);
   color: var(--muted);
+}
+
+.patientCardRow3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
 }
 
 .waitBadge {
@@ -2348,14 +2409,6 @@
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--line);
-}
-
-.patientCardRow2 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: var(--t-1);
 }
 
 .serviceTag {
@@ -2737,6 +2790,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.statutoryCountdownMuted {
+  color: var(--muted);
+  background: var(--surface-2);
+  border-color: var(--line);
+  font-weight: 500;
+}
+
 .statutoryDetailsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2821,6 +2881,37 @@
   font-size: var(--t-2);
   line-height: 1.45;
   color: var(--ink);
+}
+
+.clinicalNoteEmpty {
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  font-style: italic;
+}
+
+.clinicalNoteEmptyText {
+  font-size: var(--t-1);
+}
+
+.patientList::-webkit-scrollbar,
+.denseContainer::-webkit-scrollbar,
+.inspectorContent::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.patientList::-webkit-scrollbar-thumb,
+.denseContainer::-webkit-scrollbar-thumb,
+.inspectorContent::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+.patientList::-webkit-scrollbar-thumb:hover,
+.denseContainer::-webkit-scrollbar-thumb:hover,
+.inspectorContent::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 /* Audit Milestones Timeline */

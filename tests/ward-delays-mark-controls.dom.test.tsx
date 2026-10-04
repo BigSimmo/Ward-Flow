@@ -10,6 +10,14 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
+ * The Delays redesign (PR 48) opens on the "Action Runway" overview; the owner cards, the duration
+ * band and the measured-none sentence these tests read live in the "Summary Cards" view, unchanged.
+ */
+function showSummaryCards() {
+  fireEvent.click(screen.getByRole("button", { name: "Summary Cards" }));
+}
+
+/**
  * WF-27 — THREE MARK SOURCES (a chip, an owner card, a cause row) ALL WRITE ONE HEADER FIGURE, AND
  * TWO OF THE THREE COULD LEAVE ANOTHER STANDING WHILE MARKING NOTHING.
  *
@@ -123,6 +131,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const lockedChip = screen.getByRole("button", { name: `Needs a locked bed ${locked.length}` });
     fireEvent.click(lockedChip);
@@ -149,6 +158,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerCard = screen.getByTestId("delays-owner-yours");
     fireEvent.click(ownerCard);
@@ -186,6 +196,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerCard = screen.getByTestId("delays-owner-yours");
     fireEvent.click(ownerCard);
@@ -210,6 +221,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     fireEvent.click(screen.getByTestId("delays-owner-ed"));
 

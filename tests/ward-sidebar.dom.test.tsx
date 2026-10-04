@@ -130,7 +130,7 @@ describe("Ward Flow phone drawer", () => {
     // The one legitimate way out of the sandbox.
     expect(within(drawer).getByRole("link", { name: "Back to the developer hub" })).toHaveAttribute(
       "href",
-      "/mockups/development",
+      "/mockups/ward-flow",
     );
   });
 

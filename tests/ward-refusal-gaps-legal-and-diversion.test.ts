@@ -33,7 +33,6 @@ import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-manag
 import { daysInBed } from "../src/components/ward-management/ward-admissions";
 import {
   DIVERSION_REASONS,
-  OVERRIDE_REASONS,
   STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
 } from "../src/components/ward-management/ward-change-reasons";

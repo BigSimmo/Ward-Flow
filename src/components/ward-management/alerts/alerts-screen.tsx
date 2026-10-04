@@ -51,7 +51,6 @@ import {
 } from "./broadcast-draft";
 
 import styles from "./alerts.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
@@ -1042,7 +1041,6 @@ function AlertsWorkspace() {
               tone: "accent",
             },
           ]}
-          actions={<LegalLimitsNotChecked variant="tag" />}
         />
 
         {/* Unified Operational Filter & Control Toolbar */}
