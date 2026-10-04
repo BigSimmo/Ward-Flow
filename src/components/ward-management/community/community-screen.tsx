@@ -932,6 +932,12 @@ export function CommunityScreen({
   const hasAnyReferralsForTeam = sourceReferrals.some((r) =>
     r.destinations.some((d) => d.destination.kind === "community_team" && d.destination.teamName === team.name),
   );
+  const usesDemoReferralQueue =
+    waitingReferrals.length === 0 && isDemoMode && demoTeamReferrals.length > 0 && !hasAnyReferralsForTeam;
+  const triageQueue = usesDemoReferralQueue ? demoTeamReferrals : waitingReferrals;
+  const triageQueueUrgentCount = triageQueue.filter(
+    (referral) => referral.urgency === 1 || referral.urgency === 2,
+  ).length;
   const caseloadRows = caseloadRowsForTeam(sourceReferrals, movements, patients, team, [
     ...lists.currentlyAdmitted,
     ...lists.dischargedIntoTheArea,
@@ -1522,19 +1528,19 @@ export function CommunityScreen({
                     setActiveTab("tab-triage");
                     scrollToSection("ward-community-waiting");
                   }}
-                  title={`Priority Referral Triage Queue: ${isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length} Waiting`}
+                  title={`Priority Referral Triage Queue: ${triageQueue.length} Waiting`}
                 >
                   <span className={styles.telemetryLabel}>Triage</span>
                   <span className={styles.telemetryVal} id="cardTriageVal">
-                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
+                    {triageQueue.length}
                   </span>
-                  {isDemoMode && !hasAnyReferralsForTeam ? (
+                  {usesDemoReferralQueue ? (
                     <span
                       className={styles.telemetryPillWarn}
                       id="cardTriageBadge"
                       style={{ color: "var(--danger-ink)" }}
                     >
-                      {teamConfig.urgentTriage} Urgent
+                      {triageQueueUrgentCount} Urgent
                     </span>
                   ) : (
                     <span
@@ -1545,9 +1551,7 @@ export function CommunityScreen({
                       }
                       id="cardTriageBadge"
                     >
-                      {waitingReferrals.filter((r) => r.urgency === 1 || r.urgency === 2).length > 0
-                        ? `${waitingReferrals.filter((r) => r.urgency === 1 || r.urgency === 2).length} Urgent`
-                        : "Within KPI"}
+                      {triageQueueUrgentCount} Urgent
                     </span>
                   )}
                 </div>
@@ -1692,9 +1696,7 @@ export function CommunityScreen({
                   }}
                 >
                   <span>Waiting for the team&apos;s answer</span>
-                  <span className={styles.tabBadge}>
-                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
-                  </span>
+                  <span className={styles.tabBadge}>{triageQueue.length}</span>
                 </button>
               </li>
               <li role="presentation">
@@ -1927,10 +1929,7 @@ export function CommunityScreen({
                 aria-label="Waiting for the team's answer details"
                 tabIndex={0}
               >
-                {waitingReferrals.length === 0 &&
-                isDemoMode &&
-                demoTeamReferrals.length > 0 &&
-                !hasAnyReferralsForTeam ? (
+                {usesDemoReferralQueue ? (
                   <>
                     <div className={styles.filterToolbar}>
                       <div className={styles.filterChipsGroup}>
@@ -3618,7 +3617,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
+                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 4:30pm</span>
                         </div>
                         <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
                           RN C. Davis · Long-acting injections, ECG, metabolic monitoring

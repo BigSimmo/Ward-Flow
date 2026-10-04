@@ -449,7 +449,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     dischargeDatePlan: "Today 11:30",
     destination: "Community Step-Down",
     status: "today",
-    kpiStatusLabel: "Due Today 4pm",
+    kpiStatusLabel: "Due Today 4:30pm",
     kpiTone: "warn",
     assignedCoordinator: "SW M. Davies",
     actionLabel: "Confirm Contact",
@@ -523,7 +523,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 High Acuity",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 11am (Clinic)",
+    lastContact: "20 Sep 11:30am (Clinic)",
     nextReview: "Tribunal Review 28 Sep",
   },
   {
@@ -549,7 +549,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "cto",
     keyClinician: "RN C. Davis",
-    lastContact: "18 Sep 9am (Home)",
+    lastContact: "18 Sep 9:30am (Home)",
     nextReview: "CTO Expiry 12 Oct 2026",
   },
   {
@@ -627,7 +627,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 Maintenance",
     category: "all",
     keyClinician: "RN C. Davis",
-    lastContact: "12 Sep 3pm (Telehealth)",
+    lastContact: "12 Sep 3:30pm (Telehealth)",
     nextReview: "6-Month Review Nov 2026",
   },
   {
@@ -692,7 +692,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 Assertive Outreach",
     category: "high",
     keyClinician: "Dr S. Chen",
-    lastContact: "19 Sep 2pm (Clinic)",
+    lastContact: "19 Sep 2:30pm (Clinic)",
     nextReview: "MDT Review 26 Sep",
   },
   {
