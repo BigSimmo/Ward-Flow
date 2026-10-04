@@ -8,6 +8,7 @@ import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
@@ -24,6 +25,8 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import { BedMap } from "./bed-map";
+import { bedMeetingSheet } from "./bed-meeting-derivations";
+import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -73,6 +76,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 export function CapacityScreen() {
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration } = useWardFlow();
   const now = useWardFlowClock();
+  const patientOf = usePatientOf();
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -278,6 +282,23 @@ export function CapacityScreen() {
           <div className={styles.pageTitleBlock}>
             <h1 className={styles.pageTitle}>Capacity</h1>
             <span className={styles.pageSubtitle}>Statewide inpatient directory · synthetic current state</span>
+            {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
+             *  waiting in ED and the top delays, scoped to the service chosen here. */}
+            <BedMeetingSheetLauncher
+              now={now}
+              buildSheet={() =>
+                bedMeetingSheet({
+                  units,
+                  movements,
+                  bedReleases,
+                  admissions,
+                  leaveBeds,
+                  now,
+                  service,
+                  nameOf: (movement) => patientOf(movement).displayName,
+                })
+              }
+            />
           </div>
 
           <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">

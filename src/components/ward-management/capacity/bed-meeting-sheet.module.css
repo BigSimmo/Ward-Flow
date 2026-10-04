@@ -1,0 +1,297 @@
+/* The morning bed-meeting sheet (`bed-meeting-sheet.tsx`).
+ * On screen it is a dialog over Capacity; on paper it is one A4 page and nothing else. The dialog
+ * is portalled to <body>, outside the screen's own token scope, so it composes the shell tokens
+ * itself — including their print block, which sends light colours to the printer in dark mode. */
+.portal {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: var(--ward-space-24) var(--ward-space-16);
+  color: var(--ink);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--line-strong);
+}
+
+.dialog {
+  position: relative;
+  width: min(100%, 52rem);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--ward-space-8);
+  background: var(--surface);
+  box-shadow: var(--ward-shadow);
+  outline: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-12) var(--ward-space-16);
+  border-bottom: 1px solid var(--line);
+}
+
+.openButton,
+.primaryButton,
+.secondaryButton {
+  min-height: var(--ward-tap);
+  padding: 0 var(--ward-space-16);
+  border-radius: var(--ward-space-6);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.openButton,
+.secondaryButton {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.openButton {
+  align-self: flex-start;
+}
+
+.primaryButton {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.openButton:hover,
+.secondaryButton:hover {
+  background: var(--surface-2);
+}
+
+.primaryButton:hover {
+  background: var(--accent-press);
+}
+
+.openButton:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sheet {
+  padding: var(--ward-space-20) var(--ward-space-24) var(--ward-space-16);
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: var(--ward-leading-compact, 1.35);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-4) var(--ward-space-16);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.stamp {
+  margin: 0;
+  font-weight: 700;
+}
+
+.disclosure,
+.footer,
+.note,
+.more {
+  margin: var(--ward-space-4) 0 0;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--ward-space-12) var(--ward-space-20);
+  margin-top: var(--ward-space-12);
+}
+
+.section {
+  min-width: 0;
+  padding-top: var(--ward-space-8);
+  border-top: 2px solid var(--ink);
+  break-inside: avoid;
+}
+
+.sectionTitle {
+  margin: 0 0 var(--ward-space-6);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.subTitle {
+  margin: var(--ward-space-8) 0 var(--ward-space-2);
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary,
+.empty {
+  margin: 0 0 var(--ward-space-6);
+}
+
+.empty {
+  color: var(--ink-soft);
+}
+
+.figure {
+  font-weight: 700;
+}
+
+.facts {
+  display: grid;
+  gap: var(--ward-space-4);
+  margin: 0;
+}
+
+.facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  padding-bottom: var(--ward-space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.facts dt {
+  color: var(--ink-soft);
+}
+
+.facts dd {
+  margin: 0;
+  text-align: right;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--ward-space-8);
+  padding: var(--ward-space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rowLead {
+  font-weight: 600;
+}
+
+.rowNote {
+  color: var(--ink-soft);
+}
+
+.tag,
+.tagStrong {
+  padding: 0 var(--ward-space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--ward-space-4);
+  font-size: 0.75rem;
+}
+
+.tagStrong {
+  border-color: var(--ink);
+  font-weight: 700;
+}
+
+.footer {
+  margin-top: var(--ward-space-12);
+  padding-top: var(--ward-space-6);
+  border-top: 1px solid var(--line);
+}
+
+/* While the sheet is open, printing sends the sheet alone: every other child of <body> leaves the
+ * layout (display, not visibility, so the tall screen behind does not paginate into blank pages),
+ * and the dialog becomes plain static paper. The class is set on <html> by the launcher. */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  :global(html.ward-bed-meeting-printing) :global(body) > :not(.portal) {
+    display: none !important;
+  }
+
+  /* A dark screen theme must not print a dark page edge around the sheet. */
+  :global(html.ward-bed-meeting-printing),
+  :global(html.ward-bed-meeting-printing) :global(body) {
+    color-scheme: light;
+    background: transparent !important;
+  }
+
+  .portal {
+    position: static;
+    display: block;
+    overflow: visible;
+    padding: 0;
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  .backdrop,
+  .toolbar {
+    display: none !important;
+  }
+
+  .dialog {
+    width: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--surface);
+  }
+
+  .sheet {
+    padding: 0;
+    font-size: 8.5pt;
+  }
+
+  .title {
+    font-size: 13pt;
+  }
+
+  .sectionTitle {
+    font-size: 10pt;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm 6mm;
+  }
+
+  .tagStrong,
+  .section {
+    border-color: var(--ink);
+  }
+}
