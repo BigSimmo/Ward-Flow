@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { renderAllDelays } from "./helpers/delays-interactions";
+import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { DELAY_OWNERS, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
@@ -6,7 +7,6 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -124,7 +124,7 @@ describe("fixture sanity: South Metro actually splits the open population both w
 describe("the Delays screen narrows to a chosen service (item 44, task D1)", () => {
   it("with a service chosen, the waiting list holds only that service's own movements", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -136,9 +136,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
       MEMBER_OPEN.length,
     );
 
-    const renderedIds = new Set(
-      rows.map((row) => (row.getAttribute("data-record-key") ?? "")),
-    );
+    const renderedIds = new Set(rows.map((row) => row.getAttribute("data-record-key") ?? ""));
     for (const movement of MEMBER_OPEN) {
       expect(renderedIds.has(movement.id), `${movement.id} belongs to South Metro and must be on the list`).toBe(true);
     }
@@ -152,7 +150,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("shows the scope bar with the exact §3 summary, and S2's urgent-outside line when urgent movements exist outside", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -170,7 +168,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("marks (owner, cause, chip) still work under a service — highlighting the scoped population, never hiding it", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -192,7 +190,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
     let markedRows = 0;
     for (const row of rows) {
-      const id = (row.getAttribute("data-record-key") ?? "");
+      const id = row.getAttribute("data-record-key") ?? "";
       const saysMarked = (row.textContent ?? "").includes(`Marked: ${MARKABLE_OWNER!.name}`);
       expect(saysMarked, `${id}'s marked state disagrees with the scoped owner grouping`).toBe(
         memberIdsForOwner.has(id),
@@ -228,7 +226,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("with All services chosen, the screen is unchanged — no scope bar, and every open movement is on the list", () => {
     // resetServiceScopeForTests() in beforeEach already leaves the store at All services (null).
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -241,9 +239,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     // WRONG rows (swap two movements of equal group size, say) — it was a length check only until
     // this task. Comparing the full, sorted list of rendered ids is a property that can actually
     // fail on that mutation, not only on a dropped or duplicated row.
-    const renderedIds = rows
-      .map((row) => (row.getAttribute("data-record-key") ?? ""))
-      .sort();
+    const renderedIds = rows.map((row) => row.getAttribute("data-record-key") ?? "").sort();
     expect(renderedIds).toEqual(OPEN.map((movement) => movement.id).sort());
   });
 });
@@ -263,7 +259,7 @@ describe("WF-014 scenario — a legal form RUNNING OUT counts as urgent-outside 
     expect(wf014!.legalForm?.dueAt).toBe(NOW_ANCHOR + 60);
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AdvanceClock minutes={5} />
         <DelaysScreen />
@@ -301,7 +297,7 @@ describe("WF-009 scenario — the escalations register stays whole-network (D-b,
     ).toBe(false);
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -335,7 +331,7 @@ describe("WF-018 scenario — flagged-urgent-but-not-severe patients outside the
     );
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -353,7 +349,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
     // whole-network alike — deterministically empty, so every sentence below is provable without
     // depending on which real movements happen to be open today.
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen movements={[]} />
       </WardFlowProvider>,

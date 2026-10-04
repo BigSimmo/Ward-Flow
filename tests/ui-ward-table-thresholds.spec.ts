@@ -546,12 +546,17 @@ test.describe("@mockup every ward table's threshold still describes the table it
 const TYPE_FLOOR_PX = 12;
 
 /**
- * Elements the current design deliberately paints ABOVE the floor. Still asserted by EQUALITY, so an
- * unresolvable var() (which inherits a larger size) stays red. 53105ca6ea (25 Sept) rebuilt the
- * Delays row as a card and the cause became its title at --t-1 (13px, weight 600). O-16.2 raised the
- * cause from 10px and required it to stay distinguishable from the demographics; 13px/600 does both.
+ * PR47's selected table design declares the four waiting columns at --t-1 (13px).
+ * Keep exact computed sizes, paired with the declared-token guard in
+ * ward-delays-type-ranks.test.ts: inheritance at 13px must not mask a broken token.
+ * Workspace keeps its supporting cause/update text at the canonical 12px floor.
  */
-const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = { "delays-cause": 13 };
+const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = {
+  "delays-cause": 13,
+  "delays-profile": 13,
+  "delays-wait": 13,
+  "delays-since": 13,
+};
 
 /** Named directly, never through a redirect that would read as another screen's coverage. */
 const TYPE_FLOOR_ROUTES = [
@@ -565,7 +570,7 @@ const TYPE_FLOOR_ROUTES = [
 ] as const;
 
 test.describe("@mockup the ward type floor is met where it is painted, not where it is declared", () => {
-  test("every ruled element computes to 12px on its own route", async ({ page }) => {
+  test("every ruled element computes to its declared size on its own route", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     const misses: string[] = [];
@@ -580,6 +585,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
         [...document.querySelectorAll("[data-ward-type-floor]")].map((element) => ({
           name: element.getAttribute("data-ward-type-floor") ?? "",
           px: Number.parseFloat(getComputedStyle(element).fontSize),
+          tableStep: getComputedStyle(element).getPropertyValue("--t-1").trim(),
         })),
       );
 
@@ -600,6 +606,9 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
         for (const hit of hits) {
           measured += 1;
           const expectedPx = TYPE_SIZE_BY_NAME[name] ?? TYPE_FLOOR_PX;
+          if (name in TYPE_SIZE_BY_NAME) {
+            expect(hit.tableStep, `${route} ${name} does not resolve the declared --t-1 table step`).toBe("13px");
+          }
           if (hit.px !== expectedPx) misses.push(`${route} ${name} ${hit.px}px (expected ${expectedPx}px)`);
         }
       }
@@ -613,6 +622,29 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
         `at computed-value time and inherits, which is also larger. Read the declared token before ` +
         `concluding the screen is fine.`,
     ).toEqual([]);
+  });
+
+  test("Delays Workspace keeps its exact declared waiting-column sizes", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/mockups/ward-flow/delays", { waitUntil: "load" });
+    await expect(page.getByRole("searchbox", { name: "Filter patient worklist" })).toBeEnabled();
+    const workspaceTab = page.getByRole("tab", { name: /Action workspace/u });
+    await workspaceTab.click();
+    await expect(workspaceTab).toHaveAttribute("aria-selected", "true");
+    const waiting = page.getByRole("region", { name: "Waiting", exact: true });
+    const sizes = {
+      "delays-cause": 12,
+      "delays-since": 12,
+      "delays-wait": 13,
+    };
+    for (const [name, expectedPx] of Object.entries(sizes)) {
+      const cells = waiting.locator(`[data-ward-type-floor="${name}"]`);
+      expect(await cells.count(), `Workspace rendered no ${name} cells`).toBeGreaterThan(0);
+      const found = await cells.evaluateAll((elements) =>
+        elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+      );
+      for (const px of found) expect(px, `Workspace ${name} must match its declared size`).toBe(expectedPx);
+    }
   });
 
   /**

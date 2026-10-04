@@ -77,3 +77,19 @@
     overflow-y: visible;
   }
 }
+
+/* Reuse the live shell controls for the selected horizontal action-workspace mockup. */
+@media (min-width: 1001px) {
+  .shellRow:has([data-delay-layout="workspace"]) {
+    flex-direction: column;
+  }
+  .shellRow:has([data-delay-layout="workspace"]) .shellContent {
+    display: contents;
+  }
+  .shellRow:has([data-delay-layout="workspace"]) :global([data-ward-ground]) {
+    order: 2;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+}
