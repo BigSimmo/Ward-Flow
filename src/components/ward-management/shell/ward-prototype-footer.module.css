@@ -1,32 +1,95 @@
 .footer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
   margin-top: auto;
-  padding: 0.75rem 0.5rem 0.5rem;
+  flex-shrink: 0;
+  padding: 0.625rem 1.25rem;
   border-top: 1px solid var(--line);
+  background: var(--surface-2);
   color: var(--muted);
   font-family: var(--body, system-ui, sans-serif);
   font-size: var(--t-0);
   line-height: 1.4;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .prototypeBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.375rem;
-  border-radius: 9999px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--muted);
+  gap: 0.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-family: var(--mono);
   font-size: var(--t-0);
-  font-weight: 600;
+  font-weight: 650;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   white-space: nowrap;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 2px var(--good-soft);
+  flex-shrink: 0;
 }
 
 .footerNote {
   color: var(--muted);
   font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.authorityPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+@media print {
+  .footer {
+    background: transparent;
+    border-top: 1px solid CanvasText;
+    color: CanvasText;
+  }
+  .prototypeBadge,
+  .authorityPill {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: transparent;
+  }
 }

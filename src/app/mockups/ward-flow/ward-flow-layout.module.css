@@ -26,7 +26,7 @@
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--ground);
 }
 
 /*
@@ -49,6 +49,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--ground);
 }
 
 /*

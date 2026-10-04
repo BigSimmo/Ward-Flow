@@ -13,6 +13,7 @@ import { STATISTICS_HOME_HREF } from "@/components/ward-management/statistics/st
 
 import styles from "./statistics-sections.module.css";
 import thirdEditionStyles from "./statistics-section-frame-third-edition.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
  * THE CHROME EVERY STATISTICS SECTION PAGE CARRIES, WRITTEN ONCE.
@@ -153,6 +154,7 @@ export function StatisticsSectionFrame({
         </p>
 
         {children}
+        <WardPrototypeFooter testId="ward-statistics-section-footer" />
       </main>
     </div>
   );
@@ -180,35 +182,76 @@ function ThirdEditionFrame({
       data-testid={testId}
     >
       <main id="main-content" className={`${styles.main} ${thirdEditionStyles.main}`}>
-        <header className={thirdEditionStyles.semanticHeader}>
-          <p data-testid="ward-statistics-section-eyebrow" hidden={!title || title === section.label}>
-            {section.label}
-          </p>
-          <h1>{title ?? section.label}</h1>
-        </header>
-        <div className={thirdEditionStyles.contextRow}>
-          <Link
-            href={STATISTICS_HOME_HREF}
-            className={thirdEditionStyles.backLink}
-            data-testid="ward-statistics-section-back"
-          >
-            Back to statistics
-          </Link>
-          <details className={`${thirdEditionStyles.contextDetails} source-print`}>
-            <summary>Synthetic prototype · no role restriction</summary>
-            <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
-              <strong>Synthetic prototype</strong>
-              <p>
-                <SyntheticFiguresDisclaimer />
-              </p>
-              <p data-testid="ward-statistics-section-access">
-                <CoordinatorAccessDisclaimer />
-              </p>
-              {subtitle && <p>{subtitle}</p>}
-            </div>
-          </details>
+        <div className={thirdEditionStyles.executiveHeader}>
+          <div className={thirdEditionStyles.topUtilityBar}>
+            <Link
+              href={STATISTICS_HOME_HREF}
+              className={thirdEditionStyles.backLink}
+              data-testid="ward-statistics-section-back"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={thirdEditionStyles.backIcon}
+              >
+                <path d="M10 12L6 8l4-4" />
+              </svg>
+              <span>Back to statistics</span>
+            </Link>
+
+            <details className={`${thirdEditionStyles.contextDetails} source-print`}>
+              <summary className={thirdEditionStyles.contextSummary}>
+                <span className={thirdEditionStyles.prototypePill}>Synthetic prototype</span>
+                <span className={thirdEditionStyles.summaryDivider}>·</span>
+                <span>no role restriction</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className={thirdEditionStyles.chevronIcon}
+                >
+                  <path d="M4 6l4 4 4-4" />
+                </svg>
+              </summary>
+              <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
+                <strong>Synthetic prototype</strong>
+                <p>
+                  <SyntheticFiguresDisclaimer />
+                </p>
+                <p data-testid="ward-statistics-section-access">
+                  <CoordinatorAccessDisclaimer />
+                </p>
+                {subtitle && <p>{subtitle}</p>}
+              </div>
+            </details>
+          </div>
+
+          <header className={thirdEditionStyles.semanticHeader}>
+            <p
+              className={thirdEditionStyles.eyebrowTag}
+              data-testid="ward-statistics-section-eyebrow"
+              hidden={!title || title === section.label}
+            >
+              {section.label}
+            </p>
+            <h1 className={thirdEditionStyles.headerTitle}>{title ?? section.label}</h1>
+          </header>
         </div>
         {children}
+        <WardPrototypeFooter testId="ward-statistics-section-footer" />
       </main>
     </div>
   );

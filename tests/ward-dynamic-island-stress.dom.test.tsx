@@ -26,11 +26,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WardDynamicIsland,
-  type DynamicIslandMetric,
-  type WardDynamicIslandProps,
-} from "@/components/ward-management/shell/ward-dynamic-island";
+import { WardDynamicIsland, type DynamicIslandMetric } from "@/components/ward-management/shell/ward-dynamic-island";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
@@ -41,14 +37,8 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import {
   buildHandoverHudProps,
   buildDischargesHudProps,
-  buildReferralHudProps,
   buildSettingsHudProps,
-  buildBedBoardHudProps,
-  buildCapacityHudProps,
   buildEdHudProps,
-  buildOnCallHudProps,
-  buildTransportHudProps,
-  buildLegalFormsHudProps,
 } from "./ward-dynamic-island-rollout.contract.test";
 
 describe("Adversarial Stress Testing: WardDynamicIsland", () => {
@@ -75,8 +65,6 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
     });
 
     it("handles extreme large numbers (999+, 10000, 999999) across all 10 screen models", () => {
-      const extremeCounts = [999, 10000, 999999, "999+"];
-
       // Screen 1: Handover
       const { rerender } = render(
         <WardDynamicIsland
@@ -224,7 +212,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       const filterClicks: string[] = [];
       const onFilterChange = (filter: string) => filterClicks.push(filter);
 
-      const { rerender } = render(
+      render(
         <WardDynamicIsland
           {...buildDischargesHudProps({
             statusFilter: "all",

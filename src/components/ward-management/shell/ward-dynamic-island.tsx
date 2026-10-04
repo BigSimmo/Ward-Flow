@@ -117,7 +117,6 @@ export function WardDynamicIsland({
 
             const trimmedLabel = metric.label?.trim() ?? "";
             const cleanLabel = trimmedLabel.replace(/:+$/, "");
-            const formattedLabel = cleanLabel ? `${cleanLabel}:` : "";
             const defaultAriaLabel = cleanLabel ? `${cleanLabel}: ${metric.value}` : String(metric.value ?? "");
 
             const metricContent = (

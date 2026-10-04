@@ -32,7 +32,7 @@ describe("local audit target", () => {
   it("verifies ensure output and keeps checkout provenance separate from server identity", async () => {
     const root = process.cwd();
     const ensure = vi.fn(() => "http://localhost:4153");
-    const request = vi.fn(async (_url: string, _options: { redirect: string }) => ({
+    const response = {
       ok: true,
       redirected: false,
       json: async () => ({
@@ -41,7 +41,10 @@ describe("local audit target", () => {
         localServer: { safeLocalOrigin: true },
         runtimeMode: "development",
       }),
-    }));
+    };
+    const request = vi.fn<(url: string, options: { redirect: string }) => Promise<typeof response>>(
+      async () => response,
+    );
     const result = await resolveAuditTarget({
       root,
       url: "",

@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { PATIENT_NOW_RECORDS } from "@/components/ward-management/patients/patient-now-records";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 
 /**
