@@ -5,7 +5,14 @@
 // coordinator can check it rather than trust it.
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WardPanel } from "@/components/ward-management/ward-panel";
-import { BEDS_FORECAST_LIMITS, forecastFigureText, type BedsForecast, type BedsForecastHorizon } from "./beds-forecast";
+import {
+  BEDS_FORECAST_LIMITS,
+  forecastFigureText,
+  forecastHeadline,
+  forecastRangeEnd,
+  type BedsForecast,
+  type BedsForecastHorizon,
+} from "./beds-forecast";
 import styles from "./beds-forecast.module.css";
 
 export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
@@ -41,14 +48,15 @@ function ForecastHorizon({ horizon, now }: { horizon: BedsForecastHorizon; now: 
       <h3 className={styles.horizonHeading}>
         In {horizon.hours} hours <span className={styles.until}>by {formatInstantWithDay(horizon.until, now)}</span>
       </h3>
-      <p className={styles.headline} data-short={short ? "true" : "false"}>
-        <span className={styles.headlineLabel}>Likely free</span>{" "}
-        <strong data-testid={`ward-capacity-beds-forecast-${horizon.hours}h-likely`}>
-          {forecastFigureText(horizon.likely)}
-        </strong>
+      <p
+        className={styles.headline}
+        data-short={short ? "true" : "false"}
+        data-testid={`ward-capacity-beds-forecast-${horizon.hours}h-likely`}
+      >
+        {forecastHeadline(horizon.likely)}
       </p>
       <p className={styles.range}>
-        Range {forecastFigureText(horizon.low)} to {forecastFigureText(horizon.high)}
+        Range: {forecastRangeEnd(horizon.low)} to {forecastRangeEnd(horizon.high)}
       </p>
       <details className={styles.working}>
         <summary>How this was worked out</summary>

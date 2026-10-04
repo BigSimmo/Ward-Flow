@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
-import { bedsForecast, forecastFigureText } from "@/components/ward-management/capacity/beds-forecast";
+import { bedsForecast, forecastHeadline } from "@/components/ward-management/capacity/beds-forecast";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -733,7 +733,7 @@ describe("tomorrow's beds forecast", () => {
     const panel = screen.getByTestId("ward-capacity-beds-forecast");
     for (const entry of forecast.horizons) {
       expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-likely`)).toHaveTextContent(
-        forecastFigureText(entry.likely),
+        forecastHeadline(entry.likely),
       );
     }
     expect(within(panel).getAllByText("How this was worked out")).toHaveLength(2);

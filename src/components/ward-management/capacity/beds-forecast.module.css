@@ -1,6 +1,7 @@
 .horizons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  align-items: start;
   gap: var(--ward-space-12, 0.75rem);
 }
 
@@ -31,22 +32,14 @@
 
 .headline {
   margin: 0;
-  color: var(--ink);
-}
-
-.headline strong {
   font-family: var(--display);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--good);
 }
 
-.headline[data-short="true"] strong {
+.headline[data-short="true"] {
   color: var(--danger);
-}
-
-.headlineLabel {
-  font-size: var(--t-1);
-  color: var(--ink-soft);
 }
 
 .range,
@@ -64,6 +57,7 @@
   cursor: pointer;
   color: var(--accent-ink);
   font-size: var(--t-1);
+  text-decoration: underline;
 }
 
 .steps {
@@ -103,6 +97,7 @@
 }
 
 .limits {
+  list-style: disc;
   margin: var(--ward-space-12, 0.75rem) 0 0;
   padding-left: 1.25rem;
   color: var(--muted);
