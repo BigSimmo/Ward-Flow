@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**509 rulings/items extracted, across 30 of 35 files.**
+**510 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 300 distinct IDs
+## ID index — 301 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -163,6 +163,7 @@ safe global key across 30 files.
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1213 | D-27 · The word for a free bed is READY — and the ruling is about the WORD, not the identifier |
 | ↳ | `decisions.md`:358 | D-27. Ward Flow uses its dedicated repository (28 September) |
 | `D-28` | `decisions.md`:371 | D-28. Design Modernization & Anti-Box Architecture (30 September 2026) |
+| `D-29` | `decisions.md`:384 | D-29. Act time limits shown as a labelled synthetic demo (4 October 2026) |
 | `D-30` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1238 | D-30 · `Unit.forensic` is a WARD flag, and every rendered string says so |
 | `D-31` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1367 | D-31 · The plan's disposition — delete one half, re-derive the other |
 | `D-32` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1289 | D-32 · D-6 is restated: ONE WORDING PER STATE, and the states are named |
@@ -454,7 +455,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-28 item(s):
+29 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -484,6 +485,7 @@ safe global key across 30 files.
 - `D-26` — line 342, heading: "D-26. Select fold checks by changed risk (27 September)"
 - `D-27` — line 358, heading: "D-27. Ward Flow uses its dedicated repository (28 September)"
 - `D-28` — line 371, heading: "D-28. Design Modernization & Anti-Box Architecture (30 September 2026)"
+- `D-29` — line 384, heading: "D-29. Act time limits shown as a labelled synthetic demo (4 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

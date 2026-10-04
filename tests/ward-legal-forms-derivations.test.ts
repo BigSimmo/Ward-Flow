@@ -11,6 +11,9 @@ import {
   legalFormOrdered,
   legalFormPopulation,
   legalFormRowClassification,
+  legalExpiryReminderOf,
+  legalExpiryReminderSummary,
+  legalExpiryReminderText,
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -307,5 +310,45 @@ describe("legalFormBreakdown (cannot disagree structurally with the rows it desc
       );
       expect(form.name).toBe(legalFormName(matching[0].legalForm!));
     }
+  });
+});
+
+describe("legal expiry reminders (item 13 synthetic demo, typed expiries only)", () => {
+  it("reminds inside the Settings warning windows and nowhere else", () => {
+    const at = (offset: number) => synthetic({ legalForm: { code: "3A", kind: "detention", dueAt: NOW + offset } });
+    expect(legalExpiryReminderOf(at(30), NOW)).toBe("within-urgent");
+    expect(legalExpiryReminderOf(at(120), NOW)).toBe("within-soon");
+    expect(legalExpiryReminderOf(at(500), NOW)).toBeUndefined();
+    // A passed expiry is the breach row, not a reminder.
+    expect(legalExpiryReminderOf(at(-5), NOW)).toBeUndefined();
+    // No typed expiry means no reminder: nothing is ever computed from the form code.
+    expect(legalExpiryReminderOf(synthetic({ legalForm: { code: "1A", kind: "examination" } }), NOW)).toBeUndefined();
+  });
+
+  it("gives a row inside a window a warning chip that names the window", () => {
+    const urgent = legalFormRowClassification(synthetic({ legalForm: { code: "3A", dueAt: NOW + 30 } }), NOW);
+    expect(urgent).toEqual({
+      tone: "warning",
+      chip: { level: "urgent", text: "Expires within 1h" },
+      reasonLevel: "warning",
+    });
+    const soon = legalFormRowClassification(synthetic({ legalForm: { code: "3A", dueAt: NOW + 120 } }), NOW);
+    expect(soon.chip).toEqual({ level: "stalled", text: "Expires within 3h" });
+  });
+
+  it("summarises open forms only, and labels the sentence as a synthetic, not legally checked demo", () => {
+    const movements = [
+      synthetic({ id: "WF-R1", legalForm: { code: "3A", dueAt: NOW + 30 } }),
+      synthetic({ id: "WF-R2", legalForm: { code: "4A", kind: "transport", dueAt: NOW + 90 } }),
+      synthetic({ id: "WF-R3", legalForm: { code: "4C", kind: "transfer", dueAt: NOW + 150 } }),
+      synthetic({ id: "WF-R4", legalForm: { code: "3A", dueAt: NOW + 30 }, stage: "arrived" }),
+    ];
+    const summary = legalExpiryReminderSummary(movements, NOW);
+    expect(summary).toEqual({ withinUrgent: 1, withinSoon: 2, urgentHours: 1, soonHours: 3 });
+    const text = legalExpiryReminderText(summary);
+    expect(text).toContain("Synthetic demo reminder: 3 recorded form expiries are close (1 within 1h, 2 within 3h).");
+    expect(text).toContain("not legally checked");
+    expect(text, "no Act section numbers on screen (D5)").not.toMatch(/\bs(?:ection)?\.?\s*\d/i);
+    expect(legalExpiryReminderText({ withinUrgent: 0, withinSoon: 0, urgentHours: 1, soonHours: 3 })).toBeUndefined();
   });
 });

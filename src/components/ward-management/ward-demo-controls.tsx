@@ -1,7 +1,7 @@
 "use client";
 
 import { FlaskConical } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -38,11 +38,13 @@ import styles from "./ward-demo-controls.module.css";
  * `*BlockedReason` guard: raised with `role: "demo"`, the reducer can never refuse either.
  */
 export function WardDemoControls() {
-  const { scenario, dispatch } = useWardFlow();
+  const { scenario, dispatch, saveScenarioFile, loadScenarioFile } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
+  const [fileMessage, setFileMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -74,6 +76,47 @@ export function WardDemoControls() {
 
   function selectScenario(next: (typeof WARD_SCENARIOS)[number]) {
     dispatch({ type: "SET_SCENARIO", role: "demo", now, scenario: next });
+  }
+
+  /** Downloads the whole synthetic world (`ward-flow-scenario-file.ts`). Nothing goes to browser
+   *  storage; the browser's own download is the only copy. */
+  function saveToFile() {
+    if (!saveScenarioFile) return;
+    const built = saveScenarioFile();
+    if (!built.ok) {
+      setFileMessage(built.reason);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([built.json], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = built.fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setFileMessage(`Saved ${built.fileName} to your downloads.`);
+  }
+
+  async function loadFromFile(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    // Cleared so picking the same file again still raises a change.
+    input.value = "";
+    if (!file || !loadScenarioFile) return;
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      setFileMessage("That file could not be read, so nothing was loaded.");
+      return;
+    }
+    const result = loadScenarioFile(text);
+    setFileMessage(
+      result.ok
+        ? "Scenario loaded. It is kept in this tab only, so load the file again after a refresh."
+        : result.reason,
+    );
   }
 
   return (
@@ -140,6 +183,46 @@ export function WardDemoControls() {
               </button>
             ))}
           </div>
+          {saveScenarioFile && loadScenarioFile ? (
+            <div className={styles.fileRow} role="group" aria-label="Demo scenario file">
+              <p className={styles.fileHint}>
+                Scenario files hold synthetic demo data only. Never type real patient details.
+              </p>
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="ward-demo-save-file"
+                  className={styles.advanceButton}
+                  onClick={saveToFile}
+                >
+                  Save to file
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="ward-demo-load-file"
+                  className={styles.advanceButton}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Load from file
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                data-testid="ward-demo-load-file-input"
+                onChange={(event) => void loadFromFile(event)}
+              />
+              {fileMessage ? (
+                <p className={styles.fileMessage} role="status" data-testid="ward-demo-file-message">
+                  {fileMessage}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div className={styles.resetRow}>
             <button
               type="button"
