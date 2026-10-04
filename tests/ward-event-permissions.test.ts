@@ -390,7 +390,8 @@ describe("who may raise which event", () => {
      * deliberately never the withdrawing party**, who is a referrer outside this system and must not
      * be named by it.
      */
-    RECORD_REFERRER_WITHDRAWAL: ["coordinator"],
+    // Owner, 4 October 2026: the referrer's own side may record it too, scoped in the reducer.
+    RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
     // Q004 Task 3: ward-owned patient discharge; bounded record access; coordinator audit review.
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
     RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
