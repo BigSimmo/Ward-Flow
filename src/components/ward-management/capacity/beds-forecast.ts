@@ -13,12 +13,15 @@
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
-import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 
-export const BEDS_FORECAST_HORIZON_HOURS = [24, 48] as const;
-export type BedsForecastHorizonHours = (typeof BEDS_FORECAST_HORIZON_HOURS)[number];
+/**
+ * Tomorrow and the day after, as rolling windows from now (24 and 48 hours). Written in days so the
+ * figures cannot be mistaken for the bed-release threshold or any Mental Health Act period.
+ */
+export const BEDS_FORECAST_HORIZON_DAYS = [1, 2] as const;
 
 /**
  * Stages at which a person still needs a bed. From `pulled` onwards `PULL_PATIENT` has already
@@ -32,7 +35,8 @@ const STAGES_STILL_NEEDING_A_BED: readonly MovementStage[] = [
 ];
 
 export type BedsForecastHorizon = {
-  hours: BedsForecastHorizonHours;
+  /** The window's length in hours, from `BEDS_FORECAST_HORIZON_DAYS`. */
+  hours: number;
   /** The end of the window, `now + hours`. Releases due at or before it count, overdue ones included. */
   until: Instant;
   /** Beds ready now across the network: the same `lockedBedsFree + openBedsFree` the Ready figure uses. */
@@ -93,8 +97,9 @@ export function bedsForecast(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
   ).length;
 
-  const horizons = BEDS_FORECAST_HORIZON_HOURS.map((hours): BedsForecastHorizon => {
-    const until = now + hours * 60;
+  const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
+    const until = now + days * MINUTES_PER_DAY;
+    const hours = (days * MINUTES_PER_DAY) / 60;
     const due = pending.filter((release) => release.expectedAt <= until);
     const clear = due.filter((release) => release.blocker === null);
     const onTime = clear.filter((release) => dayOf(release.expectedAt) >= dayOf(now));

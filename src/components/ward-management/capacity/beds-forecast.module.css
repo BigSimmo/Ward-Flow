@@ -67,7 +67,7 @@
   gap: 0.25rem;
 }
 
-.step {
+.forecastStep {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
@@ -75,16 +75,16 @@
   color: var(--ink);
 }
 
-.step dt,
-.step dd {
+.forecastStep dt,
+.forecastStep dd {
   margin: 0;
 }
 
-.step dd {
+.forecastStep dd {
   font-family: var(--mono);
 }
 
-.step[data-total="true"] {
+.forecastStep[data-total="true"] {
   border-top: 1px solid var(--line-strong);
   padding-top: 0.25rem;
   font-weight: 700;

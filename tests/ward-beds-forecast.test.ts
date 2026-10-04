@@ -1,4 +1,4 @@
-// tests/ward-capacity-beds-forecast.test.ts
+// tests/ward-beds-forecast.test.ts
 //
 // Tomorrow's beds forecast (smart feature 10). The arithmetic is asserted on hand-built records so
 // each bucket can be reached on its own, then once against the seed so the screen's figures are

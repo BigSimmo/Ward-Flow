@@ -79,7 +79,7 @@ function ForecastHorizon({ horizon, now }: { horizon: BedsForecastHorizon; now: 
 
 function Step({ label, value, sign, total = false }: { label: string; value: number; sign: string; total?: boolean }) {
   return (
-    <div className={styles.step} data-total={total ? "true" : "false"}>
+    <div className={styles.forecastStep} data-total={total ? "true" : "false"}>
       <dt>
         <span className={styles.sign} aria-hidden="true">
           {sign}
