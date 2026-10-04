@@ -327,9 +327,9 @@ export function StatisticsCompareScreen({
                 accepts. An acceptance is attributable to a named ward and a decline is not.
               </p>
               <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a
-                single ward, because one referral can be live at several wards. A per-ward total would therefore sum
-                to more than the number of referrals that exist.
+                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
+                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
+                than the number of referrals that exist.
               </p>
             </div>
           </details>
@@ -518,14 +518,14 @@ export function StatisticsCompareScreen({
            */}
           <p className={styles.body}>
             Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing
-            on this screen is a real person, a real bed or a real referral.
+            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
+            this screen is a real person, a real bed or a real referral.
           </p>
           <p className={styles.note}>
-            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the
-            emergency departments — above and in the chooser below — are read from the network&apos;s own tables at
-            render time rather than typed here, in the fixed order the prototype records them, and every figure set
-            beside those names is invented.
+            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
+            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
+            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
+            names is invented.
           </p>
         </div>
       </WardPanel>

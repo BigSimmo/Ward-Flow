@@ -1332,9 +1332,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>
-                                    Emergency Department Access Target
-                                  </span>
+                                  <span className={styles.paramCardTitle}>Emergency Department Access Target</span>
                                   <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60}h</span>
                                   {draft.edAccessTargetMinutes <= 120 ? (
                                     <span className={styles.badge} data-tone="danger">
@@ -1432,9 +1430,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>
-                                    Parallel Referral Enquiry Limit
-                                  </span>
+                                  <span className={styles.paramCardTitle}>Parallel Referral Enquiry Limit</span>
                                   <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
                                   {draft.parallelReferralCap >= 5 ? (
                                     <span className={styles.badge} data-tone="warn">
@@ -1528,9 +1524,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>
-                                    Pulled Bed Reservation Hold Duration
-                                  </span>
+                                  <span className={styles.paramCardTitle}>Pulled Bed Reservation Hold Duration</span>
                                   <span className={styles.rowTag}>{draft.pullHoldMinutes}m</span>
                                   {draft.pullHoldMinutes <= 45 ? (
                                     <span className={styles.badge} data-tone="danger">
@@ -1628,9 +1622,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>
-                                    Morning roll-up time
-                                  </span>
+                                  <span className={styles.paramCardTitle}>Morning roll-up time</span>
                                   <span className={styles.rowTag}>
                                     {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                   </span>
@@ -1642,7 +1634,8 @@ export function SettingsScreen() {
                                   </span>
                                 </div>
                                 <p className={styles.paramCardRationale} data-testid="setting-morning-rollup-desc">
-                                  Time by which inpatient wards confirm morning census and available beds ({OPERATIONAL_DEFAULT_LABEL}).
+                                  Time by which inpatient wards confirm morning census and available beds (
+                                  {OPERATIONAL_DEFAULT_LABEL}).
                                 </p>
                               </div>
                             </div>

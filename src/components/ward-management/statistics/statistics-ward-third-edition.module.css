@@ -200,11 +200,16 @@
 }
 
 /* Tab filter state mappings for data-active-tab */
-.pageGrid[data-active-tab="occ"] :global([data-tab-section]:not([data-tab-section="occ"]):not([data-tab-section="common"])),
-.pageGrid[data-active-tab="los"] :global([data-tab-section]:not([data-tab-section="los"]):not([data-tab-section="common"])),
-.pageGrid[data-active-tab="flow"] :global([data-tab-section]:not([data-tab-section="flow"]):not([data-tab-section="common"])),
-.pageGrid[data-active-tab="ready"] :global([data-tab-section]:not([data-tab-section="ready"]):not([data-tab-section="common"])),
-.pageGrid[data-active-tab="longStay"] :global([data-tab-section]:not([data-tab-section="longStay"]):not([data-tab-section="common"])) {
+.pageGrid[data-active-tab="occ"]
+  :global([data-tab-section]:not([data-tab-section="occ"]):not([data-tab-section="common"])),
+.pageGrid[data-active-tab="los"]
+  :global([data-tab-section]:not([data-tab-section="los"]):not([data-tab-section="common"])),
+.pageGrid[data-active-tab="flow"]
+  :global([data-tab-section]:not([data-tab-section="flow"]):not([data-tab-section="common"])),
+.pageGrid[data-active-tab="ready"]
+  :global([data-tab-section]:not([data-tab-section="ready"]):not([data-tab-section="common"])),
+.pageGrid[data-active-tab="longStay"]
+  :global([data-tab-section]:not([data-tab-section="longStay"]):not([data-tab-section="common"])) {
   display: none !important;
 }
 

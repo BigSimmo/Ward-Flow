@@ -488,9 +488,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 Live triage
               </span>
             </div>
-            <p className={styles.pageSubtitle}>
-              Statewide psychiatric triage &amp; bed placement · Western Australia
-            </p>
+            <p className={styles.pageSubtitle}>Statewide psychiatric triage &amp; bed placement · Western Australia</p>
             <p className="sr-only" data-testid="ward-referral-board-order-note">
               Urgency tier first; longest wait first within each tier.
             </p>
@@ -916,7 +914,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </div>
                         <div className={styles.metaCell}>
                           <span className={styles.metaLabel}>Origin Facility</span>
-                          <span className={styles.metaValue} title={`${originHospital} (${selectedReferral.homeRegion})`}>
+                          <span
+                            className={styles.metaValue}
+                            title={`${originHospital} (${selectedReferral.homeRegion})`}
+                          >
                             {originHospital}
                           </span>
                         </div>

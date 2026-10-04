@@ -57,9 +57,11 @@
 
 /* Tab filter state mappings for data-active-tab */
 .pageGrid[data-active-tab="queue"] [data-tab-section]:not([data-tab-section="queue"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="distribution"] [data-tab-section]:not([data-tab-section="distribution"]):not([data-tab-section="common"]),
+.pageGrid[data-active-tab="distribution"]
+  [data-tab-section]:not([data-tab-section="distribution"]):not([data-tab-section="common"]),
 .pageGrid[data-active-tab="weat"] [data-tab-section]:not([data-tab-section="weat"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="comparison"] [data-tab-section]:not([data-tab-section="comparison"]):not([data-tab-section="common"]) {
+.pageGrid[data-active-tab="comparison"]
+  [data-tab-section]:not([data-tab-section="comparison"]):not([data-tab-section="common"]) {
   display: none !important;
 }
 
@@ -215,7 +217,7 @@
   border-right: 0;
 }
 
-.measureColumn .kpiBand > div:nth-child(n+3) {
+.measureColumn .kpiBand > div:nth-child(n + 3) {
   border-top: 1px solid var(--line);
 }
 

@@ -3916,10 +3916,7 @@ export function ReferralIntakeForm() {
                                     reason.startsWith("Choose a suburb to see");
                                   if (isVerboseClutter) {
                                     return (
-                                      <li
-                                        key={reason}
-                                        className={`${styles.destinationFact} sr-only`}
-                                      >
+                                      <li key={reason} className={`${styles.destinationFact} sr-only`}>
                                         {reason}
                                       </li>
                                     );
