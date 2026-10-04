@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
@@ -57,7 +58,7 @@ function AdvanceClock({ minutes }: { minutes: number }) {
 }
 
 function renderAdvancedBy(minutes: number) {
-  render(
+  renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <AdvanceClock minutes={minutes} />
       <DelaysScreen />
@@ -145,7 +146,7 @@ describe("a lapsed legal authority is never quieter than one still running", () 
      * unchanged and stays over ALL of them: every breached row's clock is urgent, not merely one.
      */
     for (const id of breached) {
-      fireEvent.click(screen.getByTestId(`delays-select-${id}`));
+      inspectDelayPerson(id);
       const clock = selectedClock();
       expect(
         clock,

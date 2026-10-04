@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
@@ -35,7 +36,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 
 function renderAt(now: number) {
-  return render(
+  return renderAllDelays(
     <WardFlowProvider initialNow={now}>
       <DelaysScreen />
     </WardFlowProvider>,
@@ -68,7 +69,7 @@ function AdvanceClock({ minutes }: { minutes: number }) {
 }
 
 function renderAdvancedBy(minutes: number) {
-  render(
+  renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <AdvanceClock minutes={minutes} />
       <DelaysScreen />
@@ -113,7 +114,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
      */
     renderAt(NOW_ANCHOR);
     for (const movement of expectedToShow(NOW_ANCHOR)) {
-      fireEvent.click(screen.getByTestId(`delays-select-${movement.id}`));
+      inspectDelayPerson(movement.id);
       const minutes = legalDeadlineMinutes(movement, NOW_ANCHOR);
       expect(minutes, `${movement.id} lost its deadline between the filter and the assertion`).toBeDefined();
       const form = movement.legalForm;
@@ -138,7 +139,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     renderAdvancedBy((dueAt as number) - NOW_ANCHOR + 10);
     // The state chip carrying this sentence only exists for the SELECTED patient now (see the
     // "RE-POINTED" note above), so WF-006 must be chosen before its wording can be read at all.
-    fireEvent.click(screen.getByTestId("delays-select-WF-006"));
+    inspectDelayPerson("WF-006");
     expect(
       screen.getAllByText(`${legalFormName(wf006!.legalForm!)} passed its deadline ${splitDuration(10)} ago`).length,
     ).toBeGreaterThan(0);
@@ -169,7 +170,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // Select each one in turn — see the "RE-POINTED" note above: the state chip carrying the form's
     // name only exists for whoever is currently selected.
     for (const movement of titled) {
-      fireEvent.click(screen.getByTestId(`delays-select-${movement.id}`));
+      inspectDelayPerson(movement.id);
       const withTitle = legalFormName(movement.legalForm!);
       expect(
         // A substring matcher, not a built RegExp: the title contains "(" and ")", and escaping a
@@ -205,7 +206,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // ANY movement's legal state renders at all, which would make this absence check vacuous rather
     // than a genuine proof that the sentence is withheld for this specific patient.
     for (const movement of withoutDeadline) {
-      fireEvent.click(screen.getByTestId(`delays-select-${movement.id}`));
+      inspectDelayPerson(movement.id);
       const form = movement.legalForm;
       expect(
         screen.queryByText(new RegExp(`${legalFormName(form!)} (due in|passed its deadline)`)),
