@@ -2733,3 +2733,59 @@
   font-size: var(--t-0);
   color: var(--ink-soft);
 }
+
+/* Unified dossier: local clinical / transit workspace switch. */
+.nowViewSwitch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.nowViewSwitch button {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nowViewSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  box-shadow: var(--lift);
+}
+.nowViewSwitch span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.clinicalView[hidden] {
+  display: none;
+}
+.screen button,
+.screen .ctl,
+.screen .tabBtn,
+.screen .backBtn {
+  min-height: 44px;
+  min-width: 44px;
+}
+.screen button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .nowViewSwitch {
+    padding: 10px 14px;
+  }
+  .nowViewSwitch span {
+    width: 100%;
+    margin-left: 0;
+    padding: 4px;
+  }
+}

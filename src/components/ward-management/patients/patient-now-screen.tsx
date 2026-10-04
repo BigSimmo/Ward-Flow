@@ -18,6 +18,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
+import { PatientTransitOperations } from "./patient-transit-operations";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
@@ -154,6 +155,16 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   }
 
   const [activeTab, setActiveTab] = useState<TabKey>("now");
+  const [nowView, setNowView] = useState<"clinical" | "operations">("clinical");
+  const operationsRef = useRef<HTMLDivElement | null>(null);
+  function openOperations() {
+    setActiveTab("now");
+    setNowView("operations");
+    requestAnimationFrame(() => {
+      operationsRef.current?.focus();
+      operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }
   const [selectedEpisodeIndex, setSelectedEpisodeIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<"all" | "emergency" | "inpatient">("all");
@@ -306,7 +317,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   }
 
   // Transport derived values and booking action
-  const isTransportBooked = liveMovement?.transport !== undefined;
+  const isTransportBooked = liveMovement?.transport !== undefined && liveMovement.transport.cancelledAt === undefined;
   const displayCadNumber = liveMovement?.transport?.cadNumber;
   const displayEta =
     liveMovement?.transport?.estimatedAt !== undefined
@@ -441,7 +452,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
               <div className={styles.demographicChips}>
                 <span className={styles.demoChip}>
-                  <strong>UMRN</strong> <span className={styles.tabularNum}>{livePatient?.umrn ?? "UM100023"}</span>
+                  <strong>UMRN</strong> <span className={styles.tabularNum}>{livePatient?.umrn ?? "Not recorded"}</span>
                 </span>
                 <span className={styles.demoDivider}>·</span>
                 <span className={styles.demoChip}>
@@ -522,14 +533,14 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           <div className={styles.topToolbar}>
             <div className={styles.actionControls}>
               {liveMovement ? (
-                <Link
-                  href={`/mockups/ward-flow/movements/${liveMovement.id}`}
+                <button
+                  type="button"
+                  onClick={openOperations}
                   className={`${styles.ctl} ${styles.ctlPrimary}`}
-                  data-open-movement={liveMovement.id}
                   data-testid="ward-person-refer"
                 >
-                  Open the movement
-                </Link>
+                  Coordinate placement
+                </button>
               ) : (
                 <Link
                   href="/mockups/ward-flow/referrals/new"
@@ -610,7 +621,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 <div className={styles.pulledDetailItem}>
                   <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
                   <span className={styles.pulledDetailValue}>
-                    {liveMovement?.arrivalDetails?.trackingNumber || "Not recorded"}
+                    {liveMovement?.arrivalDetails?.trackingNumber || displayCadNumber || "Not recorded"}
                   </span>
                 </div>
                 <div className={styles.pulledDetailItem}>
@@ -716,13 +727,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                     </div>
                     <div className={styles.barrierCardAction}>
                       {gate.label.toLowerCase().includes("bed") ? (
-                        <button
-                          type="button"
-                          className={styles.barrierActionBtn}
-                          onClick={() => {
-                            setActiveTab("now");
-                          }}
-                        >
+                        <button type="button" className={styles.barrierActionBtn} onClick={openOperations}>
                           View movement referrals &rarr;
                         </button>
                       ) : (
@@ -891,6 +896,9 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                                 </span>
                               </div>
                               <p className={styles.stageDetailSummary}>{detail.summary}</p>
+                              <button type="button" className={styles.ctl} onClick={openOperations}>
+                                Review stage actions
+                              </button>
                               {detail.milestones.length > 0 && (
                                 <ul className={styles.stageMilestoneList}>
                                   {detail.milestones.map((m, mi) => (
@@ -1014,488 +1022,522 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-now"
                 hidden={activeTab !== "now"}
               >
-                <div className={styles.pnCols}>
-                  {/* Left Column */}
-                  <div className={styles.pnNowLeft}>
-                    <div className={styles.sec}>
-                      <div className={styles.referralFilterRow}>
-                        <h3 className={styles.secH} style={{ margin: 0 }}>
-                          This presentation
-                          <span className={styles.count}>
-                            {(liveMovement?.withdrawnReferrals.length ?? 0) + 1} events
-                          </span>
-                        </h3>
-                      </div>
+                {liveMovement && (
+                  <>
+                    <div className={styles.nowViewSwitch} role="group" aria-label="Now view">
+                      <button
+                        type="button"
+                        aria-pressed={nowView === "clinical"}
+                        onClick={() => setNowView("clinical")}
+                      >
+                        Clinical overview
+                      </button>
+                      <button type="button" aria-pressed={nowView === "operations"} onClick={openOperations}>
+                        Transit operations
+                      </button>
+                      <span>One record · clinical context and bedflow</span>
+                    </div>
+                    <div
+                      ref={operationsRef}
+                      tabIndex={-1}
+                      hidden={nowView !== "operations"}
+                      aria-label="Transit operations workspace"
+                    >
+                      <PatientTransitOperations key={liveMovement.id} movement={liveMovement} />
+                    </div>
+                  </>
+                )}
+                <div className={styles.clinicalView} hidden={!!liveMovement && nowView !== "clinical"}>
+                  <div className={styles.pnCols}>
+                    {/* Left Column */}
+                    <div className={styles.pnNowLeft}>
+                      <div className={styles.sec}>
+                        <div className={styles.referralFilterRow}>
+                          <h3 className={styles.secH} style={{ margin: 0 }}>
+                            This presentation
+                            <span className={styles.count}>
+                              {(liveMovement?.withdrawnReferrals.length ?? 0) + 1} events
+                            </span>
+                          </h3>
+                        </div>
 
-                      <ol className={styles.tline}>
-                        {liveMovement ? (
-                          <>
-                            <li className={styles.tev}>
-                              <span className={styles.tnode} aria-hidden="true" />
-                              <span className={styles.twhen}>{clock(liveMovement.openedAt)}</span>
-                              <span className={styles.twhat}>
-                                Journey opened at{" "}
-                                <strong>{edById(liveMovement.originEdId)?.name ?? "Emergency Department"}</strong>.
-                              </span>
-                            </li>
-                            {liveMovement.legalForm && (
+                        <ol className={styles.tline}>
+                          {liveMovement ? (
+                            <>
                               <li className={styles.tev}>
                                 <span className={styles.tnode} aria-hidden="true" />
                                 <span className={styles.twhen}>{clock(liveMovement.openedAt)}</span>
                                 <span className={styles.twhat}>
-                                  Legal status: <strong>{legalFormName(liveMovement.legalForm)}</strong> recorded.
+                                  Journey opened at{" "}
+                                  <strong>{edById(liveMovement.originEdId)?.name ?? "Emergency Department"}</strong>.
                                 </span>
                               </li>
-                            )}
-                            {liveMovement.withdrawnReferrals.map((withdrawal, index) => (
-                              <li key={`${withdrawal.unitId}-${index}`} className={styles.tev} data-tone="warn">
-                                <span className={styles.tnode} aria-hidden="true" />
-                                <span className={styles.twhen}>—</span>
-                                <span className={styles.twhat}>
-                                  <strong>{unitById(withdrawal.unitId)?.name ?? "Ward"} referral withdrawn</strong>
-                                  {withdrawal.reason ? `: ${withdrawal.reason.replace(/_/g, " ")}.` : "."}
-                                </span>
-                              </li>
-                            ))}
-                            {liveMovement.acceptedUnitId && (
-                              <li className={styles.tev} data-tone="good">
-                                <span className={styles.tnode} aria-hidden="true" />
-                                <span className={styles.twhen}>—</span>
-                                <span className={styles.twhat}>
-                                  <strong>{unitById(liveMovement.acceptedUnitId)?.name ?? "Ward"} accepted.</strong>
-                                </span>
-                              </li>
-                            )}
-                            {liveMovement.transport && (
-                              <li className={styles.tev}>
-                                <span className={styles.tnode} aria-hidden="true" />
-                                <span className={styles.twhen}>—</span>
-                                <span className={styles.twhat}>
-                                  Transport {transportLeg(liveMovement.transport)?.toLowerCase() ?? "booked"} with{" "}
-                                  {liveMovement.transport.provider ?? "provider not recorded"}.
-                                </span>
-                              </li>
-                            )}
-                          </>
-                        ) : (
-                          <li className={styles.tev}>
-                            <span className={styles.tnode} aria-hidden="true" />
-                            <span className={styles.twhen}>Recorded</span>
-                            <span className={styles.twhat}>
-                              {record.early[0]?.what ?? "No active movement recorded."}
-                            </span>
-                          </li>
-                        )}
-                      </ol>
-                    </div>
-
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>Clinical presentation</h3>
-                      <p className={styles.pnStory}>“{record.reason}”</p>
-                    </div>
-
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>Requirements</h3>
-                      <dl className={styles.slFacts}>
-                        <dt>Bed</dt>
-                        <dd>
-                          {liveMovement
-                            ? `${liveMovement.security === "Secure" ? "Locked" : "Open"}, adult`
-                            : "Community care"}
-                        </dd>
-                        <dt>Nursing</dt>
-                        <dd>
-                          {liveMovement
-                            ? liveMovement.specialling
-                              ? "One to one specialling"
-                              : "Standard"
-                            : "Not recorded"}
-                        </dd>
-                        <dt>Urgency</dt>
-                        <dd>
-                          {urgencyTier
-                            ? `Tier ${urgencyTier}${urgencyTier === 1 ? ", most urgent" : ""}`
-                            : "Not recorded"}
-                        </dd>
-                        <dt>Transport</dt>
-                        <dd>
-                          {liveMovement?.transport
-                            ? `Status: ${transportLeg(liveMovement.transport) ?? "Booked"}`
-                            : "No transport job recorded"}
-                        </dd>
-                        <dt>Fit to travel</dt>
-                        <dd>
-                          {liveMovement?.medicalClearance
-                            ? liveMovement.medicalClearance.cleared
-                              ? "Clearance recorded"
-                              : "Not cleared"
-                            : "Not assessed"}
-                        </dd>
-                        <dt>Community team</dt>
-                        <dd>{record.community.teams[0]?.name ?? "No team information recorded"}</dd>
-                        <dt>Catchment</dt>
-                        <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                      </dl>
-                    </div>
-                  </div>
-
-                  {/* Right Column */}
-                  <div className={styles.pnNowRight}>
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>
-                        Referrals
-                        <span className={styles.count}>{`${liveMovement?.referredUnitIds.length ?? 0} referred`}</span>
-                      </h3>
-
-                      {!liveMovement ? (
-                        <p className={styles.pnAbsence}>No linked movement or ward referral record displayed.</p>
-                      ) : liveMovement.acceptedUnitId ? (
-                        <div>
-                          <p className={styles.destBadge} data-k="accepted">
-                            Accepted by {unitById(liveMovement.acceptedUnitId)?.name ?? "destination ward"}.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className={styles.rows}>
-                          {liveMovement.referredUnitIds.length > 0 ? (
-                            <table className={styles.referralTable} aria-label="Network bed placement status">
-                              <thead>
-                                <tr>
-                                  <th scope="col">Unit / Facility</th>
-                                  <th scope="col">Status</th>
-                                  <th scope="col">Outcome / Re-Ask Condition</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {liveMovement.referredUnitIds.map((uid) => {
-                                  const unit = unitById(uid);
-                                  const withdrawal = liveMovement.withdrawnReferrals.find((w) => w.unitId === uid);
-                                  const isAccepted = liveMovement.acceptedUnitId === uid;
-                                  return (
-                                    <tr key={uid}>
-                                      <td className={styles.unitNameCell}>
-                                        {unit?.name ?? uid}
-                                        <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontWeight: 400 }}>
-                                          {unit
-                                            ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}`
-                                            : "Inpatient Unit"}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        {isAccepted ? (
-                                          <span
-                                            className={styles.teleBadge}
-                                            style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}
-                                          >
-                                            Accepted
-                                          </span>
-                                        ) : withdrawal ? (
-                                          <span className={styles.statusBadgeDeclined}>Declined</span>
-                                        ) : (
-                                          <span
-                                            className={styles.teleBadge}
-                                            style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}
-                                          >
-                                            Referred
-                                          </span>
-                                        )}
-                                      </td>
-                                      <td className={styles.reAskCell}>
-                                        {isAccepted ? (
-                                          <strong>Bed Allocated</strong>
-                                        ) : withdrawal?.reason ? (
-                                          <>
-                                            {withdrawal.reason.replace(/_/g, " ")}.{" "}
-                                            <strong>Re-check after shift handover</strong>
-                                          </>
-                                        ) : (
-                                          "Awaiting response from bed manager"
-                                        )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                              {liveMovement.legalForm && (
+                                <li className={styles.tev}>
+                                  <span className={styles.tnode} aria-hidden="true" />
+                                  <span className={styles.twhen}>{clock(liveMovement.openedAt)}</span>
+                                  <span className={styles.twhat}>
+                                    Legal status: <strong>{legalFormName(liveMovement.legalForm)}</strong> recorded.
+                                  </span>
+                                </li>
+                              )}
+                              {liveMovement.withdrawnReferrals.map((withdrawal, index) => (
+                                <li key={`${withdrawal.unitId}-${index}`} className={styles.tev} data-tone="warn">
+                                  <span className={styles.tnode} aria-hidden="true" />
+                                  <span className={styles.twhen}>—</span>
+                                  <span className={styles.twhat}>
+                                    <strong>{unitById(withdrawal.unitId)?.name ?? "Ward"} referral withdrawn</strong>
+                                    {withdrawal.reason ? `: ${withdrawal.reason.replace(/_/g, " ")}.` : "."}
+                                  </span>
+                                </li>
+                              ))}
+                              {liveMovement.acceptedUnitId && (
+                                <li className={styles.tev} data-tone="good">
+                                  <span className={styles.tnode} aria-hidden="true" />
+                                  <span className={styles.twhen}>—</span>
+                                  <span className={styles.twhat}>
+                                    <strong>{unitById(liveMovement.acceptedUnitId)?.name ?? "Ward"} accepted.</strong>
+                                  </span>
+                                </li>
+                              )}
+                              {liveMovement.transport && (
+                                <li className={styles.tev}>
+                                  <span className={styles.tnode} aria-hidden="true" />
+                                  <span className={styles.twhen}>—</span>
+                                  <span className={styles.twhat}>
+                                    Transport {transportLeg(liveMovement.transport)?.toLowerCase() ?? "booked"} with{" "}
+                                    {liveMovement.transport.provider ?? "provider not recorded"}.
+                                  </span>
+                                </li>
+                              )}
+                            </>
                           ) : (
-                            <p className={styles.pnAbsence}>Placement request active across network wards.</p>
+                            <li className={styles.tev}>
+                              <span className={styles.tnode} aria-hidden="true" />
+                              <span className={styles.twhen}>Recorded</span>
+                              <span className={styles.twhat}>
+                                {record.early[0]?.what ?? "No active movement recorded."}
+                              </span>
+                            </li>
+                          )}
+                        </ol>
+                      </div>
+
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>Clinical presentation</h3>
+                        <p className={styles.pnStory}>“{record.reason}”</p>
+                      </div>
+
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>Requirements</h3>
+                        <dl className={styles.slFacts}>
+                          <dt>Bed</dt>
+                          <dd>
+                            {liveMovement
+                              ? `${liveMovement.security === "Secure" ? "Locked" : "Open"}, adult`
+                              : "Community care"}
+                          </dd>
+                          <dt>Nursing</dt>
+                          <dd>
+                            {liveMovement
+                              ? liveMovement.specialling
+                                ? "One to one specialling"
+                                : "Standard"
+                              : "Not recorded"}
+                          </dd>
+                          <dt>Urgency</dt>
+                          <dd>
+                            {urgencyTier
+                              ? `Tier ${urgencyTier}${urgencyTier === 1 ? ", most urgent" : ""}`
+                              : "Not recorded"}
+                          </dd>
+                          <dt>Transport</dt>
+                          <dd>
+                            {liveMovement?.transport
+                              ? `Status: ${transportLeg(liveMovement.transport) ?? "Booked"}`
+                              : "No transport job recorded"}
+                          </dd>
+                          <dt>Fit to travel</dt>
+                          <dd>
+                            {liveMovement?.medicalClearance
+                              ? liveMovement.medicalClearance.cleared
+                                ? "Clearance recorded"
+                                : "Not cleared"
+                              : "Not assessed"}
+                          </dd>
+                          <dt>Community team</dt>
+                          <dd>{record.community.teams[0]?.name ?? "No team information recorded"}</dd>
+                          <dt>Catchment</dt>
+                          <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
+                        </dl>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className={styles.pnNowRight}>
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>
+                          Referrals
+                          <span
+                            className={styles.count}
+                          >{`${liveMovement?.referredUnitIds.length ?? 0} referred`}</span>
+                        </h3>
+
+                        {!liveMovement ? (
+                          <p className={styles.pnAbsence}>No linked movement or ward referral record displayed.</p>
+                        ) : liveMovement.acceptedUnitId ? (
+                          <div>
+                            <p className={styles.destBadge} data-k="accepted">
+                              Accepted by {unitById(liveMovement.acceptedUnitId)?.name ?? "destination ward"}.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className={styles.rows}>
+                            {liveMovement.referredUnitIds.length > 0 ? (
+                              <table className={styles.referralTable} aria-label="Network bed placement status">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Unit / Facility</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Outcome / Re-Ask Condition</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {liveMovement.referredUnitIds.map((uid) => {
+                                    const unit = unitById(uid);
+                                    const withdrawal = liveMovement.withdrawnReferrals.find((w) => w.unitId === uid);
+                                    const isAccepted = liveMovement.acceptedUnitId === uid;
+                                    return (
+                                      <tr key={uid}>
+                                        <td className={styles.unitNameCell}>
+                                          {unit?.name ?? uid}
+                                          <div
+                                            style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontWeight: 400 }}
+                                          >
+                                            {unit
+                                              ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}`
+                                              : "Inpatient Unit"}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          {isAccepted ? (
+                                            <span
+                                              className={styles.teleBadge}
+                                              style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}
+                                            >
+                                              Accepted
+                                            </span>
+                                          ) : withdrawal ? (
+                                            <span className={styles.statusBadgeDeclined}>Declined</span>
+                                          ) : (
+                                            <span
+                                              className={styles.teleBadge}
+                                              style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}
+                                            >
+                                              Referred
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className={styles.reAskCell}>
+                                          {isAccepted ? (
+                                            <strong>Bed Allocated</strong>
+                                          ) : withdrawal?.reason ? (
+                                            <>
+                                              {withdrawal.reason.replace(/_/g, " ")}.{" "}
+                                              <strong>Re-check after shift handover</strong>
+                                            </>
+                                          ) : (
+                                            "Awaiting response from bed manager"
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <p className={styles.pnAbsence}>Placement request active across network wards.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>
+                          Next steps<span className={styles.count}>{record.next.length}</span>
+                        </h3>
+                        <ol className={styles.nsteps}>
+                          {record.next.map((n, i) => (
+                            <li key={i} className={styles.nstep} data-tone={n.tone ?? undefined}>
+                              <b>{fillTemplate(n.w, templateContext)}</b>
+                              <span>{fillTemplate(n.d, templateContext)}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>
+                          Who to contact<span className={styles.count}>{record.ring.length}</span>
+                        </h3>
+                        <div className={styles.contactGrid}>
+                          {record.ring.map((c, i) => (
+                            <div key={i} className={styles.contactCard} data-tone={c.tone ?? undefined}>
+                              <div className={styles.contactTop}>
+                                <span className={styles.contactWho}>{c.who}</span>
+                                <span className={styles.contactExt}>
+                                  {c.who.includes("ED")
+                                    ? "Ext 8140"
+                                    : c.who.includes("Coordinator") || c.who.includes("State")
+                                      ? "Speed Dial 41"
+                                      : "Ext 2209"}
+                                </span>
+                              </div>
+                              <span className={styles.contactRole}>{fillTemplate(c.role, templateContext)}</span>
+                              {c.note && <p className={styles.contactNote}>{fillTemplate(c.note, templateContext)}</p>}
+                            </div>
+                          ))}
+                        </div>
+                        <p className={styles.pnLadder}>{renderInlineText(record.ladder)}</p>
+                      </div>
+
+                      <div className={styles.sec}>
+                        <h3 className={styles.secH}>Legal authority</h3>
+                        <dl className={styles.slFacts}>
+                          <dt>Status</dt>
+                          <dd>{liveMovement?.legalStatus ?? "Not recorded"}</dd>
+                          <dt>Form</dt>
+                          <dd>
+                            {liveMovement?.legalForm
+                              ? `${legalFormName(liveMovement.legalForm)}${
+                                  liveMovement.legalForm.dueAt !== undefined
+                                    ? `. Due ${clock(liveMovement.legalForm.dueAt)}.`
+                                    : ". No deadline is recorded for it."
+                                }`
+                              : "No legal form recorded."}
+                          </dd>
+                        </dl>
+                      </div>
+
+                      <section
+                        className={`${styles.sec} ${styles.transportSec}`}
+                        aria-labelledby="pnTransportHeading"
+                        data-testid="ward-patient-transport-section"
+                      >
+                        <div className={styles.transportHeader}>
+                          <div className={styles.transportTitleCluster}>
+                            <span className={styles.transportIcon} aria-hidden="true">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <rect x="1" y="3" width="15" height="13" />
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 8" />
+                                <circle cx="5.5" cy="18.5" r="2.5" />
+                                <circle cx="18.5" cy="18.5" r="2.5" />
+                              </svg>
+                            </span>
+                            <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
+                              {liveMovement ? "Transport dispatch" : "Transport"}
+                            </h3>
+                          </div>
+                          {liveMovement && (
+                            <div className={styles.transportStatusCluster}>
+                              <span
+                                className={styles.transportBadge}
+                                data-booked={isTransportBooked ? "true" : "false"}
+                                data-testid="ward-patient-transport-badge"
+                              >
+                                {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
+                              </span>
+                              {!showTransportForm && (
+                                <button
+                                  type="button"
+                                  className={
+                                    isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
+                                  }
+                                  onClick={() => {
+                                    setTransportCadDraft(displayCadNumber ?? "");
+                                    setTransportEtaDraft(displayEta ?? "");
+                                    setShowTransportForm(true);
+                                  }}
+                                  data-testid="ward-patient-book-transport-btn"
+                                >
+                                  {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>
-                        Next steps<span className={styles.count}>{record.next.length}</span>
-                      </h3>
-                      <ol className={styles.nsteps}>
-                        {record.next.map((n, i) => (
-                          <li key={i} className={styles.nstep} data-tone={n.tone ?? undefined}>
-                            <b>{fillTemplate(n.w, templateContext)}</b>
-                            <span>{fillTemplate(n.d, templateContext)}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
+                        {liveMovement && bookingRejection && (
+                          <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
+                        )}
+                        {/* Form for logging/updating transport */}
+                        {liveMovement && showTransportForm && (
+                          <form
+                            className={styles.transportForm}
+                            onSubmit={handleSaveTransportBooking}
+                            data-testid="ward-patient-transport-form"
+                          >
+                            <div className={styles.transportFormGrid}>
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-cad" className={styles.transportFormLabel}>
+                                  CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
+                                </label>
+                                <input
+                                  id="transport-cad"
+                                  type="text"
+                                  className={styles.transportInput}
+                                  placeholder="e.g. CAD-84920"
+                                  value={transportCadDraft}
+                                  onChange={(e) => setTransportCadDraft(e.target.value)}
+                                  required
+                                  data-testid="ward-patient-input-cad"
+                                />
+                              </div>
 
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>
-                        Who to contact<span className={styles.count}>{record.ring.length}</span>
-                      </h3>
-                      <div className={styles.contactGrid}>
-                        {record.ring.map((c, i) => (
-                          <div key={i} className={styles.contactCard} data-tone={c.tone ?? undefined}>
-                            <div className={styles.contactTop}>
-                              <span className={styles.contactWho}>{c.who}</span>
-                              <span className={styles.contactExt}>
-                                {c.who.includes("ED")
-                                  ? "Ext 8140"
-                                  : c.who.includes("Coordinator") || c.who.includes("State")
-                                    ? "Speed Dial 41"
-                                    : "Ext 2209"}
-                              </span>
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-eta" className={styles.transportFormLabel}>
+                                  Quoted ETA by Transport Company
+                                </label>
+                                <input
+                                  id="transport-eta"
+                                  type="text"
+                                  className={styles.transportInput}
+                                  placeholder="e.g. 11:15 or ~45m"
+                                  value={transportEtaDraft}
+                                  onChange={(e) => setTransportEtaDraft(e.target.value)}
+                                  data-testid="ward-patient-input-eta"
+                                />
+                              </div>
+
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-provider" className={styles.transportFormLabel}>
+                                  Transport Provider
+                                </label>
+                                <select
+                                  id="transport-provider"
+                                  className={styles.transportSelect}
+                                  value={transportProviderDraft}
+                                  onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
+                                  data-testid="ward-patient-select-provider"
+                                >
+                                  {TRANSPORT_PROVIDERS.map((p) => (
+                                    <option key={p} value={p}>
+                                      {p}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-legal" className={styles.transportFormLabel}>
+                                  Transport Legal Status
+                                </label>
+                                <select
+                                  id="transport-legal"
+                                  className={styles.transportSelect}
+                                  value={transportLegalDraft}
+                                  onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
+                                  data-testid="ward-patient-select-legal"
+                                >
+                                  <option value="involuntary">Involuntary</option>
+                                  <option value="voluntary">Voluntary</option>
+                                </select>
+                              </div>
                             </div>
-                            <span className={styles.contactRole}>{fillTemplate(c.role, templateContext)}</span>
-                            {c.note && <p className={styles.contactNote}>{fillTemplate(c.note, templateContext)}</p>}
-                          </div>
-                        ))}
-                      </div>
-                      <p className={styles.pnLadder}>{renderInlineText(record.ladder)}</p>
-                    </div>
 
-                    <div className={styles.sec}>
-                      <h3 className={styles.secH}>Legal authority</h3>
-                      <dl className={styles.slFacts}>
-                        <dt>Status</dt>
-                        <dd>{liveMovement?.legalStatus ?? "Not recorded"}</dd>
-                        <dt>Form</dt>
-                        <dd>
-                          {liveMovement?.legalForm
-                            ? `${legalFormName(liveMovement.legalForm)}${
-                                liveMovement.legalForm.dueAt !== undefined
-                                  ? `. Due ${clock(liveMovement.legalForm.dueAt)}.`
-                                  : ". No deadline is recorded for it."
-                              }`
-                            : "No legal form recorded."}
-                        </dd>
-                      </dl>
-                    </div>
+                            <div className={styles.transportCheckboxRow}>
+                              <input
+                                id="transport-escort"
+                                type="checkbox"
+                                checked={transportEscortDraft}
+                                onChange={(e) => setTransportEscortDraft(e.target.checked)}
+                                data-testid="ward-patient-checkbox-escort"
+                              />
+                              <label htmlFor="transport-escort">Clinical escort required for transfer</label>
+                            </div>
 
-                    <section
-                      className={`${styles.sec} ${styles.transportSec}`}
-                      aria-labelledby="pnTransportHeading"
-                      data-testid="ward-patient-transport-section"
-                    >
-                      <div className={styles.transportHeader}>
-                        <div className={styles.transportTitleCluster}>
-                          <span className={styles.transportIcon} aria-hidden="true">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <rect x="1" y="3" width="15" height="13" />
-                              <polygon points="16 8 20 8 23 11 23 16 16 16 8" />
-                              <circle cx="5.5" cy="18.5" r="2.5" />
-                              <circle cx="18.5" cy="18.5" r="2.5" />
-                            </svg>
-                          </span>
-                          <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
-                            {liveMovement ? "Transport dispatch" : "Transport"}
-                          </h3>
-                        </div>
-                        {liveMovement && (
-                          <div className={styles.transportStatusCluster}>
-                            <span
-                              className={styles.transportBadge}
-                              data-booked={isTransportBooked ? "true" : "false"}
-                              data-testid="ward-patient-transport-badge"
-                            >
-                              {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
-                            </span>
-                            {!showTransportForm && (
+                            <div className={styles.transportFormActions}>
                               <button
                                 type="button"
-                                className={
-                                  isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
-                                }
-                                onClick={() => {
-                                  setTransportCadDraft(displayCadNumber ?? "");
-                                  setTransportEtaDraft(displayEta ?? "");
-                                  setShowTransportForm(true);
-                                }}
-                                data-testid="ward-patient-book-transport-btn"
+                                className={styles.transportActionBtnSecondary}
+                                onClick={() => setShowTransportForm(false)}
                               >
-                                {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                                Cancel
                               </button>
-                            )}
+                              <button
+                                type="submit"
+                                className={styles.transportActionBtn}
+                                data-testid="ward-patient-confirm-transport-btn"
+                              >
+                                Save Transport Booking
+                              </button>
+                            </div>
+                          </form>
+                        )}
+
+                        {/* Display booked facts */}
+                        {isTransportBooked && !showTransportForm && (
+                          <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
+                                {displayCadNumber || "Not recorded"}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Quoted ETA</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
+                                {displayEta || "Not recorded"}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Transport Provider</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
+                                {displayProvider}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Authority / Escort</span>
+                              <span
+                                className={styles.transportFactValue}
+                                data-testid="ward-patient-transport-authority"
+                              >
+                                {displayLegalStatus}{" "}
+                                {displayEscort === undefined
+                                  ? "· Escort not recorded"
+                                  : displayEscort
+                                    ? "· Escort req."
+                                    : "· No escort"}
+                              </span>
+                            </div>
                           </div>
                         )}
-                      </div>
 
-                      {liveMovement && bookingRejection && (
-                        <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
-                      )}
-                      {/* Form for logging/updating transport */}
-                      {liveMovement && showTransportForm && (
-                        <form
-                          className={styles.transportForm}
-                          onSubmit={handleSaveTransportBooking}
-                          data-testid="ward-patient-transport-form"
-                        >
-                          <div className={styles.transportFormGrid}>
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                                CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
-                              </label>
-                              <input
-                                id="transport-cad"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. CAD-84920"
-                                value={transportCadDraft}
-                                onChange={(e) => setTransportCadDraft(e.target.value)}
-                                required
-                                data-testid="ward-patient-input-cad"
-                              />
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-eta" className={styles.transportFormLabel}>
-                                Quoted ETA by Transport Company
-                              </label>
-                              <input
-                                id="transport-eta"
-                                type="text"
-                                className={styles.transportInput}
-                                placeholder="e.g. 11:15 or ~45m"
-                                value={transportEtaDraft}
-                                onChange={(e) => setTransportEtaDraft(e.target.value)}
-                                data-testid="ward-patient-input-eta"
-                              />
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-provider" className={styles.transportFormLabel}>
-                                Transport Provider
-                              </label>
-                              <select
-                                id="transport-provider"
-                                className={styles.transportSelect}
-                                value={transportProviderDraft}
-                                onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
-                                data-testid="ward-patient-select-provider"
-                              >
-                                {TRANSPORT_PROVIDERS.map((p) => (
-                                  <option key={p} value={p}>
-                                    {p}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className={styles.transportFormField}>
-                              <label htmlFor="transport-legal" className={styles.transportFormLabel}>
-                                Transport Legal Status
-                              </label>
-                              <select
-                                id="transport-legal"
-                                className={styles.transportSelect}
-                                value={transportLegalDraft}
-                                onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
-                                data-testid="ward-patient-select-legal"
-                              >
-                                <option value="involuntary">Involuntary</option>
-                                <option value="voluntary">Voluntary</option>
-                              </select>
-                            </div>
+                        {/* Empty state when not booked */}
+                        {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
+                          <div className={styles.transportEmptyState}>
+                            <p className={styles.transportEmptyText}>
+                              {liveMovement ? (
+                                <>
+                                  No transport vehicle has been logged for this patient yet. Once arranged by phone with
+                                  the transport provider, click <strong>Mark as Booked</strong> to record the CAD
+                                  (dispatch) number and quoted ETA.
+                                </>
+                              ) : (
+                                "No linked transport record displayed."
+                              )}
+                            </p>
                           </div>
-
-                          <div className={styles.transportCheckboxRow}>
-                            <input
-                              id="transport-escort"
-                              type="checkbox"
-                              checked={transportEscortDraft}
-                              onChange={(e) => setTransportEscortDraft(e.target.checked)}
-                              data-testid="ward-patient-checkbox-escort"
-                            />
-                            <label htmlFor="transport-escort">Clinical escort required for transfer</label>
-                          </div>
-
-                          <div className={styles.transportFormActions}>
-                            <button
-                              type="button"
-                              className={styles.transportActionBtnSecondary}
-                              onClick={() => setShowTransportForm(false)}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className={styles.transportActionBtn}
-                              data-testid="ward-patient-confirm-transport-btn"
-                            >
-                              Save Transport Booking
-                            </button>
-                          </div>
-                        </form>
-                      )}
-
-                      {/* Display booked facts */}
-                      {isTransportBooked && !showTransportForm && (
-                        <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
-                              {displayCadNumber || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Quoted ETA</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
-                              {displayEta || "Not recorded"}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Transport Provider</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
-                              {displayProvider}
-                            </span>
-                          </div>
-                          <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>Authority / Escort</span>
-                            <span className={styles.transportFactValue} data-testid="ward-patient-transport-authority">
-                              {displayLegalStatus}{" "}
-                              {displayEscort === undefined
-                                ? "· Escort not recorded"
-                                : displayEscort
-                                  ? "· Escort req."
-                                  : "· No escort"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Empty state when not booked */}
-                      {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
-                        <div className={styles.transportEmptyState}>
-                          <p className={styles.transportEmptyText}>
-                            {liveMovement ? (
-                              <>
-                                No transport vehicle has been logged for this patient yet. Once arranged by phone with
-                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD
-                                (dispatch) number and quoted ETA.
-                              </>
-                            ) : (
-                              "No linked transport record displayed."
-                            )}
-                          </p>
-                        </div>
-                      ) : null}
-                    </section>
+                        ) : null}
+                      </section>
+                    </div>
                   </div>
                 </div>
               </div>

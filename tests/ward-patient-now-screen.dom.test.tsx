@@ -97,19 +97,13 @@ describe("the patient-now screen", () => {
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
       "Review next cohort-matching bed releases across network.",
     );
-    expect(summary.getByRole("link", { name: "Open the movement" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/movements/WF-009",
-    );
+    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
     unmount();
 
     renderScreen({ movementId: "WF-004" });
     summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
-    expect(summary.getByRole("link", { name: "Open the movement" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/movements/WF-004",
-    );
+    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
   });
 
   // Owner ruling & user request: remove obsolete movement record / perspective switchers and purge WF ids

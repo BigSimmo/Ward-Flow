@@ -416,6 +416,15 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**4 October 2026 update:** Patient Now also hosts `patient-transit-operations.tsx` and its CSS
+module. The local Clinical overview / Transit operations switch preserves the five dossier tabs.
+Legacy `/movements/[movementId]` renders the same `PatientNowScreen`; cockpit exception handlers
+are reused via `MovementWorkspaceCockpit`'s embedded mode. Operational dispatches, event-name
+mappings, verification commands and screenshot capture are documented in
+[the unified flight deck implementation note](../plans/unified-patient-flight-deck.md).
+`tests/ward-patient-flight-deck.dom.test.tsx` drives referral through arrival and verifies
+reasoned step-back / release capacity behaviour against the shared reducer.
+
 **Routes:** `/people/new` (renders `AddPatientForm` from `add-patient.tsx`) and
 `/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx` by default, or
 `PersonScreen` from `person-screen.tsx` when the URL carries `?view=governed` or `?view=legacy` —
