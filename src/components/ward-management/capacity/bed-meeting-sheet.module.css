@@ -243,12 +243,8 @@
     display: none !important;
   }
 
-  /* A dark screen theme must not print a dark page edge around the sheet. */
-  :global(html.ward-bed-meeting-printing),
-  :global(html.ward-bed-meeting-printing) :global(body) {
-    color-scheme: light;
-    background: transparent !important;
-  }
+  /* The page itself (html, body) is cleared to plain paper by the matching rule in
+   * src/app/globals.css: CSS modules may not style <html> without a local class. */
 
   .portal {
     position: static;
