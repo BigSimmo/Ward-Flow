@@ -1403,9 +1403,9 @@ function WardNetworkPlacementWorkspace() {
               </div>
 
               <p className={styles.reasonNote} data-testid="ward-network-reason-caveat">
-                Each reason repeats the eligibility checks below; none ranks a ward. The health-service row compares
-                the presenting emergency department, not where the person lives: home catchment and where family
-                live are not recorded in this prototype. {REFERENCE_DISTANCE_CAVEAT}
+                Each reason repeats the eligibility checks below; none ranks a ward. The health-service row compares the
+                presenting emergency department, not where the person lives: home catchment and where family live are
+                not recorded in this prototype. {REFERENCE_DISTANCE_CAVEAT}
               </p>
 
               <p className={styles.tierNote}>
@@ -1460,8 +1460,8 @@ function WardNetworkPlacementWorkspace() {
               </p>
               <BedStateChips unit={detail} bedReleases={bedReleases} leaveBeds={leaveBeds} now={now} />
               <p className={styles.detailMeta}>
-                {bedStates(detail, admissions, bedReleases, leaveBeds).occupied} occupied of {detail.beds} beds. Confirmed and expected beds
-                are not allocatable yet.
+                {bedStates(detail, admissions, bedReleases, leaveBeds).occupied} occupied of {detail.beds} beds.
+                Confirmed and expected beds are not allocatable yet.
               </p>
             </section>
           ) : null}

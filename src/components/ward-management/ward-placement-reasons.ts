@@ -21,7 +21,11 @@ export type PlacementReasonGroup = {
 export const PLACEMENT_REASON_GROUPS: readonly PlacementReasonGroup[] = [
   { key: "gender", heading: "Gender and sex mix", gates: ["gender_designation", "sex_mix"] },
   { key: "dependency", heading: "High-dependency and specialling", gates: ["acuity", "specialling"] },
-  { key: "safety", heading: "Security, legal and forensic", gates: ["security", "authorisation", "legal_status", "forensic"] },
+  {
+    key: "safety",
+    heading: "Security, legal and forensic",
+    gates: ["security", "authorisation", "legal_status", "forensic"],
+  },
   { key: "bed", heading: "Bed and capacity", gates: ["allocatable_bed", "capacity_freshness"] },
 ];
 

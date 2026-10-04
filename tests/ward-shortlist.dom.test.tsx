@@ -148,7 +148,9 @@ describe("ShortlistPanel urgency picker", () => {
     renderShortlist();
     fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
 
-    const picker = screen.getByLabelText(`Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`) as HTMLSelectElement;
+    const picker = screen.getByLabelText(
+      `Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`,
+    ) as HTMLSelectElement;
 
     const optionText = [...picker.options].map((option) => option.textContent);
     expect(optionText).toEqual(URGENCY_LEVELS.map((level) => urgencyTierLabel(level)));
@@ -421,5 +423,8 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }
