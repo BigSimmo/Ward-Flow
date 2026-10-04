@@ -1,0 +1,106 @@
+.horizons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  align-items: start;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+.horizon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: var(--ward-space-12, 0.75rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+
+.horizonHeading {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.until {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--good);
+}
+
+.headline[data-short="true"] {
+  color: var(--danger);
+}
+
+.range,
+.note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.working summary {
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  text-decoration: underline;
+}
+
+.steps {
+  margin: 0 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.forecastStep {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.forecastStep dt,
+.forecastStep dd {
+  margin: 0;
+}
+
+.forecastStep dd {
+  font-family: var(--mono);
+}
+
+.forecastStep[data-total="true"] {
+  border-top: 1px solid var(--line-strong);
+  padding-top: 0.25rem;
+  font-weight: 700;
+}
+
+.sign {
+  display: inline-block;
+  width: 1.25em;
+  color: var(--muted);
+}
+
+.limits {
+  list-style: disc;
+  margin: var(--ward-space-12, 0.75rem) 0 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.45;
+}
