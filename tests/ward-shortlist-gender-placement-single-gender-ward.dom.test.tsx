@@ -6,6 +6,7 @@ import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Owner reversal, item 2, second round, 17 September 2026: *"No. they actually can. make smallest
@@ -36,6 +37,7 @@ function ShortlistHarness() {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={selectedUnitId}
       onSelectUnit={setSelectedUnitId}

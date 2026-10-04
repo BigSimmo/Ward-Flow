@@ -30,6 +30,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 /**
  * ⚠️ **THE WORD, ON THE SCREEN — NOT THE IDENTIFIER.**
  *
@@ -132,12 +133,12 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     expect(section).not.toBeNull();
   });
 
-  it("explains the 'Held' bed figure by contrast with the PULL, not with itself", () => {
+  it("explains the 'Closed' bed figure by contrast with the PULL, not with itself", () => {
     renderWard("rph-adult-secure");
     const disclosure = screen.getByText("What these bed figures mean", { selector: "summary" }).closest("details");
     expect(disclosure).not.toBeNull();
     expect(disclosure?.textContent?.replace(/\s+/gu, " ")).toContain(
-      "Held means empty but not offered; it is separate from a bed pulled for a patient",
+      "Closed means empty but not offered; pulled means allocated to a patient who has not arrived yet",
     );
     expect(screen.getByRole("region", { name: "Coming in" })).toBeInTheDocument();
   });
@@ -227,6 +228,7 @@ function ShortlistHarness({ movementId }: { movementId: string }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={undefined}
       onSelectUnit={() => {}}

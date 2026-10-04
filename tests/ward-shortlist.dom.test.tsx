@@ -10,6 +10,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { URGENCY_LEVELS } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Task 6 (spec item 11). WF-308 is the real fixture's own second "nowhere eligible" movement at
@@ -37,6 +38,7 @@ function ShortlistHarness() {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={selectedUnitId}
       onSelectUnit={setSelectedUnitId}
@@ -205,6 +207,7 @@ describe("the override form says what the bed failed on, in text a coordinator c
         units={units}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         referrals={referrals}
         selectedUnitId={selectedUnitId}
         onSelectUnit={setSelectedUnitId}
@@ -339,6 +342,7 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
         units={units}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         referrals={referrals}
         selectedUnitId={selectedUnitId}
         onSelectUnit={setSelectedUnitId}

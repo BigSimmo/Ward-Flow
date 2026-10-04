@@ -167,16 +167,16 @@
   background: var(--good);
 }
 
-.capacityMark[data-state="held"] > i,
-.legendItem > i[data-state="held"] {
+.capacityMark[data-state="closed"] > i,
+.legendItem > i[data-state="closed"] {
   border-color: var(--warn);
   background: var(--warn);
 }
 
-.capacityMark[data-state="blocked"] > i,
-.legendItem > i[data-state="blocked"] {
-  border-color: var(--danger);
-  background: var(--danger);
+.capacityMark[data-state="pulled"] > i,
+.legendItem > i[data-state="pulled"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .capacityMark[data-state="occupied"] > i,

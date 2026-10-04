@@ -61,6 +61,7 @@ export function CoordinatorScreen() {
     units,
     bedReleases,
     leaveBeds,
+    admissions,
     rejections,
     referrals,
     dispatch,
@@ -469,6 +470,7 @@ export function CoordinatorScreen() {
                     units={units}
                     bedReleases={bedReleases}
                     leaveBeds={leaveBeds}
+                    admissions={admissions}
                     selectedUnitId={selectedUnitId}
                     onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
                     parallelReferralCap={configuration.parallelReferralCap}
@@ -557,6 +559,7 @@ export function CoordinatorScreen() {
                         units={units}
                         bedReleases={bedReleases}
                         leaveBeds={leaveBeds}
+                        admissions={admissions}
                         referrals={referrals}
                         selectedUnitId={selectedUnitId}
                         onSelectUnit={setSelectedUnitId}
