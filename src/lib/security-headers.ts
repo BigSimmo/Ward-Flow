@@ -4,12 +4,11 @@
 //
 // IMPORTANT — do NOT add `Cross-Origin-Embedder-Policy: require-corp` here.
 // Under require-corp the browser blocks every cross-origin subresource that
-// lacks a CORP/CORS opt-in. Document page images and the PDF embed are served
-// from Supabase Storage signed URLs (*.supabase.co, a different origin), and
-// those responses do not send a CORP header — so COEP require-corp makes every
-// image preview fail to render ("Image preview failed"). Nothing in the browser
-// app relies on cross-origin isolation (no SharedArrayBuffer / crossOriginIsolated
-// usage), so COEP is omitted rather than reintroducing that failure mode.
+// lacks a CORP/CORS opt-in. The former clinical app hit exactly that with
+// Supabase Storage signed-URL images ("Image preview failed"). Nothing in the
+// browser app relies on cross-origin isolation (no SharedArrayBuffer /
+// crossOriginIsolated usage), so COEP is omitted rather than reintroducing that
+// failure mode.
 
 export type SecurityHeader = { key: string; value: string };
 
@@ -70,19 +69,19 @@ export function buildContentSecurityPolicy({
     "frame-ancestors 'none'; " +
     "form-action 'self'; " +
     upgradeInsecureRequests +
-    // img-src/media-src are scoped to the Supabase Storage origin that serves the
-    // signed-URL images (document pages) — the app loads no other cross-origin
-    // media, so a bare `https:` would needlessly widen the exfil surface. connect-src
-    // must include *.supabase.co for the signed-URL/API fetches. OpenAI calls are
-    // server-side only, so the browser gets no provider origin (2026-07-13 audit).
-    "img-src 'self' data: blob: https://*.supabase.co; " +
-    "media-src 'self' https://*.supabase.co; " +
+    // img-src/media-src/connect-src are same-origin only. The former clinical app's
+    // Supabase Storage allowance (*.supabase.co) was removed on 4 October 2026:
+    // Ward Flow loads no cross-origin media and makes no browser-side Supabase
+    // calls, and a bare `https:` would needlessly widen the exfil surface. Provider
+    // calls are server-side only, so the browser gets no provider origin.
+    "img-src 'self' data: blob:; " +
+    "media-src 'self'; " +
     // No Sentry ingest origin: error tracking is server/edge only
     // (src/sentry.{server,edge}.config.ts) and docs/error-tracking.md forbids a
     // browser SDK, so the three wildcard `*.ingest*.sentry.io` origins allowed an
     // egress channel from the clinical origin that nothing used (2026-09-02 audit,
     // L34). Re-add them only together with a browser SDK and its privacy review.
-    "connect-src 'self' https://*.supabase.co; " +
+    "connect-src 'self'; " +
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +

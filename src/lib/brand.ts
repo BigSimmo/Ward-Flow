@@ -18,7 +18,7 @@
 /**
  * Product name. Used verbatim — never lower-cased or split across a line.
  *
- * "Ward Flow" since 26 September 2026 (Josh's yes): PsychSift has left the repository, so the
+ * "Ward Flow" since 26 September 2026 (Josh's yes): the former clinical app has left the repository, so the
  * browser tab and the installed app's name now say Ward Flow. Only the name moved; the other
  * lines below are unchanged.
  */
@@ -52,7 +52,7 @@ export const BRAND_CATCHPHRASE_BARE = "From referral to bed";
  * to the person reading an install sheet on their phone; the retrieval
  * architecture is described in the docs, not in the shop window.
  */
-// 26 September 2026: Ward Flow wording, replacing PsychSift's "From question to source" (the
+// 26 September 2026: Ward Flow wording, replacing the former clinical app's "From question to source" (the
 // coordinator's recommendation on Josh's card; one commit, so it is easy to change).
 export const BRAND_DESCRIPTION = `Private psychiatric bed-flow coordination prototype for WA hospitals — ${BRAND_CATCHPHRASE_BARE.toLowerCase()}.`;
 

@@ -39,11 +39,14 @@ describe("proxy content-security-policy", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).toContain("img-src 'self' data: blob: https://*.supabase.co;");
+    expect(csp).toContain("img-src 'self' data: blob:;");
+    expect(csp).toContain("media-src 'self';");
     // No browser Sentry SDK exists, so connect-src carries no third-party telemetry
     // origin (2026-09-02 audit, L34).
-    expect(csp).toContain("connect-src 'self' https://*.supabase.co;");
+    expect(csp).toContain("connect-src 'self';");
     expect(csp).not.toContain("sentry.io");
+    // The former clinical app's Supabase Storage origin was removed (4 October 2026).
+    expect(csp).not.toContain("supabase.co");
     // OpenAI calls are server-side only; the browser must not be allowed to
     // reach the provider origin (2026-07-13 audit, finding 12).
     expect(csp).not.toContain("api.openai.com");

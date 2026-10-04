@@ -8,7 +8,7 @@
  * the `.patientWorkspace`/`.clinicalRail` values, which agreed with each other everywhere they
  * overlapped.
  *
- * ⚠️ EVERY VALUE RESOLVES THROUGH A PsychSift TOKEN. Ward Flow is a scoped layer over the app's
+ * ⚠️ EVERY VALUE RESOLVES THROUGH A v2 TOKEN. Ward Flow is a scoped layer over the app's
  * v2 palette, not a second palette. A raw hex here is the start of a fork.
  */
 .wardTokens {
@@ -191,7 +191,7 @@
    * `src/components/ward-management` — THIS file included, with no exemption — and fails on any
    * `#hex`/`rgb()`/`hsl()` in a declaration; adding the four hues here (verified by actually running
    * that test) produced eight failing findings, all in this file. This file's OWN header comment
-   * agrees with the guard and not with the brief: "EVERY VALUE RESOLVES THROUGH A PsychSift TOKEN
+   * agrees with the guard and not with the brief: "EVERY VALUE RESOLVES THROUGH A v2 TOKEN
    * ... A raw hex here is the start of a fork."
    *
    * The correct fix is a v2-level token pair (light + dark) in `src/app/globals.css` or
