@@ -22,7 +22,7 @@ is recorded at the decision it settles (D3, D5, D7).
 
 `predicted → confirmed → blocked → released` is **a software model of how a bed comes free, and no
 ward clinician has checked it.** It is Phase 5's spec D14, it is still open, and
-`docs/ward-flow-clinician-check.md` is the one-page summary waiting to go to a clinician.
+`docs/archive/ward-flow-clinician-check.md` is the one-page summary waiting to go to a clinician.
 
 Phase 7 depends on that model **only indirectly, and D15 is the decision that keeps it that way**:
 matching reads a bed's category and its `availableNow` figure, and never reads a release state. If
@@ -223,7 +223,7 @@ it is why the list is allowed to grow:**
 > A rule that COUNTS breaks the moment the thing legitimately grows — there is no third option —
 > and this one broke against a field the owner asked for. The replacement constrains what KIND of
 > field may exist rather than how many, per the referral-record rule in
-> `docs/ward-flow-mission-and-refusals.md`. A new field is allowed when it is a chosen option and
+> `docs/archive/ward-flow-mission-and-refusals.md`. A new field is allowed when it is a chosen option and
 > is recorded as a decision; adding one silently is the breach.
 
 - `ageBand` — Older adult · Adult · Youth

@@ -621,8 +621,8 @@ along with the applications-launcher, tools-search-results, and category-identit
 keyed off it, so the developer hub panel is the only entry point.
 
 - **Design spec:** `docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md`
-- **Glossary:** `docs/ward-management-context.md` · **Decisions:** `docs/ward-management-decisions.md`
-- **Route/role map:** `docs/ward-management-mode-map.md`
+- **Glossary:** `docs/archive/ward-management-context.md` · **Decisions:** `docs/archive/ward-management-decisions.md`
+- **Route/role map:** `docs/archive/ward-management-mode-map.md`
 - **Model:** `src/components/ward-management/ward-clock.ts` (the only module that reads the
   wall clock), `ward-model.ts` (domain types only), `ward-eligibility.ts` (the eight
   placement gates), `ward-sites.ts` (17 sites, 8 emergency departments, 22 units),
@@ -873,21 +873,21 @@ One shared composer (`master-search-header.tsx`) serves every mode. Placement:
 
 ## Key config files
 
-| File                                       | Role                                                      |
-| ------------------------------------------ | --------------------------------------------------------- |
-| `package.json`                             | Scripts, deps, Node 24 / npm 11                           |
-| `.env.example`                             | Full env template                                         |
-| `next.config.ts`                           | CSP, security headers, build config                       |
-| `tsconfig.json`                            | Strict TS; excludes `supabase/functions/**`               |
-| `eslint.config.mjs`                        | Lint scope                                                |
-| `AGENTS.md`                                | Agent rules, verification gates, shortcuts                |
-| `.github/workflows/ci.yml`                 | CI pipeline                                               |
-| `scripts/sync-open-pr-branches.mjs`        | Operator-only dry-run/apply helper for PR branch sync     |
-| `docs/process-hardening.md`                | Verification pyramid                                      |
-| `docs/phone-chrome-physical-acceptance.md` | Physical Safari / cold-launch PWA phone-chrome acceptance |
-| `docs/clinical-governance.md`              | Clinical safety governance                                |
-| `docs/reindex-runbook.md`                  | Reindex operations                                        |
-| `docs/retrieval-quality-runbook.md`        | Retrieval tuning                                          |
+| File                                               | Role                                                      |
+| -------------------------------------------------- | --------------------------------------------------------- |
+| `package.json`                                     | Scripts, deps, Node 24 / npm 11                           |
+| `.env.example`                                     | Full env template                                         |
+| `next.config.ts`                                   | CSP, security headers, build config                       |
+| `tsconfig.json`                                    | Strict TS; excludes `supabase/functions/**`               |
+| `eslint.config.mjs`                                | Lint scope                                                |
+| `AGENTS.md`                                        | Agent rules, verification gates, shortcuts                |
+| `.github/workflows/ci.yml`                         | CI pipeline                                               |
+| `scripts/sync-open-pr-branches.mjs`                | Operator-only dry-run/apply helper for PR branch sync     |
+| `docs/process-hardening.md`                        | Verification pyramid                                      |
+| `docs/archive/phone-chrome-physical-acceptance.md` | Physical Safari / cold-launch PWA phone-chrome acceptance |
+| `docs/clinical-governance.md`                      | Clinical safety governance                                |
+| `docs/reindex-runbook.md`                          | Reindex operations                                        |
+| `docs/retrieval-quality-runbook.md`                | Retrieval tuning                                          |
 
 ---
 

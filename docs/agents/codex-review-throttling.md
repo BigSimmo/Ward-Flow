@@ -27,7 +27,7 @@ Review routing:
 - `bug-hunter`: Use only for the exact `bug-hunter` shortcut or an explicit defect-hunt request. Prioritize reproducible bugs and smallest proof.
 - `repo-auditor`: Use for explicit repo-wide audit/refactor/dead-code/import/dependency-structure requests. Treat outputs as triage, not automatic delete lists.
 - `release-readiness`: Use for explicit release, merge, PR readiness, or handoff confidence requests. Do not run provider-backed gates without confirmation.
-- `branch-cleanup`: Use only when the prompt explicitly asks for branch cleanup/hygiene or branch deletion candidates. Apply `docs/branch-cleanup-guide.md` before inspecting branch diffs.
+- `branch-cleanup`: Use only when the prompt explicitly asks for branch cleanup/hygiene or branch deletion candidates. Apply `docs/archive/branch-cleanup-guide.md` before inspecting branch diffs.
 - `pr-ci-fix`: Use only for an explicitly authorised Ward PR/CI repair. Verify the exact repository and head; provider reads/writes, comments, reruns and publication need their applicable authority. Routine local scoped repairs follow the task authorisation. The inherited `Run PR` sweep is disabled in Ward and grants no authority.
 
 Recording completed reviews in a shared ledger (with a throttle on repeat Run PR sweeps) was

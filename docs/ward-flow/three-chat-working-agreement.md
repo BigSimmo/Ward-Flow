@@ -18,7 +18,7 @@ every checkout.
 
 ## 0. How to write to the owner
 
-**Read [how-to-write-to-the-owner.md](./how-to-write-to-the-owner.md) before your first message to
+**Read [how-to-write-to-the-owner.md](how-to-write-to-the-owner.md) before your first message to
 him.** He settled the format on 2026-09-01 after explaining it to several chats one at a time, and
 the point of writing it down is that a new chat inherits it instead of being told again.
 

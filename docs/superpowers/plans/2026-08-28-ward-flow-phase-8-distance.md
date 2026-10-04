@@ -23,7 +23,7 @@ tokens, Vitest, Playwright (project `chromium-mockups`).
 
 **Spec:** `docs/superpowers/specs/2026-08-28-ward-flow-phase-8-distance-design.md`
 **Settled decisions:** `docs/ward-flow-phase-8-decisions.md` (D8-1 … D8-7),
-`docs/ward-flow-roadmap.md`
+`docs/archive/ward-flow-roadmap.md`
 **Standing implementer rules:** `.superpowers/sdd/2026-08-27-ward-flow-phase-7-front-door/DISPATCH-PREAMBLE.md`
 
 ---

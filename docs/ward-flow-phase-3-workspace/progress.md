@@ -261,7 +261,7 @@ Fix round 3 dispatched, and it is the last for this task.
 
 ## Session 2 — resumed 2026-08-20
 
-New controller session. Confirmed the worktree, branch `codex/ward-management-design`, clean tree at f3ebd8ccf (60 commits ahead of origin/main, none pushed). Live ledger and the committed copy at `docs/ward-flow-phase-3-ledger.md` agree apart from Prettier reflow, so no ledger work was lost with the previous session.
+New controller session. Confirmed the worktree, branch `codex/ward-management-design`, clean tree at f3ebd8ccf (60 commits ahead of origin/main, none pushed). Live ledger and the committed copy at `docs/archive/ward-flow-phase-3-ledger.md` agree apart from Prettier reflow, so no ledger work was lost with the previous session.
 
 Independent baseline taken before dispatching anything, not read from the previous session's report: `tsc --noEmit` clean, and 58 unit tests green across the seven Phase 3 suites.
 
@@ -494,7 +494,7 @@ Ruling R30 — record the browser gate as verified at f1e32dcd4 and explicitly *
 
 Also recorded in the handover as a new environment trap: after hours of agent work this box can exhaust memory, and the symptom is not an error message but everything slowing, then the dev server refusing to start, then a Playwright run aborting as "N did not run" at exit 0. Check free memory before debugging code late in a session.
 
-Handover rewritten in full at `docs/ward-flow-phase-3-handover.md`: state, task table, the clinician's verbatim answer and what it invalidated, the three unconfirmed assumptions, standing instructions, verification baselines with their provenance, eleven environment traps, the guard-overclaim lesson, and the resume steps. Committed ledger copy refreshed from this file.
+Handover rewritten in full at `docs/archive/ward-flow-phase-3-handover.md`: state, task table, the clinician's verbatim answer and what it invalidated, the three unconfirmed assumptions, standing instructions, verification baselines with their provenance, eleven environment traps, the guard-overclaim lesson, and the resume steps. Committed ledger copy refreshed from this file.
 
 ### 2026-08-22 — the branch was pushed, and the push emptied `node_modules`
 
@@ -721,8 +721,8 @@ Mid-session, HEAD moved underneath me without my running any `git commit`. At se
 "docs(ward-flow): browser gate verified green at HEAD, 24 passed", authored 03:22:02 by the same
 git identity. `git reflog` confirms it as a real local commit, not a fetch.
 
-Its content is docs-only — `docs/ward-flow-phase-3-handover.md`,
-`docs/ward-flow-phase-3-ledger.md`, `docs/ward-flow-phase-3-workspace/progress.md`, 31 insertions —
+Its content is docs-only — `docs/archive/ward-flow-phase-3-handover.md`,
+`docs/archive/ward-flow-phase-3-ledger.md`, `docs/ward-flow-phase-3-workspace/progress.md`, 31 insertions —
 and it describes performing the same browser-gate verification I performed, reaching the same
 conclusion by the same reasoning (cold start, 23 passed with one route-walking failure, then 24/24
 warm) but with **different measured numbers** (945s to dev-server readiness and 43s for the isolated

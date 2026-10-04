@@ -560,7 +560,7 @@ psychiatrist searches, the patient appears with the referral attached, and the o
 from there. **Nobody needs to be given a whole department's list to satisfy it.**
 
 **3. The tentative diagnosis is selected here, and can be updated.** Confirms `FD-7` reaches the
-referral. On updating, see the seam note in `docs/ward-flow-mission-and-refusals.md`: **a later
+referral. On updating, see the seam note in `docs/archive/ward-flow-mission-and-refusals.md`: **a later
 clinician revising it is a second authored fact with its own author and time, not an overwrite** —
 that is how "can be updated" is implemented without destroying what the referrer actually asked for.
 
@@ -777,7 +777,7 @@ hub's outgoing referrals must not bypass that gate.
 
 **2026-08-18:** a ward's refusal is recorded against the patient and that ward drops out of
 suggestions for them — **and service-level "who refuses most" reporting is explicitly rejected as
-politically charged.** Recorded in `docs/ward-flow-mission-and-refusals.md`.
+politically charged.** Recorded in `docs/archive/ward-flow-mission-and-refusals.md`.
 
 ### The gap in the evidence, stated rather than papered over
 
