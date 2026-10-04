@@ -55,11 +55,9 @@ import {
 } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
-  ARRIVAL_LATE_AFTER_MINUTES,
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
   GENDER_MISMATCH_DECLINE_REASON,
-  LEAVE_BED_OPEN_WARNING_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
   isArrivalLate as isArrivalLateClock,
   leaveBedNeedsOpenWarning as leaveBedNeedsOpenWarningClock,
@@ -1008,7 +1006,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
           !(genderPlacementPending && gate.gate === "gender_designation"),
       );
       const judgements = failing.filter((gate) => SUITABILITY_GATES.includes(gate.gate));
-      let availability: ShortlistAvailability = verdict.eligible
+      const availability: ShortlistAvailability = verdict.eligible
         ? "eligible"
         : blocking.length > 0
           ? "unavailable"
@@ -1977,9 +1975,7 @@ export function isArrivalLate(
   return isArrivalLateClock(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now);
 }
 
-export function medicalClearanceWarning(
-  movement: Pick<Movement, "medicalClearance">,
-): string | null {
+export function medicalClearanceWarning(movement: Pick<Movement, "medicalClearance">): string | null {
   if (movement.medicalClearance === undefined) return null;
   if (movement.medicalClearance.cleared) return null;
   return "Not medically cleared — warning only; hold and collection may continue.";

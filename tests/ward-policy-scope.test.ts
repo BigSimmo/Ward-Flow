@@ -36,6 +36,6 @@ describe("policy-only coverage contract", () => {
     const workflow = readFileSync(new URL("../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
     expect(workflow).toMatch(/steps\.plan\.outputs\.policy == 'true'/u);
     expect(workflow).toContain("node scripts/ward-ci-public/check-policy-contracts.mjs");
-    expect(workflow).toContain("needs: [static, unit, browser]");
+    expect(workflow).toContain("needs: [static, unit, browser, secret-scan, build, coverage]");
   });
 });
