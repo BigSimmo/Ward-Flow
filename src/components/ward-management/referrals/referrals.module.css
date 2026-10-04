@@ -31,7 +31,10 @@
      literal `40rem` in this file's media query means, kept deliberately. */
   --ri-two-col-breakpoint: 40rem;
 
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
   /* ⚠️ NO `background` HERE, DELIBERATELY, AND THIS FILE IS THE ONE THAT PREDICTED WHY IT WOULD BE
      RISKY. It was painting `var(--surface)` straight over `--ward-ground`, which `WardGround`
      (`ward-shell.module.css`) paints on a real DOM ancestor of this page's `<main>` — the defect
@@ -57,6 +60,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: var(--ward-space-20);
   /*
    * 🔴 **THE `overflow-x: hidden; overflow-y: auto;` PAIR THAT USED TO BE HERE IS WHY
@@ -120,8 +124,49 @@
 
 .pageHeader {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+.pageTitleBlock {
+  display: flex;
   flex-direction: column;
-  gap: var(--ward-space-4);
+  gap: 0.125rem;
+}
+
+.pageTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.liveDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.headerTelemetry {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .pageTitle {
@@ -2712,6 +2757,12 @@ input.historyField:focus-visible {
   gap: 1rem;
 }
 
+.screen[data-referral-view="intake"] footer,
+.screen[data-referral-view="intake"] [data-testid="ward-referral-intake-governance"] {
+  order: 99 !important;
+  margin-top: 2rem !important;
+}
+
 .personPanel {
   order: 1;
   overflow: hidden;
@@ -3879,6 +3930,7 @@ input.historyField:focus-visible {
 
 .screen[data-referral-view="register"] .cardList {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -4018,6 +4070,7 @@ input.historyField:focus-visible {
   font-size: 0.75rem;
   color: var(--muted);
   width: 100%;
+  min-width: 0;
 }
 
 .bedAssignedBadge {
@@ -4031,6 +4084,8 @@ input.historyField:focus-visible {
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
   line-height: 1.2;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .bedUnassignedBadge {
@@ -4044,6 +4099,23 @@ input.historyField:focus-visible {
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
   line-height: 1.2;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.bedDeclinedBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .cardRouteRow {
@@ -4150,9 +4222,13 @@ input.historyField:focus-visible {
 }
 
 .screen[data-referral-view="register"] .cardService {
-  grid-column: 1 / -1;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--muted);
-  font-size: var(--t-1);
+  font-size: var(--t-0, 0.75rem);
 }
 
 .screen[data-referral-view="register"] .cardBody {
@@ -4216,7 +4292,7 @@ input.historyField:focus-visible {
   }
 
   .screen[data-referral-view="register"] .registerLayout {
-    grid-template-columns: minmax(30rem, 1.1fr) minmax(24rem, 0.9fr);
+    grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
   }
 
   .screen[data-referral-view="register"] .registerQueue,
@@ -4370,11 +4446,11 @@ input.historyField:focus-visible {
 @media (min-width: 62.5625rem) {
   .screen[data-referral-view="register"] .registerLayout {
     display: grid;
-    grid-template-columns: minmax(24rem, 1.15fr) minmax(28rem, 1.35fr);
+    grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
     grid-template-rows: minmax(0, 1fr);
-    min-height: 0;
-    height: clamp(24rem, calc(100dvh - 28rem), 56rem);
-    max-height: clamp(24rem, calc(100dvh - 28rem), 56rem);
+    min-height: 48rem;
+    height: 52rem;
+    max-height: 56rem;
     gap: var(--ward-space-16);
     align-items: stretch;
   }
@@ -4411,8 +4487,8 @@ input.historyField:focus-visible {
     border: 1px solid var(--line);
     border-radius: var(--r1, 10px);
     box-shadow: var(--lift);
-    padding: var(--ward-space-16, 1rem);
-    gap: var(--ward-space-14, 0.875rem);
+    padding: 0;
+    gap: 0;
     box-sizing: border-box;
   }
 
@@ -4582,6 +4658,13 @@ input.historyField:focus-visible {
   border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
   margin: 0;
   line-height: 1.35;
+}
+
+.matchCompactNoticeWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
 }
 
 .screen[data-referral-view="register"] .registerDetail .acceptingCountBannerPositive {
@@ -5498,6 +5581,92 @@ input.historyField:focus-visible {
   gap: 10px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.masterTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.identityCluster {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.identityHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.identityBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.masterActionCluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.elapsedWaitChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border, var(--line));
+  border-radius: var(--r2, 6px);
+  padding: 4px 10px;
+}
+
+.clinicalMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.metaCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metaLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.metaValue {
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bannerIdentityRow {
@@ -5557,17 +5726,17 @@ input.historyField:focus-visible {
 .tabNav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   border-bottom: 1px solid var(--line);
-  padding: 0 16px;
+  padding: 4px 18px;
   background: var(--surface);
 }
 
 .tabBtn {
   border: 0;
   background: transparent;
-  padding: 10px 14px;
-  font-size: var(--t-1, 13px);
+  padding: 6px 12px;
+  font-size: var(--t-0, 12px);
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -5575,16 +5744,19 @@ input.historyField:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: color 0.12s ease;
+  border-radius: var(--radius-sm, 4px);
+  transition: all 0.15s ease;
 }
 
 .tabBtn:hover {
   color: var(--ink);
+  background: var(--surface-2);
 }
 
 .tabBtnActive,
 .tabBtn[aria-selected="true"] {
-  color: var(--accent-ink);
+  color: var(--accent);
+  background: var(--accent-soft, rgba(0, 102, 204, 0.08));
   font-weight: 700;
 }
 
@@ -5592,16 +5764,107 @@ input.historyField:focus-visible {
 .tabBtn[aria-selected="true"]::after {
   content: "";
   position: absolute;
-  bottom: -1px;
-  left: 10px;
-  right: 10px;
+  bottom: -5px;
+  left: 8px;
+  right: 8px;
   height: 2px;
-  background: var(--gilt);
+  background: var(--accent);
+  border-radius: 2px;
 }
 
 .tabIcon {
   flex-shrink: 0;
   color: currentColor;
+}
+
+.unifiedTriageBanner {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--good);
+  border-radius: var(--r2, 6px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 18px 8px;
+}
+
+.triageSummaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.triageLeadText {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.triageLargeCount {
+  font-size: var(--t-3, 15px);
+  font-weight: 800;
+  color: var(--good);
+}
+
+.triagePillGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.triageMiniPill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm, 4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pillGood {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.pillWarn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.pillMuted {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.governanceDisclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.governanceNoticeText {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.syntheticNoticeInline {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .secHeader {
@@ -5882,3 +6145,128 @@ input.historyField:focus-visible {
 .btnDangerAction:hover {
   background: var(--ward-fixed-danger-border);
 }
+
+.historyCorrectionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+}
+
+.historyCard,
+.correctionsCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+}
+
+.historySectionHeading {
+  margin: 0;
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.historyTextContainer {
+  font-size: var(--t-1, 13px);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.historyText {
+  margin: 0;
+}
+
+.correctionsEmpty {
+  margin: 0;
+  font-size: var(--t-1, 13px);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.correctionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.correctionItem {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+}
+
+.correctionNoteText {
+  margin: 0 0 4px 0;
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.correctionMetaText {
+  margin: 0;
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.correctionControlsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin-top: var(--ward-space-8);
+  padding-top: var(--ward-space-10);
+  border-top: 1px dashed var(--line);
+}
+
+.correctionActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.addCorrectionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ward-border);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.addCorrectionBtn:hover:not([aria-disabled="true"]) {
+  background: var(--surface-subtle);
+  border-color: var(--ink-soft);
+}
+
+.addCorrectionBtn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.correctionDisclaimer {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 200px;
+}
+

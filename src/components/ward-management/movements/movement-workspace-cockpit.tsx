@@ -26,10 +26,10 @@ import {
 } from "lucide-react";
 
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   clockState,
@@ -580,8 +580,6 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
               {patient.specialling ? <WardChip level="routine">Specialling</WardChip> : null}
             </div>
           </div>
-
-          <LegalLimitsNotChecked />
 
           {/* Route & Trajectory Banner */}
           <div className={styles.trajectoryLine}>
@@ -1145,10 +1143,10 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
           <div className={styles.commandColumn}>{open ? renderActions(patient) : null}</div>
         </div>
 
-        <p className={styles.governanceNote}>
-          Synthetic prototype only. Eligibility is checked automatically; an authorised human confirms every
-          destination. This is not clinical severity.
-        </p>
+        <WardPrototypeFooter
+          testId="ward-console-governance"
+          note="Synthetic prototype only · Eligibility is checked automatically; an authorised human confirms every destination · Not clinical severity"
+        />
         <span id="ward-console-confirm-unavailable" className="sr-only">
           Confirming a destination is not built yet. Nothing is recorded when this control is activated.
         </span>

@@ -101,7 +101,6 @@ import styles from "./ed.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 const RECORDED_ED_FORMS = ["1A", "3B", "3D", "4A", "4C"] as const;
 
@@ -6602,9 +6601,6 @@ export function EdScreen({ edId }: EdScreenProps) {
             </section>
           );
         })()}
-        <div className={styles.footerLegalNotice}>
-          <LegalLimitsNotChecked />
-        </div>
         <WardPrototypeFooter testId="ward-ed-governance" note="Emergency department census · Not a medical device" />
       </main>
       {arrivalPlanMovement ? (

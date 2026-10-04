@@ -8,100 +8,63 @@
 .pageGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "switcher switcher"
-    "sovereigntabs sovereigntabs"
-    "identity identity"
-    "urgency urgency"
-    "diurnal diurnal"
-    "bands trend"
-    "waiting destinations"
-    "weat weat"
-    "declines limits"
-    "comparison comparison"
-    "measures measures"
-    "about about";
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.875rem;
   align-items: start;
 }
 
-.pageGrid > :global([data-testid="ward-statistics-ed-identity"]) {
-  grid-area: identity;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-measures"]) {
-  grid-area: measures;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-urgency"]) {
-  grid-area: urgency;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]) {
-  grid-area: diurnal;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
-  grid-area: weat;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-wait"]) {
-  grid-area: waiting;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-bands"]) {
-  grid-area: bands;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-declines"]) {
-  grid-area: declines;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-not-built"]) {
-  grid-area: limits;
-}
-.pageGrid > :global([data-testid="ward-stat-ed-trend"]) {
-  grid-area: trend;
-}
-.pageGrid > :global([data-testid="ward-stat-ed-destinations"]) {
-  grid-area: destinations;
-}
-.pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
-  grid-area: comparison;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-about"]) {
-  grid-area: about;
-}
-.pageGrid > :global([data-testid="ward-statistics-ed-unresolved"]) {
+.fullWidth {
   grid-column: 1 / -1;
+  width: 100%;
 }
 
-/* Tab filter switching */
-.pageGrid[data-active-tab="queue"]
-  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
-    :global([data-testid="ward-statistics-ed-wait"])
-  ):not(.departmentSwitcher):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
-  display: none !important;
+.measureColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  align-items: start;
+  min-width: 0;
 }
-.pageGrid[data-active-tab="distribution"]
-  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
-    :global([data-testid="ward-statistics-ed-urgency"])
-  ):not(:global([data-testid="ward-statistics-ed-diurnal"])):not(:global([data-testid="ward-statistics-ed-bands"])):not(
-    .departmentSwitcher
-  ):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
-  display: none !important;
+
+.measureColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
 }
-.pageGrid[data-active-tab="weat"]
-  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
-    :global([data-testid="ward-statistics-ed-weat"])
-  ):not(:global([data-testid="ward-stat-ed-trend"])):not(.departmentSwitcher):not(.sovereignTabs):not(
-    :global([data-testid="ward-statistics-ed-about"])
-  ) {
-  display: none !important;
+
+.measuresRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0;
 }
-.pageGrid[data-active-tab="comparison"]
-  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
-    :global([data-testid="ward-stat-ed-comparison"])
-  ):not(.departmentSwitcher):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
+
+.measureCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.diurnalCurveWrap {
+  padding: 0.5rem 0;
+  width: 100%;
+}
+
+/* Tab filter state mappings for data-active-tab */
+.pageGrid[data-active-tab="queue"] [data-tab-section]:not([data-tab-section="queue"]):not([data-tab-section="common"]),
+.pageGrid[data-active-tab="distribution"] [data-tab-section]:not([data-tab-section="distribution"]):not([data-tab-section="common"]),
+.pageGrid[data-active-tab="weat"] [data-tab-section]:not([data-tab-section="weat"]):not([data-tab-section="common"]),
+.pageGrid[data-active-tab="comparison"] [data-tab-section]:not([data-tab-section="comparison"]):not([data-tab-section="common"]) {
   display: none !important;
 }
 
 /* ─── Department Switcher ─── */
 .departmentSwitcher {
-  grid-area: switcher;
   display: flex;
   overflow-x: auto;
   border: 1px solid var(--line);
@@ -143,7 +106,6 @@
 
 /* ─── Sovereign Tab Strip ─── */
 .sovereignTabs {
-  grid-area: sovereigntabs;
   display: flex;
   gap: 0.375rem;
   max-width: 100%;
@@ -243,6 +205,18 @@
 .metricBand > div:last-child,
 .kpiBand > div:last-child {
   border-right: 0;
+}
+
+.measureColumn .kpiBand {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.measureColumn .kpiBand > div:nth-child(2n) {
+  border-right: 0;
+}
+
+.measureColumn .kpiBand > div:nth-child(n+3) {
+  border-top: 1px solid var(--line);
 }
 
 .kpi {

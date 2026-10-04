@@ -23,6 +23,7 @@ import {
   type MovementId,
 } from "@/components/ward-management/ward-model";
 import styles from "./ward-management.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementWorkspaceCockpit } from "@/components/ward-management/movements/movement-workspace-cockpit";
 import {
   stageReachedAt,
@@ -204,6 +205,7 @@ export function WardMovementNotFound({
             </>
           )}
         </p>
+        <WardPrototypeFooter testId="ward-console-governance" />
       </main>
     </div>
   );

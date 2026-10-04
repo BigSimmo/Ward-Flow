@@ -4,13 +4,15 @@ import styles from "./ward-prototype-footer.module.css";
 export interface WardPrototypeFooterProps {
   testId?: string;
   note?: ReactNode;
+  extra?: ReactNode;
   style?: CSSProperties;
   className?: string;
 }
 
 export function WardPrototypeFooter({
   testId,
-  note = "Demonstration records only — Not a medical device",
+  note = "Western Australia Mental Health Bed Flow Prototype · All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures · Not a medical device",
+  extra,
   style,
   className,
 }: WardPrototypeFooterProps) {
@@ -21,12 +23,19 @@ export function WardPrototypeFooter({
       aria-label="Prototype disclosure"
       style={style}
     >
-      <span className={styles.prototypeBadge} data-ward-type-floor="badge">
-        Synthetic prototype
-      </span>
-      <span className={styles.footerNote} data-ward-type-floor="banner">
-        {note}
-      </span>
+      <div className={styles.leftGroup}>
+        <span className={styles.prototypeBadge} data-ward-type-floor="badge">
+          <span className={styles.pulseDot} aria-hidden="true" />
+          Synthetic prototype
+        </span>
+        <span className={styles.footerNote} data-ward-type-floor="banner">
+          {note}
+        </span>
+      </div>
+      <div className={styles.rightGroup}>
+        {extra}
+        <span className={styles.authorityPill}>WA Health Clinical Flow · 100% Synthetic Data</span>
+      </div>
     </footer>
   );
 }

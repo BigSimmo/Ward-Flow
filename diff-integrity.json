@@ -367,6 +367,13 @@
       "after": 0,
       "reason": "Josh asked on 28 September 2026 for the Ward Flow developer key to be removed. The key gate, its key screen, the signed-cookie helpers (link-access*.ts) and DeveloperAreaRouteGuard went together: the route guard only existed to re-run the key check on client navigation inside the gate, and its sole importer was the deleted gate. This file tested only that guard.",
       "approvedOn": "2026-09-28"
+    },
+    {
+      "path": "tests/ward-legal-limits-not-checked.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Josh requested the removal of the Mental Health Act disclaimer notice ('Not legally checked: these Mental Health Act time limits are typed in and have not been checked against the Act by anyone with legal knowledge. Do not rely on them.') from the top and bottom of all pages across the prototype, and the removal of tests asserting that text. This suite enforced the disclaimer notice presence across ward screens and is retired per request.",
+      "approvedOn": "2026-10-04"
     }
   ]
 }

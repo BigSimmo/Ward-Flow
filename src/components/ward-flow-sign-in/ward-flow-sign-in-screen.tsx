@@ -22,6 +22,7 @@ import {
   type SignInRoleId,
 } from "./ward-flow-sign-in-data";
 import styles from "./ward-flow-sign-in-screen.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
  * WARD FLOW — SIGN IN AND ROLE.
@@ -471,15 +472,11 @@ export function WardFlowSignInScreen() {
       </section>
 
       {/* Mandatory Prototype Disclosure */}
-      <aside className={styles.prototypeNotice} aria-label="Prototype Disclosure">
-        <p>
-          Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
-          not clinical decision support.
-        </p>
-        <p className={styles.auditMeta}>
-          Western Australia Health Mental Health Directorate · Prototype Third Edition · Reference Model
-        </p>
-      </aside>
+      <WardPrototypeFooter
+        testId="ward-sign-in-governance"
+        note="Every ward state, movement, referral, clock and figure on these screens is invented · Not a medical device and not clinical decision support"
+        style={{ maxWidth: "70rem", width: "100%", marginTop: "1.5rem", borderRadius: "var(--r1)" }}
+      />
     </main>
   );
 }

@@ -81,9 +81,7 @@ import {
   type Patient,
   type PatientId,
 } from "@/components/ward-management/ward-patients";
-
 import styles from "./community.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   DEMO_COMMUNITY_REFERRALS,
   DEMO_COMMUNITY_INPATIENTS,
@@ -1044,7 +1042,6 @@ export function CommunityScreen({
           {isDemoMode && (
             <div className="sr-only">
               <span>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</span>
-              <LegalLimitsNotChecked variant="tag" />
             </div>
           )}
 
@@ -1061,7 +1058,6 @@ export function CommunityScreen({
                       ? "Fremantle Hospital · Alma Street · Fremantle Adult CMHT (SMHS)"
                       : team.name}
                   </h1>
-                  <LegalLimitsNotChecked />
                   <span className="sr-only">
                     The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.
                   </span>

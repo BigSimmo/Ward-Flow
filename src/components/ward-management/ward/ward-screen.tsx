@@ -96,7 +96,6 @@ import { WardHomeTab } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
 import { WardBedsMatrix } from "./ward-beds-matrix";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -1579,7 +1578,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     >
       <main id="main-content" className={styles.main}>
         <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : "Ward"}</h1>
-        <LegalLimitsNotChecked />
 
         {/* Item 44, build plan task F3, §3 "Ward": this page is about ONE named place (§2 "Never
          *  hidden", S4) and is never itself narrowed by the chosen service — this states how the
@@ -1962,7 +1960,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-return"
           data-active={activeTab === "return"}
         >
-          <WardDecisionsCockpit unit={unit} />
+          <WardDecisionsCockpit unit={unit} demonstration />
           <div className={styles.censusCommandCard} style={{ marginTop: "1rem", padding: "16px 20px" }}>
             <details
               className={styles.clinicalDisclosure}

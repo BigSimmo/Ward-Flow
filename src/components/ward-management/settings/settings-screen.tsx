@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Activity,
   AlertTriangle,
   Bell,
   Check,
@@ -11,11 +12,14 @@ import {
   Download,
   Layers,
   Minus,
+  Monitor,
+  Moon,
   Palette,
   Plus,
   RotateCcw,
   Search,
   Sliders,
+  Sun,
   Trash2,
   Upload,
   X,
@@ -663,151 +667,199 @@ export function SettingsScreen() {
   return (
     <div className={styles.screen} data-testid="ward-settings-screen" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        {/* Third-Edition Sovereign Header with Context & Clinical Profile */}
+        {/* Apple/ChatGPT-style Sovereign Settings Header & Clinical Profile */}
         <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderLeft}>
-            <div className={styles.headerContextPill}>
-              <strong>WA HEALTH</strong> · STATEWIDE BED COORDINATION · PERTH CENTRAL DESK · DAY SHIFT 08:00–16:30 AWST
-            </div>
-            <div className={styles.titleRow}>
-              <h1 className={styles.pageTitle} aria-label="Settings">
-                <span>Settings</span> <span className={styles.pageTitleSub}>&amp; coordination rules</span>
-              </h1>
-              {savedSurge ? (
-                <span className={styles.statusPillSurge}>
-                  <span className={styles.statusDotSurge} /> SURGE VALUES SAVED
-                </span>
-              ) : (
-                <span className={styles.statusPillStandard}>
-                  <span className={styles.statusDotStandard} /> CURRENT SAVED RULES
-                </span>
-              )}
-            </div>
-            {hasUnsavedRules ? (
-              <div className={styles.unsavedPill} role="status">
-                <span className={styles.unsavedDot} aria-hidden="true" />
-                <span>Unsaved changes — Save coordination rules to apply.</span>
+          {/* Accessible Level-1 Heading for Screen Readers and Contract Compliance */}
+          <h1 className={styles.srOnly} aria-label="Settings">
+            Settings
+          </h1>
+
+          {/* Top Clinical Operator Profile Card */}
+          <div className={styles.profileHeaderCard}>
+            <div className={styles.profileHeaderMain}>
+              <div className={styles.profileAvatarWrap}>
+                <div className={styles.profileAvatar}>SC</div>
+                <span className={styles.profileStatusDot} title="On Duty" />
               </div>
-            ) : null}
-          </div>
-          <div className={styles.hdrEnd}>
-            <button
-              type="button"
-              className={`${styles.btnSurge} ${isSurge ? styles.btnSurgeActive : ""}`}
-              onClick={handleToggleSurge}
-              aria-pressed={isSurge}
-              title="Select surge values in the unsaved draft"
-            >
-              <Plus size={15} aria-hidden="true" />
-              <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
-            </button>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={() => setIsResetModalOpen(true)}
-              aria-haspopup="dialog"
-            >
-              <RotateCcw size={15} aria-hidden="true" />
-              <span>Restore all defaults</span>
-            </button>
-            <button type="button" className={styles.btnPrimary} onClick={handleSave}>
-              <Check size={15} aria-hidden="true" />
-              <span>Save coordination rules</span>
-            </button>
+              <div className={styles.profileMeta}>
+                <div className={styles.profileNameRow}>
+                  <h2 className={styles.profileName}>Dr S. Chen</h2>
+                  <span className={styles.profileCreds}>(MBBS, FRANZCP)</span>
+                  <span className={styles.profileBadgePrimary}>Consultant</span>
+                  <span className={styles.profileBadgeSecondary}>Perth Central Desk</span>
+                </div>
+                <p className={styles.profileSub}>
+                  <span>Duty Coordinator</span>
+                  <span className={styles.profileDotSep}>·</span>
+                  <span>Day Shift 08:00–16:30 AWST</span>
+                  <span className={styles.profileDotSep}>·</span>
+                  <span className={styles.profileLiveStatus}>Active Session</span>
+                </p>
+              </div>
+            </div>
 
-            <div className={styles.hdrDivider} aria-hidden="true" />
-
-            {/* Clinical Operator Profile Component */}
-            <div className={styles.userProfileWrap} ref={profileRef}>
+            <div className={styles.profileActions}>
               <button
                 type="button"
-                className={styles.userProfile}
-                id="userProfileBtn"
-                data-testid="clinical-operator-profile"
-                aria-haspopup="dialog"
-                aria-expanded={isProfileOpen}
-                aria-controls="profilePopover"
-                onClick={() => setIsProfileOpen((v) => !v)}
-                title="Clinical Operator Profile · Dr S. Chen"
+                className={styles.profileBtnSecondary}
+                onClick={() => setIsOperatorModalOpen(true)}
+                title="Switch active operator"
               >
-                <div className={styles.userAvatar}>
-                  <span>SC</span>
-                  <span className={styles.userStatusDot} title="On Duty" />
-                </div>
-                <div className={styles.userInfo}>
-                  <div className={styles.userNameRow}>
-                    <span className={styles.userName}>Dr S. Chen</span>
-                    <span className={styles.userRoleBadge}>Consultant</span>
+                Switch Operator
+              </button>
+              <div className={styles.userProfileWrap} ref={profileRef}>
+                <button
+                  type="button"
+                  className={styles.profileBtnGhost}
+                  id="userProfileBtn"
+                  data-testid="clinical-operator-profile"
+                  aria-haspopup="dialog"
+                  aria-expanded={isProfileOpen}
+                  aria-controls="profilePopover"
+                  onClick={() => setIsProfileOpen((v) => !v)}
+                  title="Clinical Operator Profile · Dr S. Chen"
+                >
+                  <span>Delegation</span>
+                  <ChevronDown size={13} className={styles.userChevron} aria-hidden="true" />
+                </button>
+
+                {isProfileOpen && (
+                  <div
+                    className={styles.profilePopover}
+                    id="profilePopover"
+                    data-testid="profile-popover"
+                    role="dialog"
+                    aria-label="Operator Profile Details"
+                  >
+                    <div className={styles.popoverHdr}>
+                      <div className={styles.popoverAvatar}>SC</div>
+                      <div className={styles.popoverIdentity}>
+                        <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
+                        <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
+                        <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
+                      </div>
+                    </div>
+                    <div className={styles.popoverBody}>
+                      <div className={styles.popoverSection}>
+                        <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
+                        <div className={styles.popoverRow}>
+                          <span>Operational Scope:</span>
+                          <span>Statewide Bed Desk</span>
+                        </div>
+                        <div className={styles.popoverRow}>
+                          <span>Clinical Governance:</span>
+                          <span>SMHS &amp; WACHS Liaison</span>
+                        </div>
+                        <div className={styles.popoverRow}>
+                          <span>Legal Forms:</span>
+                          <span className="mono">Forms 1A, 4A, 6A</span>
+                        </div>
+                        <div className={styles.popoverRow}>
+                          <span>AHPRA Number:</span>
+                          <span className="mono">MED0001892041</span>
+                        </div>
+                        <div className={styles.popoverRow}>
+                          <span>Shift Schedule:</span>
+                          <span className="mono">08:00–16:30 AWST</span>
+                        </div>
+                      </div>
+                      <div className={styles.popoverActions}>
+                        <button
+                          type="button"
+                          className={styles.btnSecondary}
+                          style={{ flex: 1 }}
+                          onClick={() => showToast("Verify authority is not wired in this prototype.")}
+                        >
+                          Verify Authority
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnPrimary}
+                          style={{ flex: 1 }}
+                          onClick={() => {
+                            setIsOperatorModalOpen(true);
+                            setIsProfileOpen(false);
+                          }}
+                        >
+                          Switch Operator
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span className={styles.userRoleDesc}>Duty Coordinator · Central Desk</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Executive Live Telemetry & Quick Action Command Ribbon */}
+          <div className={styles.telemetryRibbon} data-testid="settings-telemetry-ribbon">
+            <div className={styles.telemetryLeftGroup}>
+              <div className={styles.telemetryTag}>
+                <Activity size={12} className={styles.telemetryPulseIcon} aria-hidden="true" />
+                <span>Live Telemetry</span>
+              </div>
+              <div className={styles.telemetryValuesRow}>
+                <span>
+                  ED Dwell: <b>{draft.edAccessTargetMinutes / 60}h</b>
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  Cap: <b>{draft.parallelReferralCap}u</b>
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  Hold: <b>{draft.pullHoldMinutes}m</b>
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.telemetryActionsGroup}>
+              {hasUnsavedRules ? (
+                <div className={styles.statusPillDirty} role="status">
+                  <span className={styles.unsavedDot} aria-hidden="true" />
+                  <span>Unsaved changes — Save coordination rules to apply.</span>
                 </div>
-                <ChevronDown size={14} className={styles.userChevron} aria-hidden="true" />
+              ) : savedSurge ? (
+                <span className={styles.statusPillSurge}>
+                  <span className={styles.statusDotSurge} aria-hidden="true" /> SURGE VALUES SAVED
+                </span>
+              ) : (
+                <span className={styles.statusPillClean}>
+                  <span className={styles.statusDotClean} aria-hidden="true" /> CURRENT SAVED RULES
+                </span>
+              )}
+
+              <button
+                type="button"
+                className={`${styles.btnSurgeRibbon} ${isSurge ? styles.btnSurgeRibbonActive : ""}`}
+                onClick={handleToggleSurge}
+                aria-pressed={isSurge}
+                title="Select surge values in the unsaved draft"
+              >
+                <Plus size={13} aria-hidden="true" />
+                <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
               </button>
 
-              {isProfileOpen && (
-                <div
-                  className={styles.profilePopover}
-                  id="profilePopover"
-                  data-testid="profile-popover"
-                  role="dialog"
-                  aria-label="Operator Profile Details"
-                >
-                  <div className={styles.popoverHdr}>
-                    <div className={styles.popoverAvatar}>SC</div>
-                    <div className={styles.popoverIdentity}>
-                      <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
-                      <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
-                      <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
-                    </div>
-                  </div>
-                  <div className={styles.popoverBody}>
-                    <div className={styles.popoverSection}>
-                      <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
-                      <div className={styles.popoverRow}>
-                        <span>Operational Scope:</span>
-                        <span>Statewide Bed Desk</span>
-                      </div>
-                      <div className={styles.popoverRow}>
-                        <span>Clinical Governance:</span>
-                        <span>SMHS &amp; WACHS Liaison</span>
-                      </div>
-                      <div className={styles.popoverRow}>
-                        <span>Legal Forms:</span>
-                        <span className="mono">Forms 1A, 4A, 6A</span>
-                      </div>
-                      <div className={styles.popoverRow}>
-                        <span>AHPRA Number:</span>
-                        <span className="mono">MED0001892041</span>
-                      </div>
-                      <div className={styles.popoverRow}>
-                        <span>Shift Schedule:</span>
-                        <span className="mono">08:00–16:30 AWST</span>
-                      </div>
-                    </div>
-                    <div className={styles.popoverActions}>
-                      <button
-                        type="button"
-                        className={styles.btnSecondary}
-                        style={{ flex: 1 }}
-                        onClick={() => showToast("Verify authority is not wired in this prototype.")}
-                      >
-                        Verify Authority
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.btnPrimary}
-                        style={{ flex: 1 }}
-                        onClick={() => {
-                          setIsOperatorModalOpen(true);
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        Switch Operator
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                className={styles.btnRestoreRibbon}
+                onClick={() => setIsResetModalOpen(true)}
+                aria-haspopup="dialog"
+                title="Restore all defaults"
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                <span>Restore all defaults</span>
+              </button>
+
+              <button
+                type="button"
+                className={styles.btnSaveRibbon}
+                onClick={handleSave}
+                title="Save coordination rules"
+              >
+                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+                <span>Save coordination rules</span>
+              </button>
             </div>
           </div>
         </header>
@@ -889,6 +941,15 @@ export function SettingsScreen() {
               data-testid="ward-settings-category-rail"
               aria-label="Settings Categories"
             >
+              {/* Floating Rail Executive Header */}
+              <div className={styles.railHeader}>
+                <div className={styles.railHeaderTitleRow}>
+                  <Sliders size={13} className={styles.railHeaderIcon} aria-hidden="true" />
+                  <span className={styles.railHeaderTitle}>Navigation</span>
+                </div>
+                <span className={styles.railHeaderBadge}>{SETTINGS_DOMAINS.length} Domains</span>
+              </div>
+
               {/* Integrated Sidebar Search */}
               <div className={styles.sidebarSearchWrap}>
                 <div className={styles.searchInputWrap}>
@@ -936,17 +997,16 @@ export function SettingsScreen() {
                     ) : (
                       <div className={styles.searchFeedbackZeroWrap}>
                         <span className={styles.searchFeedbackZero}>No settings match &ldquo;{searchQuery}&rdquo;</span>
-                        <a
-                          href="#clear-filter"
+                        <button
+                          type="button"
                           className={styles.searchFeedbackClearLink}
-                          onClick={(e) => {
-                            e.preventDefault();
+                          onClick={() => {
                             setSearchQuery("");
                             searchInputRef.current?.focus();
                           }}
                         >
                           Clear filter
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1062,19 +1122,14 @@ export function SettingsScreen() {
                         {isRowVisible("setting-appearance-theme") && (
                           <WardPanel title="Appearance" testId="ward-settings-appearance">
                             <div className={styles.preferenceBody}>
-                              <p className={styles.panelLead}>
-                                Choose your preferred visual presentation. Theme applies instantly across all clinical
-                                boards and persists across browser sessions.
-                              </p>
-
-                              <div className={styles.themeSelectorGrid} role="group" aria-label="Appearance">
+                              <div className={styles.shrunkThemeControl} role="group" aria-label="Appearance">
                                 {APPEARANCE_CHOICES.map((choice) => {
                                   const isSelected = appearance === choice.value;
                                   return (
                                     <button
                                       key={choice.value}
                                       type="button"
-                                      className={`${styles.themePreviewCard} ${isSelected ? styles.themePreviewCardActive : ""}`}
+                                      className={`${styles.shrunkThemeBtn} ${isSelected ? styles.shrunkThemeBtnActive : ""}`}
                                       aria-pressed={isSelected}
                                       aria-label={choice.label}
                                       data-testid={`ward-settings-appearance-${choice.value}`}
@@ -1083,48 +1138,14 @@ export function SettingsScreen() {
                                         showToast(`Theme set to ${choice.label}.`);
                                       }}
                                     >
-                                      {/* UI Miniature Swatch */}
-                                      <div
-                                        className={`${styles.themeMiniature} ${
-                                          choice.value === "light"
-                                            ? styles.themeMini_light
-                                            : choice.value === "dark"
-                                              ? styles.themeMini_dark
-                                              : styles.themeMini_auto
-                                        }`}
-                                        aria-hidden="true"
-                                      >
-                                        <div className={styles.miniHeader}>
-                                          <span className={styles.miniBrandDot} />
-                                          <span className={styles.miniHeaderBar} />
-                                        </div>
-                                        <div className={styles.miniBody}>
-                                          <div className={styles.miniSidebar}>
-                                            <span className={styles.miniNavDot} />
-                                            <span className={styles.miniNavDot} />
-                                          </div>
-                                          <div className={styles.miniContent}>
-                                            <div className={styles.miniCardActive} />
-                                            <div className={styles.miniCard} />
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* Metadata & Radio Indicator */}
-                                      <div className={styles.themeMetaRow}>
-                                        <div className={styles.themeNameGroup}>
-                                          <span className={styles.themeName}>{choice.label}</span>
-                                          <span className={styles.themeDescription}>{choice.description}</span>
-                                        </div>
-                                        <div
-                                          className={`${styles.themeRadioIndicator} ${
-                                            isSelected ? styles.themeRadioIndicatorActive : ""
-                                          }`}
-                                          aria-hidden="true"
-                                        >
-                                          {isSelected && <Check size={11} strokeWidth={3} aria-hidden="true" />}
-                                        </div>
-                                      </div>
+                                      {choice.value === "light" ? (
+                                        <Sun size={13} aria-hidden="true" />
+                                      ) : choice.value === "dark" ? (
+                                        <Moon size={13} aria-hidden="true" />
+                                      ) : (
+                                        <Monitor size={13} aria-hidden="true" />
+                                      )}
+                                      <span>{choice.label}</span>
                                     </button>
                                   );
                                 })}
@@ -1145,42 +1166,6 @@ export function SettingsScreen() {
                         {isRowVisible("setting-rail-density") && (
                           <WardPanel title="Navigation rail" testId="ward-settings-rail">
                             <div className={styles.preferenceBody}>
-                              <p className={styles.panelLead}>
-                                Adjust primary sidebar density. Expanded mode provides full text labels; collapsed mode
-                                maximizes clinical workspace area.
-                              </p>
-
-                              {/* Rail Preview Miniature Wireframes */}
-                              <div className={styles.railVisualContainer} aria-hidden="true">
-                                <div
-                                  className={`${styles.railMiniOption} ${!railOpen ? styles.railMiniOptionActive : ""}`}
-                                >
-                                  <div className={styles.railMiniWireframeCollapsed}>
-                                    <div className={styles.wireRailNarrow}>
-                                      <span className={styles.wireIcon} />
-                                      <span className={styles.wireIcon} />
-                                      <span className={styles.wireIcon} />
-                                    </div>
-                                    <div className={styles.wireWorkspaceWide} />
-                                  </div>
-                                  <span className={styles.railMiniLabel}>Narrow (Icons Only)</span>
-                                </div>
-
-                                <div
-                                  className={`${styles.railMiniOption} ${railOpen ? styles.railMiniOptionActive : ""}`}
-                                >
-                                  <div className={styles.railMiniWireframeExpanded}>
-                                    <div className={styles.wireRailWide}>
-                                      <span className={styles.wireRow} />
-                                      <span className={styles.wireRow} />
-                                      <span className={styles.wireRow} />
-                                    </div>
-                                    <div className={styles.wireWorkspaceNarrow} />
-                                  </div>
-                                  <span className={styles.railMiniLabel}>Wide (Expanded Labels)</span>
-                                </div>
-                              </div>
-
                               <div className={styles.preferenceStatus}>
                                 <span>Current</span>
                                 <strong data-testid="ward-settings-rail-now">{railOpen ? "Open" : "Closed"}</strong>
@@ -1346,39 +1331,34 @@ export function SettingsScreen() {
                           <div className={styles.paramCard}>
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
-                                <span className={styles.paramCardTitle}>
-                                  Emergency Department Access Target
-                                  <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60} Hours</span>
-                                </span>
+                                <div className={styles.paramTitleRow}>
+                                  <span className={styles.paramCardTitle}>
+                                    Emergency Department Access Target
+                                  </span>
+                                  <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60}h</span>
+                                  {draft.edAccessTargetMinutes <= 120 ? (
+                                    <span className={styles.badge} data-tone="danger">
+                                      Surge ({draft.edAccessTargetMinutes / 60}h)
+                                    </span>
+                                  ) : draft.edAccessTargetMinutes <= 240 ? (
+                                    <span className={styles.badge} data-tone="good">
+                                      Standard ({draft.edAccessTargetMinutes / 60}h)
+                                    </span>
+                                  ) : (
+                                    <span className={styles.badge} data-tone="warn">
+                                      Extended ({draft.edAccessTargetMinutes / 60}h)
+                                    </span>
+                                  )}
+                                  <span className={styles.paramSavedComparison}>
+                                    Saved: {configuration.edAccessTargetMinutes / 60}h
+                                  </span>
+                                </div>
                                 <p className={styles.paramCardRationale}>
-                                  Read by the Emergency department screen&rsquo;s own access-target line, its ED-home
-                                  summaries, and the movements board&rsquo;s wait meter — a departmental performance
-                                  measure, never a Mental Health Act deadline. Saved changes are recorded in the audit
-                                  trail.
+                                  Access-target benchmark for mental health clearance in emergency departments.
                                 </p>
                               </div>
-                              {draft.edAccessTargetMinutes <= 120 ? (
-                                <span className={styles.badge} data-tone="danger">
-                                  Surge ({draft.edAccessTargetMinutes / 60}h)
-                                </span>
-                              ) : draft.edAccessTargetMinutes <= 240 ? (
-                                <span className={styles.badge} data-tone="good">
-                                  Standard ({draft.edAccessTargetMinutes / 60}h)
-                                </span>
-                              ) : (
-                                <span className={styles.badge} data-tone="warn">
-                                  Extended ({draft.edAccessTargetMinutes / 60}h)
-                                </span>
-                              )}
                             </div>
                             <div className={styles.paramCardBody}>
-                              <div className={styles.paramReadoutBox}>
-                                <span className={styles.paramBigValue}>{draft.edAccessTargetMinutes / 60}</span>
-                                <span className={styles.paramUnitLabel}>Hours</span>
-                                <span className={styles.paramSavedComparison}>
-                                  Saved: {configuration.edAccessTargetMinutes / 60}h
-                                </span>
-                              </div>
                               <div className={styles.paramControlsCol}>
                                 <div className={styles.stepperCluster}>
                                   <button
@@ -1395,11 +1375,10 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={16} aria-hidden="true" />
+                                    <Minus size={15} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}</span>
-                                    <span className={styles.stepperUnit}>hours</span>
+                                    <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}h</span>
                                   </div>
                                   <button
                                     type="button"
@@ -1415,7 +1394,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={16} aria-hidden="true" />
+                                    <Plus size={15} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1436,24 +1415,11 @@ export function SettingsScreen() {
                                     />
                                     <span className={styles.sliderVal}>{draft.edAccessTargetMinutes / 60}h</span>
                                   </div>
-                                  <div className={styles.sliderTicks} aria-hidden="true">
-                                    {[2, 4, 8, 12, 24, 36].map((hrs) => {
-                                      const valMin = hrs * 60;
-                                      return (
-                                        <span
-                                          key={hrs}
-                                          className={`${styles.sliderTickItem} ${draft.edAccessTargetMinutes === valMin ? styles.sliderTickItemActive : ""}`}
-                                        >
-                                          {hrs}h
-                                        </span>
-                                      );
-                                    })}
+                                  <div className={styles.sliderFoot}>
+                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h (min)</span>
+                                    <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
+                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h (max)</span>
                                   </div>
-                                </div>
-                                <div className={styles.sliderFoot}>
-                                  <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h (minimum)</span>
-                                  <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
-                                  <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h (maximum)</span>
                                 </div>
                               </div>
                             </div>
@@ -1465,34 +1431,30 @@ export function SettingsScreen() {
                           <div className={styles.paramCard}>
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
-                                <span className={styles.paramCardTitle}>
-                                  Parallel Referral Enquiry Limit
+                                <div className={styles.paramTitleRow}>
+                                  <span className={styles.paramCardTitle}>
+                                    Parallel Referral Enquiry Limit
+                                  </span>
                                   <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
-                                </span>
+                                  {draft.parallelReferralCap >= 5 ? (
+                                    <span className={styles.badge} data-tone="warn">
+                                      Surge (5 units)
+                                    </span>
+                                  ) : (
+                                    <span className={styles.badge} data-tone="good">
+                                      Standard ({draft.parallelReferralCap} units)
+                                    </span>
+                                  )}
+                                  <span className={styles.paramSavedComparison}>
+                                    Saved: {configuration.parallelReferralCap} units
+                                  </span>
+                                </div>
                                 <p className={styles.paramCardRationale}>
-                                  Read by the coordinator&rsquo;s shortlist, the referral intake form, and the
-                                  statistics screen — how many wards one referral may be sent to in one act. Saved
-                                  changes are recorded in the audit trail.
+                                  Maximum inpatient wards a single referral circulates to simultaneously.
                                 </p>
                               </div>
-                              {draft.parallelReferralCap >= 5 ? (
-                                <span className={styles.badge} data-tone="warn">
-                                  Surge (5 units)
-                                </span>
-                              ) : (
-                                <span className={styles.badge} data-tone="good">
-                                  Standard ({draft.parallelReferralCap} units)
-                                </span>
-                              )}
                             </div>
                             <div className={styles.paramCardBody}>
-                              <div className={styles.paramReadoutBox}>
-                                <span className={styles.paramBigValue}>{draft.parallelReferralCap}</span>
-                                <span className={styles.paramUnitLabel}>Units</span>
-                                <span className={styles.paramSavedComparison}>
-                                  Saved: {configuration.parallelReferralCap} units
-                                </span>
-                              </div>
                               <div className={styles.paramControlsCol}>
                                 <div className={styles.stepperCluster}>
                                   <button
@@ -1509,11 +1471,10 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={16} aria-hidden="true" />
+                                    <Minus size={15} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.parallelReferralCap}</span>
-                                    <span className={styles.stepperUnit}>units</span>
+                                    <span className={styles.stepperVal}>{draft.parallelReferralCap} units</span>
                                   </div>
                                   <button
                                     type="button"
@@ -1529,7 +1490,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={16} aria-hidden="true" />
+                                    <Plus size={15} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1550,21 +1511,11 @@ export function SettingsScreen() {
                                     />
                                     <span className={styles.sliderVal}>{draft.parallelReferralCap} units</span>
                                   </div>
-                                  <div className={styles.sliderTicks} aria-hidden="true">
-                                    {[1, 2, 3, 4, 5].map((u) => (
-                                      <span
-                                        key={u}
-                                        className={`${styles.sliderTickItem} ${draft.parallelReferralCap === u ? styles.sliderTickItemActive : ""}`}
-                                      >
-                                        {u} {u === 1 ? "unit" : "units"}
-                                      </span>
-                                    ))}
+                                  <div className={styles.sliderFoot}>
+                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit (min)</span>
+                                    <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
+                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units (max)</span>
                                   </div>
-                                </div>
-                                <div className={styles.sliderFoot}>
-                                  <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit (minimum)</span>
-                                  <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
-                                  <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units (maximum)</span>
                                 </div>
                               </div>
                             </div>
@@ -1576,38 +1527,34 @@ export function SettingsScreen() {
                           <div className={styles.paramCard}>
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
-                                <span className={styles.paramCardTitle}>
-                                  Pulled Bed Reservation Hold Duration
-                                  <span className={styles.rowTag}>{draft.pullHoldMinutes} Minutes</span>
-                                </span>
+                                <div className={styles.paramTitleRow}>
+                                  <span className={styles.paramCardTitle}>
+                                    Pulled Bed Reservation Hold Duration
+                                  </span>
+                                  <span className={styles.rowTag}>{draft.pullHoldMinutes}m</span>
+                                  {draft.pullHoldMinutes <= 45 ? (
+                                    <span className={styles.badge} data-tone="danger">
+                                      Surge (45m)
+                                    </span>
+                                  ) : draft.pullHoldMinutes <= 90 ? (
+                                    <span className={styles.badge} data-tone="good">
+                                      Standard (90m)
+                                    </span>
+                                  ) : (
+                                    <span className={styles.badge} data-tone="warn">
+                                      Extended ({draft.pullHoldMinutes}m)
+                                    </span>
+                                  )}
+                                  <span className={styles.paramSavedComparison}>
+                                    Saved: {configuration.pullHoldMinutes}m
+                                  </span>
+                                </div>
                                 <p className={styles.paramCardRationale}>
-                                  Read by a pulled bed&rsquo;s own hold timer — how long an accepting unit&rsquo;s bed
-                                  stays reserved for an incoming patient before the hold expires. Saved changes are
-                                  recorded in the audit trail.
+                                  Buffer window an accepting unit&rsquo;s bed stays reserved before hold expires.
                                 </p>
                               </div>
-                              {draft.pullHoldMinutes <= 45 ? (
-                                <span className={styles.badge} data-tone="danger">
-                                  Surge (45m)
-                                </span>
-                              ) : draft.pullHoldMinutes <= 90 ? (
-                                <span className={styles.badge} data-tone="good">
-                                  Standard (90m)
-                                </span>
-                              ) : (
-                                <span className={styles.badge} data-tone="warn">
-                                  Extended ({draft.pullHoldMinutes}m)
-                                </span>
-                              )}
                             </div>
                             <div className={styles.paramCardBody}>
-                              <div className={styles.paramReadoutBox}>
-                                <span className={styles.paramBigValue}>{draft.pullHoldMinutes}</span>
-                                <span className={styles.paramUnitLabel}>Minutes</span>
-                                <span className={styles.paramSavedComparison}>
-                                  Saved: {configuration.pullHoldMinutes}m
-                                </span>
-                              </div>
                               <div className={styles.paramControlsCol}>
                                 <div className={styles.stepperCluster}>
                                   <button
@@ -1624,11 +1571,10 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={16} aria-hidden="true" />
+                                    <Minus size={15} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.pullHoldMinutes}</span>
-                                    <span className={styles.stepperUnit}>minutes</span>
+                                    <span className={styles.stepperVal}>{draft.pullHoldMinutes}m</span>
                                   </div>
                                   <button
                                     type="button"
@@ -1644,7 +1590,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={16} aria-hidden="true" />
+                                    <Plus size={15} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1665,21 +1611,11 @@ export function SettingsScreen() {
                                     />
                                     <span className={styles.sliderVal}>{draft.pullHoldMinutes}m</span>
                                   </div>
-                                  <div className={styles.sliderTicks} aria-hidden="true">
-                                    {[30, 60, 90, 120, 180].map((m) => (
-                                      <span
-                                        key={m}
-                                        className={`${styles.sliderTickItem} ${draft.pullHoldMinutes === m ? styles.sliderTickItemActive : ""}`}
-                                      >
-                                        {m}m
-                                      </span>
-                                    ))}
+                                  <div className={styles.sliderFoot}>
+                                    <span>{PULL_HOLD_RANGE_MINUTES.min}m (min)</span>
+                                    <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
+                                    <span>{PULL_HOLD_RANGE_MINUTES.max}m (max)</span>
                                   </div>
-                                </div>
-                                <div className={styles.sliderFoot}>
-                                  <span>{PULL_HOLD_RANGE_MINUTES.min}m (minimum)</span>
-                                  <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
-                                  <span>{PULL_HOLD_RANGE_MINUTES.max}m (maximum)</span>
                                 </div>
                               </div>
                             </div>
@@ -1691,31 +1627,26 @@ export function SettingsScreen() {
                           <div className={styles.paramCard} data-testid="setting-morning-rollup-row">
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
-                                <span className={styles.paramCardTitle}>
-                                  Morning roll-up time
+                                <div className={styles.paramTitleRow}>
+                                  <span className={styles.paramCardTitle}>
+                                    Morning roll-up time
+                                  </span>
                                   <span className={styles.rowTag}>
                                     {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                   </span>
-                                </span>
+                                  <span className={styles.badge} data-tone="good">
+                                    {OPERATIONAL_DEFAULT_LABEL}
+                                  </span>
+                                  <span className={styles.paramSavedComparison}>
+                                    Saved: {formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? 570)}
+                                  </span>
+                                </div>
                                 <p className={styles.paramCardRationale} data-testid="setting-morning-rollup-desc">
-                                  Time by which inpatient wards are asked to confirm their morning discharge census and
-                                  available beds ({OPERATIONAL_DEFAULT_LABEL}).
+                                  Time by which inpatient wards confirm morning census and available beds ({OPERATIONAL_DEFAULT_LABEL}).
                                 </p>
                               </div>
-                              <span className={styles.badge} data-tone="good">
-                                {OPERATIONAL_DEFAULT_LABEL}
-                              </span>
                             </div>
                             <div className={styles.paramCardBody}>
-                              <div className={styles.paramReadoutBox}>
-                                <span className={styles.paramBigValue} data-testid="morning-rollup-display">
-                                  {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
-                                </span>
-                                <span className={styles.paramUnitLabel}>Daily Cutoff</span>
-                                <span className={styles.paramSavedComparison}>
-                                  Saved: {formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? 570)}
-                                </span>
-                              </div>
                               <div className={styles.paramControlsCol}>
                                 <div className={styles.stepperCluster}>
                                   <button
@@ -1728,10 +1659,10 @@ export function SettingsScreen() {
                                       setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
                                     }}
                                   >
-                                    <Minus size={16} aria-hidden="true" />
+                                    <Minus size={15} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>
+                                    <span className={styles.stepperVal} data-testid="morning-rollup-display">
                                       {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                     </span>
                                   </div>
@@ -1745,7 +1676,7 @@ export function SettingsScreen() {
                                       setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
                                     }}
                                   >
-                                    <Plus size={16} aria-hidden="true" />
+                                    <Plus size={15} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1768,21 +1699,11 @@ export function SettingsScreen() {
                                       {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                     </span>
                                   </div>
-                                  <div className={styles.sliderTicks} aria-hidden="true">
-                                    {[480, 540, 570, 600, 660].map((t) => (
-                                      <span
-                                        key={t}
-                                        className={`${styles.sliderTickItem} ${(draft.morningRollupDeadlineMinutes ?? 570) === t ? styles.sliderTickItemActive : ""}`}
-                                      >
-                                        {formatMinutesToTime(t)}
-                                      </span>
-                                    ))}
+                                  <div className={styles.sliderFoot}>
+                                    <span>08:00 AM (earliest)</span>
+                                    <span>09:30 AM (default)</span>
+                                    <span>11:00 AM (latest)</span>
                                   </div>
-                                </div>
-                                <div className={styles.sliderFoot}>
-                                  <span>08:00 AM (earliest)</span>
-                                  <span>09:30 AM (default)</span>
-                                  <span>11:00 AM (latest)</span>
                                 </div>
                               </div>
                             </div>
@@ -1902,21 +1823,11 @@ export function SettingsScreen() {
                                         {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
                                       </span>
                                     </div>
-                                    <div className={styles.sliderTicks} aria-hidden="true">
-                                      {[15, 30, 60, 90, 120, 150, 180].map((m) => (
-                                        <span
-                                          key={m}
-                                          className={`${styles.sliderTickItem} ${(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES) === m ? styles.sliderTickItemActive : ""}`}
-                                        >
-                                          {formatDueSoonDuration(m)}
-                                        </span>
-                                      ))}
+                                    <div className={styles.sliderFoot}>
+                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)} (min)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)} (max)</span>
                                     </div>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)} (minimum)</span>
-                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
-                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)} (maximum)</span>
                                   </div>
                                 </div>
                               </div>
@@ -1963,7 +1874,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Minus size={16} aria-hidden="true" />
+                                      <Minus size={15} aria-hidden="true" />
                                     </button>
                                     <div className={styles.stepperDisplay}>
                                       <span className={styles.stepperVal} data-testid="due-soon-display">
@@ -1990,7 +1901,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Plus size={16} aria-hidden="true" />
+                                      <Plus size={15} aria-hidden="true" />
                                     </button>
                                   </div>
                                   <div className={styles.sliderTickTrack}>
@@ -2020,21 +1931,11 @@ export function SettingsScreen() {
                                         {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
                                       </span>
                                     </div>
-                                    <div className={styles.sliderTicks} aria-hidden="true">
-                                      {[30, 60, 120, 180, 240, 360].map((m) => (
-                                        <span
-                                          key={m}
-                                          className={`${styles.sliderTickItem} ${(draft.dueSoonMinutes ?? DUE_SOON_MINUTES) === m ? styles.sliderTickItemActive : ""}`}
-                                        >
-                                          {formatDueSoonDuration(m)}
-                                        </span>
-                                      ))}
+                                    <div className={styles.sliderFoot}>
+                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)} (min)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)} (max)</span>
                                     </div>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)} (minimum)</span>
-                                    <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
-                                    <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)} (maximum)</span>
                                   </div>
                                 </div>
                               </div>
@@ -2093,7 +1994,11 @@ export function SettingsScreen() {
                                 <span className={styles.unwiredPill}>Not wired (Demo)</span>
                                 <span className={styles.rowTag}>{statutoryWarningHours} Hours</span>
                               </span>
-                              <span className={styles.rowDesc} data-testid="setting-form4a-warn-desc">
+                              <span
+                                id="setting-form4a-warn-desc"
+                                className={styles.rowDesc}
+                                data-testid="setting-form4a-warn-desc"
+                              >
                                 Would set how far ahead of a recorded Form 4A transport-form expiry a warning appears.
                                 Not wired in this prototype.
                               </span>
@@ -2104,6 +2009,8 @@ export function SettingsScreen() {
                                   type="button"
                                   className={styles.stepperBtn}
                                   aria-disabled="true"
+                                  aria-describedby="setting-form4a-warn-desc"
+                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
                                   aria-label="Decrease recorded Form 4A expiry warning"
                                   onClick={() => {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
@@ -2119,6 +2026,8 @@ export function SettingsScreen() {
                                   type="button"
                                   className={styles.stepperBtn}
                                   aria-disabled="true"
+                                  aria-describedby="setting-form4a-warn-desc"
+                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
                                   aria-label="Increase recorded Form 4A expiry warning"
                                   onClick={() => {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
