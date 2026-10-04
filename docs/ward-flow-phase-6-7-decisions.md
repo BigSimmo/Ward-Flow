@@ -104,7 +104,7 @@ reflect how any of this works, and a fixed reason list keeps free text out.
 
 ## Sequencing
 
-1. **The clinician check comes first** — `docs/ward-flow-clinician-check.md`. It is the only
+1. **The clinician check comes first** — `docs/archive/ward-flow-clinician-check.md`. It is the only
    outstanding item that gets more expensive the longer it waits, because Phase 6 is built entirely
    on the four-stage model and Phase 7 builds further on top.
 2. **Then Phases 6 and 7 are designed in one conversation**, each still receiving its own written
@@ -322,7 +322,7 @@ than after Phases 8 and 9 build on top.
 
 ### What this does NOT settle
 
-**The clinician check is still owed** (`docs/ward-flow-clinician-check.md`). This change answers the
+**The clinician check is still owed** (`docs/archive/ward-flow-clinician-check.md`). This change answers the
 question the reviewer had the strongest structural argument about; it answers none of the others, and
 the remaining ones are exactly the ones that need someone who works on a ward. **Ask anyway.**
 

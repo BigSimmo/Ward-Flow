@@ -25,7 +25,7 @@ tokens, Vitest (`tests/**/*.test.ts`, `tests/**/*.dom.test.tsx`), Playwright
 (`tests/ui-ward-*.spec.ts`, project `chromium-mockups`).
 
 **Spec:** `docs/superpowers/specs/2026-08-27-ward-flow-phase-6-morning-page-design.md`
-**Direction and settled decisions:** `docs/ward-flow-roadmap.md`,
+**Direction and settled decisions:** `docs/archive/ward-flow-roadmap.md`,
 `docs/ward-flow-phase-6-7-decisions.md`
 
 ---

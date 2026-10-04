@@ -22,7 +22,7 @@ role gate. The matching engine stays the one function that already returns a `Ga
 tokens, Vitest, Playwright (project `chromium-mockups`).
 
 **Spec:** `docs/superpowers/specs/2026-08-27-ward-flow-phase-7-front-door-design.md`
-**Direction and settled decisions:** `docs/ward-flow-roadmap.md`,
+**Direction and settled decisions:** `docs/archive/ward-flow-roadmap.md`,
 `docs/ward-flow-phase-6-7-decisions.md`
 
 ---

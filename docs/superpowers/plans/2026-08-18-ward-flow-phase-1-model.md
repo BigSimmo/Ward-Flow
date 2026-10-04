@@ -1034,9 +1034,9 @@ ADR 1 is wrong as written — it reads as though detaining a patient in an emerg
 
 **Files:**
 
-- Modify: `docs/ward-management-decisions.md`
-- Modify: `docs/ward-management-context.md`
-- Modify: `docs/ward-management-mode-map.md`
+- Modify: `docs/archive/ward-management-decisions.md`
+- Modify: `docs/archive/ward-management-context.md`
+- Modify: `docs/archive/ward-management-mode-map.md`
 - Modify: `docs/codebase-index.md`
 
 - [ ] **Step 1: Rewrite ADR 1**

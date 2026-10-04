@@ -854,7 +854,7 @@ no claim cannot make a false one.**
 
 ## ⚠️ AND THE HANDOVER FILE COULD NOT SOLVE ITS OWN REACHABILITY
 
-**Ward Verifier, on `docs/ward-flow-orchestrator-handover.md`:**
+**Ward Verifier, on `docs/archive/ward-flow-orchestrator-handover.md`:**
 
 > **That file is on ONE branch, `cat` will not find it, and a fresh session will not know to run
 > `git show`. The handover's own reachability is the thing it cannot fix from inside itself.**
@@ -925,8 +925,8 @@ the commit, which would look like applying the observation rule correctly.**
 **Verified rather than assumed, by a session that is not me:**
 
 ```
-git show claude/Wardquestions:docs/ward-flow-orchestrator-handover.md   93 lines, resolves
-ls docs/ward-flow-orchestrator-handover.md                              No such file  <- correct
+git show claude/Wardquestions:docs/archive/ward-flow-orchestrator-handover.md   93 lines, resolves
+ls docs/archive/ward-flow-orchestrator-handover.md                              No such file  <- correct
 registry block                                                          line 21, ~15 lines
 ```
 

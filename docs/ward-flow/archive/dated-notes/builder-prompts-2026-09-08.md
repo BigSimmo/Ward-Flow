@@ -85,7 +85,7 @@ STANDING RULES — these override anything you infer later:
 * One chat per folder. Never two.
 
 READ THESE TWO FIRST — `cat` will not find them, they live on one branch each:
-  git show claude/Wardquestions:docs/ward-flow-orchestrator-handover.md
+  git show claude/Wardquestions:docs/archive/ward-flow-orchestrator-handover.md
   git show codex/task-ward-flow-live-state-20260831:docs/ward-flow/control/work-claims.md
 Write a claim row in the second one before you edit anything.
 
@@ -194,7 +194,7 @@ STANDING RULES — these override anything you infer later:
 * One chat per folder. Never two.
 
 READ THESE TWO FIRST — `cat` will not find them, they live on one branch each:
-  git show claude/Wardquestions:docs/ward-flow-orchestrator-handover.md
+  git show claude/Wardquestions:docs/archive/ward-flow-orchestrator-handover.md
   git show codex/task-ward-flow-live-state-20260831:docs/ward-flow/control/work-claims.md
 Write a claim row in the second one before you edit anything. Claim the DEFECT, not just the file.
 
@@ -305,7 +305,7 @@ STANDING RULES — these override anything you infer later:
 * One chat per folder. Never two.
 
 READ THESE TWO FIRST — `cat` will not find them, they live on one branch each:
-  git show claude/Wardquestions:docs/ward-flow-orchestrator-handover.md
+  git show claude/Wardquestions:docs/archive/ward-flow-orchestrator-handover.md
   git show codex/task-ward-flow-live-state-20260831:docs/ward-flow/control/work-claims.md
 Write a claim row in the second one before you edit anything.
 
