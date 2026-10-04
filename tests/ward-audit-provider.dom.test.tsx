@@ -6,13 +6,18 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const coordinator = { role: "coordinator" } as const;
 let current: ReturnType<typeof useWardFlow>;
-function Probe({ page }: { page: string }) {
-  current = useWardFlow();
+function Probe({ page, capture }: { page: string; capture: (flow: ReturnType<typeof useWardFlow>) => void }) {
+  capture(useWardFlow());
   return <span>{page}</span>;
 }
 const world = (page: string) => (
   <WardFlowProvider initialNow={NOW_ANCHOR + 137}>
-    <Probe page={page} />
+    <Probe
+      page={page}
+      capture={(flow) => {
+        current = flow;
+      }}
+    />
   </WardFlowProvider>
 );
 function firstRecord() {
