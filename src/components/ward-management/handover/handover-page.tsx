@@ -361,7 +361,8 @@ export function HandoverPage() {
   useWardModalFocus(isTableEnlarged, tableContainerRef, () => setIsTableEnlarged(false));
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const triggerElementRef = useRef<HTMLElement | null>(null);
+  // The control that opened the movement drawer, so closing it returns focus there.
+  const [drawerTrigger, setDrawerTrigger] = useState<HTMLElement | null>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
   const scoreDrawerRef = useRef<HTMLElement | null>(null);
 
@@ -382,10 +383,21 @@ export function HandoverPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  /**
+   * Opens the movement drawer from any patient control on the sheet. Callers record the activating
+   * element via `setDrawerTrigger` first (so closing returns focus there); this closes the enlarged
+   * table, which is a modal (useWardModalFocus makes everything outside it inert), so a drawer
+   * opened over it could not take focus or pointer input.
+   */
+  const openMovementDetail = useCallback((movement: Movement) => {
+    setIsTableEnlarged(false);
+    setSelectedMovement(movement);
+  }, []);
+
   const closeMovementDetail = useCallback(() => {
     setSelectedMovement(null);
-    triggerElementRef.current?.focus();
-  }, []);
+    drawerTrigger?.focus();
+  }, [drawerTrigger]);
 
   // Focus drawer close button when opened
   useEffect(() => {
@@ -1682,8 +1694,8 @@ export function HandoverPage() {
                                             type="button"
                                             className={pageStyles.btnPatientName}
                                             onClick={(e) => {
-                                              triggerElementRef.current = e.currentTarget;
-                                              setSelectedMovement(movement);
+                                              setDrawerTrigger(e.currentTarget);
+                                              openMovementDetail(movement);
                                             }}
                                             // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
                                             aria-label={`View clinical handover details for ${patientInfo.name}`}
@@ -1822,8 +1834,8 @@ export function HandoverPage() {
                                         type="button"
                                         className={pageStyles.btnActionSec}
                                         onClick={(e) => {
-                                          triggerElementRef.current = e.currentTarget;
-                                          setSelectedMovement(movement);
+                                          setDrawerTrigger(e.currentTarget);
+                                          openMovementDetail(movement);
                                         }}
                                         aria-label={`View clinical details for ${patientInfo.name}`}
                                       >
@@ -1867,126 +1879,133 @@ export function HandoverPage() {
                       </button>
                     </div>
                   )}
-                  <table className={pageStyles.snapSheet}>
-                    <thead>
-                      <tr>
-                        <th scope="col" style={{ width: "18%", minWidth: "160px" }}>
-                          Patient Alias &amp; UMRN
-                        </th>
-                        <th scope="col" style={{ width: "22%", minWidth: "180px" }}>
-                          Current Unit / Origin
-                        </th>
-                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
-                          Time Waiting
-                        </th>
-                        <th scope="col" style={{ width: "12%", minWidth: "100px" }}>
-                          Order Status
-                        </th>
-                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
-                          Acuity / Obs
-                        </th>
-                        <th scope="col" style={{ width: "24%", minWidth: "200px" }}>
-                          Bedflow Handover &amp; Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredMovements.length === 0 ? (
+                  <div className={isTableEnlarged ? pageStyles.enlargedTableScroll : pageStyles.tableScrollPassthrough}>
+                    <table className={pageStyles.snapSheet}>
+                      <thead>
                         <tr>
-                          <td
-                            colSpan={6}
-                            style={{ textAlign: "center", padding: "20px", color: "var(--muted)", fontStyle: "italic" }}
-                          >
-                            No clinical movements or referrals match the active scope &amp; focus filters. Stated
-                            absence: 0 records in scope.
-                          </td>
+                          <th scope="col" style={{ width: "18%", minWidth: "160px" }}>
+                            Patient Alias &amp; UMRN
+                          </th>
+                          <th scope="col" style={{ width: "22%", minWidth: "180px" }}>
+                            Current Unit / Origin
+                          </th>
+                          <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
+                            Time Waiting
+                          </th>
+                          <th scope="col" style={{ width: "12%", minWidth: "100px" }}>
+                            Order Status
+                          </th>
+                          <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
+                            Acuity / Obs
+                          </th>
+                          <th scope="col" style={{ width: "24%", minWidth: "200px" }}>
+                            Bedflow Handover &amp; Action
+                          </th>
                         </tr>
-                      ) : (
-                        filteredMovements.map((movement) => {
-                          const elapsed = elapsedLabel(movement, now);
-                          const isBreach = movementIsUrgent(movement, now);
-                          const waitBadgeClass = isBreach ? pageStyles.danger : pageStyles.warn;
-                          const statClass = isBreach ? pageStyles.danger : pageStyles.mono;
-                          const dest = destinationCell(movement, units);
-                          const orig = originDepartmentText(movement);
-                          const patientInfo = resolveMovementPatient(movement, patients, referrals);
-                          const formattedUmrn =
-                            patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
-                              ? patientInfo.umrn
-                              : `UMRN ${patientInfo.umrn}`;
+                      </thead>
+                      <tbody>
+                        {filteredMovements.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={6}
+                              style={{
+                                textAlign: "center",
+                                padding: "20px",
+                                color: "var(--muted)",
+                                fontStyle: "italic",
+                              }}
+                            >
+                              No clinical movements or referrals match the active scope &amp; focus filters. Stated
+                              absence: 0 records in scope.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredMovements.map((movement) => {
+                            const elapsed = elapsedLabel(movement, now);
+                            const isBreach = movementIsUrgent(movement, now);
+                            const waitBadgeClass = isBreach ? pageStyles.danger : pageStyles.warn;
+                            const statClass = isBreach ? pageStyles.danger : pageStyles.mono;
+                            const dest = destinationCell(movement, units);
+                            const orig = originDepartmentText(movement);
+                            const patientInfo = resolveMovementPatient(movement, patients, referrals);
+                            const formattedUmrn =
+                              patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
+                                ? patientInfo.umrn
+                                : `UMRN ${patientInfo.umrn}`;
 
-                          return (
-                            <tr key={movement.id}>
-                              <td>
-                                <div className={pageStyles.patientIdentityCell}>
-                                  <button
-                                    type="button"
-                                    className={pageStyles.btnLinkAction}
-                                    onClick={(e) => {
-                                      triggerElementRef.current = e.currentTarget;
-                                      setSelectedMovement(movement);
-                                    }}
-                                    aria-label={`View clinical handover details for ${patientInfo.name}`}
+                            return (
+                              <tr key={movement.id}>
+                                <td>
+                                  <div className={pageStyles.patientIdentityCell}>
+                                    <button
+                                      type="button"
+                                      className={pageStyles.btnLinkAction}
+                                      onClick={(e) => {
+                                        setDrawerTrigger(e.currentTarget);
+                                        openMovementDetail(movement);
+                                      }}
+                                      aria-label={`View clinical handover details for ${patientInfo.name}`}
+                                    >
+                                      <span className={pageStyles.patientAvatarPill}>{patientInfo.name.charAt(0)}</span>
+                                      <b>{patientInfo.name}</b>
+                                    </button>
+                                    <div className={pageStyles.patientMetaRow}>
+                                      <span className={pageStyles.patientUmrnChip}>{formattedUmrn}</span>
+                                      {movement.owner ? (
+                                        <span className={pageStyles.patientOwnerTag}>{movement.owner}</span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className={pageStyles.routeCell}>
+                                    <span className={pageStyles.routeOrigin}>
+                                      <b>{orig}</b>
+                                    </span>
+                                    <span className={pageStyles.routeDest}>→ {dest}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`${pageStyles.statusPill} ${waitBadgeClass}`}>
+                                    {elapsed} {isBreach ? "(Delay)" : ""}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={`${pageStyles.statusPill} ${statClass}`}>
+                                    {movement.legalForm
+                                      ? `Form ${movement.legalForm.code}`
+                                      : (movement.legalStatus ?? "Not recorded")}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span
+                                    className={`${pageStyles.statusPill} ${movement.flaggedUrgent || movement.specialling ? pageStyles.danger : pageStyles.mono}`}
                                   >
-                                    <span className={pageStyles.patientAvatarPill}>{patientInfo.name.charAt(0)}</span>
-                                    <b>{patientInfo.name}</b>
-                                  </button>
-                                  <div className={pageStyles.patientMetaRow}>
-                                    <span className={pageStyles.patientUmrnChip}>{formattedUmrn}</span>
+                                    {movementObservationLabel(movement)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className={pageStyles.actionCell}>
+                                    <span className={pageStyles.actionStageTag}>
+                                      {stageCopy[movement.stage]?.label ?? "In Handover"}
+                                    </span>
+                                    <span className={pageStyles.actionTargetText}>
+                                      {dest !== "No destination unit recorded"
+                                        ? `Target: ${dest}`
+                                        : "Awaiting bed allocation"}
+                                    </span>
                                     {movement.owner ? (
-                                      <span className={pageStyles.patientOwnerTag}>{movement.owner}</span>
+                                      <span className={pageStyles.actionOwnerText}>Owner: {movement.owner}</span>
                                     ) : null}
                                   </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className={pageStyles.routeCell}>
-                                  <span className={pageStyles.routeOrigin}>
-                                    <b>{orig}</b>
-                                  </span>
-                                  <span className={pageStyles.routeDest}>→ {dest}</span>
-                                </div>
-                              </td>
-                              <td>
-                                <span className={`${pageStyles.statusPill} ${waitBadgeClass}`}>
-                                  {elapsed} {isBreach ? "(Delay)" : ""}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={`${pageStyles.statusPill} ${statClass}`}>
-                                  {movement.legalForm
-                                    ? `Form ${movement.legalForm.code}`
-                                    : (movement.legalStatus ?? "Not recorded")}
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  className={`${pageStyles.statusPill} ${movement.flaggedUrgent || movement.specialling ? pageStyles.danger : pageStyles.mono}`}
-                                >
-                                  {movementObservationLabel(movement)}
-                                </span>
-                              </td>
-                              <td>
-                                <div className={pageStyles.actionCell}>
-                                  <span className={pageStyles.actionStageTag}>
-                                    {stageCopy[movement.stage]?.label ?? "In Handover"}
-                                  </span>
-                                  <span className={pageStyles.actionTargetText}>
-                                    {dest !== "No destination unit recorded"
-                                      ? `Target: ${dest}`
-                                      : "Awaiting bed allocation"}
-                                  </span>
-                                  {movement.owner ? (
-                                    <span className={pageStyles.actionOwnerText}>MO: {movement.owner}</span>
-                                  ) : null}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
@@ -1998,21 +2017,30 @@ export function HandoverPage() {
                   wholeNetworkCount={networkSnapshot.longestWaits.length}
                   patients={patients}
                   referrals={referrals}
-                  onSelectMovement={setSelectedMovement}
+                  onSelectMovement={(movement, trigger) => {
+                    setDrawerTrigger(trigger ?? null);
+                    openMovementDetail(movement);
+                  }}
                 />
                 <PulledBedsSection
                   snapshot={snapshot}
                   wholeNetworkCount={networkSnapshot.pulledBeds.length}
                   patients={patients}
                   referrals={referrals}
-                  onSelectMovement={setSelectedMovement}
+                  onSelectMovement={(movement, trigger) => {
+                    setDrawerTrigger(trigger ?? null);
+                    openMovementDetail(movement);
+                  }}
                 />
                 <OpenBeforeShiftEndSection
                   items={openBeforeShiftEnd}
                   now={now}
                   patients={patients}
                   referrals={referrals}
-                  onSelectMovement={setSelectedMovement}
+                  onSelectMovement={(movement, trigger) => {
+                    setDrawerTrigger(trigger ?? null);
+                    openMovementDetail(movement);
+                  }}
                 />
                 <InTransitSection
                   snapshot={snapshot}
@@ -2020,14 +2048,20 @@ export function HandoverPage() {
                   wholeNetworkCount={networkSnapshot.inTransit.length}
                   patients={patients}
                   referrals={referrals}
-                  onSelectMovement={setSelectedMovement}
+                  onSelectMovement={(movement, trigger) => {
+                    setDrawerTrigger(trigger ?? null);
+                    openMovementDetail(movement);
+                  }}
                 />
                 <PlacementGoneWrongSection
                   snapshot={snapshot}
                   wholeNetworkCount={networkSnapshot.placementGoneWrong.length}
                   patients={patients}
                   referrals={referrals}
-                  onSelectMovement={setSelectedMovement}
+                  onSelectMovement={(movement, trigger) => {
+                    setDrawerTrigger(trigger ?? null);
+                    openMovementDetail(movement);
+                  }}
                 />
                 <UrgentOutsideFilterFooter
                   movements={urgentOutsideFilter}
@@ -3376,7 +3410,7 @@ export function HandoverPage() {
                         style={{ fontSize: "var(--t-1)", lineHeight: 1.45 }}
                       >
                         <b>{stageCopy[selectedMovement.stage]?.label ?? "In Handover"}</b>.{" "}
-                        {selectedMovement.owner ? `Coordinating MO: ${selectedMovement.owner}. ` : ""}
+                        {selectedMovement.owner ? `Recorded owner: ${selectedMovement.owner}. ` : ""}
                         Target destination: {destinationCell(selectedMovement, units)}.
                       </span>
                     </div>
@@ -3384,7 +3418,9 @@ export function HandoverPage() {
 
                   <div className={pageStyles.drawerFooter}>
                     <Link
-                      href={patientHref(selPatientInfo.patientId ?? selPatientInfo.umrn)}
+                      // No resolved patient: the movement id (WF-…) is what the person route accepts; a UMRN, or the
+                      // literal "UMRN not recorded" fallback, is not.
+                      href={patientHref(selPatientInfo.patientId ?? selectedMovement.id)}
                       className={pageStyles.btnActionSec}
                       style={{
                         textDecoration: "none",
@@ -3604,7 +3640,7 @@ export function LongestWaitsSection({
   wholeNetworkCount?: number;
   patients?: Patient[];
   referrals?: Referral[];
-  onSelectMovement?: (movement: Movement) => void;
+  onSelectMovement?: (movement: Movement, trigger?: HTMLElement) => void;
 }) {
   return (
     <section className={styles.section} data-testid="ward-handover-longest-waits">
@@ -3641,7 +3677,7 @@ export function LongestWaitsSection({
                           <button
                             type="button"
                             className={pageStyles.patientNameBtn}
-                            onClick={() => onSelectMovement(entry.movement)}
+                            onClick={(event) => onSelectMovement(entry.movement, event.currentTarget)}
                             title="View clinical handover details"
                           >
                             <b>{pat.name}</b>
@@ -3680,7 +3716,7 @@ export function PulledBedsSection({
   wholeNetworkCount?: number;
   patients?: Patient[];
   referrals?: Referral[];
-  onSelectMovement?: (movement: Movement) => void;
+  onSelectMovement?: (movement: Movement, trigger?: HTMLElement) => void;
 }) {
   return (
     <section className={styles.section} data-testid="ward-handover-pulled-beds">
@@ -3714,7 +3750,7 @@ export function PulledBedsSection({
                           <button
                             type="button"
                             className={pageStyles.patientNameBtn}
-                            onClick={() => onSelectMovement(entry.movement)}
+                            onClick={(event) => onSelectMovement(entry.movement, event.currentTarget)}
                             title="View clinical handover details"
                           >
                             <b>{pat.name}</b>
@@ -3754,7 +3790,7 @@ export function InTransitSection({
   wholeNetworkCount?: number;
   patients?: Patient[];
   referrals?: Referral[];
-  onSelectMovement?: (movement: Movement) => void;
+  onSelectMovement?: (movement: Movement, trigger?: HTMLElement) => void;
 }) {
   return (
     <section className={styles.section} data-testid="ward-handover-in-transit">
@@ -3793,7 +3829,7 @@ export function InTransitSection({
                           <button
                             type="button"
                             className={pageStyles.patientNameBtn}
-                            onClick={() => onSelectMovement(entry.movement)}
+                            onClick={(event) => onSelectMovement(entry.movement, event.currentTarget)}
                             title="View clinical handover details"
                           >
                             <b>{pat.name}</b>
@@ -3832,7 +3868,7 @@ export function PlacementGoneWrongSection({
   wholeNetworkCount?: number;
   patients?: Patient[];
   referrals?: Referral[];
-  onSelectMovement?: (movement: Movement) => void;
+  onSelectMovement?: (movement: Movement, trigger?: HTMLElement) => void;
 }) {
   return (
     <section className={styles.section} data-testid="ward-handover-placement-gone-wrong">
@@ -3871,7 +3907,7 @@ export function PlacementGoneWrongSection({
                           <button
                             type="button"
                             className={pageStyles.patientNameBtn}
-                            onClick={() => onSelectMovement(entry.movement)}
+                            onClick={(event) => onSelectMovement(entry.movement, event.currentTarget)}
                             title="View clinical handover details"
                           >
                             <b>{pat.name}</b>
@@ -3931,7 +3967,7 @@ function OpenBeforeShiftEndSection({
   now: Instant;
   patients?: Patient[];
   referrals?: Referral[];
-  onSelectMovement?: (movement: Movement) => void;
+  onSelectMovement?: (movement: Movement, trigger?: HTMLElement) => void;
 }) {
   const shiftEndClock = `${String(Math.floor(DAY_SHIFT_END_MINUTE / 60)).padStart(2, "0")}:${String(DAY_SHIFT_END_MINUTE % 60).padStart(2, "0")}`;
   return (
@@ -3971,7 +4007,7 @@ function OpenBeforeShiftEndSection({
                           <button
                             type="button"
                             className={pageStyles.patientNameBtn}
-                            onClick={() => onSelectMovement(item.movement)}
+                            onClick={(event) => onSelectMovement(item.movement, event.currentTarget)}
                             title="View clinical handover details"
                           >
                             <b>{pat.name}</b>

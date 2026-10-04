@@ -1326,10 +1326,33 @@ table.snapSheet {
   border-radius: var(--r3, 10px);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: auto;
+  /* The header bar stays put and only .enlargedTableScroll scrolls, so the table's sticky column
+     headers stick to the top of the table area instead of sliding under the header bar. */
+  overflow: hidden;
+}
+
+/* Bounded (inline) view: the wrapper generates no box, so the table sits directly in
+   .snapSheetBounded's scroller exactly as before. */
+.tableScrollPassthrough {
+  display: contents;
+}
+
+.enlargedTableScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+}
+
+.enlargedTableScroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.enlargedTableScroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
 }
 
 .snapSheetEnlarged::-webkit-scrollbar {
@@ -1354,9 +1377,6 @@ table.snapSheet {
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .enlargeTitle {
@@ -2301,7 +2321,10 @@ table.snapSheet {
   .tabBtn,
   .scopeSelectControl,
   .searchInputHandover,
-  .btnLinkAction {
+  .btnLinkAction,
+  .btnEnlargeTable,
+  .btnCompressTable,
+  .patientNameBtn {
     min-height: var(--ward-tap, 48px);
   }
 }
@@ -2942,6 +2965,19 @@ table.snapSheet {
     border: 1px solid var(--line) !important;
     background: none !important;
     box-shadow: none !important;
+  }
+
+  /* Print every row. The on-screen scroll bounds (the 480px sheet, the 240px lower tables) and the
+     enlarged overlay would otherwise clip the A4 sheet to their scroll viewport. */
+  .snapSheetBounded,
+  .boundedTableScroll,
+  .snapSheetEnlarged,
+  .enlargedTableScroll {
+    position: static !important;
+    inset: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .snapSheet {
