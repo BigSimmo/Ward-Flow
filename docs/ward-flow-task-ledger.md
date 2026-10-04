@@ -2600,13 +2600,13 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 #### DECISION-03 (WF-15 / Issue 79): Non-ED Origin Modeling (Direct Community & Inter-Ward Transfers)
 
-| Aspect                          | Details                                                                                                                                                                                                                                            |
+| Aspect | Details |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
-| **Category**                    | `Hard Reducer & State-Machine Blocker`                                                                                                                                                                                                             |
-| **Core Problem**                | The `Movement` model hardcodes `edDepartureTime` and `edAcuity`. Non-ED patients (direct community admissions, inter-hospital transfers from regional WA, step-down transfers) cannot be represented without fabricated ED fields.                 |
+| **Category** | `Hard Reducer & State-Machine Blocker` |
+| **Core Problem** | The `Movement` model hardcodes `edDepartureTime` and `edAcuity`. Non-ED patients (direct community admissions, inter-hospital transfers from regional WA, step-down transfers) cannot be represented without fabricated ED fields. |
 | **WA Clinical / Legal Context** | Over 40% of public mental health admissions in WA originate from community treatment teams or inter-hospital transfers (e.g. Bunbury to Perth secure wards). Forcing these through ED fields corrupts WEAT reporting and distorts clinical triage. |
 | **Proposed Technical Solution** | Generalize origin fields to `originType: 'ed'                                                                                                                                                                                                      | 'community' | 'ward'` with origin-specific clinical metadata, replacing hardcoded ED departures. |
-| **Recommended Ruling**          | **APPROVE RECOMMENDATION**: Generalize origin model to support ED, Community, and Ward-to-Ward transfers.                                                                                                                                          |
+| **Recommended Ruling** | **APPROVE RECOMMENDATION**: Generalize origin model to support ED, Community, and Ward-to-Ward transfers. |
 
 ---
 
@@ -2625,13 +2625,13 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 #### DECISION-05 (WF-30 / Issue 78): Non-Binary & Gender-Diverse Bed Placement (`PT-007`)
 
-| Aspect                          | Details                                                                                                                                                                                                                         |
+| Aspect | Details |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Category**                    | `Clinical Governance & Human Rights Policy`                                                                                                                                                                                     |
-| **Core Problem**                | The current bed allocation algorithm partitions beds strictly by binary gender (`male` / `female`). Non-binary patient `PT-007` has no allocatable beds, causing an unhandled placement failure.                                |
+| **Category** | `Clinical Governance & Human Rights Policy` |
+| **Core Problem** | The current bed allocation algorithm partitions beds strictly by binary gender (`male` / `female`). Non-binary patient `PT-007` has no allocatable beds, causing an unhandled placement failure. |
 | **WA Clinical / Legal Context** | Under WA Health diversity guidelines and clinical bed management, non-binary and gender-diverse patients are accommodated in single-room ensuites or specialized flex-gender beds based on individual clinical risk assessment. |
 | **Proposed Technical Solution** | Introduce `genderAccommodation: 'male'                                                                                                                                                                                          | 'female' | 'flexible' | 'single_room_only'` into unit bed capacity models, allowing non-binary patients to match flexible and single-room capacity. |
-| **Recommended Ruling**          | **APPROVE RECOMMENDATION**: Implement flexible single-room accommodation matching for non-binary patients.                                                                                                                      |
+| **Recommended Ruling** | **APPROVE RECOMMENDATION**: Implement flexible single-room accommodation matching for non-binary patients. |
 
 ---
 
