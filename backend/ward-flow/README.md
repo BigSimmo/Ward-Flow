@@ -4,6 +4,18 @@ This package stores synthetic Ward Flow demonstration sessions in the existing
 `wflowdev7273a083aue` Azure Storage account. It is a development service.
 Never enter or upload real patient information.
 
+## Status note (3 October 2026)
+
+- Demo refresh persistence already exists in the browser: the app saves the
+  synthetic ward state to `sessionStorage` in
+  `src/components/ward-management/ward-flow-provider.tsx`. Saving stops for the
+  rest of the session once typed free text is dispatched (owner decision D-18),
+  and refusal records are never stored.
+- This Azure backend is code-complete but is deliberately **not** connected to
+  the UI. Connecting it waits on WF-29 (privacy and service-scoped access) and a
+  later owner decision.
+- No Azure action was taken when this note was written.
+
 ## Boundaries
 
 - The Azure Functions host is `wardflow-dev-api-aue` in `rg-wardflow-dev-aue`.
@@ -14,7 +26,8 @@ Never enter or upload real patient information.
   No storage key or password is stored in the backend.
 - The PostgreSQL `schema.sql` is retained for a later private-network rollout.
   It has not been applied and is not used by this API. There is no migration
-  runner yet; add one together with a PostgreSQL store adapter.
+  runner yet; add one together with a PostgreSQL store adapter. The unused `pg`
+  dependency was removed on 3 October 2026; add it back with that adapter.
 - Each session has an owner UUID and a revision. `PUT` uses an expected revision;
   a stale save returns `409` and does not replace the current blob.
 - The API accepts only the `synthetic` classification. This label and basic

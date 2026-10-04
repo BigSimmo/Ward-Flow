@@ -143,7 +143,7 @@ describe("the retired product name stays retired", () => {
 
     expect(
       offending.map(({ number, line }) => `${file}:${number}: ${line.trim()}`),
-      `${file} still calls the product "Clinical Guide". It is PsychSift (BRAND_NAME) — ` +
+      `${file} still calls the product "Clinical Guide". It is Ward Flow (BRAND_NAME) — ` +
         "a surface that keeps the old name labels the navigation differently from the header above it.",
     ).toEqual([]);
   });
