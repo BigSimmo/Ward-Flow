@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import styles from "./ward-arrivals-corridor.module.css";
 import type { Unit, Movement, Rejection } from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";

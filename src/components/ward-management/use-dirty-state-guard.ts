@@ -7,6 +7,8 @@ export interface DirtyStateGuardOptions {
   isDirty: boolean;
   value?: string;
   onRestore?: (cachedValue: string) => void;
+  /** Describes the unsaved text at the call site. Not rendered: browsers show their own fixed
+   *  beforeunload wording and ignore page-supplied text, and the hook never read it. */
   confirmMessage?: string;
 }
 
@@ -16,13 +18,7 @@ export interface DirtyStateGuardOptions {
  * 2. Caches draft responses in sessionStorage keyed by `key`, restoring content if the tab reloads.
  * 3. Clears cached draft when isDirty becomes false or when text is erased.
  */
-export function useDirtyStateGuard({
-  key,
-  isDirty,
-  value,
-  onRestore,
-  confirmMessage = "You have unsaved clinical text. Are you sure you want to leave?",
-}: DirtyStateGuardOptions) {
+export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStateGuardOptions) {
   const isRestoringRef = useRef(true);
   const onRestoreRef = useRef(onRestore);
 

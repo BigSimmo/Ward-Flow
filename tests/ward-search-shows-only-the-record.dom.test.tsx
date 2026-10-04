@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -11,7 +11,8 @@ vi.mock("next/link", () => ({
 }));
 
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { type Patient, patientAgeYears } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -25,9 +26,23 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * 25 September 2026: every value comes from the record or says "Not recorded".
  */
 
+let providerPatients: readonly Patient[] = [];
+
+/** Reports the provider's own patient register, so ages can be checked against what it holds. */
+function PatientsProbe({ onPatients }: { onPatients: (patients: readonly Patient[]) => void }) {
+  const { patients } = useWardFlow();
+  useEffect(() => onPatients(patients), [onPatients, patients]);
+  return null;
+}
+
+function capturePatients(patients: readonly Patient[]) {
+  providerPatients = patients;
+}
+
 function pageText(): string {
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <PatientsProbe onPatients={capturePatients} />
       <PatientSearchPage />
     </WardFlowProvider>,
   );
@@ -56,7 +71,19 @@ describe("patient search shows only what the record holds", () => {
     // Every seeded movement now names a real record (Josh, 25 September 2026: demo data only as
     // linked patients), so the "not recorded" wording is checked on a movement linked to nobody in
     // ward-unlinked-movement-says-not-recorded.dom.test.tsx. Here, the old invented ages stay gone.
-    expect(text).not.toMatch(/\b38y\b|\b34y\b/);
+    // The seed now holds real dates of birth, so a patient can genuinely be 34 or 38: rather than
+    // banning those numbers, every age shown beside a UMRN must be the age that patient's own
+    // recorded date of birth gives (one year of slack for a birthday falling on the demo day).
+    const shown = [...text.matchAll(/(UM\d+)·(\d+)y\b/g)];
+    expect(shown.length).toBeGreaterThan(0);
+    const today = new Date();
+    for (const [, umrn, age] of shown) {
+      const patient = providerPatients.find((p) => p.umrn === umrn);
+      expect(patient, `${umrn} shows an age but is not a recorded patient`).toBeDefined();
+      const recorded = patientAgeYears(patient!, today);
+      expect(Number.isFinite(recorded), `${umrn} shows an age but holds no date of birth`).toBe(true);
+      expect(Math.abs(Number(age) - recorded)).toBeLessThanOrEqual(1);
+    }
   });
 
   it("labels a form the record holds by its own code, never as voluntary", () => {

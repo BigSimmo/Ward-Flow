@@ -3,6 +3,21 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
+ * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
+ * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
+ * inside them; idempotent, so it is safe after every queue selection.
+ */
+async function openShortlistSections(shortlist: Locator) {
+  const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const checks = shortlist.locator('details[aria-label="Eligibility checks"]');
+  if ((await checks.count()) > 0 && !(await checks.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await checks.locator("summary").click();
+  }
+}
+
+/**
  * The core Ward Flow journey, walked once, role by role, in one browser window.
  *
  * This is deliberately a BREADTH proof, not a duplicate of the per-screen journeys elsewhere in
@@ -242,6 +257,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
 
     await page.locator(`[data-testid="ward-queue-row-${movementId}"]`).click();
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    await openShortlistSections(shortlist);
     await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
 
     const eligibleCandidate = shortlist

@@ -1,4 +1,4 @@
-import type { Movement, Unit, Site, ReferralAddressing } from "@/components/ward-management/ward-model";
+import type { Movement, Site, ReferralAddressing } from "@/components/ward-management/ward-model";
 import type { PatientSearchResult } from "@/components/ward-management/ward-derivations";
 import { minutesUntil } from "@/components/ward-management/ward-clock";
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -63,7 +63,7 @@ export function waitedHours(movement: Movement, now: number): number {
   return minutesUntil(now, movement.openedAt) / 60;
 }
 
-export function matchesService(result: PatientSearchResult, service: string, _units: Unit[]): boolean {
+export function matchesService(result: PatientSearchResult, service: string): boolean {
   if (service === "all") return true;
 
   if (result.kind === "movement") {

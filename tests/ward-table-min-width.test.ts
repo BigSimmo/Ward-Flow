@@ -405,8 +405,10 @@ describe("every ward table keeps the scroll threshold it was built with", () => 
     );
     expect(thresholds(css), "the retired Unit-cell floor has returned to a fluid register").toEqual([]);
     expect(css).toMatch(/\.workTable\s*\{[^{}]*width:\s*100%\s*;/u);
-    expect(css).toMatch(/\.workTable td:first-child\s*\{\s*width:\s*40%\s*;/u);
-    expect(css).toMatch(/\.workTable td:nth-child\(2\)\s*\{\s*width:\s*26%\s*;/u);
+    // The PR 46 layout pass re-proportioned the three columns to 32 / 34 / 34; the first rule and the
+    // later column-proportion block now agree instead of contradicting each other.
+    expect(css).toMatch(/\.workTable td:first-child\s*\{\s*width:\s*32%\s*;/u);
+    expect(css).toMatch(/\.workTable td:nth-child\(2\)\s*\{\s*width:\s*34%\s*;/u);
     for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/gu)) {
       if (!/\.workTable(?:\s|,|$)/u.test(selector)) continue;
       expect(body, `${selector.trim()} must allow cell content to wrap rather than clip`).not.toMatch(

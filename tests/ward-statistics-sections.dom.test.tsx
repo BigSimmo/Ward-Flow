@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -847,5 +847,37 @@ describe("one emergency department in detail", () => {
           `will go false silently the next time the seed is edited.`,
       ).not.toContain(quantifier);
     }
+  });
+});
+
+describe("StatisticsScreen interactive controls and table sorting accessibility", () => {
+  it("renders 12 sortable table headers as semantic buttons with aria-sort, and toggles sort direction on click", () => {
+    const { container } = renderInProvider(<StatisticsScreen />);
+
+    // Query all th elements with aria-sort
+    const sortableThs = container.querySelectorAll("th[aria-sort]");
+    // 6 ward-pressure columns + 6 emergency-department columns (the community team table was retired upstream).
+    expect(sortableThs.length).toBe(12);
+
+    // Each sortable th must contain a <button type="button">
+    for (const th of Array.from(sortableThs)) {
+      const btn = th.querySelector("button");
+      expect(btn).not.toBeNull();
+      expect(btn).toHaveAttribute("type", "button");
+    }
+
+    // Test sorting on the Hospital column in the Ward table
+    const hospTh = container.querySelector("th[aria-sort]:has(button)") as HTMLElement;
+    const hospBtn = hospTh.querySelector("button")!;
+    const initialSort = hospTh.getAttribute("aria-sort");
+    expect(initialSort).toBe("none");
+
+    // Click to sort ascending
+    fireEvent.click(hospBtn);
+    expect(hospTh.getAttribute("aria-sort")).toBe("ascending");
+
+    // Click to sort descending
+    fireEvent.click(hospBtn);
+    expect(hospTh.getAttribute("aria-sort")).toBe("descending");
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
@@ -237,7 +238,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           {!countryExtensionEligible(movement) && (
             <p>
               A country extension requires a current Form 1A. Record its country paper setting in{" "}
-              <a href="/mockups/ward-flow/legal-forms">Legal forms</a> first.
+              <Link href="/mockups/ward-flow/legal-forms">Legal forms</Link> first.
             </p>
           )}
           <p>A missing expiry stays unknown. No statutory interval is calculated.</p>

@@ -416,6 +416,12 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
           <div
             className={`${styles.gateCard} ${styles.gateComplete}`}
             onClick={() => jumpToGate("gate-1-section")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                jumpToGate("gate-1-section");
+              }
+            }}
             role="button"
             tabIndex={0}
           >
@@ -433,6 +439,12 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
           <div
             className={`${styles.gateCard} ${intakeState === "pending" ? styles.gateUrgent : styles.gateComplete}`}
             onClick={() => jumpToGate("gate-2-section")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                jumpToGate("gate-2-section");
+              }
+            }}
             role="button"
             tabIndex={0}
           >
@@ -452,6 +464,12 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
           <div
             className={`${styles.gateCard} ${keiraState === "pending" || rowanState === "pending" ? styles.gateReady : styles.gateComplete} ${styles.gateActiveWindow}`}
             onClick={() => jumpToGate("gate-3-section")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                jumpToGate("gate-3-section");
+              }
+            }}
             role="button"
             tabIndex={0}
           >
@@ -475,6 +493,12 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
           <div
             className={`${styles.gateCard} ${marcusState === "pending" ? styles.gatePending : styles.gateComplete}`}
             onClick={() => jumpToGate("gate-4-section")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                jumpToGate("gate-4-section");
+              }
+            }}
             role="button"
             tabIndex={0}
           >

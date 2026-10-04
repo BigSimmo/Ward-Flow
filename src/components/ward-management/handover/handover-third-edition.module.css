@@ -5,7 +5,9 @@
   background: var(--ground);
   color: var(--ink);
   font-family: var(--body);
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 
   --text: var(--ink);
   --text-heading: var(--ink);
@@ -43,7 +45,9 @@
 
 .main {
   grid-column: auto;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-width: 0;
   gap: 0.75rem;
   padding: 0.75rem 1.25rem 1.5rem;
@@ -166,16 +170,36 @@
   color: var(--gilt);
 }
 
+/* ── Contextual Statewide Handover HUD: Sleek Top Telemetry Bar ── */
+.topHudWrap {
+  display: flex;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.handoverHudTop {
+  width: 100%;
+  margin: 0 !important;
+}
+
 /* ── Filter & Coordination Ribbon ── */
 .filterRibbon {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 12px;
+  padding: 0;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
+  border-radius: var(--r2);
+  box-shadow: var(--lift-sm);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.filterControlsBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px;
 }
 
 .filterBanner {
@@ -183,8 +207,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 6px;
+  padding: 8px 14px;
   border-top: 1px solid var(--line);
+  background: var(--surface-2);
   font-size: var(--t-0);
   color: var(--muted);
 }
@@ -210,14 +235,13 @@
 .filterResetBtn {
   background: none;
   border: none;
-  padding: 0;
+  padding: 2px 6px;
   color: var(--accent);
   font-size: var(--t-0);
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
   white-space: nowrap;
-  min-height: 2.75rem;
 }
 
 .filterResetBtn:hover {
@@ -262,15 +286,15 @@
   background: transparent;
   color: var(--muted);
   font-family: var(--display);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   font-weight: 500;
-  padding: 4px 10px;
-  min-height: 2.25rem;
+  padding: 3px 8px;
+  min-height: 1.75rem;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.12s;
   white-space: nowrap;
 }
@@ -291,10 +315,10 @@
   background: var(--surface-2);
   color: var(--ink-soft);
   font-family: var(--display);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   font-weight: 500;
-  padding: 4px 10px;
-  min-height: 2.25rem;
+  padding: 3px 8px;
+  min-height: 1.75rem;
   border-radius: var(--r2);
   cursor: pointer;
   display: inline-flex;
@@ -377,14 +401,15 @@
 }
 
 .scopeSelectControl {
-  min-height: 2.25rem;
+  min-height: 1.75rem;
+  height: 1.75rem;
   padding: 0 8px;
-  border-radius: var(--r2);
+  border-radius: 4px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
   font-family: var(--display);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   cursor: pointer;
   max-width: 100%;
   box-sizing: border-box;
@@ -397,13 +422,13 @@
   font-family: var(--display);
   font-size: var(--t-0);
   font-weight: 500;
-  padding: 3px 8px;
-  min-height: 2.25rem;
+  padding: 2px 7px;
+  min-height: 1.75rem;
   border-radius: var(--pill);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   transition: all 0.12s;
   white-space: nowrap;
 }
@@ -433,13 +458,13 @@
   font-family: var(--display);
   font-size: var(--t-0);
   font-weight: 500;
-  padding: 3px 10px;
-  min-height: 2.25rem;
+  padding: 2px 8px;
+  min-height: 1.75rem;
   border-radius: var(--pill);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.12s;
   white-space: nowrap;
 }
@@ -484,24 +509,66 @@
   background: var(--svc-wachs);
 }
 
+.scopeSelectForm {
+  display: inline-flex;
+  align-items: center;
+}
+
+.scopeSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.scopeSelectIcon {
+  position: absolute;
+  left: 8px;
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .wardSelect {
-  min-height: 2.25rem;
-  padding: 0 24px 0 8px;
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
+  min-height: 28px;
+  height: 28px;
+  padding: 0 24px 0 26px;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  font-size: var(--t-1);
+  font-family: var(--display);
+  font-size: var(--t-0);
   font-weight: 500;
   outline: none;
   cursor: pointer;
-  transition: border-color 0.12s;
-  max-width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.12s ease;
+  max-width: 220px;
   box-sizing: border-box;
+}
+
+.wardSelect:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
 }
 
 .wardSelect:focus {
   border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.scopeChevronIcon {
+  position: absolute;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .delayedEgressBlock {
@@ -566,34 +633,41 @@
   align-items: center;
   min-width: 180px;
   flex: 1 1 200px;
-  max-width: 320px;
+  max-width: 280px;
 }
 
 .searchIconSvg {
   position: absolute;
-  left: 8px;
-  width: 13px;
-  height: 13px;
+  left: 9px;
+  width: 12px;
+  height: 12px;
   color: var(--muted);
   pointer-events: none;
+  z-index: 1;
 }
 
 .searchInputHandover {
   width: 100%;
   height: 28px;
-  padding: 0 24px 0 26px;
-  border-radius: var(--r2);
+  padding: 0 26px 0 27px;
+  border-radius: var(--pill);
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
   font-family: var(--body);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
+  transition: all 0.12s ease;
+}
+
+.searchInputHandover:hover {
+  border-color: var(--line-strong);
 }
 
 .searchInputHandover:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   border-color: var(--accent);
+  background: var(--surface);
 }
 
 .searchClearBtn {
@@ -707,15 +781,15 @@
   color: var(--accent-press);
 }
 
-/* ── 6 CONDENSED TABS ── */
+/* ── UNIFIED NAVIGATION SQUARE TABS ── */
 .tabNav {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-  padding: 0;
-  margin-top: 2px;
-  margin-bottom: 2px;
+  padding: 6px 10px;
+  margin: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -725,11 +799,12 @@
 }
 
 .tabBtn {
-  background: none;
-  border: none;
-  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: var(--r1);
   font-family: var(--display);
-  font-size: var(--t-2);
+  font-size: var(--t-0);
   font-weight: 500;
   color: var(--muted);
   cursor: pointer;
@@ -738,34 +813,33 @@
   gap: 6px;
   position: relative;
   white-space: nowrap;
-  transition: color 0.12s;
+  transition: all 0.12s ease;
+  min-height: 28px;
 }
 
 .tabBtn svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
   stroke: currentColor;
 }
 
 .tabBtn:hover {
   color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
 }
 
 .tabBtn.active {
   color: var(--ink);
   font-weight: 600;
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift-sm);
 }
 
 .tabBtn.active::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 8px;
-  right: 8px;
-  height: 2.5px;
-  background: var(--surface-2);
-  border-radius: 2px 2px 0 0;
+  display: none;
 }
 
 .tabBadge {
@@ -1211,6 +1285,323 @@ table.snapSheet {
 
 .snapSheet tr:hover {
   background: var(--surface-2);
+}
+
+/* ── Bounded Table Scroll & Enlarged Fullscreen View ── */
+.snapSheetBounded {
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.snapSheetBounded::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.snapSheetBounded::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.snapSheetBounded::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+.snapSheetBounded::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.snapSheetEnlarged {
+  position: fixed;
+  inset: 1.5rem;
+  z-index: 1000;
+  max-height: none;
+  height: auto;
+  background: var(--ground);
+  box-shadow: 0 16px 48px rgb(var(--ward-shadow-rgb) / 0.45);
+  border: 2px solid var(--accent);
+  border-radius: var(--r3, 10px);
+  display: flex;
+  flex-direction: column;
+  /* The header bar stays put and only .enlargedTableScroll scrolls, so the table's sticky column
+     headers stick to the top of the table area instead of sliding under the header bar. */
+  overflow: hidden;
+}
+
+/* Bounded (inline) view: the wrapper generates no box, so the table sits directly in
+   .snapSheetBounded's scroller exactly as before. */
+.tableScrollPassthrough {
+  display: contents;
+}
+
+.enlargedTableScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.enlargedTableScroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.enlargedTableScroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+.snapSheetEnlarged::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.snapSheetEnlarged::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.snapSheetEnlarged::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+.enlargeHeaderBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.enlargeTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnCompressTable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btnCompressTable:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btnEnlargeTable {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btnEnlargeTable:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--accent);
+}
+
+/* ── Secondary Bounded Table Scroll ── */
+.boundedTableScroll {
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 4px);
+  background: var(--surface);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.boundedTableScroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.boundedTableScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.boundedTableScroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+.boundedTableScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* ── Patient Identity & Clean Cell Typography ── */
+.patientIdentityCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.patientNameBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.patientNameBtn:hover b {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.patientMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.patientUmrnChip {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.patientAvatarPill {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  margin-right: 4px;
+}
+
+.patientOwnerTag {
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+.patientIdentityCellSecondary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.patientUmrnChipSecondary {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+}
+
+.routeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.routeOrigin {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.routeDest {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.actionCell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.actionStageTag {
+  display: inline-block;
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.actionTargetText {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.actionOwnerText {
+  font-size: var(--t-0);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Badges & Status Pills */
@@ -1764,8 +2155,55 @@ table.snapSheet {
 .sheetBody {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 14px;
+  padding: 0;
+  margin-top: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sheetBody > section {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  box-shadow: var(--lift-sm);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sheetBody > section h2 {
+  font-family: var(--display);
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.sheetBody > .signBlock {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  box-shadow: var(--lift-sm);
+  margin: 0;
+}
+
+.sheetBody > .accreditationFooter {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  box-shadow: var(--lift-sm);
+  margin: 0;
 }
 
 .section {
@@ -1883,7 +2321,10 @@ table.snapSheet {
   .tabBtn,
   .scopeSelectControl,
   .searchInputHandover,
-  .btnLinkAction {
+  .btnLinkAction,
+  .btnEnlargeTable,
+  .btnCompressTable,
+  .patientNameBtn {
     min-height: var(--ward-tap, 48px);
   }
 }
@@ -2357,20 +2798,20 @@ table.snapSheet {
 
 /* ── NSQHS STANDARD 6 CLINICAL HANDOVER ACCREDITATION FOOTER ── */
 .accreditationFooter {
-  margin-top: 24px;
-  padding: 16px 20px;
+  margin-top: 14px;
+  padding: 10px 14px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .accreditationGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 10px;
 }
 
 @media (max-width: 768px) {
@@ -2382,7 +2823,7 @@ table.snapSheet {
 .accreditationField {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .accreditationField:nth-child(3) {
@@ -2399,7 +2840,7 @@ table.snapSheet {
 }
 
 .accreditationLine {
-  height: 28px;
+  height: 22px;
   border-bottom: 1.5px dashed var(--line-strong);
   background: var(--surface);
   border-radius: var(--r1);
@@ -2408,8 +2849,8 @@ table.snapSheet {
 .accreditationChecks {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 6px 10px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1);
@@ -2524,6 +2965,19 @@ table.snapSheet {
     border: 1px solid var(--line) !important;
     background: none !important;
     box-shadow: none !important;
+  }
+
+  /* Print every row. The on-screen scroll bounds (the 480px sheet, the 240px lower tables) and the
+     enlarged overlay would otherwise clip the A4 sheet to their scroll viewport. */
+  .snapSheetBounded,
+  .boundedTableScroll,
+  .snapSheetEnlarged,
+  .enlargedTableScroll {
+    position: static !important;
+    inset: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .snapSheet {

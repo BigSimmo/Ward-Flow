@@ -614,32 +614,31 @@ export function StatisticsWardScreen({
           </div>
         </StatisticsDetailPanel>
 
-        <StatisticsDetailPanel
-          title="Occupancy over the window"
-          testId="ward-statistics-ward-occupancy"
-          dataTabSection="occ"
-        >
-          <div
-            className={`${styles.panelBody} ${pageStyles.trendStack}`}
-            role="group"
-            aria-label="Occupancy over the window content"
-            tabIndex={0}
-          >
-            <details className={`${pageStyles.measureDetails} source-print`}>
-              <summary>Technical trend disclosure</summary>
-              <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-                Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
-                ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
-                trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
-              </p>
-            </details>
-            <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
-            <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
-          </div>
-        </StatisticsDetailPanel>
-
         <div className={pageStyles.measureColumns} data-testid="ward-statistics-ward-measures">
           <div className={pageStyles.measureColumn}>
+            <StatisticsDetailPanel
+              title="Occupancy over the window"
+              testId="ward-statistics-ward-occupancy"
+              dataTabSection="occ"
+            >
+              <div
+                className={`${styles.panelBody} ${pageStyles.trendStack}`}
+                role="group"
+                aria-label="Occupancy over the window content"
+                tabIndex={0}
+              >
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Technical trend disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
+                    Neither trend below is recorded — both charts below are demonstration data, not a measurement of
+                    this ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so
+                    neither trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+                  </p>
+                </details>
+                <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
+                <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
+              </div>
+            </StatisticsDetailPanel>
             <WardPanel title="Length of stay" testId="ward-statistics-ward-length-of-stay" dataTabSection="los">
               <div className={styles.panelBody} role="group" aria-label="Length of stay content" tabIndex={0}>
                 <h3 className={styles.subHeading}>Average length of stay</h3>

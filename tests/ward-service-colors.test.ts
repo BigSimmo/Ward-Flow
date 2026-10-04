@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import {
-  WA_HEALTH_SERVICES_COLOR_KEY,
   getHealthServiceColorDefinition,
   getHealthServiceBadgeStyle,
   getHealthServiceDotStyle,
