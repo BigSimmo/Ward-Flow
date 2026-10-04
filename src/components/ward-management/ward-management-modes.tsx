@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ChevronDown, CircleSlash, Clock3, History, Users, UserRound } from "lucide-react";
 import { useState } from "react";
 
@@ -322,9 +323,9 @@ export function GovernanceView() {
                             {formatInstantWithDay(entry.at, now)}
                           </span>
                           <span className={governance.auditDot}>·</span>
-                          <a href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
+                          <Link href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
                             {entry.movementId}
-                          </a>
+                          </Link>
                           <span className={governance.auditDot}>·</span>
                           <span className={governance.badge} data-tone={tone}>
                             {auditKindLabels[entry.kind]}
