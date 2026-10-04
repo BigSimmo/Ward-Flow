@@ -88,6 +88,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();
+    // The wait timeline is a view inside "Who is holding people up" (the PR 48 overview switcher),
+    // so the default overview does not render it as a panel of its own.
     expect(panelTitlesInOrder()).toEqual([
       "Who is holding people up",
       "Waiting",
@@ -102,9 +104,25 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     expect(panelTitlesInOrder()).toEqual([
       "Who is holding people up",
       "Waiting",
+      "Why this person is waiting",
       "What the blocker is",
       "Escalations and resolved",
+      "Delays with no named person",
+    ]);
+
+    // Choosing the Wait timeline view places the timeline inside the overview panel, ahead of the worklist.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Executive Overview Mode" })).getByRole("button", {
+        name: "Wait timeline",
+      }),
+    );
+    expect(panelTitlesInOrder()).toEqual([
+      "Who is holding people up",
+      "Wait timeline",
+      "Waiting",
       "Why this person is waiting",
+      "What the blocker is",
+      "Escalations and resolved",
       "Delays with no named person",
     ]);
   });
@@ -114,7 +132,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("carries the register tabs in order", () => {
     renderScreen();
-    const tabs = screen.getAllByRole("tab");
+    const tabs = within(screen.getByRole("tablist", { name: "Registers" })).getAllByRole("tab");
     expect(tabs.length, "the register tabs did not render — this guard proves nothing").toBe(3);
     expect(tabs[0]).toHaveTextContent(/Escalations/u);
     expect(tabs[1]).toHaveTextContent(/Attention/u);

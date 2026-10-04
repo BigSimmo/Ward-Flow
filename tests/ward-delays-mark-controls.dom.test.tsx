@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { DELAY_CAUSE_COPY, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
@@ -125,7 +126,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   it("pressing an owner card after a chip resets the chip to 'People waiting', so no chip reads pressed while marking nothing", () => {
     const locked = OPEN.filter((movement) => movement.security === "Secure");
 
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -152,7 +153,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   it("pressing a chip after an owner card unpresses the owner card, and marks exactly the chip's own population", () => {
     const escalated = OPEN.filter((movement) => movement.escalation !== undefined);
 
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -190,7 +191,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   });
 
   it("pressing a pressed owner card again clears the mark, and the panel count reads just the open population", () => {
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -215,7 +216,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   });
 
   it("an owner card with nobody under it reads '0 of N marked', and every row still shows", () => {
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -232,14 +233,14 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   });
 
   it("closes the selected patient's detail panel when their movement closes", () => {
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
         <WithdrawReferralProbe movementId="WF-002" />
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByTestId("delays-select-WF-002"));
+    inspectDelayPerson("WF-002");
     expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("test-withdraw-referral"));
@@ -252,7 +253,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
   });
 
   it("a marked cause that empties stops naming itself in the mark label, without closing the movement", () => {
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
         <ClearUrgentFlagProbe movementId="WF-018" />

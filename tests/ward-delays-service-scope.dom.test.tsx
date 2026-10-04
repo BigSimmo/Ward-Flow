@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { renderAllDelays } from "./helpers/delays-interactions";
+import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { DELAY_OWNERS, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
@@ -131,7 +132,7 @@ describe("fixture sanity: South Metro actually splits the open population both w
 describe("the Delays screen narrows to a chosen service (item 44, task D1)", () => {
   it("with a service chosen, the waiting list holds only that service's own movements", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -157,7 +158,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("shows the scope bar with the exact §3 summary, and S2's urgent-outside line when urgent movements exist outside", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -175,7 +176,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("marks (owner, cause, chip) still work under a service — highlighting the scoped population, never hiding it", () => {
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -234,7 +235,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
   it("with All services chosen, the screen is unchanged — no scope bar, and every open movement is on the list", () => {
     // resetServiceScopeForTests() in beforeEach already leaves the store at All services (null).
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -267,7 +268,7 @@ describe("WF-014 scenario — a legal form RUNNING OUT counts as urgent-outside 
     expect(wf014!.legalForm?.dueAt).toBe(NOW_ANCHOR + 60);
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AdvanceClock minutes={5} />
         <DelaysScreen />
@@ -305,7 +306,7 @@ describe("WF-009 scenario — the escalations register stays whole-network (D-b,
     ).toBe(false);
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -339,7 +340,7 @@ describe("WF-018 scenario — flagged-urgent-but-not-severe patients outside the
     );
 
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
       </WardFlowProvider>,
@@ -357,7 +358,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
     // whole-network alike — deterministically empty, so every sentence below is provable without
     // depending on which real movements happen to be open today.
     setServiceScope(SERVICE);
-    render(
+    renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen movements={[]} />
       </WardFlowProvider>,

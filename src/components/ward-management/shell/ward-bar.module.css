@@ -2461,3 +2461,149 @@
     outline: 0.0625rem solid CanvasText;
   }
 }
+
+@media (min-width: 1001px) {
+  :global(body:has([data-ward-page="delays"])) .bar {
+    height: 58px;
+    min-height: 58px;
+    padding-inline: 20px;
+    box-shadow: none;
+    gap: 12px;
+  }
+  :global(body:has([data-ward-page="delays"])) .bar::before {
+    display: none;
+  }
+  :global(body:has([data-ward-page="delays"])) .cockpitCapsule {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+    gap: 22px;
+  }
+  :global(body:has([data-ward-page="delays"])) .place::before {
+    content: "Operations / ";
+    font-weight: 400;
+    color: var(--muted);
+  }
+  :global(body:has([data-ward-page="delays"])) .scopeBadgeInner {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface);
+    padding: 8px 12px;
+    color: var(--accent-ink);
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-ward-page="delays"])) .scopeDot,
+  :global(body:has([data-ward-page="delays"])) .barClockPill,
+  :global(body:has([data-ward-page="delays"])) .mark {
+    display: none;
+  }
+  :global(body:has([data-ward-page="delays"])) .drawerTrigger {
+    min-height: var(--ward-tap);
+    height: var(--ward-tap);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-ward-page="delays"])) .primary {
+    min-height: var(--ward-tap);
+    height: var(--ward-tap);
+    border-radius: 5px;
+    font-size: var(--t-0);
+    background: linear-gradient(var(--accent), var(--accent-press));
+  }
+  :global(body:has([data-ward-page="delays"])) .primaryPrefix {
+    display: inline;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar {
+    order: 0;
+    width: 100%;
+    padding-left: 265px;
+    padding-right: 75px;
+    background: linear-gradient(100deg, var(--accent-press), var(--accent));
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .titleGroup {
+    display: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .scopeBadgeContainer {
+    position: absolute;
+    top: 51px;
+    right: 23px;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .servicePanel {
+    left: auto;
+    right: 0;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .centerGroup {
+    flex: 1;
+    max-width: 650px;
+    margin-inline: auto;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .drawerTrigger {
+    background: transparent;
+    border: 0;
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .primary {
+    border: 1px solid var(--line-strong);
+    background: var(--accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerLabel {
+    color: inherit;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-ward-page="delays"])) .bar .scopeBadgeBtn .scopeBadgeInner {
+    background: var(--surface);
+    color: var(--accent-ink);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    min-height: 36px;
+    padding: 7px 12px;
+  }
+  :global(body:has([data-ward-page="delays"])) .bar .scopeBadgeLabel {
+    text-transform: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTriggers .drawerTrigger {
+    color: var(--on-accent);
+    background: transparent;
+    border-color: transparent;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTrigger::before {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTrigger,
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerLabel,
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerIcon {
+    color: var(--on-accent);
+    transition: none;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .bar {
+    z-index: 40;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .demoTime {
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"]))
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type::before {
+    background: var(--accent);
+    border-color: var(--line-strong);
+    box-shadow: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .searchWrap :global([data-testid="ward-global-search-input"]),
+  :global(body:has([data-delay-layout="workspace"]))
+    .searchWrap
+    :global([data-testid="ward-global-search-input"])::placeholder,
+  :global(body:has([data-delay-layout="workspace"])) .searchWrap :global([data-testid="ward-global-search"]) svg {
+    color: var(--on-accent);
+  }
+}
