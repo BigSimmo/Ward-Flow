@@ -471,7 +471,11 @@ export function WardFlowSignInScreen() {
       </section>
 
       {/* Mandatory Prototype Disclosure */}
-      <aside className={styles.prototypeNotice} aria-label="Prototype Disclosure">
+      {/*
+        Kept local rather than reusing WardPrototypeFooter: this screen sits outside
+        src/components/ward-management on purpose and must import none of it (tests/ward-flow-seam.test.ts).
+      */}
+      <aside className={styles.prototypeNotice} aria-label="Prototype Disclosure" data-testid="ward-sign-in-governance">
         <p>
           Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
           not clinical decision support.

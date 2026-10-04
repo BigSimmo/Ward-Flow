@@ -148,6 +148,7 @@ const wardFlowRoutes = collectWardFlowRoutes(WARD_FLOW_ROOT);
  * file's own comment asks of any future route.
  */
 const REDIRECT_ONLY_ROUTES = new Set<string>([
+  `${ROUTE_PREFIX}/command`,
   `${ROUTE_PREFIX}/constellation`,
   `${ROUTE_PREFIX}/transport`,
   `${ROUTE_PREFIX}/queue`,

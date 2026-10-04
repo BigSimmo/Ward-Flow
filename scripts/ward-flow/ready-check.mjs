@@ -12,7 +12,7 @@ import { offlineTestEnvironment } from "../test-environment.mjs";
 import { removePathSync } from "../retryable-fs.mjs";
 import { validatePolicyReport } from "./full-gate-recheck.mjs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { selectFoldGate } from "./select-fold-gate.mjs";
 
 // A hook's inherited index/repository controls must never redirect snapshot writes.

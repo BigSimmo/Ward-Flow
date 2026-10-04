@@ -205,7 +205,6 @@ export function compareFailingSet({ failing, expected }) {
 
 /** Test name plus the first line of its failure message, with colour codes and trailing space removed. */
 export function failureSignature(fullName, message = "") {
-  // eslint-disable-next-line no-control-regex
   const firstLine = String(message)
     .replace(/\u001b\[[0-9;]*m/g, "")
     .split("\n")[0]

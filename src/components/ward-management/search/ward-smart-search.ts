@@ -31,7 +31,7 @@ import type { EmergencyDepartment, LegalForm, Movement, Unit } from "@/component
 import { findPatients, type Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { edHref, teamHref, unitHref } from "../shell/ward-facade";
+import { teamHref, unitHref } from "../shell/ward-facade";
 
 export type CoreSearchView = {
   key: string;

@@ -838,11 +838,12 @@ export function catchmentSuburbOf(suburb: ReferralSuburb): string | null {
 }
 
 export function referralClocks(referral: Referral, now: Instant): ReferralClocks {
-  const { raisedAt, triagedAt, inDepartmentAt } = referral;
-  // Presence reads `inDepartmentAt ?? triagedAt`, matching `hasArrivedInDepartment`: a patient marked
-  // present (`RECORD_ARRIVED_IN_DEPARTMENT` writes `inDepartmentAt`, not `triagedAt`) must not read as
-  // "not in department yet". One-way only — arrival says nothing about whether triage has happened.
-  const arrivedInDepartmentAt = inDepartmentAt ?? triagedAt;
+  const { raisedAt, triagedAt } = referral;
+  // ⚠️ OPEN QUESTION (lint clean-up, 2026-10-04): an earlier comment here said presence should read
+  // `inDepartmentAt ?? triagedAt`, matching `hasArrivedInDepartment`, and computed that value — but
+  // nothing ever used it: `inDepartment` below has always counted from `triagedAt` only. The unused
+  // value was removed without changing behaviour; whether the clock should start at a recorded
+  // arrival is a clinical decision, not a lint fix.
   // Triage ends the referral wait only when it came AFTER the referral. `>= raisedAt` rather than
   // `> raisedAt` so a referral raised and triaged in the same minute counts as reached, which is
   // what a reader would say happened.

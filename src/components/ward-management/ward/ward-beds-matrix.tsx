@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 
@@ -31,7 +31,6 @@ interface WardBedsMatrixProps {
 export function WardBedsMatrix({
   unit,
   bedsList,
-  selectedBed,
   setSelectedBed,
   selectedPod,
   setSelectedPod,

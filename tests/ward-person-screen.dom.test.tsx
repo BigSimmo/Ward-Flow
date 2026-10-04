@@ -364,7 +364,10 @@ describe("a person's own screen", () => {
 
   it("carries the synthetic-prototype banner every ward screen carries", () => {
     renderPerson();
-    expect(within(screen.getByTestId("ward-person-screen")).getByText(/synthetic/i)).toBeInTheDocument();
+    // The redesigned prototype footer says "synthetic" in its badge, its note and its authority pill,
+    // so assert on the disclosure landmark itself rather than on a single unique text match.
+    const disclosure = within(screen.getByTestId("ward-person-screen")).getByLabelText("Prototype disclosure");
+    expect(disclosure).toHaveTextContent(/synthetic prototype/i);
   });
 
   /**

@@ -16,12 +16,25 @@ function renderDelays() {
   );
 }
 
+/** The wait timeline is one of the overview switcher's views (combined with the PR 48 view modes). */
+function showWaitTimeline(): HTMLElement {
+  const switcher = screen.getByRole("group", { name: "Executive Overview Mode" });
+  fireEvent.click(within(switcher).getByRole("button", { name: "Wait timeline" }));
+  expect(within(switcher).getByRole("button", { name: "Wait timeline" })).toHaveAttribute("aria-pressed", "true");
+  return screen.getByRole("region", { name: "Wait timeline" });
+}
+
 describe("the selected delay data views", () => {
-  it("adds the named wait timeline before the existing radar and renders both lower sections as tables", () => {
+  it("adds the named wait timeline as an overview view and renders both lower sections as tables", () => {
     renderDelays();
-    const timeline = screen.getByRole("region", { name: "Wait timeline" });
+    expect(screen.queryByRole("region", { name: "Wait timeline" })).not.toBeInTheDocument();
+    const timeline = showWaitTimeline();
     const currentGraph = screen.getByRole("region", { name: "Who is holding people up" });
-    expect(timeline.compareDocumentPosition(currentGraph) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(currentGraph).toContainElement(timeline);
+    expect(
+      timeline.compareDocumentPosition(screen.getByRole("region", { name: "Waiting" })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(timeline).getByRole("table")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Waiting" })).getByRole("table")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "What the blocker is" })).getByRole("table")).toBeInTheDocument();
@@ -97,7 +110,7 @@ describe("the selected delay data views", () => {
 
   it("paginates the timeline and supports keyboard switching between table layouts", () => {
     renderDelays();
-    const timeline = screen.getByRole("region", { name: "Wait timeline" });
+    const timeline = showWaitTimeline();
     expect(within(timeline).getByRole("button", { name: "Previous timeline page" })).toBeDisabled();
     const first = within(timeline).getAllByRole("button", { name: /^Inspect timeline/u })[0].textContent;
     fireEvent.click(within(timeline).getByRole("button", { name: "Next timeline page" }));
@@ -139,7 +152,7 @@ describe("the selected delay data views", () => {
       return 1;
     });
     renderDelays();
-    const timeline = screen.getByRole("region", { name: "Wait timeline" });
+    const timeline = showWaitTimeline();
     const next = within(timeline).getByRole("button", { name: "Next timeline page" });
     fireEvent.click(next);
     fireEvent.click(next);
