@@ -1,5 +1,11 @@
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
-import { clockState, minutesUntil, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockState,
+  currentDueSoonThresholds,
+  minutesUntil,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
@@ -245,6 +251,17 @@ export function legalFormRowClassification(movement: Movement, now: Instant): Le
   if (isLegalDeadlineBreached(movement, now)) {
     return { tone: "danger", chip: { level: "urgent", text: "Form expiry passed" }, reasonLevel: "danger" };
   }
+  const reminder = legalExpiryReminderOf(movement, now);
+  if (reminder !== undefined) {
+    // A reminder before a typed expiry lapses (item 13, 4 Oct 2026). The thresholds are Josh's
+    // Settings warnings, never a legal limit; the expiry itself is the time a person typed.
+    const hours = reminderHours(reminder);
+    return {
+      tone: "warning",
+      chip: { level: reminder === "within-urgent" ? "urgent" : "stalled", text: `Expires within ${hours}h` },
+      reasonLevel: "warning",
+    };
+  }
   if (legalForm.dueAt === undefined && legalFormHasClockConcept(legalForm)) {
     /*
      * 🔴 THE CHIP SAYS WHAT THE RECORD HOLDS AND NOTHING ABOUT THE TYPE — Ward Lead's ruling,
@@ -266,4 +283,69 @@ export function legalFormRowClassification(movement: Movement, now: Instant): Le
     };
   }
   return { tone: "neutral", reasonLevel: "ok" };
+}
+
+/**
+ * MENTAL HEALTH ACT EXPIRY REMINDERS — item 13 of Josh's smart-features list, 4 October 2026.
+ *
+ * A synthetic demo of reminders before a recorded form expiry lapses. Owner ruling D5 still holds:
+ * Ward Flow computes no legal time limit and cites no section of the Act. The only expiry read here
+ * is `legalForm.dueAt`, the time a clinician typed from the paper form; the two warning windows are
+ * the configurable Settings thresholds `clockState` already applies (defaults 1 hour and 3 hours),
+ * which are workflow prompts, not legal periods. A passed expiry is not a reminder: it is already
+ * the "Form expiry passed" row and alert.
+ */
+export type LegalExpiryReminder = "within-urgent" | "within-soon";
+
+export function legalExpiryReminderOf(movement: Movement, now: Instant): LegalExpiryReminder | undefined {
+  const dueAt = movement.legalForm?.dueAt;
+  if (dueAt === undefined) return undefined;
+  const state = clockState(dueAt, now);
+  if (state === "critical") return "within-urgent";
+  if (state === "due") return "within-soon";
+  return undefined;
+}
+
+/** The whole-hour window a reminder names, read from the live Settings thresholds. */
+export function reminderHours(reminder: LegalExpiryReminder): number {
+  const { urgentMinutes, soonMinutes } = currentDueSoonThresholds();
+  return Math.round((reminder === "within-urgent" ? urgentMinutes : soonMinutes) / 60);
+}
+
+export type LegalExpiryReminderSummary = {
+  withinUrgent: number;
+  withinSoon: number;
+  urgentHours: number;
+  soonHours: number;
+};
+
+/** How many open recorded forms are inside each warning window. A count of rows, never a rate. */
+export function legalExpiryReminderSummary(movements: Movement[], now: Instant): LegalExpiryReminderSummary {
+  let withinUrgent = 0;
+  let withinSoon = 0;
+  for (const movement of legalFormPopulation(movements)) {
+    const reminder = legalExpiryReminderOf(movement, now);
+    if (reminder === "within-urgent") withinUrgent += 1;
+    else if (reminder === "within-soon") withinSoon += 1;
+  }
+  return {
+    withinUrgent,
+    withinSoon,
+    urgentHours: reminderHours("within-urgent"),
+    soonHours: reminderHours("within-soon"),
+  };
+}
+
+/**
+ * The reminder sentence shown above the list, or `undefined` when no recorded expiry is inside a
+ * warning window. Always carries "Synthetic demo" and "not legally checked", so it cannot be read
+ * as a live statutory alert.
+ */
+export function legalExpiryReminderText(summary: LegalExpiryReminderSummary): string | undefined {
+  const parts: string[] = [];
+  if (summary.withinUrgent > 0) parts.push(`${summary.withinUrgent} within ${summary.urgentHours}h`);
+  if (summary.withinSoon > 0) parts.push(`${summary.withinSoon} within ${summary.soonHours}h`);
+  if (parts.length === 0) return undefined;
+  const total = summary.withinUrgent + summary.withinSoon;
+  return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}). Expiry times are typed from the form and not legally checked; warning windows are set in Settings.`;
 }

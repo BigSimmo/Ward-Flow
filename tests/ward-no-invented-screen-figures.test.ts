@@ -59,6 +59,18 @@ const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = 
   },
 ];
 
+/**
+ * Files whose shown hour periods Josh ruled on (rule 2 only), relative to WARD_DIR. D-29 (4 Oct
+ * 2026): the Act period table may show sourced Mental Health Act periods, each labelled "Synthetic
+ * demo, not legally checked". "Breach", percentages and time constants in it are still refused.
+ */
+const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [
+  {
+    file: "legal-forms/act-periods-demo.ts",
+    ruling: "D-29 (4 Oct 2026): sourced Act periods, shown only as a labelled synthetic demo.",
+  },
+];
+
 type Exclusion = { id: string; why: string; whole?: RegExp; strip?: RegExp };
 
 /** Legitimate labels that make no figure claim. A whole-string rule exempts the text; a strip rule
@@ -66,7 +78,7 @@ type Exclusion = { id: string; why: string; whole?: RegExp; strip?: RegExp };
 const EXCLUSIONS: readonly Exclusion[] = [
   {
     id: "svg-path",
-    why: "SVG icon path data (\"11H2\" is a coordinate, not hours).",
+    why: 'SVG icon path data ("11H2" is a coordinate, not hours).',
     whole: /^[Mm][\d\s.,+eE-]*(?:[MmLlHhVvCcSsQqTtAaZz][\d\s.,+eE-]*)+$/,
   },
   { id: "format-hint", why: "Tells the user how to type a time; not a limit.", strip: /\(24-hour, HH:MM\)/g },
@@ -104,7 +116,7 @@ const EXCLUSIONS: readonly Exclusion[] = [
     id: "internal-name",
     why:
       "A CSS class, element id, test id or state key: an identifier with a hyphen, underscore or inner capital, " +
-      "or a single lower-case word (a union value such as \"breached\"); shown labels are capitalised or sentences.",
+      'or a single lower-case word (a union value such as "breached"); shown labels are capitalised or sentences.',
     whole: /^(?:(?=[A-Za-z][\w:-]*$)(?=.*(?:[-_:]|[a-z][A-Z]))[\w:-]+|[a-z]+)$/,
   },
 ];
@@ -142,7 +154,15 @@ function withoutComments(source: string): string {
 }
 
 // `&gt;` and `&lt;` decode to look-alike characters so a decoded ">24h" does not end the JSX text it sits in.
-const ENTITIES: Record<string, string> = { gt: "＞", lt: "＜", amp: "&", mdash: "—", ndash: "–", middot: "·", nbsp: " " };
+const ENTITIES: Record<string, string> = {
+  gt: "＞",
+  lt: "＜",
+  amp: "&",
+  mdash: "—",
+  ndash: "–",
+  middot: "·",
+  nbsp: " ",
+};
 function decodeEntities(text: string): string {
   return text.replace(/&(\w+);/g, (whole, name: string) => ENTITIES[name] ?? whole);
 }
@@ -188,7 +208,8 @@ export function offencesIn(file: string, source: string): Offence[] {
     const text = afterExclusions(raw);
     if (!text) continue;
     if (BREACH.test(text)) out.push({ file, rule: "breach", text: clip(raw) });
-    if (HOUR_WINDOW.test(text)) out.push({ file, rule: "hour window", text: clip(raw) });
+    if (HOUR_WINDOW.test(text) && !RULED_ON_HOUR_PERIODS.some((entry) => entry.file === file))
+      out.push({ file, rule: "hour window", text: clip(raw) });
   }
   for (const raw of strings) {
     const text = afterExclusions(raw);
@@ -233,7 +254,7 @@ describe("no invented figures on a Ward Flow screen", () => {
       "const isBreachLike = breachCount;",
       'const style = { width: "100%" };',
       'const cls = "ward-breach-badge";',
-      'export const E = () => <p>Estimated time (24-hour, HH:MM)</p>;',
+      "export const E = () => <p>Estimated time (24-hour, HH:MM)</p>;",
       'const bands = ["Under 4 hours", "12 to 24 hours"];',
     ].join("\n");
     expect(offencesIn("clean.tsx", clean)).toEqual([]);

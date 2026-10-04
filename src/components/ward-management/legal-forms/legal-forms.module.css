@@ -919,6 +919,35 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Item 13 expiry reminder: synthetic demo, typed expiries only (owner ruling D5). */
+.reminderBanner {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.625rem 1rem;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--warn-soft);
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+}
+
+.actPeriodDemo {
+  display: block;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.reminderBanner svg {
+  flex: none;
+  margin-top: 0.125rem;
+  color: var(--warn);
+}
+
 .scopeSummaryText {
   margin: 0;
   font-size: var(--t-0);
