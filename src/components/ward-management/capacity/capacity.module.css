@@ -1899,20 +1899,19 @@
 .networkTableScroll {
   flex: 1;
   min-height: 0;
-  max-height: clamp(24rem, calc(100dvh - 12rem), 52rem);
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .networkTableScroll[data-ward-scroll-hint="true"] {
-  border: 1px solid var(--line);
+  border: none;
 }
 
 .networkTable {

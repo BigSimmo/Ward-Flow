@@ -1856,90 +1856,142 @@
   border: 1px solid var(--line);
   border-radius: var(--r2);
   box-shadow: var(--lift);
-  padding: 12px 14px 10px;
+  padding: 10px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   position: relative;
+  margin-bottom: var(--ward-space-12);
 }
 
 .searchForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
-.searchInputRow {
+/* Primary Command Horizon: Shrunk Universal Search Bar + 5 Inline Dropdown Facets */
+.commandRowPrimary {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 8px;
+  flex-wrap: wrap;
   width: 100%;
+}
+
+/* Precision Universal-Style Search Input */
+.searchInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 280px;
+  flex-shrink: 0;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.searchInputWrap:focus-within {
+  width: 320px;
+}
+
+@media (max-width: 900px) {
+  .searchInputWrap,
+  .searchInputWrap:focus-within {
+    width: 100%;
+  }
 }
 
 .searchIcon {
   position: absolute;
-  left: 14px;
-  width: 16px;
-  height: 16px;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
   color: var(--muted);
   pointer-events: none;
   stroke-width: 2;
   z-index: 2;
+  transition: color 0.15s ease;
+}
+
+.searchInputWrap:focus-within .searchIcon {
+  color: var(--accent);
 }
 
 .typeaheadSlot {
   width: 100%;
 }
 
-.typeaheadSlot input {
+/* Scope patient-typeahead inside searchInputWrap to universal 33px height & 9px radius */
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]) {
   width: 100%;
-  height: 40px;
-  padding: 0 54px 0 40px;
+  height: 33px;
+  min-height: 33px;
+  padding: 0 34px 0 30px;
   background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  font-family: var(--body);
-  font-size: var(--t-2);
-  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
   transition:
-    border-color 0.14s,
-    background 0.14s,
-    box-shadow 0.14s;
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.typeaheadSlot input:focus {
-  outline: none;
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]:hover) {
+  background: var(--surface);
+  border-color: var(--ink-soft);
+}
+
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]:focus-within) {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 2.5px var(--accent-soft);
+  box-shadow:
+    0 0 0 2.5px var(--accent-soft),
+    inset 0 1px 2px rgba(15, 23, 42, 0.02);
 }
 
-.typeaheadSlot input::placeholder {
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_input"]) {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  width: 100%;
+  min-height: 0;
+  height: 31px;
+  line-height: 31px;
+  outline: none;
+}
+
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_input"])::placeholder {
   color: var(--muted);
-  font-size: var(--t-2);
+  font-size: var(--t-1);
 }
 
 .searchEndAdornment {
   position: absolute;
-  right: 8px;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 3;
 }
 
 .clearBtn {
-  font-size: var(--t-0);
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--muted);
   background: var(--surface);
   border: 1px solid var(--line);
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
   transition:
     color 0.12s,
@@ -1954,54 +2006,25 @@
 
 .kbdPill {
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 10px;
+  font-weight: 600;
   color: var(--muted);
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
-.addPatientLink {
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  padding: 3px 10px;
-  border-radius: var(--r2);
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none !important;
-  transition:
-    background 0.12s,
-    border-color 0.12s,
-    color 0.12s;
-  white-space: nowrap;
-}
-.addPatientLink:hover {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-/* Condensed Filter Ribbon Toolbar */
-.filterRibbon {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.filtersPrimaryGroup {
+/* 5 Inline Dropdown Filters Group */
+.facetSelectsGroup {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
 .facetSelectWrap {
@@ -2015,18 +2038,20 @@
   -webkit-appearance: none;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: var(--r2);
+  border-radius: var(--r1);
   padding: 4px 22px 4px 8px;
   font-family: var(--body);
   font-size: var(--t-1);
+  font-weight: 500;
   color: var(--ink-soft);
   cursor: pointer;
-  height: 28px;
-  max-width: 175px;
+  height: 33px;
+  max-width: 140px;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   line-height: 1;
+  box-shadow: var(--lift);
   transition:
     border-color 0.12s,
     background 0.12s,
@@ -2034,7 +2059,7 @@
 }
 
 .facetSelect:hover {
-  background: var(--sunk);
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line-strong);
 }
@@ -2043,6 +2068,7 @@
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--surface);
 }
 
 .facetSelect.isFiltered {
@@ -2062,20 +2088,30 @@
   stroke-width: 2;
 }
 
+/* Secondary Controls Row: Presets on Left, Actions on Right */
+.commandRowSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
 /* Quick Query Chips Bar */
 .quickChipsBar {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding-top: 4px;
 }
 
 .quickChipsLabel {
-  font-size: var(--t-0);
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--muted);
   flex-shrink: 0;
 }
@@ -2083,17 +2119,17 @@
 .quickChipsGroup {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .chip {
-  padding: 2px 9px;
+  padding: 3px 9px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink-soft);
-  font-size: var(--t-0);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none !important;
@@ -2103,7 +2139,7 @@
     color 0.12s;
 }
 .chip:hover {
-  background: var(--sunk);
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line-strong);
 }
@@ -2114,7 +2150,7 @@
   font-weight: 600;
 }
 
-/* Secondary Toolbar Actions */
+/* Secondary Toolbar Actions: Reset + Sort + View Switcher */
 .toolbarActionsGroup {
   display: flex;
   align-items: center;
@@ -2126,16 +2162,18 @@
   display: inline-flex;
   background: var(--sunk);
   border: 1px solid var(--line);
-  border-radius: var(--r2);
+  border-radius: var(--r1);
   padding: 2px;
   gap: 2px;
+  height: 33px;
+  align-items: center;
 }
 
 .viewModeBtn {
-  padding: 2px 7px;
-  border-radius: calc(var(--r2) - 2px);
-  font-size: var(--t-0);
-  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: calc(var(--r1) - 2px);
+  font-size: 11px;
+  font-weight: 600;
   color: var(--muted);
   display: inline-flex;
   align-items: center;
@@ -2144,6 +2182,7 @@
   border: none;
   background: transparent;
   text-decoration: none !important;
+  height: 27px;
   transition:
     background 0.12s,
     color 0.12s;
@@ -2152,26 +2191,29 @@
   width: 12px;
   height: 12px;
 }
+.viewModeBtn:hover {
+  color: var(--ink);
+}
 .viewModeBtn[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: var(--lift);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .activeFilterResetPill {
-  font-size: var(--t-0);
+  font-size: 11px;
   font-weight: 600;
   color: var(--danger-ink);
   background: var(--danger-soft);
   border: 1px solid var(--danger);
-  padding: 2px 7px;
+  padding: 4px 9px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
   text-decoration: none !important;
+  height: 33px;
   transition: background 0.12s;
 }
 .activeFilterResetPill:hover {

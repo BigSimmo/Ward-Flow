@@ -423,3 +423,34 @@ describe("Community gateway — recently opened filter", () => {
     }
   });
 });
+
+describe("Community gateway — directory header layout and quick controls", () => {
+  it("toggles the reads-alike filter using the quick collision pill", () => {
+    renderGateway();
+    const collisionPill = screen.getByRole("button", { name: /read alike/i });
+    expect(collisionPill).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(collisionPill);
+    expect(collisionPill).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "Filter team names" })).toHaveValue("alike");
+
+    fireEvent.click(collisionPill);
+    expect(collisionPill).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("combobox", { name: "Filter team names" })).toHaveValue("all");
+  });
+
+  it("shows the reset button when search or filter is active, and resets on click", () => {
+    renderGateway();
+    expect(screen.queryByRole("button", { name: /reset all search and filter/i })).toBeNull();
+
+    const searchInput = screen.getByRole("searchbox", { name: "Search team names" });
+    fireEvent.change(searchInput, { target: { value: "test" } });
+
+    const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
+    expect(resetBtn).toBeInTheDocument();
+
+    fireEvent.click(resetBtn);
+    expect(searchInput).toHaveValue("");
+    expect(screen.queryByRole("button", { name: /reset all search and filter/i })).toBeNull();
+  });
+});

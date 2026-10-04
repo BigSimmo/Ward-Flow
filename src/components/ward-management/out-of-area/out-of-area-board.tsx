@@ -20,6 +20,7 @@ import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/wa
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./out-of-area.module.css";
 import pageStyles from "./out-of-area-third-edition.module.css";
@@ -1353,6 +1354,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             </div>
           </div>
         )}
+        <WardPrototypeFooter
+          testId="ward-out-of-area-footer"
+          note="Out-of-area placements · Synthetic demonstration figures · Not a medical device"
+        />
       </main>
     </div>
   );

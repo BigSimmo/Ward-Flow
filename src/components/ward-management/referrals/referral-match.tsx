@@ -420,6 +420,7 @@ export function ReferralMatchView({
   // before and after, on the next render.
   const priorRejectionCountRef = useRef(rejections.length);
   const [checkToken, setCheckToken] = useState(0);
+  const [collapsedTiers, setCollapsedTiers] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (checkToken === 0) return;
@@ -487,217 +488,272 @@ export function ReferralMatchView({
       <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
         Referrer cancelled this referral — recorded by
       </label>
-      <select
-        id="ward-referral-match-withdraw-recorder"
-        data-testid="ward-referral-match-withdraw-recorder"
-        className={styles.select}
-        value={withdrawRecorder}
-        onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
-      >
-        <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
-        <option value="sender">{senderLabel}</option>
-      </select>
-      {!withdrawConfirmOpen ? (
-        <button
-          type="button"
-          className={styles.declineButton}
-          data-testid="ward-referral-match-withdraw"
-          onClick={() => setWithdrawConfirmOpen(true)}
+      <div className={styles.selectWithActionRow}>
+        <select
+          id="ward-referral-match-withdraw-recorder"
+          data-testid="ward-referral-match-withdraw-recorder"
+          className={styles.select}
+          value={withdrawRecorder}
+          onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
         >
-          Withdraw referral
-        </button>
-      ) : (
-        <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+          <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
+          <option value="sender">{senderLabel}</option>
+        </select>
+        {!withdrawConfirmOpen ? (
           <button
             type="button"
             className={styles.declineButton}
-            data-testid="ward-referral-match-confirm-withdraw"
-            onClick={handleWholeWithdraw}
+            data-testid="ward-referral-match-withdraw"
+            onClick={() => setWithdrawConfirmOpen(true)}
           >
-            Confirm withdrawal
+            Withdraw referral
           </button>
-          <button
-            type="button"
-            className={styles.acceptButton}
-            data-testid="ward-referral-match-cancel-withdraw"
-            onClick={() => setWithdrawConfirmOpen(false)}
-          >
-            Keep referral
-          </button>
-        </div>
-      )}
+        ) : (
+          <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+            <button
+              type="button"
+              className={styles.declineButton}
+              data-testid="ward-referral-match-confirm-withdraw"
+              onClick={handleWholeWithdraw}
+            >
+              Confirm withdrawal
+            </button>
+            <button
+              type="button"
+              className={styles.acceptButton}
+              data-testid="ward-referral-match-cancel-withdraw"
+              onClick={() => setWithdrawConfirmOpen(false)}
+            >
+              Keep referral
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   ) : null;
   if (!ward) {
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
-        <p className={styles.matchSummary}>
-          {patientInfo ? (
-            <>
-              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>{" "}
-              <span className="sr-only">{referral.id}</span>
-            </>
-          ) : (
-            referral.id
-          )}{" "}
-          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
-          matching a bed. There is no bed shortlist for this referral.
-        </p>
-        {gpSourceNotice}
-        {edAddressing && edAddressing.state === "queued" ? (
-          <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
-            {!edAcceptConfirmOpen ? (
-              <button
-                type="button"
-                className={styles.acceptButton}
-                data-testid="ward-referral-match-accept-emergency_department"
-                onClick={() => setEdAcceptConfirmOpen(true)}
-              >
-                Accept presentation / referral
-              </button>
+        <div className={styles.presentationNoticeCard}>
+          <div className={styles.presentationNoticeHeader}>
+            <span className={styles.presentationBadge}>Direct Presentation · Non-Inpatient</span>
+            <span className={styles.presentationMeta}>Triage &amp; Departmental Review</span>
+          </div>
+          <p className={styles.matchSummary}>
+            {patientInfo ? (
+              <>
+                <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>{" "}
+                <span className="sr-only">{referral.id}</span>
+              </>
             ) : (
-              <div
-                className={styles.matchRowTop}
-                data-testid="ward-referral-match-accept-confirm-group-emergency_department"
-              >
+              referral.id
+            )}{" "}
+            was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
+            matching a bed. There is no bed shortlist for this referral.
+          </p>
+          {gpSourceNotice}
+        </div>
+
+        <div className={styles.presentationActionCard}>
+          <div className={styles.presentationActionHeader}>
+            <span className={styles.presentationActionTitle}>Departmental Intake Actions</span>
+            <span className={styles.presentationActionSubtitle}>Record presentation outcome</span>
+          </div>
+
+          {edAddressing && edAddressing.state === "queued" ? (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-emergency_department">
+              {!edAcceptConfirmOpen ? (
                 <button
                   type="button"
-                  className={styles.acceptButton}
-                  data-testid="ward-referral-match-confirm-accept-emergency_department"
-                  onClick={handleEdAccept}
+                  className={styles.acceptPresentationBtn}
+                  data-testid="ward-referral-match-accept-emergency_department"
+                  onClick={() => setEdAcceptConfirmOpen(true)}
                 >
-                  Confirm acceptance
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="15"
+                    height="15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Accept presentation / referral</span>
                 </button>
+              ) : (
+                <div
+                  className={styles.confirmActionRow}
+                  data-testid="ward-referral-match-accept-confirm-group-emergency_department"
+                >
+                  <button
+                    type="button"
+                    className={styles.acceptPresentationBtn}
+                    data-testid="ward-referral-match-confirm-accept-emergency_department"
+                    onClick={handleEdAccept}
+                  >
+                    Confirm acceptance
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.cancelBtn}
+                    data-testid="ward-referral-match-cancel-accept-emergency_department"
+                    onClick={() => setEdAcceptConfirmOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {edAddressing && edAddressing.state === "queued" ? (
+            <div
+              className={styles.declineControls}
+              data-testid="ward-referral-match-decline-controls-emergency_department"
+            >
+              <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-emergency_department">
+                Decline reason (emergency department)
+              </label>
+              <div className={styles.selectWithActionRow}>
+                <select
+                  id="ward-referral-match-decline-reason-emergency_department"
+                  data-testid="ward-referral-match-decline-reason-emergency_department"
+                  className={styles.select}
+                  value={declineReason ?? ""}
+                  onChange={(event) => {
+                    const chosen = event.target.value;
+                    // Membership, never truthiness — same discipline as the ward select above.
+                    setDeclineReason(
+                      ED_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
+                        ? (chosen as ReferralDeclineReason)
+                        : undefined,
+                    );
+                  }}
+                >
+                  <option value="">Choose a reason…</option>
+                  {ED_DECLINE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {DECLINE_REASON_LABELS[reason] ?? reason}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className={styles.declineButton}
-                  data-testid="ward-referral-match-cancel-accept-emergency_department"
-                  onClick={() => setEdAcceptConfirmOpen(false)}
+                  data-testid="ward-referral-match-decline-emergency_department"
+                  aria-disabled={declineReason === undefined ? "true" : undefined}
+                  aria-describedby={
+                    declineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
+                  }
+                  title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+                  onClick={
+                    declineReason === undefined
+                      ? ignoreUnavailableActivation
+                      : () => handleDecline("emergency_department")
+                  }
                 >
-                  Cancel
+                  Decline referral
                 </button>
               </div>
-            )}
-          </div>
-        ) : null}
-        {edAddressing && edAddressing.state === "queued" ? (
-          <div
-            className={styles.declineControls}
-            data-testid="ward-referral-match-decline-controls-emergency_department"
-          >
-            <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-emergency_department">
-              Decline reason (emergency department)
-            </label>
-            <select
-              id="ward-referral-match-decline-reason-emergency_department"
-              data-testid="ward-referral-match-decline-reason-emergency_department"
-              className={styles.select}
-              value={declineReason ?? ""}
-              onChange={(event) => {
-                const chosen = event.target.value;
-                // Membership, never truthiness — same discipline as the ward select above.
-                setDeclineReason(
-                  ED_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
-                    ? (chosen as ReferralDeclineReason)
-                    : undefined,
-                );
-              }}
-            >
-              <option value="">Choose a reason…</option>
-              {ED_DECLINE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {DECLINE_REASON_LABELS[reason] ?? reason}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className={styles.declineButton}
-              data-testid="ward-referral-match-decline-emergency_department"
-              aria-disabled={declineReason === undefined ? "true" : undefined}
-              aria-describedby={
-                declineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
-              }
-              title={declineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
-              onClick={
-                declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("emergency_department")
-              }
-            >
-              Decline referral
-            </button>
-            {declineReason === undefined ? (
-              <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
-                {DECLINE_REASON_UNCHOSEN_ED}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        {communityAddressing && communityAddressing.state === "queued" ? (
-          <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
-            {/*
-             * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same
-             * button style as the ward bed accept above (`styles.acceptButton`), no reason and no
-             * unit to gate on (see `handleCommunityAccept`'s own doc comment), so unlike every
-             * decline control on this screen this one is never `aria-disabled`.
-             */}
-            <button
-              type="button"
-              className={styles.acceptButton}
-              data-testid="ward-referral-match-accept-community_team"
-              onClick={handleCommunityAccept}
-            >
-              Accept referral
-            </button>
-          </div>
-        ) : null}
-        {communityAddressing && communityAddressing.state === "queued" ? (
-          <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
-            <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
-              Decline reason (community team)
-            </label>
-            <select
-              id="ward-referral-match-decline-reason-community_team"
-              data-testid="ward-referral-match-decline-reason-community_team"
-              className={styles.select}
-              value={communityDeclineReason ?? ""}
-              onChange={(event) => {
-                const chosen = event.target.value;
-                // Membership, never truthiness — same discipline as the ward and ED selects above.
-                setCommunityDeclineReason(
-                  COMMUNITY_DECLINE_REASONS.includes(chosen as CommunityDeclineReason)
-                    ? (chosen as CommunityDeclineReason)
-                    : undefined,
-                );
-              }}
-            >
-              <option value="">Choose a reason…</option>
-              {COMMUNITY_DECLINE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {COMMUNITY_DECLINE_REASON_LABELS[reason]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className={styles.declineButton}
-              data-testid="ward-referral-match-decline-community_team"
-              aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
-              aria-describedby={
-                communityDeclineReason === undefined ? "ward-referral-match-decline-blocked-community_team" : undefined
-              }
-              title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
-              onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
-            >
-              Decline referral
-            </button>
-            {communityDeclineReason === undefined ? (
-              <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
-                {DECLINE_REASON_UNCHOSEN_COMMUNITY}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        {wholeWithdrawControl}
+              {declineReason === undefined ? (
+                <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
+                  {DECLINE_REASON_UNCHOSEN_ED}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {communityAddressing && communityAddressing.state === "queued" ? (
+            <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
+              {/*
+               * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same
+               * button style as the ward bed accept above (`styles.acceptButton`), no reason and no
+               * unit to gate on (see `handleCommunityAccept`'s own doc comment), so unlike every
+               * decline control on this screen this one is never `aria-disabled`.
+               */}
+              <button
+                type="button"
+                className={styles.acceptPresentationBtn}
+                data-testid="ward-referral-match-accept-community_team"
+                onClick={handleCommunityAccept}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Accept referral</span>
+              </button>
+            </div>
+          ) : null}
+
+          {communityAddressing && communityAddressing.state === "queued" ? (
+            <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
+              <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
+                Decline reason (community team)
+              </label>
+              <div className={styles.selectWithActionRow}>
+                <select
+                  id="ward-referral-match-decline-reason-community_team"
+                  data-testid="ward-referral-match-decline-reason-community_team"
+                  className={styles.select}
+                  value={communityDeclineReason ?? ""}
+                  onChange={(event) => {
+                    const chosen = event.target.value;
+                    // Membership, never truthiness — same discipline as the ward and ED selects above.
+                    setCommunityDeclineReason(
+                      COMMUNITY_DECLINE_REASONS.includes(chosen as CommunityDeclineReason)
+                        ? (chosen as CommunityDeclineReason)
+                        : undefined,
+                    );
+                  }}
+                >
+                  <option value="">Choose a reason…</option>
+                  {COMMUNITY_DECLINE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {COMMUNITY_DECLINE_REASON_LABELS[reason]}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className={styles.declineButton}
+                  data-testid="ward-referral-match-decline-community_team"
+                  aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
+                  aria-describedby={
+                    communityDeclineReason === undefined
+                      ? "ward-referral-match-decline-blocked-community_team"
+                      : undefined
+                  }
+                  title={communityDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_COMMUNITY : undefined}
+                  onClick={communityDeclineReason === undefined ? ignoreUnavailableActivation : handleCommunityDecline}
+                >
+                  Decline referral
+                </button>
+              </div>
+              {communityDeclineReason === undefined ? (
+                <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
+                  {DECLINE_REASON_UNCHOSEN_COMMUNITY}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {wholeWithdrawControl}
+        </div>
+
         {lastRejection ? (
           <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
             {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
@@ -734,6 +790,21 @@ export function ReferralMatchView({
       c.verdict.gates.every((g) => (g.gate === "allocatable_bed" || g.gate === "capacity_freshness" ? true : g.pass)),
   );
   const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
+
+  const isTier1Expanded = collapsedTiers[1] !== true;
+  const isTier2Expanded = collapsedTiers[2] !== true;
+  const isTier3Expanded =
+    collapsedTiers[3] !== undefined ? !collapsedTiers[3] : tier1Candidates.length === 0 && tier2Candidates.length === 0;
+
+  const toggleTier = (tier: number) => {
+    setCollapsedTiers((prev) => {
+      const currentlyExpanded = tier === 3 ? isTier3Expanded : prev[tier] !== true;
+      return {
+        ...prev,
+        [tier]: currentlyExpanded,
+      };
+    });
+  };
 
   const toggleGates = (id: string) => {
     setExpandedUnitGates((prev) => {
@@ -1113,7 +1184,9 @@ export function ReferralMatchView({
       ) : null}
 
       {hasCohort ? (
-        <div className={styles.unifiedTriageBanner}>
+        <div
+          className={`${styles.unifiedTriageBanner} ${accepting.length === 0 ? styles.unifiedTriageBannerZero : ""}`}
+        >
           <div className={styles.triageSummaryRow}>
             <div className={styles.triageLeadText}>
               <span className={styles.triageLargeCount} data-testid="ward-referral-match-accepting-count">
@@ -1121,10 +1194,12 @@ export function ReferralMatchView({
               </span>
             </div>
             <div className={styles.triagePillGroup}>
-              <span className={`${styles.triageMiniPill} ${styles.pillGood}`}>
+              <span className={`${styles.triageMiniPill} ${accepting.length > 0 ? styles.pillGood : styles.pillMuted}`}>
                 ● {tier1Candidates.length} Immediate Vacancies
               </span>
-              <span className={`${styles.triageMiniPill} ${styles.pillWarn}`}>
+              <span
+                className={`${styles.triageMiniPill} ${tier2Candidates.length > 0 ? styles.pillWarn : styles.pillMuted}`}
+              >
                 ▲ {tier2Candidates.length} Blocked (No Bed)
               </span>
               <span className={`${styles.triageMiniPill} ${styles.pillMuted}`}>
@@ -1179,318 +1254,355 @@ export function ReferralMatchView({
       ) : null}
 
       {/* TIER 1: READY TO PLACE NOW */}
-      <div style={{ marginBottom: "14px" }}>
-        <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
+        <button
+          type="button"
+          className={`${styles.secHeader} ${styles.secHeaderGood} ${styles.secHeaderToggle}`}
+          onClick={() => toggleTier(1)}
+          aria-expanded={isTier1Expanded}
+          aria-controls="referral-match-tier-1-body"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className={styles.accordionChevron} aria-hidden="true">
+              {isTier1Expanded ? "▼" : "▶"}
+            </span>
             <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} aria-hidden="true" />
             <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
           </div>
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+          <span className={styles.tierCountBadge}>
             {tier1Candidates.length} {tier1Candidates.length === 1 ? "Unit Available" : "Units Available"}
           </span>
-        </div>
+        </button>
 
-        {tier1Candidates.length === 0 ? (
-          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-            No units in the network currently meet all clinical criteria with an immediately confirmed allocatable bed.
-          </p>
-        ) : (
-          tier1Candidates.map((c) => {
-            const passedGates = c.verdict.gates.filter((g) => g.pass);
-            const totalGates = c.verdict.gates.length;
-            const gateKey = `alt2-t1-${c.unit.id}`;
-            const isGatesExpanded = expandedUnitGates.has(gateKey);
-            const freeBeds = c.unit.allocatable.value;
-            const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
-            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-            const occPct = c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
-            const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
+        {isTier1Expanded ? (
+          <div id="referral-match-tier-1-body" className={styles.tierBody}>
+            {tier1Candidates.length === 0 ? (
+              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+                No units in the network currently meet all clinical criteria with an immediately confirmed allocatable
+                bed.
+              </p>
+            ) : (
+              tier1Candidates.map((c) => {
+                const passedGates = c.verdict.gates.filter((g) => g.pass);
+                const totalGates = c.verdict.gates.length;
+                const gateKey = `alt2-t1-${c.unit.id}`;
+                const isGatesExpanded = expandedUnitGates.has(gateKey);
+                const freeBeds = c.unit.allocatable.value;
+                const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
+                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+                const occPct =
+                  c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
+                const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
 
-            return (
-              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
-                <div className={styles.unitCardTop}>
-                  <div>
-                    <div className={styles.unitName}>
-                      <span>{c.unit.name}</span>
-                      <span className={styles.bandAvailableBadge} style={{ fontSize: "11px", padding: "1px 6px" }}>
-                        {bedLabel}
+                return (
+                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
+                    <div className={styles.unitCardTop}>
+                      <div>
+                        <div className={styles.unitName}>
+                          <span>{c.unit.name}</span>
+                          <span className={styles.bandAvailableBadge} style={{ fontSize: "11px", padding: "1px 6px" }}>
+                            {bedLabel}
+                          </span>
+                        </div>
+                        <div className={styles.unitSub}>
+                          {hospitalName} · {c.unit.cohort} · Contact: Not recorded
+                        </div>
+                      </div>
+                      <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
+                        ✓ Accept Bed at {shortName}
+                      </button>
+                    </div>
+
+                    <div className={styles.unitIntelRow}>
+                      <span>
+                        Bed Allocation: <strong>Allocatable bed recorded</strong>
+                      </span>
+                      <span className={styles.demoDot}>·</span>
+                      <span>
+                        Transit: <strong>Not recorded</strong>
+                      </span>
+                      <span className={styles.demoDot}>·</span>
+                      <span>
+                        Census:{" "}
+                        <strong>
+                          {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
+                        </strong>
                       </span>
                     </div>
-                    <div className={styles.unitSub}>
-                      {hospitalName} · {c.unit.cohort} · Contact: Not recorded
+
+                    <div className={styles.gateSummary}>
+                      <button
+                        type="button"
+                        className={styles.gateToggle}
+                        onClick={() => toggleGates(gateKey)}
+                        aria-expanded={isGatesExpanded}
+                        aria-controls={`gate-grid-${gateKey}`}
+                      >
+                        <span>
+                          ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                        </span>
+                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                        </span>
+                      </button>
+                      {isGatesExpanded ? (
+                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                          {c.verdict.gates.map((g) => (
+                            <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
+                              ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
-                    ✓ Accept Bed at {shortName}
-                  </button>
-                </div>
-
-                <div className={styles.unitIntelRow}>
-                  <span>
-                    Bed Allocation: <strong>Allocatable bed recorded</strong>
-                  </span>
-                  <span className={styles.demoDot}>·</span>
-                  <span>
-                    Transit: <strong>Not recorded</strong>
-                  </span>
-                  <span className={styles.demoDot}>·</span>
-                  <span>
-                    Census:{" "}
-                    <strong>
-                      {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
-                    </strong>
-                  </span>
-                </div>
-
-                <div className={styles.gateSummary}>
-                  <button
-                    type="button"
-                    className={styles.gateToggle}
-                    onClick={() => toggleGates(gateKey)}
-                    aria-expanded={isGatesExpanded}
-                    aria-controls={`gate-grid-${gateKey}`}
-                  >
-                    <span>
-                      ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
-                    </span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                      {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
-                    </span>
-                  </button>
-                  {isGatesExpanded ? (
-                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                      {c.verdict.gates.map((g) => (
-                        <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
-                          ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })
-        )}
+                );
+              })
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* TIER 2: CAPACITY CHECKS OUTSTANDING */}
-      <div style={{ marginBottom: "14px" }}>
-        <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
+        <button
+          type="button"
+          className={`${styles.secHeader} ${styles.secHeaderWarn} ${styles.secHeaderToggle}`}
+          onClick={() => toggleTier(2)}
+          aria-expanded={isTier2Expanded}
+          aria-controls="referral-match-tier-2-body"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className={styles.accordionChevron} aria-hidden="true">
+              {isTier2Expanded ? "▼" : "▶"}
+            </span>
             <span className={`${styles.pulseDot} ${styles.pulseDotWarn}`} aria-hidden="true" />
             <span>TIER 2: CAPACITY CHECKS OUTSTANDING</span>
           </div>
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+          <span className={styles.tierCountBadge}>
             {tier2Candidates.length} {tier2Candidates.length === 1 ? "Unit" : "Units"}
           </span>
-        </div>
+        </button>
 
-        {tier2Candidates.length === 0 ? (
-          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-            No candidates have capacity checks outstanding.
-          </p>
-        ) : (
-          tier2Candidates.map((c) => {
-            const gateKey = `alt2-t2-${c.unit.id}`;
-            const isGatesExpanded = expandedUnitGates.has(gateKey);
-            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+        {isTier2Expanded ? (
+          <div id="referral-match-tier-2-body" className={styles.tierBody}>
+            {tier2Candidates.length === 0 ? (
+              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+                No candidates have capacity checks outstanding.
+              </p>
+            ) : (
+              tier2Candidates.map((c) => {
+                const gateKey = `alt2-t2-${c.unit.id}`;
+                const isGatesExpanded = expandedUnitGates.has(gateKey);
+                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
 
-            return (
-              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
-                <div className={styles.unitCardTop}>
-                  <div>
-                    <div className={styles.unitName}>
-                      <span>{c.unit.name}</span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          padding: "1px 6px",
-                          borderRadius: "10px",
-                          background: "var(--warn-soft)",
-                          color: "var(--warn)",
-                          fontWeight: 700,
-                        }}
-                      >
-                        Capacity unresolved
+                return (
+                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
+                    <div className={styles.unitCardTop}>
+                      <div>
+                        <div className={styles.unitName}>
+                          <span>{c.unit.name}</span>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              padding: "1px 6px",
+                              borderRadius: "10px",
+                              background: "var(--warn-soft)",
+                              color: "var(--warn)",
+                              fontWeight: 700,
+                            }}
+                          >
+                            Capacity unresolved
+                          </span>
+                        </div>
+                        <div className={styles.unitSub}>
+                          {hospitalName} · {c.unit.cohort}
+                        </div>
+                      </div>
+                      <div className={styles.unitActionStatusWrap}>
+                        <button
+                          type="button"
+                          className={styles.btnSubtle}
+                          aria-disabled="true"
+                          aria-describedby={`turnaround-unavailable-${c.unit.id}`}
+                          title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
+                          onClick={ignoreUnavailableActivation}
+                        >
+                          Flag Turnaround Priority
+                        </button>
+                        <span id={`turnaround-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
+                          Scheduling workflow not recorded
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.unitIntelRow}>
+                      <span>
+                        Recorded capacity checks:{" "}
+                        <strong>
+                          {c.verdict.gates
+                            .filter((gate) => !gate.pass)
+                            .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
+                            .join(" · ")}
+                        </strong>
                       </span>
                     </div>
-                    <div className={styles.unitSub}>
-                      {hospitalName} · {c.unit.cohort}
+
+                    <div className={styles.gateSummary}>
+                      <button
+                        type="button"
+                        className={`${styles.gateToggle} ${styles.gateToggleWarn}`}
+                        onClick={() => toggleGates(gateKey)}
+                        aria-expanded={isGatesExpanded}
+                        aria-controls={`gate-grid-${gateKey}`}
+                      >
+                        <span>Capacity checks outstanding · other recorded gates passed</span>
+                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                        </span>
+                      </button>
+                      {isGatesExpanded ? (
+                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                          {c.verdict.gates.map((g) => {
+                            const isPending = !g.pass;
+                            return (
+                              <div
+                                key={g.gate}
+                                className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
+                              >
+                                {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.btnSubtle}
-                    aria-disabled="true"
-                    aria-describedby={`turnaround-unavailable-${c.unit.id}`}
-                    title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
-                    onClick={ignoreUnavailableActivation}
-                  >
-                    Flag Turnaround Priority
-                  </button>
-                </div>
-                <span
-                  id={`turnaround-unavailable-${c.unit.id}`}
-                  className={styles.emptyNote}
-                  style={{ display: "block" }}
-                >
-                  Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here.
-                </span>
-
-                <div className={styles.unitIntelRow}>
-                  <span>
-                    Recorded capacity checks:{" "}
-                    <strong>
-                      {c.verdict.gates
-                        .filter((gate) => !gate.pass)
-                        .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
-                        .join(" · ")}
-                    </strong>
-                  </span>
-                </div>
-
-                <div className={styles.gateSummary}>
-                  <button
-                    type="button"
-                    className={`${styles.gateToggle} ${styles.gateToggleWarn}`}
-                    onClick={() => toggleGates(gateKey)}
-                    aria-expanded={isGatesExpanded}
-                    aria-controls={`gate-grid-${gateKey}`}
-                  >
-                    <span>Capacity checks outstanding · other recorded gates passed</span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                      {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
-                    </span>
-                  </button>
-                  {isGatesExpanded ? (
-                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                      {c.verdict.gates.map((g) => {
-                        const isPending = !g.pass;
-                        return (
-                          <div
-                            key={g.gate}
-                            className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
-                          >
-                            {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })
-        )}
+                );
+              })
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* TIER 3: INELIGIBLE CRITERIA EXCLUSIONS */}
-      <div style={{ marginBottom: "14px" }}>
-        <div className={`${styles.secHeader} ${styles.secHeaderDanger}`}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
+        <button
+          type="button"
+          className={`${styles.secHeader} ${styles.secHeaderDanger} ${styles.secHeaderToggle}`}
+          onClick={() => toggleTier(3)}
+          aria-expanded={isTier3Expanded}
+          aria-controls="referral-match-tier-3-body"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className={styles.accordionChevron} aria-hidden="true">
+              {isTier3Expanded ? "▼" : "▶"}
+            </span>
             <span className={`${styles.pulseDot} ${styles.pulseDotDanger}`} aria-hidden="true" />
             <span>TIER 3: INELIGIBLE CRITERIA EXCLUSIONS & STATUTORY POLICY LOCKOUTS</span>
           </div>
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+          <span className={styles.tierCountBadge}>
             {tier3Candidates.length} {tier3Candidates.length === 1 ? "Unit Excluded" : "Units Excluded"}
           </span>
-        </div>
+        </button>
 
-        {tier3Candidates.length === 0 ? (
-          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-            No units in this network are excluded by statutory or cohort criteria.
-          </p>
-        ) : (
-          tier3Candidates.map((c) => {
-            const gateKey = `alt2-t3-${c.unit.id}`;
-            const isGatesExpanded = expandedUnitGates.has(gateKey);
-            const failedGates = c.verdict.gates.filter((g) => !g.pass);
-            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+        {isTier3Expanded ? (
+          <div id="referral-match-tier-3-body" className={styles.tierBody}>
+            {tier3Candidates.length === 0 ? (
+              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+                No units in this network are excluded by statutory or cohort criteria.
+              </p>
+            ) : (
+              tier3Candidates.map((c) => {
+                const gateKey = `alt2-t3-${c.unit.id}`;
+                const isGatesExpanded = expandedUnitGates.has(gateKey);
+                const failedGates = c.verdict.gates.filter((g) => !g.pass);
+                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
 
-            return (
-              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardIneligible}`}>
-                <div className={styles.unitCardTop}>
-                  <div>
-                    <div className={styles.unitName}>
-                      <span>{c.unit.name}</span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          padding: "1px 6px",
-                          borderRadius: "10px",
-                          background: "var(--danger-soft)",
-                          color: "var(--danger)",
-                          fontWeight: 700,
-                        }}
-                      >
-                        Statutory Exclusion
+                return (
+                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardIneligible}`}>
+                    <div className={styles.unitCardTop}>
+                      <div>
+                        <div className={styles.unitName}>
+                          <span>{c.unit.name}</span>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              padding: "1px 6px",
+                              borderRadius: "10px",
+                              background: "var(--danger-soft)",
+                              color: "var(--danger)",
+                              fontWeight: 700,
+                            }}
+                          >
+                            Statutory Exclusion
+                          </span>
+                        </div>
+                        <div className={styles.unitSub}>
+                          {hospitalName} · {c.unit.cohort}
+                        </div>
+                      </div>
+                      <div className={styles.unitActionStatusWrap}>
+                        <button
+                          type="button"
+                          className={styles.btnSubtle}
+                          aria-disabled="true"
+                          aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
+                          title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
+                          onClick={ignoreUnavailableActivation}
+                        >
+                          Clinical Override
+                        </button>
+                        <span id={`clinical-override-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
+                          Unavailable: reason-gated workflow required
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.unitIntelRow}>
+                      <span>
+                        Statutory Barrier:{" "}
+                        <strong style={{ color: "var(--danger)" }}>
+                          ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
+                        </strong>
                       </span>
                     </div>
-                    <div className={styles.unitSub}>
-                      {hospitalName} · {c.unit.cohort}
+
+                    <div className={styles.gateSummary}>
+                      <button
+                        type="button"
+                        className={`${styles.gateToggle} ${styles.gateToggleDanger}`}
+                        onClick={() => toggleGates(gateKey)}
+                        aria-expanded={isGatesExpanded}
+                        aria-controls={`gate-grid-${gateKey}`}
+                      >
+                        <span>
+                          ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion
+                          Breakdown
+                        </span>
+                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
+                        </span>
+                      </button>
+                      {isGatesExpanded ? (
+                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                          {c.verdict.gates.map((g) => (
+                            <div
+                              key={g.gate}
+                              className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
+                            >
+                              {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.btnSubtle}
-                    aria-disabled="true"
-                    aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
-                    title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
-                    onClick={ignoreUnavailableActivation}
-                  >
-                    Clinical Override
-                  </button>
-                </div>
-                <span
-                  id={`clinical-override-unavailable-${c.unit.id}`}
-                  className={styles.emptyNote}
-                  style={{ display: "block" }}
-                >
-                  This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward
-                  request workflow.
-                </span>
-
-                <div className={styles.unitIntelRow}>
-                  <span>
-                    Statutory Barrier:{" "}
-                    <strong style={{ color: "var(--danger)" }}>
-                      ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
-                    </strong>
-                  </span>
-                </div>
-
-                <div className={styles.gateSummary}>
-                  <button
-                    type="button"
-                    className={`${styles.gateToggle} ${styles.gateToggleDanger}`}
-                    onClick={() => toggleGates(gateKey)}
-                    aria-expanded={isGatesExpanded}
-                    aria-controls={`gate-grid-${gateKey}`}
-                  >
-                    <span>
-                      ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion Breakdown
-                    </span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                      {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
-                    </span>
-                  </button>
-                  {isGatesExpanded ? (
-                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                      {c.verdict.gates.map((g) => (
-                        <div
-                          key={g.gate}
-                          className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
-                        >
-                          {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })
-        )}
+                );
+              })
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "10px" }}>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en-AU" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ward Flow — Perfected Synthetic Prototype Footer & Spacing Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ground: #edf2f7;
+      --surface: #ffffff;
+      --surface-2: #f4f7fa;
+      --sunk: #e9eef4;
+      --ink: #111827;
+      --ink-soft: #374151;
+      --muted: #64748b;
+      --line: rgba(22, 30, 40, 0.11);
+      --line-strong: rgba(22, 30, 40, 0.22);
+      --accent: #1e3a5f;
+      --accent-soft: rgba(30, 58, 95, 0.08);
+      --accent-ink: #102a43;
+      --warn: #d97706;
+      --warn-soft: rgba(217, 119, 6, 0.18);
+      --good: #059669;
+      --good-soft: rgba(5, 150, 105, 0.16);
+      --danger: #b03b2e;
+      --lift: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+      --lift-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --r1: 10px;
+      --r2: 6px;
+      --pill: 9999px;
+      --body: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    [data-theme="dark"] {
+      --ground: #0c1117;
+      --surface: #161c24;
+      --surface-2: #1e2632;
+      --sunk: #11161d;
+      --ink: #f3f4f6;
+      --ink-soft: #d1d5db;
+      --muted: #94a3b8;
+      --line: rgba(255, 255, 255, 0.1);
+      --line-strong: rgba(255, 255, 255, 0.2);
+      --accent: #60a5fa;
+      --accent-soft: rgba(96, 165, 250, 0.12);
+      --accent-ink: #93c5fd;
+      --warn: #f59e0b;
+      --warn-soft: rgba(245, 158, 11, 0.22);
+      --good: #10b981;
+      --good-soft: rgba(16, 185, 129, 0.2);
+      --danger: #f87171;
+      --lift: 0 2px 5px rgba(0, 0, 0, 0.35);
+      --lift-md: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--ground);
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.5;
+      padding: 2rem 1.5rem 4rem;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    header.doc-header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r1);
+      padding: 1.5rem 2rem;
+      box-shadow: var(--lift);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .doc-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--pill);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .tag-blue { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent); }
+    .tag-green { background: var(--good-soft); color: var(--good); border: 1px solid var(--good); }
+
+    h1 {
+      font-size: 1.625rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    p.lead {
+      color: var(--ink-soft);
+      font-size: 0.9375rem;
+      max-width: 75ch;
+    }
+
+    .control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r2);
+      padding: 0.75rem 1.25rem;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--pill);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .btn-pill {
+      border: none;
+      background: transparent;
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--pill);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-pill:hover { color: var(--ink); }
+    .btn-pill.active {
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Comparison Section */
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r1);
+      box-shadow: var(--lift);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-head {
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .card-head.before { color: var(--danger); }
+    .card-head.after { color: var(--good); }
+
+    .card-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 220px;
+      justify-content: space-between;
+    }
+
+    /* Mock Content Preview */
+    .mock-list-item {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--r2);
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mock-list-item .name { font-weight: 600; font-size: 14px; }
+    .mock-list-item .sub { font-size: 12px; color: var(--muted); }
+    .mock-list-item .stat { font-family: var(--mono); font-size: 12px; color: #b45309; }
+
+    /* The Unperfected Footer */
+    .unperfected-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      padding: 0.625rem 1.25rem;
+      border-top: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 0; /* Zero margin caused the clipping! */
+    }
+    .unperfected-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--pill);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .unperfected-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    .unperfected-authority {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--pill);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    /* THE PERFECTED FOOTER */
+    .perfected-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      margin-top: auto;
+      margin-block-start: 1rem;
+      flex-shrink: 0;
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-family: var(--body);
+      font-size: 12px;
+      line-height: 1.35;
+      width: 100%;
+      border-radius: var(--radius-lg, 0.75rem);
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .perfected-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .perfected-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.15rem 0.65rem;
+      border-radius: var(--pill);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+
+    .perfected-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 0 2px var(--warn-soft);
+      flex-shrink: 0;
+    }
+
+    .perfected-note {
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .perfected-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .perfected-authority {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: var(--pill);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      color: var(--ink-soft);
+      font-family: var(--body);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent);
+    }
+
+    .perfected-icon {
+      width: 12px;
+      height: 12px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Live Variants Showcase */
+    .variant-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r1);
+      overflow: hidden;
+    }
+    .variant-table th, .variant-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+    .variant-table td:last-child {
+      min-width: 0;
+    }
+    .variant-table th {
+      background: var(--surface-2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .defect-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(176, 59, 46, 0.12);
+      color: var(--danger);
+    }
+
+    .fix-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(5, 150, 105, 0.12);
+      color: var(--good);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="doc-header">
+      <div class="doc-badge-row">
+        <span class="tag tag-blue">Ward Flow Prototype Engineering</span>
+        <span class="tag tag-green">Resolved &amp; Verified</span>
+      </div>
+      <h1>Perfected Synthetic Prototype Governance Banner &amp; Layout Spacing</h1>
+      <p class="lead">
+        Design and layout review addressing the synthetic prototype disclaimer at the bottom of the Ward Flow pages. 
+        Solves the content collision bug on the Search Hub where "Moodjar" was partially covered, eliminates jarring green heartbeat pulse dots, 
+        and refines the typography, tokens, and multi-viewport responsiveness.
+      </p>
+    </header>
+
+    <div class="control-bar">
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span style="font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Theme:</span>
+        <div class="btn-group">
+          <button type="button" class="btn-pill active" onclick="setTheme('light', this)">☀️ Light Mode</button>
+          <button type="button" class="btn-pill" onclick="setTheme('dark', this)">🌙 Dark Mode</button>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--muted);">
+        Verified against WA Health Design System &bull; Invariant FF8
+      </div>
+    </div>
+
+    <!-- Before vs After -->
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      <h2 class="section-title">Before vs After Comparison</h2>
+      <div class="comparison-grid">
+        <!-- Before -->
+        <div class="card">
+          <div class="card-head before">
+            <span>❌ Previous Unrefined Version (Colliding)</span>
+            <span class="defect-badge">Covers Card Content</span>
+          </div>
+          <div class="card-body">
+            <div class="mock-list-item" style="border-bottom: 2px dashed rgba(176, 59, 46, 0.4); opacity: 0.85;">
+              <div>
+                <div class="name">Moodjar</div>
+                <div class="sub" style="color:var(--danger); text-decoration: line-through;">Armadale Health Service &bull; East Metro (Sliced)</div>
+              </div>
+              <div class="stat">2 ready &bull; 1 cleaning STALE</div>
+            </div>
+            <div style="font-size:11.5px; color:var(--muted); line-height:1.4;">
+              &bull; <strong>Defect 1:</strong> Zero gap in <code>.main</code> + missing footer height allowance in <code>.hubShell</code> squished the card.<br/>
+              &bull; <strong>Defect 2:</strong> <code>.listScroll</code> had 0 bottom padding, cutting bottom rows in half.<br/>
+              &bull; <strong>Defect 3:</strong> Green blinking dot misled clinicians into inferring live EHR status.<br/>
+              &bull; <strong>Defect 4:</strong> Raw monospace font looked unfinished and wrapped onto 3 broken lines.
+            </div>
+            <!-- The Old Footer -->
+            <div class="unperfected-footer">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <span class="unperfected-badge">
+                  <span class="unperfected-pulse"></span>
+                  SYNTHETIC PROTOTYPE
+                </span>
+                <span style="font-size:11px; color:var(--muted);">Real hospital network; invented bed figures...</span>
+              </div>
+              <span class="unperfected-authority">WA Health Clinical Flow &bull; Synthetic data only</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- After -->
+        <div class="card">
+          <div class="card-head after">
+            <span>✅ Perfected Version (Generous Spacing)</span>
+            <span class="fix-badge">Full Clearance</span>
+          </div>
+          <div class="card-body">
+            <div class="mock-list-item">
+              <div>
+                <div class="name">Moodjar</div>
+                <div class="sub">Armadale Health Service &bull; East Metro</div>
+              </div>
+              <div class="stat">2 ready &bull; 1 cleaning STALE</div>
+            </div>
+            <div style="font-size:11.5px; color:var(--good); line-height:1.4;">
+              &bull; <strong>Fix 1:</strong> Added <code>gap: 1rem</code> to <code>.main</code> and recalculated workspace height cleanly.<br/>
+              &bull; <strong>Fix 2:</strong> Added <code>padding-bottom: 1.5rem</code> to <code>.listScroll</code> so the last item is never clipped.<br/>
+              &bull; <strong>Fix 3:</strong> Amber simulation dot with subtle halo signifies governance disclosure.<br/>
+              &bull; <strong>Fix 4:</strong> Refined typography, SVG shield seal, and single-row compact layout.
+            </div>
+            <!-- The Perfected Footer -->
+            <footer class="perfected-footer">
+              <div class="perfected-left">
+                <span class="perfected-badge">
+                  <span class="perfected-dot"></span>
+                  <span>Synthetic prototype</span>
+                </span>
+                <span class="perfected-note">Real hospital network; invented bed figures and community team names &bull; Not a medical device</span>
+              </div>
+              <div class="perfected-right">
+                <span class="perfected-authority">
+                  <svg class="perfected-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z"></path>
+                    <path d="M5.5 8l2 2 3.5-3.5"></path>
+                  </svg>
+                  <span>WA Health Clinical Flow &bull; Synthetic data only</span>
+                </span>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Scope Variants in the Application -->
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      <h2 class="section-title">Component Scope Variants Across Ward Flow Screens</h2>
+      <table class="variant-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Screen Scope</th>
+            <th>Rendered Perfected Banner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Search Hub</strong><br/>
+              <span style="font-size:12px; color:var(--muted);">/mockups/ward-flow/hub</span>
+            </td>
+            <td>
+              <footer class="perfected-footer" style="margin-top:0;">
+                <div class="perfected-left">
+                  <span class="perfected-badge"><span class="perfected-dot"></span><span>Synthetic prototype</span></span>
+                  <span class="perfected-note">Real hospital network; invented bed figures and community team names &bull; Not a medical device</span>
+                </div>
+                <div class="perfected-right">
+                  <span class="perfected-authority">
+                    <svg class="perfected-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z"></path><path d="M5.5 8l2 2 3.5-3.5"></path></svg>
+                    <span>WA Health Clinical Flow &bull; Synthetic data only</span>
+                  </span>
+                </div>
+              </footer>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Standard Statewide</strong><br/>
+              <span style="font-size:12px; color:var(--muted);">Alerts, Delays, Discharges, Capacity</span>
+            </td>
+            <td>
+              <footer class="perfected-footer" style="margin-top:0;">
+                <div class="perfected-left">
+                  <span class="perfected-badge"><span class="perfected-dot"></span><span>Synthetic prototype</span></span>
+                  <span class="perfected-note">Western Australia Mental Health Bed Flow Prototype &bull; All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures &bull; Not a medical device</span>
+                </div>
+                <div class="perfected-right">
+                  <span class="perfected-authority">
+                    <svg class="perfected-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z"></path><path d="M5.5 8l2 2 3.5-3.5"></path></svg>
+                    <span>WA Health Clinical Flow &bull; Synthetic data only</span>
+                  </span>
+                </div>
+              </footer>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Unit-Scoped Cockpit</strong><br/>
+              <span style="font-size:12px; color:var(--muted);">/mockups/ward-flow/ward/[unitId]</span>
+            </td>
+            <td>
+              <footer class="perfected-footer" style="margin-top:0;">
+                <div class="perfected-left">
+                  <span class="perfected-badge"><span class="perfected-dot"></span><span>Synthetic prototype</span></span>
+                  <span class="perfected-note">Scoped to SCGH Mental Health Unit &bull; Bed decisions remain human-confirmed &bull; Not a medical device</span>
+                </div>
+                <div class="perfected-right">
+                  <span class="perfected-authority">
+                    <svg class="perfected-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z"></path><path d="M5.5 8l2 2 3.5-3.5"></path></svg>
+                    <span>WA Health Clinical Flow &bull; Synthetic data only</span>
+                  </span>
+                </div>
+              </footer>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Emergency Department</strong><br/>
+              <span style="font-size:12px; color:var(--muted);">/mockups/ward-flow/ed</span>
+            </td>
+            <td>
+              <footer class="perfected-footer" style="margin-top:0;">
+                <div class="perfected-left">
+                  <span class="perfected-badge"><span class="perfected-dot"></span><span>Synthetic prototype</span></span>
+                  <span class="perfected-note">Emergency department census &bull; Not a medical device</span>
+                </div>
+                <div class="perfected-right">
+                  <span class="perfected-authority">
+                    <svg class="perfected-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z"></path><path d="M5.5 8l2 2 3.5-3.5"></path></svg>
+                    <span>WA Health Clinical Flow &bull; Synthetic data only</span>
+                  </span>
+                </div>
+              </footer>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme, btn) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.querySelectorAll('.btn-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

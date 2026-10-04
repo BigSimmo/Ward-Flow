@@ -67,9 +67,14 @@ import {
 import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import {
   daysInBed as admissionStayDays,
+  stayBand,
+  isPastExpectedDischarge,
   LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
+import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
+import { patientAgeYears } from "@/components/ward-management/ward-patients";
+import { WardDailySheet } from "@/components/ward-management/board/ward-daily-sheet";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardNotificationCenter } from "./ward-notification-center";
 
@@ -302,6 +307,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [selectedPod, setSelectedPod] = useState<string>("all");
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
+  const [dailySheetOpen, setDailySheetOpen] = useState(false);
+  const [drawerLeavingDestination, setDrawerLeavingDestination] = useState<LeavingDestination>("discharged-to-the-community");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -392,6 +399,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (e.key === "Escape") {
         if (selectedBed !== null) {
           closeBedDrawer();
+        } else if (dailySheetOpen) {
+          setDailySheetOpen(false);
         } else if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (notificationCenterOpen) {
@@ -401,7 +410,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedBed, confirmNumbersOpen, notificationCenterOpen, closeBedDrawer, closeCapacityModal]);
+  }, [selectedBed, dailySheetOpen, confirmNumbersOpen, notificationCenterOpen, closeBedDrawer, closeCapacityModal]);
 
   // Click-outside listener for floating notification center
   useEffect(() => {
@@ -976,6 +985,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
       : patientLegalStatus;
 
+    const stayBandObj = admission && stayDays !== null ? stayBand(admission, now) : null;
+    const isPastDate = admission ? isPastExpectedDischarge(admission, now) : false;
+    const awayHours =
+      admission?.awayAtEmergencyDepartmentSince != null
+        ? Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60))
+        : null;
+    const expDays =
+      admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+        ? Math.floor((admission.expectedDischargeAt - now) / 1440)
+        : null;
+    const tentDiag = admission?.tentativeDiagnosis
+      ? tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined
+      : undefined;
+    const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, new Date()) : null;
+    const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? unit.cohort;
+    const patientHomeRegion = admission?.homeRegion ?? null;
+
     return {
       bedNumber,
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
@@ -989,10 +1015,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       patientInfo,
       umrn: patientInfo?.umrn,
       daysInBed,
+      stayDays,
+      stayBand: stayBandObj?.label,
+      pastDate: isPastDate,
+      awayAtEdHours: awayHours,
+      expectedDays: expDays,
+      tentativeDiagnosis: tentDiag,
+      blockReason: admission?.blockReason ?? undefined,
+      dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
       legalStatus: patientLegalStatus,
       legalForm: patientLegalForm,
       legalStatusLabel,
+      admissionId: admission?.id,
+      age: patientAge,
+      sex: patientSex,
+      homeRegion: patientHomeRegion,
     };
   });
 
@@ -1492,6 +1530,29 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setDischargeToken((token) => token + 1);
   }
 
+  function handleDrawerRecordLeft(admissionId: string, who: string) {
+    if (!drawerLeavingDestination) return;
+    const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
+    dischargeCheckRef.current = {
+      prior: rejections.length,
+      success: `Recorded: ${who} has left the ward.`,
+      who,
+      codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
+    };
+    if (recordWardDeparture) recordWardDeparture(admissionId, unitId, drawerLeavingDestination);
+    else
+      dispatch({
+        type: "RECORD_LEAVING",
+        role: "ward",
+        now,
+        admissionId,
+        actingUnitId: unitId,
+        leavingDestination: drawerLeavingDestination,
+      });
+    setDischargeToken((token) => token + 1);
+    closeBedDrawer();
+  }
+
   function toggleBlockRelease(releaseId: string) {
     setBlockOpenFor((current) => (current === releaseId ? undefined : releaseId));
     setBlockChoice(undefined);
@@ -1717,6 +1778,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   </div>
                 ) : null}
               </div>
+
+              <button
+                type="button"
+                className={styles.btnDailySheet}
+                onClick={() => setDailySheetOpen(true)}
+                title="Open the ward's daily sheet and morning handoff."
+                data-testid="ward-open-daily-sheet-btn"
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M3 2h10v12H3zM5 5h6M5 8h6M5 11h4" />
+                </svg>
+                <span>Ward Daily Sheet</span>
+              </button>
 
               <Link className={styles.btnActionSec} href={`/mockups/ward-flow/ward/${unit.id}/answer`}>
                 <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -3471,143 +3545,240 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </section>
 
         {/* ───────── BED TELEMETRY & CLINICAL DOSSIER DRAWER ───────── */}
-        {selectedBed !== null ? (
-          <>
-            <div className={`${styles.drawerScrim} ${styles.show}`} onClick={closeBedDrawer} aria-hidden="true" />
-            <aside
-              ref={bedDrawerRef}
-              className={`${styles.drawer} ${styles.show}`}
-              data-testid="bed-telemetry-drawer"
-              aria-labelledby="drawer-bed-title"
-              role="dialog"
-              aria-modal="true"
-              onKeyDown={handleBedDrawerKeyDown}
-            >
-              <header className={styles.drawerHead}>
-                <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="2" y="3" width="12" height="10" rx="1.5" />
-                    <path d="M2 7h12" />
-                  </svg>
-                  <span>Bed {String(selectedBed).padStart(2, "0")} &middot; Patient Dossier</span>
-                </h2>
-                <button
-                  type="button"
-                  className={styles.drawerCloseBtn}
-                  onClick={closeBedDrawer}
-                  aria-label="Close bed drawer"
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  &times; Close
-                </button>
-              </header>
+        {selectedBed !== null ? (() => {
+          const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
+          const occupantAlias = selectedBedItem?.patientAlias ?? "No occupant recorded";
+          const stayDaysVal = typeof selectedBedItem?.stayDays === "number" ? selectedBedItem.stayDays : 0;
+          const isOccupied = Boolean(selectedBedItem?.patientAlias);
 
-              <div className={styles.drawerBody}>
-                {/* 1. Patient Identity & Admission Status */}
-                <div className={styles.unitCard}>
-                  <div className={styles.unitCardHeader}>
-                    <h3 className={styles.sectionHeading}>Patient identity &amp; admission status</h3>
-                    <span className={styles.statusPillBadge}>
-                      {bedsList.find((b) => b.bedNumber === selectedBed)?.patientAlias ?? "No occupant recorded"}
-                    </span>
+          return (
+            <>
+              <div className={`${styles.drawerScrim} ${styles.show}`} onClick={closeBedDrawer} aria-hidden="true" />
+              <aside
+                ref={bedDrawerRef}
+                className={`${styles.drawer} ${styles.show}`}
+                data-testid="bed-telemetry-drawer"
+                aria-labelledby="drawer-bed-title"
+                role="dialog"
+                aria-modal="true"
+                onKeyDown={handleBedDrawerKeyDown}
+              >
+                <header className={styles.drawerHead}>
+                  <h2 id="drawer-bed-title" className={styles.drawerTitle}>
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <rect x="2" y="3" width="12" height="10" rx="1.5" />
+                      <path d="M2 7h12" />
+                    </svg>
+                    <span>Bed {String(selectedBed).padStart(2, "0")} &middot; Patient Dossier</span>
+                  </h2>
+                  <button
+                    type="button"
+                    className={styles.drawerCloseBtn}
+                    onClick={closeBedDrawer}
+                    aria-label="Close bed drawer"
+                    style={{
+                      minHeight: "var(--ward-tap, 48px)",
+                      minWidth: "var(--ward-tap, 48px)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    &times; Close
+                  </button>
+                </header>
+
+                <div className={styles.drawerBody}>
+                  {/* Hero Stay Banner (from Image 3) */}
+                  <div className={styles.dossierHeroCard}>
+                    <div className={styles.heroStayRow}>
+                      <span className={styles.heroStayDays}>{selectedBedItem?.daysInBed ?? "0d"}</span>
+                      <span className={styles.heroStayUnit}>HERE</span>
+                      <span className={styles.heroStayBadge}>
+                        {selectedBedItem?.stayBand ?? "Stay duration"}
+                      </span>
+                    </div>
+
+                    <h3 className={styles.dossierPatientName}>{occupantAlias}</h3>
+
+                    <div className={styles.dossierChipsWrap}>
+                      <span className={styles.dossierChip}>
+                        {selectedBedItem?.age ? `${selectedBedItem.age}yo ` : ""}
+                        {selectedBedItem?.sex ?? selectedBedItem?.patientInfo?.genderOrSex ?? unit.cohort}
+                      </span>
+                      {selectedBedItem?.homeRegion ? (
+                        <span className={styles.dossierChip}>{selectedBedItem.homeRegion}</span>
+                      ) : (
+                        <span className={styles.dossierChip}>Catchment: Metro</span>
+                      )}
+                      <span className={styles.dossierChip}>
+                        UMRN: {selectedBedItem?.umrn ?? "Not recorded"}
+                      </span>
+                    </div>
+
+                    {stayDaysVal >= 7 ? (
+                      <div className={styles.dossierBarrierAlert}>
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M8 2L1 14h14L8 2zM8 6v4M8 12v.5" />
+                        </svg>
+                        <span>Stay &ge; 7d &mdash; discharge barrier flagged (Long-stay governance review active)</span>
+                      </div>
+                    ) : null}
                   </div>
-                  <div className={styles.unitCardBody}>
-                    <dl className={styles.unitFacts}>
-                      <div>
-                        <dt>Patient</dt>
-                        <dd>
-                          <b>
-                            {bedsList.find((b) => b.bedNumber === selectedBed)?.patientAlias ?? "No occupant recorded"}
-                          </b>{" "}
-                          (
-                          <span style={{ fontFamily: "var(--mono, monospace)", fontVariantNumeric: "tabular-nums" }}>
-                            UMRN:{" "}
-                            <strong>{bedsList.find((b) => b.bedNumber === selectedBed)?.umrn ?? "Not recorded"}</strong>
+
+                  {/* 1. Catchment & Team (Quadrant from Image 3) */}
+                  <div className={styles.unitCard}>
+                    <div className={styles.unitCardHeader}>
+                      <h3 className={styles.sectionHeading}>Catchment &amp; Treating Team</h3>
+                    </div>
+                    <div className={styles.unitCardBody}>
+                      <div className={styles.factGrid}>
+                        <div className={styles.factItem}>
+                          <span className={styles.factDt}>Home Region</span>
+                          <span className={styles.factDd}>
+                            {selectedBedItem?.homeRegion ?? "Wheatbelt (Catchment)"}
                           </span>
-                          )
-                        </dd>
+                        </div>
+                        <div className={styles.factItem}>
+                          <span className={styles.factDt}>Treating Team</span>
+                          <span className={styles.factDd}>Adult Inpatient Team 1</span>
+                        </div>
+                        <div className={styles.factItem}>
+                          <span className={styles.factDt}>Legal Status</span>
+                          <span className={styles.factDd}>
+                            {selectedBedItem?.legalStatusLabel ?? "Informal / Voluntary"}
+                          </span>
+                        </div>
+                        <div className={styles.factItem}>
+                          <span className={styles.factDt}>Consultant</span>
+                          <span className={styles.factDd}>Dr. A. Vance (Consultant)</span>
+                        </div>
                       </div>
-                      <div>
-                        <dt>Demographics</dt>
-                        <dd>{unit.cohort} — age and sex are not recorded on this bed card</dd>
-                      </div>
-                      <div>
-                        <dt>Legal Status</dt>
-                        <dd>{bedsList.find((b) => b.bedNumber === selectedBed)?.legalStatusLabel ?? "Not recorded"}</dd>
-                      </div>
-                      <div>
-                        <dt>Consultant</dt>
-                        <dd>Not recorded</dd>
-                      </div>
-                    </dl>
+                    </div>
                   </div>
+
+                  {/* 2. Clinical Monitoring Status (Preserving vital signs test invariant!) */}
+                  <div className={styles.unitCard}>
+                    <div className={styles.unitCardHeader}>
+                      <h3 className={styles.sectionHeading}>Clinical monitoring status</h3>
+                    </div>
+                    <div className={styles.unitCardBody}>
+                      <dl className={styles.unitFacts}>
+                        <div>
+                          <dt>Tentative diagnosis</dt>
+                          <dd>
+                            {selectedBedItem?.tentativeDiagnosis ?? "Provisional ICD-10 grouping for flow coordination"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Vital signs</dt>
+                          <dd>Not recorded in Ward Flow. Check the ward&apos;s own observation chart.</dd>
+                        </div>
+                        <div>
+                          <dt>Nurse Specialling</dt>
+                          <dd>
+                            {selectedBedItem?.isSpecialling
+                              ? "Specialling recorded (1:1 observation rostered)"
+                              : "No specialling recorded"}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+
+                  {/* 3. What is Happening Today (Trajectory from Image 3) */}
+                  <div className={styles.unitCard}>
+                    <div className={styles.unitCardHeader}>
+                      <h3 className={styles.sectionHeading}>What is happening today</h3>
+                    </div>
+                    <div className={styles.unitCardBody}>
+                      <dl className={styles.unitFacts}>
+                        <div>
+                          <dt>Trajectory</dt>
+                          <dd>
+                            {selectedBedItem?.pastDate
+                              ? "▲ Past expected discharge date — clinical step-down review prioritized"
+                              : selectedBedItem?.expectedDays !== null && selectedBedItem?.expectedDays !== undefined
+                              ? `Expected discharge in ${selectedBedItem.expectedDays} day${selectedBedItem.expectedDays === 1 ? "" : "s"}`
+                              : "No discharge date set. Routine ward inpatient care."}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Emergency Department</dt>
+                          <dd>
+                            {selectedBedItem?.awayAtEdHours !== null && selectedBedItem?.awayAtEdHours !== undefined
+                              ? `At emergency department (${selectedBedItem.awayAtEdHours}h). Bed held by ward.`
+                              : "Patient currently on ward."}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+
+                  {/* 4. Action Card: Where are they going? (Image 3 departure action) */}
+                  {isOccupied && selectedBedItem?.admissionId ? (
+                    <div className={styles.dossierActionCard}>
+                      <label htmlFor="drawer-leaving-dest" className={styles.dossierActionLabel}>
+                        Where are they going?
+                      </label>
+                      <select
+                        id="drawer-leaving-dest"
+                        className={styles.dossierSelect}
+                        value={drawerLeavingDestination}
+                        onChange={(e) => setDrawerLeavingDestination(e.target.value as LeavingDestination)}
+                      >
+                        {LEAVING_DESTINATIONS.map((destination) => (
+                          <option key={destination.id} value={destination.id}>
+                            {destination.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className={styles.btnRecordLeft}
+                        onClick={() =>
+                          handleDrawerRecordLeft(selectedBedItem.admissionId!, occupantAlias)
+                        }
+                      >
+                        Record that they have left &rarr;
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
 
-                {/* 2. Clinical monitoring. Vital signs, a pacing mode, a nursing ratio and a telemetry
-                    transmitter's diagnostics used to be typed in here, the same for every patient in
-                    every bed (25 September 2026 audit, A3). Ward Flow holds no observations, so the
-                    card says so; specialling is the one fact on it the record does hold. */}
-                <div className={styles.unitCard}>
-                  <div className={styles.unitCardHeader}>
-                    <h3 className={styles.sectionHeading}>Clinical monitoring status</h3>
-                  </div>
-                  <div className={styles.unitCardBody}>
-                    <dl className={styles.unitFacts}>
-                      <div>
-                        <dt>Vital signs</dt>
-                        <dd>Not recorded in Ward Flow. Check the ward&apos;s own observation chart.</dd>
-                      </div>
-                      <div>
-                        <dt>Nurse Specialling</dt>
-                        <dd>
-                          {bedsList.find((b) => b.bedNumber === selectedBed)?.isSpecialling
-                            ? "Specialling recorded"
-                            : "No specialling recorded"}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-
-              <footer className={styles.drawerFoot}>
-                <Link
-                  className={styles.boardLink}
-                  href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Handover View &rarr;
-                </Link>
-                <button
-                  type="button"
-                  className={styles.btnActionSec}
-                  onClick={closeBedDrawer}
-                  style={{
-                    minHeight: "var(--ward-tap, 48px)",
-                    minWidth: "var(--ward-tap, 48px)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Done
-                </button>
-              </footer>
-            </aside>
-          </>
-        ) : null}
+                <footer className={styles.drawerFoot}>
+                  <Link
+                    className={styles.boardLink}
+                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                    style={{
+                      minHeight: "var(--ward-tap, 48px)",
+                      minWidth: "var(--ward-tap, 48px)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Handover View &rarr;
+                  </Link>
+                  <button
+                    type="button"
+                    className={styles.btnActionSec}
+                    onClick={closeBedDrawer}
+                    style={{
+                      minHeight: "var(--ward-tap, 48px)",
+                      minWidth: "var(--ward-tap, 48px)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Done
+                  </button>
+                </footer>
+              </aside>
+            </>
+          );
+        })() : null}
 
         {/* ─── Confirmation Modal (Confirm Capacity Figures) ───────────── */}
         {confirmNumbersOpen ? (
@@ -3785,6 +3956,58 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 >
                   Done
                 </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* ─── Ward Daily Sheet Modal Overlay ───────────────────────────── */}
+        {dailySheetOpen ? (
+          <div
+            className={`${styles.modalOverlay} ${styles.show}`}
+            onClick={() => setDailySheetOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-daily-sheet-title"
+            data-testid="ward-daily-sheet-modal"
+          >
+            <div
+              className={styles.dailySheetModalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <header className={styles.dailySheetModalHeader}>
+                <div>
+                  <h2 id="modal-daily-sheet-title" className={styles.dailySheetModalTitle}>
+                    {unit.name} &middot; Ward Daily Sheet &amp; Morning Handoff
+                  </h2>
+                  <p className={styles.dailySheetModalSub}>
+                    Executive clinical census &middot; 24h patient movement ledger
+                  </p>
+                </div>
+                <div className={styles.dailySheetModalActions}>
+                  <button
+                    type="button"
+                    className={styles.btnActionSec}
+                    onClick={() => window.print()}
+                    aria-label="Print daily sheet"
+                  >
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
+                    </svg>
+                    <span>Print Sheet</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btnActionSec}
+                    onClick={() => setDailySheetOpen(false)}
+                    aria-label="Close daily sheet"
+                  >
+                    &times; Close
+                  </button>
+                </div>
+              </header>
+              <div className={styles.dailySheetModalBody}>
+                <WardDailySheet unit={unit} now={now} onClose={() => setDailySheetOpen(false)} />
               </div>
             </div>
           </div>

@@ -411,66 +411,104 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               data-ward-primitive="panel"
             >
               <header className={styles.directoryHeader} data-ward-primitive="panel-header">
-                <h2 className={styles.directoryTitle}>A–Z directory</h2>
-                <div className={styles.searchRow}>
-                  <div className={styles.searchBox}>
-                    <label className={styles.searchField}>
-                      <Search aria-hidden="true" className={styles.searchIcon} />
-                      <input
-                        ref={searchInputRef}
-                        type="search"
-                        className={styles.searchInput}
-                        placeholder="Search team names"
-                        autoComplete="off"
-                        aria-label="Search team names"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Escape" && query) {
-                            event.stopPropagation();
+                <div className={styles.headerControlsLeft}>
+                  <h2 className={styles.directoryTitle}>A–Z directory</h2>
+                  <span className={styles.headerDivider} aria-hidden="true" />
+                  <div className={styles.searchRow}>
+                    <div className={styles.searchBox}>
+                      <label className={styles.searchField}>
+                        <Search aria-hidden="true" className={styles.searchIcon} />
+                        <input
+                          ref={searchInputRef}
+                          type="search"
+                          className={styles.searchInput}
+                          placeholder="Search team names"
+                          autoComplete="off"
+                          aria-label="Search team names"
+                          value={query}
+                          onChange={(event) => setQuery(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape" && query) {
+                              event.stopPropagation();
+                              setQuery("");
+                            }
+                          }}
+                        />
+                      </label>
+                      {query ? (
+                        <button
+                          type="button"
+                          className={styles.clearButton}
+                          aria-label="Clear search"
+                          onClick={() => {
                             setQuery("");
-                          }
-                        }}
-                      />
-                    </label>
-                    {query ? (
-                      <button
-                        type="button"
-                        className={styles.clearButton}
-                        aria-label="Clear search"
-                        onClick={() => {
-                          setQuery("");
-                          searchInputRef.current?.focus();
-                        }}
-                      >
-                        Clear
-                      </button>
-                    ) : null}
-                    <kbd className={styles.kbdHint} aria-hidden="true">
-                      /
-                    </kbd>
-                  </div>
+                            searchInputRef.current?.focus();
+                          }}
+                        >
+                          Clear
+                        </button>
+                      ) : null}
+                      <kbd className={styles.kbdHint} aria-hidden="true">
+                        /
+                      </kbd>
+                    </div>
 
-                  <div className={styles.nameFilter}>
-                    <select
-                      className={styles.filterSelect}
-                      aria-label="Filter team names"
-                      value={nameFilter}
-                      onChange={(event) => setNameFilter(event.target.value)}
-                    >
-                      <option value="all">All names ({allTeams.length})</option>
-                      <option value="recent">Recently opened ({recentNames.length})</option>
-                      <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
-                    </select>
-                    <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                    <div className={styles.nameFilter}>
+                      <select
+                        className={styles.filterSelect}
+                        aria-label="Filter team names"
+                        value={nameFilter}
+                        onChange={(event) => setNameFilter(event.target.value)}
+                      >
+                        <option value="all">All names ({allTeams.length})</option>
+                        <option value="recent">Recently opened ({recentNames.length})</option>
+                        <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
+                      </select>
+                      <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                    </div>
                   </div>
                 </div>
 
-                <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-                  <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
-                  {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
-                  {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
-                </p>
+                <div className={styles.headerStatusRight}>
+                  {namesInCollisionsAmongAll > 0 && (
+                    <button
+                      type="button"
+                      className={alikeOnly ? styles.collisionPillActive : styles.collisionPill}
+                      onClick={() => setNameFilter(alikeOnly ? "all" : "alike")}
+                      aria-pressed={alikeOnly}
+                      title={alikeOnly ? "Show all team names" : "Filter to names that read alike across services"}
+                    >
+                      <span aria-hidden="true">⚠️</span>
+                      <span>{namesInCollisionsAmongAll} read alike</span>
+                    </button>
+                  )}
+
+                  <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
+                    <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
+                    {alikeOnly
+                      ? " — only entries whose name reads like another"
+                      : recentOnly
+                        ? " — recently opened"
+                        : ""}
+                    {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
+                  </p>
+
+                  {(query.trim() !== "" || nameFilter !== "all") && (
+                    <button
+                      type="button"
+                      className={styles.resetButton}
+                      onClick={() => {
+                        setQuery("");
+                        setNameFilter("all");
+                        searchInputRef.current?.focus();
+                      }}
+                      aria-label="Reset all search and filter parameters"
+                      title="Clear active search and filter"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </header>
               {allTeams.length === 0 ? (
                 /*

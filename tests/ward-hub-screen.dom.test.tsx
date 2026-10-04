@@ -161,34 +161,41 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
    * departments, which is what makes the mutant die; the floor below refuses to run the case at all
    * if a fixture change ever takes that property away.
    */
-  it("the count on a kind's tab is how many rows pressing that tab actually shows, not how many exist", () => {
+  it("the count in the category filter option is how many rows selecting that category actually shows, not how many exist", () => {
     renderHub();
     const results = () => within(screen.getByRole("region", { name: /search results/i }));
-    const tabCount = (name: RegExp) => Number(within(screen.getByRole("tab", { name })).getByText(/^\d+$/).textContent);
+    const categorySelect = () => screen.getByRole("combobox", { name: /filter by category/i }) as HTMLSelectElement;
+    const categoryOptionCount = (value: string) => {
+      const select = categorySelect();
+      const option = Array.from(select.options).find((opt) => opt.value === value);
+      const match = option?.textContent?.match(/\((\d+)\)/);
+      return match ? Number(match[1]) : 0;
+    };
 
-    const unfilteredWardCount = tabCount(/wards/i);
+    const unfilteredWardCount = categoryOptionCount("ward");
 
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "metro" } });
 
-    const claimed = tabCount(/wards/i);
+    const claimed = categoryOptionCount("ward");
     expect(
       claimed,
-      "the tab still claims the whole ward population while the query has narrowed the list",
+      "the category dropdown still claims the whole ward population while the query has narrowed the list",
     ).toBeLessThan(unfilteredWardCount);
     // The discriminating floor: unless this query also matches a non-ward, a ward tally that
     // actually counted EVERY kind would print the same number and nothing below could tell.
     expect(
-      tabCount(/eds/i),
+      categoryOptionCount("ed"),
       'the query "metro" no longer matches any emergency department — this case can no longer tell a ward count from a total',
     ).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole("tab", { name: /wards/i }));
+    fireEvent.change(categorySelect(), { target: { value: "ward" } });
     expect(results().getAllByRole("listitem")).toHaveLength(claimed);
   });
 
-  it("restricts the list to one kind when that kind's tab is selected, with an empty query", () => {
+  it("restricts the list to one kind when that kind is selected in the category dropdown, with an empty query", () => {
     renderHub();
-    fireEvent.click(screen.getByRole("tab", { name: /wards/i }));
+    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
+    fireEvent.change(categorySelect, { target: { value: "ward" } });
 
     // Wards are still there...
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
@@ -455,26 +462,40 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
   });
 
-  it("arrow keys move between the kind filters and the list changes with them", () => {
+  it("selecting different categories in the dropdown updates the list accordingly", () => {
     renderHub();
-    const wardsTab = screen.getByRole("tab", { name: /wards/i });
-    fireEvent.click(wardsTab);
+    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
+    fireEvent.change(categorySelect, { target: { value: "ward" } });
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
 
-    // Right from Wards lands on EDs: the wards go, an emergency department arrives. Asserting both
-    // halves is what separates a real filter change from a tab that merely re-styled itself.
-    fireEvent.keyDown(wardsTab.parentElement as HTMLElement, { key: "ArrowRight" });
+    fireEvent.change(categorySelect, { target: { value: "ed" } });
     expect(screen.queryByText("Dabakarn")).not.toBeInTheDocument();
     expect(screen.getByText(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
   });
 
-  it("only the selected filter is in the tab order, which is what role=tablist promises", () => {
+  it("the category dropdown is in the tab order as a single focus stop", () => {
     renderHub();
-    // The consequence, not the attribute: exactly one of the four is reachable by Tab. Four
-    // separate tab stops for one control is the thing role=tablist says is not happening.
-    const reachable = screen.getAllByRole("tab").filter((tab) => tab.tabIndex === 0);
-    expect(reachable).toHaveLength(1);
-    expect(reachable[0]).toHaveAttribute("aria-selected", "true");
+    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
+    expect(categorySelect).toBeInTheDocument();
+    expect(categorySelect.tabIndex).toBe(0);
+  });
+
+  it("toggling the ready beds quick filter restricts the results to wards with available beds", () => {
+    renderHub();
+    const results = () => within(document.getElementById("hub-results") as HTMLElement);
+    const readyToggle = screen.getByRole("button", { name: /ready beds only/i });
+    fireEvent.click(readyToggle);
+
+    // Mental Health Unit has 2 ready beds, so it must be visible in results
+    expect(results().getByText("Mental Health Unit")).toBeInTheDocument();
+
+    // Graylands Older Adult has 0 ready beds in fixture, so it must NOT be visible in results
+    expect(results().queryByText("Graylands Older Adult")).not.toBeInTheDocument();
+
+    // Reset button appears and resets the filter
+    const resetBtn = screen.getByRole("button", { name: /reset all filters/i });
+    fireEvent.click(resetBtn);
+    expect(results().getByText("Graylands Older Adult")).toBeInTheDocument();
   });
 });
 
@@ -757,7 +778,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives every ward row both its place link and a statistics link built from its own id", () => {
     expect(WARD_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.click(screen.getByRole("tab", { name: /wards/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "ward" } });
 
     for (const entry of WARD_ENTRIES) {
       clickResultRow(entry.name);
@@ -778,7 +799,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives every ED row both its place link and a statistics link built from its own id", () => {
     expect(ED_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.click(screen.getByRole("tab", { name: /eds/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "ed" } });
 
     for (const entry of ED_ENTRIES) {
       clickResultRow(entry.name);
@@ -797,7 +818,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives no community row a statistics link, and states the absence in words instead", () => {
     expect(COMMUNITY_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.click(screen.getByRole("tab", { name: /community/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "community" } });
 
     for (const entry of COMMUNITY_ENTRIES) {
       clickResultRow(entry.name);

@@ -1120,6 +1120,8 @@
 
   .searchBox,
   .chip,
+  .collisionPill,
+  .resetButton,
   .familyPanel,
   .familyCard,
   .teamRow,
@@ -1818,21 +1820,42 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem 1rem;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
 }
 
+.headerControlsLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--line);
+  flex: none;
+}
+
 .directoryTitle {
   margin: 0;
-  flex: 1 0 8rem;
+  flex: 0 0 auto;
   font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text-heading);
+  white-space: nowrap;
 }
 
 .directoryHeader .searchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-12, 0.75rem);
   flex: 0 1 auto;
   min-width: 0;
 }
@@ -1851,8 +1874,88 @@
   width: 14rem;
 }
 
+.headerStatusRight {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.collisionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--warn-border, var(--line));
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.15s ease;
+}
+
+.collisionPill:hover {
+  filter: brightness(0.97);
+  box-shadow: var(--lift-sm);
+}
+
+.collisionPillActive {
+  composes: collisionPill;
+  background: var(--warn);
+  color: var(--on-accent);
+  border-color: var(--warn);
+  box-shadow: 0 0 0 2px var(--warn-soft);
+}
+
 .directoryHeader .resultLine {
-  flex-basis: 100%;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.3rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
+  white-space: nowrap;
+}
+
+.directoryHeader .resultLine strong {
+  color: var(--ink);
+  margin-right: 0.2rem;
+}
+
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-xs, 4px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.resetButton:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--text-heading);
+}
+
+.resetButton:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .content {
@@ -1868,12 +1971,33 @@
   flex: none;
 }
 
+@media (max-width: 56rem) {
+  .headerStatusRight {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 40rem) {
+  .headerControlsLeft {
+    width: 100%;
+  }
+
+  .headerDivider {
+    display: none;
+  }
+
   .directoryHeader .searchRow {
     width: 100%;
   }
 
   .directoryHeader .searchBox {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .directoryHeader .nameFilter {
     width: 100%;
     flex: 1 1 100%;
   }

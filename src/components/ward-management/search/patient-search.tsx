@@ -914,7 +914,7 @@ Clinical Note: ${p.clinicalNote}`;
           </div>
         </section>
 
-        {/* ═══ SLEEK & CONDENSED SEARCH & FILTER COMMAND BAR (Image 1) ═══ */}
+        {/* ═══ SLEEK UNIFIED COMMAND HORIZON (OPTION 1) ═══ */}
         <section className={styles.searchConsole} aria-label="Caseload search and filter console">
           <form
             className={styles.searchForm}
@@ -925,48 +925,49 @@ Clinical Note: ${p.clinicalNote}`;
               setAccessRecord((l) => recordSearch(l, { words, at: now }));
             }}
           >
-            {/* Command Search Input Row */}
-            <div className={styles.searchInputRow}>
-              <svg
-                className={styles.searchIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <div className={styles.typeaheadSlot}>
-                <PatientTypeahead
-                  patients={patients}
-                  referrals={referrals}
-                  value={text}
-                  onValueChange={setText}
-                  label="Search"
-                  placeholder="Search patient name, URM, site, notes…"
-                  offerAddPerson={false}
-                />
+            {/* Primary Command Horizon: Shrunk Universal Search Bar + 5 Inline Dropdown Facets */}
+            <div className={styles.commandRowPrimary}>
+              {/* Shrunk & Perfected Universal Search Bar (280px-320px, 33px height, inset shadow) */}
+              <div className={styles.searchInputWrap}>
+                <svg
+                  className={styles.searchIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <div className={styles.typeaheadSlot}>
+                  <PatientTypeahead
+                    patients={patients}
+                    referrals={referrals}
+                    value={text}
+                    onValueChange={setText}
+                    label="Search"
+                    placeholder="Search patient name, URM, site…"
+                    offerAddPerson={false}
+                  />
+                </div>
+                <div className={styles.searchEndAdornment}>
+                  {text ? (
+                    <button type="button" className={styles.clearBtn} onClick={() => setText("")} title="Clear search">
+                      Clear &times;
+                    </button>
+                  ) : null}
+                  <span className={styles.kbdPill} title="Press / or ⌘K to search">
+                    /
+                  </span>
+                </div>
               </div>
-              <div className={styles.searchEndAdornment}>
-                {text ? (
-                  <button type="button" className={styles.clearBtn} onClick={() => setText("")} title="Clear search">
-                    Clear &times;
-                  </button>
-                ) : null}
-                <span className={styles.kbdPill} title="Press / or ⌘K to search">
-                  /
-                </span>
-              </div>
-            </div>
 
-            {/* Filter Ribbon: Dropdowns + Chips + Secondary Actions */}
-            <div className={styles.filterRibbon}>
-              <div className={styles.filtersPrimaryGroup}>
-                {/* 2. Service */}
+              {/* 5 Dropdown Filters Inline to Cover the Gap */}
+              <div className={styles.facetSelectsGroup}>
+                {/* 1. Service */}
                 <div className={styles.facetSelectWrap}>
                   <label className="sr-only" htmlFor="ward-patient-search-service">
                     Service
@@ -995,7 +996,7 @@ Clinical Note: ${p.clinicalNote}`;
                   </svg>
                 </div>
 
-                {/* 3. Setting */}
+                {/* 2. Setting */}
                 <div className={styles.facetSelectWrap}>
                   <label className="sr-only" htmlFor="ward-patient-search-setting">
                     Setting
@@ -1032,7 +1033,7 @@ Clinical Note: ${p.clinicalNote}`;
                   </svg>
                 </div>
 
-                {/* 4. Legal Status */}
+                {/* 3. Legal Status */}
                 <div className={styles.facetSelectWrap}>
                   <label className="sr-only" htmlFor="ward-patient-search-legal">
                     Legal Status
@@ -1056,7 +1057,7 @@ Clinical Note: ${p.clinicalNote}`;
                   </svg>
                 </div>
 
-                {/* 5. Wait / Acuity */}
+                {/* 4. Wait Band */}
                 <div className={styles.facetSelectWrap}>
                   <label className="sr-only" htmlFor="ward-patient-search-wait">
                     Wait Band
@@ -1091,7 +1092,7 @@ Clinical Note: ${p.clinicalNote}`;
                   </svg>
                 </div>
 
-                {/* 6. Acuity Tier Filter */}
+                {/* 5. Acuity Tier Filter */}
                 <div className={styles.facetSelectWrap}>
                   <label className="sr-only" htmlFor="ward-patient-search-tier">
                     Acuity Tier
@@ -1162,9 +1163,46 @@ Clinical Note: ${p.clinicalNote}`;
                   ))}
                 </select>
               </div>
+            </div>
 
-              {/* Secondary Actions: Sort & View Mode Switcher */}
+            {/* Secondary Controls Row: Presets on Left, Actions on Right */}
+            <div className={styles.commandRowSecondary}>
+              {/* Quick Query Presets */}
+              <div className={styles.quickChipsBar}>
+                <span className={styles.quickChipsLabel}>Quick presets:</span>
+                <div className={styles.quickChipsGroup} aria-label="Quick queries">
+                  {QUICK_CHIPS.map((chip) => {
+                    const isActive = text === chip.query;
+                    return (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        className={`${styles.chip} ${isActive ? styles.active : ""}`}
+                        data-chip={chip.query}
+                        onClick={() => setText(isActive ? "" : chip.query)}
+                      >
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Secondary Actions: Reset + Sort & View Mode Switcher */}
               <div className={styles.toolbarActionsGroup}>
+                <button
+                  type="button"
+                  id="resetFiltersBtn"
+                  className={styles.activeFilterResetPill}
+                  data-testid="ward-patient-search-reset-filters"
+                  onClick={resetAllFilters}
+                  style={{ display: activeFilterCount > 0 ? "inline-flex" : "none" }}
+                  title="Clear search and all active filters"
+                >
+                  <span>Reset filters</span>
+                  <span className="mono">({activeFilterCount})</span>
+                </button>
+
                 <div className={styles.facetSelectWrap}>
                   <select
                     id="sortSelect"
@@ -1218,40 +1256,6 @@ Clinical Note: ${p.clinicalNote}`;
                     <span>Dense</span>
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  id="resetFiltersBtn"
-                  className={styles.activeFilterResetPill}
-                  data-testid="ward-patient-search-reset-filters"
-                  onClick={resetAllFilters}
-                  style={{ display: activeFilterCount > 0 ? "inline-flex" : "none" }}
-                  title="Clear search and all active filters"
-                >
-                  <span>Reset filters</span>
-                  <span className="mono">({activeFilterCount})</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Query Chips */}
-            <div className={styles.quickChipsBar}>
-              <span className={styles.quickChipsLabel}>Quick presets:</span>
-              <div className={styles.quickChipsGroup} aria-label="Quick queries">
-                {QUICK_CHIPS.map((chip) => {
-                  const isActive = text === chip.query;
-                  return (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      className={`${styles.chip} ${isActive ? styles.active : ""}`}
-                      data-chip={chip.query}
-                      onClick={() => setText(isActive ? "" : chip.query)}
-                    >
-                      {chip.label}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
@@ -1719,7 +1723,6 @@ Clinical Note: ${p.clinicalNote}`;
 
         {/* ═══ SOVEREIGN MINIMAL FOOTER ═══ */}
         <WardPrototypeFooter
-          className={styles.governanceBanner}
           testId="ward-patient-search-governance"
           note="Demonstration records only — Not a medical device. Cross-setting index across people, movements and active referrals."
         />

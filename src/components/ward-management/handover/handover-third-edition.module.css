@@ -571,6 +571,123 @@
   z-index: 1;
 }
 
+/* ── Compact Selects for Streamlined Navigation (Image 3) ── */
+.compactSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.compactSelect {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 24px 0 10px;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.compactSelect:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.compactSelect:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Segmented Table Switcher (Images 1 & 2) ── */
+.tableSwitcherBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tableSwitchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--pill);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.tableSwitchBtn:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.tableSwitchBtnActive {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  border-color: var(--line);
+  box-shadow: var(--lift-sm);
+}
+
+.tableSwitchBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--pill);
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.tableSwitchBadge.badgeDanger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.tableSectionWrapper {
+  width: 100%;
+}
+
+.tableSectionHidden {
+  display: none !important;
+}
+
+@media print {
+  .tableSectionHidden {
+    display: block !important;
+  }
+  .tableSwitcherBar {
+    display: none !important;
+  }
+}
+
 .delayedEgressBlock {
   margin-top: 12px;
   padding: 12px 14px;
