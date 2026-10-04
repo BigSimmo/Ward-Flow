@@ -5,9 +5,28 @@ import os from "node:os";
 import path from "node:path";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
 import { selectFoldGate } from "../scripts/ward-flow/select-fold-gate.mjs";
+
+// Return a child environment only alongside its newly owned synthetic root.
+// Git fixture setup and real repository operations retain the parent controls.
+function syntheticReadyFixture() {
+  const root = mkdtempSync(path.join(os.tmpdir(), "ward-ready-proof-"));
+  const readyEnv = { ...process.env };
+  const localControls = new Set(
+    execFileSync("git", ["rev-parse", "--local-env-vars"], { cwd: root, encoding: "utf8" })
+      .trim()
+      .split(/\r?\n/u)
+      .map((name) => name.toUpperCase()),
+  );
+  for (const name of Object.keys(readyEnv)) {
+    if (localControls.has(name.toUpperCase()) || /^GIT_CONFIG_(?:KEY|VALUE)_\d+$/iu.test(name)) delete readyEnv[name];
+  }
+  return { root, readyEnv };
+}
+
 describe("Ward fold gate follows public scope contracts", () => {
   it("does not approve READY or run a fake FULL from related tests on a merged source snapshot", () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), "ward-ready-proof-"));
+    const parentEnvironment = { ...process.env };
+    const { root, readyEnv } = syntheticReadyFixture();
     const git = (...args: string[]) => execFileSync("git", ["-C", root, ...args], { stdio: "ignore" });
     try {
       git("init", "-q", "-b", "main");
@@ -23,13 +42,14 @@ describe("Ward fold gate follows public scope contracts", () => {
       const result = spawnSync(
         process.execPath,
         [path.resolve("scripts/ward-flow/ready-check.mjs"), "--onto", "main"],
-        { cwd: root, encoding: "utf8", env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" }, timeout: 10000 },
+        { cwd: root, encoding: "utf8", env: { ...readyEnv, WARD_FOLD_TEST_FIXTURE: "1" }, timeout: 10000 },
       );
       expect(result.status).toBe(75);
       expect(result.stdout + result.stderr).toContain("Related tests cannot satisfy it");
       expect(result.stdout + result.stderr).toContain("RETIRED broad READY route");
       expect(result.stdout + result.stderr).toContain("npm run verify:pr-local");
       expect(result.stdout + result.stderr).not.toContain("PASSED");
+      expect({ ...process.env }).toEqual(parentEnvironment);
     } finally {
       removePathSync(root, { recursive: true });
     }

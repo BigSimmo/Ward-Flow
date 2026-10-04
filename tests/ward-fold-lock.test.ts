@@ -1,5 +1,5 @@
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,8 +8,25 @@ const script = path.resolve(__dirname, "../scripts/ward-flow/fold-lock.mjs");
 const preflightScript = path.resolve(__dirname, "../scripts/ward-flow/fold-preflight.mjs");
 const readyScript = path.resolve(__dirname, "../scripts/ward-flow/ready-check.mjs");
 
-function fixture() {
+// This environment is paired only with the fresh synthetic root created here.
+// Fixture Git setup and every real checkout operation still inherit process.env.
+function syntheticReadyFixture() {
   const root = mkdtempSync(path.join(tmpdir(), "ward-fold-lock-"));
+  const readyEnv = { ...process.env };
+  const localControls = new Set(
+    execFileSync("git", ["rev-parse", "--local-env-vars"], { cwd: root, encoding: "utf8" })
+      .trim()
+      .split(/\r?\n/u)
+      .map((name) => name.toUpperCase()),
+  );
+  for (const name of Object.keys(readyEnv)) {
+    if (localControls.has(name.toUpperCase()) || /^GIT_CONFIG_(?:KEY|VALUE)_\d+$/iu.test(name)) delete readyEnv[name];
+  }
+  return { root, readyEnv };
+}
+
+function fixture() {
+  const { root, readyEnv } = syntheticReadyFixture();
   const git = (args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
   git(["init", "--quiet"]);
   git([
@@ -37,18 +54,20 @@ function fixture() {
         WARD_FOLD_TEST_FIXTURE: "1",
       },
     });
-  return { root, git, lock, run };
+  return { root, git, lock, run, readyEnv };
 }
 
 describe("Ward fold lock recovery", () => {
   it("refuses every configured remote, including a non-origin remote, before mutation", () => {
-    const { git, root, lock } = fixture();
+    const parentEnvironment = { ...process.env };
+    const { git, root, lock, readyEnv } = fixture();
     git(["remote", "add", "upstream", "https://github.com/example/ward-flow.git"]);
     for (const target of [script, preflightScript, readyScript]) {
       const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
         cwd: root,
         encoding: "utf8",
         timeout: 15000,
+        env: target === readyScript ? readyEnv : process.env,
       });
       expect(result.status).toBe(2);
       expect(result.stderr).toContain(
@@ -56,15 +75,18 @@ describe("Ward fold lock recovery", () => {
       );
       expect(existsSync(lock)).toBe(false);
     }
+    expect({ ...process.env }).toEqual(parentEnvironment);
   });
 
   it("fails closed when Git cannot verify remotes", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "ward-fold-not-a-repository-"));
+    const parentEnvironment = { ...process.env };
+    const { root, readyEnv } = syntheticReadyFixture();
     for (const target of [script, preflightScript, readyScript]) {
       const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
         cwd: root,
         encoding: "utf8",
         timeout: 15000,
+        env: target === readyScript ? readyEnv : process.env,
       });
       expect(result.status).toBe(2);
       expect(result.stderr).toContain(
@@ -72,7 +94,45 @@ describe("Ward fold lock recovery", () => {
       );
       expect(existsSync(path.join(root, ".git"))).toBe(false);
     }
+    expect({ ...process.env }).toEqual(parentEnvironment);
   });
+
+  it.each(["GIT_CONFIG_COUNT", "GIT_DIR"])(
+    "refuses injected %s before mutating its synthetic fixture or parent environment",
+    (control) => {
+      const parentEnvironment = { ...process.env };
+      const { root, git, lock, readyEnv } = fixture();
+      const beforeHead = git(["rev-parse", "HEAD"]);
+      const beforeFiles = readdirSync(root).sort();
+      const beforeGitFiles = readdirSync(path.join(root, ".git")).sort();
+      const redirectedGit = path.join(root, "redirected-git");
+      const injected =
+        control === "GIT_CONFIG_COUNT"
+          ? { GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "core.hooksPath", GIT_CONFIG_VALUE_0: path.join(root, "hooks") }
+          : { GIT_DIR: redirectedGit };
+      try {
+        const result = spawnSync(process.execPath, [readyScript, "--onto", "main"], {
+          cwd: root,
+          encoding: "utf8",
+          timeout: 15000,
+          env: { ...readyEnv, WARD_FOLD_TEST_FIXTURE: "1", ...injected },
+        });
+        expect(result.status).toBe(2);
+        expect(result.stderr).toContain("Refusing readiness with inherited repository-local Git controls");
+        expect(result.stdout + result.stderr).not.toContain("PASSED");
+        expect(existsSync(lock)).toBe(false);
+        expect(existsSync(redirectedGit)).toBe(false);
+        expect(readdirSync(root).sort()).toEqual(beforeFiles);
+        expect(readdirSync(path.join(root, ".git")).sort()).toEqual(beforeGitFiles);
+        expect(git(["rev-parse", "HEAD"])).toBe(beforeHead);
+        expect(git(["status", "--porcelain"])).toBe("");
+        expect({ ...process.env }).toEqual(parentEnvironment);
+      } finally {
+        // root was generated by this test under tmpdir; it contains no external links.
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
 
   it("refuses the retired fold workflow in a repository with a remote", () => {
     const { git, lock, run, root } = fixture();
