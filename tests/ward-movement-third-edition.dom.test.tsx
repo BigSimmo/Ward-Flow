@@ -5,7 +5,6 @@ import { panelTitlesInOrder } from "./helpers/ward-panels";
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { totalsReconciliation } from "@/components/ward-management/movements/movements-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { dayOf } from "@/components/ward-management/ward-clock";

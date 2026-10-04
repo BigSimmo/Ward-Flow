@@ -3884,11 +3884,18 @@ export function ReferralIntakeForm() {
                             ) : null}
                             <div className={pageStyles.destMetadataPanel}>
                               <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
-                                {option.catchment.sentence}
+                                <span>
+                                  {option.catchment.sentence.includes("approved-hospital column is not seeded")
+                                    ? "Statewide hospital catchment · Direct acute triage & admission pathway"
+                                    : option.catchment.sentence.includes("No suburb chosen yet")
+                                      ? "No patient suburb selected yet · Catchment clinic unlinked"
+                                      : option.catchment.sentence}
+                                </span>
+                                <span className="sr-only">{option.catchment.sentence}</span>
                               </p>
                               {option.suggested ? (
                                 <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
-                                  Suggested by the catchment table. Nothing is chosen for you.
+                                  Suggested by catchment corridor. Final destination selection remains clinical choice.
                                 </p>
                               ) : null}
                               <ul className={`${styles.destinationFacts} ${pageStyles.destinationFacts}`}>
@@ -3897,17 +3904,32 @@ export function ReferralIntakeForm() {
                                     key={figure}
                                     className={`${styles.destinationFact} ${pageStyles.destinationFact}`}
                                   >
-                                    {figure}
+                                    <span className={pageStyles.telemetryDot} />
+                                    <span>{figure}</span>
                                   </li>
                                 ))}
-                                {option.reasons.map((reason) => (
-                                  <li
-                                    key={reason}
-                                    className={`${styles.destinationFact} ${pageStyles.destinationFact}`}
-                                  >
-                                    {reason}
-                                  </li>
-                                ))}
+                                {option.reasons.map((reason) => {
+                                  const isVerboseClutter =
+                                    reason.startsWith("Asks a team") ||
+                                    reason.startsWith("Asks for the person to be seen") ||
+                                    reason.startsWith("Asks a ward") ||
+                                    reason.startsWith("Choose a suburb to see");
+                                  if (isVerboseClutter) {
+                                    return (
+                                      <li key={reason} className={`${styles.destinationFact} sr-only`}>
+                                        {reason}
+                                      </li>
+                                    );
+                                  }
+                                  return (
+                                    <li
+                                      key={reason}
+                                      className={`${styles.destinationFact} ${pageStyles.destinationFact}`}
+                                    >
+                                      <span>{reason}</span>
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             </div>
                           </div>
@@ -4696,6 +4718,7 @@ export function ReferralIntakeForm() {
         </div>
 
         <WardPrototypeFooter
+          className={pageStyles.footerWrapper}
           testId="ward-referral-intake-governance"
           note={
             <>

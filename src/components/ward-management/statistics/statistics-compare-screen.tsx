@@ -302,41 +302,39 @@ export function StatisticsCompareScreen({
         </a>
       </nav>
 
-      <details className={`${styles.measureDetails} source-print`}>
-        <summary>Scope &amp; attribution limits</summary>
-        <WardPanel
-          title="Ward and emergency department tables"
-          count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-          testId="ward-statistics-compare-scope"
-        >
-          <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-              Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-            </p>
-            <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
-              <summary>Method and attribution limits</summary>
-              <div className={styles.revealBody}>
-                <p data-testid="ward-statistics-compare-attributability-rule">
-                  <strong>
-                    A measure belongs to a named ward only when its source record carries a required unit id.
-                  </strong>{" "}
-                  An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                  optional unit id covers only the records where it happens to be present, not the whole population.
-                </p>
-                <p data-testid="ward-statistics-compare-declines-example">
-                  <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                  accepts. An acceptance is attributable to a named ward and a decline is not.
-                </p>
-                <p data-testid="ward-statistics-compare-double-count-example">
-                  <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a
-                  single ward, because one referral can be live at several wards. A per-ward total would therefore sum
-                  to more than the number of referrals that exist.
-                </p>
-              </div>
-            </details>
-          </div>
-        </WardPanel>
-      </details>
+      {/* ══════════ SCOPE & ATTRIBUTION LIMITS PANEL ══════════ */}
+      <WardPanel
+        title="Scope and attribution limits"
+        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
+        testId="ward-statistics-compare-scope"
+      >
+        <div className={styles.panelBody}>
+          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
+            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
+          </p>
+          <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
+            <summary>Method and attribution limits</summary>
+            <div className={styles.revealBody}>
+              <p data-testid="ward-statistics-compare-attributability-rule">
+                <strong>
+                  A measure belongs to a named ward only when its source record carries a required unit id.
+                </strong>{" "}
+                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
+                optional unit id covers only the records where it happens to be present, not the whole population.
+              </p>
+              <p data-testid="ward-statistics-compare-declines-example">
+                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
+                accepts. An acceptance is attributable to a named ward and a decline is not.
+              </p>
+              <p data-testid="ward-statistics-compare-double-count-example">
+                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
+                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
+                than the number of referrals that exist.
+              </p>
+            </div>
+          </details>
+        </div>
+      </WardPanel>
 
       <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
         <details className={`${family.disclosure} source-print`}>
@@ -498,41 +496,39 @@ export function StatisticsCompareScreen({
        * hospital, and department NAMES are real, read from the network's own tables rather than
        * typed here.
        */}
-      <details className={`${styles.measureDetails} source-print`}>
-        <summary>Data provenance &amp; attribution limits</summary>
-        <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
-          <div className={styles.panelBody}>
-            {/*
-             * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
-             * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
-             * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
-             * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
-             * has scrolled away, and alone it must still say the figures are not real.
-             *
-             * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
-             * suite run over this screen: "None of it describes a real person…" and a second
-             * paragraph that said only what IS real. Both were honest and both failed, because the
-             * disclosing words were not bound to a verb or a noun inside their own sentence.
-             *
-             * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
-             * sentence boundary, so a marker before it does not vouch for the clause after it —
-             * which is the exact hole its own header records ("The ward names are invented; there
-             * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
-             */}
-            <p className={styles.body}>
-              Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-              for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing
-              on this screen is a real person, a real bed or a real referral.
-            </p>
-            <p className={styles.note}>
-              <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the
-              emergency departments — above and in the chooser below — are read from the network&apos;s own tables at
-              render time rather than typed here, in the fixed order the prototype records them, and every figure set
-              beside those names is invented.
-            </p>
-          </div>
-        </WardPanel>
-      </details>
+      {/* ══════════ DATA PROVENANCE PANEL ══════════ */}
+      <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
+        <div className={styles.panelBody}>
+          {/*
+           * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
+           * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
+           * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
+           * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
+           * has scrolled away, and alone it must still say the figures are not real.
+           *
+           * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
+           * suite run over this screen: "None of it describes a real person…" and a second
+           * paragraph that said only what IS real. Both were honest and both failed, because the
+           * disclosing words were not bound to a verb or a noun inside their own sentence.
+           *
+           * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
+           * sentence boundary, so a marker before it does not vouch for the clause after it —
+           * which is the exact hole its own header records ("The ward names are invented; there
+           * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
+           */}
+          <p className={styles.body}>
+            Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
+            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
+            this screen is a real person, a real bed or a real referral.
+          </p>
+          <p className={styles.note}>
+            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
+            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
+            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
+            names is invented.
+          </p>
+        </div>
+      </WardPanel>
     </StatisticsSectionFrame>
   );
 }

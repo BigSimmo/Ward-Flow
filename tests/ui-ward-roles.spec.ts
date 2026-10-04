@@ -2,6 +2,21 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
+/**
+ * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
+ * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
+ * inside them; idempotent, so it is safe after every queue selection.
+ */
+async function openShortlistSections(shortlist: Locator) {
+  const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const checks = shortlist.locator('details[aria-label="Eligibility checks"]');
+  if ((await checks.count()) > 0 && !(await checks.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await checks.locator("summary").click();
+  }
+}
+
 async function gotoWard(page: Page, unitId: string): Promise<Locator> {
   await page.goto(`/mockups/ward-flow/ward/${unitId}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
@@ -976,6 +991,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
     await queue.getByTestId("ward-queue-row-WF-315").click();
+    await openShortlistSections(shortlist);
     await shortlist.getByTestId("ward-shortlist-candidate-rph-adult-secure").click();
     // 🔴 2026-09-17: retargeted from `fsh-adult-secure` to `bty-adult-secure`. Re-measured against
     // the current fixture (`eligibleCandidatesAmong` for WF-315): the 17 September sample-data and

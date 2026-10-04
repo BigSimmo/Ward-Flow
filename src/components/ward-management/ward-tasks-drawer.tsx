@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, X } from "lucide-react";
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
