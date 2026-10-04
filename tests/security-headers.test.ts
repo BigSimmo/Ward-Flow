@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildContentSecurityPolicy, buildSecurityHeaders, resolveRuntimeFlags } from "../src/lib/security-headers";
 
-// Regression guard for the "all images fail to render" incident. Document page
-// images and the PDF embed load cross-origin from Supabase Storage signed URLs
-// (*.supabase.co). Two header mistakes silently break every image in the browser
-// while all server-side tests still pass:
-//   1. Cross-Origin-Embedder-Policy: require-corp — blocks cross-origin
-//      subresources that lack a CORP/CORS opt-in (Supabase does not send one).
-//   2. A CSP that stops allowing the *.supabase.co image origin.
+// Regression guard for the "all images fail to render" incident in the former
+// clinical app, whose document images loaded cross-origin from Supabase Storage.
+// Cross-Origin-Embedder-Policy: require-corp blocks cross-origin subresources
+// that lack a CORP/CORS opt-in, so it stays banned. Ward Flow loads no
+// cross-origin media, so since 4 October 2026 img-src, media-src and
+// connect-src are same-origin only and the *.supabase.co allowance is gone.
 // These assertions fail loudly if either is reintroduced.
 
 const flagVariants = [
@@ -25,24 +24,23 @@ describe("security headers", () => {
       const byKey = new Map(headers.map((header) => [header.key, header.value]));
       const csp = buildContentSecurityPolicy({ ...flags, nonce: NONCE });
 
-      it("never sets Cross-Origin-Embedder-Policy (would block cross-origin Supabase images)", () => {
+      it("never sets Cross-Origin-Embedder-Policy (would block cross-origin subresources)", () => {
         expect(byKey.has("Cross-Origin-Embedder-Policy")).toBe(false);
         expect(headers.some((header) => /require-corp/i.test(header.value))).toBe(false);
       });
 
-      it("scopes img-src to the Supabase Storage origin (no bare https: wildcard)", () => {
+      it("scopes img-src to same-origin, data: and blob: (no remote origin, no bare https: wildcard)", () => {
         const imgSrc = csp.split(";").find((directive) => directive.trim().startsWith("img-src"));
         expect(imgSrc).toBeDefined();
         const sources = imgSrc!.trim().split(/\s+/);
-        // Supabase signed-URL images still load, but a broad `https:` wildcard is not allowed.
-        expect(sources).toContain("https://*.supabase.co");
-        expect(sources).not.toContain("https:");
+        expect(sources).toEqual(["img-src", "'self'", "data:", "blob:"]);
+        expect(csp).not.toContain("supabase.co");
       });
 
-      it("allows the Supabase origin in connect-src and no third-party telemetry origin", () => {
+      it("keeps connect-src same-origin with no Supabase or third-party telemetry origin", () => {
         const connectSrc = csp.split(";").find((directive) => directive.trim().startsWith("connect-src"));
         expect(connectSrc).toBeDefined();
-        expect(connectSrc).toContain("https://*.supabase.co");
+        expect(connectSrc!.trim()).toBe("connect-src 'self'");
         // There is no browser Sentry SDK (docs/error-tracking.md: "no client Sentry
         // bundle path"; the only inits are src/sentry.{server,edge}.config.ts), so the
         // three wildcard `*.ingest*.sentry.io` origins were an egress channel from the

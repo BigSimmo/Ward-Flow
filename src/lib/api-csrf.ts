@@ -22,9 +22,9 @@
  * call, the ingestion worker) and passes: CSRF needs a browser to be tricked, and
  * blocking here would break every API client instead.
  *
- * This is defence in depth. The session cookies @supabase/ssr writes are
- * `SameSite=Lax`, so a cross-site POST does not carry the session in the first
- * place.
+ * This is defence in depth. It does not rely on any cookie's `SameSite`
+ * attribute (the former clinical app's @supabase/ssr session cookies, which
+ * this comment used to cite, left with that app).
  */
 
 const CSRF_GUARDED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);

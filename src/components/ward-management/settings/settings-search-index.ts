@@ -1,6 +1,6 @@
 /**
  * Declarative search index and domain taxonomy for the Ward Flow Settings console.
- * Modeled after PsychSift's `settings-sections.ts` to provide keyword search,
+ * Modeled after the former clinical app's `settings-sections.ts` to provide keyword search,
  * domain filtering, and real-time hit counts across configuration parameters.
  */
 

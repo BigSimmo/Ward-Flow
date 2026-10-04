@@ -49,4 +49,4 @@ The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
 
-The deployment dependency audit reported one high-severity production dependency advisory for transitive `sharp`. It was not remediated in this hosting task. Review the advisory and an appropriate patched dependency before treating the prototype as production-ready.
+Dependency audit, 4 October 2026: `npm audit --omit=dev` reports 0 vulnerabilities in both the root package and `backend/`. The earlier high-severity advisory for transitive `sharp` is resolved: `sharp` is pinned through an override at 0.35.4. One development-only advisory remains in the full tree, `braces` (GHSA-vfj7-8cjw-p6xm, via `micromatch`); its fix needs a semver-major dependency change and is deferred. This is a local audit result, not a hosted or production-readiness verdict.
