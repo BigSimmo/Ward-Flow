@@ -121,7 +121,7 @@ export function periodLengthText(length: PeriodLength): string {
 }
 
 /** Perth is UTC+8 all year (no daylight saving), so its wall clock is a fixed shift from UTC. */
-const PERTH_OFFSET_MS = 8 * 60 * 60_000;
+const perthUtcOffsetMs = 8 * 60 * 60_000;
 
 /**
  * The instant a period ends. Months are counted on the Perth calendar, and a start on a day the
@@ -130,7 +130,7 @@ const PERTH_OFFSET_MS = 8 * 60 * 60_000;
 export function addPeriod(start: Instant, length: PeriodLength, dayZero: Date): Instant {
   if ("hours" in length) return start + length.hours * 60;
   if ("days" in length) return start + length.days * 24 * 60;
-  const begin = new Date(calendarDateOf(start, dayZero).getTime() + PERTH_OFFSET_MS);
+  const begin = new Date(calendarDateOf(start, dayZero).getTime() + perthUtcOffsetMs);
   const targetMonth = begin.getUTCMonth() + length.months;
   const lastDay = new Date(Date.UTC(begin.getUTCFullYear(), targetMonth + 1, 0)).getUTCDate();
   const end = new Date(begin.getTime());
