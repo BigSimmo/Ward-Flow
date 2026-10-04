@@ -68,9 +68,9 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(css).not.toMatch(/\.drawerTriggers,\s*\.primaryWrap,\s*\.primary\s*\{[^}]*order:\s*3/u);
     });
 
-    it("hides .primaryPrefix and capitalizes .primaryMain", () => {
-      expect(css).toMatch(/\.primaryPrefix\s*\{[^}]*display:\s*none/u);
-      expect(css).toMatch(/\.primaryMain\s*\{[^}]*text-transform:\s*capitalize/u);
+    it("shows the full New referral label on desktop in sentence case", () => {
+      expect(css).toMatch(/\.primaryPrefix\s*\{[^}]*display:\s*inline/u);
+      expect(css).toMatch(/\.primaryMain\s*\{[^}]*text-transform:\s*none/u);
     });
 
     it("ensures drawerTrigger and serviceTrigger meet the 48px tap-target floor", () => {
@@ -83,18 +83,31 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(css).toMatch(/\.primary\s*\{[^}]*min-width:\s*var\(--spacing-tap/u);
     });
 
-    it("drops demoTime and hides triggerLabel in responsive media tiers", () => {
-      expect(css).toMatch(/@media\s*\(max-width:\s*1360px\)\s*\{[\s\S]*?\.demoTime\s*\{[^}]*display:\s*none/u);
+    it("hides triggerLabel in responsive media tiers", () => {
       expect(css).toMatch(/@media\s*\(max-width:\s*1360px\)\s*\{[\s\S]*?\.triggerLabel\s*\{[^}]*clip-path/u);
     });
 
-    it("drops barClockPill on compact screens (<= 1050px)", () => {
-      expect(css).toMatch(/@media\s*\(max-width:\s*1050px\)\s*\{[\s\S]*?\.barClockPill\s*\{[^}]*display:\s*none/u);
+    it("omits the title clock and Activity time from the header", () => {
+      renderBar();
+      expect(screen.queryByTestId("ward-bar-clock")).not.toBeInTheDocument();
+      expect(screen.getByTestId("ward-bar-activity-trigger")).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
     });
   });
 
   describe("Interactive Stress Testing: Referral & Drawers", () => {
-    it("renders Referral primary action with prefix hidden and exact text available", () => {
+    it.each([
+      { kind: "record-decision", label: "Record a decision" },
+      { kind: "contact-team", label: "Contact a team" },
+      { kind: "export-figures", label: "Export the figures" },
+    ] as const)("keeps the shared header treatment for $label", (action) => {
+      renderBar(action);
+      const trigger = screen.getByTestId("ward-bar-primary-action");
+      expect(trigger).toHaveAccessibleName(action.label);
+      expect(trigger.className).toMatch(/referralPrimary/u);
+      expect(trigger.querySelector('[class*="referralChevron"] .lucide-chevron-right')).toBeInTheDocument();
+    });
+
+    it("renders New referral primary action with exact text available", () => {
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
       const trigger = screen.getByTestId("ward-bar-primary-action");
       expect(trigger).toHaveTextContent("New referral");

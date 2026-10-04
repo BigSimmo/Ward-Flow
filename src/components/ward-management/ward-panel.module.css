@@ -3,7 +3,7 @@
 /*
  * THE PANEL EDGE FOLLOWS THE DESIGN SYSTEM'S OWN RULE, 2026-09-05 — SPEC §4.7: "in-flow cards use
  * border + shadow". It used `--ward-border` (neutral-500, 4.97:1 on white) and NO shadow, which is
- * four times the contrast of PsychSift's own card edge (`--border`, 1.20:1) and is most of why the
+ * four times the contrast of the app's own card edge (`--border`, 1.20:1) and is most of why the
  * ward screens read as heavier than the rest of the app.
  *
  * ⚠️ AND THE HEAVY LINE WAS NOT A MISTAKE — IT WAS THE ONLY THING SEPARATING THE PANEL.

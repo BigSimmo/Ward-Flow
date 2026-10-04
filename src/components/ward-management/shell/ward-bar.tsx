@@ -7,8 +7,9 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
   FileText,
-  ListChecks,
   Plus,
   Settings,
   Wrench,
@@ -208,22 +209,6 @@ const isDrawerPanel = (
 ): id is "activity" | "tasks" | "tools" | "referral" | "service" | "figures" =>
   id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service" || id === "figures";
 
-export function WardBarClock({ shownActivity }: { shownActivity?: boolean | WardActivityContent }) {
-  const now = useWardFlowClock();
-  return (
-    <>
-      <span className={styles.demoTime} aria-hidden="true">
-        {formatInstant(now)}
-      </span>
-      <span className="sr-only">
-        {Boolean(shownActivity)
-          ? `, synthetic activity at demo time ${formatInstant(now)}`
-          : ", activity not available for this page"}
-      </span>
-    </>
-  );
-}
-
 const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
   "North Metro": "north",
   "South Metro": "south",
@@ -371,6 +356,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
   const now = useWardFlowClock();
+
   const { role, placeId } = useWardNavCounts();
   const checksPublication = useWardChecks();
 
@@ -1041,7 +1027,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <Activity className={styles.triggerIcon} aria-hidden="true" />
           <span className={styles.triggerLabel}>Activity</span>
           <span className={styles.dot} data-tone={activityTone} aria-hidden="true" />
-          <WardBarClock shownActivity={shownActivity} />
+          <span className="sr-only">
+            {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
+          </span>
         </button>
 
         <button
@@ -1054,7 +1042,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ListChecks className={styles.triggerIcon} aria-hidden="true" />
+          <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" />
           <span className={styles.triggerLabel}>Tasks</span>
           <span className={styles.badge}>{tasksItems.length}</span>
         </button>
@@ -1107,7 +1095,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <button
             type="button"
             ref={primaryTriggerRef}
-            className={styles.primary}
+            className={`${styles.primary} ${styles.referralPrimary}`}
             data-testid="ward-bar-primary-action"
             aria-haspopup="true"
             aria-expanded={openPanel === "primary"}
@@ -1116,7 +1104,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           >
             <span className={styles.primaryPrefix}>New </span>
             <span className={styles.primaryMain}>referral</span>
-            <ChevronDown className={styles.triggerIcon} aria-hidden="true" />
+            <span className={styles.referralChevron} aria-hidden="true">
+              <ChevronRight className={styles.triggerIcon} aria-hidden="true" />
+            </span>
           </button>
           {openPanel === "primary" ? (
             <div
@@ -1153,7 +1143,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <button
             type="button"
             ref={primaryTriggerRef}
-            className={styles.primary}
+            className={`${styles.primary} ${styles.referralPrimary}`}
             data-testid="ward-bar-primary-action"
             aria-haspopup="true"
             aria-expanded={openPanel === "primary"}
@@ -1167,7 +1157,10 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               announceToWardShell(`${primaryAction.label} ${NOT_WIRED_SUFFIX}`);
             }}
           >
-            {primaryAction.label}
+            <span className={styles.primaryMain}>{primaryAction.label}</span>
+            <span className={styles.referralChevron} aria-hidden="true">
+              <ChevronRight className={styles.triggerIcon} aria-hidden="true" />
+            </span>
           </button>
           {openPanel === "primary" ? (
             <div
