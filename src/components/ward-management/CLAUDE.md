@@ -9,7 +9,8 @@ they differ, they win.
 - **Synthetic data only.** Made-up patients. Never show an invented clinical figure as if it were real.
 - **D4:** a control that is not connected says exactly "Not wired in this prototype."
 - **D5:** no Mental Health Act section numbers, and no computed legal time limits. Show only times a
-  person typed.
+  person typed. One exception (D-29, 4 Oct 2026): `legal-forms/act-periods-demo.ts` alone may hold
+  sourced Act periods and sections, shown as "Synthetic demo, not legally checked".
 - **No typed text in browser storage.** Classify every new event in
   `ward-flow-persistence-classification.ts`; any id or free-text field needs review.
 - **New events** go in `EVENT_ROLE` (`ward-flow-events.ts`) and `tests/ward-event-permissions.test.ts`.

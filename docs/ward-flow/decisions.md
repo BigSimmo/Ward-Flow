@@ -380,3 +380,18 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
   6. **Anti-Box Modernization Authorized:** Rule R4 is amended with an official owner authorization: design modernization to replace outdated rectangular card boxes with dynamic HUDs, natural language statements, and clean Swiss layouts is approved across Ward Flow.
   7. **Fluid Inline Strips & Narrative Stacks:** Rigid 2/3/5-column metric grids (`.figureStrip`) may be replaced with flexible horizontal strips, natural language executive sentences, and adaptive inline pills.
 - **Why:** The previous rules created a rigid design straitjacket where developers were forced into boxy cards, verbose buttons, and layout shifts to avoid breaking dogmatic rules.
+
+## D-29. Act time limits shown as a labelled synthetic demo (4 October 2026)
+
+- **Date:** 4 October 2026. **Decided by:** Josh (item 13 thread: "Go ahead for act drafting task",
+  then "Ok I give permission" after reviewing the draft of the Act time limits).
+- **Decision:** This narrows D5 for one purpose. The Legal forms screen may show the Mental Health
+  Act period for a recorded form, with its section reference. It is labelled "Synthetic demo, not
+  legally checked" and counts down from the written time a person typed. Only periods with a written
+  source appear. They are held in one file,
+  `src/components/ward-management/legal-forms/act-periods-demo.ts`, and the section-citation guard
+  exempts that file and its test only. The typed expiry from the paper form stays the record, and
+  the engine still never writes a computed `dueAt`. Forms 1B and 3D have no period until a source is
+  confirmed. Everything else in D5 is unchanged.
+- **Why:** Josh asked for statutory countdowns as a clearly labelled synthetic demo. The WA legal
+  review on the "before any real patient" list is still required before any real use.
