@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { createContext, createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -132,6 +133,10 @@ import { MovementsScreen } from "@/components/ward-management/movements/movement
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardChromeHeader } from "@/components/ward-management/ward-chrome-header";
 
+// jsdom is already the installed test environment; use only its document API here.
+const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
+  JSDOM: new (markup: string) => { window: { document: Document } };
+};
 const REPO_ROOT = process.cwd();
 const WARD_FLOW_ROUTES = path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow");
 const SHELL_DIR = path.join(REPO_ROOT, "src", "components", "ward-management", "shell");
@@ -210,10 +215,7 @@ function bedReleased(state: WardFlowState): WardFlowState {
     if (admission.movementId !== null) return false;
     return true;
   });
-  expect(
-    release,
-    "no un-discharged bed release found on an admission free of any linked movement",
-  ).toBeDefined();
+  expect(release, "no un-discharged bed release found on an admission free of any linked movement").toBeDefined();
   const admission = state.admissions.find((a) => a.id === release!.admissionId)!;
   return mutate(
     state,
@@ -387,7 +389,7 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     },
   },
   /**
-   * The Delays screen marks each cause row `data-severe`, and prints that group's size beside it.
+   * The Delays screen marks each cause control `data-severe`, and prints the group size in its table row.
    * Summing the severe rows is what the screen SHOWS as needing attention now — and it is read off
    * the rows rather than from any single printed total, because the screen prints no single total.
    */
@@ -395,16 +397,19 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     screen: "Delays",
     component: DelaysScreen,
     read: (markup) => {
-      const rows = [
-        ...markup.matchAll(
-          /<button[^>]*data-severe="(true|false)"[^>]*data-testid="delays-cause-[a-z_]+"[^>]*><span[^>]*>(\d+)<\/span>/gu,
-        ),
-      ];
-      expect(
-        rows.length,
-        "the Delays screen rendered no cause rows at all, so there is nothing to sum",
-      ).toBeGreaterThan(0);
-      return rows.filter((row) => row[1] === "true").reduce((total, row) => total + Number(row[2]), 0);
+      const document = new JSDOM(markup).window.document;
+      const buttons = [...document.querySelectorAll<HTMLButtonElement>("button[data-testid^='delays-cause-']")];
+      expect(buttons.length, "the Delays screen rendered no cause rows to count").toBeGreaterThan(0);
+      return buttons.reduce((total, button) => {
+        const row = button.closest("tr");
+        expect(row, "a cause control must belong to its displayed count row").not.toBeNull();
+        const count = row?.querySelector("td:last-child")?.textContent?.trim() ?? "";
+        expect(count, "every cause row must display an integer count").toMatch(/^\d+$/u);
+        expect(button.dataset.severe, "every cause must identify whether it needs attention").toMatch(
+          /^(true|false)$/u,
+        );
+        return total + (button.dataset.severe === "true" ? Number(count) : 0);
+      }, 0);
     },
   },
   /**

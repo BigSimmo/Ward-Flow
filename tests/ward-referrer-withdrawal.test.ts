@@ -327,3 +327,72 @@ describe("recording that a referrer withdrew just a referral's community-team ar
     expect(wardArm.withdrawnAt).toBe(NOW_ANCHOR + 20);
   });
 });
+
+/**
+ * Owner, 4 October 2026: "Let the community team and the ED record it as well, if they are
+ * cancelling their referral." Each side may withdraw only a referral it sent; the coordinator may
+ * withdraw any.
+ */
+describe("the referrer's own side recording that it cancelled its referral", () => {
+  const WARD: ReferralDestination = {
+    kind: "psychiatric_ward",
+    sex: "Female",
+    gender: "Female",
+    secureBedNeeded: false,
+    involuntaryBedNeeded: false,
+    highAcuityNursingNeeded: false,
+  };
+
+  function raise(source: "community" | "ed_medical"): { state: WardFlowState; referralId: string } {
+    const raised = wardFlowReducer(seedWardFlowState(), {
+      type: "RECEIVE_REFERRAL",
+      role: source === "ed_medical" ? "ed" : "community",
+      now: NOW_ANCHOR,
+      ageBand: "Adult",
+      destinations: [WARD],
+      homeRegion: "Perth Metropolitan",
+      suburb: { kind: "named", name: "Armadale" },
+      source,
+      urgency: 2,
+      originSiteCode: "SCGH",
+      transportNeeded: false,
+      ...FIXTURE_HISTORY,
+    });
+    expect(raised.rejections, "raising the fixture referral must not itself be refused").toEqual([]);
+    return { state: raised, referralId: raised.referrals.at(-1)!.id };
+  }
+
+  function withdrawAs(state: WardFlowState, referralId: string, role: "community" | "ed") {
+    return wardFlowReducer(state, { type: "RECORD_REFERRER_WITHDRAWAL", role, now: NOW_ANCHOR + 10, referralId });
+  }
+
+  it.each([
+    ["community", "community"],
+    ["ed_medical", "ed"],
+  ] as const)("a %s referral can be withdrawn by its own sender, role %s", (source, role) => {
+    const { state, referralId } = raise(source);
+    const after = withdrawAs(state, referralId, role);
+    expect(after.rejections).toEqual([]);
+    const ward = referralIn(after, referralId).destinations[0];
+    expect(ward.withdrawnAt).toBe(NOW_ANCHOR + 10);
+    expect(ward.withdrawalRecordedBy).toBeDefined();
+  });
+
+  it.each([
+    ["community", "ed"],
+    ["ed_medical", "community"],
+  ] as const)("a %s referral cannot be withdrawn by the other side, role %s", (source, role) => {
+    const { state, referralId } = raise(source);
+    const after = withdrawAs(state, referralId, role);
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toMatch(/cannot withdraw it/);
+    expect(referralIn(after, referralId).destinations[0].withdrawnAt).toBeUndefined();
+  });
+
+  it("the coordinator can still withdraw a referral either side sent", () => {
+    for (const source of ["community", "ed_medical"] as const) {
+      const { state, referralId } = raise(source);
+      expect(withdraw(state, referralId).rejections).toEqual([]);
+    }
+  });
+});

@@ -574,7 +574,7 @@
  * Both re-implemented what `WardPanel` (`../ward-panel.tsx`) already draws — a bordered card with
  * its own header — and they drew it with the edge the design system moved AWAY from on the same
  * day. `ward-panel.module.css` records the measurement: `--ward-border` is neutral-500 at 4.97:1
- * on white, four times the contrast of PsychSift's own card edge, and "most of why the ward screens
+ * on white, four times the contrast of the app's own card edge, and "most of why the ward screens
  * read as heavier than the rest of the app". The system's answer is a lighter line PLUS elevation
  * (`--border` + `--e1`), and these four screens had adopted neither half because they had never
  * adopted the primitive.

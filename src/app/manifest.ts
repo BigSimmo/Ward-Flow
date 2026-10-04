@@ -35,7 +35,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/monochrome-192", type: "image/png", sizes: "192x192", purpose: "monochrome" },
       { src: "/icons/monochrome-512", type: "image/png", sizes: "512x512", purpose: "monochrome" },
     ],
-    // No install shortcuts: the four PsychSift ones (Ask, Documents, Medication, Differentials)
-    // pointed at pages that left with PsychSift on 25-26 September 2026 (Josh's go-ahead, 26 Sept).
+    // No install shortcuts: the four from the former clinical app (Ask, Documents, Medication, Differentials)
+    // pointed at pages that left with it on 25-26 September 2026 (Josh's go-ahead, 26 Sept).
   };
 }

@@ -4,6 +4,7 @@ import type { LeavingDestination } from "./ward-admissions";
 import {
   createContext,
   type Dispatch,
+  Fragment,
   type ReactNode,
   type SetStateAction,
   useCallback,
@@ -253,20 +254,54 @@ type WardFlowContainer = {
   /** Event log, step 1: every dispatch this session, in memory only (see `ward-event-log.ts`).
    *  Starts empty; a reset to a new world starts it again. Never saved. */
   eventLog?: readonly EventLogEntry[];
+  /** True once the mount effect has read (or declined to read) the saved session. Storage is never
+   *  written before this, so the deterministic first-render seed cannot overwrite a saved day. */
+  sessionAdopted?: boolean;
+  /** True when adoption replaced the world with a saved one that differs from the first-render
+   *  seed. The screens below are then remounted once (see `WardFlowWorld`'s return). */
+  sessionRestored?: boolean;
+  /** Events dispatched before adoption, in order, held in memory only. Adopting a changed saved day
+   *  replays them on top of it, so an action taken in the first moments after load is applied (or
+   *  refused, visibly) rather than silently dropped with the seed it landed on. */
+  preAdoptionEvents?: readonly WardFlowEvent[];
 };
 
-/** Not a `WardFlowEvent`: replacing the world from a demo file is a provider-level demo action,
- *  like a browser restore, and never reaches the reducer, the event log or a role check. */
+/**
+ * The one container change that is not a `WardFlowEvent`: adopting the saved session after
+ * hydration. Keyed by a module-private symbol so no caller-built event can ever take this path.
+ */
+const ADOPT_SESSION: unique symbol = Symbol("ward-flow-adopt-session");
+type AdoptSessionAction = {
+  type: "ADOPT_SAVED_SESSION";
+  [ADOPT_SESSION]: (current: WardFlowContainer) => WardFlowContainer;
+};
+
+/** Also not a `WardFlowEvent`: replacing the world from a demo scenario file
+ *  (`ward-flow-scenario-file.ts`) never reaches the reducer, the event log or a role check. */
 type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
 
 function wardFlowContainerReducer(
   container: WardFlowContainer,
-  action: WardFlowEvent | LoadScenarioFileAction,
+  action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction,
 ): WardFlowContainer {
-  if (action.type !== "LOAD_SCENARIO_FILE_INTERNAL") return trackWardFlowTypedTextDispatch(container, action);
-  // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
-  // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
-  return { world: action.world, typedTextSeen: true, restoredElapsed: action.restoredElapsed, eventLog: [] };
+  if (ADOPT_SESSION in action) return action[ADOPT_SESSION](container);
+  if (action.type === "LOAD_SCENARIO_FILE_INTERNAL")
+    // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
+    // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
+    // It also counts as adopted, so a late browser restore can never replace it.
+    return {
+      ...container,
+      world: action.world,
+      typedTextSeen: true,
+      restoredElapsed: action.restoredElapsed,
+      eventLog: [],
+      recoveryNotice: undefined,
+      sessionAdopted: true,
+      preAdoptionEvents: undefined,
+    };
+  const next = trackWardFlowTypedTextDispatch(container, action);
+  if (container.sessionAdopted) return next;
+  return { ...next, preAdoptionEvents: [...(container.preAdoptionEvents ?? []), action] };
 }
 
 /**
@@ -476,8 +511,8 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  * **What this does.** The first render — server, and the client's hydration render — uses offset
  * zero: the frozen 10:42 night the fixture was authored against, which is exactly what every test
  * already renders, so the first paint is a coherent board rather than a placeholder. A mount effect
- * then reads the wall clock once and re-keys `WardFlowWorld`, whose `useReducer` initialiser
- * re-seeds at the real offset. **A state update after hydration is not a hydration mismatch** —
+ * then reads the wall clock once and hands it to `WardFlowWorld`, which restores any saved session
+ * through its reducer without remounting. **A state update after hydration is not a hydration mismatch** —
  * React compares only the first client render against the server HTML.
  *
  * 🔴 **`suppressHydrationWarning` WOULD HAVE BEEN THE WORST OF THE OPTIONS AND IS RECORDED HERE SO
@@ -539,23 +574,20 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
   const anchorOffsetMinutes = initialNow !== undefined ? initialNow - NOW_ANCHOR : 0;
 
   /**
-   * ⚠️ **THE `key` IS WHAT RE-SEEDS THE WORLD, AND IT HAS TO BE.** `useReducer`'s initialiser runs
-   * once per mount, so a changed offset cannot reach the seed any other way without inventing a
-   * reducer event for it. Re-keying remounts `WardFlowWorld` and re-runs
-   * `seedWardFlowStateAt(offset)` — discarding whatever state existed, which is safe here and only
-   * here: the effect above fires before any interaction is possible, and it fires once.
-   *
-   * 🔴 **THE KEY NO LONGER INTERPOLATES `anchorOffsetMinutes` — that interpolation WAS the "adopted
-   * remount key flip".** Because the live demo's `anchorOffsetMinutes` is now always 0 (see the
-   * determinism comment above), the remount below re-seeds at the SAME offset as the hydration
-   * render, so "Board time" no longer jumps to the wall clock. The one `adopted === null` → `"live"`
-   * flip is RETAINED deliberately: it is the single re-run of `WardFlowWorld`'s `useReducer`
-   * initialiser that lets `tryReadDemoState` restore a saved session AFTER hydration, with no
-   * server/client markup mismatch.
+   * 🔴 **NO `key` HERE — ADOPTION NO LONGER REMOUNTS THE TREE (open item 5, 3 Oct 2026).** Until
+   * then this element was keyed `adopted !== null ? "live" : "pinned"`, so the mount effect above
+   * flipped the key and React threw away and rebuilt the WHOLE layout (rail, bar, every screen) about
+   * a second after load. PR #31 measured it: the server-rendered shell was replaced by a fresh copy,
+   * so a click or a half-typed entry landing in that window went to a node about to be discarded.
+   * The only reason for the remount was to re-run `useReducer`'s initialiser so a saved session
+   * could be restored after hydration. `WardFlowWorld` now does that restore in its own mount
+   * effect, through a private reducer action. A first visit, or a reload with nothing changed, keeps
+   * every node. Only a reload of a day that was actually changed remounts the screens (not the
+   * provider), because screens seed one-time drafts from provider data and must reseed from the
+   * restored day; that is the same remount as before, now confined to the case that needs it.
    */
   return (
     <WardFlowWorld
-      key={adopted !== null ? "live" : "pinned"}
       anchorOffsetMinutes={anchorOffsetMinutes}
       mountedAtAbsolute={adopted?.mountedAtAbsolute ?? null}
       initialNow={initialNow}
@@ -593,11 +625,9 @@ function WardFlowWorld({
    * two components deriving it separately would disagree across midnight, which is the
    * two-clocks-on-one-card failure a layer down.
    *
-   * ⚠️ Declared ABOVE the `useReducer` call (audit finding ISSUE-P1-83, defect 3b): the reducer's
-   * own initialiser needs today's `dayZero` to decide whether a saved session still describes
-   * today's world, so it has to exist before that initialiser runs — a `const` referenced by a
-   * closure created earlier in the same statement is only safe once the `const` itself has been
-   * evaluated, so this has to sit above the `useReducer` call, not below it.
+   * Audit finding ISSUE-P1-83, defect 3b: the session restore needs today's `dayZero` to decide
+   * whether a saved session still describes today's world. Since 3 Oct 2026 that restore runs in
+   * the adoption effect below rather than in the reducer's initialiser, which reads it from here.
    *
    * `useState`'s lazy initialiser (not a `useRef` guarded by its own `.current` check, which this
    * was until `react-hooks/refs` — 2026-09-17 — pointed out that reading `.current` here, and in
@@ -617,20 +647,13 @@ function WardFlowWorld({
   const [container, dispatchContainer] = useReducer(
     wardFlowContainerReducer,
     anchorOffsetMinutes,
-    (offset): WardFlowContainer => {
-      if (initialNow === undefined && mountedAtAbsolute !== null) {
-        const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
-        if (saved)
-          return {
-            world: saved.state,
-            typedTextSeen: false,
-            restoredElapsed:
-              saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute,
-          };
-        return { world: seedWardFlowStateAt(offset), typedTextSeen: false, restoredElapsed: 0, recoveryNotice };
-      }
-      return { world: seedWardFlowStateAt(offset), typedTextSeen: false, restoredElapsed: 0 };
-    },
+    // A pinned `now` never reads a saved session, so it starts adopted and holds no replay queue.
+    (offset): WardFlowContainer => ({
+      world: seedWardFlowStateAt(offset),
+      typedTextSeen: false,
+      restoredElapsed: 0,
+      sessionAdopted: initialNow !== undefined,
+    }),
   );
   const state = container.world;
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
@@ -706,12 +729,61 @@ function WardFlowWorld({
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [initialNow, mountedAtAbsolute]);
-  const [storageUnavailable, setStorageUnavailable] = useState(container.recoveryNotice === STORAGE_UNAVAILABLE);
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
+
+  /**
+   * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
+   * `mountedAtAbsolute`. This replaced re-keying (and so remounting) the whole tree: the restored
+   * state arrives through the reducer, so every node rendered at hydration stays the same node.
+   * Runs once per mount; `sessionAdopted` gates the storage write below until it has run.
+   */
+  useEffect(() => {
+    if (initialNow !== undefined || mountedAtAbsolute === null) return;
+    const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    // Never move the allocator backwards: a record opened before adoption already used its number.
+    if (saved)
+      openRequestSequence.current = Math.max(
+        openRequestSequence.current,
+        nextOpenRequestSequence(saved.state.auditEvents),
+      );
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
+    if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
+    dispatchContainer({
+      type: "ADOPT_SAVED_SESSION",
+      [ADOPT_SESSION]: (current) => {
+        if (current.sessionAdopted) return current;
+        if (saved) {
+          const restoredElapsed =
+            saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
+          // A saved day identical to the seed already on screen (nothing was changed before the
+          // reload) only moves the clock; the screens keep their nodes and their state.
+          if (JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] }))
+            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
+          // Anything dispatched before adoption is replayed on the restored day through the same
+          // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
+          // on screen rather than lost.
+          let restored: WardFlowContainer = {
+            world: saved.state,
+            typedTextSeen: false,
+            restoredElapsed,
+            sessionAdopted: true,
+            sessionRestored: true,
+          };
+          for (const event of current.preAdoptionEvents ?? [])
+            restored = trackWardFlowTypedTextDispatch(restored, event);
+          return restored;
+        }
+        // The rejected or unreadable save leaves the first-render seed in place, with its notice.
+        if (recoveryNotice) return { ...current, recoveryNotice, sessionAdopted: true, preAdoptionEvents: undefined };
+        return { ...current, sessionAdopted: true, preAdoptionEvents: undefined };
+      },
+    });
+  }, [initialNow, mountedAtAbsolute, dayZero]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
+    if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
     // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
     // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
     // cleared immediately and never written to again until a genuine reseed re-enables it — checked
@@ -726,7 +798,17 @@ function WardFlowWorld({
     }
     if (storageUnavailable) return;
     if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
-  }, [state, container.typedTextSeen, initialNow, mountedAtAbsolute, dayZero, now, elapsed, storageUnavailable]);
+  }, [
+    state,
+    container.typedTextSeen,
+    container.sessionAdopted,
+    initialNow,
+    mountedAtAbsolute,
+    dayZero,
+    now,
+    elapsed,
+    storageUnavailable,
+  ]);
 
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
@@ -873,7 +955,16 @@ function WardFlowWorld({
       {(storageUnavailable || container.recoveryNotice) && (
         <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
       )}
-      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
+      <WardFlowClockContext.Provider value={now}>
+        {/*
+         * Remounts the screens once, and only when a saved day that differs from the seed was
+         * restored: screens initialise drafts and selections from provider data once
+         * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+         * must start again from the restored world rather than keep the seed's. A first visit, or a
+         * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+         */}
+        <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+      </WardFlowClockContext.Provider>
     </WardFlowContext.Provider>
   );
 }

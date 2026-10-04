@@ -5,12 +5,10 @@ import { panelTitlesInOrder } from "./helpers/ward-panels";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allEmergencyDepartments, allUnits, edById, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allUnits, edById, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { isOpen, searchMovements } from "@/components/ward-management/ward-derivations";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
-import { dayOf } from "@/components/ward-management/ward-clock";
-import { wardMovements } from "@/components/ward-management/ward-movements";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 /**
@@ -91,6 +89,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();
     expect(panelTitlesInOrder()).toEqual([
+      "Wait timeline",
       "Who is holding people up",
       "Waiting",
       "What the blocker is",
@@ -102,11 +101,12 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
     expect(panelTitlesInOrder()).toEqual([
+      "Wait timeline",
       "Who is holding people up",
       "Waiting",
+      "Why this person is waiting",
       "What the blocker is",
       "Escalations and resolved",
-      "Why this person is waiting",
       "Delays with no named person",
     ]);
   });
@@ -116,7 +116,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("carries the register tabs in order", () => {
     renderScreen();
-    const tabs = screen.getAllByRole("tab");
+    const tabs = within(screen.getByRole("tablist", { name: "Registers" })).getAllByRole("tab");
     expect(tabs.length, "the register tabs did not render — this guard proves nothing").toBe(3);
     expect(tabs[0]).toHaveTextContent(/Escalations/u);
     expect(tabs[1]).toHaveTextContent(/Attention/u);
