@@ -191,7 +191,7 @@
   margin: 0;
   padding: 0 var(--dc-space-8);
   color: var(--dc-muted);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: var(--dc-leading-body);
 }
 

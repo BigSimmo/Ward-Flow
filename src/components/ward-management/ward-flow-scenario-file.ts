@@ -1,7 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * SAVE AND LOAD A DEMO SCENARIO AS A FILE (Josh, 4 October 2026, open-items list item 2).
@@ -104,10 +103,8 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
   if (typeof now !== "number" || !Number.isFinite(now) || !isValidStoredWardFlowState(file.state))
     return { ok: false, reason: DAMAGED };
   const state = file.state;
-  if (
-    now < NOW_ANCHOR + state.clockOffsetMinutes ||
-    state.auditEvents.some((event) => event.at !== null && event.at > now)
-  )
-    return { ok: false, reason: DAMAGED };
+  // The provider also refuses a clock earlier than the scenario anchor: only a named few files may
+  // read that constant (`tests/ward-flow-single-source.test.ts`).
+  if (state.auditEvents.some((event) => event.at !== null && event.at > now)) return { ok: false, reason: DAMAGED };
   return { ok: true, state, now };
 }

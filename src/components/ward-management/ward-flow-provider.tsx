@@ -745,6 +745,8 @@ function WardFlowWorld({
     (text: string): { ok: true } | { ok: false; reason: string } => {
       const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
       if (!read.ok) return read;
+      if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
+        return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
       // The clock resumes at the file's own scenario time: `now` is rebuilt from the same parts the
       // render uses, so the elapsed term is read fresh rather than from the last 30s tick.
       const elapsedNow =
