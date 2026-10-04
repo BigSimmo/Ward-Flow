@@ -39,7 +39,8 @@ export type BedMeetingCapacity = {
   occupied: number;
   ready: number;
   lockedReady: number;
-  held: number;
+  pulled: number;
+  closed: number;
   /** `undefined` when no ward reports it — never a misleading zero. */
   pendingPreparation: number | undefined;
 };
@@ -141,7 +142,8 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     occupied: totals.occupied,
     ready: totals.ready,
     lockedReady: totals.lockedReady,
-    held: totals.held,
+    pulled: totals.pulled,
+    closed: totals.closed,
     pendingPreparation: tracked.length === 0 ? undefined : tracked.reduce((sum, value) => sum + value, 0),
   };
 

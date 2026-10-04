@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * ⚠️ THE REFER CONTROL, FOR A WARD THAT ONLY DECLINED BEFORE — the half of `4e07bf520` that was
@@ -43,6 +44,7 @@ function Harness({ movementId }: { movementId: string }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={selectedUnitId}
       onSelectUnit={setSelectedUnitId}

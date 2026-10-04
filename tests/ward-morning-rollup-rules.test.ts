@@ -511,7 +511,9 @@ describe("ward-morning-rollup", () => {
       // "Discharges held up", not "Blocked releases" — owner ruling 2026-09-06. The label changed;
       // the field name and the one-label-per-figure rule this pins did not.
       blockedToday: "Discharges held up",
-      held: "Held",
+      // "Closed", not "Held" — 2026-09-01 ruling 5. "Held" now means only a bed kept for a patient
+      // on leave; the empty bed a ward is not offering is Closed.
+      held: "Closed",
       // "On leave", not "Leave (usable)" — owner ruling 2026-09-06. Unlike `blockedToday` above,
       // where only the label moved, this figure changed MEANING as well: it counted leave beds
       // the ward had flagged usable, and now counts every bed on leave. The field was renamed

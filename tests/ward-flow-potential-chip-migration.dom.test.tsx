@@ -21,6 +21,7 @@ import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * CHANGED 25 September 2026: `Confirmed`/`Expected` figures below are no longer pinned by the
@@ -102,6 +103,7 @@ describe("network view and coordinator flow diagram never show the raw potential
         units={allUnits()}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         selectedUnitId={undefined}
         onSelectUnit={() => {}}
         parallelReferralCap={PARALLEL_REFERRAL_CAP}

@@ -527,7 +527,7 @@
   color: var(--net-good);
 }
 
-.bedChip[data-state="held"] {
+.bedChip[data-state="closed"] {
   border-color: var(--net-warn);
   background: var(--net-warn-soft);
   color: var(--net-warn);
@@ -540,10 +540,9 @@
   color: var(--net-blue);
 }
 
-.bedChip[data-state="blocked"] {
-  border-color: var(--net-danger);
-  background: var(--net-danger-soft);
-  color: var(--net-danger);
+.bedChip[data-state="pulled"] {
+  border-color: var(--net-blue);
+  color: var(--net-blue);
 }
 
 .bedTime {
@@ -629,7 +628,7 @@
   background: var(--net-good-soft);
 }
 
-.legendSwatch[data-state="held"] {
+.legendSwatch[data-state="closed"] {
   border-color: var(--net-warn);
   background: var(--net-warn-soft);
 }
@@ -640,9 +639,8 @@
   border-color: var(--net-blue);
 }
 
-.legendSwatch[data-state="blocked"] {
-  border-color: var(--net-danger);
-  background: var(--net-danger-soft);
+.legendSwatch[data-state="pulled"] {
+  border-color: var(--net-blue);
 }
 
 .legendRoute,
@@ -724,6 +722,25 @@
 .compareTable td[data-tone="danger"] {
   color: var(--net-danger);
   font-weight: 700;
+}
+
+.compareTable td[data-tone="neutral"] {
+  color: var(--net-muted);
+  font-weight: 700;
+}
+
+/* The engine's own sentence under each verdict: quieter than the verdict, never hidden. */
+.reasonDetail {
+  display: block;
+  margin-top: var(--net-space-2);
+  color: var(--net-muted);
+  font-weight: 400;
+}
+
+.reasonNote {
+  margin: var(--net-space-6) 0 0;
+  color: var(--net-muted);
+  font-size: var(--text-xs);
 }
 
 .tierNote {

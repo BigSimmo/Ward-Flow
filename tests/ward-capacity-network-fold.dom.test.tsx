@@ -263,7 +263,8 @@ describe("a folded group's summary row states its own totals, never the network'
         blocked,
         dischargesDueToday,
         transfersToday,
-        held,
+        pulled,
+        closed,
         occupied,
         sexMix,
         specialling,
@@ -296,7 +297,8 @@ describe("a folded group's summary row states its own totals, never the network'
 
       const expectedReady = sumOf('[data-testid="ward-capacity-network-ready"]', "Ready");
       const expectedLocked = sumOf('[data-testid="ward-capacity-network-locked"]', "Locked");
-      const expectedHeld = sumOf('[data-testid="ward-capacity-network-held"]', "Held");
+      const expectedPulled = sumOf('[data-testid="ward-capacity-network-pulled"]', "Pulled");
+      const expectedClosed = sumOf('[data-testid="ward-capacity-network-closed"]', "Closed");
       const expectedOccupied = sumOf('[data-testid="ward-capacity-network-occupied"]', "Occupied");
       const expectedFreeing = trackedSumOf('[data-testid="ward-capacity-network-freeing"]', "Freeing");
       const expectedConfirmed = trackedSumOf('[data-testid="ward-capacity-network-confirmed"]', "Confirmed");
@@ -305,7 +307,8 @@ describe("a folded group's summary row states its own totals, never the network'
 
       expect(readCount(ready, `${service}'s Ready total`), `${service}'s Ready total`).toBe(expectedReady);
       expect(readCount(locked, `${service}'s Locked total`), `${service}'s Locked total`).toBe(expectedLocked);
-      expect(readCount(held, `${service}'s Held total`), `${service}'s Held total`).toBe(expectedHeld);
+      expect(readCount(pulled, `${service}'s Pulled total`), `${service}'s Pulled total`).toBe(expectedPulled);
+      expect(readCount(closed, `${service}'s Closed total`), `${service}'s Closed total`).toBe(expectedClosed);
       expect(readCount(occupied, `${service}'s Occupied total`), `${service}'s Occupied total`).toBe(expectedOccupied);
       expect(readTracked(freeing, `${service}'s Freeing total`), `${service}'s Freeing total`).toBe(expectedFreeing);
       expect(readTracked(confirmed, `${service}'s Confirmed total`), `${service}'s Confirmed total`).toBe(

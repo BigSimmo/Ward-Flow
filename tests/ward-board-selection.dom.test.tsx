@@ -191,13 +191,14 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
 });
 
 describe("ward board selection — a bed with no occupant is a class, not a location", () => {
-  it("says which bed is not recorded when a held tile is chosen", async () => {
+  it("says which bed is not recorded when a closed tile is chosen", async () => {
     // Owner ruling 2026-09-25: out-of-service beds are not recorded, so there is no out-of-service
-    // tile to choose any more; the former blocked bed is a held one. The same honesty applies to it.
+    // tile to choose any more; the former blocked bed is a closed one (the box once called held,
+    // renamed by the 2026-09-01 ruling). The same honesty applies to it.
     const user = userEvent.setup();
     const { container } = renderWardBoard(BLOCKED_UNIT_ID);
     expect(container.querySelectorAll('[data-bed-kind="blocked"]')).toHaveLength(0);
-    await user.click(tileButtonOfKind(container, "held"));
+    await user.click(tileButtonOfKind(container, "closed"));
 
     const detail = screen.getByTestId("ward-board-detail");
     expect(within(detail).getByTestId("ward-board-detail-bed-class")).toBeTruthy();

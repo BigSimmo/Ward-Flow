@@ -11,6 +11,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import type { MovementId } from "@/components/ward-management/ward-model";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * The coordinator sees how far each ward is by road from the department the patient is in.
@@ -34,6 +35,7 @@ function Harness({ movementId }: { movementId: MovementId }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={undefined}
       onSelectUnit={() => {}}

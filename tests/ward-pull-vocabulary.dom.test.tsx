@@ -30,6 +30,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 /**
  * ⚠️ **THE WORD, ON THE SCREEN — NOT THE IDENTIFIER.**
  *
@@ -132,12 +133,12 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     expect(section).not.toBeNull();
   });
 
-  it("explains the 'Held' bed figure by contrast with the PULL, not with itself", () => {
+  it("explains the 'Closed' bed figure by contrast with the PULL, not with itself", () => {
     renderWard("rph-adult-secure");
     const disclosure = screen.getByText("What these bed figures mean", { selector: "summary" }).closest("details");
     expect(disclosure).not.toBeNull();
     expect(disclosure?.textContent?.replace(/\s+/gu, " ")).toContain(
-      "Held means empty but not offered; it is separate from a bed pulled for a patient",
+      "Closed means empty but not offered; pulled means allocated to a patient who has not arrived yet",
     );
     expect(screen.getByRole("region", { name: "Coming in" })).toBeInTheDocument();
   });
@@ -152,7 +153,9 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     expect(card.textContent ?? "").toContain("Bed pull ");
 
     fireEvent.click(within(card).getByRole("button", { name: "Release the pulled bed" }));
-    expect(screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`),
+    ).toBeInTheDocument();
     // The reason OPTION text, which is a label-map lookup rather than a literal in this file's
     // component — a stale map key would render nothing here.
     expect(screen.getByRole("option", { name: "Pull made in error" })).toBeInTheDocument();
@@ -227,6 +230,7 @@ function ShortlistHarness({ movementId }: { movementId: string }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={undefined}
       onSelectUnit={() => {}}
@@ -249,7 +253,9 @@ describe("the coordinator's undo section says pull", () => {
     expect(toggle).toHaveTextContent("Release the pulled bed");
 
     fireEvent.click(toggle);
-    expect(screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("ward-release-pull").textContent ?? "").not.toMatch(/hold/i);
   });
 });
@@ -556,5 +562,8 @@ describe("a refused pull says pull in the refusal a coordinator actually reads",
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }

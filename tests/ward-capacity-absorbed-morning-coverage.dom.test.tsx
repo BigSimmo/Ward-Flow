@@ -10,7 +10,7 @@ import {
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
@@ -108,28 +108,30 @@ describe("Case 1 — Capacity identifies synthetic data via the governance foote
  * `MorningPage` did — its closest analogue is the "Ready now" panel, which states `netTotals.ready`
  * of `netTotals.beds` beds and nothing else. `netTotals` (`capacity-derivations.ts`) is computed as
  * `{ wards, beds, ready, pendingPreparation }` — it structurally cannot carry a same-day
- * confirmed/expected/held figure, because nothing sums one into it. This asserts the number itself,
- * independently derived from the real fixture, and floors on confirmed/expected/held genuinely being
+ * confirmed/expected/closed figure, because nothing sums one into it. This asserts the number itself,
+ * independently derived from the real fixture, and floors on confirmed/expected/closed genuinely being
  * non-zero and different from `ready` — the same "guard the guard" the retired case ran, so an
  * anchored equality below cannot pass by coincidence on a fixture where every figure happens to
  * agree.
  */
 describe("Case 2 — the Ready-now panel states availableNow alone", () => {
-  it("shows exactly netTotals.ready of netTotals.beds beds, never a total inflated by confirmed, expected or held", () => {
+  it("shows exactly netTotals.ready of netTotals.beds beds, never a total inflated by confirmed, expected or closed", () => {
     const confirmedTotal = networkRows.reduce((sum, row) => sum + (row.confirmed ?? 0), 0);
     const expectedTotal = networkRows.reduce((sum, row) => sum + (row.expected ?? 0), 0);
-    const heldTotal = networkRows.reduce((sum, row) => sum + row.held, 0);
+    const closedTotal = networkRows.reduce((sum, row) => sum + row.closed, 0);
 
     expect(confirmedTotal, "fixture assumption: some ward confirms a release today").toBeGreaterThan(0);
     expect(expectedTotal, "fixture assumption: some ward expects a release today").toBeGreaterThan(0);
-    expect(heldTotal, "fixture assumption: some ward holds a bed back today").toBeGreaterThan(0);
+    expect(closedTotal, "fixture assumption: some ward has a closed bed today").toBeGreaterThan(0);
     expect(confirmedTotal, "confirmed and ready coincide — this fixture cannot distinguish the two").not.toBe(
       netTotals.ready,
     );
     expect(expectedTotal, "expected and ready coincide — this fixture cannot distinguish the two").not.toBe(
       netTotals.ready,
     );
-    expect(heldTotal, "held and ready coincide — this fixture cannot distinguish the two").not.toBe(netTotals.ready);
+    expect(closedTotal, "closed and ready coincide — this fixture cannot distinguish the two").not.toBe(
+      netTotals.ready,
+    );
 
     renderScreen();
     const panel = screen.getByRole("region", { name: "Ready now" });
@@ -162,8 +164,8 @@ describe("Case 2 — the Ready-now panel states availableNow alone", () => {
  * genuinely differ from expected on at least one ward, or the two mutations above would be
  * numerically invisible on a fixture where every figure happened to coincide.
  */
-describe("Case 20 — each ward row renders its own confirmed/expected/held/occupied breakdown, never another ward's or the group's rolled-up total", () => {
-  it("matches an independently-computed capacityBreakdown/unitCapacity for that unit alone, on every row", () => {
+describe("Case 20 — each ward row renders its own confirmed/expected/pulled/closed/occupied breakdown, never another ward's or the group's rolled-up total", () => {
+  it("matches an independently-computed capacityBreakdown/bedStates for that unit alone, on every row", () => {
     const confirmedValues = new Set(networkRows.map((row) => row.confirmed));
     expect(
       confirmedValues.size,
@@ -174,19 +176,21 @@ describe("Case 20 — each ward row renders its own confirmed/expected/held/occu
       rowsWhereConfirmedDiffersFromExpected.length,
       "confirmed equals expected on every ward — a column-swap mutation would be invisible",
     ).toBeGreaterThan(0);
+    expect(
+      networkRows.some((row) => row.pulled > 0),
+      "no ward has a pulled patient — the Pulled column is untested",
+    ).toBe(true);
 
     renderScreen();
     const table = screen.getByTestId("ward-capacity-network-table");
 
     for (const row of networkRows) {
       const expectedBreakdown = capacityBreakdown(row.unit, bedReleases, leaveBeds, NOW);
-      // `held` and `occupied` are read from a SEPARATE call the screen itself makes — `held` via
-      // `capacityBreakdown(unit, [], leave, now)` (releases deliberately empty; see
-      // `capacity-derivations.ts`'s own comment on why), `occupied` via `unitCapacity(unit, [])` —
-      // reproduced exactly here rather than reusing `row.held`/`row.occupied`, which would just be
-      // comparing the production value against itself.
-      const expectedHeld = capacityBreakdown(row.unit, [], leaveBeds, NOW).held;
-      const expectedOccupied = unitCapacity(row.unit, []).occupied;
+      // Pulled, Closed and Occupied are the ruled boxes (`ward-bed-states.ts`), read from a SEPARATE
+      // call with the same inputs the screen passes — reproduced here rather than reusing
+      // `row.pulled`/`row.closed`/`row.occupied`, which would just be comparing the production value
+      // against itself. Closed is the box once mislabelled "Held".
+      const expectedStates = bedStates(row.unit, wardAdmissions, bedReleases, leaveBeds);
 
       const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
       expect(
@@ -197,13 +201,16 @@ describe("Case 20 — each ward row renders its own confirmed/expected/held/occu
         within(tableRow).getByTestId("ward-capacity-network-expected"),
         `${row.unit.id}: expected`,
       ).toHaveTextContent(freeingCellText(expectedBreakdown.expectedToday));
-      expect(within(tableRow).getByTestId("ward-capacity-network-held"), `${row.unit.id}: held`).toHaveTextContent(
-        countCellText(expectedHeld),
+      expect(within(tableRow).getByTestId("ward-capacity-network-pulled"), `${row.unit.id}: pulled`).toHaveTextContent(
+        countCellText(expectedStates.pulled),
+      );
+      expect(within(tableRow).getByTestId("ward-capacity-network-closed"), `${row.unit.id}: closed`).toHaveTextContent(
+        countCellText(expectedStates.closed),
       );
       expect(
         within(tableRow).getByTestId("ward-capacity-network-occupied"),
         `${row.unit.id}: occupied`,
-      ).toHaveTextContent(countCellText(expectedOccupied));
+      ).toHaveTextContent(countCellText(expectedStates.occupied));
     }
   });
 });

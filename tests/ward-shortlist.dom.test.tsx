@@ -10,6 +10,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { URGENCY_LEVELS } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Task 6 (spec item 11). WF-308 is the real fixture's own second "nowhere eligible" movement at
@@ -37,6 +38,7 @@ function ShortlistHarness() {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={selectedUnitId}
       onSelectUnit={setSelectedUnitId}
@@ -146,7 +148,9 @@ describe("ShortlistPanel urgency picker", () => {
     renderShortlist();
     fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
 
-    const picker = screen.getByLabelText(`Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`) as HTMLSelectElement;
+    const picker = screen.getByLabelText(
+      `Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`,
+    ) as HTMLSelectElement;
 
     const optionText = [...picker.options].map((option) => option.textContent);
     expect(optionText).toEqual(URGENCY_LEVELS.map((level) => urgencyTierLabel(level)));
@@ -205,6 +209,7 @@ describe("the override form says what the bed failed on, in text a coordinator c
         units={units}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         referrals={referrals}
         selectedUnitId={selectedUnitId}
         onSelectUnit={setSelectedUnitId}
@@ -339,6 +344,7 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
         units={units}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         referrals={referrals}
         selectedUnitId={selectedUnitId}
         onSelectUnit={setSelectedUnitId}
@@ -417,5 +423,8 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }

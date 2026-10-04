@@ -8,6 +8,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 /**
  * OWNER RULING, 2026-09-02: a coordinator may see the suburb a referred patient is from —
  * `PD-3` permits a suburb precisely because it names a service area, never a dwelling. This suite
@@ -93,6 +94,7 @@ function ShortlistHarness() {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={undefined}
       onSelectUnit={() => {}}
@@ -140,6 +142,7 @@ describe("coordinator shortlist shows a referred patient's suburb", () => {
           units={units}
           bedReleases={bedReleases}
           leaveBeds={leaveBeds}
+          admissions={wardAdmissions}
           referrals={referrals}
           selectedUnitId={undefined}
           onSelectUnit={() => {}}

@@ -135,7 +135,7 @@ function read(paths: string[]) {
  * 🔴 **THE DECLARATION SURFACE IS WIDER THAN THE FILE TYPE, AND THIS GUARD LEARNED THAT TWICE.**
  *
  * A custom property can also be declared at RUNTIME, from a JSX inline style — and the hub does
- * exactly that: `hub-screen.tsx:497-499` sets `--bar-ready`, `--bar-not-yet` and `--bar-blocked`
+ * exactly that: `hub-screen.tsx:497-499` sets `--bar-ready`, `--bar-not-yet` and `--bar-pulled`
  * per bed bar from `barWidth(...)`, which `hub.module.css:814-824` then reads as
  * `width: var(--bar-ready, 0%)`. **Those are per-row values that cannot live in a stylesheet: one
  * declared width would be one width for every ward.**
@@ -279,7 +279,7 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
       runtimeDeclared.size,
       "no custom property was collected from JSX — the runtime scan is dead",
     ).toBeGreaterThan(0);
-    for (const name of ["--bar-ready", "--bar-not-yet", "--bar-blocked"]) {
+    for (const name of ["--bar-ready", "--bar-not-yet", "--bar-pulled"]) {
       expect(runtimeDeclared, `${name} is set from hub-screen.tsx and must count as declared`).toContain(name);
     }
   });
@@ -361,7 +361,7 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
     const withFallback = [...new Set(misses.filter((miss) => miss.hasFallback).map((miss) => miss.name))].sort();
     expect(withFallback, "an undeclared token appeared behind a fallback").toEqual(
       /*
-       * ⚠️ **`--bar-blocked`, `--bar-not-yet` and `--bar-ready` WERE ON THIS LIST AND ARE NOT MISSES.**
+       * ⚠️ **`--bar-pulled` (once `--bar-blocked`), `--bar-not-yet` and `--bar-ready` WERE ON THIS LIST AND ARE NOT MISSES.**
        * They are declared at RUNTIME from JSX (`hub-screen.tsx:497-499`, one width per bed bar) and
        * read as `var(--bar-ready, 0%)`. A scan of `.css` alone cannot see a runtime declaration, so
        * they arrived here looking like undeclared names — and the obvious repair, pointing them at a

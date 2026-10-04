@@ -14,6 +14,12 @@ import {
 
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import {
+  BED_STATE_DETAILS,
+  BED_STATE_LABELS,
+  bedStates,
+  type BedStateCounts,
+} from "@/components/ward-management/ward-bed-states";
 import { eligibility, wardAddressing } from "@/components/ward-management/ward-eligibility";
 import {
   candidateReason,
@@ -57,43 +63,33 @@ import {
   type TravelBandGroupCounts,
   referralPersonFacts,
 } from "@/components/ward-management/ward-referrals";
-import { siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { PLACEMENT_REASON_GROUPS, placementReason } from "@/components/ward-management/ward-placement-reasons";
+import {
+  REFERENCE_DISTANCE_CAVEAT,
+  referenceDistance,
+} from "@/components/ward-management/reference/ward-reference-distances";
 import { FlowDiagram } from "@/components/ward-management/coordinator/flow-diagram";
 import { PressureStrip } from "@/components/ward-management/coordinator/pressure-strip";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
 
-type BedStateKey = "available" | "held" | "confirmed" | "expected" | "blocked";
+type BedStateKey = "available" | "pulled" | "closed" | "confirmed" | "expected";
 
-// Review Finding 4: this used to be `"potential"`, sourced from `unitCapacity()`'s raw release
-// count — every release for the unit regardless of state or timing, including one already
-// `discharged` and one expected beyond tonight, both of which spec D5/D6 exclude from every count.
-// Confirmed and Expected are read from `capacityBreakdown()` instead, the same figures the
+// Review Finding 4: Confirmed and Expected are read from `capacityBreakdown()`, the same figures the
 // capacity board and the ward screen already show, so this board can never disagree with them.
+//
+// Ready, Pulled and Closed are the owner's ruled bed states (R-B-05, R-B-09, and 2026-09-01 ruling 5:
+// "the box currently called Held becomes Closed"), read from `bedStates()` so every screen spells and
+// counts them the same way. "Held" now means only a bed kept for a patient on leave, which is not a
+// chip here. Out-of-service beds are not recorded in the model, so there is no Blocked chip.
 const bedStateCopy: Record<BedStateKey, { label: string; detail: string }> = {
-  // ⚠️ Both halves say the ruled word (OWNER, 2026-09-04). The label already did; the detail said
-  // "Available now", so one chip carried two names for its own number.
-  available: { label: "Ready", detail: "Ready" },
-  /*
-   * ⚠️ **THIS LABEL IS KNOWINGLY WRONG AND IS OWED TO THE SIX-BED-STATES TASK.**
-   *
-   * `Unit.held` means a bed that is physically EMPTY and that the ward is not offering — typically
-   * because it cannot staff it. Under the owner's 2026-09-01 bed states that concept is **`Closed`**.
-   *
-   * But since the hold-to-pull rename, **"Bed held" is the phrase for a bed kept for a patient who is
-   * away on leave** — a different thing entirely. So this label now describes the wrong concept in a
-   * summary a coordinator reads.
-   *
-   * It was left deliberately: renaming it belongs to the bed-states work, which has to decide the
-   * whole set at once. **Recorded here because "we knowingly left a wrong label" and "we missed a
-   * label" are indistinguishable to whoever reads it next** — Ward Verifier's point, and the right
-   * one.
-   */
-  held: { label: "Held", detail: "Bed held" },
+  available: { label: BED_STATE_LABELS.ready, detail: BED_STATE_DETAILS.ready },
+  pulled: { label: BED_STATE_LABELS.pulled, detail: BED_STATE_DETAILS.pulled },
+  closed: { label: BED_STATE_LABELS.closed, detail: BED_STATE_DETAILS.closed },
   confirmed: { label: "Confirmed", detail: "Confirmed today" },
   expected: { label: "Expected", detail: "Expected today" },
-  blocked: { label: "Blocked", detail: "Not available" },
 };
 
 /**
@@ -222,17 +218,15 @@ function transportTone(etaLabel: string) {
   return /requested|awaiting|not yet/i.test(etaLabel) ? "warning" : "good";
 }
 
-// Review Finding 4: the "Confirmed"/"Expected" chips read `capacityBreakdown()`, not
-// `unitCapacity()`'s raw `potential` — see the `bedStateCopy` doc comment above. The four
-// physical states (Ready/Held/Blocked, plus Occupied where shown) are untouched.
 function bedStateValue(
   key: BedStateKey,
-  capacity: ReturnType<typeof unitCapacity>,
+  states: BedStateCounts,
   breakdown: ReturnType<typeof capacityBreakdown>,
 ): number {
   if (key === "confirmed") return breakdown.confirmedToday;
   if (key === "expected") return breakdown.expectedToday;
-  return capacity[key];
+  if (key === "available") return states.ready;
+  return states[key];
 }
 
 function BedStateChips({
@@ -248,7 +242,8 @@ function BedStateChips({
   now: Instant;
   showTime?: boolean;
 }) {
-  const capacity = unitCapacity(unit, bedReleases);
+  const { admissions } = useWardFlow();
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   return (
@@ -266,7 +261,7 @@ function BedStateChips({
           key={key}
           title={bedStateCopy[key].detail}
         >
-          {bedStateValue(key, capacity, breakdown)}
+          {bedStateValue(key, states, breakdown)}
         </span>
       ))}
       {showTime ? <span className={styles.bedTime}>{formatInstant(unit.allocatable.confirmedAt)}</span> : null}
@@ -318,7 +313,8 @@ function ServiceCard({
   onSelect: () => void;
   registerRef: (id: string, node: HTMLButtonElement | null) => void;
 }) {
-  const capacity = unitCapacity(unit, bedReleases);
+  const { admissions } = useWardFlow();
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   // One spelling for both outcomes, and it is the match view's own. `matchReason` answers "can
   // this bed take this person, and if not why" for an accepting bed too ("Eligible now"), so this
@@ -333,7 +329,7 @@ function ServiceCard({
       data-routed={routed ? "true" : undefined}
       data-testid={`ward-network-card-${unit.id}`}
       className={styles.serviceCard}
-      aria-label={`${unit.name}. ${capabilityLabel(unit)}. ${capacity.available} ready, ${capacity.held} held, ${breakdown.confirmedToday} confirmed, ${breakdown.expectedToday} expected, blocked not recorded, of ${unit.beds} beds. Confirmed ${formatInstant(unit.allocatable.confirmedAt)}.${verdict ? ` ${verdict}.` : ""}`}
+      aria-label={`${unit.name}. ${capabilityLabel(unit)}. ${states.ready} ready, ${states.pulled} pulled, ${states.closed} closed, ${breakdown.confirmedToday} confirmed, ${breakdown.expectedToday} expected, of ${unit.beds} beds. Confirmed ${formatInstant(unit.allocatable.confirmedAt)}.${verdict ? ` ${verdict}.` : ""}`}
     >
       <span className={styles.serviceName}>{unit.name}</span>
       <span className={styles.serviceCapability}>{capabilityLabel(unit)}</span>
@@ -533,7 +529,7 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, configuration } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
   const now = useWardFlowClock();
   const [view, setView] = useState<NetworkView>("overview");
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
@@ -619,6 +615,7 @@ export function WardNetworkWorkspace() {
               units={units}
               bedReleases={bedReleases}
               leaveBeds={leaveBeds}
+              admissions={admissions}
               selectedUnitId={selectedUnitId}
               onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
               parallelReferralCap={configuration.parallelReferralCap}
@@ -668,7 +665,7 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
 }
 
 function WardNetworkPlacementWorkspace() {
-  const { movements, units, referrals, bedReleases, leaveBeds } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlow();
   const now = useWardFlowClock();
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
@@ -697,6 +694,7 @@ function WardNetworkPlacementWorkspace() {
     [movements, selectedPatientId],
   );
   const candidates = useMemo(() => (patient ? candidatesFor(patient, units, now) : []), [patient, units, now]);
+  const originEd = patient ? allEmergencyDepartments().find((ed) => ed.id === patient.originEdId) : undefined;
 
   /*
    * Task 7 (spec D8-5). Referral selection sits ALONGSIDE the movement selection above: the
@@ -1339,6 +1337,36 @@ function WardNetworkPlacementWorkspace() {
                         );
                       })}
                     </tr>
+                    {/* Why each ward fits or does not (owner request, 4 October 2026), read straight
+                        from the same eligibility verdict as the gate list below, in plain groups. */}
+                    {PLACEMENT_REASON_GROUPS.map((group) => (
+                      <tr key={group.key} data-testid={`ward-network-reason-${group.key}`}>
+                        <th scope="row">{group.heading}</th>
+                        {candidates.map((candidate) => {
+                          const reason = placementReason(candidate.verdict, group);
+                          return (
+                            <td key={candidate.unit.id} data-tone={reason.tone}>
+                              {reason.label}
+                              <span className={styles.reasonDetail}>{reason.detail}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    <tr data-testid="ward-network-reason-distance">
+                      <th scope="row">Road distance from presenting ED</th>
+                      {candidates.map((candidate) => {
+                        const route = referenceDistance(
+                          originEd?.referenceEdId,
+                          siteByCode(candidate.unit.siteCode)?.referenceSiteId,
+                        );
+                        return (
+                          <td key={candidate.unit.id}>
+                            {route === null ? "No measured route" : `${route.km} km, about ${route.min} min`}
+                          </td>
+                        );
+                      })}
+                    </tr>
                     <tr>
                       <th scope="row">Current bed state</th>
                       {candidates.map((candidate) => (
@@ -1363,14 +1391,22 @@ function WardNetworkPlacementWorkspace() {
                     <tr>
                       <th scope="row">Eligibility</th>
                       {candidates.map((candidate) => (
-                        <td key={candidate.unit.id} title={candidateReason(candidate.verdict)}>
+                        <td key={candidate.unit.id}>
                           <strong>{candidate.verdict.eligible ? "Eligible" : "Not eligible"}</strong>
+                          {/* Visible text, not a `title`: a tooltip reaches nobody on a touch screen. */}
+                          <span className={styles.reasonDetail}>{candidateReason(candidate.verdict)}</span>
                         </td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <p className={styles.reasonNote} data-testid="ward-network-reason-caveat">
+                Each reason repeats the eligibility checks below; none ranks a ward. The health-service row compares the
+                presenting emergency department, not where the person lives: home catchment and where family live are
+                not recorded in this prototype. {REFERENCE_DISTANCE_CAVEAT}
+              </p>
 
               <p className={styles.tierNote}>
                 <span
@@ -1424,8 +1460,8 @@ function WardNetworkPlacementWorkspace() {
               </p>
               <BedStateChips unit={detail} bedReleases={bedReleases} leaveBeds={leaveBeds} now={now} />
               <p className={styles.detailMeta}>
-                {unitCapacity(detail, bedReleases).occupied} occupied of {detail.beds} beds. Confirmed and expected beds
-                are not allocatable yet.
+                {bedStates(detail, admissions, bedReleases, leaveBeds).occupied} occupied of {detail.beds} beds.
+                Confirmed and expected beds are not allocatable yet.
               </p>
             </section>
           ) : null}

@@ -27,6 +27,10 @@ import { allUnits } from "@/components/ward-management/ward-sites";
  * called, the given-away tile must not be readable as that word.**
  *
  * So it survives `"Empty"` → `"Ready"` and goes red on `"Empty, waiting"` → `"Ready, waiting"`.
+ *
+ * The given-away tile now reads `"Pulled"` (the ruled bed-state word, `ward-bed-states.ts`), so the
+ * tiles are told apart by their `data-bed-kind` — `waiting` and `empty` — rather than by finding
+ * the word "waiting" in their text, which would have left the comparisons below with no subjects.
  */
 
 /** A unit whose grid carries both tile kinds; asserted rather than assumed, below. */
@@ -40,12 +44,13 @@ function renderBoard(unitId: string) {
   );
 }
 
-/** Every bed tile's visible text, in grid order. Read from the DOM rather than from the source, so
- *  this asks what a coordinator can actually read. */
-function tileTexts(): string[] {
+/** The visible text of every bed tile of one kind, in grid order. Read from the DOM rather than
+ *  from the source, so this asks what a coordinator can actually read. */
+function tileTexts(kind: "waiting" | "empty"): string[] {
   const grid = screen.getByTestId("ward-board-beds");
   return within(grid)
     .getAllByRole("listitem")
+    .filter((item) => item.getAttribute("data-bed-kind") === kind)
     .map((item) => item.textContent ?? "");
 }
 
@@ -55,19 +60,17 @@ describe("the board's given-away tile is never readable as its fillable tile", (
     // with no tiles of either kind. Floored on the POPULATION — that both kinds are present — never
     // on a count, which would break the day the seed changes and teach somebody to edit the number.
     renderBoard(UNIT_ID);
-    const texts = tileTexts();
 
-    expect(texts.length).toBeGreaterThan(0);
-    expect(texts.some((text) => /waiting/i.test(text))).toBe(true);
-    expect(texts.some((text) => !/waiting/i.test(text) && /empty|ready/i.test(text))).toBe(true);
+    expect(tileTexts("waiting").length).toBeGreaterThan(0);
+    expect(tileTexts("empty").length).toBeGreaterThan(0);
   });
 
   it("never labels a given-away bed with the fillable bed's own word", () => {
     renderBoard(UNIT_ID);
-    const texts = tileTexts();
 
-    const givenAway = texts.filter((text) => /waiting/i.test(text));
-    const fillable = texts.filter((text) => !/waiting/i.test(text) && /empty|ready/i.test(text));
+    const givenAway = tileTexts("waiting");
+    const fillable = tileTexts("empty");
+    expect(givenAway.length).toBeGreaterThan(0);
 
     /*
      * The fillable tile's word, taken from the SCREEN rather than written down here — so the rule
@@ -85,12 +88,10 @@ describe("the board's given-away tile is never readable as its fillable tile", (
 
   it("keeps the two labels distinguishable from each other, not merely different in punctuation", () => {
     renderBoard(UNIT_ID);
-    const texts = tileTexts();
 
-    const givenAway = new Set(texts.filter((text) => /waiting/i.test(text)).map((text) => text.trim().toLowerCase()));
-    const fillable = new Set(
-      texts.filter((text) => !/waiting/i.test(text) && /empty|ready/i.test(text)).map((t) => t.trim().toLowerCase()),
-    );
+    const givenAway = new Set(tileTexts("waiting").map((text) => text.trim().toLowerCase()));
+    const fillable = new Set(tileTexts("empty").map((text) => text.trim().toLowerCase()));
+    expect(givenAway.size).toBeGreaterThan(0);
 
     // Disjoint sets: no string may serve as both, which a rename collapsing the two would produce.
     for (const label of givenAway) expect(fillable.has(label)).toBe(false);
