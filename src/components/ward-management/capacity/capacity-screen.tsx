@@ -27,6 +27,8 @@ import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-ch
 import { BedMap } from "./bed-map";
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
+import { bedsForecast } from "./beds-forecast";
+import { BedsForecastPanel } from "./beds-forecast-panel";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -141,6 +143,9 @@ export function CapacityScreen() {
 
   const gapRows = bedKindGaps(movements, units, now);
   const gapTotals = bedKindTotals(gapRows);
+  // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
+  // changes it.
+  const forecast = bedsForecast(units, bedReleases, admissions, movements, now);
   const shortfalls = gapRows.filter((row) => row.gap < 0);
 
   // ⚠️ `bedReleases` PASSED DELIBERATELY. "Expected to free today" is not a fact `Unit` carries —
@@ -514,6 +519,8 @@ export function CapacityScreen() {
               Across the whole network, not only {service}.
             </p>
           ) : null}
+
+          <BedsForecastPanel forecast={forecast} />
 
           <div className={styles.capacityGrid}>
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>

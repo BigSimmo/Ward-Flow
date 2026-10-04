@@ -105,6 +105,13 @@ repo-wide guards.
 - **`src/components/ward-management/capacity/bed-meeting-sheet.tsx`** and its `.module.css` — the
   "Bed-meeting sheet" button on Capacity, its preview dialog and the sheet-only A4 print rules.
   Tested by `tests/ward-bed-meeting-sheet.dom.test.tsx`.
+- **`src/components/ward-management/capacity/beds-forecast.ts`** — smart feature 10, tomorrow's
+  beds: `bedsForecast` (24 and 48 hour estimates from beds ready now, confirmed and expected
+  discharges, minus people still needing a bed, with a low/likely/high range), `forecastFigureText`
+  and `BEDS_FORECAST_LIMITS`. Pure, so the morning bed-meeting sheet can reuse it. Rendered by
+  **`beds-forecast-panel.tsx`** (styles in `beds-forecast.module.css`) on the Capacity screen.
+  **Tests:** `tests/ward-beds-forecast.test.ts` and the forecast block in
+  `tests/ward-capacity-screen.dom.test.tsx`.
 - **`src/components/ward-management/capacity/service-capacity-tracker.ts`** (602 lines) — WA-wide
   compound escalation tracking: `deriveBedCapacityTone`, `deriveEdWarning`,
   `evaluateCompoundEscalation`, `trackServiceBedCapacity`, plus the `CapacityAlertCode`
