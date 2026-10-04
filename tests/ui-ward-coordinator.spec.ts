@@ -28,6 +28,21 @@ async function gotoCoordinator(page: Page) {
 }
 
 /**
+ * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
+ * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
+ * inside them; idempotent, so it is safe after every queue selection.
+ */
+async function openShortlistSections(shortlist: Locator) {
+  const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const checks = shortlist.locator('details[aria-label="Eligibility checks"]');
+  if ((await checks.count()) > 0 && !(await checks.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await checks.locator("summary").click();
+  }
+}
+
+/**
  * Resolves a movement id off a real, currently-rendered queue row rather than trusting whatever
  * the test author expected to be there — the same reasoning `movementById` itself documents
  * (never fall back to a different record on a miss).
@@ -689,6 +704,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).toBeGreaterThan(0);
 
     await queue.locator('[data-testid="ward-queue-row-WF-001"]').click();
+    await openShortlistSections(shortlist);
 
     // The locked candidates say so on their own rows; the open one does not. Both the shortlist
     // row and the diagram node now read `restrictionNotice`'s own wording (flow-diagram fix:
@@ -719,6 +735,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // A Secure movement on a Secure ward is a plain match — the note must not appear there, or it
     // would be noise a coordinator learns to ignore.
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await openShortlistSections(shortlist);
     await expect(shortlist).not.toContainText("More restrictive than this movement requires");
   });
 
@@ -820,6 +837,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // states its own verdict in text, not only by icon, and all eleven gates are rendered — never
     // a `.slice()`.
     await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await openShortlistSections(shortlist);
     const wf017Gates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(wf017Gates).toHaveCount(11);
     for (const gate of await wf017Gates.all()) {
@@ -844,6 +862,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // above — this is the unconditional proof the brief's own guarded assertion could skip.
     // Selected by id, not by row position, so it does not matter which row it currently ranks.
     await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await openShortlistSections(shortlist);
     const wf009Gates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(wf009Gates).toHaveCount(11);
     for (const gate of await wf009Gates.all()) {
@@ -878,6 +897,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // fixture, so the pre-click assertion checks the SPECIFIC new referral is absent, not the
     // phrase overall.
     await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await openShortlistSections(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).not.toContainText("Parallel referral: Dabakarn");
@@ -918,6 +938,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).toBe(true);
 
     await queue.locator('[data-testid="ward-queue-row-WF-017"]').click();
+    await openShortlistSections(shortlist);
 
     // The default candidate's gates are shown (orientation is fine)...
     await expect(shortlist.locator('[data-testid^="ward-gate-"]')).toHaveCount(11);
@@ -978,6 +999,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).not.toBe(wf004.acceptedUnitId);
 
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
     await expect(referButton).toHaveAttribute("aria-disabled", "true");
     await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
@@ -1092,6 +1114,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // WF-009: every candidate is ineligible, so override is the only human path that can
     // place a patient here — exactly the scenario the control exists for.
     await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await openShortlistSections(shortlist);
 
     const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");
     await expect(overrideToggle).toBeVisible();
@@ -1150,6 +1173,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await queue.locator('[data-testid="ward-queue-row-WF-002"]').click();
 
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    await openShortlistSections(shortlist);
 
     // Nothing is referable until a human picks a ward.
     const refer = shortlist.getByTestId("ward-shortlist-refer");
@@ -1189,6 +1213,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
 
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await openShortlistSections(shortlist);
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf004Default.unit.id}"]`).click();
 
     const refer = shortlist.getByTestId("ward-shortlist-refer");
@@ -1242,6 +1267,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(refusalMarker).toHaveText("0 refused");
 
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
+    await openShortlistSections(shortlist);
     await shortlist.locator(`[data-testid="ward-shortlist-candidate-${wf004Default.unit.id}"]`).click();
 
     const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");

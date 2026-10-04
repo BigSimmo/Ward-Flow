@@ -61,10 +61,22 @@ function isTypeButton(attr) {
  */
 function isStaticallyOff(value) {
   if (value == null) return false; // bare boolean attribute → `true`, not off
-  const nodeIsOff = (node) =>
-    node.type === "Literal"
-      ? node.value === false || node.value === null || node.value === "false"
-      : node.type === "Identifier" && node.name === "undefined";
+  const nodeIsOff = (node) => {
+    if (node.type === "Literal") {
+      return node.value === false || node.value === null || node.value === "false";
+    }
+    if (node.type === "Identifier" && node.name === "undefined") {
+      return true;
+    }
+    if (
+      (node.type === "ArrowFunctionExpression" || node.type === "FunctionExpression") &&
+      node.body.type === "BlockStatement" &&
+      node.body.body.length === 0
+    ) {
+      return true;
+    }
+    return false;
+  };
   if (value.type === "Literal") return nodeIsOff(value);
   if (value.type === "JSXExpressionContainer") return nodeIsOff(value.expression);
   return false;

@@ -24,7 +24,11 @@ import {
  * register being emptied; the exact figure catches it being widened.
  */
 describe("the register's community-team contact detail", () => {
-  const matched = COMMUNITY_TEAM_PAGES.filter((team) => referenceTeamDetail(team.name) !== null);
+  // ⚠️ OPEN QUESTION (lint clean-up, 2026-10-04): the pinned match count described above is not
+  // asserted anywhere. A `matched` list (COMMUNITY_TEAM_PAGES names that resolve exactly in the
+  // register) was computed here but never used, and it is currently EMPTY — no community-team page
+  // name matches a register name exactly. Pinning 0 would freeze that gap; whether the two
+  // vocabularies should overlap is a product decision, so the unused value was removed instead.
 
   it("knows what it is checking against, so a pass cannot come from an empty list", () => {
     // The canary. Every assertion below passes by finding something; an empty register or an empty

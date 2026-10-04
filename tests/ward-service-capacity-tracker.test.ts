@@ -10,27 +10,7 @@ import {
 } from "@/components/ward-management/capacity/service-capacity-tracker";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { allUnits, wardSites } from "@/components/ward-management/ward-sites";
-import type { Movement, Site, Unit } from "@/components/ward-management/ward-model";
-
-function createUnitStub(overrides: Partial<Unit> & Pick<Unit, "id" | "siteCode" | "beds">): Unit {
-  return {
-    name: overrides.id,
-    cohort: "Adult",
-    lockedBeds: 0,
-    authorised: true,
-    empty: { value: overrides.beds, source: "ward", confirmedAt: 0, staleAfterMinutes: 90 },
-    allocatable: { value: overrides.beds, source: "ward", confirmedAt: 0, staleAfterMinutes: 90 },
-    allocatableLocked: 0,
-    held: 0,
-    blocked: 0,
-    sexMix: { Female: 0, Male: 0 },
-    speciallingCapacity: 0,
-    highAcuityCapacity: 0,
-    sexDesignation: "Undesignated",
-    forensic: false,
-    ...overrides,
-  };
-}
+import type { Movement } from "@/components/ward-management/ward-model";
 
 function createMovementStub(overrides: Partial<Movement> & { id: `WF-${string}`; originEdId: string }): Movement {
   return {

@@ -316,7 +316,7 @@ async function runPass2(browser) {
               await btn.click({ timeout: 1000 });
               clicked++;
               await page.waitForTimeout(100);
-            } catch (e) {}
+            } catch {}
           }
         }
         return { success: true, detail: `Exercised ${clicked} buttons on Bed Board` };
@@ -336,7 +336,7 @@ async function runPass2(browser) {
             await tab.click({ timeout: 1000 });
             switched++;
             await page.waitForTimeout(150);
-          } catch (e) {}
+          } catch {}
         }
         return { success: true, detail: `Switched through ${switched} patient tabs` };
       },
@@ -371,7 +371,7 @@ async function runPass2(browser) {
             await pill.click({ timeout: 1000 });
             clicked++;
             await page.waitForTimeout(100);
-          } catch (e) {}
+          } catch {}
         }
         return { success: true, detail: `Clicked ${clicked} delay filter pills` };
       },

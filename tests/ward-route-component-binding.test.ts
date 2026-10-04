@@ -82,6 +82,7 @@ const PINNED: Record<string, string | null> = {
   alerts: "AlertsScreen",
   "board/[unitId]": "WardBoard",
   capacity: "CapacityScreen",
+  command: "redirect:/mockups/ward-flow",
   community: "CommunityIndex",
   "community/[teamId]": "CommunityScreen",
   constellation: "redirect:/mockups/ward-flow/network",

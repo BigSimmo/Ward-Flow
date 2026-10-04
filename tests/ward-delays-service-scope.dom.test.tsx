@@ -17,6 +17,14 @@ import {
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
 /**
+ * The Delays redesign (PR 48) opens on the "Action Runway" overview; the owner cards, the duration
+ * band and the measured-none sentence these tests read live in the "Summary Cards" view, unchanged.
+ */
+function showSummaryCards() {
+  fireEvent.click(screen.getByRole("button", { name: "Summary Cards" }));
+}
+
+/**
  * The `ADVANCE_CLOCK` scaffold `tests/ward-delays-legal-deadline.dom.test.tsx` established: moves
  * `now` forward without re-seeding the world, so a `dueAt` authored relative to `NOW_ANCHOR` stays
  * where it was and the clock genuinely crosses it. Duplicated here rather than imported — that file
@@ -173,6 +181,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerId = MARKABLE_OWNER!.id;
     const ownerCard = screen.getByTestId(`delays-owner-${ownerId}`);
@@ -354,6 +363,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
         <DelaysScreen movements={[]} />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     // D-a: the exact zero-case sentence, stating the definition.
     expect(screen.getByTestId("ward-service-scope-bar-urgent")).toHaveTextContent(

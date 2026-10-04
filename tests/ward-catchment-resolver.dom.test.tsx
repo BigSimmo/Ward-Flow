@@ -16,7 +16,6 @@ import {
   WardCatchmentResolver,
   resolveCatchmentQuery,
   resolveSuburb,
-  findSuburbsByPostcode,
   mapClinicToServiceAndHospital,
   formatCatchmentSummary,
   QUICK_PICK_SUBURBS,
