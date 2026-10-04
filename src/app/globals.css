@@ -4921,6 +4921,18 @@ html[data-motion="reduced"] .source-capsule-hit[aria-expanded="true"]:hover .sou
   }
 }
 
+/* Ward Flow morning bed-meeting sheet (capacity/bed-meeting-sheet.tsx) print page.
+ * While the sheet is open its module hides every other <body> child; this clears the page
+ * itself so a dark screen theme does not print a dark edge around the sheet. Kept here
+ * because a CSS module may not style <html> or <body> without a local class. */
+@media print {
+  html.ward-bed-meeting-printing,
+  html.ward-bed-meeting-printing body {
+    color-scheme: light;
+    background: transparent !important;
+  }
+}
+
 /* Caring Contacts workspace (/caring-contacts) print safeguard.
  * The transitional `header, nav, button { display: none }` rule above removes the
  * workspace header when printing, and the "fictional data only" marker lives in
