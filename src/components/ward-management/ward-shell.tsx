@@ -1,7 +1,7 @@
 // src/components/ward-management/ward-shell.tsx
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
@@ -29,8 +29,20 @@ import styles from "./ward-shell.module.css";
  * argument never depended on the number, so no replacement number is recorded here either.)
  */
 export function WardGround({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const groundRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !window.location.hash) {
+      const scroller = groundRef.current?.parentElement;
+      if (scroller && "scrollTop" in scroller) {
+        scroller.scrollTop = 0;
+      }
+    }
+  }, [pathname]);
+
   return (
-    <div className={styles.shell} data-ward-ground>
+    <div ref={groundRef} className={styles.shell} data-ward-ground>
       {children}
     </div>
   );

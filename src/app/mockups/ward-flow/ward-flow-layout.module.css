@@ -50,6 +50,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--ground);
+  scroll-padding-top: 3.5rem;
 }
 
 /*

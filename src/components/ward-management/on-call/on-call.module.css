@@ -497,17 +497,6 @@
 }
 
 @media (min-width: 62.5625rem) {
-  .filterControlBar {
-    position: sticky;
-    top: 4rem;
-    z-index: 20;
-    box-shadow: 0 3px 12px var(--sunk);
-  }
-
-  .protocolCard {
-    scroll-margin-block-start: 12rem;
-  }
-
   .filterBtn,
   .clearBtn,
   .searchInput,
