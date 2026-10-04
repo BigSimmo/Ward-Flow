@@ -1,0 +1,1275 @@
+/* Layout follows the owner's three selected visual references; colour roles come from the
+ * existing Ward shell palette so theme and forced-colour choices remain coherent. */
+.workspace,
+.timelinePanel {
+  --dv-ink: var(--accent-ink);
+  --dv-muted: var(--muted);
+  --dv-line: var(--line);
+  --dv-selected: var(--accent-soft);
+  --dv-blue: var(--accent-ink);
+  --dv-amber: var(--warn);
+  --t-1: 13px;
+  min-width: 0;
+  color: var(--dv-ink);
+  font-family: var(--body);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.panel,
+.teamRail,
+.dossier {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--dv-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.workspace h2,
+.timelinePanel h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.layoutHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 12px;
+}
+.layoutHeader > h2 {
+  font-size: 16px;
+}
+.tabs,
+.modeSwitch {
+  display: flex;
+  gap: 5px;
+}
+.tabs button,
+.modeSwitch button,
+.markBar button,
+.pagination button,
+.openLink,
+.selectLabel,
+.search,
+.sortHint,
+.rowsPerPage select {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--dv-ink);
+}
+.tabs button,
+.modeSwitch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 15px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tabs button > span {
+  font-size: var(--t-0);
+  opacity: 0.65;
+}
+.tabs button[aria-selected="true"],
+.modeSwitch button[aria-pressed="true"],
+.markBar button[aria-pressed="true"] {
+  background: linear-gradient(var(--accent), var(--accent-press));
+  border-color: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 2px 3px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.layout {
+  display: grid;
+  gap: 6px;
+  align-items: stretch;
+}
+.layout[data-layout="focus"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.layout[data-layout="workspace"] {
+  grid-template-columns: 200px minmax(0, 1fr) 340px;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+.timelineHeader,
+.worklistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  min-height: 58px;
+  border-bottom: 1px solid var(--dv-line);
+}
+.timelineHeader {
+  padding: 11px 20px;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 225px;
+  min-width: 160px;
+  height: 36px;
+  padding: 0 11px;
+  background: var(--surface-2);
+  color: var(--dv-muted);
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: var(--dv-ink);
+}
+.search:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.search input::placeholder {
+  color: var(--muted);
+}
+.selectLabel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  height: 36px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.selectLabel select {
+  min-width: 45px;
+  max-width: 155px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  outline-offset: -2px;
+}
+.sortHint {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.markBar {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.markBar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 13px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.markBar b {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  border-radius: 9px;
+  font-size: 12px;
+}
+.tableScroll,
+.worklistScroll {
+  position: relative;
+  min-width: 0;
+  overflow: auto;
+}
+.waitingPanel {
+  min-width: 0;
+}
+.fromColumn,
+.ownerColumn {
+  white-space: nowrap;
+}
+.table {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-cell-inset: 11px 16px;
+  --t-2: 13px;
+  --ink-soft: var(--dv-ink);
+  text-align: left;
+  font-size: 13px;
+}
+.table th,
+.table td {
+  vertical-align: middle;
+}
+.workspace .table thead th,
+.timelinePanel .table thead th {
+  text-transform: none;
+  letter-spacing: normal;
+  height: 38px;
+  --ward-table-cell-inset: 9px 16px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.workspace .table tbody th,
+.timelinePanel .table tbody th {
+  font-size: inherit;
+  color: var(--dv-ink);
+  font-weight: 600;
+}
+.table tbody tr[data-selected="true"] > * {
+  background: var(--dv-selected);
+}
+.table tbody tr[data-dimmed="true"] > * {
+  opacity: 0.48;
+}
+.table tbody tr:hover > * {
+  background: var(--surface-2);
+}
+.waitingTable {
+  --ward-table-cell-inset: 11px 12px;
+  --ward-table-min-width: 1070px;
+}
+.waitingTable thead th {
+  --ward-table-cell-inset: 9px 12px;
+}
+.patientButton {
+  display: block;
+  min-height: 32px;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--dv-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.patientMeta {
+  display: block;
+  margin-top: 3px;
+}
+.secondary {
+  display: block;
+  color: var(--dv-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.profile {
+  color: var(--dv-muted);
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+.cause {
+  color: var(--dv-ink);
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+.wait {
+  white-space: nowrap;
+  font-size: var(--t-1);
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.table .wait[data-long="true"] {
+  color: var(--warn);
+}
+.update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dv-muted);
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+.update::before {
+  content: "";
+  flex: 0 0 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.update[data-recorded="true"]::before {
+  background: var(--good);
+}
+.urgency {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 35px;
+  height: 27px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--line);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.urgency[data-tier="1"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.urgency[data-tier="2"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.ownerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--on-accent);
+  background: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ownerBadge[data-owner="wards"] {
+  background: linear-gradient(var(--accent), var(--accent-press));
+}
+.ownerBadge[data-owner="transport"] {
+  background: linear-gradient(var(--warn), var(--warn));
+}
+.ownerBadge[data-owner="other"] {
+  background: var(--muted);
+}
+.openLink {
+  display: inline-flex;
+  width: 35px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.checkboxCell {
+  width: 38px;
+}
+.checkboxCell input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  vertical-align: middle;
+  cursor: pointer;
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  min-height: 55px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--dv-line);
+  color: var(--dv-muted);
+  font-size: 12px;
+}
+.footer > span:first-child {
+  margin-right: auto;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
+}
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+}
+.pagination button:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+.rowsPerPage {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-left: auto;
+}
+.rowsPerPage select {
+  height: 34px;
+  width: 75px;
+  padding-inline: 10px;
+  font: inherit;
+}
+.detailRow {
+  --ward-table-cell-inset: 0 20px 9px;
+}
+.detailRow > td {
+  background: var(--dv-selected);
+}
+.compactStrip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 72px;
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+}
+.compactStrip > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stripBed {
+  min-width: 240px;
+  padding-right: 28px;
+  border-right: 1px solid var(--line);
+}
+.stripStep {
+  flex: 1;
+}
+.primaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 35px;
+  padding: 8px 13px;
+  border-radius: 5px;
+  background: linear-gradient(var(--accent), var(--accent-press));
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.detailRow .primaryLink {
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  border: 1px solid var(--line-strong);
+}
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.moreTools {
+  font-size: 12px;
+}
+.moreTools > summary {
+  padding: 9px 3px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.moreTools[open] > summary {
+  margin-bottom: 10px;
+}
+.moreTools[open] {
+  padding-bottom: 12px;
+}
+.filterNote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--dv-line);
+  color: var(--dv-muted);
+  font-size: 12px;
+}
+.textButton {
+  border: 0;
+  background: transparent;
+  padding: 3px;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+.empty {
+  padding: 32px !important;
+  color: var(--dv-muted);
+}
+.legalNote {
+  display: block;
+  margin-top: 4px;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: normal;
+}
+/* Version 02: team rail, compact worklist and patient dossier. */
+.teamRail {
+  padding: 5px 10px 16px;
+}
+.teamRail h3 {
+  padding: 10px 2px;
+  margin: 0 0 7px;
+  border-bottom: 1px solid var(--dv-line);
+  font-size: 14px;
+  font-weight: 700;
+}
+.teamRail button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 39px;
+  margin: 2px 0;
+  padding: 8px 8px;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.teamRail button > span {
+  flex: 1;
+}
+.teamRail button strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-weight: 400;
+}
+.teamRail button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+  border-left-color: var(--accent);
+}
+.teamRail .railCauseTitle {
+  margin-top: 20px;
+}
+.layout[data-layout="workspace"] .worklistHeader {
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 17px 15px;
+}
+.queueHeading h2 {
+  font-size: 18px;
+}
+.queueHeading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.layout[data-layout="workspace"] .toolbar {
+  gap: 8px;
+}
+.layout[data-layout="workspace"] .search {
+  width: 185px;
+  min-width: 140px;
+}
+.layout[data-layout="workspace"] .selectLabel {
+  border: 0;
+  padding: 0;
+}
+.layout[data-layout="workspace"] .selectLabel select {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 8px;
+  margin-left: 2px;
+  font-weight: 400;
+}
+.layout[data-layout="workspace"] .waitingTable {
+  min-width: 670px;
+}
+.layout[data-layout="workspace"] .table {
+  --ward-table-cell-inset: 13px 10px;
+}
+.layout[data-layout="workspace"] .table thead th {
+  font-size: var(--t-0);
+  --ward-table-cell-inset: 10px 10px;
+}
+.layout[data-layout="workspace"] .patientButton {
+  font-weight: 400;
+  font-size: 12px;
+}
+.layout[data-layout="workspace"] tr[data-selected="true"] .patientButton {
+  font-weight: 700;
+}
+.layout[data-layout="workspace"] .cause {
+  font-size: 12px;
+}
+.layout[data-layout="workspace"] .update {
+  font-size: var(--t-0);
+}
+.layout[data-layout="workspace"] .update::before {
+  display: none;
+}
+.layout[data-layout="workspace"] .openLink {
+  width: 20px;
+  border: 0;
+  background: transparent;
+}
+.layout[data-layout="workspace"] .pagination > span {
+  display: none;
+}
+.dossier {
+  padding: 12px 18px 10px;
+}
+.dossier > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dossier > header > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dossier h3 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+.synthetic {
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-0);
+  white-space: nowrap;
+}
+.dossierWait {
+  margin: 3px 0 12px;
+  font-size: 15px;
+}
+.dossierWait b {
+  color: var(--warn);
+}
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.facts > div {
+  padding: 10px;
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+}
+.facts > div:nth-child(2n + 1) {
+  border-right: 1px solid var(--line);
+}
+.facts dt {
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.facts dd {
+  margin: 0;
+  font-size: 12px;
+}
+.facts .ownerBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  padding: 4px 7px;
+}
+.facts .lastChange {
+  grid-column: 1 / -1;
+  border: 0;
+}
+.lastChange dd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dossier h4 {
+  margin: 16px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.activity {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px;
+  font-size: var(--t-0);
+}
+.activity li {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  position: relative;
+  gap: 4px;
+  padding: 5px 0 6px 25px;
+  color: var(--muted);
+}
+.activity li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  box-shadow: 0 0 0 2px var(--surface);
+  z-index: 1;
+}
+.activity li:first-child::before {
+  background: var(--accent);
+}
+.activity li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: -9px;
+  width: 1px;
+  background: var(--line);
+}
+.nextStep {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.nextStep > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--t-0);
+}
+.nextStep > div > strong {
+  font-size: 12px;
+}
+.nextStep > div > span {
+  color: var(--muted);
+}
+.nextStep > a {
+  grid-column: 2;
+  justify-self: start;
+}
+.noSelection {
+  padding: 20px;
+  color: var(--dv-muted);
+}
+.noSelection h3 {
+  font-size: 18px;
+  color: var(--dv-ink);
+}
+.blockerPanel {
+  margin-top: 12px;
+}
+.blockerPanel summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 49px;
+  padding: 11px 17px;
+  cursor: pointer;
+  list-style: none;
+}
+.blockerPanel summary::-webkit-details-marker {
+  display: none;
+}
+.blockerPanel summary h2 {
+  font-size: 14px;
+}
+.blockerPanel summary > span {
+  margin-left: auto;
+  color: var(--dv-muted);
+  font-size: 12px;
+}
+.blockerTable {
+  min-width: 550px;
+}
+.causeButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dv-ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.causeButton[aria-pressed="true"] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.table .numeric {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+/* Version 03: four-column timeline, end-of-bar waits, one shared linear scale. */
+.timelineTable {
+  table-layout: fixed;
+  --ward-table-min-width: 1040px;
+  --ward-table-cell-inset: 9px 20px;
+}
+.timelinePatientCol {
+  width: 230px;
+}
+.timelineReasonCol {
+  width: 205px;
+}
+.timelineOwnerCol {
+  width: 135px;
+}
+.timelineTable td,
+.timelineTable th {
+  height: 61px;
+}
+.timelinePanel .timelineTable thead th {
+  height: 48px;
+}
+.timelineTable .patientButton {
+  font-size: 13px;
+}
+.timelineTable .patientButton > .urgency {
+  margin-left: 8px;
+  min-width: 33px;
+  height: 22px;
+  padding: 2px 7px;
+}
+.timelineTable .patientMeta {
+  margin-top: 3px;
+}
+.axisCell {
+  padding-right: 85px !important;
+}
+.axis {
+  position: relative;
+  height: 27px;
+  font-weight: 400;
+}
+.axis > span {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.axis > span:first-child {
+  transform: none;
+}
+.axis .reviewLabel {
+  bottom: 23px;
+  transform: none;
+  padding: 3px 8px;
+  border-left: 1px dashed var(--gilt);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--t-0);
+}
+.trackCell {
+  padding-right: 85px !important;
+}
+.track {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  margin-top: 16px;
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+  background-size: 25% 100%;
+}
+.beforeUpdate,
+.quietWait {
+  position: absolute;
+  top: 0;
+  height: 16px;
+  border-radius: 2px;
+}
+.beforeUpdate {
+  left: 0;
+  background: var(--accent);
+}
+.quietWait {
+  background: repeating-linear-gradient(135deg, var(--accent) 0 1px, var(--accent-soft) 1px 3px);
+}
+.updateDot {
+  position: absolute;
+  top: -1px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%);
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--accent);
+  box-sizing: content-box;
+}
+.reviewLine {
+  position: absolute;
+  top: -39px;
+  bottom: -15px;
+  border-left: 1px dashed var(--gilt);
+  z-index: 2;
+  pointer-events: none;
+}
+.trackCaption {
+  position: absolute;
+  bottom: 21px;
+  font-size: var(--t-0);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  color: var(--muted);
+}
+.trackCaption[style*="0%"] {
+  transform: none;
+}
+.barDuration {
+  position: absolute;
+  top: -1px;
+  padding-left: 11px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.timelineTable .ownerBadge {
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 10px;
+}
+.timelineTable .ownerBadge[data-owner="transport"] {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+.timelineDetail {
+  padding: 12px 9px 0;
+}
+.timelineDetail .compactStrip {
+  gap: 18px;
+  background: var(--surface);
+  min-height: 65px;
+  padding: 10px 15px;
+}
+.timelineDetail .compactStrip > div {
+  padding-right: 18px;
+  border-right: 1px solid var(--dv-line);
+  font-size: 12px;
+}
+.timelineDetail .compactStrip > strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.compactStrip small {
+  color: var(--dv-muted);
+  font-size: var(--t-0);
+}
+.timelineDetail .ownerBadge {
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 4px 8px;
+}
+.timelineDetail .primaryLink {
+  margin-left: auto;
+}
+.timelinePanel > .footer {
+  border: 0;
+  padding-block: 13px;
+  gap: 10px;
+}
+.timelineLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  font-size: var(--t-0);
+  margin-right: auto;
+}
+.timelineLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.solidKey,
+.hatchKey {
+  display: inline-block;
+  width: 28px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.hatchKey {
+  background: repeating-linear-gradient(135deg, var(--accent) 0 1px, var(--accent-soft) 1px 3px);
+}
+.dotKey {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.reviewKey {
+  display: inline-block;
+  height: 12px;
+  border-left: 1px dashed var(--gilt);
+}
+.timelinePanel .pagination {
+  gap: 8px;
+}
+.timelinePanel .pagination > span {
+  display: none;
+}
+.workspace button:focus-visible,
+.timelinePanel button:focus-visible,
+.workspace a:focus-visible,
+.timelinePanel a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (max-width: 1450px) {
+  .layout[data-layout="workspace"] {
+    grid-template-columns: 175px minmax(0, 1fr) 305px;
+  }
+  .worklistHeader {
+    flex-wrap: wrap;
+  }
+  .toolbar {
+    justify-content: flex-start;
+  }
+  .timelineHeader {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 1100px) {
+  .layout[data-layout="workspace"] {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .dossier,
+  .noSelection {
+    grid-column: 2;
+  }
+  .teamRail {
+    grid-row: 1 / 3;
+  }
+  .compactStrip {
+    flex-wrap: wrap;
+  }
+  .stripBed {
+    min-width: 180px;
+  }
+}
+@media (max-width: 900px) {
+  .layoutHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .layout[data-layout="workspace"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .teamRail {
+    grid-row: auto;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 4px;
+  }
+  .teamRail h3 {
+    width: 100%;
+    padding: 6px;
+    margin: 0;
+  }
+  .teamRail button {
+    width: auto;
+    flex: 1 1 130px;
+    margin: 0;
+  }
+  .teamRail .railCauseTitle {
+    margin-top: 5px;
+  }
+  .dossier,
+  .noSelection {
+    grid-column: 1;
+  }
+  .toolbar {
+    width: 100%;
+    gap: 6px;
+  }
+  .toolbar .search {
+    flex: 1 1 180px;
+  }
+  .markBar {
+    flex-wrap: wrap;
+  }
+  .worklistHeader,
+  .timelineHeader {
+    padding: 12px;
+    gap: 12px;
+  }
+  .footer {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .rowsPerPage {
+    margin-left: 0;
+  }
+  .pagination {
+    gap: 8px;
+  }
+  .compactStrip {
+    padding: 12px;
+    gap: 12px;
+  }
+  .stripBed {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+  }
+  .stripStep {
+    flex-basis: 60%;
+  }
+  .timelineDetail .compactStrip > div {
+    flex: 1 1 115px;
+  }
+  .timelineDetail .compactStrip > strong {
+    flex-basis: 100%;
+  }
+  .timelineLegend {
+    gap: 9px;
+  }
+  .timelineTable {
+    min-width: 1020px;
+  }
+  .tabs button {
+    padding-inline: 10px;
+  }
+}
+
+/* Final reference alignment: a single-line action toolbar and six compact rows. */
+@media (min-width: 1451px) {
+  .layout[data-layout="workspace"] {
+    grid-template-columns: 225px minmax(0, 1fr) 390px;
+  }
+  .layout[data-layout="workspace"] .worklistHeader {
+    flex-wrap: nowrap;
+  }
+  .queueHeading {
+    min-width: 200px;
+    flex: 1;
+  }
+  .layout[data-layout="workspace"] .toolbar {
+    flex-wrap: nowrap;
+  }
+  .layout[data-layout="workspace"] .search {
+    width: 190px;
+  }
+  .layout[data-layout="workspace"] .selectLabel select {
+    max-width: 120px;
+  }
+}
+.dossier h3 {
+  font-weight: 700;
+}
+.waitingTable {
+  --ward-table-cell-inset: 9px 12px;
+}
+.layout[data-layout="workspace"] .table,
+.layout[data-layout="workspace"] .table thead th {
+  --ward-table-cell-inset: 10px 10px;
+}
+.layout[data-layout="workspace"] .waitingTable,
+.layout[data-layout="workspace"] .waitingTable thead th {
+  --ward-table-cell-inset: 10px 10px;
+}
+.layout[data-layout="workspace"] .filterNote {
+  display: none;
+}
+.layout[data-layout="workspace"] .filterNote:has([data-ward-panel-count]) {
+  display: flex;
+}
+@media print {
+  .tableScroll,
+  .worklistScroll {
+    overflow: visible;
+  }
+  .layout[data-layout="workspace"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .teamRail,
+  .tabs,
+  .toolbar,
+  .pagination,
+  .moreTools,
+  .rowsPerPage {
+    display: none;
+  }
+  .table {
+    min-width: 0;
+    font-size: 10pt;
+  }
+  .table th,
+  .table td {
+    padding: 6pt;
+  }
+  .panel,
+  .dossier {
+    break-inside: avoid;
+  }
+}
+@media (forced-colors: active) {
+  .ownerBadge,
+  .urgency,
+  .primaryLink,
+  .quietWait,
+  .beforeUpdate {
+    border: 1px solid CanvasText;
+  }
+  .quietWait {
+    background: Canvas;
+    border-style: dashed;
+  }
+  .beforeUpdate {
+    background: CanvasText;
+  }
+  .reviewLine {
+    border-color: CanvasText;
+  }
+  .table tbody tr[data-selected="true"] > * {
+    outline: 1px solid Highlight;
+  }
+}

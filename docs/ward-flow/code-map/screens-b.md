@@ -126,10 +126,30 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   `DELAY_OWNERS`, `ownerOf`, `delayGroups`, `legalDeadlineMinutes`. A comment flags a past defect:
   an earlier plan imported `Instant` from `ward-model` instead of `ward-clock`, a type error Vitest
   (no typecheck) never caught — a live pitfall pattern for this codebase.
-- **`src/components/ward-management/delays/delays-screen.tsx`** (2040 lines) — MERGE 01: the
+- **`src/components/ward-management/delays/delays-screen.tsx`** — MERGE 01: the
   priority queue, exceptions inbox and escalation board folded into one screen answering "why is
-  this person still waiting?". Outline: `DelaysScreen` (164), `DelayRow` (1539),
-  `SelectedPerson` (1668), `PersonRow` (1897).
+  this person still waiting?". `DelaysScreen` now places a named wait timeline above the existing
+  radar, and replaces the waiting/blocker card panels with two table layouts. `DelayRow` and
+  `SelectedPerson` retain recorded-person inspection and the existing coordination actions behind
+  the compact views' patient-tools disclosure.
+- **`src/components/ward-management/delays/delays-data-views.tsx`** — `DelaysWaitTimeline`
+  and `DelaysTableWorkspace`: a paged, linear timeline plus the Focus table / Action workspace
+  tabs. The waiting and blocker tables share the screen's scoped records; text/team/cause filters
+  are local to the tables. Existing mark controls continue highlighting without hiding records.
+  Selection and table filters survive switching layouts. Both worklists paginate; the Focus view
+  expands a short bed/next-step strip, while the Action view uses a compact patient dossier.
+  Blocker totals retain the service scope in an expandable table. The timeline has a working
+  Table/Timeline switch and a compact selected-record strip.
+  The Delays-only header variants reuse `WardRail` and `WardBar`: a narrow rail in Focus mode,
+  horizontal navigation and a navy utility bar in Action mode. `data-delay-layout` drives the
+  scoped shell CSS; other routes retain their existing presentation.
+- **`src/components/ward-management/delays/delays-view-model.ts`** — common linear time
+  scale and recorded-update geometry. Arrival-only records draw a fully hatched wait without a
+  subsequent-update marker; waits beyond 24 hours remain on the scale.
+- **`src/components/ward-management/delays/delays-data-views.module.css`** — scoped table,
+  timeline, queue, responsive, print and forced-colour styles. Tables scroll within their panels
+  on narrow screens. Tests: `ward-delays-data-views.dom.test.tsx`,
+  `ward-delays-view-model.test.ts` and the existing `ward-delays-*` suites.
 - **`src/components/ward-management/delays/delays.module.css`** (5406 lines) — the largest CSS
   module in this map; styles for `delays-screen.tsx`.
 

@@ -1,4 +1,4 @@
-// Single source of truth for the brand mark: the PsychSift S — two
+// Single source of truth for the brand mark: the Ward Flow S — two
 // counter-turning strokes divided by one straight cut, with a settled point —
 // on a rounded tile. Every surface that draws the mark derives from the
 // geometry here so the favicon, the in-app <BrandMark>, the browser-tab icon

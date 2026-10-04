@@ -2880,3 +2880,230 @@
     display: none;
   }
 }
+
+/* The October delay previews use the same navigation and menus with the selected mockup chrome. */
+@media (min-width: 1001px) {
+  :global(body:has([data-ward-page="delays"])) .rail[data-rail="open"] {
+    width: 205px;
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .brand {
+    height: 58px;
+    min-height: 58px;
+    padding: 14px;
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .brandBadge,
+  :global(body:has([data-ward-page="delays"])) .rail .railSearchBox,
+  :global(body:has([data-ward-page="delays"])) .rail .shiftCockpit,
+  :global(body:has([data-ward-page="delays"])) .rail .alertsContainer,
+  :global(body:has([data-ward-page="delays"])) .rail .railActionBox,
+  :global(body:has([data-ward-page="delays"])) .rail .railState {
+    display: none;
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .railLink {
+    min-height: 44px;
+    border-radius: 5px;
+    font-size: var(--t-1);
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .railLink[data-active="true"] {
+    border-color: transparent;
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .eyebrow {
+    color: var(--muted);
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .brandTitle {
+    font-size: var(--t-3);
+  }
+  :global(body:has([data-ward-page="delays"])) .rail .brandEmblem {
+    width: 27px;
+    height: 27px;
+    border-radius: 5px;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail {
+    order: 1;
+    position: relative;
+    top: auto;
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 22px;
+    background: var(--surface);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brand {
+    position: fixed;
+    left: 22px;
+    top: 0;
+    height: 56px;
+    width: 225px;
+    color: var(--on-accent);
+    padding: 0;
+    border: 0;
+    z-index: 42;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle {
+    display: inline;
+    color: var(--on-accent);
+    font-size: var(--t-5);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brandStateText {
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brandEmblem {
+    width: 30px;
+    height: 30px;
+    background: var(--surface);
+    color: var(--accent-ink);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railToggle,
+  :global(body:has([data-delay-layout="workspace"])) .rail .mobileMenu,
+  :global(body:has([data-delay-layout="workspace"])) .rail .railCheck,
+  :global(body:has([data-delay-layout="workspace"])) .rail .serviceLine,
+  :global(body:has([data-delay-layout="workspace"])) .rail .eyebrow,
+  :global(body:has([data-delay-layout="workspace"])) .rail .tag,
+  :global(body:has([data-delay-layout="workspace"])) .rail .utilityLinks,
+  :global(body:has([data-delay-layout="workspace"])) .rail .railPolicyFoot {
+    display: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railScroll {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    overflow: visible;
+    padding: 0;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail nav[aria-label="Ward Flow views"] {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railGroup,
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList {
+    display: contents;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li {
+    display: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li:has(a[href="/mockups/ward-flow"]),
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li:has(a[href="/mockups/ward-flow/movements"]),
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li:has(a[href="/mockups/ward-flow/capacity"]),
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li:has(a[href="/mockups/ward-flow/delays"]),
+  :global(body:has([data-delay-layout="workspace"])) .rail .railList > li:has(a[href="/mockups/ward-flow/referrals"]),
+  :global(body:has([data-delay-layout="workspace"]))
+    .rail
+    .railList
+    > li:has(a[href="/mockups/ward-flow/transport/officer"]) {
+    display: block;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railLink {
+    height: 45px;
+    min-height: 45px;
+    border: 0;
+    padding: 0 5px;
+    border-radius: 0;
+    gap: 10px;
+    font-size: var(--t-1);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railLink[data-active="true"] {
+    color: var(--accent-ink);
+    background: transparent;
+    border-bottom: 3px solid var(--accent-ink);
+    font-weight: 700;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railText {
+    display: block;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .mobileMore {
+    display: block;
+    padding: 0;
+    margin-left: 20px;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .moreTrigger {
+    min-height: 35px;
+    border: 0;
+    background: transparent;
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railFoot {
+    position: fixed;
+    top: 8px;
+    right: 17px;
+    width: 42px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    z-index: 42;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .userProfileCardBtn {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .userAvatar {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line-strong);
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .userMeta,
+  :global(body:has([data-delay-layout="workspace"])) .rail .userChevron {
+    display: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .roleSwitcherPopover {
+    position: absolute;
+    top: 45px;
+    bottom: auto;
+    left: auto;
+    right: 0;
+    width: 280px;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .rail[data-rail="open"],
+  :global(body:has([data-delay-layout="workspace"])) .rail[data-rail="closed"] {
+    width: 100%;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brand {
+    background: transparent;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle b {
+    color: var(--on-accent);
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brandTitle .brandStateText {
+    color: var(--on-accent);
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .rail {
+    transition: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railScroll {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 46px;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .railScroll > nav {
+    flex-shrink: 0;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .rail .brand {
+    transition: none;
+  }
+}
+@media (min-width: 1001px) {
+  /* Let the fixed brand/persona sit over the utility bar without covering its service menu. */
+  :global(body:has([data-delay-layout="workspace"])) .rail {
+    z-index: auto;
+  }
+}
