@@ -69,7 +69,7 @@ The clock:
 > `const elapsed = initialNow !== undefined ? 0 : …` silently discards `initialNow`. A pinned
 > provider therefore always served `NOW_ANCHOR` (642, 10:42) whatever instant it was handed,
 > which made every time-of-day branch in the ward screens unreachable through the real
-> provider. Recorded as `#YTR84P`; see `docs/ward-flow-pinned-clock-handover.md`. The snippet
+> provider. Recorded as `#YTR84P`; see `docs/archive/ward-flow-pinned-clock-handover.md`. The snippet
 > is kept below as the historical instruction, **not** as a specification. The shipped clock is
 > `src/components/ward-management/ward-flow-provider.tsx`, where the pinned instant is used
 > verbatim; `tests/ward-flow-provider.dom.test.tsx` pins it away from the anchor in both

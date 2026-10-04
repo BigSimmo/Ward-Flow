@@ -124,7 +124,7 @@ open it.**
 
 ### `tests/stale-resume-instructions.test.ts` — **NOT MINE**
 
-`docs/ward-flow-coordination-rules.md` and `docs/ward-flow-fold-manifest-2026-08-31.md`: **0 commits
+`docs/archive/ward-flow-coordination-rules.md` and `docs/archive/ward-flow-fold-manifest-2026-08-31.md`: **0 commits
 by me, ever.**
 
 ### `tests/test-runner-safety.test.ts` — **NOT MINE**

@@ -26,7 +26,7 @@ this comes first — an owner call recorded in "Open questions" below.
 ### 1. The foundation is still not validated — and has already changed once
 
 `predicted → confirmed → released`, with **blocked as a flag rather than a stage** — the model of how
-a bed comes free — has still never been put to a ward clinician. `docs/ward-flow-clinician-check.md`
+a bed comes free — has still never been put to a ward clinician. `docs/archive/ward-flow-clinician-check.md`
 is the one-page summary waiting to go out.
 
 **It was four stages when this spec was first written.** The owner revised it on 2026-08-28, while
@@ -272,7 +272,7 @@ is, or about sides of a ward.
 · 1–3 months · over 3 months (ids `under-2-weeks` / `2-weeks-1-month` / `1-3-months` /
 `over-3-months`; ceilings 14 / 30 / 90 / open). **Superseded set, recorded here 2026-08-28:** under
 1 week · 1–4 weeks · 1–3 months · over 3 months. He replaced the first two bands and left the third
-alone. See the note in `docs/ward-flow-handover-2026-08-29.md` §6 on why a verbatim list without a
+alone. See the note in `docs/archive/ward-flow-handover-2026-08-29.md` §6 on why a verbatim list without a
 date eventually instructs a reader to undo the decision it preserves.
 These are his, not derived from anything, and the page must label them as bands he set.
 

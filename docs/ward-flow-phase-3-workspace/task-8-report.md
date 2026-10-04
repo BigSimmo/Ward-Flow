@@ -270,7 +270,7 @@ against the raw fixture (`ward-sites.ts`) rather than eyeballed:
 ## Not run / not done
 
 - Did not touch `scripts/playwright-pr-shards.mjs` (pre-existing, out of scope — see above).
-- Did not rewrite `docs/ward-management-mode-map.md`. It is already substantially stale relative
+- Did not rewrite `docs/archive/ward-management-mode-map.md`. It is already substantially stale relative
   to Phase 3 (still describes the pre-reducer, read-only prototype and points at the superseded
   2026-08-18 design spec, not 2026-08-19's role-screens design) — this predates Task 8 and spans
   Tasks 1-7's own additions (coordinator screen, mutable state) as well, so a proper rewrite is a

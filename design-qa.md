@@ -3,7 +3,7 @@
 > **Superseded (2026-09-02).** Point-in-time QA handoff from 2026-08-19 (PR #2140), kept as the
 > record of that review. The constellation view it passes was retired in Ward Flow Phase 2:
 > `src/app/mockups/ward-flow/constellation/page.tsx` is now a redirect-only stub to
-> `/mockups/ward-flow/network` (see `docs/ward-management-mode-map.md`). The evidence paths below
+> `/mockups/ward-flow/network` (see `docs/archive/ward-management-mode-map.md`). The evidence paths below
 > (`artifacts/ward-management/*.png` and a workstation-local generated image) are not tracked in
 > this repository and cannot be opened from it. Do not treat the verdict as current.
 

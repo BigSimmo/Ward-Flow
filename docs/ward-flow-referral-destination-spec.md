@@ -180,7 +180,7 @@ reason field**. The reason lives in component state and dies on refresh, while
 
 > ⚠️ **SUPERSEDED — there are FIVE coordinator override reasons, all built; the fifth is continuity
 > with a previous admission at this unit.** Owner ruling recorded in
-> `docs/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
+> `docs/archive/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
 > as the record of what was decided earlier; it is NOT current and must not be built from.
 
 `DB-15` already decided the four

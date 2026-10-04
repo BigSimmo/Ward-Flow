@@ -13,7 +13,7 @@
 
 **Tech Stack:** Next.js 16 App Router (server component route → `"use client"` workspace), React 19, TypeScript 6 strict, CSS Modules with local `--net-*`/`--ward-*` token scales, Vitest for contracts, Playwright Chromium for journeys.
 
-**Spec:** [`docs/ward-management-mode-map.md`](../../ward-management-mode-map.md) (route/role model), [`docs/ward-management-context.md`](../../ward-management-context.md) (glossary), [`docs/ward-management-decisions.md`](../../ward-management-decisions.md) (ADRs 1–3)
+**Spec:** [`docs/archive/ward-management-mode-map.md`](../../archive/ward-management-mode-map.md) (route/role model), [`docs/archive/ward-management-context.md`](../../archive/ward-management-context.md) (glossary), [`docs/archive/ward-management-decisions.md`](../../archive/ward-management-decisions.md) (ADRs 1–3)
 
 ## Global Constraints
 
@@ -60,7 +60,7 @@ The five bed states never summed: five of sixteen services over-counted their be
 
 - Modify: `src/components/ward-management/synthetic-fixtures.ts`
 - Create: `tests/ward-management-model.test.ts`
-- Modify: `docs/ward-management-context.md` (the "Bed state" entry currently says the point is unresolved)
+- Modify: `docs/archive/ward-management-context.md` (the "Bed state" entry currently says the point is unresolved)
 
 **Interfaces:**
 
@@ -118,7 +118,7 @@ Expected: PASS (2 tests).
 
 - [ ] **Step 5: Update the glossary to record the resolution**
 
-In `docs/ward-management-context.md`, replace the paragraph beginning "Whether _potential_ is disjoint from _occupied_" with:
+In `docs/archive/ward-management-context.md`, replace the paragraph beginning "Whether _potential_ is disjoint from _occupied_" with:
 
 ```markdown
 _Potential_ is a subset of _occupied_: the bed is in use now and is expected to free after
@@ -130,7 +130,7 @@ beds that cannot be allocated.
 
 ```bash
 npm run format
-git add tests/ward-management-model.test.ts src/components/ward-management/synthetic-fixtures.ts docs/ward-management-context.md
+git add tests/ward-management-model.test.ts src/components/ward-management/synthetic-fixtures.ts docs/archive/ward-management-context.md
 git commit -m "fix(ward-flow): close bed-state arithmetic and pin the potential/occupied relationship"
 ```
 
@@ -145,7 +145,7 @@ ADR 1. An involuntary patient must be detained at a hospital authorised under th
 - Modify: `src/components/ward-management/synthetic-fixtures.ts`
 - Create: `src/components/ward-management/eligibility.ts`
 - Modify: `tests/ward-management-model.test.ts`
-- Modify: `docs/ward-management-decisions.md` (flip ADR 1 to Accepted)
+- Modify: `docs/archive/ward-management-decisions.md` (flip ADR 1 to Accepted)
 
 **Interfaces:**
 
@@ -255,13 +255,13 @@ In `ward-management-modes.tsx` `CapacityView`, add an `Authorised` column to `da
 
 - [ ] **Step 7: Flip the ADR**
 
-In `docs/ward-management-decisions.md`, change ADR 1's status line to `**Status:** Accepted — <today>`.
+In `docs/archive/ward-management-decisions.md`, change ADR 1's status line to `**Status:** Accepted — <today>`.
 
 - [ ] **Step 8: Commit**
 
 ```bash
 npm run format
-git add src/components/ward-management tests/ward-management-model.test.ts docs/ward-management-decisions.md
+git add src/components/ward-management tests/ward-management-model.test.ts docs/archive/ward-management-decisions.md
 git commit -m "feat(ward-flow): gate placement on authorised-hospital status (ADR 1)"
 ```
 
@@ -277,7 +277,7 @@ ADR 3. One four-value list currently serves both the patient's responsible healt
 - Modify: `src/components/ward-management/eligibility.ts`
 - Modify: `tests/ward-management-model.test.ts`
 - Modify: `src/components/ward-management/ward-management-network.tsx:58-62` (`catchmentFit`)
-- Modify: `docs/ward-management-decisions.md` (flip ADR 3 to Accepted)
+- Modify: `docs/archive/ward-management-decisions.md` (flip ADR 3 to Accepted)
 
 **Interfaces:**
 
@@ -365,7 +365,7 @@ Set ADR 3's status to `Accepted — <today>`.
 
 ```bash
 npm run format
-git add src/components/ward-management tests/ward-management-model.test.ts docs/ward-management-decisions.md
+git add src/components/ward-management tests/ward-management-model.test.ts docs/archive/ward-management-decisions.md
 git commit -m "feat(ward-flow): grade locality on a catchment ladder instead of string equality (ADR 3)"
 ```
 
@@ -932,7 +932,7 @@ Four ADRs, a glossary with four "not yet modelled" entries, and a mode map with 
 
 **Files:**
 
-- Modify: `docs/ward-management-mode-map.md`, `docs/ward-management-context.md`, `docs/ward-management-decisions.md`
+- Modify: `docs/archive/ward-management-mode-map.md`, `docs/archive/ward-management-context.md`, `docs/archive/ward-management-decisions.md`
 - Modify: `docs/codebase-index.md`
 
 - [ ] **Step 1: Update the route table**

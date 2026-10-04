@@ -7,7 +7,7 @@
 
 **Status:** Approved design, awaiting implementation plan.
 **Date:** 2026-08-18
-**Supersedes:** the route model in `docs/ward-management-mode-map.md` and the mode list in
+**Supersedes:** the route model in `docs/archive/ward-management-mode-map.md` and the mode list in
 `docs/superpowers/plans/2026-08-18-ward-flow-model-and-modes.md`, both of which assume a
 nine-mode strip rather than the role-first structure decided here.
 
@@ -191,7 +191,7 @@ security need, sex and any specialling requirement.
 
 > ⚠️ **SUPERSEDED — nothing is locked out; a decline does not lock a ward out, and out-of-catchment
 > options are greyed rather than removed.** Owner ruling 2026-08-30 (FD-24), recorded in
-> `docs/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
+> `docs/archive/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
 > as the record of what was decided earlier; it is NOT current and must not be built from.
 
 **Shortlisting.** The coordinator picks it up. The system **filters before it ranks**. Hard gates
@@ -202,7 +202,7 @@ owned by the coordinator.
 
 > ⚠️ **SUPERSEDED — a ward is told NOTHING about co-addressees, not their identities and not that
 > they exist.** Owner ruling 2026-08-30 (FD-23 and FD-31), recorded in
-> `docs/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
+> `docs/archive/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
 > as the record of what was decided earlier; it is NOT current and must not be built from.
 
 **Parallel referrals are supported**, capped at three at a time. Every unit receiving one is told
@@ -211,7 +211,7 @@ reason. Concealing parallel referrals from wards is how trust between services b
 
 > ⚠️ **SUPERSEDED — nothing is locked out; a decline does not lock a ward out, and out-of-catchment
 > options are greyed rather than removed.** Owner ruling 2026-08-30 (FD-24), recorded in
-> `docs/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
+> `docs/archive/ward-flow-owner-rulings-2026-09-01.md` ("latest decision wins"). The passage below is kept
 > as the record of what was decided earlier; it is NOT current and must not be built from.
 
 **Acceptance.** A ward accepting in principle moves it to _accepted, awaiting bed_, owned by the
@@ -359,7 +359,7 @@ referrals never exceed the cap; a declined unit never reappears in that patient'
 
 ## 17. Reconciling the existing decision records
 
-`docs/ward-management-decisions.md` holds three ADRs written before this design. Two need
+`docs/archive/ward-management-decisions.md` holds three ADRs written before this design. Two need
 action.
 
 **ADR 1 — authorised hospitals — is wrong as written and must be corrected, not merely
