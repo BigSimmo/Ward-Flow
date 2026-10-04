@@ -1239,10 +1239,10 @@ async function openDesignShowcase(page: Page) {
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1, name: "Design system showcase" })).toBeVisible();
   await page.waitForLoadState("networkidle");
-  // The server-rendered shell is discarded and rebuilt by the client roughly a second after load, on a
-  // slow runner later than networkidle. Until that finishes, any table handle is a detached node with
-  // empty computed styles, and a click lands on a button whose handlers are not attached. React stamps
+  // Until hydration finishes, a click lands on a button whose handlers are not attached. React stamps
   // its props onto a host node only once it owns it, so wait for that on the control the tests use.
+  // (This wait was added while the ward layout still remounted itself after load; that remount was
+  // removed on 3 Oct 2026, and the hydration wait is still the right guard for the first click.)
   await page.waitForFunction(() => {
     const apply = [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Apply example");
     return apply?.isConnected === true && Object.keys(apply).some((key) => key.startsWith("__reactProps$"));
