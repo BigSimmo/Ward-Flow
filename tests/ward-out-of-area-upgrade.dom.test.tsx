@@ -315,7 +315,9 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
   it("requires patient selection before opening the arrangement form", () => {
     renderBoard();
     const action = screen.getByRole("button", { name: /Initiate Repatriation/i });
-    expect(action).toBeDisabled();
+    // The redesign keeps the unavailable action focusable (aria-disabled, not `disabled`) so keyboard
+    // and screen-reader users can still reach its "Select a patient" explanation.
+    expect(action).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(action);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

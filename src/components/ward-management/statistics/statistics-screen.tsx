@@ -41,6 +41,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
@@ -613,68 +614,74 @@ export function StatisticsScreen({
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${wardSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("name")}
                       aria-sort={wardSortCol === "name" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Ward{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("name")}>
+                        Ward{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${wardSortCol === "hosp" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("hosp")}
                       aria-sort={wardSortCol === "hosp" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Hospital{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("hosp")}>
+                        Hospital{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "beds" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("beds")}
                       aria-sort={wardSortCol === "beds" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Beds{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("beds")}>
+                        Beds{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ready" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("ready")}
                       aria-sort={wardSortCol === "ready" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Ready{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("ready")}>
+                        Ready{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "occ" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("occ")}
                       aria-sort={wardSortCol === "occ" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Occupancy{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("occ")}>
+                        Occupancy{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ref" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleWardSort("ref")}
                       aria-sort={wardSortCol === "ref" ? (wardSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Referred, awaiting answer{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("ref")}>
+                        Referred, awaiting answer{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                   </tr>
                 </thead>
@@ -845,68 +852,74 @@ export function StatisticsScreen({
                     <th
                       scope="col"
                       className={`${pageStyles.sortable} ${edSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("name")}
                       aria-sort={edSortCol === "name" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Site{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("name")}>
+                        Site{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "waiting" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("waiting")}
                       aria-sort={edSortCol === "waiting" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Waiting{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("waiting")}>
+                        Waiting{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "longest" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("longest")}
                       aria-sort={edSortCol === "longest" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Longest wait{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("longest")}>
+                        Longest wait{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "median" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("median")}
                       aria-sort={edSortCol === "median" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Median wait{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("median")}>
+                        Median wait{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over8" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("over8")}
                       aria-sort={edSortCol === "over8" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Over 8 hours{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("over8")}>
+                        Over 8 hours{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                     <th
                       scope="col"
                       className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over24" ? pageStyles.sortActive : ""}`}
-                      onClick={() => handleEdSort("over24")}
                       aria-sort={edSortCol === "over24" ? (edSortAsc ? "ascending" : "descending") : "none"}
                     >
-                      Over 24 hours{" "}
-                      <span className={pageStyles.sortIcon} aria-hidden="true">
-                        {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                      </span>
+                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("over24")}>
+                        Over 24 hours{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
                     </th>
                   </tr>
                 </thead>
@@ -1085,117 +1098,127 @@ export function StatisticsScreen({
             </WardPanel>
           </div>
 
-          {/* Referrals for a bed */}
-          <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
-            <div className={pageStyles.pb}>
-              <p className={pageStyles.scopeNote}>
-                Referrals raised today with a ward destination. Each referral is counted once in each measure.
+          {/* Right column: Referrals & Health Services */}
+          <div className={pageStyles.sideCol}>
+            {/* Referrals for a bed */}
+            <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
+              <div className={pageStyles.pb}>
+                <p className={pageStyles.scopeNote}>
+                  Referrals raised today with a ward destination. Each referral is counted once in each measure.
+                </p>
+              </div>
+
+              <dl className={`${pageStyles.band} ${pageStyles.referralBand}`} id="refBand">
+                <div className={pageStyles.kpi}>
+                  <dt>Raised today</dt>
+                  <dd>
+                    {refRaised}
+                    <small>asking a ward for a bed</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Accepted today</dt>
+                  <dd>
+                    {refAccepted}
+                    <small>accepted outcome</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Declined today</dt>
+                  <dd>
+                    {refDeclined}
+                    <small>each with a recorded reason</small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi} data-tone="warn">
+                  <dt>Still open</dt>
+                  <dd>
+                    {refOpen}
+                    <small>ward answer pending</small>
+                  </dd>
+                </div>
+              </dl>
+
+              <p className={pageStyles.panelFoot}>
+                <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link> · Withdrawn referrals remain in the
+                raised total.
               </p>
+
+              {/* Referrals article for test suite */}
+              <details className={`${pageStyles.measurementDetails} source-print`}>
+                <summary>Referral to bed joining detail</summary>
+                <div className={styles.panelBody}>
+                  <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
+                    <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
+
+                    <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
+                      <strong>No referral-to-bed duration is published.</strong> An exact referral link does not
+                      establish that the referral started the wait that ended with this admission. The counts below
+                      report coherent linked records without turning them into a duration.
+                    </p>
+
+                    <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
+                      <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
+                        {join.chronologicallyCoherentCount}
+                      </span>{" "}
+                      of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
+                      {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
+                      arrived no earlier than the referral was raised.
+                    </p>
+                    <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
+                      Matched from{" "}
+                      <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
+                      {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
+                      <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
+                      {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
+                    </p>
+                    <p className={styles.figureNote}>
+                      Counts are recalculated from the current referral and admission records.
+                    </p>
+                  </article>
+                </div>
+              </details>
+            </WardPanel>
+
+            {/* Choose a health service */}
+            <div id={STATISTICS_SERVICE_CHOOSER_ID}>
+              <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
+                <div className={pageStyles.pb}>
+                  <p className={pageStyles.scopeNote}>
+                    Select a health service to view dedicated ward capacities, ED demands and community allocations.
+                  </p>
+                </div>
+                <div className={styles.panelBody}>
+                  <ul className={pageStyles.serviceGrid} data-testid="ward-statistics-service-list">
+                    {HEALTH_SERVICES.map((svc) => (
+                      <li key={svc} className={pageStyles.serviceCardItem}>
+                        <Link
+                          href={serviceStatisticsHref(svc)}
+                          className={pageStyles.serviceCardLink}
+                          data-testid={`ward-statistics-service-link-${svc}`}
+                        >
+                          <div className={pageStyles.serviceCardContent}>
+                            <span className={pageStyles.serviceCardTitle}>{svc}</span>
+                            <span className={pageStyles.serviceCardSubtitle}>View service measures →</span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </WardPanel>
             </div>
+          </div>
+        </div>
 
-            <dl className={`${pageStyles.band} ${pageStyles.referralBand}`} id="refBand">
-              <div className={pageStyles.kpi}>
-                <dt>Raised today</dt>
-                <dd>
-                  {refRaised}
-                  <small>asking a ward for a bed</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Accepted today</dt>
-                <dd>
-                  {refAccepted}
-                  <small>accepted outcome</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Declined today</dt>
-                <dd>
-                  {refDeclined}
-                  <small>each with a recorded reason</small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi} data-tone="warn">
-                <dt>Still open</dt>
-                <dd>
-                  {refOpen}
-                  <small>ward answer pending</small>
-                </dd>
-              </div>
-            </dl>
-
-            <p className={pageStyles.panelFoot}>
-              <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link> · Withdrawn referrals remain in the
-              raised total.
+        <WardPrototypeFooter
+          testId="ward-statistics-governance"
+          note={
+            <p style={{ margin: 0, display: "inline" }}>
+              <SyntheticFiguresDisclaimer />
             </p>
-
-            {/* Referrals article for test suite */}
-            <details className={`${pageStyles.measurementDetails} source-print`}>
-              <summary>Referral to bed joining detail</summary>
-              <div className={styles.panelBody}>
-                <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
-                  <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
-
-                  <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
-                    <strong>No referral-to-bed duration is published.</strong> An exact referral link does not establish
-                    that the referral started the wait that ended with this admission. The counts below report coherent
-                    linked records without turning them into a duration.
-                  </p>
-
-                  <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
-                    <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
-                      {join.chronologicallyCoherentCount}
-                    </span>{" "}
-                    of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
-                    {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
-                    arrived no earlier than the referral was raised.
-                  </p>
-                  <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
-                    Matched from{" "}
-                    <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
-                    {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
-                    <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
-                    {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
-                  </p>
-                  <p className={styles.figureNote}>
-                    Counts are recalculated from the current referral and admission records.
-                  </p>
-                </article>
-              </div>
-            </details>
-          </WardPanel>
-        </div>
-
-        {/* ══════════ THE HONESTY FOOT ══════════ */}
-        <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-          <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-            <div className={styles.panelBody}>
-              <ul className={styles.indexList} data-testid="ward-statistics-service-list">
-                {HEALTH_SERVICES.map((svc) => (
-                  <li key={svc} className={styles.indexItem}>
-                    <Link
-                      href={serviceStatisticsHref(svc)}
-                      className={styles.indexLink}
-                      data-testid={`ward-statistics-service-link-${svc}`}
-                    >
-                      <span className={styles.indexLabel}>{svc}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </WardPanel>
-        </div>
-
-        <div
-          className={`${styles.governanceBanner} ${pageStyles.provenanceFooter}`}
-          data-testid="ward-statistics-governance"
-        >
-          <span className={styles.prototypeBadge}>Synthetic prototype</span>
-          <p>
-            <SyntheticFiguresDisclaimer />
-          </p>
-        </div>
+          }
+        />
       </main>
     </div>
   );

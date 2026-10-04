@@ -2,11 +2,9 @@
 
 import React, { useState, useId } from "react";
 import {
-  CATCHMENT_DOCUMENTS,
   S2015_CATCHMENT_ROWS,
   lookupCatchment,
   normaliseSuburbKey,
-  type CatchmentAnswer,
   type CatchmentLookup,
 } from "@/components/ward-management/ward-catchment";
 import { getHealthServiceBadgeStyle, getHealthServiceDotStyle } from "@/components/ward-management/ward-service-colors";

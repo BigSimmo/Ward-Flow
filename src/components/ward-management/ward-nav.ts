@@ -374,11 +374,9 @@ export const WARD_NAV: readonly WardNavItem[] = [
 ];
 
 /**
- * The one link out of the sandbox. A sandbox has exactly one exit and it is the developer page
- * it was opened from — see `ward-management-navigation.tsx` for the eight that were removed and
- * why.
+ * In this standalone repository, the developer hub and home destination is /mockups/ward-flow.
  */
-export const WARD_DEVELOPER_HUB_HREF = "/mockups/development";
+export const WARD_DEVELOPER_HUB_HREF = "/mockups/ward-flow";
 
 /* `WARD_REFERRAL_INTAKE_HREF` was declared here until 2026-09-03. It moved ABOVE `WARD_NAV`
  * because `WARD_NAV` now references it, and a `const` used before its declaration is a temporal
@@ -404,6 +402,10 @@ export const WARD_ADD_PERSON_HREF = "/mockups/ward-flow/people/new";
  * array — a route belongs in exactly one of the two.
  */
 export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new Map([
+  [
+    "/mockups/ward-flow/command",
+    "A deliberate redirect to /mockups/ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
+  ],
   [
     "/mockups/ward-flow/constellation",
     "A deliberate 307 redirect to /network, documented in its own route file (constellation/page.tsx) — not a destination.",
@@ -669,10 +671,7 @@ function matchesDynamicRoute(route: string, pathname: string): boolean {
       // form. Without this, `people/[patientId]` swallowed `/people/new` and resolved it to the
       // patient route's action. No dynamic route's id can legitimately be the word "new".
       return (
-        pathSegment !== undefined &&
-        pathSegment.length > 0 &&
-        !/^\[.+\]$/.test(pathSegment) &&
-        pathSegment !== "new"
+        pathSegment !== undefined && pathSegment.length > 0 && !/^\[.+\]$/.test(pathSegment) && pathSegment !== "new"
       );
     }
     return segment === pathSegment;
@@ -743,4 +742,3 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
 
   return "Command";
 }
-

@@ -9,6 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, BarChart2, Search, Star } from "lucide-react";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -682,9 +683,18 @@ export function HubScreen() {
                           <tr
                             key={row.service}
                             className={styles.serviceRow}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => {
                               setQuery(row.service);
                               inputRef.current?.focus();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setQuery(row.service);
+                                inputRef.current?.focus();
+                              }
                             }}
                             title={`Filter network by ${row.service}`}
                           >
@@ -987,7 +997,7 @@ export function HubScreen() {
                     {selected.kind === "community" ? "Community directory; no page for this regional entry." : ""}
                   </p>
                   <div className={styles.ctaActions}>
-                    <a
+                    <Link
                       className={styles.ctaButton}
                       href={selected.href}
                       // ⚠️ Recorded HERE and nowhere else — see `recordHubVisit`. Arrow keys move the
@@ -997,7 +1007,7 @@ export function HubScreen() {
                     >
                       <span>{selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`}</span>
                       <ArrowRight className={styles.ctaIcon} size={15} aria-hidden="true" />
-                    </a>
+                    </Link>
                     {/*
                       ⚠️ **WARD AND ED ONLY, AND DELIBERATELY.** `wardStatisticsHref`/`edStatisticsHref`
                       (`statistics/statistics-sections.ts`) resolve against `units.find` and
@@ -1007,15 +1017,15 @@ export function HubScreen() {
                       `hub-derivations.ts` for why one must not be invented.
                     */}
                     {selected.kind === "ward" ? (
-                      <a className={styles.statsLink} href={wardStatisticsHref(selected.id)}>
+                      <Link className={styles.statsLink} href={wardStatisticsHref(selected.id)}>
                         <BarChart2 className={styles.statsIcon} size={14} aria-hidden="true" />
                         <span>View statistics</span>
-                      </a>
+                      </Link>
                     ) : selected.kind === "ed" ? (
-                      <a className={styles.statsLink} href={edStatisticsHref(selected.id)}>
+                      <Link className={styles.statsLink} href={edStatisticsHref(selected.id)}>
                         <BarChart2 className={styles.statsIcon} size={14} aria-hidden="true" />
                         <span>View statistics</span>
-                      </a>
+                      </Link>
                     ) : null}
                   </div>
                   {selected.kind === "community" ? (

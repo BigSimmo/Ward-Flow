@@ -15,7 +15,7 @@ describe("Ward push workflow identity", () => {
     expect(isRequiredCiWorkflow({ name: "unit", workflowName: "Ward Flow CI" })).toBe(true);
     expect(isRequiredCiWorkflow({ path: ".github/workflows/ward-flow.yml" })).toBe(true);
     expect(isRequiredCiWorkflow({ workflowName: "CI", path: ".github/workflows/ci.yml" })).toBe(false);
-    const fetch = vi.fn((_command: string, _args: string[], _options: object) =>
+    const fetch = vi.fn<(command: string, args: string[], options: object) => string>(() =>
       JSON.stringify([{ workflowName: "Ward Flow CI", status: "queued" }]),
     );
     expect(defaultRunsFetch("codex/fixture", fetch)).toHaveLength(1);

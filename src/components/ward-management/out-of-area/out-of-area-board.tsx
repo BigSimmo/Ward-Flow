@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -515,12 +516,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <button
                     className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
                     type="button"
-                    disabled={!selected}
+                    aria-disabled={!selected}
+                    tabIndex={0}
                     aria-label="Initiate Repatriation"
                     title={
                       selected ? "Arrange return for the selected patient" : "Select a patient to arrange their return"
                     }
-                    onClick={(e) => openRepatriation(e.currentTarget)}
+                    onClick={selected ? (e) => openRepatriation(e.currentTarget) : ignoreUnavailableActivation}
                   >
                     + Arrange return
                   </button>

@@ -4,7 +4,6 @@ import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf"
 import {
   DEVELOPER_AREA_HEADER,
   DEVELOPER_AREA_PATH_HEADER,
-  DEVELOPER_GATED_PATH_PREFIXES,
   WARD_FLOW_OFFLINE_HEADER,
   isDeveloperGatedPath,
   isWardFlowPath,

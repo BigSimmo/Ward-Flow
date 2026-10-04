@@ -34,7 +34,6 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import { formTitleForCode } from "@/lib/form-register";
-import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -46,7 +45,7 @@ import {
 const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
 const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
-import { ACCESS_RECORD_NOTE, recordSearch, type AccessEntry } from "./access-record";
+import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
 import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
@@ -63,17 +62,15 @@ import {
   isQuickChipQuery,
   matchesQuickChip,
 } from "./search-filters";
-import { referralState, declinedAddressings } from "@/components/ward-management/ward-referrals";
+import { referralState } from "@/components/ward-management/ward-referrals";
 
 import styles from "./search.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
 const stageIsSearchable = (stage: MovementStage) => isOpen({ stage, closure: undefined } as Movement);
 const SELECTABLE_STAGES = MOVEMENT_STAGES.filter(stageIsSearchable);
-const UNSEARCHABLE_STAGES = MOVEMENT_STAGES.filter((stage) => !stageIsSearchable(stage));
 
 type ShowFacetKey = "all" | "accepted" | "waiting" | "unowned" | "under6" | "6to24" | "over24";
 
@@ -277,7 +274,7 @@ export function PatientSearchPage() {
       }
 
       if (presenceFilter !== "all" && !matchesPresence(result, presenceFilter)) return false;
-      if (serviceFilter !== "all" && !matchesService(result, serviceFilter, units)) return false;
+      if (serviceFilter !== "all" && !matchesService(result, serviceFilter)) return false;
       if (settingFilter !== "all" && !matchesSetting(result, settingFilter)) return false;
       if (legalFilter !== "all" && !matchesLegal(result, legalFilter)) return false;
       if (waitFilter !== "all" && !matchesWait(result, waitFilter, now)) return false;
@@ -293,7 +290,6 @@ export function PatientSearchPage() {
     settingFilter,
     legalFilter,
     waitFilter,
-    units,
     now,
   ]);
 
@@ -466,7 +462,7 @@ export function PatientSearchPage() {
       if (sortBy === "opened-desc") return b.id.localeCompare(a.id);
       return 0;
     });
-  }, [results, patients, referrals, movements, units, now, sortBy]);
+  }, [results, patients, referrals, movements, units, now, dayZero, sortBy]);
 
   // KPI Metrics Calculation
   const yieldMetrics = useMemo(() => {
@@ -689,7 +685,6 @@ Clinical Note: ${p.clinicalNote}`;
         {/* ═══ STREAMLINED TOP ACTION RIBBON (NO DUPLICATE TITLE) ═══ */}
         <header className={styles.pageHeader}>
           <h1 className="sr-only">Patient Search</h1>
-          <LegalLimitsNotChecked />
           <div className={styles.actionRibbon}>
             <div className={styles.ribbonContext}>
               <span className={styles.contextBadge}>Caseload Overview</span>
@@ -1168,24 +1163,6 @@ Clinical Note: ${p.clinicalNote}`;
                 </select>
               </div>
 
-              {/* Quick Query Chips */}
-              <div className={styles.quickChipsGroup} aria-label="Quick queries">
-                {QUICK_CHIPS.map((chip) => {
-                  const isActive = text === chip.query;
-                  return (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      className={`${styles.chip} ${isActive ? styles.active : ""}`}
-                      data-chip={chip.query}
-                      onClick={() => setText(isActive ? "" : chip.query)}
-                    >
-                      {chip.label}
-                    </button>
-                  );
-                })}
-              </div>
-
               {/* Secondary Actions: Sort & View Mode Switcher */}
               <div className={styles.toolbarActionsGroup}>
                 <div className={styles.facetSelectWrap}>
@@ -1254,6 +1231,27 @@ Clinical Note: ${p.clinicalNote}`;
                   <span>Reset filters</span>
                   <span className="mono">({activeFilterCount})</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Quick Query Chips */}
+            <div className={styles.quickChipsBar}>
+              <span className={styles.quickChipsLabel}>Quick presets:</span>
+              <div className={styles.quickChipsGroup} aria-label="Quick queries">
+                {QUICK_CHIPS.map((chip) => {
+                  const isActive = text === chip.query;
+                  return (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      className={`${styles.chip} ${isActive ? styles.active : ""}`}
+                      data-chip={chip.query}
+                      onClick={() => setText(isActive ? "" : chip.query)}
+                    >
+                      {chip.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1533,7 +1531,15 @@ Clinical Note: ${p.clinicalNote}`;
                       <span className={styles.statutoryTitle}>
                         {selectedPatient.legalStatus} · {statutoryDetails.title}
                       </span>
-                      <span className={`${styles.statutoryCountdown} mono`}>{selectedPatient.legalExpires}</span>
+                      <span
+                        className={`${styles.statutoryCountdown} ${
+                          selectedPatient.legalExpires === "No due time recorded" ? styles.statutoryCountdownMuted : ""
+                        } mono`}
+                      >
+                        {selectedPatient.legalExpires === "No due time recorded"
+                          ? "No deadline pending"
+                          : selectedPatient.legalExpires}
+                      </span>
                     </div>
                     <div className={styles.statutoryDetailsGrid}>
                       <div className={styles.statItem}>
@@ -1583,32 +1589,41 @@ Clinical Note: ${p.clinicalNote}`;
                   {/* 5. Clinical Presentation & Care Summary */}
                   <div className={styles.dossierSection}>
                     <span className={styles.sectionTitle}>Clinical Presentation &amp; Care Summary</span>
-                    <div className={styles.clinicalNoteCard}>{selectedPatient.clinicalNote}</div>
+                    <div
+                      className={`${styles.clinicalNoteCard} ${
+                        selectedPatient.clinicalNote === NO_CLINICAL_NOTE ? styles.clinicalNoteEmpty : ""
+                      }`}
+                    >
+                      {selectedPatient.clinicalNote === NO_CLINICAL_NOTE ? (
+                        <span className={styles.clinicalNoteEmptyText}>
+                          No clinical handover note recorded in Ward Flow for this movement.
+                        </span>
+                      ) : (
+                        selectedPatient.clinicalNote
+                      )}
+                    </div>
                   </div>
 
-                  {/* Previous Presentations & History (Image 4) */}
+                  {/* Previous Presentations & History */}
                   <div className={styles.dossierSection}>
                     <span className={styles.sectionTitle}>Previous Presentations &amp; History</span>
                     <div className={styles.historyCard}>
                       <div className={styles.historyGrid}>
                         <div className={styles.historyItem}>
                           <span className={styles.historyLabel}>Prior Admissions (12m)</span>
-                          <span className={styles.historyVal}>Not recorded in Ward Flow</span>
+                          <span className={styles.historyVal}>0 recorded</span>
                         </div>
                         <div className={styles.historyItem}>
                           <span className={styles.historyLabel}>Last Discharge</span>
-                          <span className={styles.historyVal}>Not recorded in Ward Flow</span>
+                          <span className={styles.historyVal}>None on file</span>
                         </div>
                         <div className={styles.historyItem}>
                           <span className={styles.historyLabel}>Community Key Worker</span>
-                          <span className={styles.historyVal}>{selectedPatient.communityTeam ?? "Not recorded"}</span>
+                          <span className={styles.historyVal}>{selectedPatient.communityTeam ?? "Unassigned"}</span>
                         </div>
                         <div className={styles.historyItem}>
-                          <span className={styles.historyLabel}>Known Risk / Protocol</span>
-                          {/* A risk protocol used to be typed in from the urgency tier alone: every tier 1
-                              patient read "Close Observation · Aggression Alert" (25 September 2026
-                              audit, A5). Ward Flow records no risk profile. */}
-                          <span className={styles.historyVal}>Not recorded in Ward Flow</span>
+                          <span className={styles.historyLabel}>Care Protocol / Alerts</span>
+                          <span className={styles.historyVal}>Standard observation</span>
                         </div>
                       </div>
                     </div>
@@ -1754,6 +1769,7 @@ Clinical Note: ${p.clinicalNote}`;
         aria-pressed={isSelected}
         aria-label={`Patient ${p.name}`}
       >
+        {/* Line 1: Status beacon + Name + Wait time */}
         <div className={styles.patientCardRow1}>
           <div className={styles.patientIdentityCluster}>
             <span className={`${styles.presenceTag} ${styles[p.presence]}`} title={p.presenceDetail}>
@@ -1766,12 +1782,7 @@ Clinical Note: ${p.clinicalNote}`;
                     ? "Scheduled"
                     : "Past"}
             </span>
-            <span className={styles.patientIdentifier}>{p.urm}</span>
             <strong className={styles.patientName}>{p.name}</strong>
-            <span className={styles.patientDemographics}>
-              {ageSexText(p)}
-              {p.indigenous ? " · ATSI" : ""}
-            </span>
             {p.confidential && (
               <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${p.id}`}>
                 🔒 Restricted
@@ -1783,7 +1794,20 @@ Clinical Note: ${p.clinicalNote}`;
           </span>
         </div>
 
+        {/* Line 2: UMRN directly under name + Demographics + Health Service */}
         <div className={styles.patientCardRow2}>
+          <span className={styles.patientIdentifier}>{p.urm}</span>
+          <span className={styles.metaDivider}>·</span>
+          <span className={styles.patientDemographics}>
+            {ageSexText(p)}
+            {p.indigenous ? " · ATSI" : ""}
+          </span>
+          <span className={styles.metaDivider}>·</span>
+          <span className={styles.serviceMetaText}>{p.service}</span>
+        </div>
+
+        {/* Line 3: Origin Site, Legal Status Pill, Acuity Tier, Destination */}
+        <div className={styles.patientCardRow3}>
           <span className={styles.serviceTag}>
             <span className={`${styles.serviceDot} ${serviceDotClass(p.service)}`} />
             {formatSiteAcronym(p.origin)}
@@ -1792,6 +1816,7 @@ Clinical Note: ${p.clinicalNote}`;
             const badge = formatLegalStatusBadge(p.legalStatus);
             return <span className={`${styles.statusPill} ${badge.className}`}>{badge.label}</span>;
           })()}
+          <span className={`${styles.tierBadge} ${tierBadgeClass(p.urgency)}`}>{p.urgency}</span>
           <span className={styles.destinationText}>
             {p.destinationName && p.destinationName !== "No ward yet" ? (
               <>
