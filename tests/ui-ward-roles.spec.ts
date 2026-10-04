@@ -1307,6 +1307,18 @@ test.describe("@mockup Ward Flow design system showcase", () => {
     await input.fill("QA example row");
     await page.getByRole("button", { name: "Apply example" }).click();
     await expect(page.getByText(/Example applied locally\. The first row label and table density/)).toBeVisible();
+    // The success message and the density custom property update in the same render, but on a slow
+    // runner the cells' computed padding has been read while still at the comfortable value (CI saw
+    // "12px" for both). Wait on the rendered padding itself — the property this test is about — before
+    // snapshotting, then assert the full snapshot exactly as before.
+    for (const key of ["firstPadding", "secondPadding"] as const) {
+      await expect
+        .poll(async () => (await showcaseTableState(page))[key], {
+          message: `applied compact density must change the ${key} computed padding`,
+          timeout: 10_000,
+        })
+        .not.toBe(before[key]);
+    }
     const applied = await showcaseTableState(page);
     expect(applied.firstLabel).toBe("QA example row");
     expect(applied.density).not.toBe(before.density);

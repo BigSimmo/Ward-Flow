@@ -1,104 +1,30 @@
 # Fingerprints of known false positives, one per line:
 # <commit>:<file>:<rule>:<line>
-# Fake Supabase-style secret fixture in a test that verifies secret *redaction*.
-# The current tip no longer matches the rule, but this historical commit is
-# still scanned on every PR run.
-92cd8ac656800a0db504bdf9559bd9b30b52212c:tests/privacy.test.ts:generic-api-key:32
-# False positives in medication indication labels ("key": "...") detected by
-# generic-api-key rule on historical commit content scanned in PR history.
-27121756b10df6d93841ebf48b0f1991e0144a1f:data/medications-snapshot.json:generic-api-key:22253
-27121756b10df6d93841ebf48b0f1991e0144a1f:data/medications-snapshot.json:generic-api-key:47690
-b65acddaa13e69e0ad2a49783116056b3a1a3639:data/medications-snapshot.json:generic-api-key:21520
-b65acddaa13e69e0ad2a49783116056b3a1a3639:data/medications-snapshot.json:generic-api-key:46330
-# A retrieval-eval metric-spec field (since renamed to "field" at tip 9f3d0defe)
-# held plain summary field names like p90_latency_ms and tripped generic-api-key
-# as a false positive (no secret; GitGuardian + Semgrep pass). The original commit
-# and an earlier allowlist comment that quoted the pattern are both pinned below.
-d7cfc5559f0d7a5db74eb49808f237c989b4136a:scripts/compare-retrieval-eval.ts:generic-api-key:37
-d2b7b89852a2090d56ce6aed1dd39417aedf332d:.gitleaksignore:generic-api-key:13
-# False positive: two synthetic chunk identifiers in a citation-array assertion
-# were parsed as a generic API key in the original remediation commit.
-b30bcb030edce84e2a0704a8714ee3ef1dcf642d:tests/rag-offline-answer.test.ts:generic-api-key:205
-# False positive: a synthetic hard-negative ranking candidate identifier was
-# interpreted as a generic API key. The fixture contains no credential material.
-d650ecb89bcdfece0af77ad9ea0d62d8eaa42233:scripts/build-ranking-snapshot.ts:generic-api-key:107
-# False positive: docs prose "sampling/cost" in the operator-approval checklist
-# was parsed as a generic API key. Tip wording no longer matches; historical
-# commit content remains in PR range scans.
-313517ec00f4e965800d1284afaad6a367435a07:docs/error-tracking.md:generic-api-key:13
-# False positive: deliberately credential-shaped test data proving that hosted
-# app inventory reporting never echoes arbitrary operator-supplied values.
-a394d76631c7ea3405037baf58091b1c4c47fa3f:tests/codex-cloud-setup.test.ts:generic-api-key:451
-# False positive: a synthetic PHI canary in the adversarial fixture dataset. The
-# first version of these tokens carried identifier-shaped digit runs
-# (CANARY-PHI-DOB-<date>), which read as a high-entropy secret; the file contains
-# no credential material. The tip no longer matches — canary tokens are now
-# letters-only, enforced by scripts/rag-adversarial-contract.mjs and pinned by
-# tests/rag-adversarial-fixtures.test.ts — but this historical commit is still
-# scanned on every PR range run.
-57fd5ae462dd85a3fd6af0a4d6e2db5d8d711b68:scripts/fixtures/rag-adversarial-cases.v1.json:generic-api-key:18
-# False positives in the vendored third-party user skills copied verbatim into
-# .claude/cloud-profile/ for Claude Code web-container parity (docs/claude-cloud.md).
-# Both are deliberately fake illustrative strings in documentation prose, read in
-# context before pinning. DESCRIBED, NEVER QUOTED: an allowlist comment that
-# reproduces the offending string becomes a finding in this file at its own line, as
-# the d2b7b898 entry above records. That is not hypothetical here — the first version
-# of this block quoted one of the two values and turned two findings into three.
-#   - clean-up-comments/references/rule.md:497 sits under a "don't leave sensitive
-#     info in production" marker inside a "Remove Sensitive Information" section. The
-#     skill teaches the rule the scanner enforces, and the value it shows as the thing
-#     NOT to commit is an obvious sequential-digit placeholder.
-#   - playwright-best-practices/advanced/authentication-flows.md:54 is a mock token
-#     constant in a "Fully Mocked Verification" example, handed back by a page.route
-#     stub that never reaches a real service.
-# Neither is a credential and neither is executed; GitGuardian passes on the same
-# content. Pinned per finding rather than by path, so every other line of the vendored
-# tree stays scanned — a vendored directory is exactly where a real secret could
-# otherwise hide unnoticed. A fingerprint is <commit>:<file>:<rule>:<line>, so these
-# are re-derived from the scan that actually failed rather than carried over from the
-# superseded PR #2227, whose commit prefix da6088e70 exists on no branch here and
-# would never have matched.
-0792284e63001015899f08e72301e2f23648d616:.claude/cloud-profile/skills/playwright-best-practices/advanced/authentication-flows.md:generic-api-key:54
-0792284e63001015899f08e72301e2f23648d616:.claude/cloud-profile/skills/clean-up-comments/references/rule.md:generic-api-key:497
-# The tip no longer quotes that value (see the commit above), but a Gitleaks PR run
-# scans every commit in the base..head range, so the commit that briefly carried it is
-# still read on each run and has to be pinned by its own fingerprint. Rewriting it out
-# of history would need a force-push, which is worse than one more pinned line.
-14535ffc5f05d559f6bccac84099f9e6874bba6a:.gitleaksignore:generic-api-key:49
-# Reviewed false positive: a localhost example URL with a dummy API key in a removed handoff document.
-92097e53e096bc33c8b23f73874981b2e3214af3:docs/ed-care-plans/claude-build-handover-2026-08-21.md:generic-api-key:360
-# The Care Plan history restored the same dummy URL under its current path.
-5bdefc4bf4e338eed1a6e204e3c689112b16ae0c:docs/care-plan/claude-build-handover-2026-08-21.md:generic-api-key:360
-# Reviewed false positive: the exported browser-storage key name for the Therapy
-# compare set. It is a `localStorage` key, visible in any browser's devtools and
-# never a credential; `generic-api-key` matched it only because the identifier
-# ends in "Key" and the hyphenated slug measures 3.99 Shannon entropy. Its five
-# siblings (answer-thread, recent-queries, saved-*, search-pins) are the same
-# shape and sit at 3.72-3.78, just under the rule's threshold, so this is a
-# margin artefact rather than a new class of finding. Rewording the slug to duck
-# the threshold was rejected: it is tuning an unverifiable number (gitleaks is
-# not installed locally) and would leave a worse name behind. The value is not
-# quoted in this comment, because a previous allowlist entry that quoted its own
-# pattern tripped the same rule (see line 49 above).
-9b34a0149759b2c2f1e8ed5d37f02ba1ac35cf39:src/lib/therapy-compare-memory.ts:generic-api-key:24
-# Reviewed false positive: a Caring Contacts mutation-testing report pasted the raw
-# Vitest assertion output for row `M4`, which printed the overlay commit's own
-# per-render identifier. It is generated by the commit machinery for one render and
-# discarded, authenticates nothing and reaches no service; `generic-api-key` matched
-# it only on shape and a 3.52 entropy. DESCRIBED, NEVER QUOTED, per the line 49 entry
-# above. The tip no longer carries it — the report now elides the id and says why —
-# but a PR run scans every commit in the base..head range, so the commit that
-# introduced it is still read and has to be pinned by its own fingerprint. Rewriting
-# it out of 500+ commits of history would need a force-push, which is worse.
-f69f2f129ac3fd65c7115a9f84b254f1a1d41929:docs/caring-contacts/phase-2b-sdd-archive/task-exit-only-trigger-report.md:generic-api-key:207
-# Reviewed false positive: two Vitest env stubs for the answer-feedback hash secret.
-# The value is a test placeholder that authenticates nothing and reaches no service;
-# `generic-api-key` matched it because a short hexadecimal run sits beside an
-# identifier ending in SECRET. DESCRIBED, NEVER QUOTED, per the line 49 entry above.
-# The tip no longer carries it — both stubs now use this repository's ordinary
-# descriptive placeholder shape, the same one every other test uses for this variable
-# — but a PR run scans every commit in the base..head range, so the commit that
-# introduced it is still read on each run and has to be pinned by its own fingerprint.
-# Rewriting it out of history would need a force-push, which is worse.
-c3bb25828022355cbc27ac3262c285725d5bda0c:tests/env-answer-feedback-warning.test.ts:generic-api-key:49
-c3bb25828022355cbc27ac3262c285725d5bda0c:tests/instrumentation.test.ts:generic-api-key:151
+#
+# Only fingerprints whose commit exists in this repository belong here. Entries
+# inherited from the former PsychSift/Database history pointed at commits that do
+# not exist in BigSimmo/Ward-Flow (checked with `git cat-file -e <sha>^{commit}`,
+# 4 October 2026) and could never match, so they were removed.
+#
+# DESCRIBED, NEVER QUOTED: an allowlist comment that reproduces the offending
+# string becomes a new finding in this file at its own line. Describe each false
+# positive in prose instead.
+#
+# A Gitleaks PR run scans every commit in the base..head range, so a historical
+# commit that carried a false positive stays pinned by its own fingerprint even
+# after the tip no longer matches. Rewriting it out of history would need a
+# force-push, which is worse than one more pinned line.
+#
+# Reviewed false positives found by the first full-history scan in the dedicated
+# Ward-Flow repository (gitleaks 8.28.0, 3 October 2026):
+#   - The synthetic Azure backend's API audience is an application (client) ID: a
+#     public identifier carried in every issued token, not a credential. It appears in
+#     the backend test environment and in the documented example environment file.
+#   - The acceptance-fingerprints file records SHA-256 content hashes of source files.
+#   - tests/pre-commit-checks.test.ts holds a deliberately password-shaped synthetic
+#     string that proves the pre-commit scanner flags such values.
+8a650d43eee440fb75670544fc26600a9e60bc41:backend/ward-flow/backend.test.mjs:generic-api-key:13
+8a650d43eee440fb75670544fc26600a9e60bc41:backend/ward-flow/.env.example:generic-api-key:7
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:docs/ward-flow/plans/visual-rebuild-full-estate/tasks/acceptance-fingerprints-r37.json:generic-api-key:10
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:docs/ward-flow/plans/visual-rebuild-full-estate/tasks/acceptance-fingerprints-r37.json:generic-api-key:101
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:tests/pre-commit-checks.test.ts:generic-api-key:221

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
@@ -50,7 +51,7 @@ describe("recording that no transport is needed", () => {
 
   it("the ED board carries the control that dispatches it", () => {
     // The reachability suite proves a dispatch exists SOMEWHERE in ward source. This pins where.
-    const source = require("node:fs").readFileSync("src/components/ward-management/ed/ed-screen.tsx", "utf8");
+    const source = readFileSync("src/components/ward-management/ed/ed-screen.tsx", "utf8");
     expect(source).toContain("ward-ed-no-transport-needed-");
     expect(source).toContain('type: "RECORD_TRANSPORT_NEED"');
     expect(source).toContain("No transport needed");
