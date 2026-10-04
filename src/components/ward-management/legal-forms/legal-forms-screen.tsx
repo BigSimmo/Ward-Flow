@@ -30,6 +30,7 @@ import {
   legalExpiryReminderSummary,
   legalExpiryReminderText,
 } from "./legal-forms-derivations";
+import { actPeriodCountdownText, actPeriodReading } from "./act-periods-demo";
 import styles from "./legal-forms.module.css";
 
 /**
@@ -887,6 +888,7 @@ export function LegalFormsScreen() {
                               now={now}
                               onInspect={handleOpenInspector}
                               onRenew={(m) => handleOpenRenew(m.id)}
+                              dayZero={dayZero}
                               patients={patients}
                               referrals={referrals}
                             />
@@ -925,6 +927,7 @@ export function LegalFormsScreen() {
                                 now={now}
                                 onInspect={handleOpenInspector}
                                 onRenew={(m) => handleOpenRenew(m.id)}
+                                dayZero={dayZero}
                                 patients={patients}
                                 referrals={referrals}
                               />
@@ -1578,6 +1581,7 @@ function LegalFormRow({
   now,
   onInspect,
   onRenew,
+  dayZero,
   patients,
   referrals,
 }: {
@@ -1585,6 +1589,7 @@ function LegalFormRow({
   now: Instant;
   onInspect: (movement: Movement) => void;
   onRenew: (movement: Movement) => void;
+  dayZero: Date;
   patients?: Patient[];
   referrals?: Referral[];
 }) {
@@ -1598,6 +1603,8 @@ function LegalFormRow({
   const originLabel = departmentLabel(movement.originEdId, originEd?.name);
   const classification = legalFormRowClassification(movement, now);
   const breached = isLegalDeadlineBreached(movement, now);
+  // Owner ruling 4 Oct 2026: the Act period beside the typed record, as a labelled synthetic demo.
+  const actPeriod = actPeriodReading(movement, dayZero);
 
   let clock: { value: string; sub: string; urgent?: boolean } | undefined;
   if (legalForm.dueAt !== undefined) {
@@ -1628,6 +1635,13 @@ function LegalFormRow({
         originLabel,
         `Owner: ${movement.owner}`,
       ]}
+      annotation={
+        actPeriod ? (
+          <span className={styles.actPeriodDemo} data-testid="ward-legal-act-period">
+            {actPeriod.text} {actPeriodCountdownText(actPeriod, now)}
+          </span>
+        ) : undefined
+      }
       reason={{
         level: classification.reasonLevel,
         text: legalDeadlineText(movement, now),

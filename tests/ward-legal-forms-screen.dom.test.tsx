@@ -207,3 +207,12 @@ describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
     expect(screen.getAllByText(/^Expires within \dh$/).length).toBeGreaterThan(0);
   });
 });
+
+describe("LegalFormsScreen Act period demo (owner ruling D-29)", () => {
+  it("labels every Act period line as a synthetic demo that is not legally checked", () => {
+    renderScreen();
+    const lines = screen.getAllByTestId("ward-legal-act-period");
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line).toHaveTextContent(/^Synthetic demo, not legally checked: /);
+  });
+});

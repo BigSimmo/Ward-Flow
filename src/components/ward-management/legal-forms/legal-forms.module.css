@@ -967,6 +967,14 @@
   border-left: 3px solid var(--warn);
 }
 
+.actPeriodDemo {
+  display: block;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  color: var(--muted);
+  font-style: italic;
+}
+
 .reminderBanner svg {
   flex: none;
   margin-top: 0.125rem;
