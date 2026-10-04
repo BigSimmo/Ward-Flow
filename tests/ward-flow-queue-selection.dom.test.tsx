@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
@@ -70,7 +70,16 @@ const SUBJECT = movementById("WF-004");
  * throw. Selection is required first, and the detail panel is where the live row now lives.
  */
 function selectPatient(id: string) {
+  // The compact worklist paginates, and the live clinical row sits behind a native disclosure.
+  // Reach both through the screen's controls before asserting the original liveness contract.
+  const waiting = screen.getByRole("region", { name: "Waiting" });
+  fireEvent.change(within(waiting).getByRole("combobox", { name: "Rows per page" }), {
+    target: { value: "100" },
+  });
   fireEvent.click(screen.getByTestId(`delays-select-${id}`));
+  const summary = screen.getByText("Patient actions and full details");
+  fireEvent.click(summary);
+  expect(summary.closest("details")).toHaveAttribute("open");
 }
 
 /**

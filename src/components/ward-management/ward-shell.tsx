@@ -29,7 +29,11 @@ import styles from "./ward-shell.module.css";
  * argument never depended on the number, so no replacement number is recorded here either.)
  */
 export function WardGround({ children }: { children: ReactNode }) {
-  return <div className={styles.shell}>{children}</div>;
+  return (
+    <div className={styles.shell} data-ward-ground>
+      {children}
+    </div>
+  );
 }
 
 /**

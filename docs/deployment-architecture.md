@@ -260,6 +260,9 @@ comparable (~200 ms) from Singapore or Sydney and does not favour either host.
   1 MiB framing overhead before authentication or `request.formData()`. Keep
   the managed host's request-body limit at 151 MiB or lower as a third ingress
   fence; `MAX_UPLOAD_MB` is capped at 150 MiB by environment validation.
+  **Correction (4 October 2026):** the 151 MiB figure is historical. Ward Flow's
+  Next Proxy now buffers at most 1 MB (`proxyClientMaxBodySize: "1mb"` in
+  `next.config.ts`).
 
 ### Config as code (`railway.app.json`)
 

@@ -10,10 +10,52 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, matchesGlob } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 import { DOM_UNIT_TEST_GLOBS } from "../scripts/unit-test-population.mjs";
 
 const ROOT = "src/components/ward-management";
 const TOKEN_FILE = join(ROOT, "ward-tokens.module.css");
+
+/** Prove the routed wrapper's actual JSX ancestry while allowing extra attributes and formatting. */
+function expectWardGroundAncestry() {
+  const source = ts.createSourceFile(
+    "ward-shell.tsx",
+    readFileSync(join(ROOT, "ward-shell.tsx"), "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let wrappers = 0;
+  function visit(node: ts.Node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === "WardGround") {
+      function inspect(child: ts.Node) {
+        if (ts.isJsxElement(child) && child.openingElement.tagName.getText(source) === "div") {
+          const hasShell = child.openingElement.attributes.properties.some(
+            (attribute) =>
+              ts.isJsxAttribute(attribute) &&
+              attribute.name.getText(source) === "className" &&
+              attribute.initializer &&
+              ts.isJsxExpression(attribute.initializer) &&
+              attribute.initializer.expression?.getText(source) === "styles.shell",
+          );
+          const hasChildren = child.children.some(
+            (content) =>
+              ts.isJsxExpression(content) &&
+              content.expression &&
+              ts.isIdentifier(content.expression) &&
+              content.expression.text === "children",
+          );
+          if (hasShell && hasChildren) wrappers += 1;
+        }
+        ts.forEachChild(child, inspect);
+      }
+      inspect(node);
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  expect(wrappers, "WardGround must wrap its children in exactly one styles.shell div").toBe(1);
+}
 
 /**
  * ⚠️ EVERY SCAN IN THIS FILE READS STRIPPED CSS, AND THAT IS NOT TIDINESS.
@@ -337,9 +379,7 @@ describe("every --ward-* token a new module uses is actually declared", () => {
     const ground = stripComments(readFileSync(join(ROOT, "ward-shell.module.css"), "utf8"));
     const rootRule = /\.shell\s*\{([^}]+)\}/u.exec(ground)?.[1] ?? "";
     expect(rootRule).toContain("composes: wardTokens");
-    expect(stripComments(readFileSync(join(ROOT, "ward-shell.tsx"), "utf8"))).toContain(
-      "<div className={styles.shell}>{children}</div>",
-    );
+    expectWardGroundAncestry();
     expect(stripComments(readFileSync("src/app/mockups/ward-flow/layout.tsx", "utf8"))).toContain(
       "<WardGround>{children}</WardGround>",
     );
@@ -386,9 +426,7 @@ describe("every --ward-* token a new module uses is actually declared", () => {
     const ground = stripComments(readFileSync(join(ROOT, "ward-shell.module.css"), "utf8"));
     const rootRule = /\.shell\s*\{([^}]+)\}/u.exec(ground)?.[1] ?? "";
     expect(rootRule).toContain("composes: wardTokens");
-    expect(stripComments(readFileSync(join(ROOT, "ward-shell.tsx"), "utf8"))).toContain(
-      "<div className={styles.shell}>{children}</div>",
-    );
+    expectWardGroundAncestry();
     expect(stripComments(readFileSync("src/app/mockups/ward-flow/layout.tsx", "utf8"))).toContain(
       "<WardGround>{children}</WardGround>",
     );

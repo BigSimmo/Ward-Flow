@@ -5,7 +5,7 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
 /**
  * ⚠️ **NOT `src/app/(search-app)/on-call` — A DIFFERENT PRODUCT AREA WITH THE SAME WORD.**
  *
- * PsychSift has a built `on-call` mode of its own (`src/components/on-call/**`): clinical-reference
+ * The former clinical app had a built `on-call` mode of its own (`src/components/on-call/**`): clinical-reference
  * material for a doctor on call — education, logistics, playbook, orientation. **It shares the name
  * and nothing else.** This route is Ward Flow's bed-coordination roster view, and a reader who
  * confuses the two would look for ward roles in a guideline library.

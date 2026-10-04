@@ -5,8 +5,8 @@
  * **A LEAF MODULE ON PURPOSE.** This file imports nothing, so Ward Flow's screens (all
  * `"use client"` components) can use it without pulling any other code into the client bundle.
  * It must stay that way: a value import here would undo the reason the file exists. It was split
- * out of PsychSift's forms catalogue on 2026-08-24 for exactly that reason. The catalogue, its data
- * files and its form ranker were removed with PsychSift (26 September 2026), so **this is the only
+ * out of the former clinical app's forms catalogue on 2026-08-24 for exactly that reason. The catalogue, its data
+ * files and its form ranker were removed with the former clinical app (26 September 2026), so **this is the only
  * copy of the register.**
  *
  * The register is transcribed from

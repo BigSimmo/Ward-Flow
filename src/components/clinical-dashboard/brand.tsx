@@ -2,7 +2,7 @@ import { cn } from "@/components/ui-primitives";
 import { BRAND_COUNTER_TRANSFORM, BRAND_VIEWBOX, brandMarkOptics } from "@/lib/brand-mark";
 
 /**
- * Site brand mark: the PsychSift S — two counter-turning strokes divided by one
+ * Site brand mark: the Ward Flow S — two counter-turning strokes divided by one
  * straight cut, with a settled point.
  *
  * In the app the symbol is drawn on its own, with no tile behind it, so it sits

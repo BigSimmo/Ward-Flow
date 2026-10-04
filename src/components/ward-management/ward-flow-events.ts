@@ -2408,7 +2408,14 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * select (see `ReferralHistoryAndCorrections`'s own comment on that same shape). The scoped
    * withdrawal control lives there too, so it needs no wider role than this list already grants.
    */
-  RECORD_REFERRER_WITHDRAWAL: ["coordinator"],
+  /*
+   * ✅ ANSWERED 4 October 2026 — the owner: "Let the community team and the ED record it as well,
+   * if they are cancelling their referral." So `community` and `ed` join, and the reducer scopes
+   * each to referrals its own side sent (`referralSenderRole`, `ward-referrals.ts`): a community
+   * team cannot withdraw an ED's referral, nor an ED a community one. The coordinator keeps the
+   * role for any referral.
+   */
+  RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed"],
   /**
    * RB7, build plan item 27 (2026-09-17): the three parties who could plausibly need to correct a
    * referral after the fact — the referrer's own team (`community` or `ed`, whichever raised it),
