@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Ambulance,
   ArrowRight,
-  CheckCircle2,
   Clock,
   Lock,
   MapPin,
@@ -528,7 +527,6 @@ function WardReferralDrawerContent({
     }
 
     // Acute Inpatient Ward Bed dynamically bound to live capacity records
-    const isSecure = security === "Secure";
     const patientCohort = currentPatient.cohort;
 
     const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);

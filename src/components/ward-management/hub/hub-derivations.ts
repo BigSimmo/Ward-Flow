@@ -4,7 +4,7 @@ import { wardServiceOrder } from "@/components/ward-management/ward-derivations"
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { HOME_REGIONS, type BedRelease, type LeaveBed, type Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 /**
@@ -101,19 +101,6 @@ function wardSecurity(unit: Unit): "Open" | "Locked" | "Mixed" {
  */
 function isStale(unit: Unit, now: Instant): boolean {
   return now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
-}
-
-/** Lower-cased, non-alphanumeric runs collapsed to one hyphen, trimmed — a generic slugify, not a
- *  domain rule, so it stays local rather than reusing `communityTeamSlug`
- *  (`community/community-derivations.ts`): that function slugifies a DIFFERENT vocabulary (the
- *  referral-recorded clinic names `communityTeamOptions()` returns), and importing it here would
- *  read as the two vocabularies being related when they are deliberately not — see the comment on
- *  `communityHref` below for why. */
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 /**

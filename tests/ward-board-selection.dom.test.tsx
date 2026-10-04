@@ -25,8 +25,6 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import type { Unit } from "@/components/ward-management/ward-model";
-import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
  * SELECTION — the reversal of 281bdf83f, and the parts of that commit's reasoning that survive it.
@@ -51,12 +49,6 @@ function renderWardBoard(unitId: string) {
 const UNIT_ID = "rph-adult-secure";
 /** Records blocked beds, so the out-of-service branch of the panel has a real subject here. */
 const BLOCKED_UNIT_ID = "fsh-adult-secure";
-
-function unitFor(unitId: string): Unit {
-  const unit = wardSites.flatMap((site) => site.units).find((candidate) => candidate.id === unitId);
-  if (unit === undefined) throw new Error(`No seeded unit ${unitId} — this test cannot check anything.`);
-  return unit;
-}
 
 /** Exactly the two calls the component makes, so a scoping mistake in the component shows up as a
  *  disagreement with this rather than being reproduced by it. */
