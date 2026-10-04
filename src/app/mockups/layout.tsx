@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 /**
  * Mockup routes are a development surface: reachable in dev and test builds, 404 in a production
  * build unless explicitly opted in. Read here rather than through `@/lib/env`, whose full server
- * contract (database, provider and upload settings) belonged to PsychSift and went with it.
+ * contract (database, provider and upload settings) belonged to the former clinical app and went with it.
  */
 function mockupsEnabled(): boolean {
   return process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_MOCKUPS_ENABLED === "true";
