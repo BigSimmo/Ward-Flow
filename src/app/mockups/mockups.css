@@ -9,6 +9,6 @@
 @source "../";
 @source "../../components";
 
-/* The re-include lines for PsychSift's mockup component folders and loose mockup files went with
-   those mockups in the PsychSift removal (25 September 2026). No Ward Flow file is named for a
+/* The re-include lines for the former clinical app's mockup component folders and loose mockup files went with
+   those mockups in its removal (25 September 2026). No Ward Flow file is named for a
    mockup, so the broad component scan above still reaches all of Ward Flow. */
