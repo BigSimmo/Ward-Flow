@@ -108,7 +108,7 @@ records vs archive). The most load-bearing entries:
 - `docs/process-hardening.md` — verification gates, CI expectations, known limits
 - `docs/testing.md` — local test safety, focused/live commands, Playwright ownership, flake policy
 - `docs/clinical-governance.md` — deployment and source governance checklist
-- `docs/deployment-architecture.md` — app/worker/Supabase deployment topology
+- `docs/archive/deployment-architecture.md` — app/worker/Supabase deployment topology
 - `docs/supabase-migration-reconciliation.md` — migration drift and repair policy
 
 Run `npm run docs:check-links` to verify repo paths referenced from the

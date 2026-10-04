@@ -267,6 +267,6 @@ if their live classification is deliberately revisited.
 
 `external-workflow.mjs` (`workflow:run/status/verify/deps/clean-state/export/handoff`) and
 `productivity-workflow.mjs` (`workflow:flightplan/triage/clinical-proof/design-sweep/rag-lab/
-operator-closeout/lifecycle`) — see `docs/productivity-workflows.md`.
+operator-closeout/lifecycle`) — see `docs/archive/productivity-workflows.md`.
 
 <!-- docs-script-refs:historical-end -->

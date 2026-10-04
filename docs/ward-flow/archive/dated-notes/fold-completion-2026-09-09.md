@@ -55,7 +55,7 @@ gone red — the route would simply have come back.
 ## What this closes
 
 The eleven ward documents that the ownership registry says live only on `claude/Wardquestions` —
-including `docs/ward-flow-orchestrator-handover.md` — **are already on the master line.** That
+including `docs/archive/ward-flow-orchestrator-handover.md` — **are already on the master line.** That
 pointer is now stale in the direction that costs nothing (it sends people somewhere the file also
 is), but it should be corrected when someone next edits that registry.
 

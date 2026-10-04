@@ -37,7 +37,7 @@ Here is a summary of the key areas available:
 
 - **Complete context & clinical/legal rules:** [ward-flow-context.md](../../ward-flow-context.md)
 - **Design specifications & phase plans:** Located under `docs/superpowers/specs/` and `docs/superpowers/plans/` (covering Phases 1 through 7, including coordinator screens, bed availability, role screens, and specialist boards: e.g., [2026-08-18-ward-flow-metro-patient-flow-design.md](../../superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md) and [2026-08-18-ward-flow-phase-1-model.md](../../superpowers/plans/2026-08-18-ward-flow-phase-1-model.md))
-- **Handover notes & ledgers:** [ward-flow-complete-ledger.md](../../ward-flow-complete-ledger.md), [ward-flow-phase-handoff.md](../../ward-flow-phase-handoff.md), and [ward-management-mode-map.md](../../ward-management-mode-map.md)
+- **Handover notes & ledgers:** [ward-flow-complete-ledger.md](../../archive/ward-flow-complete-ledger.md), [ward-flow-phase-handoff.md](../../archive/ward-flow-phase-handoff.md), and [ward-management-mode-map.md](../../archive/ward-management-mode-map.md)
 
 ### 2. Application Routes & UI Views
 
@@ -90,7 +90,7 @@ The current local time is: 2026-09-10T17:07:37+08:00.
 
 #### Assistant Response to Turn 2:
 
-Based on the Ward Flow architecture, the live routes in the codebase ([ward-nav.ts](../../../src/components/ward-management/ward-nav.ts)), and the roadmap specifications ([ward-flow-roadmap.md](../../ward-flow-roadmap.md)), here are the key pages and specialist boards missing from your list:
+Based on the Ward Flow architecture, the live routes in the codebase ([ward-nav.ts](../../../src/components/ward-management/ward-nav.ts)), and the roadmap specifications ([ward-flow-roadmap.md](../../archive/ward-flow-roadmap.md)), here are the key pages and specialist boards missing from your list:
 
 ---
 
@@ -442,7 +442,7 @@ Here is why it fits the **Network** section so well, along with how to structure
 
 #### Why Network is the Natural Fit
 
-1. **Fulfills the Roadmap Mandate:** In the project roadmap ([ward-flow-roadmap.md](../../ward-flow-roadmap.md), Decision 14), the owner explicitly noted that _“The network diagram earns its place by becoming functional: ... a time control”_. A 48-hour timeline gives the Network section genuine operational utility rather than being just a static diagram.
+1. **Fulfills the Roadmap Mandate:** In the project roadmap ([ward-flow-roadmap.md](../../archive/ward-flow-roadmap.md), Decision 14), the owner explicitly noted that _“The network diagram earns its place by becoming functional: ... a time control”_. A 48-hour timeline gives the Network section genuine operational utility rather than being just a static diagram.
 2. **Macro Foresight vs. Micro Execution:**
    - A single ward bed board (`/board/[unitId]`) handles the micro tactical layout (who is in Bed 4, who is in Bed 5).
    - **Network (`/network`)** handles the system-wide strategic picture. A 48-hour timeline at the Network level answers: _"Which health services (North, South, East, Country) will hit acute bed deficits tonight vs tomorrow afternoon when trial leave returns?"_
