@@ -82,9 +82,15 @@ export function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; no
               </dd>
             </div>
             <div>
-              <dt>Held</dt>
+              <dt>Pulled</dt>
               <dd>
-                <Count value={capacity.held} />
+                <Count value={capacity.pulled} />
+              </dd>
+            </div>
+            <div>
+              <dt>Closed</dt>
+              <dd>
+                <Count value={capacity.closed} />
               </dd>
             </div>
             <div>
