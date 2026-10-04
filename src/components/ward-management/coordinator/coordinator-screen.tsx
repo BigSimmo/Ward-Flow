@@ -27,6 +27,7 @@ import { FlowDiagram } from "./flow-diagram";
 import { PressureStrip } from "./pressure-strip";
 import { PriorityQueue } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
+import { SinceLastLookPanel } from "./since-last-look-panel";
 
 /**
  * Task 3 shell: five landmark regions, all present and stubbed with real synthetic volume
@@ -68,6 +69,7 @@ export function CoordinatorScreen() {
     focusMovementId,
     setFocusMovementId,
     configuration,
+    scenario,
   } = useWardFlow();
   const now = useWardFlowClock();
   // Item 44, build plan task B1: the chosen health service, read from the shared store S2 built.
@@ -343,6 +345,12 @@ export function CoordinatorScreen() {
   // is no ward-scoped counterpart to build here.
   const declineRegister = useMemo(() => allDeclines(movements), [movements]);
 
+  // Smart feature 9: what changed since the coordinator last left this screen.
+  const lastLookWorld = useMemo(
+    () => ({ scenario, referrals, movements, units, bedReleases }),
+    [scenario, referrals, movements, units, bedReleases],
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
@@ -356,6 +364,8 @@ export function CoordinatorScreen() {
             onSelectEd={setSelectedEdId}
             service={service}
           />
+
+          <SinceLastLookPanel world={lastLookWorld} now={now} />
 
           <div
             className={styles.regionGrid}
