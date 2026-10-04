@@ -64,7 +64,8 @@ describe("Activity drawer is consistently wired across all screens", () => {
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
     const dot = trigger.querySelector('[data-tone][aria-hidden="true"]');
     expect(dot).toHaveAttribute("data-tone", "good");
-    expect(trigger.textContent).toContain("synthetic activity at demo time");
+    expect(trigger.textContent).toContain("synthetic activity");
+    expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
 
     // Header freshness shows synthetic demo time and last event time (not "no recorded event")
     expect(within(sheet).getByText(/Synthetic state · demo time/u)).toBeInTheDocument();
