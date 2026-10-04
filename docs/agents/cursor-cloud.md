@@ -1,8 +1,10 @@
 # Cursor Cloud Specific Instructions
 
-> **Ward Flow scope — 1 October 2026.** This file contains inherited PsychSift guidance. The current [Ward Flow repository boundary](../../AGENTS.md) governs. References to PsychSift, Database, Supabase, OpenAI, foreign Railway targets or their credentials are historical and must not be followed here. Ward Flow stays synthetic; it must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
+> **Ward Flow scope — 4 October 2026.** The Cloud Agent environment installs Node.js 24.21.0 (npm 11) under `~/.local` and links `node`, `npm`, `npx`, and `corepack` into `/usr/local/cargo/bin`, which is first on `PATH`. The image's Node 22 at `/exec-daemon/node` is too old for `engines.node` (`>=24.15.0 <25`). After checkout, install is `npm ci` at the repository root and `npm ci --prefix backend/ward-flow`. On boot, `npm run ensure` starts or reuses the dev server and prints its URL. Open that URL at `/mockups/ward-flow`. The UI uses synthetic browser state and needs no secrets, database, or provider login.
+>
+> Cloud Agents rewrite GitHub remotes to an `x-access-token` URL. `git remote get-url` then fails the canonical `BigSimmo/Ward-Flow` check, so the ownership-boundary tests (`public-signout-boundary`, `public-startup-boundary`, `ward-flow-remote-boundary`, `ward-sign-out-check`, and the related claim, receipt, and pre-commit tests) fail here. That is the cloud credential rewrite, not a product defect. Do not remove the rewrite; pushes need it.
 
-No Ward Flow Cloud setup is established by the copied commands below. Do not run their setup, maintenance, live-mode, login or provider procedures for this repository. Verify a Ward Flow-specific setup contract first.
+> The copied block below is historical PsychSift guidance. Do not run its setup, maintenance, live-mode, Supabase, OpenAI, login, or provider procedures. The current [Ward Flow repository boundary](../../AGENTS.md) governs. Ward Flow stays synthetic and must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
 
 > The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
 
