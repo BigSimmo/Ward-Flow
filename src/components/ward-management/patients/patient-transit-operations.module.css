@@ -460,3 +460,153 @@
     text-align: center;
   }
 }
+
+/* Rounded, compact operational modules. */
+.deck {
+  padding: 14px 16px;
+  gap: 12px;
+  background: #f9fbfc;
+}
+.heading {
+  align-items: center;
+  gap: 10px;
+}
+.heading h2 {
+  font-size: 19px;
+  margin: 3px 0;
+}
+.heading p {
+  font-size: 11px;
+  max-width: 48ch;
+  line-height: 1.5;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+.stage,
+.count {
+  border-radius: 30px;
+  font-size: 10px;
+}
+.metrics {
+  border-radius: 16px;
+  background: #edf4f5;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.metrics > div {
+  padding: 10px 12px;
+  gap: 3px;
+  border-bottom: 0 !important;
+}
+.metrics svg {
+  width: 16px;
+  height: 16px;
+}
+.metrics span,
+.metrics small {
+  font-size: 10px;
+}
+.metrics strong {
+  font-size: 12px;
+}
+.columns {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.rightColumn {
+  gap: 12px;
+}
+.card {
+  border-radius: 17px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px #163e5310;
+}
+.cardHeader {
+  padding: 13px 14px;
+  background: #f1f6f7;
+}
+.cardHeader h3 {
+  font-size: 16px;
+  margin-top: 4px;
+}
+.cardBody {
+  padding: 14px;
+  gap: 10px;
+}
+.filters {
+  margin: 10px 12px 6px;
+  border-radius: 12px;
+  border: 0;
+}
+.filters button {
+  border-radius: 9px;
+  font-size: 11px;
+}
+.card > .hint {
+  padding: 0 14px 10px;
+  font-size: 11px;
+}
+.candidates {
+  padding: 0 14px;
+  max-height: 380px;
+}
+.candidate {
+  padding: 10px 0;
+}
+.pick {
+  font-size: 12px;
+}
+.primary,
+.secondary {
+  border-radius: 11px;
+  font-size: 12px;
+}
+.cardFooter {
+  padding: 12px 14px;
+  flex-wrap: wrap;
+  gap: 7px;
+  background: #f8fbfa;
+}
+.destination {
+  border-radius: 12px;
+  padding: 12px;
+  background: #edf5f3;
+}
+.deck input:not([type="checkbox"]),
+.deck select {
+  border-radius: 9px;
+}
+.additional > summary {
+  padding: 12px 14px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .rightColumn {
+    grid-row: 1;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metrics > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .deck {
+    padding: 12px;
+  }
+  .heading {
+    flex-direction: row;
+  }
+  .heading h2 {
+    font-size: 17px;
+  }
+  .heading p {
+    display: none;
+  }
+}
+.metrics {
+  display: none;
+}

@@ -416,6 +416,11 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**4 October 2026 visual refinement:** `patient-flight-header.tsx` supplies the compact curved
+identity band; `patient-record-overview.tsx` and its CSS module supply the record-only hub. Live
+status comes from movement closure/stage state. Open movements default to transit operations;
+closed/arrived movements and record-only patients have explicit inactive rail labels.
+
 **4 October 2026 update:** Patient Now also hosts `patient-transit-operations.tsx` and its CSS
 module. The local Clinical overview / Transit operations switch preserves the five dossier tabs.
 Legacy `/movements/[movementId]` renders the same `PatientNowScreen`; cockpit exception handlers

@@ -30,7 +30,7 @@ async function capture(page, name, width, { full = true } = {}) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   checks.push({ view: name, width, horizontalOverflow: overflow });
   const filename = `${width}-${name}.png`;
-  await page.screenshot({ path: path.join(outputDir, filename), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, filename), fullPage: false });
   captures.push({ name, width, file: filename, kind: "viewport" });
   if (full) {
     // Expand only scroll containers for a second image of the entire view; viewport evidence above is unmodified.
@@ -53,6 +53,8 @@ try {
     const page = await context.newPage();
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(new URL("/mockups/ward-flow/people/WF-009", base).href, { waitUntil: "networkidle" });
+    await capture(page, "live-first-page", width);
+    await page.getByRole("button", { name: "Clinical overview", exact: true }).click();
     await capture(page, "clinical-overview", width);
     for (const tab of ["History", "Community", "Details", "Documents"]) {
       await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
@@ -69,6 +71,7 @@ try {
     await page.getByText("Additional workflow controls", { exact: false }).first().click();
     await capture(page, "additional-workflow", width);
     await page.goto(new URL("/mockups/ward-flow/people/WF-004", base).href, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Clinical overview", exact: true }).click();
     await capture(page, "accepted-patient-clinical", width);
     await page.getByRole("button", { name: "Coordinate placement", exact: true }).click();
     await capture(page, "accepted-patient-transit", width);
@@ -116,6 +119,10 @@ try {
     const page = await context.newPage();
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(new URL("/mockups/ward-flow/people/WF-009", base).href, { waitUntil: "networkidle" });
+    const journey = page
+      .locator("details")
+      .filter({ has: page.getByTestId("ward-patient-stage-btn-placement_requested") });
+    if (!(await journey.evaluate((el) => el.open))) await journey.locator(":scope > summary").click();
     for (const stage of [
       "placement_requested",
       "destination_review",
@@ -138,6 +145,7 @@ try {
       await capture(page, `history-${filter.toLowerCase()}`, width);
     }
     await page.goto(new URL("/mockups/ward-flow/people/WF-004", base).href, { waitUntil: "networkidle" });
+    await page.getByText("Arrival plan & transport documents", { exact: true }).click();
     await page.getByRole("button", { name: "Update Arrival Time", exact: true }).click();
     await capture(page, "arrival-plan-dialog", width, { full: false });
     await page.keyboard.press("Escape");
@@ -155,6 +163,12 @@ try {
     await capture(page, "eligibility-gates", width);
     await page.goto(new URL("/mockups/ward-flow/people/WF-012?view=governed", base).href, { waitUntil: "networkidle" });
     await capture(page, "governed-dossier", width);
+    await page.goto(new URL("/mockups/ward-flow/people/PT-005", base).href, { waitUntil: "networkidle" });
+    await capture(page, "inactive-first-page", width);
+    for (const tab of ["History", "Community", "Details", "Documents"]) {
+      await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+      await capture(page, `inactive-${tab.toLowerCase()}`, width);
+    }
     await context.close();
   }
   await fs.writeFile(

@@ -62,3 +62,35 @@ arrival/document dialogs, the governed dossier and legacy movement route.
 The local evidence folder also contains an axe-core result for the new transit deck at all three
 sizes, focus handoff and visible button dimensions. These checks cover the new deck; they are
 not a certification of the whole existing application.
+
+## Compact visual refinement — 4 October 2026
+
+The subsequent owner request replaces the expansive header with a curved navy identity band,
+a compact four-part snapshot and a local next-action toolbar. `patient-flight-header.tsx` is a
+presentation component; Patient Now supplies its identity and movement facts from shared state.
+The operational modules use rounded surfaces, smaller gaps and side-by-side ward review and
+dispatch on desktop. The duplicate metrics deck is visually removed because the snapshot
+already supplies those facts. On narrow screens dispatch appears before the shortlist and the
+journey remains available through an accessible disclosure.
+
+The initial Now view is transit operations for an open movement and clinical context for a
+completed/closed journey. Explicit Now-view choices remain available. “Live bedflow” means an
+open synthetic movement with neither a closure nor the arrived stage, not a live EHR connection.
+The header status is announced by a live region; the local rail says LIVE BEDFLOW or NOT IN LIVE
+BEDFLOW. Arriving or withdrawing a referred bed search updates both labels from reducer state.
+
+A patient without a linked movement receives `patient-record-overview.tsx`, a compact hub for
+recorded identity, address, legal status, GP, catchment, history and documents. Its shortcuts open
+and focus the existing dossier tabs. Unsupported community coordinator, medication, telephone
+and outpatient-review claims were removed from the record-only rail. Catchment is explicitly
+separated from proof of active care. Withdrawal remains disabled when no ward referral exists.
+
+Verification covers 276 tests in ten focused suites, including arrival/withdrawal live-status
+changes, record-only navigation, referral/placement/transport actions and reducer constraints.
+The current visual capture includes both live and inactive records at 1440, 820 and 390 pixels.
+
+For Patient Now at tablet widths, the existing shell Menu carries navigation and shift context,
+so the expanded shift/search chrome no longer consumes the top half of the viewport. Desktop
+navigation and other screens retain their existing layouts. Automated axe checks of the patient
+page found no WCAG 2/2.1 AA violations for live and record-only views at the three target sizes;
+this is local automated evidence, not certification of the complete application.

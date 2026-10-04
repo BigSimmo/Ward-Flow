@@ -646,7 +646,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                     <button
                       type="button"
                       className={styles.secondary}
-                      disabled={!confirmWithdraw}
+                      disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
                       onClick={() =>
                         send({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id })
                       }

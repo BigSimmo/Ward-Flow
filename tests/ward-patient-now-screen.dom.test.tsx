@@ -125,7 +125,7 @@ describe("the patient-now screen", () => {
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
   });
 
-  it("renders a dedicated Community Trajectory card and + Raise Inpatient Referral link for a community outpatient", () => {
+  it("distinguishes a patient record without asserting active community care", () => {
     renderScreen({ patientId: "PT-005" });
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
@@ -134,8 +134,12 @@ describe("the patient-now screen", () => {
     );
     expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
     expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();
-    expect(within(root).getByText("Community Trajectory")).toBeInTheDocument();
-    expect(within(root).getByText("Sarah Jenkins, RN (CNS)")).toBeInTheDocument();
+    expect(root).toHaveAttribute("data-bedflow", "inactive");
+    expect(within(root).getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(within(root).queryByText("Sarah Jenkins, RN (CNS)")).not.toBeInTheDocument();
+    expect(within(root).getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    fireEvent.click(within(root).getByRole("button", { name: "View patient details" }));
+    expect(within(root).getByRole("tab", { name: "Details" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("has the page shell for the default movement record (WF-009)", () => {

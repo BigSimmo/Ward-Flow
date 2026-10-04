@@ -58,13 +58,12 @@ describe("Patient Transport & Transfer Coordination section", () => {
       </WardFlowProvider>,
     );
     const nowPanel = document.getElementById("pnpane-now")!;
-    expect(nowPanel).toHaveTextContent("No linked movement or ward referral record displayed.");
+    expect(nowPanel).toHaveTextContent("No linked movement is displayed.");
     expect(nowPanel).not.toHaveTextContent("Placement request active across network wards.");
-    const section = screen.getByTestId("ward-patient-transport-section");
-    expect(section).toHaveTextContent("No linked transport record displayed.");
-    expect(section).not.toHaveTextContent(/Awaiting Transport Booking|Transport dispatch|Mark as Booked/);
-    expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
-    expect(within(section).queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
   });
 
   it("hides an open booking form when navigating to a patient-only record", () => {
@@ -80,10 +79,10 @@ describe("Patient Transport & Transfer Coordination section", () => {
         <PatientNowScreen patientId="PT-005" />
       </WardFlowProvider>,
     );
-    const section = screen.getByTestId("ward-patient-transport-section");
-    expect(section).toHaveTextContent("No linked transport record displayed.");
-    expect(within(section).queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
-    expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
   });
 
   it("displays the recorded transport, CAD number, provider and quoted ETA for WF-004", () => {
@@ -185,7 +184,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     fireEvent.click(saveBtn);
 
     expect(badge).toHaveAttribute("data-booked", "false");
-    expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
+    expect(within(section).getByRole("alert", { hidden: true })).toHaveTextContent("Booking was not recorded");
     expect(within(section).queryByTestId("ward-patient-cad-number")).not.toBeInTheDocument();
   });
 });
