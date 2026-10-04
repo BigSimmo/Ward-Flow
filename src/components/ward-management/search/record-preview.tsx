@@ -253,10 +253,13 @@ export function RecordPreview({
   }, [onClose]);
 
   const [actionNotice, setActionNotice] = useState<string | null>(null);
-
-  useEffect(() => {
+  // Clear the notice when the selection changes. Adjusting state during render (React's documented
+  // pattern for resetting state on a prop change) avoids the extra effect-driven render.
+  const [noticeSelection, setNoticeSelection] = useState(selection);
+  if (noticeSelection !== selection) {
+    setNoticeSelection(selection);
     setActionNotice(null);
-  }, [selection]);
+  }
 
   if (selection === null) {
     return (
@@ -312,7 +315,7 @@ export function RecordPreview({
       targetWard = movementSummary.destinationCell;
       currentStage = movementSummary.stageLabel;
       transportStatus = transportStatusLabel(linkedMovement.transport);
-      nurseEscort = (linkedMovement as any).escort !== undefined;
+      nurseEscort = "escort" in linkedMovement && linkedMovement.escort !== undefined;
       originSite = movementSummary.departmentText;
       legalStatus = movementLegalStatus(linkedMovement);
       urgency = `Tier ${linkedMovement.urgency}`;
@@ -887,7 +890,7 @@ export function RecordPreview({
   const targetWard = summary.destinationCell;
   const currentStage = summary.stageLabel;
   const transportStatus = transportStatusLabel(movement.transport);
-  const nurseEscort = (movement as any).escort !== undefined;
+  const nurseEscort = "escort" in movement && movement.escort !== undefined;
   const originSite = summary.departmentText;
   // The movement's own legal record and urgency. A default "Form 1A", a fixed "Tier 1" and an age
   // of 38 used to stand in here (25 September 2026 audit, A5).

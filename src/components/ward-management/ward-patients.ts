@@ -280,11 +280,7 @@ export function matchDateOfBirth(dobIso: string, query: string): boolean {
   if (auMatch) {
     const [, qDay, qMonth, qYear] = auMatch;
     const qYearFull = qYear.length === 2 ? (parseInt(qYear, 10) > 30 ? `19${qYear}` : `20${qYear}`) : qYear;
-    if (
-      parseInt(qDay, 10) === dInt &&
-      parseInt(qMonth, 10) === mInt &&
-      (yyyy === qYearFull || yyyy.endsWith(qYear))
-    ) {
+    if (parseInt(qDay, 10) === dInt && parseInt(qMonth, 10) === mInt && (yyyy === qYearFull || yyyy.endsWith(qYear))) {
       return true;
     }
   }
@@ -294,15 +290,18 @@ export function matchDateOfBirth(dobIso: string, query: string): boolean {
 
 export type PatientSearchContext = {
   movements?: readonly { acceptedUnitId?: string; clinicalNote?: string; blocker?: string; [key: string]: unknown }[];
-  referrals?: readonly { destinations?: readonly { acceptedUnitId?: string }[]; clinicalNote?: string; [key: string]: unknown }[];
+  referrals?: readonly {
+    destinations?: readonly { acceptedUnitId?: string }[];
+    clinicalNote?: string;
+    [key: string]: unknown;
+  }[];
   units?: readonly { id: string; name: string }[];
 };
 
-export function findPatients(
-  patients: readonly Patient[],
-  query: string,
-  _context?: PatientSearchContext,
-): Patient[] {
+// The context argument is part of the public signature that search callers already pass; matching is
+// currently patient-record-only, so it is accepted and deliberately unused.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function findPatients(patients: readonly Patient[], query: string, _context?: PatientSearchContext): Patient[] {
   const needle = fold(query);
   if (needle.length === 0) return [];
   return patients.filter((patient) => {
@@ -322,7 +321,9 @@ export function findPatients(
     }
 
     // 3. Clinical diagnosis & complaint keywords on patient profile
-    const pAny = patient as any;
+    // These free-text fields are not on the Patient type; read them only if a record carries them.
+    const pAny: Partial<Record<"primaryDiagnosis" | "presentingComplaint" | "clinicalNotes" | "assignedWard", string>> =
+      patient as unknown as Record<string, string | undefined>;
     if (pAny.primaryDiagnosis && fold(pAny.primaryDiagnosis).includes(needle)) {
       return true;
     }
