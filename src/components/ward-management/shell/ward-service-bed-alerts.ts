@@ -1,4 +1,3 @@
-import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import {
   trackServiceBedCapacity,
   deriveBedCapacityTone,
@@ -14,7 +13,6 @@ import {
   type StatewideCapacityReport,
 } from "@/components/ward-management/capacity/service-capacity-tracker";
 import {
-  HEALTH_SERVICES,
   type BedRelease,
   type HealthService,
   type Movement,
@@ -105,16 +103,6 @@ export function occupancyTone(occupancyPercent: number): {
 function roundOneDecimal(value: number): number {
   return Math.round(value * 10) / 10;
 }
-
-function serviceSlug(service: HealthService): string {
-  return service.toLowerCase().replace(/\s+/g, "-");
-}
-
-type ServiceTotals = {
-  freeBeds: number;
-  totalBeds: number;
-  facilityNames: string[];
-};
 
 /**
  * Group live wards by the health service already stored on each site.

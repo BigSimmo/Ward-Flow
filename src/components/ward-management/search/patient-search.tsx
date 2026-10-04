@@ -34,7 +34,6 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import { formTitleForCode } from "@/lib/form-register";
-import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -46,7 +45,7 @@ import {
 const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
 const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
-import { ACCESS_RECORD_NOTE, recordSearch, type AccessEntry } from "./access-record";
+import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
 import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
@@ -63,7 +62,7 @@ import {
   isQuickChipQuery,
   matchesQuickChip,
 } from "./search-filters";
-import { referralState, declinedAddressings } from "@/components/ward-management/ward-referrals";
+import { referralState } from "@/components/ward-management/ward-referrals";
 
 import styles from "./search.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -72,7 +71,6 @@ const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in 
 
 const stageIsSearchable = (stage: MovementStage) => isOpen({ stage, closure: undefined } as Movement);
 const SELECTABLE_STAGES = MOVEMENT_STAGES.filter(stageIsSearchable);
-const UNSEARCHABLE_STAGES = MOVEMENT_STAGES.filter((stage) => !stageIsSearchable(stage));
 
 type ShowFacetKey = "all" | "accepted" | "waiting" | "unowned" | "under6" | "6to24" | "over24";
 
@@ -276,7 +274,7 @@ export function PatientSearchPage() {
       }
 
       if (presenceFilter !== "all" && !matchesPresence(result, presenceFilter)) return false;
-      if (serviceFilter !== "all" && !matchesService(result, serviceFilter, units)) return false;
+      if (serviceFilter !== "all" && !matchesService(result, serviceFilter)) return false;
       if (settingFilter !== "all" && !matchesSetting(result, settingFilter)) return false;
       if (legalFilter !== "all" && !matchesLegal(result, legalFilter)) return false;
       if (waitFilter !== "all" && !matchesWait(result, waitFilter, now)) return false;
@@ -292,7 +290,6 @@ export function PatientSearchPage() {
     settingFilter,
     legalFilter,
     waitFilter,
-    units,
     now,
   ]);
 
@@ -465,7 +462,7 @@ export function PatientSearchPage() {
       if (sortBy === "opened-desc") return b.id.localeCompare(a.id);
       return 0;
     });
-  }, [results, patients, referrals, movements, units, now, sortBy]);
+  }, [results, patients, referrals, movements, units, now, dayZero, sortBy]);
 
   // KPI Metrics Calculation
   const yieldMetrics = useMemo(() => {

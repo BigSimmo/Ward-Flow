@@ -23,7 +23,6 @@ import {
   DAY_SHIFT_END_MINUTE,
   openWorkBeforeShiftEnd,
   openWorkBeforeShiftEndLabel,
-  pullHoldRemainingLabel,
 } from "@/components/ward-management/ward-board-time-features";
 import {
   elapsedLabel,
@@ -3823,7 +3822,6 @@ export function InTransitSection({
 
 export function PlacementGoneWrongSection({
   snapshot,
-  units,
   wholeNetworkCount = 0,
   patients = [],
   referrals = [],

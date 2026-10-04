@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";

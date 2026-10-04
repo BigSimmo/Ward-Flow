@@ -28,11 +28,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import {
-  WardDynamicIsland,
-  type DynamicIslandMetric,
-  type WardDynamicIslandProps,
-} from "@/components/ward-management/shell/ward-dynamic-island";
+import { WardDynamicIsland, type WardDynamicIslandProps } from "@/components/ward-management/shell/ward-dynamic-island";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
@@ -1332,7 +1328,7 @@ describe("Tier 3: Interactions & Filters", () => {
 
   it("Discharges: clicking 'Confirmed', 'Expected', and 'Departed' updates filter selection", () => {
     const handleFilterChange = vi.fn();
-    const { rerender } = render(
+    render(
       <WardDynamicIsland {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })} />,
     );
 

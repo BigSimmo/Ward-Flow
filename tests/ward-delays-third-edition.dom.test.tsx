@@ -5,12 +5,10 @@ import { panelTitlesInOrder } from "./helpers/ward-panels";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allEmergencyDepartments, allUnits, edById, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allUnits, edById, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { isOpen, searchMovements } from "@/components/ward-management/ward-derivations";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
-import { dayOf } from "@/components/ward-management/ward-clock";
-import { wardMovements } from "@/components/ward-management/ward-movements";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 /**

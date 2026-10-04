@@ -119,7 +119,8 @@ describe("useDirtyStateGuard", () => {
     let callCount = 0;
 
     const { rerender } = renderHook(
-      ({ renderIndex }: { renderIndex: number }) =>
+      // `renderIndex` only exists to force a rerender with a new inline `onRestore`.
+      () =>
         useDirtyStateGuard({
           key: "test-identity",
           isDirty: false,

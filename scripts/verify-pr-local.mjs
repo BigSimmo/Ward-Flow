@@ -15,6 +15,9 @@ const common = [
   "check:ward-doc-links",
 ];
 
+// `--extended` is still accepted (callers pass it), but the extended and default plans are now the
+// same list: tests/ward-verification-plan.test.ts pins that equality.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for call-site compatibility
 export function selectedScripts(scope, _extended = false) {
   const plan = Array.isArray(scope.entries) ? classifyChanges(scope.entries) : scope;
   const scripts = [...common];

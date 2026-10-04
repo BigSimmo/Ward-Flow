@@ -8,7 +8,6 @@ import {
 import {
   appendAudit,
   classifyAuditEvent,
-  enumValue,
   finiteInstant,
   reviewDecision,
   type AuditDecision,
@@ -26,14 +25,7 @@ import {
 import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import {
-  BROADCAST_CATEGORIES,
-  BROADCAST_SEVERITIES,
-  BROADCAST_TARGET_SCOPES,
-  COORDINATOR_DESK_ACKNOWLEDGER_ID,
-  isAlertActive,
-  type BroadcastAlert,
-} from "./alerts/ward-broadcast-model";
+import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import {
@@ -1129,10 +1121,6 @@ function findUnit(state: WardFlowState, unitId: string): Unit | undefined {
 
 function findBedRelease(state: WardFlowState, releaseId: string): BedRelease | undefined {
   return state.bedReleases.find((candidate) => candidate.id === releaseId);
-}
-
-function findNotice(state: WardFlowState, noticeId: string): Notice | undefined {
-  return state.notices.find((candidate) => candidate.id === noticeId);
 }
 
 /** Replaces one bed release in the array by id, leaving every other element untouched. */

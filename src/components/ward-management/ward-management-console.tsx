@@ -1,35 +1,13 @@
 "use client";
 
-import {
-  ArrowLeft,
-  BedSingle,
-  CalendarDays,
-  CheckCircle2,
-  FileCheck2,
-  Search,
-  ShieldCheck,
-  Truck,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { type Instant } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import {
-  MOVEMENT_STAGES,
-  type Movement,
-  type MovementStage,
-  type MovementId,
-} from "@/components/ward-management/ward-model";
+import { type MovementId } from "@/components/ward-management/ward-model";
 import styles from "./ward-management.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementWorkspaceCockpit } from "@/components/ward-management/movements/movement-workspace-cockpit";
-import {
-  stageReachedAt,
-  type StepState,
-  trackStepSentence,
-} from "@/components/ward-management/movements/movement-workspace-derivations";
 
 export {
   stageChangeReasonLabel,
@@ -44,60 +22,6 @@ export {
   orphanedTransportAttention,
   attentionItems,
 } from "@/components/ward-management/movements/movement-workspace-derivations";
-
-const stageIcons = {
-  placement_requested: FileCheck2,
-  destination_review: Search,
-  accepted_awaiting_bed: BedSingle,
-  pulled: CalendarDays,
-  handover_ready: ShieldCheck,
-  moving: Truck,
-  arrived: CheckCircle2,
-} satisfies Record<MovementStage, LucideIcon>;
-
-/**
- * THE PROGRESS TRACK FOR ONE PATIENT — and the deletion that matters more than the addition.
- *
- * ⚠️ THIS USED TO RENDER `stageSummaries(movements)`: seven counts — 14/9/6/7/2/6/6 on the day it
- * was reviewed — every one of them a fact about OTHER PATIENTS, on one patient's own page, under a
- * heading that reads as this patient's progress. The call is gone, not reworded, and nothing on
- * this page reads the whole `movements` collection any more.
- *
- * ⚠️ AND IT USED TO BE SEVEN BUTTONS. Clicking a stage moved a local `useState` and nothing else —
- * a future step on somebody else's movement was clickable and did nothing. Steps are plain list
- * items now: this is a record of where a patient has got to, not a control.
- *
- * ⚠️ A CLOSED MOVEMENT HAS NO CURRENT STEP. Observed 2026-09-04: the closure banner said the
- * movement was over while step 3 rendered in accent blue as though it were live. The step a closed
- * movement stopped at is marked `stopped`, which is worded and styled as a full stop, never as
- * "you are here".
- */
-function MovementTrack({ movement, now, open }: { movement: Movement; now: Instant; open: boolean }) {
-  const reachedIndex = MOVEMENT_STAGES.indexOf(movement.stage);
-  return (
-    <ol className={styles.track} data-testid="ward-console-track">
-      {MOVEMENT_STAGES.map((stage, index) => {
-        const Icon = stageIcons[stage];
-        const state: StepState =
-          index < reachedIndex ? "done" : index > reachedIndex ? "ahead" : open ? "current" : "stopped";
-        const at = state === "ahead" ? undefined : stageReachedAt(movement, stage);
-        return (
-          <li className={styles.trackStep} key={stage} data-state={state}>
-            <span className={styles.trackMark} aria-hidden="true">
-              <Icon aria-hidden="true" />
-            </span>
-            <span className={styles.trackBody}>
-              <strong className={styles.trackLabel}>
-                {index + 1}. {stageCopy[stage].label}
-              </strong>
-              <span className={styles.trackWhen}>{trackStepSentence(movement, state, at, now)}</span>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
 
 /**
  * ⚠️ **THIS IS A MOVEMENT WORKSPACE, AND ITS PROP NOW SAYS SO.** It was `patientId: string`, and
@@ -210,17 +134,6 @@ export function WardMovementNotFound({
     </div>
   );
 }
-
-/*
- * The reason each correction control states while it is inert. Named constants because each is
- * rendered TWICE — once as the `title` a pointer user gets, once as the visually hidden text an
- * `aria-describedby` reader gets — and two copies of a sentence drift. Same shape as
- * `DECLINE_REASON_UNCHOSEN` in `referral-match.tsx`.
- */
-const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first. The ward reads the reason.";
-const STEP_BACK_UNCHOSEN = "Choose the stage and the reason first. Both are recorded on this movement's audit trail.";
-const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first. The provider is told.";
-const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 
 export function WardPatientWorkspace({ movementId }: { movementId: MovementId }) {
   const { movements } = useWardFlow();

@@ -13,13 +13,10 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import {
   restrictionNotice,
   eligibilityWarning,
-  elapsedLabel,
   stageCopy,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
-import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { OverrideRegister } from "@/components/ward-management/override-register";
-import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
@@ -97,8 +94,6 @@ export function WardHomeTab({
   overridesHere,
   now,
   presentation,
-  activeAnswerIndex,
-  setAnswerIndex,
   visibleIncoming,
   declineOpenFor,
   toggleDecline,
@@ -107,11 +102,9 @@ export function WardHomeTab({
   submitDecline,
   priorRejectionCountRef,
   rejections,
-  dispatch,
   setCheckToken,
   recentAnswers,
   breakdown,
-  capacityConfirmationForm,
   pendingBedReleasesCount,
   unitLeaveBedsCount,
   resolvePatientIdentity,
@@ -119,7 +112,6 @@ export function WardHomeTab({
   overrideReasonForm,
   onAcceptInPrinciple,
   liveFormAlerts,
-  onOpenDecisions,
 }: WardHomeTabProps) {
   const { bedReleases } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);

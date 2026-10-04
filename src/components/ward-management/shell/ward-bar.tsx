@@ -20,12 +20,7 @@ import { standingFigures, WardStatsDrawerContent } from "@/components/ward-manag
 
 import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import {
-  calendarDateOf,
-  formatInstant,
-  formatInstantWithDay,
-  splitDuration,
-} from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
@@ -48,7 +43,6 @@ import {
   SERVICE_SCOPED_SCREENS,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import {
   STATISTICS_COMPARE_HREF,
@@ -72,7 +66,6 @@ import {
   onCallHref,
   settingsHref,
   unitHref,
-  wardBoardHref,
 } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
@@ -374,7 +367,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
-    dayZero,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -519,7 +511,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       return "Real-Time Patient Record";
     }
     return undefined;
-  }, [pathname, place, routeTitle, units]);
+  }, [pathname, place, routeTitle]);
 
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronLeft, ChevronRight, Clock, Scale, ShieldAlert, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Scale, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";

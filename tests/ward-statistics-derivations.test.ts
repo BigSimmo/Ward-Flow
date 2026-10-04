@@ -12,8 +12,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { ADMISSION_STATES, type Admission, type AdmissionState } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { BedRelease, Decline, DeclineReason, Movement, Referral } from "@/components/ward-management/ward-model";
 

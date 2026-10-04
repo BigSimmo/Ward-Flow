@@ -374,7 +374,6 @@ export function MovementsScreen() {
   const openMovements = movements.filter(isOpen);
   const openStages = journeyStages(openMovements, now);
   const waitingMovements = byLongestWait(openMovements, now);
-  const noOwnerMovements = openMovements.filter((movement) => movement.owner.trim().length === 0);
   const unacceptedTransport = byLongestWait(
     openMovements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
     now,

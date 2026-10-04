@@ -4,14 +4,10 @@ import { useContext, useEffect, useId, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import {
-  setAudioBuzzPreference,
-  triggerUrgentBuzzAlert,
-  useAudioBuzzPreference,
-} from "@/components/ward-management/shell/ward-sound-store";
+import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import styles from "./ward-notification-center.module.css";
 

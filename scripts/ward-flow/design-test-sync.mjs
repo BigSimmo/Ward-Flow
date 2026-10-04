@@ -17,7 +17,7 @@
  * that PREVENT modifying any clinical calculations, legal thresholds, or patient safety rules.
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import process from "node:process";
@@ -25,7 +25,6 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 const REGISTRY_PATH = join(ROOT, "docs", "ward-flow", "design-test-registry.json");
-const PAIRS_PATH = join(ROOT, "scripts", "ward-flow", "screen-pairs.mjs");
 const MOCKUPS_DIR = join(ROOT, "docs", "ward-flow", "mockups");
 
 function sha256(filePath) {
@@ -52,9 +51,8 @@ export async function checkRegistryCompleteness() {
   const errors = [];
 
   const registeredMockups = new Set(registry.screens.map((s) => s.mockup));
-  const registeredRoutes = new Set(registry.screens.map((s) => s.route));
 
-  for (const [mockup, route] of contractPairs) {
+  for (const [mockup] of contractPairs) {
     if (!registeredMockups.has(mockup)) {
       errors.push(`Contract mockup "${mockup}" is missing from design-test-registry.json`);
     }
@@ -163,7 +161,9 @@ export function syncScreenTests(screenId) {
   }
 
   console.log(`[Design-Test-Sync] Synchronizing tests for screen: ${screenId}`);
-  console.log(`[Design-Test-Sync] Protected clinical invariants: ${screen.invariants.protectedClinicalFields.join(", ")}`);
+  console.log(
+    `[Design-Test-Sync] Protected clinical invariants: ${screen.invariants.protectedClinicalFields.join(", ")}`,
+  );
 
   // Verify that protected invariants cannot be overwritten
   for (const invariant of screen.invariants.protectedClinicalFields) {
@@ -214,7 +214,9 @@ async function main() {
     console.log("== Ward Flow Design-to-Test Sync: Design & Implementation Hashes ==");
     const changes = detectChanges();
     for (const c of changes) {
-      console.log(`- ${c.id.padEnd(20)} | Mockup: ${c.mockupHash} | Code: ${c.componentHash} | Tests: ${c.tests.length}`);
+      console.log(
+        `- ${c.id.padEnd(20)} | Mockup: ${c.mockupHash} | Code: ${c.componentHash} | Tests: ${c.tests.length}`,
+      );
     }
     process.exit(0);
   }
