@@ -104,7 +104,9 @@
   border: 0.0625rem solid var(--line-strong);
   border-radius: 0.5rem;
   background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
+    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -115,7 +117,7 @@
 .recordActions:hover,
 .infoDisclosure:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .recordActions > summary,
@@ -232,7 +234,9 @@
   border: 0.0625rem solid var(--line-strong);
   border-radius: 0.5rem;
   background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
+    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
   padding: 0.625rem 0.75rem;
   margin-bottom: 0.75rem;
   transition:
@@ -242,7 +246,7 @@
 
 .candidatesSection:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .candidateHeading {
@@ -318,7 +322,9 @@
   border: 0.0625rem solid var(--line-strong);
   border-radius: 0.5rem;
   background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
+    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
   margin-bottom: 0.75rem;
   overflow: hidden;
   transition:
@@ -328,7 +334,7 @@
 
 .detailDisclosure:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .detailDisclosure > summary {

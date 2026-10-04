@@ -919,7 +919,7 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--r1);
   box-shadow:
-    0 10px 32px -4px var(--ward-shadow-black-08),
+    0 10px 32px -4px rgb(var(--ward-shadow-rgb) / 0.08),
     0 0 0 1px var(--line);
   padding: 0.875rem;
   display: flex;
@@ -943,7 +943,7 @@
 .categoryRail:hover {
   border-color: var(--line-strong);
   box-shadow:
-    0 14px 40px -4px var(--ward-shadow-black-12),
+    0 14px 40px -4px rgb(var(--ward-shadow-rgb) / 0.12),
     0 0 0 1px var(--line-strong);
 }
 
@@ -1255,7 +1255,7 @@
   border: 1px solid var(--line);
   border-bottom-color: var(--line-strong);
   border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-04, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2286,7 +2286,7 @@
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-04, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
   padding: 0.875rem 1rem;
   display: flex;
   flex-direction: column;
@@ -2413,16 +2413,18 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-04, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .paramCard:hover {
   border-color: var(--line-strong);
-  box-shadow: 0 2px 8px var(--ward-shadow-black-06, rgba(0, 0, 0, 0.06));
+  box-shadow: 0 2px 8px var(--ward-shadow-black-06);
 }
 
 .paramCardHeader {
@@ -4148,7 +4150,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-06, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-06);
   flex-wrap: wrap;
 }
 
@@ -4256,12 +4258,12 @@
 
 .btnSurgeRibbon:hover {
   background: var(--warn);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .btnSurgeRibbonActive {
   background: var(--warn) !important;
-  color: #ffffff !important;
+  color: var(--on-accent) !important;
 }
 
 .btnRestoreRibbon {
@@ -4294,10 +4296,10 @@
   font-size: var(--t-0);
   font-weight: 600;
   background: var(--accent);
-  color: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: var(--on-accent);
+  border: 1px solid rgb(var(--ward-shadow-rgb) / 0.12);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 113, 227, 0.25);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ward-blue) 25%, transparent);
   transition: all 0.12s ease;
   white-space: nowrap;
 }
@@ -4322,8 +4324,8 @@
   align-items: center;
   gap: 0.75rem;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.08);
+    0 8px 32px rgb(var(--ward-shadow-rgb) / 0.18),
+    0 2px 8px rgb(var(--ward-shadow-rgb) / 0.08);
   z-index: 1000;
   animation: slideUpIsland 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -4369,7 +4371,7 @@
 
 .islandBtnSave {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
   border: none;
   font-size: var(--t-0);
   font-weight: 600;
@@ -4379,7 +4381,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  box-shadow: 0 2px 6px rgba(0, 113, 227, 0.35);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ward-blue) 35%, transparent);
   white-space: nowrap;
 }
 
@@ -4392,7 +4394,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-06, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-06);
   overflow: hidden;
   margin-bottom: 1.25rem;
 }
@@ -4507,8 +4509,8 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  background: var(--ward-canvas);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
   cursor: pointer;
   transition: transform 0.1s ease;
 }
@@ -4559,10 +4561,10 @@
   width: 16px;
   left: 2px;
   bottom: 2px;
-  background-color: #ffffff;
+  background-color: var(--ward-canvas);
   transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
 }
 
 .appleSwitch input:checked + .appleSwitchSlider {
@@ -4643,5 +4645,5 @@
 .shrunkThemeBtnActive {
   background: var(--surface) !important;
   color: var(--ink) !important;
-  box-shadow: 0 1px 3px var(--ward-shadow-black-06, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 1px 3px var(--ward-shadow-black-06);
 }

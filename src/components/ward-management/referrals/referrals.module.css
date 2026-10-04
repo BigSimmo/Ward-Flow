@@ -5629,7 +5629,7 @@ input.historyField:focus-visible {
   font-weight: 700;
   color: var(--warn);
   background: var(--warn-soft);
-  border: 1px solid var(--warn-border, var(--line));
+  border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
   padding: 4px 10px;
 }
@@ -5756,7 +5756,7 @@ input.historyField:focus-visible {
 .tabBtnActive,
 .tabBtn[aria-selected="true"] {
   color: var(--accent);
-  background: var(--accent-soft, rgba(0, 102, 204, 0.08));
+  background: var(--accent-soft);
   font-weight: 700;
 }
 
@@ -6269,4 +6269,3 @@ input.historyField:focus-visible {
   flex: 1;
   min-width: 200px;
 }
-

@@ -3328,13 +3328,15 @@
 .suburbFilterInput {
   height: 42px !important;
   min-height: 42px !important;
-  border: 1px solid var(--line-strong, #cbd5e1) !important;
+  border: 1px solid var(--line-strong) !important;
   border-radius: var(--r2, 8px) !important;
   background: var(--surface) !important;
   padding: 0 12px !important;
   font-size: 0.875rem !important;
   color: var(--ink) !important;
-  transition: border-color 0.15s, box-shadow 0.15s !important;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s !important;
 }
 
 .select:focus,
@@ -3424,16 +3426,16 @@
 }
 
 .urgencyDot[data-tier="1"] {
-  background: var(--danger, #dc2626) !important;
-  box-shadow: 0 0 0 3px var(--danger-soft, rgba(220, 38, 38, 0.15)) !important;
+  background: var(--danger) !important;
+  box-shadow: 0 0 0 3px var(--danger-soft) !important;
 }
 .urgencyDot[data-tier="2"] {
-  background: var(--warn, #d97706) !important;
-  box-shadow: 0 0 0 3px var(--warn-soft, rgba(217, 119, 6, 0.15)) !important;
+  background: var(--warn) !important;
+  box-shadow: 0 0 0 3px var(--warn-soft) !important;
 }
 .urgencyDot[data-tier="3"] {
-  background: var(--good, #16a34a) !important;
-  box-shadow: 0 0 0 3px var(--good-soft, rgba(22, 163, 74, 0.15)) !important;
+  background: var(--good) !important;
+  box-shadow: 0 0 0 3px var(--good-soft) !important;
 }
 
 .urgencyDetails {
@@ -3527,13 +3529,13 @@
 .optSelectedYes {
   background: var(--accent) !important;
   color: var(--on-accent) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.12) !important;
 }
 
 .optSelectedNo {
   background: var(--surface) !important;
   color: var(--ink) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08) !important;
 }
 
 /* 4. Right Sidebar & Referral Summary Polish (Image 3 fix) */

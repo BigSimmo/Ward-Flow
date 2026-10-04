@@ -1319,9 +1319,9 @@ table.snapSheet {
   inset: 1.5rem;
   z-index: 1000;
   max-height: none;
-  height: calc(100vh - 3rem);
+  height: auto;
   background: var(--ground);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 16px 48px rgb(var(--ward-shadow-rgb) / 0.45);
   border: 2px solid var(--accent);
   border-radius: var(--r3, 10px);
   display: flex;
@@ -1373,7 +1373,7 @@ table.snapSheet {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border-radius: var(--r-control, 6px);
+  border-radius: 6px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
@@ -1394,7 +1394,7 @@ table.snapSheet {
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--r-control, 4px);
+  border-radius: 4px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);

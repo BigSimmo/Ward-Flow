@@ -340,10 +340,10 @@
   white-space: normal;
 }
 .workTable td:first-child {
-  width: 38%;
+  width: 32%;
 }
 .workTable td:nth-child(2) {
-  width: 28%;
+  width: 34%;
 }
 .workTable td strong {
   font-weight: 500;

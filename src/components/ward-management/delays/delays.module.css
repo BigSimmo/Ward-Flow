@@ -3209,13 +3209,13 @@
   text-align: left;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.05);
 }
 
 .runwayPatientCard:hover {
   border-color: var(--danger);
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.08);
 }
 
 .runwayPatientCardImminent {
@@ -3234,23 +3234,23 @@
 }
 
 .runwayTagBreached {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-accent);
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .runwayTagImminent {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--warn);
-  color: #fff;
+  color: var(--on-accent);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -6283,7 +6283,7 @@
 .cardServiceTag {
   display: inline-block;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   padding: 1px 5px;
   border-radius: 3px;
@@ -6336,7 +6336,7 @@
 }
 
 .cardOwnerTag {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -6435,8 +6435,8 @@
   border: 1.5px solid var(--line-strong);
   border-radius: var(--r1, 10px);
   box-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.08),
-    0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    0 4px 20px -2px rgb(var(--ward-shadow-rgb) / 0.08),
+    0 2px 6px -1px rgb(var(--ward-shadow-rgb) / 0.04);
   overflow: hidden;
   margin-top: 10px;
 }
@@ -6469,7 +6469,7 @@
 }
 
 .pillarsSectionSubtitle {
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--muted);
 }
 
@@ -6534,7 +6534,7 @@
 
 .catchmentClearBtn:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .catchmentGrid {
@@ -6603,7 +6603,7 @@
 }
 
 .catchmentFullName {
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -6627,7 +6627,7 @@
 }
 
 .catchmentBreachedTag {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -6639,7 +6639,7 @@
 }
 
 .catchmentImminentTag {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -6700,7 +6700,7 @@
 }
 
 .catchmentStatLabel {
-  font-size: 9px;
+  font-size: var(--t-0);
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -6715,7 +6715,7 @@
 }
 
 .catchmentEdHeader {
-  font-size: 9px;
+  font-size: var(--t-0);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -6732,7 +6732,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--ink-soft);
 }
 
@@ -6754,7 +6754,7 @@
   justify-content: space-between;
   border-top: 1px solid var(--line);
   padding-top: 6px;
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--accent);
   font-weight: 600;
 }
@@ -6763,7 +6763,7 @@
  * BLOCKER CONSOLE REFINEMENTS (IMAGE 5 RIGHT SIDE)
  * ================================================================================ */
 .causeSevereAlertBadge {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -6804,7 +6804,7 @@
 }
 
 .catchmentBreachBadge {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   background: var(--danger-soft);
   color: var(--danger);
@@ -6816,7 +6816,7 @@
 }
 
 .catchmentImminentBadge {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 800;
   background: var(--warn-soft);
   color: var(--warn-ink, var(--warn));
@@ -6828,7 +6828,7 @@
 }
 
 .catchmentValidBadge {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 600;
   background: var(--good-soft);
   color: var(--good-ink, var(--good));
@@ -6863,7 +6863,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--muted);
   border-top: 1px solid var(--line);
   padding-top: 6px;
@@ -6881,7 +6881,7 @@
 
 .catchmentBands {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--t-0);
   color: var(--muted);
   text-align: right;
   white-space: nowrap;
@@ -6894,7 +6894,7 @@
 }
 
 .catchmentHint {
-  font-size: var(--t-0, 11px);
+  font-size: var(--t-0, 12px);
   color: var(--muted);
   font-style: italic;
 }
