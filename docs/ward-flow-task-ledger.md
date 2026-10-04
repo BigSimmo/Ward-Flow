@@ -962,10 +962,10 @@ with the placeholder said out loud.
 > | Raise, accept and decline roles                                | `ward-flow-events.ts` role table (widened since: `ed` and `community` answer their own destination kind only, via `answerableBy`)                   |
 > | A referrer may withdraw                                        | `RECORD_REFERRER_WITHDRAWAL` (FD-5) and `WITHDRAW_REFERRAL`; `ward-referrer-withdrawal.test.ts`                                                     |
 >
-> **Still the owner's call, not a build gap:** recording a referrer's withdrawal is coordinator-only
-> (flagged in `ward-flow-events.ts` as a product question: should the community team or the ED also
-> record it?). The 57 referral test files plus `ward-referrer-withdrawal.test.ts` passed locally on
-> 4 October (1,036 tests).
+> **Owner, 4 October 2026:** the community team and the ED may also record a withdrawal "if they are
+> cancelling their referral" — scoped in the reducer to referrals their own side sent
+> (`referralSenderRole`). The coordinator's referral screen now has a whole-referral "Withdraw
+> referral" control (it had only the community-arm one) with a "recorded by" choice.
 
 - **Multi-select destinations in ONE referral** — not repeat referrals
 - **The referral tool flags catchment** and shows **estimated wait time and useful stats per option**
