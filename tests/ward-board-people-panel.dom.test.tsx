@@ -27,7 +27,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
  * handing it the wrong collection.
  *
  * So the first test below asserts the thing a ward can check without a computer: the people listed
- * in this panel, plus the beds drawn as out-of-service, held and empty, come to exactly the number
+ * in this panel, plus the beds drawn as out-of-service, closed and empty, come to exactly the number
  * of beds the ward has. It runs across EVERY seeded unit rather than the one this panel was built
  * against, because the wrong-collection defect is invisible on a ward whose numbers happen to be
  * plausible and glaring on the next one along.
@@ -103,7 +103,7 @@ describe("ward board people panel — the figure has to be possible, not merely 
       // failed: the listed people plus the beds nobody is in must equal the ward's beds.
       const unoccupiedTiles =
         container.querySelectorAll('[data-bed-kind="blocked"]').length +
-        container.querySelectorAll('[data-bed-kind="held"]').length +
+        container.querySelectorAll('[data-bed-kind="closed"]').length +
         container.querySelectorAll('[data-bed-kind="empty"]').length;
 
       if (rows !== expected) offenders.push(`${unit.id}: panel listed ${rows} people, ward holds ${expected}`);
@@ -517,12 +517,12 @@ describe("a person who is away at an emergency department", () => {
     ).toBe(occupiedInSeed);
 
     /*
-     * 3. THE FIGURE A COORDINATOR ACTS ON, and the actual harm: a tile drawn empty or held is a
+     * 3. THE FIGURE A COORDINATOR ACTS ON, and the actual harm: a tile drawn empty or closed is a
      *    tile this ward is saying somebody could be taken to. If an away person's bed lands in
      *    that pool, a coordinator is offered a bed with somebody in it.
      */
     const blockedDrawn = kinds.filter((kind) => kind === "blocked").length;
-    const offerableDrawn = kinds.filter((kind) => kind === "empty" || kind === "held").length;
+    const offerableDrawn = kinds.filter((kind) => kind === "empty" || kind === "closed").length;
     expect(
       offerableDrawn,
       `the grid offers ${offerableDrawn} beds on a ward with ${unit.beds} beds, ${occupiedInSeed} of them taken ` +

@@ -90,6 +90,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { RELEASE_DAYS, parseReleaseDayInstant, releaseTimeAlreadyPassed, type ReleaseDay } from "./release-day";
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { WardDecisionsCockpit } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon } from "./ward-telemetry-ribbon";
 import { WardHomeTab } from "./ward-home-tab";
@@ -599,6 +600,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   const site = siteByCode(unit.siteCode);
   const capacity = unitCapacity(unit, bedReleases);
+  // The ruled four boxes — Ready · Pulled · Closed · Occupied — for every bed-state figure this
+  // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
+  // "Held" is reserved for a bed kept for a patient on leave.
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   // Who a bed release can name: people occupying a bed on this ward with no live release already
   // (the reducer refuses anyone else). Named from the record, the same way the bed list names them.
   const bedReleaseCandidates = (admissions ?? [])
@@ -2306,8 +2311,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 <div className={styles.capacityTrackTitleRow}>
                   <span className={styles.capacityTrackLabel}>Capacity distribution</span>
                   <span style={{ fontSize: "11.5px", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-                    {capacity.occupied} Occupied · {capacity.available} Ready · {capacity.held} Held · Blocked not
-                    recorded
+                    {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} ·{" "}
+                    {states.closed} {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
                   </span>
                 </div>
 
@@ -2315,45 +2320,63 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <div
                     className={styles.capSeg}
                     data-state="available"
-                    style={{ flexGrow: capacity.available, width: `${(capacity.available / unit.beds) * 100}%` }}
+                    style={{ flexGrow: states.ready, width: `${(states.ready / unit.beds) * 100}%` }}
                   />
                   <div
                     className={styles.capSeg}
-                    data-state="held"
-                    style={{ flexGrow: capacity.held, width: `${(capacity.held / unit.beds) * 100}%` }}
+                    data-state="pulled"
+                    style={{ flexGrow: states.pulled, width: `${(states.pulled / unit.beds) * 100}%` }}
                   />
                   <div
                     className={styles.capSeg}
-                    data-state="blocked"
-                    style={{ flexGrow: capacity.blocked, width: `${(capacity.blocked / unit.beds) * 100}%` }}
+                    data-state="closed"
+                    style={{ flexGrow: states.closed, width: `${(states.closed / unit.beds) * 100}%` }}
                   />
                   <div
                     className={styles.capSeg}
                     data-state="occupied"
-                    style={{ flexGrow: capacity.occupied, width: `${(capacity.occupied / unit.beds) * 100}%` }}
+                    style={{ flexGrow: states.occupied, width: `${(states.occupied / unit.beds) * 100}%` }}
                   />
                 </div>
 
                 <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="available">
-                    <span className={styles.statBoxLabel}>Ready</span>{" "}
+                  {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
+                    not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
+                  <span
+                    className={`${styles.bedChip} ${styles.statBox}`}
+                    data-state="available"
+                    title={BED_STATE_DETAILS.ready}
+                  >
+                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
                     <strong className={styles.statBoxVal} style={{ color: "var(--good)" }}>
-                      {capacity.available}
+                      {states.ready}
                     </strong>
                   </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="held">
-                    <span className={styles.statBoxLabel}>Held</span>{" "}
+                  <span
+                    className={`${styles.bedChip} ${styles.statBox}`}
+                    data-state="pulled"
+                    title={BED_STATE_DETAILS.pulled}
+                  >
+                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
+                    <strong className={styles.statBoxVal}>{states.pulled}</strong>
+                  </span>
+                  <span
+                    className={`${styles.bedChip} ${styles.statBox}`}
+                    data-state="closed"
+                    title={BED_STATE_DETAILS.closed}
+                  >
+                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
                     <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
-                      {capacity.held}
+                      {states.closed}
                     </strong>
                   </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="blocked">
-                    <span className={styles.statBoxLabel}>Blocked</span>{" "}
-                    <strong className={styles.statBoxVal}>Not recorded</strong>
-                  </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="occupied">
-                    <span className={styles.statBoxLabel}>Occupied</span>{" "}
-                    <strong className={styles.statBoxVal}>{capacity.occupied}</strong>
+                  <span
+                    className={`${styles.bedChip} ${styles.statBox}`}
+                    data-state="occupied"
+                    title={BED_STATE_DETAILS.occupied}
+                  >
+                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
+                    <strong className={styles.statBoxVal}>{states.occupied}</strong>
                   </span>
                   <span className={`${styles.bedChip} ${styles.statBox}`} data-state="confirmed">
                     <span className={styles.statBoxLabel}>Confirmed</span>{" "}
@@ -2404,9 +2427,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 <details className={styles.clinicalDisclosure}>
                   <summary>What these bed figures mean</summary>
                   <p className={styles.bedNote}>
-                    Ready, held, blocked and occupied total {unit.beds}. Held means empty but not offered; it is
-                    separate from a bed pulled for a patient. Confirmed, expected, held-up discharge and leave are flow
-                    counts and are not added to that total.
+                    Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled
+                    means allocated to a patient who has not arrived yet. Beds being made ready are counted inside
+                    Ready, and beds held for a patient on leave inside Occupied. Confirmed, expected, held-up discharge
+                    and leave are flow counts and are not added to that total.
                   </p>
                 </details>
               </div>
@@ -3661,8 +3685,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             fontWeight: 600,
                           }}
                         >
-                          {capacity.occupied} / {unit.beds} beds (
-                          {unit.beds > 0 ? Math.round((capacity.occupied / unit.beds) * 100) : 0}%)
+                          {states.occupied} / {unit.beds} beds (
+                          {unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0}%)
                         </dd>
                       </div>
                       <div>
@@ -3690,7 +3714,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Held for Referrals</dt>
+                        <dt>{BED_STATE_LABELS.pulled}, not arrived</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -3698,11 +3722,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             fontWeight: 600,
                           }}
                         >
-                          {capacity.held} beds
+                          {states.pulled} beds
                         </dd>
                       </div>
                       <div>
-                        <dt>Blocked Offline</dt>
+                        <dt>{BED_STATE_LABELS.closed}, not offered</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -3710,7 +3734,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                             fontWeight: 600,
                           }}
                         >
-                          Not recorded
+                          {states.closed} beds
                         </dd>
                       </div>
                       <div>

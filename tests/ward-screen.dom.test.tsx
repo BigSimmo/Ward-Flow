@@ -259,22 +259,27 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     expect(chipRow).toHaveTextContent(`Expected ${breakdown.expectedToday}`);
     expect(chipRow).toHaveTextContent(`On leave ${breakdown.onLeave}`);
 
-    // The four physical states are untouched by this fix — same figures, same order, same chips.
+    // The four physical states, in the ruled vocabulary (`ward-bed-states.ts`): Ready · Pulled ·
+    // Closed · Occupied. The two seeded pulls on this ward are their own box, out of Occupied, and
+    // the empty bed the ward is not offering is Closed — "Held" now means only a leave bed. No
+    // Blocked chip: out of service is not recorded (owner ruling 2026-09-25) and folds into Closed.
     expect(chipRow).toHaveTextContent("Ready 1");
-    expect(chipRow).toHaveTextContent("Held 1");
-    expect(chipRow).toHaveTextContent("Blocked Not recorded"); // owner ruling 2026-09-25: out of service is not recorded
-    expect(chipRow).toHaveTextContent("Occupied 18");
+    expect(chipRow).toHaveTextContent("Pulled 2");
+    expect(chipRow).toHaveTextContent("Closed 1");
+    expect(chipRow).toHaveTextContent("Occupied 16");
+    expect(chipRow).not.toHaveTextContent("Held");
+    expect(chipRow).not.toHaveTextContent("Blocked Not recorded");
   });
 
   /**
    * Bed-model rework (2026-08-28): the ward's own blocked-release figure, shown BESIDE Confirmed
    * and Expected rather than instead of either.
    *
-   * The two words matter as much as the number. This chip row already carries a "Blocked" chip
-   * meaning physically blocked BEDS (`unitCapacity().blocked`, 0 at rph-adult-secure), so the new
-   * figure reads "Discharges held up" — two chips reading the same word beside each other while
-   * meaning different things would be a defect, not a tidy-up. Both are asserted here together,
-   * which is the only place in the suite where the distinction can actually go wrong.
+   * The two words matter as much as the number. This chip row used to carry a "Blocked" chip
+   * meaning physically blocked BEDS, so the new figure reads "Discharges held up" — two chips
+   * reading the same word beside each other while meaning different things would be a defect, not
+   * a tidy-up. The physical chip has since gone: out-of-service beds are not recorded (owner ruling
+   * 2026-09-25) and fold into Closed, one of the ruled four (`ward-bed-states.ts`).
    */
   it("renders the blocked-release count beside Confirmed, worded so it cannot be read as the physical Blocked chip", () => {
     render(
@@ -293,8 +298,10 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
       `Discharges held up ${breakdown.blockedToday}`,
     );
-    // ...and the physical bed chip still says its own, different thing.
-    expect(chipRow).toHaveTextContent("Blocked Not recorded"); // owner ruling 2026-09-25: out of service is not recorded
+    // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
+    // the empty bed the ward is not offering is the separately worded Closed chip.
+    expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
+    expect(chipRow).toHaveTextContent("Closed");
   });
 
   /**

@@ -18,6 +18,7 @@ import {
   wardFacingGateDetail,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -74,7 +75,7 @@ export interface WardAnswerViewProps {
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
-  const { movements, units, bedReleases, leaveBeds, dispatch, rejections } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const unit = units.find((candidate) => candidate.id === unitId);
 
@@ -183,6 +184,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   const site = siteByCode(currentUnit.siteCode);
   const capacity = unitCapacity(currentUnit, bedReleases);
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
+  // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
+  const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
   // Owner ruling 2026-09-05, carried here: the ready figure above does not subtract a bed being
   // made ready (it must not lurch as cleaning starts and stops), so this sentence — using the
   // reducer's own `bedsPendingPreparation`, never re-derived — is what keeps a coordinator from
@@ -311,7 +314,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   }
 
   // Bed matrix cells
-  const occupiedCount = capacity.occupied;
+  const occupiedCount = states.occupied;
   const occupancyPct = Math.round((occupiedCount / Math.max(1, unit.beds)) * 100);
   const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
 
@@ -380,7 +383,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             {
               id: "kpi-occupied",
               label: "Occupied",
-              value: capacity.occupied,
+              value: states.occupied,
               subtext: `${occupancyPct}%`,
               tone: "neutral",
             },
@@ -839,11 +842,20 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               <div className={styles.bedGrid}>
                 {Array.from({ length: unit.beds }, (_, i) => {
                   const bedNum = String(i + 1).padStart(2, "0");
-                  const isVacant = i < capacity.available;
-                  const isHeld = !isVacant && i < capacity.available + capacity.held;
-                  const statusLabel = isVacant ? "READY" : isHeld ? "Held" : "Inpatient";
+                  // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
+                  // particular beds: no admission records a bed number.
+                  const isVacant = i < states.ready;
+                  const isPulled = !isVacant && i < states.ready + states.pulled;
+                  const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
+                  const statusLabel = isVacant
+                    ? "READY"
+                    : isPulled
+                      ? BED_STATE_LABELS.pulled
+                      : isClosed
+                        ? BED_STATE_LABELS.closed
+                        : "Inpatient";
                   const cellClass = `${styles.bedCell} ${
-                    isVacant ? styles.vacant : isHeld ? styles.held : styles.occupied
+                    isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
                   }`;
                   return (
                     <button

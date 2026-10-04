@@ -112,7 +112,7 @@ describe("ward board page", () => {
   it("states the day count as text on every occupied tile", () => {
     const occupants = occupantsFor(UNIT_ID);
     // Only occupants who have actually ARRIVED carry a day count. A pulled bed is occupied — the
-    // ward gave it away — but its stay has not started, so it shows "Empty, waiting" instead.
+    // ward gave it away — but its stay has not started, so it shows "Pulled" instead.
     const arrived = occupants.filter((admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) !== null);
     expect(arrived.length).toBeGreaterThan(0);
 
@@ -139,7 +139,7 @@ describe("ward board page", () => {
     // And the pulled bed is drawn as taken, never as a free bed.
     const pulled = occupants.filter((admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) === null);
     expect(container.querySelectorAll('[data-bed-kind="waiting"]')).toHaveLength(pulled.length);
-    expect(screen.getAllByText("Empty, waiting")).toHaveLength(pulled.length);
+    expect(within(screen.getByTestId("ward-board-beds")).getAllByText("Pulled")).toHaveLength(pulled.length);
   });
 });
 
@@ -158,7 +158,7 @@ describe("ward board page", () => {
  */
 describe("ward board page — out-of-service beds", () => {
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model, and an
-  // empty bed the feed marked blocked counts as held. So the sample network has no out-of-service
+  // empty bed the feed marked blocked counts as closed (once called held). So the sample network has no out-of-service
   // bed, and the board draws none: it never shows a count nothing records.
   it("draws no out-of-service tile, because no ward records an out-of-service bed", () => {
     const unit = unitFor(BLOCKED_UNIT_ID);
@@ -185,25 +185,26 @@ describe("ward board page — out-of-service beds", () => {
    */
   it("leaves exactly the unit's fillable empty beds looking fillable", () => {
     const unit = unitFor(BLOCKED_UNIT_ID);
-    // Since the owner's ruling of 2026-09-25 this unit's former blocked bed is an empty, HELD bed,
-    // so the fillable empties are its empty beds less the held ones (held is non-zero here).
+    // Since the owner's ruling of 2026-09-25 this unit's former blocked bed is an empty, CLOSED bed
+    // (`unitCapacity().held`; no live pull here, so it equals the ruled Closed), so the fillable
+    // empties are its empty beds less the closed ones (non-zero here).
     const { held } = unitCapacity(unit, []);
     expect(held, `${BLOCKED_UNIT_ID} should now hold its former blocked bed`).toBeGreaterThan(0);
     const { container } = renderWardBoard(BLOCKED_UNIT_ID);
 
     expect(container.querySelectorAll('[data-bed-kind="empty"]')).toHaveLength(unit.empty.value - held);
-    expect(container.querySelectorAll('[data-bed-kind="held"]')).toHaveLength(held);
+    expect(container.querySelectorAll('[data-bed-kind="closed"]')).toHaveLength(held);
   });
 
   /**
    * And the four kinds still add up to the ward's beds. A tile per bed was already asserted for
    * `rph-adult-secure`; here it is the partition that matters, because a blocked tile added
    * WITHOUT taking one away from the empties would leave the ward drawing more beds than it has —
-   * the same defect in the opposite direction. Widened to include "held" (Task B) alongside
+   * the same defect in the opposite direction. Widened to include "closed" (Task B) alongside
    * "empty": `fsh-adult-secure` has none, so this also doubles as a non-vacuity check that the
-   * held branch does not silently swallow tiles that belong on the empty side.
+   * closed branch does not silently swallow tiles that belong on the empty side.
    */
-  it("partitions every bed into occupied, out-of-service, held or empty, with none left over", () => {
+  it("partitions every bed into occupied, out-of-service, closed or empty, with none left over", () => {
     const unit = unitFor(BLOCKED_UNIT_ID);
     const { container } = renderWardBoard(BLOCKED_UNIT_ID);
 
@@ -211,14 +212,14 @@ describe("ward board page — out-of-service beds", () => {
       occupied: container.querySelectorAll('[data-bed-kind="occupied"]').length,
       waiting: container.querySelectorAll('[data-bed-kind="waiting"]').length,
       blocked: container.querySelectorAll('[data-bed-kind="blocked"]').length,
-      held: container.querySelectorAll('[data-bed-kind="held"]').length,
+      closed: container.querySelectorAll('[data-bed-kind="closed"]').length,
       empty: container.querySelectorAll('[data-bed-kind="empty"]').length,
     };
 
     // "Waiting" is an OCCUPIED bed — the ward gave it away and the person has not arrived. It is
     // counted on the occupied side of this sum, never with the empties.
     expect(counts.occupied + counts.waiting).toBe(occupantsFor(BLOCKED_UNIT_ID).length);
-    expect(counts.occupied + counts.waiting + counts.blocked + counts.held + counts.empty).toBe(unit.beds);
+    expect(counts.occupied + counts.waiting + counts.blocked + counts.closed + counts.empty).toBe(unit.beds);
     expect(container.querySelectorAll("[data-bed-kind]")).toHaveLength(unit.beds);
   });
 });
@@ -232,11 +233,12 @@ describe("ward board page — out-of-service beds", () => {
  *
  * `rph-adult-secure` is the fixture used here precisely because it is the unit named in the task:
  * `beds: 20, empty: 2, allocatable: 1, blocked: 0`, so `unitCapacity` derives `held: 1` and
- * `available: 1` — a non-zero held count on a unit with no blocked beds at all, so this suite
- * cannot pass by accident via the blocked-tile logic.
+ * `available: 1` — a non-zero count on a unit with no blocked beds at all, so this suite cannot
+ * pass by accident via the blocked-tile logic. That empty-but-not-offered bed is now called
+ * **Closed** (2026-09-01 ruling 5; `ward-bed-states.ts`): "Held" means only a leave bed.
  */
-describe("ward board page — held beds", () => {
-  it("draws rph-adult-secure's held bed as its own tile kind, agreeing with the header", () => {
+describe("ward board page — closed beds", () => {
+  it("draws rph-adult-secure's closed bed as its own tile kind, agreeing with the header", () => {
     const unit = unitFor(UNIT_ID);
     const capacity = unitCapacity(unit, []);
     // Non-vacuity: if the fixture ever changes so this unit has no held bed, this suite would
@@ -251,32 +253,34 @@ describe("ward board page — held beds", () => {
     const headline = screen.getByTestId("ward-board-headline");
     expect(headline.textContent).toContain(`${capacity.available}`);
 
-    expect(container.querySelectorAll('[data-bed-kind="held"]')).toHaveLength(capacity.held);
+    expect(container.querySelectorAll('[data-bed-kind="closed"]')).toHaveLength(capacity.held);
     // Said in WORDS on every one of them, not by the dot pattern alone.
     //
     // **Scoped to the grid, and the reason is a real collision rather than a tidy-up.** The triage
-    // bar added by the three-zone rebuild prints `CAPACITY_FIGURE_LABELS.held`, which is the same
-    // word — so a page-wide `getAllByText("Held")` now finds two elements and this assertion went
-    // red. The two are not a contradiction: the bar's figure and the tiles are the same held count
-    // seen twice, which is exactly what the next assertion below now proves rather than assumes.
-    expect(within(screen.getByTestId("ward-board-beds")).getAllByText("Held")).toHaveLength(capacity.held);
-    // The triage bar's own Held figure, against the tiles drawn for it. Two surfaces on one page
+    // bar added by the three-zone rebuild prints `CAPACITY_FIGURE_LABELS.held` ("Closed"), which is
+    // the same word — so a page-wide `getAllByText("Closed")` finds two elements. The two are not a
+    // contradiction: the bar's figure and the tiles are the same closed count seen twice, which is
+    // exactly what the next assertion below now proves rather than assumes. (No live pull on the
+    // seeded ward, so the ruled Closed equals `unitCapacity().held` here.)
+    expect(within(screen.getByTestId("ward-board-beds")).getAllByText("Closed")).toHaveLength(capacity.held);
+    expect(within(screen.getByTestId("ward-board-beds")).queryAllByText("Held")).toHaveLength(0);
+    // The triage bar's own Closed figure, against the tiles drawn for it. Two surfaces on one page
     // showing one fact is only safe while they agree, and this is what makes the agreement fail
     // loudly instead of quietly.
     expect(screen.getByTestId("ward-board-figure-held").textContent).toContain(`${capacity.held}`);
 
     // The plain "Empty" tiles are only the FILLABLE subset now — `available`, not the unit's raw
-    // `empty.value` (which also includes the held bed). Held and available must add back up to
+    // `empty.value` (which also includes the closed bed). Closed and ready must add back up to
     // the unit's own physically-empty count, and every kind together must still equal the beds.
     const counts = {
       occupied: container.querySelectorAll('[data-bed-kind="occupied"]').length,
       waiting: container.querySelectorAll('[data-bed-kind="waiting"]').length,
       blocked: container.querySelectorAll('[data-bed-kind="blocked"]').length,
-      held: container.querySelectorAll('[data-bed-kind="held"]').length,
+      closed: container.querySelectorAll('[data-bed-kind="closed"]').length,
       empty: container.querySelectorAll('[data-bed-kind="empty"]').length,
     };
     expect(counts.empty).toBe(capacity.available);
-    expect(counts.held + counts.empty).toBe(unit.empty.value);
-    expect(counts.occupied + counts.waiting + counts.blocked + counts.held + counts.empty).toBe(unit.beds);
+    expect(counts.closed + counts.empty).toBe(unit.empty.value);
+    expect(counts.occupied + counts.waiting + counts.blocked + counts.closed + counts.empty).toBe(unit.beds);
   });
 });

@@ -470,10 +470,10 @@ export function WardArrivalsCorridor({
         </div>
       )}
 
-      {/* Explains the Held bed figure by contrast with the PULL */}
+      {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}
       <div className={styles.explanationNote}>
-        <strong>Operational Note:</strong> Ready, held, blocked and occupied total {unit.beds}. Held means empty but not
-        offered; it is separate from a bed pulled for a patient.
+        <strong>Operational Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but
+        not offered; it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
       </div>
     </section>
   );

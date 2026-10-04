@@ -153,7 +153,9 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     expect(card.textContent ?? "").toContain("Bed pull ");
 
     fireEvent.click(within(card).getByRole("button", { name: "Release the pulled bed" }));
-    expect(screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`),
+    ).toBeInTheDocument();
     // The reason OPTION text, which is a label-map lookup rather than a literal in this file's
     // component — a stale map key would render nothing here.
     expect(screen.getByRole("option", { name: "Pull made in error" })).toBeInTheDocument();
@@ -251,7 +253,9 @@ describe("the coordinator's undo section says pull", () => {
     expect(toggle).toHaveTextContent("Release the pulled bed");
 
     fireEvent.click(toggle);
-    expect(screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`Reason for releasing the pulled bed for ${seedPatientName("WF-004")}`),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("ward-release-pull").textContent ?? "").not.toMatch(/hold/i);
   });
 });
@@ -558,5 +562,8 @@ describe("a refused pull says pull in the refusal a coordinator actually reads",
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }

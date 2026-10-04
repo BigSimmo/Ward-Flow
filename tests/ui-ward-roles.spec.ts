@@ -1138,13 +1138,13 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     }
 
     // --- Step 1: the ward's own screen, before the drop. Dabakarn seeds with
-    // allocatable = 1 (Ready 1 · Held 1) and carries WF-003 accepted-awaiting-bed, whose Hold
+    // allocatable = 1 (Ready 1 · Closed 1) and carries WF-003 accepted-awaiting-bed, whose Hold
     // control is therefore fully live: no `aria-disabled`, no `title`. ---
     const wardScreen = await gotoWard(page, "rph-adult-secure");
 
     const bedGrid = wardScreen.getByTestId("ward-unit-beds");
     await expect(bedGrid).toContainText("Ready 1");
-    await expect(bedGrid).toContainText("Held 1");
+    await expect(bedGrid).toContainText("Closed 1");
 
     // ⚠️ The testid below is the PULL one, not the older spelling. The merge with main took
     // main's copy of this line, and main predates this line's rename of that control -- so the
@@ -1170,7 +1170,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // performed and found failing: "typing 0 into Confirm allocatable beds ... beds: Ready 2
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
     await expect(bedGrid).toContainText("Ready 0");
-    await expect(bedGrid).toContainText("Held 2"); // the physically-empty pool is unchanged; it is now unconfirmed rather than ready
+    await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(wardScreen.getByText(/Currently confirmed 0 at/)).toBeVisible();
 
     // --- Step 4: the Hold control must stop advertising an action the reducer would now

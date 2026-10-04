@@ -119,7 +119,7 @@ describe("recording a departure from the ward board", () => {
 
   it("does NOT offer it on a bed nobody is in", () => {
     /*
-     * An empty, held or out-of-service tile stands for a CLASS of bed rather than a person, so
+     * An empty, closed or out-of-service tile stands for a CLASS of bed rather than a person, so
      * there is nobody to discharge. Offering a control that the reducer would then refuse is how a
      * prototype teaches a clinician to distrust its controls.
      */
@@ -131,7 +131,7 @@ describe("recording a departure from the ward board", () => {
       .getAllByRole("listitem")
       .find((tile) => {
         const kind = tile.getAttribute("data-bed-kind");
-        return kind === "empty" || kind === "held" || kind === "blocked";
+        return kind === "empty" || kind === "closed" || kind === "blocked";
       });
     if (!notAPerson) throw new Error("the seed ward has no non-person tile to check");
 
@@ -157,7 +157,7 @@ describe("recording a departure from the ward board", () => {
       .getAllByRole("listitem")
       .filter((tile) => {
         const kind = tile.getAttribute("data-bed-kind");
-        return kind === "empty" || kind === "held";
+        return kind === "empty" || kind === "closed";
       }).length;
 
     selectAnOccupiedBed();
@@ -171,18 +171,19 @@ describe("recording a departure from the ward board", () => {
       .getAllByRole("listitem")
       .filter((tile) => {
         const kind = tile.getAttribute("data-bed-kind");
-        return kind === "empty" || kind === "held";
+        return kind === "empty" || kind === "closed";
       }).length;
 
     expect(occupiedAfter, "the departing person is still shown in a bed").toBe(occupiedBefore - 1);
     /*
-     * ⚠️ EMPTY **OR HELD**, and the distinction is the design rather than a looser assertion.
+     * ⚠️ EMPTY **OR CLOSED** (the box once called held), and the distinction is the design rather
+     * than a looser assertion.
      *
-     * The first version of this test expected an EMPTY tile and got a held one. The held one is
+     * The first version of this test expected an EMPTY tile and got a held one. That tile is
      * correct: `RECORD_LEAVING` raises the ward's `empty` count but deliberately does NOT raise
      * `allocatable`, because `allocatable` is the ward's own claim about what it can actually
      * fill, and a bed whose occupant has just walked out is not yet a bed the ward has offered.
-     * `held` on this board means exactly that — physically empty, not yet offered — so a just-
+     * `closed` on this board means exactly that — physically empty, not yet offered — so a just-
      * vacated bed landing there is the model working, not a rounding error.
      *
      * Asserted as the pair so the test pins what matters (the bed stops being occupied and becomes

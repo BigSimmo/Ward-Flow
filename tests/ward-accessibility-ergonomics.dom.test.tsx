@@ -40,7 +40,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
         </WardFlowProvider>,
       );
 
-      const bedButtons = screen.getAllByRole("button", { name: /^Bed \d\d (READY|Held|Inpatient)$/ });
+      const bedButtons = screen.getAllByRole("button", { name: /^Bed \d\d (READY|Pulled|Closed|Inpatient)$/ });
       expect(bedButtons.length).toBe(unit.beds);
 
       for (const btn of bedButtons) {
