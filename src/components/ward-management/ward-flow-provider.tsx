@@ -60,6 +60,11 @@ import {
   type AssertNever,
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
+import {
+  buildScenarioFile,
+  readScenarioFile,
+  type ScenarioFileBuild,
+} from "@/components/ward-management/ward-flow-scenario-file";
 
 /**
  * The screens never see the raw reducer state or the clock's internal offsets — they see the
@@ -157,6 +162,11 @@ type WardFlowContextValue = {
   focusMovementId: string | undefined;
   setFocusMovementId: Dispatch<SetStateAction<string | undefined>>;
   resetDemoState: () => void;
+  /** Demo scenario files (`ward-flow-scenario-file.ts`): the whole synthetic world as a file the
+   *  presenter downloads, and a loader that replaces this world with one read back from a file.
+   *  Optional so hand-built test contexts need not supply them. */
+  saveScenarioFile?: () => ScenarioFileBuild;
+  loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
 };
 
 export type { WardFlowContextValue };
@@ -244,6 +254,20 @@ type WardFlowContainer = {
    *  Starts empty; a reset to a new world starts it again. Never saved. */
   eventLog?: readonly EventLogEntry[];
 };
+
+/** Not a `WardFlowEvent`: replacing the world from a demo file is a provider-level demo action,
+ *  like a browser restore, and never reaches the reducer, the event log or a role check. */
+type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
+
+function wardFlowContainerReducer(
+  container: WardFlowContainer,
+  action: WardFlowEvent | LoadScenarioFileAction,
+): WardFlowContainer {
+  if (action.type !== "LOAD_SCENARIO_FILE_INTERNAL") return trackWardFlowTypedTextDispatch(container, action);
+  // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
+  // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
+  return { world: action.world, typedTextSeen: true, restoredElapsed: action.restoredElapsed, eventLog: [] };
+}
 
 /**
  * Wraps the real reducer to also track whether this session has DISPATCHED — not merely had
@@ -590,8 +614,8 @@ function WardFlowWorld({
   // and live `now` take the same shape — the offset is *the now we want* minus the anchor, wherever
   // that now came from. `initialNow === NOW_ANCHOR` is offset zero, which is exactly the old
   // behaviour, which is why no existing suite moves.
-  const [container, dispatch] = useReducer(
-    trackWardFlowTypedTextDispatch,
+  const [container, dispatchContainer] = useReducer(
+    wardFlowContainerReducer,
     anchorOffsetMinutes,
     (offset): WardFlowContainer => {
       if (initialNow === undefined && mountedAtAbsolute !== null) {
@@ -609,6 +633,8 @@ function WardFlowWorld({
     },
   );
   const state = container.world;
+  // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
+  const dispatch: Dispatch<WardFlowEvent> = dispatchContainer;
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
   // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
   activateScenarioNetwork(state.scenario);
@@ -710,6 +736,38 @@ function WardFlowWorld({
     dispatch({ type: "RESET_SCENARIO", role: "demo", now });
   }, [dispatch, now]);
 
+  const saveScenarioFile = useCallback(
+    () => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    [state, now],
+  );
+
+  const loadScenarioFile = useCallback(
+    (text: string): { ok: true } | { ok: false; reason: string } => {
+      const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
+      if (!read.ok) return read;
+      // The clock resumes at the file's own scenario time: `now` is rebuilt from the same parts the
+      // render uses, so the elapsed term is read fresh rather than from the last 30s tick.
+      const elapsedNow =
+        initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
+      const base = NOW_ANCHOR + anchorOffsetMinutes + Math.max(0, elapsedNow);
+      // A new generation, as a reseed does, so every screen keyed on it drops drafts and
+      // selections that belonged to the world being replaced.
+      const world: WardFlowState = {
+        ...read.state,
+        worldGeneration: Math.max(state.worldGeneration, read.state.worldGeneration) + 1,
+      };
+      // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
+      openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
+      dispatchContainer({
+        type: "LOAD_SCENARIO_FILE_INTERNAL",
+        world,
+        restoredElapsed: read.now - read.state.clockOffsetMinutes - base,
+      });
+      return { ok: true };
+    },
+    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes],
+  );
+
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
@@ -782,6 +840,8 @@ function WardFlowWorld({
       focusMovementId,
       setFocusMovementId,
       resetDemoState,
+      saveScenarioFile,
+      loadScenarioFile,
     }),
     [
       // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
@@ -801,6 +861,8 @@ function WardFlowWorld({
       dispatch,
       focusMovementId,
       resetDemoState,
+      saveScenarioFile,
+      loadScenarioFile,
     ],
   );
 
