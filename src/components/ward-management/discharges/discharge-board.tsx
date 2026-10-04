@@ -41,7 +41,6 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 import { DischargeFollowUp } from "./discharge-follow-up";
 import styles from "./discharges.module.css";
@@ -1903,7 +1902,7 @@ function DischargeWorkspace() {
                         <span className={pageStyles.restingStatVal} style={{ color: "var(--muted)" }}>
                           {counts.departed}
                         </span>
-                        <span className={pageStyles.restingStatLabel}>Discharged (24h)</span>
+                        <span className={pageStyles.restingStatLabel}>Discharged · 24h</span>
                       </div>
                     </div>
                   </div>

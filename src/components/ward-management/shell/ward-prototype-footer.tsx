@@ -34,7 +34,7 @@ export function WardPrototypeFooter({
       </div>
       <div className={styles.rightGroup}>
         {extra}
-        <span className={styles.authorityPill}>WA Health Clinical Flow · 100% Synthetic Data</span>
+        <span className={styles.authorityPill}>WA Health Clinical Flow · Synthetic data only</span>
       </div>
     </footer>
   );

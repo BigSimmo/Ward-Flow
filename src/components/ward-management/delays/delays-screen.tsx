@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useId, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { WardFilters } from "@/components/ward-management/ward-controls";
-import {
-  delaysAliasBannerCopy,
-  parseDelaysAliasFrom,
-  type DelaysAliasFrom,
-} from "@/components/ward-management/delays/delays-alias";
+import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import {
   clockState,
   dayOf,
@@ -16,20 +12,13 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import {
-  isOpen,
-  stageCopy,
-  referralForMovement,
-  shortlistCandidates,
-  movementHealthService,
-} from "@/components/ward-management/ward-derivations";
+import { isOpen, stageCopy, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   type Movement,
   type Unit,
-  type Referral,
   type HealthService,
 } from "@/components/ward-management/ward-model";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -46,10 +35,9 @@ import {
 import { WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { allEmergencyDepartments, edById, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   DELAY_CAUSE_COPY,
-  DELAY_CAUSE_ORDER,
   DELAY_OWNERS,
   type DelayCause,
   type DelayOwnerId,
@@ -68,7 +56,6 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 
 export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
 
@@ -146,7 +133,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const { movements: liveMovements, units, configuration, setFocusMovementId, referrals } = useWardFlow();
+  const { movements: liveMovements, units, configuration } = useWardFlow();
   const resolvePatientIdentity = usePatientOf();
   const service = useServiceScope();
   const now = useWardFlowClock();
@@ -272,9 +259,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   );
   const placedToday = closedToday.filter((movement) => movement.closure?.outcome === "arrived");
   const didNotProceedToday = closedToday.filter((movement) => movement.closure?.outcome === "did_not_proceed");
-
-  // All rows ordered worst blocker first, then longest wait
-  const rows = groups.flatMap((group) => group.movements.map((movement) => ({ movement, cause: group.cause })));
 
   const selectMovement = (movementId: string) => {
     const isOpening = movementId !== selectedId;
@@ -799,7 +783,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       <span>Statutory &amp; Safety Sentinel · Immediate Detention / Legal Jeopardy</span>
                     </div>
                     <span className={styles.runwaySentinelBadge}>
-                      {breachedMovements.length} Breached · {expiringSoonMovements.length} Expiring &lt;60m
+                      {breachedMovements.length} Past recorded time · {expiringSoonMovements.length} Expiring &lt;60m
                     </span>
                   </div>
 
@@ -818,11 +802,11 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                           type="button"
                           className={styles.runwayPatientCard}
                           onClick={() => selectMovement(m.id)}
-                          aria-label={`Select patient ${identity.displayName}, Form breached ${overdueStr}`}
+                          aria-label={`Select patient ${identity.displayName}, form past its recorded time ${overdueStr}`}
                         >
                           <div className={styles.runwayPatientTop}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span className={styles.runwayTagBreached}>Breached</span>
+                              <span className={styles.runwayTagBreached}>Past time</span>
                               <span className={styles.runwayPatientName}>{identity.displayName}</span>
                             </div>
                             <span className={styles.runwayTimeTag}>-{overdueStr}</span>
@@ -1006,9 +990,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                         <strong className={styles.catchmentServiceName}>{cat.title}</strong>
                         <div className={styles.catchmentBadgeGroup}>
                           {cat.breached > 0 ? (
-                            <span className={styles.catchmentBreachBadge}>
-                              {cat.breached} Legal Breach{cat.breached > 1 ? "es" : ""}
-                            </span>
+                            <span className={styles.catchmentBreachBadge}>{cat.breached} past recorded time</span>
                           ) : cat.imminent > 0 ? (
                             <span className={styles.catchmentImminentBadge}>{cat.imminent} Imminent (&lt;60m)</span>
                           ) : (
@@ -1033,7 +1015,15 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       <div className={styles.catchmentFootRow}>
                         <span className={styles.catchmentEds}>{cat.eds.join(" · ")}</span>
                         <span className={styles.catchmentBands}>
-                          {cat.over24} &gt;24h · {cat.eightTo24} 8–24h · {cat.under8} &lt;8h
+                          {(
+                            [
+                              [cat.over24, "Over 24 hours"],
+                              [cat.eightTo24, "8 to 24 hours"],
+                              [cat.under8, "Under 8 hours"],
+                            ] as const
+                          )
+                            .map(([count, band]) => `${count} ${band}`)
+                            .join(" · ")}
                         </span>
                       </div>
                     </button>
