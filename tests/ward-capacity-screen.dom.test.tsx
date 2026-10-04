@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { bedsForecast, forecastFigureText } from "@/components/ward-management/capacity/beds-forecast";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -721,5 +722,21 @@ describe("Capacity's tables declare the scroll affordance they have earned", () 
     expect(screen.getAllByText("This table scrolls sideways on narrow screens.")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Key columns" }));
     expect(screen.queryByText("This table scrolls sideways on narrow screens.")).not.toBeInTheDocument();
+  });
+});
+
+describe("tomorrow's beds forecast", () => {
+  it("shows the 24 and 48 hour estimates from bedsForecast, with the working and its limits", () => {
+    const seeded = seedWardFlowState();
+    const forecast = bedsForecast(seeded.units, seeded.bedReleases, seeded.admissions, seeded.movements, NOW_ANCHOR);
+    renderScreen();
+    const panel = screen.getByTestId("ward-capacity-beds-forecast");
+    for (const entry of forecast.horizons) {
+      expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-likely`)).toHaveTextContent(
+        forecastFigureText(entry.likely),
+      );
+    }
+    expect(within(panel).getAllByText("How this was worked out")).toHaveLength(2);
+    expect(within(panel).getByText(/not predicted/)).toBeInTheDocument();
   });
 });
