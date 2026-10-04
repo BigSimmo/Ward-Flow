@@ -416,6 +416,15 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**4 October 2026 tab refinement:** `patient-dossier-tabs.tsx` and its CSS module provide searchable
+History, care-linked Community, grouped Details and authority/document-ledger panes.
+`patient-clinical-summary.tsx` provides the Now clinical overview; `patient-tracker-facts.tsx` and
+its CSS module provide persistent reservation, transport and clearance context. Explicit clinical
+clearance recording and workflow focus handoffs stay in Patient Now / transit operations.
+`tests/ward-patient-dossier-tabs.dom.test.tsx` covers the new filters, metadata, clipboard and
+clearance/focus behaviour; `scripts/ward-flow/capture-patient-dossier-tabs.mjs` captures every tab,
+live/inactive records, filters and dialogs at desktop, tablet and mobile sizes with axe checks.
+
 **4 October 2026 visual refinement:** `patient-flight-header.tsx` supplies the compact curved
 identity band; `patient-record-overview.tsx` and its CSS module supply the record-only hub. Live
 status comes from movement closure/stage state. Open movements default to transit operations;

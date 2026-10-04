@@ -3321,3 +3321,187 @@
     display: none;
   }
 }
+
+/* Quiet, persistent clinical journey tracker. */
+.pnGrid {
+  grid-template-columns: 222px minmax(0, 1fr);
+}
+.railStatus {
+  padding: 16px;
+  background: linear-gradient(120deg, #eef4f8, #e6edf2);
+}
+.railStatus[data-live="true"] {
+  background: linear-gradient(120deg, #eaf6f0, #dceee7);
+}
+.railStatus strong {
+  font-size: 18px;
+  letter-spacing: -0.035em;
+}
+.railStatus p {
+  margin-top: 7px;
+  font-size: 11px;
+}
+.journeyBody {
+  padding: 12px;
+}
+.journeyDisclosure .ph {
+  display: none;
+}
+.jrn {
+  gap: 2px;
+}
+.jst {
+  gap: 7px;
+}
+.jnode {
+  width: 25px;
+  height: 25px;
+  border-width: 1px;
+}
+.jIndicatorCol {
+  width: 27px;
+  padding-top: 10px;
+}
+.stageButton {
+  padding: 9px 8px;
+  border-radius: 11px;
+  width: 100%;
+}
+.jst[data-s="now"] .stageButton {
+  background: #e7f3ee;
+  color: #175e51;
+}
+.jst[data-s="recorded"] .jnode {
+  background: #ecf5ef;
+  border-color: #c7dfd0;
+  color: #246a51;
+}
+.jnameRow {
+  gap: 4px;
+}
+.jname {
+  line-height: 1.4;
+  font-size: 11px;
+}
+.stageRightCluster {
+  justify-content: space-between;
+  width: 100%;
+}
+.stageChevron {
+  margin-left: auto;
+}
+.jst[data-s="todo"] .stageRightCluster {
+  position: absolute;
+  right: 7px;
+  width: auto;
+  top: 15px;
+}
+.stageButton {
+  position: relative;
+}
+.stageDetailBox {
+  font-size: 11px;
+  background: #f5f8fa;
+  border-radius: 13px;
+}
+@media (max-width: 1050px) {
+  .pnGrid {
+    grid-template-columns: 1fr;
+  }
+  .railStatus strong {
+    font-size: 15px;
+  }
+  .railStatus p {
+    display: block;
+  }
+  .journeyBody {
+    padding: 14px;
+  }
+  .jrn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .jline {
+    display: none;
+  }
+  .stageButton {
+    text-align: left;
+  }
+  .railStatus {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .railStatus p {
+    margin: 0 0 0 auto;
+  }
+}
+@media (max-width: 600px) {
+  .jrn {
+    grid-template-columns: 1fr;
+  }
+  .railStatus {
+    padding: 12px 14px;
+  }
+  .railStatus strong {
+    display: none;
+  }
+  .railStatus p {
+    font-size: 10px;
+  }
+}
+.legacyTransportDisclosure {
+  margin: 0 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.legacyTransportDisclosure > summary {
+  padding: 12px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  color: #305967;
+  font-size: 12px;
+  font-weight: 650;
+}
+.legacyTransportDisclosure .transportSec {
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+.clearanceField {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.clearanceField select {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.clearanceAttestation {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.clearanceModalBox {
+  border-radius: 22px;
+}
+.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
+  order: -1;
+  border-top: 0;
+  padding-top: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}

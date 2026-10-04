@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowRight, BedDouble, Check, Hospital, ShieldCheck, Truck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { candidateReason, eligibility } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
@@ -39,6 +39,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
   const [genderReason, setGenderReason] = useState<GenderPlacementReason | "">("");
   const [wardChecked, setWardChecked] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [wardQuery, setWardQuery] = useState("");
   const [filter, setFilter] = useState<"eligible" | "all" | "referred">("eligible");
   const [submitted, setSubmitted] = useState<{ rejections: number; audit: number }>();
   const [booking, setBooking] = useState(false);
@@ -51,6 +52,23 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
   const [backTo, setBackTo] = useState<MovementStage | "">("");
   const [backReason, setBackReason] = useState<StepBackReason | "">("");
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const nextActionRef = useRef<HTMLHeadingElement>(null);
+  const workflowCheckpoint = [
+    movement.stage,
+    movement.closure?.at,
+    movement.transport?.cadNumber,
+    movement.transport?.acceptedAt,
+    movement.transport?.enRouteAt,
+    movement.transport?.collectedAt,
+    movement.transport?.cancelledAt,
+  ].join("|");
+  const previousCheckpoint = useRef(workflowCheckpoint);
+  useEffect(() => {
+    if (previousCheckpoint.current !== workflowCheckpoint) {
+      previousCheckpoint.current = workflowCheckpoint;
+      nextActionRef.current?.focus({ preventScroll: true });
+    }
+  }, [workflowCheckpoint]);
   const formRef = useRef<HTMLFormElement>(null);
   const bookTriggerRef = useRef<HTMLButtonElement>(null);
   const open = !movement.closure && movement.stage !== "arrived";
@@ -62,7 +80,9 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
   const eligibleCount = candidates.filter((c) => c.verdict.eligible).length;
   const shown = candidates.filter(
     (c) =>
-      filter === "all" || (filter === "referred" ? movement.referredUnitIds.includes(c.unit.id) : c.verdict.eligible),
+      (filter === "all" ||
+        (filter === "referred" ? movement.referredUnitIds.includes(c.unit.id) : c.verdict.eligible)) &&
+      c.unit.name.toLowerCase().includes(wardQuery.toLowerCase().trim()),
   );
   const canRefer =
     open && ["placement_requested", "destination_review"].includes(movement.stage) && !movement.acceptedUnitId;
@@ -95,6 +115,508 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
     requestAnimationFrame(() => bookTriggerRef.current?.focus());
   }
 
+  const candidatePanel = (
+    <section className={styles.card} aria-labelledby="candidate-title">
+      <div className={styles.cardHeader}>
+        <div>
+          <span className={styles.eyebrow}>DESTINATION REVIEW</span>
+          <h3 id="candidate-title">{destination ? "Network eligibility reference" : "Network ward shortlist"}</h3>
+        </div>
+        <span className={styles.count}>{eligibleCount} eligible</span>
+      </div>
+      <label className={styles.wardSearch}>
+        <Search size={15} aria-hidden="true" />
+        <input
+          aria-label="Search network wards"
+          placeholder="Find a ward…"
+          value={wardQuery}
+          onChange={(event) => setWardQuery(event.target.value)}
+        />
+      </label>
+      <div className={styles.filters} role="group" aria-label="Ward shortlist filter">
+        {(
+          [
+            ["eligible", "Eligible"],
+            ["all", "All wards"],
+            ["referred", "Referred"],
+          ] as const
+        ).map(([value, label]) => (
+          <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className={styles.hint}>
+        Current {movement.cohort.toLowerCase()} cohort · eligibility recalculates with capacity and legal status.
+      </p>
+      <div className={styles.candidates}>
+        {shown.length === 0 && (
+          <p className={styles.empty}>No wards match this view. Choose All wards to review the eligibility gates.</p>
+        )}
+        {shown.map(({ unit, verdict }) => {
+          const referred = movement.referredUnitIds.includes(unit.id);
+          const accepted = destination?.id === unit.id;
+          return (
+            <article className={styles.candidate} key={unit.id}>
+              <div className={styles.candidateTop}>
+                <label className={styles.pick}>
+                  <input
+                    type="checkbox"
+                    checked={selectedTargets.includes(unit.id)}
+                    disabled={!canRefer || !verdict.eligible || referred || accepted}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? [...selected, unit.id] : selected.filter((id) => id !== unit.id))
+                    }
+                  />
+                  <strong>{unit.name}</strong>
+                </label>
+                <span className={styles.verdict} data-pass={verdict.eligible}>
+                  {accepted ? "Accepted" : referred ? "Referred" : verdict.eligible ? "Eligible" : "Review gates"}
+                </span>
+              </div>
+              <p>{candidateReason(verdict)}</p>
+              <div className={styles.candidateMeta}>
+                <span>{unit.allocatable.value} allocatable beds</span>
+                <span>{unit.authorised ? "Authorised" : "Voluntary ward"}</span>
+                <span>{unit.lockedBeds > 0 ? "Ward includes locked beds" : "Open ward"}</span>
+              </div>
+              <details>
+                <summary>
+                  Eligibility breakdown{" "}
+                  <span>
+                    {verdict.gates.filter((g) => g.pass).length}/{verdict.gates.length} checks
+                  </span>
+                </summary>
+                <ul className={styles.gates}>
+                  {verdict.gates.map((g) => (
+                    <li key={g.gate} data-pass={g.pass}>
+                      <span aria-hidden="true">{g.pass ? "✓" : "!"}</span>
+                      <div>
+                        <strong>{g.gate.replace(/_/g, " ")}</strong>
+                        <p>{g.detail}</p>
+                      </div>
+                      <span>{g.pass ? "Pass" : "Review"}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+              {referred && open && movement.stage === "destination_review" && (
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={!verdict.eligible}
+                  onClick={() =>
+                    send({
+                      type: "ACCEPT_IN_PRINCIPLE",
+                      role: "ward",
+                      now,
+                      movementId: movement.id,
+                      unitId: unit.id,
+                    })
+                  }
+                >
+                  Accept bed <ArrowRight size={15} aria-hidden="true" />
+                </button>
+              )}
+            </article>
+          );
+        })}
+      </div>
+      {canRefer && needsGenderPlacement && (
+        <div className={styles.cardBody}>
+          <p className={styles.hint}>Record the placement plan agreed with the selected wards.</p>
+          <label>
+            Ward placement reason
+            <select value={genderReason} onChange={(e) => setGenderReason(e.target.value as GenderPlacementReason)}>
+              <option value="">Choose reason</option>
+              {GENDER_PLACEMENT_REASONS.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.pick}>
+            <input type="checkbox" checked={wardChecked} onChange={(e) => setWardChecked(e.target.checked)} />
+            Placement checked with the ward
+          </label>
+        </div>
+      )}
+      <div className={styles.cardFooter}>
+        <span>{selectedTargets.length} wards selected</span>
+        <button
+          type="button"
+          className={styles.primary}
+          disabled={
+            !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
+          }
+          onClick={() => {
+            send({
+              type: "REFER_TO_UNITS",
+              role: "coordinator",
+              now,
+              movementId: movement.id,
+              unitIds: selectedTargets,
+              ...(needsGenderPlacement && genderReason && wardChecked
+                ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                : {}),
+            });
+            setSelected([]);
+          }}
+        >
+          Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </section>
+  );
+  const dispatchPanel = (
+    <div className={styles.rightColumn}>
+      <section className={styles.card} aria-labelledby="dispatch-title">
+        <div className={styles.cardHeader}>
+          <div>
+            <span className={styles.eyebrow}>NEXT ACTION</span>
+            <h3 id="dispatch-title" tabIndex={-1} ref={nextActionRef}>
+              Placement &amp; dispatch deck
+            </h3>
+          </div>
+          <Truck size={21} aria-hidden="true" />
+        </div>
+        <div className={styles.cardBody}>
+          <div className={styles.destination}>
+            <span>Receiving ward</span>
+            <strong>{destination?.name ?? "No destination recorded"}</strong>
+            <p>{movement.blocker || "No blocker recorded"}</p>
+          </div>
+          {destination && (
+            <details>
+              <summary>Receiving ward safety checks</summary>
+              <ul className={styles.gates}>
+                {eligibility(movement, destination, now).gates.map((g) => (
+                  <li key={g.gate} data-pass={g.pass}>
+                    <span>{g.pass ? "✓" : "!"}</span>
+                    <p>{g.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {open && movement.stage === "accepted_awaiting_bed" && destination && (
+            <button
+              type="button"
+              className={styles.primary}
+              onClick={() =>
+                send({
+                  type: "PULL_PATIENT",
+                  role: "coordinator",
+                  now,
+                  movementId: movement.id,
+                  unitId: destination.id,
+                })
+              }
+            >
+              Pull patient into bed
+            </button>
+          )}
+          {remaining !== undefined && (
+            <p className={styles.hold} role="status">
+              {remaining <= 0
+                ? "Hold expired. Review the reservation before progressing."
+                : `Bed hold · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
+            </p>
+          )}
+          {activeJob && (
+            <dl className={styles.facts}>
+              <div>
+                <dt>Provider</dt>
+                <dd>{job.provider}</dd>
+              </div>
+              <div>
+                <dt>CAD number</dt>
+                <dd>{job.cadNumber ?? "Not recorded"}</dd>
+              </div>
+              <div>
+                <dt>Quoted ETA</dt>
+                <dd>{job.estimatedAt === undefined ? "Not recorded" : clock(job.estimatedAt)}</dd>
+              </div>
+              <div>
+                <dt>Clinical escort</dt>
+                <dd>{job.escortRequired ? "Required" : "Not required"}</dd>
+              </div>
+            </dl>
+          )}
+          {open && movement.stage === "pulled" && !job && !booking && (
+            <button
+              ref={bookTriggerRef}
+              type="button"
+              className={styles.primary}
+              onClick={() => {
+                setBooking(true);
+                requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("select")?.focus());
+              }}
+            >
+              Record transport booking
+            </button>
+          )}
+          {booking && !job && (
+            <form
+              ref={formRef}
+              className={styles.booking}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (
+                  !provider ||
+                  !legal ||
+                  !escort ||
+                  !cad.trim() ||
+                  !eta ||
+                  !Number.isFinite(Number(eta)) ||
+                  Number(eta) < 0
+                )
+                  return;
+                send({
+                  type: "BOOK_TRANSPORT",
+                  role: "ed",
+                  now,
+                  movementId: movement.id,
+                  provider,
+                  cadNumber: cad.trim(),
+                  estimatedAt: now + Number(eta),
+                  transportLegalStatus: legal,
+                  escortRequired: escort === "yes",
+                });
+              }}
+            >
+              <h4>Sending team · record phone booking</h4>
+              <label>
+                Transport provider
+                <select required value={provider} onChange={(e) => setProvider(e.target.value as TransportProvider)}>
+                  <option value="">Choose provider</option>
+                  {TRANSPORT_PROVIDERS.map((p) => (
+                    <option key={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                CAD number
+                <input required value={cad} onChange={(e) => setCad(e.target.value)} />
+              </label>
+              <label>
+                Quoted ETA (minutes from now)
+                <input required type="number" min="0" value={eta} onChange={(e) => setEta(e.target.value)} />
+              </label>
+              <label>
+                Transport legal status
+                <select required value={legal} onChange={(e) => setLegal(e.target.value as TransportLegalStatus)}>
+                  <option value="">Choose status</option>
+                  <option value="voluntary">Voluntary</option>
+                  <option value="involuntary">Involuntary</option>
+                </select>
+              </label>
+              <label>
+                Clinical escort required?
+                <select required value={escort} onChange={(e) => setEscort(e.target.value as typeof escort)}>
+                  <option value="">Choose answer</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+              <div className={styles.actionRow}>
+                <button type="button" className={styles.secondary} onClick={closeBooking}>
+                  Close booking form
+                </button>
+                <button type="submit" className={styles.primary} disabled={!!activeJob}>
+                  <Check size={16} aria-hidden="true" />
+                  Save booking
+                </button>
+              </div>
+            </form>
+          )}
+          {open && movement.stage === "pulled" && (activeJob || noTransport) && (
+            <button
+              type="button"
+              className={styles.primary}
+              onClick={() => {
+                closeBooking();
+                send({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
+              }}
+            >
+              Mark handover ready · sending team
+            </button>
+          )}
+          {open && movement.stage === "handover_ready" && activeJob && (
+            <div className={styles.actionStack}>
+              <p className={styles.hint}>Transport officer · record each confirmed milestone.</p>
+              <button
+                type="button"
+                className={styles.secondary}
+                disabled={job.acceptedAt !== undefined}
+                onClick={() => send({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id })}
+              >
+                Provider accepted job
+              </button>
+              <button
+                type="button"
+                className={styles.secondary}
+                disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined}
+                onClick={() => send({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id })}
+              >
+                Vehicle en route
+              </button>
+              <button
+                type="button"
+                className={styles.primary}
+                disabled={job.enRouteAt === undefined}
+                onClick={() => send({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id })}
+              >
+                Mark moving · patient collected
+              </button>
+            </div>
+          )}
+          {open &&
+            (movement.stage === "moving" || (noTransport && ["pulled", "handover_ready"].includes(movement.stage))) &&
+            destination && (
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() =>
+                  send({
+                    type: "PATIENT_ARRIVED",
+                    role: "ward",
+                    now,
+                    movementId: movement.id,
+                    actingUnitId: destination.id,
+                  })
+                }
+              >
+                Confirm arrival · receiving ward
+              </button>
+            )}
+          {!destination && (
+            <p className={styles.hint}>Select eligible wards and refer. Record acceptance before pulling a bed.</p>
+          )}
+        </div>
+      </section>
+      {open && (
+        <section className={styles.card} aria-labelledby="correction-title">
+          <div className={styles.cardHeader}>
+            <div>
+              <span className={styles.eyebrow}>REVIEW & CORRECTIONS</span>
+              <h3 id="correction-title">Review & corrections</h3>
+            </div>
+          </div>
+          <div className={styles.cardBody}>
+            {movement.stage === "pulled" && (
+              <details>
+                <summary>Release bed pull</summary>
+                <label>
+                  Release reason
+                  <select value={releaseReason} onChange={(e) => setReleaseReason(e.target.value as ReleasePullReason)}>
+                    <option value="">Choose reason</option>
+                    {RELEASE_PULL_REASONS.map((r) => (
+                      <option value={r} key={r}>
+                        {r.replace(/_/g, " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
+                  onClick={() => {
+                    if (releaseReason)
+                      send({
+                        type: "RELEASE_PULL",
+                        role: "coordinator",
+                        now,
+                        movementId: movement.id,
+                        reason: releaseReason,
+                      });
+                  }}
+                >
+                  Release pull
+                </button>
+                {activeJob && (
+                  <p className={styles.hint}>
+                    Cancel the transport job in additional controls before releasing the bed.
+                  </p>
+                )}
+              </details>
+            )}
+            {MOVEMENT_STAGES.indexOf(movement.stage) > 0 && (
+              <details>
+                <summary>Step back with recorded reason</summary>
+                <p className={styles.hint}>
+                  Corrects the stage record. Held beds and transport bookings remain until explicitly released or
+                  cancelled.
+                </p>
+                <label>
+                  Earlier journey stage
+                  <select value={backTo} onChange={(e) => setBackTo(e.target.value as MovementStage)}>
+                    <option value="">Choose stage</option>
+                    {MOVEMENT_STAGES.slice(0, MOVEMENT_STAGES.indexOf(movement.stage)).map((s) => (
+                      <option value={s} key={s}>
+                        {stageCopy[s].label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Clinical / operational reason
+                  <select value={backReason} onChange={(e) => setBackReason(e.target.value as StepBackReason)}>
+                    <option value="">Choose reason</option>
+                    {STEP_BACK_REASONS.map((r) => (
+                      <option value={r} key={r}>
+                        {stepBackReasonLabels[r]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={!backTo || !backReason}
+                  onClick={() => {
+                    if (backTo && backReason)
+                      send({
+                        type: "STEP_BACK_STAGE",
+                        role: "coordinator",
+                        now,
+                        movementId: movement.id,
+                        to: backTo,
+                        reason: backReason,
+                      });
+                  }}
+                >
+                  Record step-back
+                </button>
+              </details>
+            )}
+            {canRefer && (
+              <details>
+                <summary>Withdraw referral</summary>
+                <p className={styles.hint}>Ends the bed search and withdraws every open ward referral.</p>
+                <label className={styles.pick}>
+                  <input
+                    type="checkbox"
+                    checked={confirmWithdraw}
+                    onChange={(e) => setConfirmWithdraw(e.target.checked)}
+                  />
+                  Confirm this bed search is no longer required
+                </label>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
+                  onClick={() => send({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id })}
+                >
+                  Withdraw referral
+                </button>
+              </details>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
+  );
   return (
     <section className={styles.deck} aria-labelledby="transit-title">
       <header className={styles.heading}>
@@ -157,508 +679,9 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           Journey complete. The recorded placement and transport remain visible; operational actions are closed.
         </p>
       )}
-      <div className={styles.columns}>
-        <section className={styles.card} aria-labelledby="candidate-title">
-          <div className={styles.cardHeader}>
-            <div>
-              <span className={styles.eyebrow}>01 / DESTINATION REVIEW</span>
-              <h3 id="candidate-title">Network ward shortlist</h3>
-            </div>
-            <span className={styles.count}>{eligibleCount} eligible</span>
-          </div>
-          <div className={styles.filters} role="group" aria-label="Ward shortlist filter">
-            {(
-              [
-                ["eligible", "Eligible"],
-                ["all", "All wards"],
-                ["referred", "Referred"],
-              ] as const
-            ).map(([value, label]) => (
-              <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <p className={styles.hint}>
-            Current {movement.cohort.toLowerCase()} cohort · eligibility recalculates with capacity and legal status.
-          </p>
-          <div className={styles.candidates}>
-            {shown.length === 0 && (
-              <p className={styles.empty}>
-                No wards match this view. Choose All wards to review the eligibility gates.
-              </p>
-            )}
-            {shown.map(({ unit, verdict }) => {
-              const referred = movement.referredUnitIds.includes(unit.id);
-              const accepted = destination?.id === unit.id;
-              return (
-                <article className={styles.candidate} key={unit.id}>
-                  <div className={styles.candidateTop}>
-                    <label className={styles.pick}>
-                      <input
-                        type="checkbox"
-                        checked={selectedTargets.includes(unit.id)}
-                        disabled={!canRefer || !verdict.eligible || referred || accepted}
-                        onChange={(e) =>
-                          setSelected(
-                            e.target.checked ? [...selected, unit.id] : selected.filter((id) => id !== unit.id),
-                          )
-                        }
-                      />
-                      <strong>{unit.name}</strong>
-                    </label>
-                    <span className={styles.verdict} data-pass={verdict.eligible}>
-                      {accepted ? "Accepted" : referred ? "Referred" : verdict.eligible ? "Eligible" : "Review gates"}
-                    </span>
-                  </div>
-                  <p>{candidateReason(verdict)}</p>
-                  <div className={styles.candidateMeta}>
-                    <span>{unit.allocatable.value} allocatable beds</span>
-                    <span>{unit.authorised ? "Authorised" : "Voluntary ward"}</span>
-                    <span>{unit.lockedBeds > 0 ? "Ward includes locked beds" : "Open ward"}</span>
-                  </div>
-                  <details>
-                    <summary>
-                      Eligibility breakdown{" "}
-                      <span>
-                        {verdict.gates.filter((g) => g.pass).length}/{verdict.gates.length} checks
-                      </span>
-                    </summary>
-                    <ul className={styles.gates}>
-                      {verdict.gates.map((g) => (
-                        <li key={g.gate} data-pass={g.pass}>
-                          <span aria-hidden="true">{g.pass ? "✓" : "!"}</span>
-                          <div>
-                            <strong>{g.gate.replace(/_/g, " ")}</strong>
-                            <p>{g.detail}</p>
-                          </div>
-                          <span>{g.pass ? "Pass" : "Review"}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                  {referred && open && movement.stage === "destination_review" && (
-                    <button
-                      type="button"
-                      className={styles.secondary}
-                      disabled={!verdict.eligible}
-                      onClick={() =>
-                        send({
-                          type: "ACCEPT_IN_PRINCIPLE",
-                          role: "ward",
-                          now,
-                          movementId: movement.id,
-                          unitId: unit.id,
-                        })
-                      }
-                    >
-                      Accept bed <ArrowRight size={15} aria-hidden="true" />
-                    </button>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-          {canRefer && needsGenderPlacement && (
-            <div className={styles.cardBody}>
-              <p className={styles.hint}>Record the placement plan agreed with the selected wards.</p>
-              <label>
-                Ward placement reason
-                <select value={genderReason} onChange={(e) => setGenderReason(e.target.value as GenderPlacementReason)}>
-                  <option value="">Choose reason</option>
-                  {GENDER_PLACEMENT_REASONS.map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
-              </label>
-              <label className={styles.pick}>
-                <input type="checkbox" checked={wardChecked} onChange={(e) => setWardChecked(e.target.checked)} />
-                Placement checked with the ward
-              </label>
-            </div>
-          )}
-          <div className={styles.cardFooter}>
-            <span>{selectedTargets.length} wards selected</span>
-            <button
-              type="button"
-              className={styles.primary}
-              disabled={
-                !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
-              }
-              onClick={() => {
-                send({
-                  type: "REFER_TO_UNITS",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                  unitIds: selectedTargets,
-                  ...(needsGenderPlacement && genderReason && wardChecked
-                    ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                    : {}),
-                });
-                setSelected([]);
-              }}
-            >
-              Refer to selected wards <ArrowRight size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </section>
-        <div className={styles.rightColumn}>
-          <section className={styles.card} aria-labelledby="dispatch-title">
-            <div className={styles.cardHeader}>
-              <div>
-                <span className={styles.eyebrow}>02 / NEXT ACTION</span>
-                <h3 id="dispatch-title">Placement & dispatch deck</h3>
-              </div>
-              <Truck size={21} aria-hidden="true" />
-            </div>
-            <div className={styles.cardBody}>
-              <div className={styles.destination}>
-                <span>Receiving ward</span>
-                <strong>{destination?.name ?? "No destination recorded"}</strong>
-                <p>{movement.blocker || "No blocker recorded"}</p>
-              </div>
-              {destination && (
-                <details>
-                  <summary>Receiving ward safety checks</summary>
-                  <ul className={styles.gates}>
-                    {eligibility(movement, destination, now).gates.map((g) => (
-                      <li key={g.gate} data-pass={g.pass}>
-                        <span>{g.pass ? "✓" : "!"}</span>
-                        <p>{g.detail}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-              {open && movement.stage === "accepted_awaiting_bed" && destination && (
-                <button
-                  type="button"
-                  className={styles.primary}
-                  onClick={() =>
-                    send({
-                      type: "PULL_PATIENT",
-                      role: "coordinator",
-                      now,
-                      movementId: movement.id,
-                      unitId: destination.id,
-                    })
-                  }
-                >
-                  Pull patient into bed
-                </button>
-              )}
-              {remaining !== undefined && (
-                <p className={styles.hold} role="status">
-                  {remaining <= 0
-                    ? "Hold expired. Review the reservation before progressing."
-                    : `Bed hold · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
-                </p>
-              )}
-              {activeJob && (
-                <dl className={styles.facts}>
-                  <div>
-                    <dt>Provider</dt>
-                    <dd>{job.provider}</dd>
-                  </div>
-                  <div>
-                    <dt>CAD number</dt>
-                    <dd>{job.cadNumber ?? "Not recorded"}</dd>
-                  </div>
-                  <div>
-                    <dt>Quoted ETA</dt>
-                    <dd>{job.estimatedAt === undefined ? "Not recorded" : clock(job.estimatedAt)}</dd>
-                  </div>
-                  <div>
-                    <dt>Clinical escort</dt>
-                    <dd>{job.escortRequired ? "Required" : "Not required"}</dd>
-                  </div>
-                </dl>
-              )}
-              {open && movement.stage === "pulled" && !job && !booking && (
-                <button
-                  ref={bookTriggerRef}
-                  type="button"
-                  className={styles.primary}
-                  onClick={() => {
-                    setBooking(true);
-                    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("select")?.focus());
-                  }}
-                >
-                  Record transport booking
-                </button>
-              )}
-              {booking && !job && (
-                <form
-                  ref={formRef}
-                  className={styles.booking}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (
-                      !provider ||
-                      !legal ||
-                      !escort ||
-                      !cad.trim() ||
-                      !eta ||
-                      !Number.isFinite(Number(eta)) ||
-                      Number(eta) < 0
-                    )
-                      return;
-                    send({
-                      type: "BOOK_TRANSPORT",
-                      role: "ed",
-                      now,
-                      movementId: movement.id,
-                      provider,
-                      cadNumber: cad.trim(),
-                      estimatedAt: now + Number(eta),
-                      transportLegalStatus: legal,
-                      escortRequired: escort === "yes",
-                    });
-                  }}
-                >
-                  <h4>Sending team · record phone booking</h4>
-                  <label>
-                    Transport provider
-                    <select
-                      required
-                      value={provider}
-                      onChange={(e) => setProvider(e.target.value as TransportProvider)}
-                    >
-                      <option value="">Choose provider</option>
-                      {TRANSPORT_PROVIDERS.map((p) => (
-                        <option key={p}>{p}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    CAD number
-                    <input required value={cad} onChange={(e) => setCad(e.target.value)} />
-                  </label>
-                  <label>
-                    Quoted ETA (minutes from now)
-                    <input required type="number" min="0" value={eta} onChange={(e) => setEta(e.target.value)} />
-                  </label>
-                  <label>
-                    Transport legal status
-                    <select required value={legal} onChange={(e) => setLegal(e.target.value as TransportLegalStatus)}>
-                      <option value="">Choose status</option>
-                      <option value="voluntary">Voluntary</option>
-                      <option value="involuntary">Involuntary</option>
-                    </select>
-                  </label>
-                  <label>
-                    Clinical escort required?
-                    <select required value={escort} onChange={(e) => setEscort(e.target.value as typeof escort)}>
-                      <option value="">Choose answer</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </label>
-                  <div className={styles.actionRow}>
-                    <button type="button" className={styles.secondary} onClick={closeBooking}>
-                      Close booking form
-                    </button>
-                    <button type="submit" className={styles.primary} disabled={!!activeJob}>
-                      <Check size={16} aria-hidden="true" />
-                      Save booking
-                    </button>
-                  </div>
-                </form>
-              )}
-              {open && movement.stage === "pulled" && (activeJob || noTransport) && (
-                <button
-                  type="button"
-                  className={styles.primary}
-                  onClick={() => {
-                    closeBooking();
-                    send({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
-                  }}
-                >
-                  Mark handover ready · sending team
-                </button>
-              )}
-              {open && movement.stage === "handover_ready" && activeJob && (
-                <div className={styles.actionStack}>
-                  <p className={styles.hint}>Transport officer · record each confirmed milestone.</p>
-                  <button
-                    type="button"
-                    className={styles.secondary}
-                    disabled={job.acceptedAt !== undefined}
-                    onClick={() => send({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id })}
-                  >
-                    Provider accepted job
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.secondary}
-                    disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined}
-                    onClick={() => send({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id })}
-                  >
-                    Vehicle en route
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.primary}
-                    disabled={job.enRouteAt === undefined}
-                    onClick={() => send({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id })}
-                  >
-                    Mark moving · patient collected
-                  </button>
-                </div>
-              )}
-              {open &&
-                (movement.stage === "moving" ||
-                  (noTransport && ["pulled", "handover_ready"].includes(movement.stage))) &&
-                destination && (
-                  <button
-                    type="button"
-                    className={styles.primary}
-                    onClick={() =>
-                      send({
-                        type: "PATIENT_ARRIVED",
-                        role: "ward",
-                        now,
-                        movementId: movement.id,
-                        actingUnitId: destination.id,
-                      })
-                    }
-                  >
-                    Confirm arrival · receiving ward
-                  </button>
-                )}
-              {!destination && (
-                <p className={styles.hint}>Select eligible wards and refer. Record acceptance before pulling a bed.</p>
-              )}
-            </div>
-          </section>
-          {open && (
-            <section className={styles.card} aria-labelledby="correction-title">
-              <div className={styles.cardHeader}>
-                <div>
-                  <span className={styles.eyebrow}>03 / EXCEPTIONS</span>
-                  <h3 id="correction-title">Review & corrections</h3>
-                </div>
-              </div>
-              <div className={styles.cardBody}>
-                {movement.stage === "pulled" && (
-                  <details>
-                    <summary>Release bed pull</summary>
-                    <label>
-                      Release reason
-                      <select
-                        value={releaseReason}
-                        onChange={(e) => setReleaseReason(e.target.value as ReleasePullReason)}
-                      >
-                        <option value="">Choose reason</option>
-                        {RELEASE_PULL_REASONS.map((r) => (
-                          <option value={r} key={r}>
-                            {r.replace(/_/g, " ")}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      className={styles.secondary}
-                      disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
-                      onClick={() => {
-                        if (releaseReason)
-                          send({
-                            type: "RELEASE_PULL",
-                            role: "coordinator",
-                            now,
-                            movementId: movement.id,
-                            reason: releaseReason,
-                          });
-                      }}
-                    >
-                      Release pull
-                    </button>
-                    {activeJob && (
-                      <p className={styles.hint}>
-                        Cancel the transport job in additional controls before releasing the bed.
-                      </p>
-                    )}
-                  </details>
-                )}
-                {MOVEMENT_STAGES.indexOf(movement.stage) > 0 && (
-                  <details>
-                    <summary>Step back with recorded reason</summary>
-                    <p className={styles.hint}>
-                      Corrects the stage record. Held beds and transport bookings remain until explicitly released or
-                      cancelled.
-                    </p>
-                    <label>
-                      Earlier journey stage
-                      <select value={backTo} onChange={(e) => setBackTo(e.target.value as MovementStage)}>
-                        <option value="">Choose stage</option>
-                        {MOVEMENT_STAGES.slice(0, MOVEMENT_STAGES.indexOf(movement.stage)).map((s) => (
-                          <option value={s} key={s}>
-                            {stageCopy[s].label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Clinical / operational reason
-                      <select value={backReason} onChange={(e) => setBackReason(e.target.value as StepBackReason)}>
-                        <option value="">Choose reason</option>
-                        {STEP_BACK_REASONS.map((r) => (
-                          <option value={r} key={r}>
-                            {stepBackReasonLabels[r]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      className={styles.secondary}
-                      disabled={!backTo || !backReason}
-                      onClick={() => {
-                        if (backTo && backReason)
-                          send({
-                            type: "STEP_BACK_STAGE",
-                            role: "coordinator",
-                            now,
-                            movementId: movement.id,
-                            to: backTo,
-                            reason: backReason,
-                          });
-                      }}
-                    >
-                      Record step-back
-                    </button>
-                  </details>
-                )}
-                {canRefer && (
-                  <details>
-                    <summary>Withdraw referral</summary>
-                    <p className={styles.hint}>Ends the bed search and withdraws every open ward referral.</p>
-                    <label className={styles.pick}>
-                      <input
-                        type="checkbox"
-                        checked={confirmWithdraw}
-                        onChange={(e) => setConfirmWithdraw(e.target.checked)}
-                      />
-                      Confirm this bed search is no longer required
-                    </label>
-                    <button
-                      type="button"
-                      className={styles.secondary}
-                      disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
-                      onClick={() =>
-                        send({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id })
-                      }
-                    >
-                      Withdraw referral
-                    </button>
-                  </details>
-                )}
-              </div>
-            </section>
-          )}
-        </div>
+      <div className={styles.columns} data-assigned={Boolean(destination)}>
+        {destination ? dispatchPanel : candidatePanel}
+        {destination ? candidatePanel : dispatchPanel}
       </div>
       <details className={`${styles.card} ${styles.additional}`}>
         <summary>

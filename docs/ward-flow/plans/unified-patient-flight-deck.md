@@ -94,3 +94,49 @@ so the expanded shift/search chrome no longer consumes the top half of the viewp
 navigation and other screens retain their existing layouts. Automated axe checks of the patient
 page found no WCAG 2/2.1 AA violations for live and record-only views at the three target sizes;
 this is local automated evidence, not certification of the complete application.
+
+## Dossier tabs and tracker refinement — 4 October 2026
+
+The next owner iteration keeps the compact curved visual framework and restructures the contents
+of all five tabs. `patient-dossier-tabs.tsx` owns the four secondary panes and their scoped styles;
+`patient-clinical-summary.tsx` owns the Now clinical overview. History has searchable, filterable,
+sortable episode cards and an actual reducer stage-change log, replacing the fixed-year diagram.
+Community separates catchment and GP records from confirmed follow-up, with source-derived
+coordination contacts. Details groups patient identity, care facts and movement context, counts
+unrecorded fields and supports a missing-information filter. Documents combines recorded legal
+forms with provider-uploaded metadata, with search, authority/transfer filters and expandable
+source details. Binary files are not invented or retained by this metadata-only prototype.
+
+`patient-tracker-facts.tsx` keeps the destination, actual admission bed state, hold countdown,
+active transport/CAD/ETA and medical clearance visible beside every tab. Its seven-stage graphic
+and stage nodes distinguish recorded transitions from the current stage and unrecorded stages.
+Secondary tabs put these operational facts ahead of the stage list. Inactive records retain the
+explicit inactive sidebar. Opening coordination returns to the local Now controls.
+
+The ward shortlist now has a name search. Once a destination is accepted, dispatch precedes the
+network eligibility reference in both DOM and visual order. Successful stage and transport
+milestones focus the next-action heading; typing or ticking the demo clock does not steal focus.
+The clearance dialog now records the treating team's explicit cleared/not-cleared outcome via
+`RECORD_MOVEMENT_MEDICAL_CLEARANCE`, only after an outcome and confirmation are supplied. It
+does not simulate a request or notification. Escape/close/save restore focus to the opener.
+
+All facts continue to derive from the patient record or shared Ward Flow state. The reducer,
+legal checks, role constraints and route behaviour are unchanged. Sparse history remains sparse;
+unrecorded clinical facts, document expiry, community allocation and contacts stay explicit.
+
+Local completion evidence: 285 tests passed across 12 focused suites, TypeScript and scoped ESLint
+passed, and the new capture checks 30 live/inactive tab states with axe at 1440, 820 and 390 pixels.
+The screenshot set includes 57 view/filter/dialog states and 125 images. Automated checks found
+no relevant WCAG 2/2.1 AA violations, browser runtime errors or horizontal viewport overflow.
+The local gallery and logs are in `/workspace/artifacts/ward-flow-perfected-tabs`; no publication
+or deployment occurred.
+
+```sh
+npx vitest run tests/ward-patient-dossier-tabs.dom.test.tsx tests/ward-patient-flight-deck.dom.test.tsx tests/ward-patient-now-screen.dom.test.tsx tests/ward-patient-now.dom.test.tsx tests/ward-patient-transport-section.dom.test.tsx tests/ward-workflow-actions.dom.test.tsx tests/ward-flow-reducer.test.ts tests/ward-eligibility.test.ts tests/ward-movement-stage-changes.test.ts tests/ward-movement-step-back-reducer.test.ts tests/ward-transport-need-vs-booked-job-2026-09-25.test.ts tests/ward-transport-not-needed.test.ts
+npm run ensure
+FLIGHT_DECK_CHROMIUM=/usr/bin/chromium node scripts/ward-flow/capture-patient-dossier-tabs.mjs <ensure-url> <output-dir>
+```
+
+Viewport images preserve the actual app scrolling. Full images expand scroll containers only
+for capture. Desktop workspace images crop the native tracker and active pane so the tab layouts
+can be compared without repeating the identity header. Browser evidence is synthetic only.

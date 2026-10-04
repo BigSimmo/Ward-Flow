@@ -12,10 +12,13 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 
+import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
+import { PatientClinicalSummary } from "./patient-clinical-summary";
+import { PatientTrackerFacts } from "./patient-tracker-facts";
 import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
 import { TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
@@ -28,7 +31,6 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
-import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
@@ -69,17 +71,6 @@ function getStageBedflowDetail(stageId: string, liveMovement?: Movement): StageP
       detail: `Recorded by ${change.by}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
   };
-}
-
-function renderInlineText(text: string) {
-  if (!text.includes("<b>")) return text;
-  const parts = text.split(/(<b>.*?<\/b>)/g);
-  return parts.map((part, idx) => {
-    if (part.startsWith("<b>") && part.endsWith("</b>")) {
-      return <strong key={idx}>{part.slice(3, -4)}</strong>;
-    }
-    return part;
-  });
 }
 
 /**
@@ -183,12 +174,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
       operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     });
   }
-  const [selectedEpisodeIndex, setSelectedEpisodeIndex] = useState<number | null>(null);
   const wideJourney = useSyncExternalStore(subscribeJourneyLayout, getJourneyLayout, () => true);
   const [journeyOverride, setJourneyOverride] = useState<boolean>();
   const journeyOpen = journeyOverride ?? wideJourney;
   const [copied, setCopied] = useState(false);
-  const [historyFilter, setHistoryFilter] = useState<"all" | "emergency" | "inpatient">("all");
 
   // Transport booking state & overrides
   const [showTransportForm, setShowTransportForm] = useState(false);
@@ -197,8 +186,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   const [showClearanceModal, setShowClearanceModal] = useState(false);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
-  const [clearanceConfirmed, setClearanceConfirmed] = useState(false);
-  const [clearanceUrgent, setClearanceUrgent] = useState(true);
+  const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
+  const [clearanceAttested, setClearanceAttested] = useState(false);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
@@ -266,7 +255,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
   if (prevStageIndex !== currentStageIndex) {
     setPrevStageIndex(currentStageIndex);
-    setExpandedStageIndex(currentStageIndex);
+    setExpandedStageIndex(null);
     setFocusedStageIndex(currentStageIndex);
   }
 
@@ -401,32 +390,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
     declined: {},
   };
 
-  // SVGs for presentation history timeline (2019-2027)
-  const yFrom = 2019;
-  const yTo = 2027;
-  const x0 = 34;
-  const x1 = 966;
-  const baseY = 74;
-  const getPx = (y: number) => x0 + ((y - yFrom) / (yTo - yFrom)) * (x1 - x0);
-
-  const rawPresentations = record.presentations;
-
-  const presentations = rawPresentations.filter((p) => {
-    if (historyFilter === "emergency") {
-      return (
-        Boolean(p.current) ||
-        p.to.toLowerCase().includes("discharged from ed") ||
-        p.los.includes("h") ||
-        p.where.includes("ED") ||
-        p.where.includes("Health Campus")
-      );
-    }
-    if (historyFilter === "inpatient") {
-      return !p.current && !p.to.toLowerCase().includes("discharged from ed") && p.to !== "no destination yet";
-    }
-    return true;
-  });
-
   return (
     <main
       id="main-content"
@@ -435,6 +398,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="patient-now"
       data-bedflow={isLiveBedflow ? "live" : "inactive"}
+      data-active-tab={activeTab}
     >
       <div className={styles.scroll}>
         {livePatient?.confidential && (
@@ -772,10 +736,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 <i aria-hidden="true" />
                 {isLiveBedflow ? "LIVE BEDFLOW" : "NOT IN LIVE BEDFLOW"}
               </span>
-              <strong>{isLiveBedflow ? "Active transfer" : "Record overview"}</strong>
+              <strong>{isLiveBedflow ? "Live journey" : "Record overview"}</strong>
               <p>
                 {isLiveBedflow
-                  ? "Coordinate placement and follow the journey here."
+                  ? `Tier ${urgencyTier ?? "not recorded"} · ${waitedStr} since opened`
                   : "No active placement or transport. Patient information remains available."}
               </p>
             </div>
@@ -841,7 +805,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                         <li key={s.id} className={styles.jst} data-s={stateAttr}>
                           <div className={styles.jIndicatorCol}>
                             <span className={styles.jnode} aria-hidden="true">
-                              {i + 1}
+                              {stateAttr === "recorded" ? "✓" : i + 1}
                             </span>
                             {i < STAGES.length - 1 && <span className={styles.jline} />}
                           </div>
@@ -853,6 +817,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                                 stageButtonRefs.current[i] = el;
                               }}
                               tabIndex={focusedStageIndex === i ? 0 : -1}
+                              aria-current={stateAttr === "now" ? "step" : undefined}
                               className={styles.stageButton}
                               aria-expanded={isExpanded}
                               aria-controls={`stage-panel-${s.id}`}
@@ -943,16 +908,18 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   </ol>
                 )}
 
-                <dl className={`${styles.slFacts} ${styles.jfoot}`}>
-                  <dt>Since movement opened</dt>
-                  <dd>{waitedStr}</dd>
-                  <dt>Acuity need</dt>
-                  <dd>
-                    {liveMovement
-                      ? `${liveMovement.security === "Secure" ? "Locked" : "Open"} adult bed${liveMovement.specialling ? " (1:1)" : ""}`
-                      : "No active movement recorded"}
-                  </dd>
-                </dl>
+                {isLiveBedflow && liveMovement && (
+                  <PatientTrackerFacts
+                    movement={liveMovement}
+                    now={now}
+                    destination={acceptingUnit?.name}
+                    bedState={
+                      admissions.find((a) => a.id === liveMovement.admissionId || a.movementId === liveMovement.id)
+                        ?.state
+                    }
+                    onCoordinate={openOperations}
+                  />
+                )}
               </div>
             </details>
           </section>
@@ -1033,7 +1000,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
               >
                 Documents
                 <span className={styles.tabNum} id="pncount-documents">
-                  {record.documents.length}
+                  {record.documents.length + uploadedForms.length}
                 </span>
               </button>
             </div>
@@ -1083,502 +1050,243 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   />
                 ) : (
                   <div className={styles.clinicalView} hidden={effectiveNowView !== "clinical"}>
-                    <div className={styles.pnCols}>
-                      {/* Left Column */}
-                      <div className={styles.pnNowLeft}>
-                        <div className={styles.sec}>
-                          <div className={styles.referralFilterRow}>
-                            <h3 className={styles.secH} style={{ margin: 0 }}>
-                              This presentation
-                              <span className={styles.count}>
-                                {(liveMovement?.withdrawnReferrals.length ?? 0) + 1} events
-                              </span>
+                    <PatientClinicalSummary
+                      movement={liveMovement}
+                      patient={livePatient}
+                      record={record}
+                      bedState={
+                        admissions.find((a) => a.id === liveMovement.admissionId || a.movementId === liveMovement.id)
+                          ?.state
+                      }
+                      onCoordinate={openOperations}
+                      onClearance={(event) => {
+                        clearanceTriggerRef.current = event.currentTarget;
+                        setClearanceDraft("");
+                        setClearanceAttested(false);
+                        setShowClearanceModal(true);
+                      }}
+                    />
+                    <details className={styles.legacyTransportDisclosure}>
+                      <summary>Transport booking record</summary>
+                      <section
+                        className={`${styles.sec} ${styles.transportSec}`}
+                        aria-labelledby="pnTransportHeading"
+                        data-testid="ward-patient-transport-section"
+                      >
+                        <div className={styles.transportHeader}>
+                          <div className={styles.transportTitleCluster}>
+                            <span className={styles.transportIcon} aria-hidden="true">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <rect x="1" y="3" width="15" height="13" />
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 8" />
+                                <circle cx="5.5" cy="18.5" r="2.5" />
+                                <circle cx="18.5" cy="18.5" r="2.5" />
+                              </svg>
+                            </span>
+                            <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
+                              {liveMovement ? "Transport dispatch" : "Transport"}
                             </h3>
                           </div>
-
-                          <ol className={styles.tline}>
-                            {liveMovement ? (
-                              <>
-                                <li className={styles.tev}>
-                                  <span className={styles.tnode} aria-hidden="true" />
-                                  <span className={styles.twhen}>{clock(liveMovement.openedAt)}</span>
-                                  <span className={styles.twhat}>
-                                    Journey opened at{" "}
-                                    <strong>{edById(liveMovement.originEdId)?.name ?? "Emergency Department"}</strong>.
-                                  </span>
-                                </li>
-                                {liveMovement.legalForm && (
-                                  <li className={styles.tev}>
-                                    <span className={styles.tnode} aria-hidden="true" />
-                                    <span className={styles.twhen}>{clock(liveMovement.openedAt)}</span>
-                                    <span className={styles.twhat}>
-                                      Legal status: <strong>{legalFormName(liveMovement.legalForm)}</strong> recorded.
-                                    </span>
-                                  </li>
-                                )}
-                                {liveMovement.withdrawnReferrals.map((withdrawal, index) => (
-                                  <li key={`${withdrawal.unitId}-${index}`} className={styles.tev} data-tone="warn">
-                                    <span className={styles.tnode} aria-hidden="true" />
-                                    <span className={styles.twhen}>—</span>
-                                    <span className={styles.twhat}>
-                                      <strong>{unitById(withdrawal.unitId)?.name ?? "Ward"} referral withdrawn</strong>
-                                      {withdrawal.reason ? `: ${withdrawal.reason.replace(/_/g, " ")}.` : "."}
-                                    </span>
-                                  </li>
-                                ))}
-                                {liveMovement.acceptedUnitId && (
-                                  <li className={styles.tev} data-tone="good">
-                                    <span className={styles.tnode} aria-hidden="true" />
-                                    <span className={styles.twhen}>—</span>
-                                    <span className={styles.twhat}>
-                                      <strong>{unitById(liveMovement.acceptedUnitId)?.name ?? "Ward"} accepted.</strong>
-                                    </span>
-                                  </li>
-                                )}
-                                {liveMovement.transport && (
-                                  <li className={styles.tev}>
-                                    <span className={styles.tnode} aria-hidden="true" />
-                                    <span className={styles.twhen}>—</span>
-                                    <span className={styles.twhat}>
-                                      Transport {transportLeg(liveMovement.transport)?.toLowerCase() ?? "booked"} with{" "}
-                                      {liveMovement.transport.provider ?? "provider not recorded"}.
-                                    </span>
-                                  </li>
-                                )}
-                              </>
-                            ) : (
-                              <li className={styles.tev}>
-                                <span className={styles.tnode} aria-hidden="true" />
-                                <span className={styles.twhen}>Recorded</span>
-                                <span className={styles.twhat}>
-                                  {record.early[0]?.what ?? "No active movement recorded."}
-                                </span>
-                              </li>
-                            )}
-                          </ol>
-                        </div>
-
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>Clinical presentation</h3>
-                          <p className={styles.pnStory}>“{record.reason}”</p>
-                        </div>
-
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>Requirements</h3>
-                          <dl className={styles.slFacts}>
-                            <dt>Bed</dt>
-                            <dd>
-                              {liveMovement
-                                ? `${liveMovement.security === "Secure" ? "Locked" : "Open"}, adult`
-                                : "Community care"}
-                            </dd>
-                            <dt>Nursing</dt>
-                            <dd>
-                              {liveMovement
-                                ? liveMovement.specialling
-                                  ? "One to one specialling"
-                                  : "Standard"
-                                : "Not recorded"}
-                            </dd>
-                            <dt>Urgency</dt>
-                            <dd>
-                              {urgencyTier
-                                ? `Tier ${urgencyTier}${urgencyTier === 1 ? ", most urgent" : ""}`
-                                : "Not recorded"}
-                            </dd>
-                            <dt>Transport</dt>
-                            <dd>
-                              {liveMovement?.transport
-                                ? `Status: ${transportLeg(liveMovement.transport) ?? "Booked"}`
-                                : "No transport job recorded"}
-                            </dd>
-                            <dt>Fit to travel</dt>
-                            <dd>
-                              {liveMovement?.medicalClearance
-                                ? liveMovement.medicalClearance.cleared
-                                  ? "Clearance recorded"
-                                  : "Not cleared"
-                                : "Not assessed"}
-                            </dd>
-                            <dt>Community team</dt>
-                            <dd>{record.community.teams[0]?.name ?? "No team information recorded"}</dd>
-                            <dt>Catchment</dt>
-                            <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                          </dl>
-                        </div>
-                      </div>
-
-                      {/* Right Column */}
-                      <div className={styles.pnNowRight}>
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>
-                            Referrals
-                            <span
-                              className={styles.count}
-                            >{`${liveMovement?.referredUnitIds.length ?? 0} referred`}</span>
-                          </h3>
-
-                          {!liveMovement ? (
-                            <p className={styles.pnAbsence}>No linked movement or ward referral record displayed.</p>
-                          ) : liveMovement.acceptedUnitId ? (
-                            <div>
-                              <p className={styles.destBadge} data-k="accepted">
-                                Accepted by {unitById(liveMovement.acceptedUnitId)?.name ?? "destination ward"}.
-                              </p>
-                            </div>
-                          ) : (
-                            <div className={styles.rows}>
-                              {liveMovement.referredUnitIds.length > 0 ? (
-                                <table className={styles.referralTable} aria-label="Network bed placement status">
-                                  <thead>
-                                    <tr>
-                                      <th scope="col">Unit / Facility</th>
-                                      <th scope="col">Status</th>
-                                      <th scope="col">Outcome / Re-Ask Condition</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {liveMovement.referredUnitIds.map((uid) => {
-                                      const unit = unitById(uid);
-                                      const withdrawal = liveMovement.withdrawnReferrals.find((w) => w.unitId === uid);
-                                      const isAccepted = liveMovement.acceptedUnitId === uid;
-                                      return (
-                                        <tr key={uid}>
-                                          <td className={styles.unitNameCell}>
-                                            {unit?.name ?? uid}
-                                            <div
-                                              style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontWeight: 400 }}
-                                            >
-                                              {unit
-                                                ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}`
-                                                : "Inpatient Unit"}
-                                            </div>
-                                          </td>
-                                          <td>
-                                            {isAccepted ? (
-                                              <span
-                                                className={styles.teleBadge}
-                                                style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}
-                                              >
-                                                Accepted
-                                              </span>
-                                            ) : withdrawal ? (
-                                              <span className={styles.statusBadgeDeclined}>Declined</span>
-                                            ) : (
-                                              <span
-                                                className={styles.teleBadge}
-                                                style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}
-                                              >
-                                                Referred
-                                              </span>
-                                            )}
-                                          </td>
-                                          <td className={styles.reAskCell}>
-                                            {isAccepted ? (
-                                              <strong>Bed Allocated</strong>
-                                            ) : withdrawal?.reason ? (
-                                              <>
-                                                {withdrawal.reason.replace(/_/g, " ")}.{" "}
-                                                <strong>Re-check after shift handover</strong>
-                                              </>
-                                            ) : (
-                                              "Awaiting response from bed manager"
-                                            )}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <p className={styles.pnAbsence}>Placement request active across network wards.</p>
+                          {liveMovement && (
+                            <div className={styles.transportStatusCluster}>
+                              <span
+                                className={styles.transportBadge}
+                                data-booked={isTransportBooked ? "true" : "false"}
+                                data-testid="ward-patient-transport-badge"
+                              >
+                                {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
+                              </span>
+                              {!showTransportForm && (
+                                <button
+                                  type="button"
+                                  className={
+                                    isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
+                                  }
+                                  onClick={() => {
+                                    setTransportCadDraft(displayCadNumber ?? "");
+                                    setTransportEtaDraft(displayEta ?? "");
+                                    setShowTransportForm(true);
+                                  }}
+                                  data-testid="ward-patient-book-transport-btn"
+                                >
+                                  {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
+                                </button>
                               )}
                             </div>
                           )}
                         </div>
 
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>
-                            Next steps<span className={styles.count}>{record.next.length}</span>
-                          </h3>
-                          <ol className={styles.nsteps}>
-                            {record.next.map((n, i) => (
-                              <li key={i} className={styles.nstep} data-tone={n.tone ?? undefined}>
-                                <b>{fillTemplate(n.w, templateContext)}</b>
-                                <span>{fillTemplate(n.d, templateContext)}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>
-                            Who to contact<span className={styles.count}>{record.ring.length}</span>
-                          </h3>
-                          <div className={styles.contactGrid}>
-                            {record.ring.map((c, i) => (
-                              <div key={i} className={styles.contactCard} data-tone={c.tone ?? undefined}>
-                                <div className={styles.contactTop}>
-                                  <span className={styles.contactWho}>{c.who}</span>
-                                  <span className={styles.contactExt}>
-                                    {c.who.includes("ED")
-                                      ? "Ext 8140"
-                                      : c.who.includes("Coordinator") || c.who.includes("State")
-                                        ? "Speed Dial 41"
-                                        : "Ext 2209"}
-                                  </span>
-                                </div>
-                                <span className={styles.contactRole}>{fillTemplate(c.role, templateContext)}</span>
-                                {c.note && (
-                                  <p className={styles.contactNote}>{fillTemplate(c.note, templateContext)}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <p className={styles.pnLadder}>{renderInlineText(record.ladder)}</p>
-                        </div>
-
-                        <div className={styles.sec}>
-                          <h3 className={styles.secH}>Legal authority</h3>
-                          <dl className={styles.slFacts}>
-                            <dt>Status</dt>
-                            <dd>{liveMovement?.legalStatus ?? "Not recorded"}</dd>
-                            <dt>Form</dt>
-                            <dd>
-                              {liveMovement?.legalForm
-                                ? `${legalFormName(liveMovement.legalForm)}${
-                                    liveMovement.legalForm.dueAt !== undefined
-                                      ? `. Due ${clock(liveMovement.legalForm.dueAt)}.`
-                                      : ". No deadline is recorded for it."
-                                  }`
-                                : "No legal form recorded."}
-                            </dd>
-                          </dl>
-                        </div>
-
-                        <section
-                          className={`${styles.sec} ${styles.transportSec}`}
-                          aria-labelledby="pnTransportHeading"
-                          data-testid="ward-patient-transport-section"
-                        >
-                          <div className={styles.transportHeader}>
-                            <div className={styles.transportTitleCluster}>
-                              <span className={styles.transportIcon} aria-hidden="true">
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <rect x="1" y="3" width="15" height="13" />
-                                  <polygon points="16 8 20 8 23 11 23 16 16 16 8" />
-                                  <circle cx="5.5" cy="18.5" r="2.5" />
-                                  <circle cx="18.5" cy="18.5" r="2.5" />
-                                </svg>
-                              </span>
-                              <h3 id="pnTransportHeading" className={styles.secH} style={{ margin: 0 }}>
-                                {liveMovement ? "Transport dispatch" : "Transport"}
-                              </h3>
-                            </div>
-                            {liveMovement && (
-                              <div className={styles.transportStatusCluster}>
-                                <span
-                                  className={styles.transportBadge}
-                                  data-booked={isTransportBooked ? "true" : "false"}
-                                  data-testid="ward-patient-transport-badge"
-                                >
-                                  {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
-                                </span>
-                                {!showTransportForm && (
-                                  <button
-                                    type="button"
-                                    className={
-                                      isTransportBooked ? styles.transportActionBtnSecondary : styles.transportActionBtn
-                                    }
-                                    onClick={() => {
-                                      setTransportCadDraft(displayCadNumber ?? "");
-                                      setTransportEtaDraft(displayEta ?? "");
-                                      setShowTransportForm(true);
-                                    }}
-                                    data-testid="ward-patient-book-transport-btn"
-                                  >
-                                    {isTransportBooked ? "Update Booking Details" : "Mark as Booked"}
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {liveMovement && bookingRejection && (
-                            <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
-                          )}
-                          {/* Form for logging/updating transport */}
-                          {liveMovement && showTransportForm && (
-                            <form
-                              className={styles.transportForm}
-                              onSubmit={handleSaveTransportBooking}
-                              data-testid="ward-patient-transport-form"
-                            >
-                              <div className={styles.transportFormGrid}>
-                                <div className={styles.transportFormField}>
-                                  <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                                    CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
-                                  </label>
-                                  <input
-                                    id="transport-cad"
-                                    type="text"
-                                    className={styles.transportInput}
-                                    placeholder="e.g. CAD-84920"
-                                    value={transportCadDraft}
-                                    onChange={(e) => setTransportCadDraft(e.target.value)}
-                                    required
-                                    data-testid="ward-patient-input-cad"
-                                  />
-                                </div>
-
-                                <div className={styles.transportFormField}>
-                                  <label htmlFor="transport-eta" className={styles.transportFormLabel}>
-                                    Quoted ETA by Transport Company
-                                  </label>
-                                  <input
-                                    id="transport-eta"
-                                    type="text"
-                                    className={styles.transportInput}
-                                    placeholder="e.g. 11:15 or ~45m"
-                                    value={transportEtaDraft}
-                                    onChange={(e) => setTransportEtaDraft(e.target.value)}
-                                    data-testid="ward-patient-input-eta"
-                                  />
-                                </div>
-
-                                <div className={styles.transportFormField}>
-                                  <label htmlFor="transport-provider" className={styles.transportFormLabel}>
-                                    Transport Provider
-                                  </label>
-                                  <select
-                                    id="transport-provider"
-                                    className={styles.transportSelect}
-                                    value={transportProviderDraft}
-                                    onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
-                                    data-testid="ward-patient-select-provider"
-                                  >
-                                    {TRANSPORT_PROVIDERS.map((p) => (
-                                      <option key={p} value={p}>
-                                        {p}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-
-                                <div className={styles.transportFormField}>
-                                  <label htmlFor="transport-legal" className={styles.transportFormLabel}>
-                                    Transport Legal Status
-                                  </label>
-                                  <select
-                                    id="transport-legal"
-                                    className={styles.transportSelect}
-                                    value={transportLegalDraft}
-                                    onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
-                                    data-testid="ward-patient-select-legal"
-                                  >
-                                    <option value="involuntary">Involuntary</option>
-                                    <option value="voluntary">Voluntary</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div className={styles.transportCheckboxRow}>
+                        {liveMovement && bookingRejection && (
+                          <p role="alert">Booking was not recorded: {bookingRejection.reason}</p>
+                        )}
+                        {/* Form for logging/updating transport */}
+                        {liveMovement && showTransportForm && (
+                          <form
+                            className={styles.transportForm}
+                            onSubmit={handleSaveTransportBooking}
+                            data-testid="ward-patient-transport-form"
+                          >
+                            <div className={styles.transportFormGrid}>
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-cad" className={styles.transportFormLabel}>
+                                  CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
+                                </label>
                                 <input
-                                  id="transport-escort"
-                                  type="checkbox"
-                                  checked={transportEscortDraft}
-                                  onChange={(e) => setTransportEscortDraft(e.target.checked)}
-                                  data-testid="ward-patient-checkbox-escort"
+                                  id="transport-cad"
+                                  type="text"
+                                  className={styles.transportInput}
+                                  placeholder="e.g. CAD-84920"
+                                  value={transportCadDraft}
+                                  onChange={(e) => setTransportCadDraft(e.target.value)}
+                                  required
+                                  data-testid="ward-patient-input-cad"
                                 />
-                                <label htmlFor="transport-escort">Clinical escort required for transfer</label>
                               </div>
 
-                              <div className={styles.transportFormActions}>
-                                <button
-                                  type="button"
-                                  className={styles.transportActionBtnSecondary}
-                                  onClick={() => setShowTransportForm(false)}
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="submit"
-                                  className={styles.transportActionBtn}
-                                  data-testid="ward-patient-confirm-transport-btn"
-                                >
-                                  Save Transport Booking
-                                </button>
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-eta" className={styles.transportFormLabel}>
+                                  Quoted ETA by Transport Company
+                                </label>
+                                <input
+                                  id="transport-eta"
+                                  type="text"
+                                  className={styles.transportInput}
+                                  placeholder="e.g. 11:15 or ~45m"
+                                  value={transportEtaDraft}
+                                  onChange={(e) => setTransportEtaDraft(e.target.value)}
+                                  data-testid="ward-patient-input-eta"
+                                />
                               </div>
-                            </form>
-                          )}
 
-                          {/* Display booked facts */}
-                          {isTransportBooked && !showTransportForm && (
-                            <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
-                              <div className={styles.transportFact}>
-                                <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
-                                <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
-                                  {displayCadNumber || "Not recorded"}
-                                </span>
-                              </div>
-                              <div className={styles.transportFact}>
-                                <span className={styles.transportFactLabel}>Quoted ETA</span>
-                                <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
-                                  {displayEta || "Not recorded"}
-                                </span>
-                              </div>
-                              <div className={styles.transportFact}>
-                                <span className={styles.transportFactLabel}>Transport Provider</span>
-                                <span
-                                  className={styles.transportFactValue}
-                                  data-testid="ward-patient-transport-provider"
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-provider" className={styles.transportFormLabel}>
+                                  Transport Provider
+                                </label>
+                                <select
+                                  id="transport-provider"
+                                  className={styles.transportSelect}
+                                  value={transportProviderDraft}
+                                  onChange={(e) => setTransportProviderDraft(e.target.value as TransportProvider)}
+                                  data-testid="ward-patient-select-provider"
                                 >
-                                  {displayProvider}
-                                </span>
+                                  {TRANSPORT_PROVIDERS.map((p) => (
+                                    <option key={p} value={p}>
+                                      {p}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
-                              <div className={styles.transportFact}>
-                                <span className={styles.transportFactLabel}>Authority / Escort</span>
-                                <span
-                                  className={styles.transportFactValue}
-                                  data-testid="ward-patient-transport-authority"
+
+                              <div className={styles.transportFormField}>
+                                <label htmlFor="transport-legal" className={styles.transportFormLabel}>
+                                  Transport Legal Status
+                                </label>
+                                <select
+                                  id="transport-legal"
+                                  className={styles.transportSelect}
+                                  value={transportLegalDraft}
+                                  onChange={(e) => setTransportLegalDraft(e.target.value as TransportLegalStatus)}
+                                  data-testid="ward-patient-select-legal"
                                 >
-                                  {displayLegalStatus}{" "}
-                                  {displayEscort === undefined
-                                    ? "· Escort not recorded"
-                                    : displayEscort
-                                      ? "· Escort req."
-                                      : "· No escort"}
-                                </span>
+                                  <option value="involuntary">Involuntary</option>
+                                  <option value="voluntary">Voluntary</option>
+                                </select>
                               </div>
                             </div>
-                          )}
 
-                          {/* Empty state when not booked */}
-                          {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
-                            <div className={styles.transportEmptyState}>
-                              <p className={styles.transportEmptyText}>
-                                {liveMovement ? (
-                                  <>
-                                    No transport vehicle has been logged for this patient yet. Once arranged by phone
-                                    with the transport provider, click <strong>Mark as Booked</strong> to record the CAD
-                                    (dispatch) number and quoted ETA.
-                                  </>
-                                ) : (
-                                  "No linked transport record displayed."
-                                )}
-                              </p>
+                            <div className={styles.transportCheckboxRow}>
+                              <input
+                                id="transport-escort"
+                                type="checkbox"
+                                checked={transportEscortDraft}
+                                onChange={(e) => setTransportEscortDraft(e.target.checked)}
+                                data-testid="ward-patient-checkbox-escort"
+                              />
+                              <label htmlFor="transport-escort">Clinical escort required for transfer</label>
                             </div>
-                          ) : null}
-                        </section>
-                      </div>
-                    </div>
+
+                            <div className={styles.transportFormActions}>
+                              <button
+                                type="button"
+                                className={styles.transportActionBtnSecondary}
+                                onClick={() => setShowTransportForm(false)}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className={styles.transportActionBtn}
+                                data-testid="ward-patient-confirm-transport-btn"
+                              >
+                                Save Transport Booking
+                              </button>
+                            </div>
+                          </form>
+                        )}
+
+                        {/* Display booked facts */}
+                        {isTransportBooked && !showTransportForm && (
+                          <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
+                                {displayCadNumber || "Not recorded"}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Quoted ETA</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-transport-eta">
+                                {displayEta || "Not recorded"}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Transport Provider</span>
+                              <span className={styles.transportFactValue} data-testid="ward-patient-transport-provider">
+                                {displayProvider}
+                              </span>
+                            </div>
+                            <div className={styles.transportFact}>
+                              <span className={styles.transportFactLabel}>Authority / Escort</span>
+                              <span
+                                className={styles.transportFactValue}
+                                data-testid="ward-patient-transport-authority"
+                              >
+                                {displayLegalStatus}{" "}
+                                {displayEscort === undefined
+                                  ? "· Escort not recorded"
+                                  : displayEscort
+                                    ? "· Escort req."
+                                    : "· No escort"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty state when not booked */}
+                        {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
+                          <div className={styles.transportEmptyState}>
+                            <p className={styles.transportEmptyText}>
+                              {liveMovement ? (
+                                <>
+                                  No transport vehicle has been logged for this patient yet. Once arranged by phone with
+                                  the transport provider, click <strong>Mark as Booked</strong> to record the CAD
+                                  (dispatch) number and quoted ETA.
+                                </>
+                              ) : (
+                                "No linked transport record displayed."
+                              )}
+                            </p>
+                          </div>
+                        ) : null}
+                      </section>
+                    </details>
                   </div>
                 )}
               </div>
@@ -1591,143 +1299,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-history"
                 hidden={activeTab !== "history"}
               >
-                <div className={styles.sec}>
-                  <div className={styles.referralFilterRow}>
-                    <h3 className={styles.secH} style={{ margin: 0 }}>
-                      Presentations
-                      <span className={styles.count}>{presentations.length}</span>
-                      {/* Josh, 25 Sept 2026: the past presentations are written for the sample scenarios,
-                          not recorded, so the history says it is an example. */}
-                      {record.presentations.length > 0 ? (
-                        <span className={styles.count} data-testid="pn-history-example-label">
-                          Example history
-                        </span>
-                      ) : null}
-                    </h3>
-
-                    <div className={styles.segmentedControl} role="group" aria-label="History filter">
-                      <button
-                        type="button"
-                        className={styles.segmentBtn}
-                        aria-pressed={historyFilter === "all"}
-                        onClick={() => setHistoryFilter("all")}
-                      >
-                        All ({rawPresentations.length})
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.segmentBtn}
-                        aria-pressed={historyFilter === "emergency"}
-                        onClick={() => setHistoryFilter("emergency")}
-                      >
-                        Emergency
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.segmentBtn}
-                        aria-pressed={historyFilter === "inpatient"}
-                        onClick={() => setHistoryFilter("inpatient")}
-                      >
-                        Inpatient
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Multi-year Timeline SVG Chart */}
-                  <div className={`${styles.pnScrollX} ${styles.pnChart}`}>
-                    <svg
-                      viewBox="0 0 1000 110"
-                      className={styles.historyTimelineSvg}
-                      role="img"
-                      aria-label="Multi-year presentation frequency timeline from 2019 to 2027"
-                    >
-                      {/* Grid lines and year marks */}
-                      {[2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027].map((year) => {
-                        const px = getPx(year);
-                        return (
-                          <g key={year}>
-                            <line className={styles.gridLine} x1={px} y1={20} x2={px} y2={baseY} />
-                            {year < 2027 && (
-                              <text className={styles.tickText} x={px} y={96} textAnchor="middle">
-                                {year}
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-
-                      {/* Presentation Episode Mark circles */}
-                      {presentations.map((p, i) => {
-                        const px = getPx(p.year);
-                        const isCurrent = Boolean(p.current);
-                        const isSelected = selectedEpisodeIndex === i;
-                        return (
-                          <g
-                            key={i}
-                            role="button"
-                            tabIndex={0}
-                            className={styles.cmark}
-                            aria-label={`${p.date}, ${p.where} to ${p.to}, ${p.los}. Open this presentation.`}
-                            aria-pressed={isSelected}
-                            onClick={() => setSelectedEpisodeIndex(i)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setSelectedEpisodeIndex(i);
-                              }
-                            }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <circle className={styles.chalo} cx={px} cy={baseY} r={13} />
-                            <circle
-                              className={styles.pnMark}
-                              cx={px}
-                              cy={baseY}
-                              r={isCurrent ? 7 : 5}
-                              data-current={isCurrent ? "true" : undefined}
-                              stroke={isSelected ? "var(--gilt)" : undefined}
-                              strokeWidth={isSelected ? 2 : undefined}
-                            />
-                          </g>
-                        );
-                      })}
-
-                      <text
-                        x={getPx(2026.62)}
-                        y={baseY - 17}
-                        textAnchor="end"
-                        className={styles.tickText}
-                        style={{ fill: "var(--accent-ink)", fontWeight: 600 }}
-                      >
-                        open now
-                      </text>
-                    </svg>
-                  </div>
-
-                  {/* Presentation Episode Cards */}
-                  <div className={styles.rows} style={{ marginTop: "14px" }}>
-                    {presentations.map((p, i) => (
-                      <div
-                        key={i}
-                        className={styles.row}
-                        style={{
-                          border: selectedEpisodeIndex === i ? "1px solid var(--accent)" : undefined,
-                        }}
-                      >
-                        <span className={styles.rowTop}>
-                          <strong>
-                            {p.date} · {p.where}
-                          </strong>
-                          <span className={styles.when}>{p.los}</span>
-                        </span>
-                        <span className={styles.rowSub}>
-                          Destination: <strong>{p.to}</strong> · Outcome: {p.outcome}
-                        </span>
-                        {p.story && <span className={styles.rowWho}>{p.story}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <PatientHistoryTab record={record} movement={liveMovement} />
               </div>
 
               {/* Tab 3: COMMUNITY */}
@@ -1738,35 +1310,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-community"
                 hidden={activeTab !== "community"}
               >
-                <div className={styles.sec}>
-                  <h3 className={styles.secH}>
-                    Community team
-                    <span className={styles.count}>
-                      {record.community.teams.length ? `${record.community.teams.length} on record` : "none"}
-                    </span>
-                  </h3>
-
-                  {record.community.teams.length > 0 ? (
-                    <div className={styles.rows}>
-                      {record.community.teams.map((t, i) => (
-                        <div key={i} className={styles.row}>
-                          <span className={styles.rowTop}>
-                            <strong>{t.name}</strong>
-                            <span className={styles.when}>{t.state}</span>
-                          </span>
-                          <span className={styles.rowSub}>{t.note}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.pnAbsence}>{record.community.absent}</p>
-                  )}
-                </div>
-
-                <div className={styles.sec}>
-                  <h3 className={styles.secH}>Follow up</h3>
-                  <p className={styles.pnProse}>{record.community.followUp}</p>
-                </div>
+                <PatientCommunityTab record={record} patient={livePatient} movement={liveMovement} />
               </div>
 
               {/* Tab 4: DETAILS */}
@@ -1777,50 +1321,12 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-details"
                 hidden={activeTab !== "details"}
               >
-                <div className={styles.sec} data-testid="ward-person-placement-details">
-                  <h3 className={styles.secH}>Identity</h3>
-                  <dl className={styles.slFacts}>
-                    <dt>Name</dt>
-                    <dd>{displayName}</dd>
-                    <dt>Preferred name</dt>
-                    <dd>{preferredName ?? "None recorded"}</dd>
-                    {/* Owner, 26 Sept 2026: dropped the WF journey number row — Record number (UMRN) below already carries the identifier. */}
-                    <dt>Record number</dt>
-                    <dd>{livePatient?.umrn ?? "Not recorded"}</dd>
-                    <dt>Date of birth</dt>
-                    <dd>{livePatient?.dateOfBirth ?? "Not recorded"}</dd>
-                    <dt>Age band</dt>
-                    <dd>{liveMovement?.cohort ?? "Not recorded"}</dd>
-                    <dt>Sex</dt>
-                    <dd>{liveMovement?.sex ?? livePatient?.sex ?? "Not recorded"}</dd>
-                    <dt>Gender</dt>
-                    <dd>{liveMovement?.gender ?? livePatient?.gender ?? "Not recorded"}</dd>
-                  </dl>
-                </div>
-
-                <div className={styles.sec}>
-                  <h3 className={styles.secH}>Location and care</h3>
-                  <dl className={styles.slFacts}>
-                    <dt>Address</dt>
-                    <dd>{livePatient?.address ?? "Not recorded"}</dd>
-                    <dt>Suburb</dt>
-                    <dd>{livePatient?.suburb ?? "Not recorded"}</dd>
-                    <dt>Aboriginal or Torres Strait Islander status</dt>
-                    <dd>{livePatient?.aboriginalOrTorresStraitIslanderStatus ?? "Not stated"}</dd>
-                    <dt>GP</dt>
-                    <dd>{livePatient?.generalPractitioner ?? "Not recorded"}</dd>
-                    <dt>Interpreter / preferred language</dt>
-                    <dd>{livePatient?.interpreterLanguage ?? "Not recorded"}</dd>
-                    <dt>Catchment community team</dt>
-                    <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                    <dt>Legal status</dt>
-                    <dd>{liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "Not recorded"}</dd>
-                    <dt>Health service</dt>
-                    <dd>Not recorded</dd>
-                    <dt>Owner</dt>
-                    <dd>{liveMovement?.owner?.trim() || "Not recorded"}</dd>
-                  </dl>
-                </div>
+                <PatientDetailsTab
+                  patient={livePatient}
+                  movement={liveMovement}
+                  displayName={displayName}
+                  preferredName={preferredName}
+                />
               </div>
 
               {/* Tab 5: DOCUMENTS */}
@@ -1831,42 +1337,20 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-documents"
                 hidden={activeTab !== "documents"}
               >
-                <div className={styles.sec}>
-                  <h3 className={styles.secH}>
-                    Documents<span className={styles.count}>{record.documents.length}</span>
-                  </h3>
-
-                  <div className={styles.tableWrap}>
-                    <table className={styles.dataTable}>
-                      <thead>
-                        <tr>
-                          <th scope="col">Type</th>
-                          <th scope="col">Document</th>
-                          <th scope="col">From</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {record.documents.map((d, i) => (
-                          <tr key={i}>
-                            <td>
-                              <span className={styles.fcode}>{fillTemplate(d.code, templateContext)}</span>
-                            </td>
-                            <td>{fillTemplate(d.name, templateContext)}</td>
-                            <td>{d.from}</td>
-                            <td>{d.when}</td>
-                            <td>
-                              <span className={styles.statusPill} data-status={d.status}>
-                                {fillTemplate(d.status, templateContext)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <PatientDocumentsTab
+                  record={{
+                    ...record,
+                    documents: record.documents.map((d) => ({
+                      ...d,
+                      code: fillTemplate(d.code, templateContext),
+                      name: fillTemplate(d.name, templateContext),
+                      status: fillTemplate(d.status, templateContext),
+                    })),
+                  }}
+                  movement={liveMovement}
+                  now={now}
+                  onRecordDocument={() => setShowUploadFormsModal(true)}
+                />
               </div>
 
               {/* Discreet provenance legal notice */}
@@ -1894,7 +1378,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           <div className={styles.clearanceModalBox} ref={clearanceModalRef}>
             <div className={styles.clearanceModalHead}>
               <h2 id="clearanceModalTitle" className={styles.clearanceModalTitle}>
-                Request Emergency Department Medical Clearance
+                Record treating-team medical clearance
               </h2>
               <button
                 type="button"
@@ -1910,72 +1394,48 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 Record the medical clearance provided by the treating team. This prototype does not determine fitness
                 for transport or legal transfer requirements.
               </p>
-              <div
-                style={{
-                  background: "var(--surface-2)",
-                  padding: "10px",
-                  borderRadius: "var(--r1)",
-                  fontSize: "var(--t-0)",
-                  border: "1px solid var(--line)",
-                }}
-              >
-                <strong>Current Status:</strong> Fit to travel: <em>Not Assessed</em>
-                <br />
-                <strong>Required Sign-off:</strong> Emergency Medicine Consultant / Senior Registrar on duty at{" "}
-                {liveMovement
-                  ? (edById(liveMovement.originEdId)?.name ?? "Emergency Department")
-                  : "Emergency Department"}
-                .
-              </div>
-              <p>Submit request notification to ED triage &amp; Duty Medical Officer:</p>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "var(--t-0)",
-                  cursor: "pointer",
-                }}
-              >
+              <label className={styles.clearanceField}>
+                Treating-team clearance outcome
+                <select
+                  value={clearanceDraft}
+                  onChange={(event) => setClearanceDraft(event.target.value as typeof clearanceDraft)}
+                >
+                  <option value="">Choose stated outcome</option>
+                  <option value="cleared">Medical clearance provided</option>
+                  <option value="not-cleared">Not medically cleared</option>
+                </select>
+              </label>
+              <label className={styles.clearanceAttestation}>
                 <input
                   type="checkbox"
-                  checked={clearanceUrgent}
-                  onChange={(e) => setClearanceUrgent(e.target.checked)}
-                />{" "}
-                Flag request as high urgency (bed placement dependent)
+                  checked={clearanceAttested}
+                  onChange={(event) => setClearanceAttested(event.target.checked)}
+                />
+                This is the treating team&apos;s stated outcome.
               </label>
-              {clearanceConfirmed && (
-                <div
-                  role="status"
-                  style={{
-                    background: "var(--good-soft)",
-                    color: "var(--good-ink)",
-                    padding: "8px 12px",
-                    borderRadius: "var(--r1)",
-                    fontSize: "var(--t-0)",
-                    fontWeight: 600,
-                  }}
-                >
-                  ✓ Clearance request dispatched to ED Duty Doctor.
-                </div>
-              )}
+              <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
             </div>
             <div className={styles.clearanceModalFoot}>
-              <button type="button" className={styles.ctl} onClick={() => setShowClearanceModal(false)}>
+              <button type="button" className={styles.ctl} onClick={closeClearanceModal}>
                 Close
               </button>
               <button
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
+                disabled={!clearanceDraft || !clearanceAttested || !liveMovement}
                 onClick={() => {
-                  setClearanceConfirmed(true);
-                  setTimeout(() => {
-                    setShowClearanceModal(false);
-                    setClearanceConfirmed(false);
-                  }, 1200);
+                  if (!liveMovement || !clearanceDraft || !clearanceAttested) return;
+                  dispatch({
+                    type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+                    role: "ed",
+                    now,
+                    movementId: liveMovement.id,
+                    cleared: clearanceDraft === "cleared",
+                  });
+                  closeClearanceModal();
                 }}
               >
-                Dispatch Clearance Request
+                Save clearance outcome
               </button>
             </div>
           </div>

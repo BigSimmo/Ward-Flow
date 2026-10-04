@@ -42,6 +42,7 @@ function referAndAccept() {
   expect(screen.getByTestId("live-stage")).toHaveTextContent("destination_review");
   fireEvent.click(screen.getByRole("button", { name: "Accept bed" }));
   expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
+  expect(screen.getByRole("heading", { name: "Placement & dispatch deck" })).toHaveFocus();
 }
 describe("unified Patient Now clinical flight deck", () => {
   it("keeps the local toolbar, focus, and five dossier tabs", () => {

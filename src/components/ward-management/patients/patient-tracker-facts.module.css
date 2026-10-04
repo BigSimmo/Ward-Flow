@@ -1,0 +1,96 @@
+.facts {
+  padding: 12px 2px 0;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+}
+.progress {
+  display: flex;
+  gap: 4px;
+}
+.progress span {
+  height: 4px;
+  flex: 1;
+  background: #e1e8ec;
+  border-radius: 20px;
+}
+.progress span[data-state="recorded"] {
+  background: #83b9a6;
+}
+.progress span[data-state="current"] {
+  background: #17675c;
+}
+.destination {
+  display: grid;
+  gap: 6px;
+  padding: 5px 2px;
+}
+.destination span {
+  font-size: 9px;
+  color: #526c7c;
+  letter-spacing: 0.08em;
+  font-weight: 750;
+}
+.destination strong {
+  font-size: 12px;
+  color: #305967;
+  line-height: 1.5;
+}
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #dce7ec;
+  border-radius: 12px;
+  background: #f3f7f8;
+  color: #305967;
+}
+.tile > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.tile svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.tile span {
+  font-size: 10px;
+  color: #526c7c;
+}
+.tile strong {
+  font-size: 12px;
+}
+.tile small {
+  color: #526c7c;
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.tile[data-attention="true"] {
+  background: #fff3e5;
+  border-color: #efd5b1;
+  color: #904e1f;
+}
+.facts button {
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 11px;
+  background: #17675c;
+  color: white;
+  border: 1px solid #17675c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+.facts button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.facts p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+}

@@ -220,7 +220,7 @@ describe("the patient-now screen", () => {
     const fact = (label: string) => within(pane).getByText(label, { selector: "dt" }).nextElementSibling;
     expect(fact("Catchment community team")).toHaveTextContent(patient.catchmentCommunityTeam!);
     expect(fact("Age band")).toHaveTextContent("Not recorded");
-    expect(fact("Health service")).toHaveTextContent("Not recorded");
+    expect(within(pane).queryByText("Health service", { selector: "dt" })).not.toBeInTheDocument();
     expect(fact("Owner")).toHaveTextContent("Not recorded");
   });
 
