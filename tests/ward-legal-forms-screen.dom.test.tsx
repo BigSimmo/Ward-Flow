@@ -145,10 +145,9 @@ describe("the Legal forms screen", () => {
     const renderedNames = rowEls.map(
       (row) => row.querySelector("[data-ward-primitive='record-id']")?.textContent ?? "",
     );
-    expect(
-      [...renderedNames].sort(),
-      "the visible id slot no longer shows the resolved patient's formal name",
-    ).toEqual([...expectedNames].sort());
+    expect([...renderedNames].sort(), "the visible id slot no longer shows the resolved patient's formal name").toEqual(
+      [...expectedNames].sort(),
+    );
     for (const name of renderedNames) {
       expect(name, "a WF journey number is visible where the patient's name should be").not.toMatch(/^WF-/u);
     }
@@ -196,5 +195,15 @@ describe("the Legal forms screen", () => {
   it("never states 'No owner' — Movement.owner is a required string with no absent state to render", () => {
     renderScreen();
     expect(screen.queryByText(/No owner/u)).not.toBeInTheDocument();
+  });
+});
+
+describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
+  it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as a synthetic, not legally checked demo", () => {
+    renderScreen();
+    const banner = screen.getByTestId("ward-legal-expiry-reminder");
+    expect(banner).toHaveTextContent(/^Synthetic demo reminder:/);
+    expect(banner).toHaveTextContent("not legally checked");
+    expect(screen.getAllByText(/^Expires within \dh$/).length).toBeGreaterThan(0);
   });
 });

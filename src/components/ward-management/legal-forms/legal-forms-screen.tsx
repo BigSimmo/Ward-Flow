@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { type LegalClockAgeBand, type LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
@@ -27,6 +27,8 @@ import {
   legalFormGroupRows,
   legalFormRowClassification,
   isLegalDeadlineBreached,
+  legalExpiryReminderSummary,
+  legalExpiryReminderText,
 } from "./legal-forms-derivations";
 import styles from "./legal-forms.module.css";
 
@@ -150,6 +152,9 @@ export function LegalFormsScreen() {
   const breakdown = legalFormBreakdown(rows, now);
   const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
   const upcoming = withDeadline.length - passed;
+  const reminders = legalExpiryReminderSummary(movements, now);
+  const reminderText = legalExpiryReminderText(reminders);
+  const closeCount = reminders.withinUrgent + reminders.withinSoon;
 
   const checkAuthorityScroll = () => {
     const el = authorityCardRef.current;
@@ -364,9 +369,11 @@ export function LegalFormsScreen() {
           statusText={
             passed > 0
               ? `${passed} recorded due times passed`
-              : upcoming > 0
-                ? `${upcoming} upcoming recorded due times`
-                : "No recorded due times"
+              : closeCount > 0
+                ? `${closeCount} recorded due ${closeCount === 1 ? "time" : "times"} within ${reminders.soonHours}h`
+                : upcoming > 0
+                  ? `${upcoming} upcoming recorded due times`
+                  : "No recorded due times"
           }
           ariaLabel="Mental health legal forms status summary"
           metrics={[
@@ -849,6 +856,13 @@ export function LegalFormsScreen() {
                     </span>
                   </p>
                 </div>
+
+                {reminderText !== undefined ? (
+                  <p className={styles.reminderBanner} role="status" data-testid="ward-legal-expiry-reminder">
+                    <Clock size={14} aria-hidden="true" />
+                    <span>{reminderText}</span>
+                  </p>
+                ) : null}
 
                 {rows.length === 0 ? (
                   <p className={styles.absent}>
@@ -1595,7 +1609,7 @@ function LegalFormRow({
     clock = {
       value: timeStr,
       sub: breached ? "past due" : "remaining",
-      urgent: breached || remaining < 180,
+      urgent: clockState(legalForm.dueAt, now) !== "clear",
     };
   }
 
