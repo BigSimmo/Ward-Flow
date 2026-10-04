@@ -9,6 +9,7 @@ import {
   clearWardFlowDemoState,
 } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -283,6 +284,82 @@ describe("conservative demo recovery", () => {
     render(consumerTree());
     expect(current.units.find((candidate) => candidate.id === unit.id)!.allocatable.value).toBe(value);
     expect(firstSeenAllocatable[unit.id]).toBe(value);
+  });
+  // PR #41 review (4 Oct 2026): an action dispatched before the saved day is adopted (a child's
+  // mount effect runs first) must not be silently dropped when a changed day is restored. It is
+  // replayed on the restored day, keeping its log entry and its typed-text lock.
+  // Dispatches once per test, like one click: the restore remounts this node, which must not resend.
+  let earlySent = false;
+  function EarlyDispatcher({ event }: { event: (value: ReturnType<typeof useWardFlow>) => WardFlowEvent }) {
+    const value = useWardFlow();
+    const [dispatched] = useState(() => event(value));
+    useEffect(() => {
+      if (earlySent) return;
+      earlySent = true;
+      value.dispatch(dispatched);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return null;
+  }
+  function capacityChange(value: ReturnType<typeof useWardFlow>, skip?: string): WardFlowEvent {
+    const unit = value.units.find((candidate) => candidate.id !== skip && candidate.empty.value < candidate.beds)!;
+    return {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      now: value.now,
+      unitId: unit.id,
+      actingUnitId: unit.id,
+      expectedRevision: unit.allocatable.revision ?? 0,
+      value: unit.empty.value + 1,
+    };
+  }
+  function saveChangedDay() {
+    earlySent = false;
+    const view = mount();
+    const event = capacityChange(current) as Extract<WardFlowEvent, { type: "CONFIRM_CAPACITY" }>;
+    act(() => current.dispatch(event));
+    view.unmount();
+    return event;
+  }
+  it("replays an action taken before a changed saved day was adopted", () => {
+    const savedChange = saveChangedDay();
+    let early: Extract<WardFlowEvent, { type: "CONFIRM_CAPACITY" }> | undefined;
+    render(
+      <WardFlowProvider>
+        <Probe />
+        <EarlyDispatcher event={(value) => (early = capacityChange(value, savedChange.unitId) as typeof early)!} />
+      </WardFlowProvider>,
+    );
+    const unitValue = (id: string) => current.units.find((candidate) => candidate.id === id)!.allocatable.value;
+    expect(unitValue(savedChange.unitId)).toBe(savedChange.value);
+    expect(unitValue(early!.unitId)).toBe(early!.value);
+    expect(current.eventLog).toHaveLength(1);
+    expect(saved().state.units.length).toBeGreaterThan(0);
+  });
+  it("keeps the typed-text lock from an action taken before a changed saved day was adopted", () => {
+    saveChangedDay();
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toBeNull();
+    render(
+      <WardFlowProvider>
+        <Probe />
+        <EarlyDispatcher
+          event={(value) => ({
+            type: "RECORD_REPATRIATION",
+            role: "coordinator",
+            now: value.now,
+            admissionId: value.admissions[0].id,
+            homeHospital: value.units[0].siteCode,
+            receivingWardAgreed: true,
+            mode: "road",
+            provider: "Ambulance service",
+            cadNumber: "Synthetic-private-CAD",
+            transportLegalStatus: "voluntary",
+            estimatedAt: value.now + 60,
+          })}
+        />
+      </WardFlowProvider>,
+    );
+    expect(current.eventLog).toHaveLength(1);
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
   });
   it("rejects a backward system clock", () => {
     const view = mount();

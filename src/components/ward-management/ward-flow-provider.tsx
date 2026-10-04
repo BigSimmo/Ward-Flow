@@ -250,6 +250,10 @@ type WardFlowContainer = {
   /** True when adoption replaced the world with a saved one that differs from the first-render
    *  seed. The screens below are then remounted once (see `WardFlowWorld`'s return). */
   sessionRestored?: boolean;
+  /** Events dispatched before adoption, in order, held in memory only. Adopting a changed saved day
+   *  replays them on top of it, so an action taken in the first moments after load is applied (or
+   *  refused, visibly) rather than silently dropped with the seed it landed on. */
+  preAdoptionEvents?: readonly WardFlowEvent[];
 };
 
 /**
@@ -267,7 +271,9 @@ function wardFlowContainerReducer(
   action: WardFlowEvent | AdoptSessionAction,
 ): WardFlowContainer {
   if (ADOPT_SESSION in action) return action[ADOPT_SESSION](container);
-  return trackWardFlowTypedTextDispatch(container, action);
+  const next = trackWardFlowTypedTextDispatch(container, action);
+  if (container.sessionAdopted) return next;
+  return { ...next, preAdoptionEvents: [...(container.preAdoptionEvents ?? []), action] };
 }
 
 /**
@@ -613,7 +619,13 @@ function WardFlowWorld({
   const [container, dispatch] = useReducer(
     wardFlowContainerReducer,
     anchorOffsetMinutes,
-    (offset): WardFlowContainer => ({ world: seedWardFlowStateAt(offset), typedTextSeen: false, restoredElapsed: 0 }),
+    // A pinned `now` never reads a saved session, so it starts adopted and holds no replay queue.
+    (offset): WardFlowContainer => ({
+      world: seedWardFlowStateAt(offset),
+      typedTextSeen: false,
+      restoredElapsed: 0,
+      sessionAdopted: initialNow !== undefined,
+    }),
   );
   const state = container.world;
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
@@ -698,7 +710,12 @@ function WardFlowWorld({
   useEffect(() => {
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
-    if (saved) openRequestSequence.current = nextOpenRequestSequence(saved.state.auditEvents);
+    // Never move the allocator backwards: a record opened before adoption already used its number.
+    if (saved)
+      openRequestSequence.current = Math.max(
+        openRequestSequence.current,
+        nextOpenRequestSequence(saved.state.auditEvents),
+      );
     // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
     if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
     dispatch({
@@ -711,18 +728,24 @@ function WardFlowWorld({
           // A saved day identical to the seed already on screen (nothing was changed before the
           // reload) only moves the clock; the screens keep their nodes and their state.
           if (JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] }))
-            return { ...current, restoredElapsed, sessionAdopted: true };
-          return {
+            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
+          // Anything dispatched before adoption is replayed on the restored day through the same
+          // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
+          // on screen rather than lost.
+          let restored: WardFlowContainer = {
             world: saved.state,
             typedTextSeen: false,
             restoredElapsed,
             sessionAdopted: true,
             sessionRestored: true,
           };
+          for (const event of current.preAdoptionEvents ?? [])
+            restored = trackWardFlowTypedTextDispatch(restored, event);
+          return restored;
         }
         // The rejected or unreadable save leaves the first-render seed in place, with its notice.
-        if (recoveryNotice) return { ...current, recoveryNotice, sessionAdopted: true };
-        return { ...current, sessionAdopted: true };
+        if (recoveryNotice) return { ...current, recoveryNotice, sessionAdopted: true, preAdoptionEvents: undefined };
+        return { ...current, sessionAdopted: true, preAdoptionEvents: undefined };
       },
     });
   }, [initialNow, mountedAtAbsolute, dayZero]);
