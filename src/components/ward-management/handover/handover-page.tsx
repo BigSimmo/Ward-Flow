@@ -62,6 +62,7 @@ import {
 
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
@@ -1010,6 +1011,7 @@ export function HandoverPage() {
                 subtext: "in scope",
               },
             ]}
+            actions={<LegalLimitsNotChecked variant="tag" />}
           />
         </div>
 
