@@ -90,6 +90,17 @@ const TEST_DIR = "tests";
 const GUARD_FILE_NAME = "ward-act-section-citation-guard.test.ts";
 
 /**
+ * Owner ruling, 4 October 2026 (Josh, item 13): the synthetic demo may show Act periods with their
+ * section references, labelled "Synthetic demo, not legally checked". Exactly these two files may
+ * carry section numbers — the one table that holds them and its own test. Every other file in every
+ * scanned root stays under D5. Adding a path here needs the owner's word, recorded beside it.
+ */
+const OWNER_APPROVED_CITATION_FILES = new Set([
+  join(WARD_MANAGEMENT_DIR, "legal-forms", "act-periods-demo.ts"),
+  join(TEST_DIR, "ward-act-periods-demo.test.ts"),
+]);
+
+/**
  * Named exemption: `docs/ward-flow/mockups/reference/` holds Gemini reference copies that nothing
  * in the product is built from — 53 citation lines live there, left in place deliberately as a
  * historical artefact of what an earlier pass produced, not as a drawing this repository ships.
@@ -129,7 +140,7 @@ function scannedFiles(): string[] {
     .filter((entry) => entry.isFile() && /^ward-.*\.test\.tsx?$/.test(entry.name) && entry.name !== GUARD_FILE_NAME)
     .map((entry) => join(TEST_DIR, entry.name));
 
-  return [...srcAndAppRoots, ...drawings, ...wardTests];
+  return [...srcAndAppRoots, ...drawings, ...wardTests].filter((path) => !OWNER_APPROVED_CITATION_FILES.has(path));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -203,6 +214,13 @@ describe("no Mental Health Act section citations in product code, comments, test
     // `src/components/ward-management` alone carries 260+ files and `tests/` carries 500+
     // `ward-*.test.ts(x)` files; 50 is a floor far below any root emptying out on its own.
     expect(scannedFiles().length).toBeGreaterThan(50);
+  });
+
+  it("exempts only the owner-approved Act period table and its test, and both still exist", () => {
+    expect(OWNER_APPROVED_CITATION_FILES.size).toBe(2);
+    for (const path of OWNER_APPROVED_CITATION_FILES) {
+      expect(readFileSync(path, "utf8").length, `${path} is exempt but missing`).toBeGreaterThan(0);
+    }
   });
 
   it("finds no Act or WAPOL section citation outside the reference exemption", () => {
