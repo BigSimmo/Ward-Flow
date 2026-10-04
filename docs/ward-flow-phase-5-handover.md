@@ -26,9 +26,9 @@ Companion documents, none of which this file duplicates:
 | For                                              | Read                                                                             |
 | ------------------------------------------------ | -------------------------------------------------------------------------------- |
 | The binding specification (14 decisions, D1–D14) | `docs/superpowers/specs/2026-08-26-ward-flow-phase-5-bed-availability-design.md` |
-| Direction, phase order, settled refusals         | `docs/ward-flow-roadmap.md`                                                      |
-| What was built and what screenshots caught       | `docs/ward-flow-complete-ledger.md` §5d                                          |
-| Earlier Phase 1–3 rulings                        | `docs/ward-management-decisions.md`                                              |
+| Direction, phase order, settled refusals         | `docs/archive/ward-flow-roadmap.md`                                              |
+| What was built and what screenshots caught       | `docs/archive/ward-flow-complete-ledger.md` §5d                                  |
+| Earlier Phase 1–3 rulings                        | `docs/archive/ward-management-decisions.md`                                      |
 
 ---
 
@@ -413,7 +413,7 @@ What is established:
   empty or hidden.
 
 > **This experiment was already run. Do not run it again.** The full result is tabulated in
-> `docs/ward-flow-complete-ledger.md` §5d-ii and §5d-iii. The paragraph below was written before
+> `docs/archive/ward-flow-complete-ledger.md` §5d-ii and §5d-iii. The paragraph below was written before
 > those runs and is kept only for the reasoning it records.
 
 **Answered: the flake is pre-existing and is not Phase 5's.** Measured on a quiet tree: 3 runs on
@@ -443,7 +443,7 @@ deliberately rather than by habit.
 
 ## 10. Owed before Phase 6 builds on this
 
-Both are already written into `docs/ward-flow-roadmap.md`. Neither blocks Phase 5.
+Both are already written into `docs/archive/ward-flow-roadmap.md`. Neither blocks Phase 5.
 
 1. **Spec D14 has still never been checked by a ward clinician.** `predicted → confirmed → blocked
 → released` is a software model of how a bed comes free. A bed may be confirmed and blocked at

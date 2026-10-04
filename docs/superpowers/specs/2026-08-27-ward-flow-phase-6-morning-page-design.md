@@ -12,7 +12,7 @@ beds are there right now, and where" — built entirely from figures Phase 5 alr
 still so it can be printed and argued over, and able to demonstrate itself in sixty seconds.
 
 **Inputs, not outputs.** The product owner's answers in `docs/ward-flow-phase-6-7-decisions.md`
-(questions 1, 2, 3, 4 and 12) and `docs/ward-flow-roadmap.md` decision 13 are settled and are not
+(questions 1, 2, 3, 4 and 12) and `docs/archive/ward-flow-roadmap.md` decision 13 are settled and are not
 re-derived here. A further answer given on 2026-08-27 — that the prototype stays inside the
 administrator-gated sandbox and the shareable artefact is the printed page and the live
 demonstration, not a public link — is recorded in D9.
@@ -23,7 +23,7 @@ demonstration, not a public link — is recorded in D9.
 
 `predicted → confirmed → blocked → released` is **a software model of how a bed comes free, and no
 ward clinician has checked it.** It is Phase 5's spec D14, it is still open, and
-`docs/ward-flow-clinician-check.md` is the one-page summary waiting to go to a clinician.
+`docs/archive/ward-flow-clinician-check.md` is the one-page summary waiting to go to a clinician.
 
 Every figure on the morning page is derived from those four words. That makes this page the point at
 which a wrong model starts becoming expensive, which is exactly why the roadmap put the clinician

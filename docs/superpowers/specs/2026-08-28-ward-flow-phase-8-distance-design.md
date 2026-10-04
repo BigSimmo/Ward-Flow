@@ -46,7 +46,7 @@ really about which health service the patient's emergency department belongs to 
 ## Read this second: the facts nobody has
 
 Six real-world, clinical or legal facts are unknown to everyone who has worked on this. They are
-listed in `docs/ward-flow-phase-8-9-questions.md` section 3. **This specification answers none of
+listed in `docs/archive/ward-flow-phase-8-9-questions.md` section 3. **This specification answers none of
 them, and must not answer any of them by implication.** Each one below says what it blocks and what
 Phase 8 builds instead.
 

@@ -16,7 +16,7 @@ Everything a session needs to work on Ward Flow, in one file. Written to be read
 any prior conversation.
 
 If you are starting Phase 2, read this file, then
-[`docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md`](./superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md).
+[`docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md`](superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md).
 Everything else referenced here is supporting detail you can reach for when a task needs it.
 
 ---
@@ -76,7 +76,7 @@ never treats a patient's current location as a compliance problem.
 
 > This rule was got wrong once during this build. The original ADR said an involuntary patient must
 > be "detained at an authorised hospital", which reads as though holding a detained patient in an
-> ED were unlawful. It has been corrected in `docs/ward-management-decisions.md` ADR 1. Do not
+> ED were unlawful. It has been corrected in `docs/archive/ward-management-decisions.md` ADR 1. Do not
 > reintroduce the older phrasing.
 
 ### Forms that appear in the model
@@ -188,7 +188,7 @@ redirect-only), pinned by `tests/ward-landmarks.test.ts`. The eight core views: 
 and the `constellation` redirect stub. `/mockups/ward-flow/patients/[patientId]` no longer
 exists — it was renamed to `/mockups/ward-flow/movements/[movementId]`, nested under the existing
 `/movements` mode page. The full current list, with description and source directory for each
-route, is in `docs/ward-management-mode-map.md`; `src/components/ward-management/ward-nav.ts` is
+route, is in `docs/archive/ward-management-mode-map.md`; `src/components/ward-management/ward-nav.ts` is
 the source of truth for navigation.
 
 `/mockups/ward-flow/constellation` was retired by Phase 2 and remains as a redirect-only stub to
@@ -476,7 +476,7 @@ Three practices came out of it, and they apply to every remaining phase:
 ## 10. Decisions taken on the owner's behalf during Phase 1
 
 Recorded so they can be found and undone. Full text with costs in
-[`docs/ward-flow-phase-handoff.md`](./ward-flow-phase-handoff.md).
+[`docs/archive/ward-flow-phase-handoff.md`](archive/ward-flow-phase-handoff.md).
 
 1. **`speciallingCapacity`, not the plan's `spellingCapacity` typo** — written correctly from the
    start rather than propagated through five files and fixed later.
@@ -525,7 +525,7 @@ mutable state this build has ever had. Read that spec before doing any Phase 3 w
 ## Phase 2 as originally planned
 
 Ten tasks. Full detail in
-[`docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md`](./superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md).
+[`docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md`](superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md).
 
 | Task | What                               | Why it is where it is                                                    |
 | ---- | ---------------------------------- | ------------------------------------------------------------------------ |
@@ -556,10 +556,10 @@ model work but would cost more than it returns on screens.
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md`  | The binding authority. Sections 3, 4, 7, 10, 12 carry the requirements most easily violated |
 | `docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md` | Executing Phase 2                                                                           |
-| `docs/ward-flow-phase-handoff.md`                                           | Phase 1 rulings and parked findings in full                                                 |
-| `docs/ward-management-context.md`                                           | The domain glossary — ~30 terms                                                             |
-| `docs/ward-management-decisions.md`                                         | Four ADRs, including the corrected authorisation rule                                       |
-| `docs/ward-management-mode-map.md`                                          | The route model as currently built. Carries a superseded banner                             |
-| `docs/ward-flow-phase-2-kickoff.md`                                         | The session-start brief                                                                     |
+| `docs/archive/ward-flow-phase-handoff.md`                                   | Phase 1 rulings and parked findings in full                                                 |
+| `docs/archive/ward-management-context.md`                                   | The domain glossary — ~30 terms                                                             |
+| `docs/archive/ward-management-decisions.md`                                 | Four ADRs, including the corrected authorisation rule                                       |
+| `docs/archive/ward-management-mode-map.md`                                  | The route model as currently built. Carries a superseded banner                             |
+| `docs/archive/ward-flow-phase-2-kickoff.md`                                 | The session-start brief                                                                     |
 
 <!-- docs-script-refs:historical-end -->

@@ -50,10 +50,10 @@ and left the file uncommitted rather than deciding on my own that the extra cont
 3. **Nine unmentioned new documentation entries**, not just the one plan doc named in the
    brief (`docs/ward-flow/archive/dated-notes/builder-plan-2026-09-01.md`, which is present as expected).
    The other eight/nine that also appear in the diff:
-   - `docs/ward-flow-owner-rulings-2026-08-31-community.md`
-   - `docs/ward-flow-owner-rulings-2026-08-31.md`
-   - `docs/ward-flow-owner-rulings-2026-09-01.md`
-   - `docs/ward-flow-plan.md`
+   - `docs/archive/ward-flow-owner-rulings-2026-08-31-community.md`
+   - `docs/archive/ward-flow-owner-rulings-2026-08-31.md`
+   - `docs/archive/ward-flow-owner-rulings-2026-09-01.md`
+   - `docs/archive/ward-flow-plan.md`
    - `docs/ward-flow/control/BUILDER-ACTIVATION-RECEIPTS.md`
    - `docs/ward-flow/how-to-write-to-the-owner.md`
    - `docs/ward-flow/stale-claims.md`

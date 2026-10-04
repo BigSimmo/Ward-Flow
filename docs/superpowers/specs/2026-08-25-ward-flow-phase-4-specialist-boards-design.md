@@ -14,7 +14,7 @@ no patient data, no OpenAI call, no server. Every number is invented.
 
 - **Binding:** `docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md` — §6
   (specialist boards), §11 (success criteria), §15 (migration), §18 (phasing).
-- **Phase 3 close:** `docs/ward-flow-phase-3-handover.md`.
+- **Phase 3 close:** `docs/archive/ward-flow-phase-3-handover.md`.
 - This document settles Phase 4's open questions and **supersedes** the one-line Phase 4 sentence
   in §18 of the binding spec. Where the two disagree, this document wins for Phase 4 scope only;
   every other section of the binding spec still governs.

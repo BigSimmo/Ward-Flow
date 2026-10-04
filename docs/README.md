@@ -40,7 +40,7 @@ consumers before applying its advice; keep original incident commands/results as
 - [wiring-conventions.md](wiring-conventions.md) — page/button wiring conventions and the dead-button / orphan-route gates
 - [search-chrome-behaviour.md](search-chrome-behaviour.md) — shared search-chrome contract: composer ownership, phone edge-to-edge dock, hide/reveal reserves
 - [mockup-retirement-policy.md](mockup-retirement-policy.md) — when a mockup may be deleted, who decides, what evidence is required, and the three tiers that keep developer-gated prototypes out of cleanup scope
-- [deployment-architecture.md](deployment-architecture.md) — app/worker/Supabase deployment topology
+- [deployment-architecture.md](archive/deployment-architecture.md) — app/worker/Supabase deployment topology
 - [design-system/README.md](design-system/README.md) — front door for the v2 design system (tokens, components, gates)
 - [design-system/SPEC.md](design-system/SPEC.md) — the complete v2 design system: roles, rules, rationale (never values)
 - [design-system/TOKENS.md](design-system/TOKENS.md) — reconciled token inventory: every role, winning name, owner, and what it replaces
@@ -64,13 +64,13 @@ Every remaining tracked document in this category (architecture and design, plus
 - [process-hardening.md](process-hardening.md) — verification gates, CI expectations, known debts
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
-- [ward-flow-clinician-check.md](ward-flow-clinician-check.md) — one-page plain-English check of the four-stage bed model, for a ward clinician
+- [ward-flow-clinician-check.md](archive/ward-flow-clinician-check.md) — one-page plain-English check of the four-stage bed model, for a ward clinician
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
-- [ward-flow-phase-6-7-kickoff-prompt.md](ward-flow-phase-6-7-kickoff-prompt.md) — paste-in prompt to open the Phase 6 and 7 design conversation
-- [phone-chrome-physical-acceptance.md](phone-chrome-physical-acceptance.md) — labelled Safari and cold-launch PWA acceptance matrix
-- [productivity-workflows.md](productivity-workflows.md) — repo workflow planners (flightplan, triage, rag-lab, …)
+- [ward-flow-phase-6-7-kickoff-prompt.md](archive/ward-flow-phase-6-7-kickoff-prompt.md) — paste-in prompt to open the Phase 6 and 7 design conversation
+- [phone-chrome-physical-acceptance.md](archive/phone-chrome-physical-acceptance.md) — labelled Safari and cold-launch PWA acceptance matrix
+- [productivity-workflows.md](archive/productivity-workflows.md) — repo workflow planners (flightplan, triage, rag-lab, …)
 - [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in [agents/codex-github-review.md](agents/codex-github-review.md)
-- [branch-cleanup-guide.md](branch-cleanup-guide.md) — branch hygiene workflow
+- [branch-cleanup-guide.md](archive/branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
 
@@ -97,27 +97,27 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 
 ## Plans and workstreams (living)
 
-- [pr-handoff-stop-cross-agent-gap.md](pr-handoff-stop-cross-agent-gap.md) — why the PR-babysit budget is hook-enforced for Claude Code but prose-only for Codex and Cursor, and what parity would require (ledger `#258`)
+- [pr-handoff-stop-cross-agent-gap.md](archive/pr-handoff-stop-cross-agent-gap.md) — why the PR-babysit budget is hook-enforced for Claude Code but prose-only for Codex and Cursor, and what parity would require (ledger `#258`)
 - [superpowers/](superpowers/) — agent-authored plans and specs
 
 ### Also catalogued (2026-09-02)
 
 Every remaining tracked document in this category (the Ward Flow developer-gated prototype's context, decisions, roadmap, ledgers and dated handovers), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [ward-flow-complete-ledger.md](ward-flow-complete-ledger.md) — Ward Flow — the complete ledger, Phases 1 to 5 — The single cross-session record of everything built.
+- [ward-flow-complete-ledger.md](archive/ward-flow-complete-ledger.md) — Ward Flow — the complete ledger, Phases 1 to 5 — The single cross-session record of everything built.
 - [ward-flow-context.md](ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
-- [ward-flow-phase-2-kickoff.md](ward-flow-phase-2-kickoff.md) — Ward Flow Phase 2 — kickoff brief for a fresh session — Paste the block at the bottom of this file into a new chat.
-- [ward-flow-phase-3-handover.md](ward-flow-phase-3-handover.md) — Ward Flow Phase 3 — session handover — Rewritten 2026-08-23, at the end of session 3.
-- [ward-flow-phase-3-ledger.md](ward-flow-phase-3-ledger.md) — ward-flow-phase-3-ledger
-- [ward-flow-phase-3-rulings.md](ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
+- [ward-flow-phase-2-kickoff.md](archive/ward-flow-phase-2-kickoff.md) — Ward Flow Phase 2 — kickoff brief for a fresh session — Paste the block at the bottom of this file into a new chat.
+- [ward-flow-phase-3-handover.md](archive/ward-flow-phase-3-handover.md) — Ward Flow Phase 3 — session handover — Rewritten 2026-08-23, at the end of session 3.
+- [ward-flow-phase-3-ledger.md](archive/ward-flow-phase-3-ledger.md) — ward-flow-phase-3-ledger
+- [ward-flow-phase-3-rulings.md](archive/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
 - [ward-flow-phase-5-handover.md](ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
-- [ward-flow-phase-5-kickoff-prompt.md](ward-flow-phase-5-kickoff-prompt.md) — Ward Flow Phase 5 — kickoff prompt — Paste the block below into a fresh session as its first message.
-- [ward-flow-phase-handoff.md](ward-flow-phase-handoff.md) — Ward Flow — phase handoff — Durable record of decisions taken while executing the Ward Flow phase plans.
-- [ward-flow-pinned-clock-handover.md](ward-flow-pinned-clock-handover.md) — Ward Flow — the pinned-clock defect: session handover — Why this file exists.
-- [ward-flow-roadmap.md](ward-flow-roadmap.md) — Ward Flow roadmap and settled decisions — What this file is for.
-- [ward-management-context.md](ward-management-context.md) — Ward Flow — domain glossary — The ubiquitous language for the ward-management context.
-- [ward-management-decisions.md](ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
-- [ward-management-mode-map.md](ward-management-mode-map.md) — Ward Flow mode map — Superseded: the nine-mode strip this document describes is superseded by the role-first structure (flow coordinator, ED, ward, transport off…
+- [ward-flow-phase-5-kickoff-prompt.md](archive/ward-flow-phase-5-kickoff-prompt.md) — Ward Flow Phase 5 — kickoff prompt — Paste the block below into a fresh session as its first message.
+- [ward-flow-phase-handoff.md](archive/ward-flow-phase-handoff.md) — Ward Flow — phase handoff — Durable record of decisions taken while executing the Ward Flow phase plans.
+- [ward-flow-pinned-clock-handover.md](archive/ward-flow-pinned-clock-handover.md) — Ward Flow — the pinned-clock defect: session handover — Why this file exists.
+- [ward-flow-roadmap.md](archive/ward-flow-roadmap.md) — Ward Flow roadmap and settled decisions — What this file is for.
+- [ward-management-context.md](archive/ward-management-context.md) — Ward Flow — domain glossary — The ubiquitous language for the ward-management context.
+- [ward-management-decisions.md](archive/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
+- [ward-management-mode-map.md](archive/ward-management-mode-map.md) — Ward Flow mode map — Superseded: the nine-mode strip this document describes is superseded by the role-first structure (flow coordinator, ED, ward, transport off…
 
 ## Subdirectory map
 

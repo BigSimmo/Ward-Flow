@@ -553,7 +553,7 @@ lapsed predictions — it depends on Task 1 landing first.
 A section on the existing `/governance` page listing what this system deliberately will not do, and
 **why** — predicting community demand; automatic escalation on a threshold; anything that predicts,
 scores, ranks or recommends; notifications that actually send; recording a person's name; diagnosis.
-Every reason already exists in `docs/ward-flow-roadmap.md`; this is transcription, not authorship.
+Every reason already exists in `docs/archive/ward-flow-roadmap.md`; this is transcription, not authorship.
 
 **Anticipated problem:** the governance page already carries an effectiveness panel making claims about
 what the system does. Do not let the register overclaim in the opposite direction; state each refusal

@@ -238,7 +238,7 @@ Also re-ran the path grep as a self-check even though it wasn't in this round's 
 
 ### Scope discipline
 
-Did not touch anything else in `ward-model.ts` beyond the one paragraph explicitly un-restricted for this round. Did not touch `WardPatientWorkspace`'s name or `docs/ward-flow-plan.md`, both named out of scope. Did not rename any `patient`-named `Movement`-typed variable elsewhere.
+Did not touch anything else in `ward-model.ts` beyond the one paragraph explicitly un-restricted for this round. Did not touch `WardPatientWorkspace`'s name or `docs/archive/ward-flow-plan.md`, both named out of scope. Did not rename any `patient`-named `Movement`-typed variable elsewhere.
 
 ### Concerns
 

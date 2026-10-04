@@ -1060,7 +1060,7 @@ in a task ledger** — that is the fourth time tonight a ruling has lived only i
 ⚠️ **This heading said _"none built"_ for hours — in the very document arguing that a cut must be
 recorded at the decision rather than in a list of cuts.** **Found by sweeping this file against
 itself, not by anybody reading it.** **Ward Verifier is stamping the same status onto each of `D9-1`
-… `D9-9` in `docs/ward-flow-phase-9-decisions.md`, which is where a fresh session actually arrives.**
+… `D9-9` in `docs/archive/ward-flow-phase-9-decisions.md`, which is where a fresh session actually arrives.**
 
 - The wait becomes prominent, ceiling removed, **never outranks urgency**
 - Declaring escalation records it and marks the screens

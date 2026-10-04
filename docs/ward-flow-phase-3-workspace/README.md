@@ -44,14 +44,14 @@ The ranges are named in `progress.md` and in each file's original name.
 Two files here have a canonical committed home elsewhere; where they differ, the canonical one
 wins:
 
-| File in this directory | Canonical copy                       |
-| ---------------------- | ------------------------------------ |
-| `progress.md`          | `docs/ward-flow-phase-3-ledger.md`   |
-| —                      | `docs/ward-flow-phase-3-handover.md` |
+| File in this directory | Canonical copy                               |
+| ---------------------- | -------------------------------------------- |
+| `progress.md`          | `docs/archive/ward-flow-phase-3-ledger.md`   |
+| —                      | `docs/archive/ward-flow-phase-3-handover.md` |
 
 ## Reading order
 
-Start with `docs/ward-flow-phase-3-handover.md`, then `docs/ward-flow-phase-3-ledger.md`. Come
+Start with `docs/archive/ward-flow-phase-3-handover.md`, then `docs/archive/ward-flow-phase-3-ledger.md`. Come
 here only when you need the detail behind a specific task — what its reviewer checked, what an
 implementer reported, or the exact requirements a task was given.
 

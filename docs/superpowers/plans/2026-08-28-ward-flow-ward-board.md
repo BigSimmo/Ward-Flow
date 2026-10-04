@@ -37,7 +37,7 @@ Copied verbatim from the spec and from `AGENTS.md`. **Every task's requirements 
   ids `under-1-week` / `1-4-weeks`, ceilings 7 / 28. Every code sample further down this plan
   predates the change and shows the old ids — they are left as written because a plan is a record
   of what was decided when, not a live specification. **The code is the authority, not this file.**
-  See `docs/ward-flow-handover-2026-08-29.md` §6.
+  See `docs/archive/ward-flow-handover-2026-08-29.md` §6.
 - **Colour never carries a fact alone.** Every colour has the same fact beside it in words or numbers.
 - **One owner-pending list must not be invented** (D15). D9's list was ANSWERED on 2026-08-28 — reuse `BED_RELEASE_BLOCKERS`, never define a second vocabulary for the same fact.
 - **The bed model is THREE stages plus a flag** — `predicted | confirmed | released`, with `blocked` a flag (`blocker` + `blockedBy`) sitting on a predicted or confirmed release. `blocked` is never a state. A blocked-but-confirmed bed KEEPS counting as confirmed.

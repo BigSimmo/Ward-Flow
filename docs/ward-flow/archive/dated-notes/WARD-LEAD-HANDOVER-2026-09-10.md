@@ -242,7 +242,7 @@ byte-pinned mockups, now restored and ignored.
 
 ⚠️ **The eleventh did not recur, and "did not recur" is not "was fine."**
 `ward-flow-chat-control.test.ts` failed once under a full-suite load with
-_"canonicalPath docs/ward-flow-questions-rule.md does not exist at activation source"_, taking 70
+_"canonicalPath docs/archive/ward-flow-questions-rule.md does not exist at activation source"_, taking 70
 seconds on that one case. **The file exists, at that source and in the tree** — measured. It passes
 alone (44/44) and passed in this full run. **A non-reproduction is not a negative**, so it is
 recorded here rather than closed: a git-subprocess read under parallel load on this machine is the
