@@ -115,7 +115,7 @@ function DistanceBandsBar({
 }
 
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
-  const { units: liveUnits, admissions, referrals, bedReleases } = useWardFlow();
+  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
 
   const section = statisticsSectionById("service");
@@ -244,6 +244,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <StatisticsCapacityChart
               units={serviceUnits}
               bedReleases={bedReleases}
+              admissions={admissions}
+              leaveBeds={leaveBeds}
               initialGroup="ward"
               scopeLabel={`in ${service}`}
             />

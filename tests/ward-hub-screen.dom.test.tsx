@@ -101,7 +101,7 @@ describe("Ward Flow Master Search Hub — fixture assumptions (floors the discri
   it("Mental Health Unit has two DIFFERENT non-zero capacity figures, so a collapsed-into-one screen has something to disagree with", () => {
     expect(SCGH_ADULT_OPEN, "fixture no longer has scgh-adult-open — re-point this case").toBeDefined();
     expect(SCGH_CAPACITY?.available, "Mental Health Unit's ready-to-admit figure moved").toBe(2);
-    expect(SCGH_CAPACITY?.held, "Mental Health Unit's not-yet-cleared figure moved").toBe(3);
+    expect(SCGH_CAPACITY?.held, "Mental Health Unit's closed (empty, not offered) figure moved").toBe(3);
     expect(
       SCGH_CAPACITY?.available,
       "the two figures are now equal — this fixture can no longer tell 'two numbers' from 'one number shown twice'",
@@ -204,8 +204,8 @@ describe("Ward Flow Master Search Hub — the owner's 2026-09-05 ruling: both nu
   /**
    * ⚠️ **THIS CASE ASSERTED AGAINST `document.body.textContent` AND COULD NOT SEE THE NUMBERS IT
    * WAS GUARDING.** `textContent` concatenates sibling elements with no separator, so the screen's
-   * perfectly correct "2 / Ready to admit / 3 / Vacant, not yet cleared" arrives as
-   * `…North Metro2Ready to admit3Vacant…` — where `/\b2\b/` cannot match, because "o2" and "2R"
+   * perfectly correct "2 / Ready to admit / 3 / Closed, not offered" arrives as
+   * `…North Metro2Ready to admit3Closed…` — where `/\b2\b/` cannot match, because "o2" and "2R"
    * are both word-character pairs with no boundary between them. It failed against a screen that
    * was right, which is the worse of the two ways a guard can be wrong (a guard that reddens on
    * correct work gets widened until it means nothing).
@@ -225,14 +225,21 @@ describe("Ward Flow Master Search Hub — the owner's 2026-09-05 ruling: both nu
     if (!bedsSection) throw new Error("Selected ward Beds section is missing");
     const preview = within(bedsSection);
 
-    // The ready-to-admit figure (2) stands as its own labelled fact...
-    expect(preview.getByText(String(SCGH_CAPACITY?.available))).toBeInTheDocument();
-    expect(preview.getByText(/^ready to admit$/i)).toBeInTheDocument();
-    // ...and the not-yet-cleared figure (3) as its own, separately labelled. A screen that
+    // The ready-to-admit figure (2) stands as its own labelled fact... Each figure is read inside
+    // its own labelled cell: the ward also has 2 pulled patients, so a bare "2" now appears twice.
+    const cellOf = (label: RegExp): HTMLElement => {
+      const cell = preview.getByText(label).parentElement;
+      if (!cell) throw new Error(`No cell holds the label ${String(label)}`);
+      return cell;
+    };
+    expect(within(cellOf(/^ready to admit$/i)).getByText(String(SCGH_CAPACITY?.available))).toBeInTheDocument();
+    // ...and the Closed figure (3; empty, not offered — the box once mislabelled "Held") as its own,
+    // separately labelled. No live pull is made here, so the ruled Closed equals
+    // `unitCapacity().held`. A screen that
     // collapsed both into the physically-empty total would still satisfy the "2" above by
     // accident; this pair is what a collapse actually breaks.
-    expect(preview.getByText(String(SCGH_CAPACITY?.held))).toBeInTheDocument();
-    expect(preview.getByText(/not yet cleared|still being made ready/i)).toBeInTheDocument();
+    expect(within(cellOf(/^Closed, not offered$/i)).getByText(String(SCGH_CAPACITY?.held))).toBeInTheDocument();
+    expect(preview.queryByText(/^Held$/i), "Held now means only a leave bed, never this box").not.toBeInTheDocument();
     // And the collapsed total (5 = 2 + 3) must not appear in this ward's own capacity at all. It
     // is the `empty` count doing a job neither `available` nor `held` may do alone: it reads as
     // availability, and the reducer refuses `PULL_PATIENT` into three of those five beds.

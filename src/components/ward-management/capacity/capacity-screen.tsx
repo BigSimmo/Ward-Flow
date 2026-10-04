@@ -18,6 +18,7 @@ import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -530,6 +531,8 @@ export function CapacityScreen() {
                   initialBedDetail={false}
                   units={units}
                   bedReleases={bedReleases}
+                  admissions={admissions}
+                  leaveBeds={leaveBeds}
                   selectedUnitId={selectedUnitId}
                   onSelectWard={selectWard}
                   service={service}
@@ -777,8 +780,9 @@ export function CapacityScreen() {
                       <th scope="col">{BED_RELEASE_BLOCKED_FIGURE_LABEL}</th>
                       <th scope="col">Discharges due today</th>
                       <th scope="col">Transfers today</th>
-                      <th scope="col">Held</th>
-                      <th scope="col">Occupied</th>
+                      <th scope="col">{BED_STATE_LABELS.pulled}</th>
+                      <th scope="col">{BED_STATE_LABELS.closed}</th>
+                      <th scope="col">{BED_STATE_LABELS.occupied}</th>
                       <th scope="col">Sex mix</th>
                       <th scope="col">Specialling</th>
                       <th scope="col">Involuntary-capable</th>
@@ -1304,8 +1308,8 @@ function NetworkRow({
         ) : null}
       </td>
       {/*
-        ⚠️ **HELD AND OCCUPIED TAKE `countCellText`, NOT `freeingCellText`, AND THE DIFFERENCE IS
-        NOT COSMETIC.** Both read only `Unit`, never the release list, so neither has a "nobody told
+        ⚠️ **PULLED, CLOSED AND OCCUPIED TAKE `countCellText`, NOT `freeingCellText`, AND THE
+        DIFFERENCE IS NOT COSMETIC.** None reads the release list, so none has a "nobody told
         this screen" state to represent — there is no `undefined` for them and rendering
         "Not tracked here" would be a claim about reporting that is simply false. A real zero still
         reads as the word, which is the rule that applies to every possible-zero on this screen.
@@ -1330,8 +1334,16 @@ function NetworkRow({
       <td data-testid="ward-capacity-network-transfers-today" className={styles.notTracked}>
         Not recorded
       </td>
-      <td data-testid="ward-capacity-network-held" className={row.held === 0 ? styles.statedZero : undefined}>
-        {countCellText(row.held)}
+      {/*
+        The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied add up to the
+        ward's beds. Closed is the box once mislabelled "Held"; "on leave" sits beside Occupied as a
+        marker of beds already counted inside it, never a fifth box.
+      */}
+      <td data-testid="ward-capacity-network-pulled" className={row.pulled === 0 ? styles.statedZero : undefined}>
+        {countCellText(row.pulled)}
+      </td>
+      <td data-testid="ward-capacity-network-closed" className={row.closed === 0 ? styles.statedZero : undefined}>
+        {countCellText(row.closed)}
       </td>
       <td data-testid="ward-capacity-network-occupied" className={row.occupied === 0 ? styles.statedZero : undefined}>
         {countCellText(row.occupied)}
@@ -1340,6 +1352,11 @@ function NetworkRow({
             +{row.surge} Surge
           </span>
         )}
+        {row.onLeave > 0 ? (
+          <small className={styles.beingMadeReady} data-testid="ward-capacity-network-on-leave">
+            {row.onLeave} {BED_STATE_LABELS.onLeave.toLowerCase()}
+          </small>
+        ) : null}
       </td>
       {/*
         🔴 **SEX MIX AND SPECIALLING HEADROOM — OWNER RULING 2026-09-06, built here the same day.**
@@ -1492,14 +1509,14 @@ function NetworkRow({
 }
 
 /**
- * `NETWORK_TABLE_COLUMN_COUNT` matches the seventeen `<th scope="col">` cells declared in
+ * `NETWORK_TABLE_COLUMN_COUNT` matches the eighteen `<th scope="col">` cells declared in
  * `CapacityScreen`'s own `<thead>` above — Ward, Bed kinds, Ready, Locked, Freeing, the three
- * release-stage figures, Discharges due today, Transfers today (decision 8A), Held, Occupied, Sex mix, Specialling, Mental Health Act, Confirmed and
+ * release-stage figures, Discharges due today, Transfers today (decision 8A), Pulled, Closed, Occupied, Sex mix, Specialling, Mental Health Act, Confirmed and
  * Ask for an update. Used only to span an empty-service sentence across the whole row; not read
  * from the `<thead>` at runtime because a Server-Component-shaped table primitive has no DOM to
  * count at render time (see `WardTable`'s own comment on why it cannot measure itself).
  */
-const NETWORK_TABLE_COLUMN_COUNT = 17;
+const NETWORK_TABLE_COLUMN_COUNT = 18;
 
 /**
  * One health service's rows on the network table, behind a fold — Task 2, Part Two.
@@ -1607,7 +1624,8 @@ function NetworkServiceGroupRows({
           <td>{freeingCellText(totals.blocked)}</td>
           <td>{freeingCellText(totals.dischargesDueToday)}</td>
           <td className={styles.groupNoSummary}>Not recorded</td>
-          <td>{countCellText(totals.held)}</td>
+          <td>{countCellText(totals.pulled)}</td>
+          <td>{countCellText(totals.closed)}</td>
           <td>
             {countCellText(totals.occupied)}
             {totals.surge !== undefined && totals.surge > 0 && (
@@ -1785,16 +1803,19 @@ function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () 
                 <dd>{countCellText(row.ready)}</dd>
               </div>
               <div>
-                <dt>Held</dt>
-                <dd>{countCellText(row.held)}</dd>
+                <dt>{BED_STATE_LABELS.pulled}</dt>
+                <dd>{countCellText(row.pulled)}</dd>
               </div>
               <div>
-                <dt>Blocked beds</dt>
-                <dd>Not recorded</dd>
+                <dt>{BED_STATE_LABELS.closed}</dt>
+                <dd>{countCellText(row.closed)}</dd>
               </div>
               <div>
-                <dt>Occupied</dt>
-                <dd>{countCellText(row.occupied)}</dd>
+                <dt>{BED_STATE_LABELS.occupied}</dt>
+                <dd>
+                  {countCellText(row.occupied)}
+                  {row.onLeave > 0 ? ` · ${row.onLeave} ${BED_STATE_LABELS.onLeave.toLowerCase()}` : null}
+                </dd>
               </div>
               <div>
                 <dt>Freeing today</dt>

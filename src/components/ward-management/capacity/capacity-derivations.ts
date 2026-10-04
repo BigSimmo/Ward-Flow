@@ -19,6 +19,7 @@ import {
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type {
@@ -167,7 +168,7 @@ export type NetworkWardRow = {
   dischargesDueToday: number | undefined;
   /**
    * 🔴 **THE SIX PER-WARD FIGURES, RESTORED 2026-09-06 BY OWNER RULING — AND EVERY ONE OF THEM IS
-   * READ FROM `capacityBreakdown()` / `unitCapacity()`, NEVER COUNTED IN THIS FILE.**
+   * READ FROM `capacityBreakdown()` / `unitCapacity()` / `bedStates()`, NEVER COUNTED IN THIS FILE.**
    *
    * MERGE 02 cut this board to Ready · Locked · Freeing, and a release's stage stopped reaching the
    * coordinator entirely. Owner, asked whether that was intended: _"Yes the coordinator should still
@@ -212,10 +213,20 @@ export type NetworkWardRow = {
   oldestBlockedSince: Instant | undefined;
   /** Releases outside today's band, counted in none of the three figures above and stated on screen. */
   excludedBeyondToday: number | undefined;
-  /** Empty beds this ward is NOT offering — `empty` minus `available`. Reads only `Unit`, so always a number. */
-  held: number;
-  /** Beds with a patient in them — `unitCapacity().occupied`. Reads only `Unit`, so always a number. */
+  /**
+   * The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied add up to the
+   * ward's beds. `closed` is physically empty and not offered — the box once mislabelled "Held";
+   * "Held" now means only a bed kept for a patient on leave (`onLeave`, inside `occupied`).
+   * Without `admissions` no pull can be told apart, so `pulled` is 0 and a seeded pulled patient
+   * stays inside `occupied` — the figure the screen printed before the ruling, not an invented one.
+   */
+  pulled: number;
+  /** Empty beds this ward is NOT offering, and not pulled into — `bedStates().closed`. Always a number. */
+  closed: number;
+  /** Beds with a patient in them, excluding a pulled patient — `bedStates().occupied`. Always a number. */
   occupied: number;
+  /** Inside `occupied`: beds held for a patient on leave — `bedStates().onLeave`. A marker, never a box. */
+  onLeave: number;
   surge?: number;
   /** When the ward last confirmed its allocatable count — `unit.allocatable.confirmedAt`, the
    *  ward-sourced figure, not `unit.empty` (the feed's). */
@@ -329,6 +340,7 @@ export function networkWardRows(
   }
   return units.map((unit) => {
     const cap = unitCapacity(unit, []);
+    const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
     return {
       unit,
       ready: lockedBedsFree(unit) + openBedsFree(unit),
@@ -353,10 +365,13 @@ export function networkWardRows(
       oldestBlockedSince: releases === undefined ? undefined : oldestBlockedSince(unit.id, releases),
       excludedBeyondToday:
         releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).excludedBeyondToday,
-      // `held` and `occupied` read only `Unit`, never the release list, so unlike the three above they
-      // are ALWAYS a number: there is no "nobody told this screen" case to represent.
-      held: capacityBreakdown(unit, [], leave ?? [], now).held,
-      occupied: cap.occupied,
+      // The four ruled boxes come from `bedStates`, never counted here. Unlike the release figures
+      // above they are ALWAYS a number: Closed and Occupied read the `Unit`, and Pulled reads the
+      // admissions (0 without them — see the field's note on `NetworkWardRow`).
+      pulled: states.pulled,
+      closed: states.closed,
+      occupied: states.occupied,
+      onLeave: states.onLeave,
       surge: ("surge" in cap ? (cap as { surge?: number }).surge : undefined) ?? Math.max(0, cap.occupied - unit.beds),
       // `bedsPendingPreparation` is the reducer's OWN helper — the same function whose result gates
       // PULL_PATIENT — so the screen and the refusal cannot disagree about which beds are still
@@ -578,7 +593,8 @@ export type NetworkServiceGroupTotals = {
   confirmed: number | undefined;
   expected: number | undefined;
   blocked: number | undefined;
-  held: number;
+  pulled: number;
+  closed: number;
   occupied: number;
   surge?: number;
   sexMix: { Female: number; Male: number };
@@ -603,7 +619,8 @@ export function networkServiceGroupTotals(rows: NetworkWardRow[]): NetworkServic
     confirmed: trackedSum(rows.map((row) => row.confirmed)),
     expected: trackedSum(rows.map((row) => row.expected)),
     blocked: trackedSum(rows.map((row) => row.blocked)),
-    held: rows.reduce((sum, row) => sum + row.held, 0),
+    pulled: rows.reduce((sum, row) => sum + row.pulled, 0),
+    closed: rows.reduce((sum, row) => sum + row.closed, 0),
     occupied: rows.reduce((sum, row) => sum + row.occupied, 0),
     surge: rows.reduce((sum, row) => sum + (row.surge ?? 0), 0),
     sexMix: rows.reduce(

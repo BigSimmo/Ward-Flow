@@ -697,10 +697,16 @@
   opacity: 0.85;
 }
 
-.bedCell.held {
+/* Closed: physically empty, not offered (`ward-bed-states.ts`). */
+.bedCell.closed {
   border: 1px dashed var(--warn);
   background: var(--warn-soft);
   color: var(--warn-ink);
+}
+
+/* Pulled: allocated to a named patient who has not arrived yet. */
+.bedCell.pulled {
+  border: 1px solid var(--accent);
 }
 
 .bedCell.vacant {

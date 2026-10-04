@@ -28,7 +28,9 @@ import {
   type WardRequestWithdrawalReason,
   wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   clockState,
   formatElapsed,
@@ -52,7 +54,6 @@ import {
   referralBlockedReason,
   needsNoRecordedReason,
   restrictionNotice,
-  unitCapacity,
 } from "@/components/ward-management/ward-derivations";
 import { eligibility, type EligibilityGate, type GateResult } from "@/components/ward-management/ward-eligibility";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -116,9 +117,11 @@ type ShortlistPanelProps = {
    * Threaded through only for the ward-detail block's Confirmed/Expected chips
    * (`capacityBreakdown()` takes it) -- `flow-diagram.tsx`'s `UnitNode` already receives it for
    * the same reason and reads the same function. Every other figure this panel renders
-   * (`capacityLine`'s available/held/blocked/occupied, via `unitCapacity`) does not need it.
+   * (`capacityLine`'s four bed states, via `bedStates`) does not need it.
    */
   leaveBeds: LeaveBed[];
+  /** Live admissions, so the four bed states can count Pulled beds (`bedStates`). */
+  admissions: readonly Admission[];
   /**
    * Every front-door referral this state holds — the same live collection `useWardFlow()` hands
    * back, never a filtered subset. Added so this panel can resolve `movement.referralId` back to
@@ -227,9 +230,9 @@ const LEGAL_STATUS_OPTIONS: LegalStatus[] = [
 // see that file's own doc comment on `SEXES` for the defect class this prevents.
 const URGENCY_OPTIONS = URGENCY_LEVELS;
 
-function capacityLine(unit: Unit, bedReleases: BedRelease[]) {
-  const capacity = unitCapacity(unit, bedReleases);
-  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
+function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonly Admission[]) {
+  const states = bedStates(unit, admissions, bedReleases, []);
+  const pendingPreparation = states.beingMadeReady;
   /*
    * 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for a
    * preparation note — asked whether a bed being cleaned should drop the ward's number or merely
@@ -247,7 +250,7 @@ function capacityLine(unit: Unit, bedReleases: BedRelease[]) {
    *
    * Appended only when there is one. An absence is silence, never "Being made ready 0".
    */
-  const line = `Ready ${capacity.available} · Held ${capacity.held} · Blocked not recorded · Occupied ${capacity.occupied}`;
+  const line = `Ready ${states.ready} · Pulled ${states.pulled} · Closed ${states.closed} · Occupied ${states.occupied}`;
   return pendingPreparation > 0 ? `${line} · Being made ready ${pendingPreparation}` : line;
 }
 
@@ -381,6 +384,7 @@ export function ShortlistPanel({
   units,
   bedReleases,
   leaveBeds,
+  admissions,
   referrals,
   selectedUnitId,
   onSelectUnit,
@@ -441,19 +445,19 @@ export function ShortlistPanel({
 
   /**
    * The ward detail block, matching the Command mockup's `wardDetailHtml()` — that ward's own bed
-   * states, in this column, once a ward is selected. Not a re-derivation: `unitCapacity` is the
-   * exact function `capacityLine` above already calls for available/held/blocked/occupied, and
+   * states, in this column, once a ward is selected. Not a re-derivation: `bedStates` is the
+   * exact function `capacityLine` above already calls for Ready/Pulled/Closed/Occupied, and
    * `capacityBreakdown` is the exact function `flow-diagram.tsx`'s `UnitNode` already calls for
    * Confirmed/Expected — so this block can never show a figure either of those two surfaces
    * contradicts.
    *
    * ⚠️ Confirmed and Expected are drawn from `capacityBreakdown` (bed releases), never from
-   * `unit.beds`, and are never summed into `available`/`held`/`blocked`/`occupied` — the same
+   * `unit.beds`, and are never summed into the four bed states — the same
    * ruling `coordinator.module.css`'s `.diagramBedChip[data-state="confirmed"]` comment records.
    */
   const activeCapacity = useMemo(
-    () => (activeUnit ? unitCapacity(activeUnit, bedReleases) : undefined),
-    [activeUnit, bedReleases],
+    () => (activeUnit ? bedStates(activeUnit, admissions, bedReleases, leaveBeds) : undefined),
+    [activeUnit, admissions, bedReleases, leaveBeds],
   );
   const activeBreakdown = useMemo(
     () => (activeUnit ? capacityBreakdown(activeUnit, bedReleases, leaveBeds, now) : undefined),
@@ -461,7 +465,7 @@ export function ShortlistPanel({
   );
   // 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for this —
   // see `capacityLine`'s own comment above and `flow-diagram.tsx`'s `UnitNode` for the ruling this
-  // repeats a third time. `activeCapacity.available` is rendered untouched below.
+  // repeats a third time. `activeCapacity.ready` is rendered untouched below.
   const activePendingPreparation = activeUnit ? bedsPendingPreparation(activeUnit.id, bedReleases) : 0;
 
   const [overrideRecord, setOverrideRecord] = useState<OverrideRecord | undefined>(undefined);
@@ -1771,7 +1775,7 @@ export function ShortlistPanel({
                         </span>
                       </span>
                       <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-                        {capacityLine(candidate.unit, bedReleases)}
+                        {capacityLine(candidate.unit, bedReleases, admissions)}
                       </span>
                       {/* ⚠️ A MEASURED ROAD ROUTE, SHOWN ONLY WHERE ONE EXISTS. The pack covers
                         metropolitan EDs and metropolitan sites; a regional pair, or an ED with no
@@ -1908,7 +1912,7 @@ export function ShortlistPanel({
                         >
                           <span className={styles.shortlistCandidateName}>{candidate.unit.name}</span>
                           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-                            {capacityLine(candidate.unit, bedReleases)}
+                            {capacityLine(candidate.unit, bedReleases, admissions)}
                           </span>
                           {/* ⚠️ THE REASON IS ON SCREEN, NOT ONLY IN THE TITLE. "No allocatable bed"
                             and "Open ward does not meet a secure requirement" look identical as
@@ -1951,7 +1955,7 @@ export function ShortlistPanel({
           the mockup puts them in, without a coordinator having to look back at the diagram.
 
           ⚠️ Four separate labelled counts, deliberately not the mockup's "N occupied of M beds"
-          ratio: `capacityLine` above already states Ready/Held/Blocked/Occupied this same way for
+          ratio: `capacityLine` above already states Ready/Pulled/Closed/Occupied this same way for
           every candidate row, and the diagram's own bed chips (`coordinator.module.css`'s
           `.diagramBedChip` rules, reused here rather than duplicated) never use a ratio either.
           Introducing one here would be a fifth reading of the same beds this screen already states
@@ -1963,13 +1967,13 @@ export function ShortlistPanel({
               <div className={styles.shortlistWardDetail} data-testid={`ward-shortlist-ward-detail-${activeUnit.id}`}>
                 <span className={styles.diagramBedRow}>
                   <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="available">
-                    Ready {activeCapacity.available}
+                    Ready {activeCapacity.ready}
                   </span>
-                  <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="held">
-                    Held {activeCapacity.held}
+                  <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="pulled">
+                    Pulled {activeCapacity.pulled}
                   </span>
-                  <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="blocked">
-                    Blocked not recorded
+                  <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="closed">
+                    Closed {activeCapacity.closed}
                   </span>
                   <span className={`${styles.diagramBedChip} ${shortlistStyles.tabularNum}`} data-state="occupied">
                     Occupied {activeCapacity.occupied}

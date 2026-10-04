@@ -565,9 +565,10 @@
   width: var(--bar-not-yet, 0%);
   background: var(--warn);
 }
-.barBlocked {
-  width: var(--bar-blocked, 0%);
-  background: repeating-linear-gradient(45deg, var(--danger) 0 2px, var(--surface) 2px 4px);
+/* Pulled: a bed allocated to someone not yet arrived — spoken for, so accent rather than alarm. */
+.barPulled {
+  width: var(--bar-pulled, 0%);
+  background: repeating-linear-gradient(45deg, var(--accent) 0 2px, var(--surface) 2px 4px);
 }
 .barLegend {
   margin-top: 0.5rem;
@@ -1222,7 +1223,7 @@
   }
   .barReady,
   .barNotYet,
-  .barBlocked {
+  .barPulled {
     border-right: 1px solid CanvasText;
   }
 }
@@ -1280,7 +1281,7 @@
   .barNotYet {
     border-style: dashed !important;
   }
-  .barBlocked {
+  .barPulled {
     border-style: double !important;
   }
 }

@@ -147,7 +147,7 @@ const RETRACTED = /\b(?:any\s?more|no longer|until recently|used to be|has since
  *
  * ⚠️ **They are recorded as a LIMIT rather than fixed, and the reason is measured, not assumed.**
  * Splitting on `and` or `,` shreds honest prose: the real first sentence in `hub-screen.tsx` is
- * *"Every bed figure — ready to admit, vacant but not yet cleared, and out of service — is invented
+ * *"Every bed figure — ready, pulled, closed and occupied — is invented
  * for this prototype"*, which carries two commas and an `and` **inside one claim** and would break
  * into fragments that each fail. **A guard that reddens correct work gets widened until it means
  * nothing**, so chasing these would cost more than they take.

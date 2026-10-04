@@ -6,6 +6,7 @@ import { dayOf } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * The ward detail block (task C, Command mockup parity): the mockup's `wardDetailHtml()` shows
@@ -47,6 +48,7 @@ function ShortlistHarness({ selectedUnitId }: { selectedUnitId: string }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={selectedUnitId}
       onSelectUnit={() => {}}
@@ -94,7 +96,7 @@ function renderWardDetail(selectedUnitId: string) {
 }
 
 describe("ShortlistPanel's ward detail block", () => {
-  it("shows the six bed-state chips and the preparation note, hand-computed from Moodjar's own seed data", () => {
+  it("shows the bed-state chips and the preparation note, hand-computed from Moodjar's own seed data", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ShortlistHarness selectedUnitId="arm-adult-open" />
@@ -113,10 +115,12 @@ describe("ShortlistPanel's ward detail block", () => {
     // notEmpty  = max(19 - 3, 0) = 16
     // blocked   = min(max(0, 0), 16) = 0
     // occupied  = max(16 - 0, 0) = 16
+    // Bed states (R-B-05): one seeded pulled patient (AD-ARMA-16) sits inside that 16, so
+    // Pulled 1 and Occupied 15; the empty bed the ward is not offering is Closed 1.
     expect(within(detail).getByText("Ready 2")).toBeInTheDocument();
-    expect(within(detail).getByText("Held 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Blocked not recorded")).toBeInTheDocument(); // owner ruling 2026-09-25
-    expect(within(detail).getByText("Occupied 16")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 15")).toBeInTheDocument();
 
     // CHANGED 25 September 2026: Moodjar's Confirmed/Expected figures are no longer pinned by the
     // hand-authored WR-008 (owner ruling 2026-09-25 removed it) — this unit's occupied admissions
@@ -148,10 +152,11 @@ describe("ShortlistPanel's ward detail block", () => {
     // notEmpty  = max(20 - 2, 0) = 18
     // blocked   = min(max(0, 0), 18) = 0
     // occupied  = max(18 - 0, 0) = 18
+    // Bed states (R-B-05): two seeded pulled patients (AD-RPHS-03, AD-RPHS-16) sit inside that 18.
     expect(within(detail).getByText("Ready 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Held 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Blocked not recorded")).toBeInTheDocument(); // owner ruling 2026-09-25
-    expect(within(detail).getByText("Occupied 18")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 2")).toBeInTheDocument();
+    expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 16")).toBeInTheDocument();
 
     // CHANGED 25 September 2026: Ward 2K's Confirmed/Expected figures are no longer pinned by the
     // hand-authored WR-001 (owner ruling 2026-09-25 removed it) — read from the fixture at runtime

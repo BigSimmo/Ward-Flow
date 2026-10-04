@@ -48,6 +48,8 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
     expect(sheet.capacity.ready).toBe(rows.reduce((sum, row) => sum + row.ready, 0));
     expect(sheet.capacity.beds).toBe(rows.reduce((sum, row) => sum + row.unit.beds, 0));
     expect(sheet.capacity.occupied).toBe(rows.reduce((sum, row) => sum + row.occupied, 0));
+    expect(sheet.capacity.pulled).toBe(rows.reduce((sum, row) => sum + row.pulled, 0));
+    expect(sheet.capacity.closed).toBe(rows.reduce((sum, row) => sum + row.closed, 0));
   });
 
   it("discharges match the Discharges board's groups, held up first", () => {

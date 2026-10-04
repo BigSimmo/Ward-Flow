@@ -1440,16 +1440,16 @@
   color: var(--good);
 }
 
-.diagramBedChip[data-state="held"] {
+.diagramBedChip[data-state="closed"] {
   border-color: var(--warn);
   background: var(--warn-soft);
   color: var(--warn);
 }
 
-.diagramBedChip[data-state="blocked"] {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+.diagramBedChip[data-state="pulled"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
 .diagramBedChip[data-state="occupied"] {

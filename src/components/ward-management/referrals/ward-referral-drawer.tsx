@@ -36,7 +36,7 @@ import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   URGENCY_LEVELS,
   type Cohort,
@@ -249,7 +249,10 @@ export type WardCapacityRecord = {
   cohort: Cohort;
   security: "Open" | "Secure";
   readyBeds: number;
-  heldBeds: number;
+  /** `bedStates().pulled` — allocated to a named patient who has not arrived yet. */
+  pulledBeds: number;
+  /** `bedStates().closed` — physically empty, but the ward is not offering it. */
+  closedBeds: number;
   /** Of `readyBeds`, how many are still being made ready. */
   pendingPreparation?: number;
 };
@@ -272,10 +275,13 @@ export function useWardCapacity(): WardCapacityRecord[] {
   }
   const units = flow?.units;
   const bedReleases = flow?.bedReleases;
+  const admissions = flow?.admissions;
+  const leaveBeds = flow?.leaveBeds;
   return useMemo(() => {
     if (!units || !bedReleases) return [];
     return units.map((unit) => {
-      const cap = unitCapacity(unit, bedReleases);
+      // The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied.
+      const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? []);
       return {
         unitId: unit.id,
         name: unit.name,
@@ -283,12 +289,13 @@ export function useWardCapacity(): WardCapacityRecord[] {
         healthService: unitHealthService(unit),
         cohort: unit.cohort,
         security: unitHasOpenBeds(unit) ? "Open" : "Secure",
-        readyBeds: cap.available,
-        heldBeds: cap.held,
+        readyBeds: states.ready,
+        pulledBeds: states.pulled,
+        closedBeds: states.closed,
         pendingPreparation: bedsPendingPreparation(unit.id, [...bedReleases]),
       };
     });
-  }, [units, bedReleases]);
+  }, [units, bedReleases, admissions, leaveBeds]);
 }
 
 export function WardReferralDrawer(props: WardReferralDrawerProps) {
@@ -525,12 +532,13 @@ function WardReferralDrawerContent({
     const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);
 
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
-    const heldBedsCount = matchingRecords.reduce((sum, r) => sum + r.heldBeds, 0);
+    const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
+    const closedBedsCount = matchingRecords.reduce((sum, r) => sum + r.closedBeds, 0);
     // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
     // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
     // sentence beside it is what was missing here.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
-    const pillText = `${readyBedsCount} Bed${readyBedsCount === 1 ? "" : "s"} Ready · ${heldBedsCount} Held`;
+    const pillText = `${readyBedsCount} Bed${readyBedsCount === 1 ? "" : "s"} Ready · ${pulledBedsCount} Pulled · ${closedBedsCount} Closed`;
     const pillTone = readyBedsCount > 0 ? ("good" as const) : ("danger" as const);
 
     const sortedUnits = [...matchingRecords].sort((a, b) => {
@@ -1287,7 +1295,10 @@ function WardReferralDrawerContent({
                               <strong>{u.readyBeds}</strong> Ready
                             </span>
                             <span className={styles.destHeldCount}>
-                              <strong>{u.heldBeds}</strong> Held
+                              <strong>{u.pulledBeds}</strong> Pulled
+                            </span>
+                            <span className={styles.destHeldCount}>
+                              <strong>{u.closedBeds}</strong> Closed
                             </span>
                           </div>
                           {(u.pendingPreparation ?? 0) > 0 ? (

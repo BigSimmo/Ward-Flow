@@ -5,6 +5,7 @@ import { FlowDiagram } from "@/components/ward-management/coordinator/flow-diagr
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * The diagram's sideways-scroll affordance (task C, Command mockup parity): a border on
@@ -34,6 +35,7 @@ describe("FlowDiagram's sideways-scroll affordance", () => {
         units={allUnits()}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         selectedUnitId={undefined}
         onSelectUnit={() => {}}
         parallelReferralCap={PARALLEL_REFERRAL_CAP}

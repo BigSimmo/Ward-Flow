@@ -206,7 +206,8 @@
   color: var(--ward-success);
 }
 
-.bedChip[data-state="held"] {
+.bedChip[data-state="held"],
+.bedChip[data-state="closed"] {
   border-color: var(--ward-warning);
   background: var(--ward-warning-soft);
   color: var(--ward-warning);
@@ -222,6 +223,12 @@
   border-color: var(--ward-border-strong);
   background: var(--surface-subtle);
   color: var(--muted);
+}
+
+/* Pulled: allocated to a named patient who has not arrived (`ward-bed-states.ts`). */
+.bedChip[data-state="pulled"] {
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* Confirmed, expected and leave beds — never summed into the four physical states above (they
@@ -4722,8 +4729,13 @@
   background: var(--good);
 }
 
-.capSeg[data-state="held"] {
+.capSeg[data-state="held"],
+.capSeg[data-state="closed"] {
   background: var(--accent);
+}
+
+.capSeg[data-state="pulled"] {
+  background: var(--warn);
 }
 
 .capSeg[data-state="blocked"] {

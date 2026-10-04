@@ -47,7 +47,11 @@ export const CAPACITY_FIGURE_LABELS = {
   confirmedToday: "Confirmed today",
   expectedToday: "Expected today",
   blockedToday: BED_RELEASE_BLOCKED_FIGURE_LABEL,
-  held: "Held",
+  // "Closed", not "Held" — 2026-09-01 ruling 5; "Held" now means only a bed kept for a patient on
+  // leave. The key stays `held` because it names `CapacityBreakdown.held`, but that field still
+  // counts a live pull's empty bed: a screen printing this label shows `bedStates().closed`
+  // (`ward-bed-states.ts`), as the bed board does.
+  held: "Closed",
   // "On leave", not "Leave (usable)" — owner ruling 11, 2026-09-06. The FIGURE changed too, not
   // only the label: it counts beds on leave, where it counted leave beds a ward said could be
   // filled. See `capacityBreakdown.onLeave`.

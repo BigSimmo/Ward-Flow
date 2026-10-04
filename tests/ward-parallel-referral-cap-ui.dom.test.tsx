@@ -25,6 +25,7 @@ import { StatisticsScreen } from "@/components/ward-management/statistics/statis
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 const LOWERED_CAP = 2;
 
@@ -60,6 +61,7 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
         units={units}
         bedReleases={bedReleases}
         leaveBeds={leaveBeds}
+        admissions={wardAdmissions}
         referrals={referrals}
         selectedUnitId={selectedUnitId}
         onSelectUnit={setSelectedUnitId}

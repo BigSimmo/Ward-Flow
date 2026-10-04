@@ -94,7 +94,7 @@ const FORCED_COLOURS_PALETTE = bodyAfter(
 );
 const PRINT_PALETTE = bodyAfter(bodyAfter(THIRD_EDITION_WITHOUT_COMMENTS, "@media print"), ".wardShellTokens,");
 
-const HUB_PAINT_DEPENDENCIES = ["--good", "--warn", "--danger", "--surface", "--line-strong"] as const;
+const HUB_PAINT_DEPENDENCIES = ["--good", "--warn", "--accent", "--surface", "--line-strong"] as const;
 
 /** Follows `var(--x)` through the ward token layer and then globals, for one palette scope. */
 function resolveToken(token: string, scope: 0 | 1, seen = new Set<string>()): string {
@@ -150,7 +150,9 @@ function resolvedBackground(className: string, scope: 0 | 1): string {
   return (background?.[1] ?? "").replace(/var\((--[a-z0-9-]+)\)/g, (_, token: string) => resolveToken(token, scope));
 }
 
-const SEGMENTS = ["barReady", "barNotYet", "barBlocked"] as const;
+// Ready, Closed (the box once mislabelled "Held") and Pulled — `ward-bed-states.ts`. The out-of-service
+// segment this list once named went with the ruling that folds out-of-service beds into Closed.
+const SEGMENTS = ["barReady", "barNotYet", "barPulled"] as const;
 
 describe("Ward Flow hub — the bed bar's segments are three different paints, in both palettes", () => {
   it("the resolver still understands the token files (if this fails, every result below is worthless)", () => {

@@ -6,6 +6,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Shortlist override drafts are kept per movement. Switching the selected movement from A to B used
@@ -27,6 +28,7 @@ function Harness({ selectedId }: { selectedId: string }) {
       units={units}
       bedReleases={bedReleases}
       leaveBeds={leaveBeds}
+      admissions={wardAdmissions}
       referrals={referrals}
       selectedUnitId={undefined}
       onSelectUnit={() => {}}

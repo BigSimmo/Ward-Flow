@@ -37,7 +37,7 @@ import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import type {
@@ -130,7 +130,7 @@ type Tile =
     }
   | { kind: "waiting"; key: string }
   | { kind: "blocked"; key: string }
-  | { kind: "held"; key: string }
+  | { kind: "closed"; key: string }
   | { kind: "empty"; key: string };
 
 const BOARD_FILTERS = ["all", "look", "ready", "quiet"] as const;
@@ -188,12 +188,13 @@ function findUnit(unitId: string, liveUnits: readonly Unit[]): { unit: Unit; sit
 /**
  * One tile per bed, in `unit.beds` of them.
  *
- * A unit's beds divide into FOUR: **occupied** (including pulled — the ward gave the bed away and
- * the person may still be in an emergency department), **blocked** (out of service), **held**
- * (physically empty, but not yet confirmed as one the ward will actually offer), and **available**
- * — drawn on screen as the plain "empty" tile, because that is the bed a coordinator can fill
- * right now. Tiles are laid out occupied, then blocked, then held, then available, and
- * `occupied + blocked + held + available === unit.beds`.
+ * A unit's beds divide into the ruled four (`ward-bed-states.ts`): **occupied**, **pulled** — drawn
+ * as the "waiting" tile: the ward gave the bed away and the person may still be in an emergency
+ * department — **closed** (physically empty, but the ward is not offering it), and **ready** —
+ * drawn as the plain "empty" tile, because that is the bed a coordinator can fill right now. The
+ * out-of-service **blocked** tiles are kept as their own kind, but the count is 0 on every unit
+ * (owner ruling 2026-09-25) and is folded into Closed wherever the four are counted. Tiles are laid
+ * out occupied/pulled, then blocked, then closed, then ready, and they add up to `unit.beds`.
  *
  * **The blocked tiles are the fix for a defect found by rendering this page and looking at it.**
  * The first pass knew only occupied and empty, so it drew `beds − occupied` empty tiles and every
@@ -202,17 +203,18 @@ function findUnit(unitId: string, liveUnits: readonly Unit[]): { unit: Unit; sit
  * board contradicting itself on screen. No test caught it; `tests/ward-board-consistency.test.ts`
  * was written afterwards and pins the arithmetic across all 23 units.
  *
- * **The held tiles are the same class of fix, for a different unit.** On `rph-adult-secure` the
- * header already said "1 bed you can fill today" (`headlineAvailable`, `min(allocatable, empty)`
+ * **The closed tiles (once called "held") are the same class of fix, for a different unit.** On
+ * `rph-adult-secure` the header already said "1 bed you can fill today" (`headlineAvailable`, `min(allocatable, empty)`
  * = `min(1, 2)`), but the first pass still drew BOTH physically-empty beds as plain "Empty" tiles —
  * the header and the grid disagreeing about how many beds a coordinator can actually take someone
- * to. **Held is not invented here**: `unitCapacity` (`ward-derivations.ts`) already partitions
- * every unit into `available + held + blocked + occupied === unit.beds`, and is the same function
- * `ward-screen.tsx` and `flow-diagram.tsx` read for their own "Held" figure — this board reads its
- * `held` count rather than re-deriving a second, possibly-drifting version of the same split.
+ * to. **Closed is not invented here**: `bedStates` (`ward-bed-states.ts`) already partitions every
+ * unit into Ready · Pulled · Closed · Occupied, and is the same function the ward screen reads for
+ * its own figures — this board reads its `closed` count rather than re-deriving a second,
+ * possibly-drifting version of the same split. ⚠️ Reading `unitCapacity().held` here, as this board
+ * once did, drew a live pull twice: once as its "waiting" tile and again as an unoffered empty bed.
  *
- * **Which tile is blocked or held is NOT knowable and is not invented.** `Unit.blocked` is a COUNT
- * and `unitCapacity`'s `held` is derived from two more counts (`unit.allocatable.value`,
+ * **Which tile is blocked or closed is NOT knowable and is not invented.** `Unit.blocked` is a COUNT
+ * and Closed is derived from more counts (`unit.allocatable.value`,
  * `unit.empty.value`) — the model holds no per-bed record and no admission carries a bed number —
  * so these are drawn purely because they have to be drawn somewhere. The claim being made on
  * screen is "this many of this ward's beds are out of service" / "this many are empty but not yet
@@ -227,7 +229,7 @@ function findUnit(unitId: string, liveUnits: readonly Unit[]): { unit: Unit; sit
  * If a unit somehow holds more occupants than it has beds, every occupant is still drawn — the
  * over-count is the fact worth seeing, and truncating the list to `unit.beds` would hide exactly
  * the people a double-allocation put there. The blocked tiles are drawn in that case too: beds out
- * of service do not stop being out of service because the ward is over-full, and the held/available
+ * of service do not stop being out of service because the ward is over-full, and the closed/ready
  * counts floor at zero rather than going negative and cancelling them out.
  */
 function buildTiles(
@@ -268,17 +270,21 @@ function buildTiles(
   // than the ward has beds is a worse failure than one that shows the shortfall as empty.
   const emptyPoolCount = Math.max(0, unit.beds - occupants.length - blockedCount);
 
-  // `unitCapacity`'s `held` comes from `unit.allocatable.value`/`unit.empty.value` directly, not
-  // from this function's own admissions-derived `emptyPoolCount` above — so it is clamped into
-  // that pool exactly as `blockedCount` already is, in case a future feed disagrees with itself.
-  // A held count that overshot the physically-empty pool would otherwise draw more tiles than the
-  // ward has beds, which is the same failure class `blockedCount`'s own guard exists to prevent.
-  const heldCount = Math.max(0, Math.min(Math.floor(unitCapacity(unit, [...bedReleases]).held), emptyPoolCount));
-  for (let index = 0; index < heldCount; index += 1) {
-    tiles.push({ kind: "held", key: `held-${index}` });
+  // `bedStates`'s `closed` comes from `unit.allocatable.value`/`unit.empty.value`, not from this
+  // function's own admissions-derived `emptyPoolCount` above — so it is clamped into that pool
+  // exactly as `blockedCount` already is, in case a future feed disagrees with itself. A closed
+  // count that overshot the physically-empty pool would otherwise draw more tiles than the ward has
+  // beds, which is the same failure class `blockedCount`'s own guard exists to prevent. Leave beds
+  // are passed empty: they only feed the On leave marker, never a tile count.
+  const closedCount = Math.max(
+    0,
+    Math.min(Math.floor(bedStates(unit, admissions, [...bedReleases], []).closed), emptyPoolCount),
+  );
+  for (let index = 0; index < closedCount; index += 1) {
+    tiles.push({ kind: "closed", key: `closed-${index}` });
   }
 
-  const emptyCount = Math.max(0, emptyPoolCount - heldCount);
+  const emptyCount = Math.max(0, emptyPoolCount - closedCount);
   for (let index = 0; index < emptyCount; index += 1) {
     tiles.push({ kind: "empty", key: `empty-${index}` });
   }
@@ -377,7 +383,7 @@ function daysUntilExpected(admission: Admission, now: Instant): number | null {
  * 28 people" on a twenty-bed ward. Its derivation was correct and all nine of its assertions
  * passed; the defect was in the CALL, where no test of that derivation could see it. The check
  * that catches this class is arithmetic a ward can do in its head — these rows plus the empty,
- * held and out-of-service tiles must equal `unit.beds` — and the new suite asserts exactly that.
+ * closed and out-of-service tiles must equal `unit.beds` — and the new suite asserts exactly that.
  *
  * `bedIsOccupied` includes `"pulled"`, so a bed given away to somebody still in an emergency
  * department appears here with no stay rather than being dropped: they hold one of the ward's beds
@@ -1044,7 +1050,7 @@ export function WardBoard({
    *
    * Selection is therefore honest in exactly one direction. An occupied or waiting tile stands for
    * a PERSON, and `selectedKey` holds that person's admission id, which is a real handle on a real
-   * record. A blocked, held or empty tile stands for no particular bed — those tiles are counts
+   * record. A blocked, closed or empty tile stands for no particular bed — those tiles are counts
    * drawn somewhere rather than locations — so selecting one shows what the ward records about
    * that CLASS of bed and says, on the panel, that which bed is not recorded.
    *
@@ -1224,10 +1230,10 @@ export function WardBoard({
   const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
   const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now);
   const tiles = buildTiles(unit, admissions, bedReleases, now);
-  // Read straight back out, purely to say how many held tiles are on screen in the footnote below
+  // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the
   // footnote must describe exactly what got drawn, not a second, unclamped copy of the figure.
-  const heldTileCount = tiles.filter((tile) => tile.kind === "held").length;
+  const closedTileCount = tiles.filter((tile) => tile.kind === "closed").length;
 
   /*
    * Scoped to THIS unit with the same helper `buildTiles` uses, so the panel and the grid can
@@ -1269,6 +1275,9 @@ export function WardBoard({
    * that helper IS `capacityBreakdown(...).availableNow` floored, so the two cannot disagree.
    */
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
+  // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
+  // tiles from. `breakdown.held` is NOT this figure: it still counts a live pull's empty bed.
+  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds]);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
   /*
@@ -1301,7 +1310,7 @@ export function WardBoard({
       case "look":
         return (
           tile.kind === "blocked" ||
-          tile.kind === "held" ||
+          tile.kind === "closed" ||
           tile.kind === "waiting" ||
           (tile.kind === "occupied" &&
             (tile.pastDate || tile.awayAtEd || (occupant !== undefined && occupant.blockReason !== null)))
@@ -1390,7 +1399,7 @@ export function WardBoard({
   /*
    * WHAT THE "NEEDS A LOOK THIS SHIFT" BAND SAYS, derived from figures this page already holds.
    *
-   * ⚠️ NOT ONE NUMBER IS COMPUTED HERE. `blockedTileCount` and `breakdown.held` are the tiles and the
+   * ⚠️ NOT ONE NUMBER IS COMPUTED HERE. `blockedTileCount` and `states.closed` are the tiles and the
    * triage bar's own figure; `incoming` and `outgoing` are the two flow lists rendered below. A digest
    * that recomputed them would be a second arithmetic on one screen, and this file already carries a
    * note about why the bar and the home page's cards must be one.
@@ -1411,7 +1420,9 @@ export function WardBoard({
       label: CAPACITY_FIGURE_LABELS.availableNow,
       value: breakdown.availableNow,
     },
-    { key: "held", label: CAPACITY_FIGURE_LABELS.held, value: breakdown.held },
+    // Keyed `held` because that is the `CAPACITY_FIGURE_LABELS` key; the label it carries is
+    // "Closed" (2026-09-01 ruling 5) and the value is the ruled Closed, so it matches the tiles.
+    { key: "held", label: CAPACITY_FIGURE_LABELS.held, value: states.closed },
     {
       key: "confirmedToday",
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
@@ -2330,7 +2341,7 @@ export function WardBoard({
                   </p>
                 ) : shiftTiles.length === 0 ? (
                   <p className={styles.workBandEmpty}>
-                    No bed is out of service or held; nobody is travelling here or due out today.
+                    No bed is out of service or closed; nobody is travelling here or due out today.
                   </p>
                 ) : (
                   <div className={styles.shiftGrid} data-testid="ward-board-work-band-list">
@@ -2729,14 +2740,15 @@ export function WardBoard({
                 <span className="sr-only">Out of service: </span>
                 Out of service — not fillable
               </li>
-              {/* Task B. Same reasoning as the blocked entry just above: the tile itself says "Held" in
-                words, this is only the index. */}
+              {/* Task B. Same reasoning as the blocked entry just above: the tile itself says
+                "Closed" in words, this is only the index. (The `Held` style names predate the
+                2026-09-01 ruling that renamed this box Closed; "Held" now means a leave bed only.) */}
               <li className={styles.legendItem}>
                 <span className={`${styles.legendSwatch} ${styles.legendSwatchHeld}`} aria-hidden="true">
                   <span className={styles.legendGlyph}>○</span>
                 </span>
-                <span className="sr-only">Held: </span>
-                Empty, not yet offered — not fillable
+                <span className="sr-only">{BED_STATE_LABELS.closed}: </span>
+                Empty, not offered — not fillable
               </li>
             </ul>
 
@@ -2751,14 +2763,14 @@ export function WardBoard({
              * restore holds without touching the global reset.
              *
              * **Still no bed identity.** The button's accessible name is the tile's own content — a
-             * day count, or the word Empty / Held / Out of service — and never an ordinal. Nothing
+             * day count, or the word Ready / Pulled / Closed / Out of service — and never an ordinal. Nothing
              * numbers these tiles and nothing may. The chosen presentation order changes only the
              * scan order; “Recorded order” restores the source order and none is a floor plan.
              */}
             {/* 🔴 **`<ul>`, NOT `<ol>` — THE GRID ASSERTS NO ORDER BECAUSE IT HAS NONE.** The rule at
                 the top of this component says a tile carries no bed identity and that nothing here
                 ever has an ordinal to print. `buildTiles` pushes occupants in seed order and then
-                `blocked-n`, `held-n`, `empty-n` — **counts rendered as tiles, with keys that are
+                `blocked-n`, `closed-n`, `empty-n` — **counts rendered as tiles, with keys that are
                 literally `empty-3`.** Reordering two of them changes nothing a reader could read, so
                 an ordered list was claiming what the data cannot support.
 
@@ -2861,10 +2873,10 @@ export function WardBoard({
                           )}
                         </>
                       )}
-                      {/* Rule 2 on screen: taken, but nobody is in it yet. */}
+                      {/* Rule 2 on screen: taken, but nobody is in it yet — the ruled Pulled box. */}
                       {tile.kind === "waiting" && (
                         <>
-                          <span className={styles.bedState}>Empty, waiting</span>
+                          <span className={styles.bedState}>{BED_STATE_LABELS.pulled}</span>
                           <span className={styles.bedNote}>The ward has already given this bed away.</span>
                         </>
                       )}
@@ -2878,14 +2890,14 @@ export function WardBoard({
                           <span className={styles.bedNote}>Not fillable today.</span>
                         </>
                       )}
-                      {/* Task B on screen: physically empty, but not yet one of the beds this ward is
-                        offering — a different fact from "Empty" (fillable now) and from "Out of
-                        service" (never fillable today). The word is what makes it unambiguous; the
-                        dotted edge and dot pattern only make it quicker to spot. */}
-                      {tile.kind === "held" && (
+                      {/* Task B on screen: physically empty, but not one of the beds this ward is
+                        offering — the ruled Closed box, a different fact from Ready (fillable now)
+                        and from "Out of service". The word is what makes it unambiguous; the dotted
+                        edge and dot pattern only make it quicker to spot. */}
+                      {tile.kind === "closed" && (
                         <>
-                          <span className={styles.bedState}>Held</span>
-                          <span className={styles.bedNote}>Empty, not yet offered.</span>
+                          <span className={styles.bedState}>{BED_STATE_LABELS.closed}</span>
+                          <span className={styles.bedNote}>Empty, not offered.</span>
                         </>
                       )}
                       {tile.kind === "empty" && (
@@ -2972,8 +2984,8 @@ export function WardBoard({
                     ? "Who is in this bed"
                     : selectedTile.kind === "empty"
                       ? "An empty bed"
-                      : selectedTile.kind === "held"
-                        ? "A held bed"
+                      : selectedTile.kind === "closed"
+                        ? "A closed bed"
                         : "A bed out of service"}
               </h2>
               {/* No Close on an empty panel — there is nothing to close, and a control that does
@@ -3315,8 +3327,8 @@ export function WardBoard({
                     <p className={styles.detailLead}>
                       {selectedTile.kind === "empty"
                         ? `One of this ward's ${emptyTileCount} bed${emptyTileCount === 1 ? "" : "s"} a coordinator can fill right now.`
-                        : selectedTile.kind === "held"
-                          ? `One of this ward's ${heldTileCount} bed${heldTileCount === 1 ? "" : "s"} that are empty but not yet confirmed as ones this ward will offer.`
+                        : selectedTile.kind === "closed"
+                          ? `One of this ward's ${closedTileCount} bed${closedTileCount === 1 ? "" : "s"} that are empty but not offered by this ward.`
                           : `One of this ward's ${blockedTileCount} bed${blockedTileCount === 1 ? "" : "s"} that are out of service and cannot be filled today.`}
                     </p>
                     {/* The constraint the header already carries, repeated here only where it bites: a
@@ -3328,7 +3340,7 @@ export function WardBoard({
                     )}
                     {/*
                      * THE LINE THAT KEEPS SELECTION HONEST. `Unit.blocked` is a count and
-                     * `unitCapacity`'s held/available split is derived from two more counts; no record
+                     * the Closed/Ready split is derived from two more counts; no record
                      * anywhere says WHICH bed. So a reader who has just clicked one of these tiles is
                      * told, on the panel, that they have selected a class of bed and not a location.
                      */}
@@ -3399,7 +3411,7 @@ export function WardBoard({
          * It is `display: none` on screen and restored in the print block — the only hidden content on
          * this board, and hidden in the direction that ADDS to the sheet rather than removing from it.
          * The rendered rows are what the existing suite in `tests/ward-board-people-panel.dom.test.tsx`
-         * asserts against (rows + blocked + held + empty === `unit.beds`, ordering, provenance, no
+         * asserts against (rows + blocked + closed + empty === `unit.beds`, ordering, provenance, no
          * diagnosis), so every one of those invariants still has a live subject after the rebuild.
          *
          * The list is NOT truncated and must not become so. Eighteen people is a long sheet, and a
@@ -3660,7 +3672,7 @@ function tileClassName(tile: Tile, selected: boolean): string {
       return `${styles.bed} ${styles.bedWaiting}${mark}`;
     case "blocked":
       return `${styles.bed} ${styles.bedBlocked}${mark}`;
-    case "held":
+    case "closed":
       return `${styles.bed} ${styles.bedHeld}${mark}`;
     case "occupied": {
       const band = tile.bandId === null ? "" : ` ${BAND_CLASS[tile.bandId]}`;

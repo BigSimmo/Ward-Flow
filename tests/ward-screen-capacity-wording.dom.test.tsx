@@ -13,6 +13,8 @@ vi.mock("next/link", () => ({
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -122,7 +124,11 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     // The breakdown is the screen's own vocabulary for this exact value.
     const breakdown = screen.getByTestId("ward-unit-beds");
     expect(breakdown).toHaveTextContent(`Ready ${capacity.available}`);
-    expect(breakdown).toHaveTextContent(`Held ${capacity.held}`);
+    // The empty bed the ward is not offering is "Closed" (2026-09-01 ruling 5), never "Held".
+    const seed = seedWardFlowState();
+    const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds).closed;
+    expect(breakdown).toHaveTextContent(`Closed ${closed}`);
+    expect(breakdown).not.toHaveTextContent("Held");
 
     // The hero must agree with it — same value, same word, one screen.
     const heroLabel = screen.getByTestId("ward-hero").textContent?.toLowerCase() ?? "";

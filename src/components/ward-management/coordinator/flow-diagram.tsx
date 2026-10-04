@@ -3,14 +3,15 @@
 import { Network } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   candidateReason,
   eligibleCandidatesAmong,
   restrictionNotice,
-  unitCapacity,
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
 import {
@@ -38,6 +39,8 @@ type FlowDiagramProps = {
   units: Unit[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  /** Live admissions, so each node can count its Pulled beds (`bedStates`). */
+  admissions: readonly Admission[];
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
   /** Task 7 of the audit-wiring plan, 2026-09-16: the coordinator-configured parallel referral
@@ -216,6 +219,7 @@ export function FlowDiagram({
   units,
   bedReleases,
   leaveBeds,
+  admissions,
   selectedUnitId,
   onSelectUnit,
   parallelReferralCap,
@@ -244,7 +248,7 @@ export function FlowDiagram({
   // silently vanishing from the board (review Minor 6).
   //
   // Whole-branch review Critical 1: grouped from the caller's live `units`, never `allUnits()` —
-  // every unit NODE on this board (its bed grid, via `unitCapacity` in `UnitNode` below) must
+  // every unit NODE on this board (its bed grid, via `bedStates` in `UnitNode` below) must
   // move the instant a ward confirms new capacity, not only at first paint.
   const serviceGroups = useMemo(
     () =>
@@ -520,6 +524,7 @@ export function FlowDiagram({
                         unit={unit}
                         bedReleases={bedReleases}
                         leaveBeds={leaveBeds}
+                        admissions={admissions}
                         now={now}
                         movement={movement}
                         candidate={shortlistByUnitId.get(unit.id)}
@@ -569,8 +574,8 @@ export function FlowDiagram({
       <div className={flowStyles.legend} aria-label="Flow diagram key">
         <span className={flowStyles.legendTitle}>Capacity</span>
         <LegendItem state="available" label="Ready" />
-        <LegendItem state="held" label="Held" />
-        <LegendItem state="blocked" label="Blocked" />
+        <LegendItem state="pulled" label={BED_STATE_LABELS.pulled} />
+        <LegendItem state="closed" label={BED_STATE_LABELS.closed} />
         <LegendItem state="occupied" label="Occupied" />
         <details className={`${flowStyles.advancedKey} source-print`} data-flow-key>
           <summary>More key</summary>
@@ -618,6 +623,7 @@ function UnitNode({
   unit,
   bedReleases,
   leaveBeds,
+  admissions,
   now,
   movement,
   candidate,
@@ -628,6 +634,7 @@ function UnitNode({
   unit: Unit;
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  admissions: readonly Admission[];
   now: Instant;
   movement: Movement | undefined;
   candidate: ShortlistCandidate | undefined;
@@ -635,7 +642,7 @@ function UnitNode({
   onSelectUnit: (unitId: string) => void;
   registerUnitNode: (id: string, node: HTMLButtonElement | null) => void;
 }) {
-  const capacity = unitCapacity(unit, bedReleases);
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   // 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for a
   // preparation note: asked whether a bed being cleaned should drop the ward's number or merely
@@ -688,10 +695,11 @@ function UnitNode({
       <span className={`${styles.diagramUnitName} ${flowStyles.unitName}`}>{unit.name}</span>
       <span className={`${styles.diagramUnitCapability} ${flowStyles.unitCapability}`}>{capabilityLabel(unit)}</span>
       <span className={`${styles.diagramBedRow} ${flowStyles.bedRow}`}>
-        <CapacityMark state="available" label="Ready" count={capacity.available} />
-        <CapacityMark state="held" label="Held" count={capacity.held} />
-        <CapacityMark state="blocked" label="Blocked" count="not recorded" />
-        <CapacityMark state="occupied" label="Occupied" count={capacity.occupied} />
+        {/* The owner's four bed states (R-B-05), which add up to the ward's beds. */}
+        <CapacityMark state="available" label={BED_STATE_LABELS.ready} count={states.ready} />
+        <CapacityMark state="pulled" label={BED_STATE_LABELS.pulled} count={states.pulled} />
+        <CapacityMark state="closed" label={BED_STATE_LABELS.closed} count={states.closed} />
+        <CapacityMark state="occupied" label={BED_STATE_LABELS.occupied} count={states.occupied} />
         {/* Review Finding 4: `capacity.potential` counted every bed release for the unit
             regardless of state or timing -- including a release already `discharged` and one
             expected beyond tonight, both of which spec D5/D6 exclude from every count. Confirmed

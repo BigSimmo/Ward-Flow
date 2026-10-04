@@ -85,6 +85,7 @@ export function StatisticsScreen({
     referrals: liveReferrals,
     bedReleases: liveBedReleases,
     movements: liveMovements,
+    leaveBeds,
     units,
     dayZero,
     configuration,
@@ -484,7 +485,12 @@ export function StatisticsScreen({
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
         <WardPanel title="Where beds are available" count="Current capacity" testId="ward-statistics-patients">
-          <StatisticsCapacityChart units={units} bedReleases={sourceBedReleases} />
+          <StatisticsCapacityChart
+            units={units}
+            bedReleases={sourceBedReleases}
+            admissions={sourceAdmissions}
+            leaveBeds={leaveBeds}
+          />
 
           {/* Patients audience contract and pull-to-arrival article */}
           <details className={`${pageStyles.measurementDetails} source-print`}>

@@ -4,8 +4,10 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { unitCapacity } from "../ward-derivations";
 import { bedsPendingPreparation } from "../ward-bed-availability";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "../ward-bed-states";
+import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
-import type { BedRelease, Unit } from "../ward-model";
+import type { BedRelease, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
 import { csvCell } from "./statistics-csv";
 import styles from "./statistics-capacity-chart.module.css";
@@ -17,20 +19,34 @@ type CapacityRow = {
   beds: number;
   occupied: number;
   ready: number;
-  held: number;
+  pulled: number;
+  closed: number;
+  onLeave: number;
   pending: number;
   units: Unit[];
 };
 
-/** One current-state chart; React owns filters, aggregation, selection and bar geometry. */
+/** The pulled bar segment reuses the occupied fill (a bed spoken for), told apart by its lighter weight. */
+const PULLED_SEGMENT_OPACITY = 0.5;
+
+/**
+ * One current-state chart; React owns filters, aggregation, selection and bar geometry. Bed figures
+ * are the ruled boxes from `bedStates` — Ready · Pulled · Closed · Occupied add up to the beds.
+ * Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled patient stays inside
+ * Occupied.
+ */
 export function StatisticsCapacityChart({
   units,
   bedReleases,
+  admissions = [],
+  leaveBeds = [],
   initialGroup = "hospital",
   scopeLabel = "across the network",
 }: {
   units: Unit[];
   bedReleases: BedRelease[];
+  admissions?: readonly Admission[];
+  leaveBeds?: readonly LeaveBed[];
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
 }) {
@@ -58,15 +74,19 @@ export function StatisticsCapacityChart({
         beds: 0,
         occupied: 0,
         ready: 0,
-        held: 0,
+        pulled: 0,
+        closed: 0,
+        onLeave: 0,
         pending: 0,
         units: [],
       };
-      const capacity = unitCapacity(unit, bedReleases);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
       row.beds += unit.beds;
-      row.occupied += capacity.occupied;
-      row.ready += capacity.available;
-      row.held += capacity.held;
+      row.occupied += states.occupied;
+      row.ready += states.ready;
+      row.pulled += states.pulled;
+      row.closed += states.closed;
+      row.onLeave += states.onLeave;
       row.pending += bedsPendingPreparation(unit.id, bedReleases);
       row.units.push(unit);
       grouped.set(id, row);
@@ -82,7 +102,7 @@ export function StatisticsCapacityChart({
               : 0;
       return difference || a.name.localeCompare(b.name);
     });
-  }, [units, bedReleases, service, query, groupBy, sort]);
+  }, [units, bedReleases, admissions, leaveBeds, service, query, groupBy, sort]);
 
   // Resolve from current rows: hidden or removed selections never leave a stale inspector.
   const selected = rows.find((row) => row.id === selectedId);
@@ -91,10 +111,11 @@ export function StatisticsCapacityChart({
       beds: sum.beds + row.beds,
       ready: sum.ready + row.ready,
       occupied: sum.occupied + row.occupied,
-      held: sum.held + row.held,
+      pulled: sum.pulled + row.pulled,
+      closed: sum.closed + row.closed,
       pending: sum.pending + row.pending,
     }),
-    { beds: 0, ready: 0, occupied: 0, held: 0, pending: 0 },
+    { beds: 0, ready: 0, occupied: 0, pulled: 0, closed: 0, pending: 0 },
   );
   const { maximum, ticks } =
     scale === "share"
@@ -118,8 +139,17 @@ export function StatisticsCapacityChart({
 
   function exportCsv() {
     const lines = [
-      ["Synthetic current-state data", "Scope", "Total beds", "Occupied", "Ready", "Held"],
-      ...rows.map((row) => [row.name, row.context, row.beds, row.occupied, row.ready, row.held]),
+      ["Synthetic current-state data", "Scope", "Total beds", "Ready", "Pulled", "Closed", "Occupied", "On leave"],
+      ...rows.map((row) => [
+        row.name,
+        row.context,
+        row.beds,
+        row.ready,
+        row.pulled,
+        row.closed,
+        row.occupied,
+        row.onLeave,
+      ]),
     ];
     const url = URL.createObjectURL(
       new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
@@ -238,15 +268,19 @@ export function StatisticsCapacityChart({
         <div className={styles.legend} aria-label="Bed status legend">
           <span>
             <i className={styles.ready} />
-            Ready
+            {BED_STATE_LABELS.ready}
           </span>
           <span>
-            <i className={styles.occupied} />
-            Occupied
+            <i className={styles.occupied} style={{ opacity: PULLED_SEGMENT_OPACITY }} />
+            {BED_STATE_LABELS.pulled}
           </span>
           <span>
             <i className={styles.held} />
-            Held
+            {BED_STATE_LABELS.closed}
+          </span>
+          <span>
+            <i className={styles.occupied} />
+            {BED_STATE_LABELS.occupied}
           </span>
         </div>
         <div className={styles.switch} role="group" aria-label="Chart scale">
@@ -291,7 +325,7 @@ export function StatisticsCapacityChart({
                     if (node) rowButtons.current.set(row.id, node);
                     else rowButtons.current.delete(row.id);
                   }}
-                  title={`${row.ready} ready · ${row.occupied} occupied · ${row.held} held · ${row.beds} beds`}
+                  title={`${row.ready} ready · ${row.pulled} pulled · ${row.closed} closed · ${row.occupied} occupied · ${row.beds} beds`}
                   onKeyDown={(event) => {
                     const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
                     if (direction || event.key === "Home" || event.key === "End") {
@@ -308,7 +342,7 @@ export function StatisticsCapacityChart({
                   type="button"
                   className={styles.row}
                   aria-pressed={selected?.id === row.id}
-                  aria-label={`${row.name}: ${row.ready} ready, ${row.occupied} occupied, ${row.held} held of ${row.beds} beds. Show details.`}
+                  aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
                   onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
                 >
                   <span className={styles.rowName}>
@@ -323,14 +357,24 @@ export function StatisticsCapacityChart({
                       {row.ready > 0 && (
                         <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
                       )}
+                      {row.pulled > 0 && (
+                        <span
+                          className={styles.occupied}
+                          data-bed-state="pulled"
+                          style={{
+                            width: `${(row.pulled / (row.beds || 1)) * 100}%`,
+                            opacity: PULLED_SEGMENT_OPACITY,
+                          }}
+                        />
+                      )}
+                      {row.closed > 0 && (
+                        <span className={styles.held} style={{ width: `${(row.closed / (row.beds || 1)) * 100}%` }} />
+                      )}
                       {row.occupied > 0 && (
                         <span
                           className={styles.occupied}
                           style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
                         />
-                      )}
-                      {row.held > 0 && (
-                        <span className={styles.held} style={{ width: `${(row.held / (row.beds || 1)) * 100}%` }} />
                       )}
                     </span>
                     <small>{scale === "share" ? `${percent}% occupied` : `${row.beds} beds`}</small>
@@ -357,16 +401,23 @@ export function StatisticsCapacityChart({
             <p>{selected.context}</p>
             <dl className={styles.detailsMetrics}>
               <div>
-                <dt>Ready</dt>
+                <dt>{BED_STATE_LABELS.ready}</dt>
                 <dd>{selected.ready}</dd>
               </div>
               <div>
-                <dt>Occupied</dt>
-                <dd>{selected.occupied}</dd>
+                <dt>{BED_STATE_LABELS.pulled}</dt>
+                <dd>{selected.pulled}</dd>
               </div>
               <div>
-                <dt>Held</dt>
-                <dd>{selected.held}</dd>
+                <dt>{BED_STATE_LABELS.closed}</dt>
+                <dd>{selected.closed}</dd>
+              </div>
+              <div>
+                <dt>{BED_STATE_LABELS.occupied}</dt>
+                <dd>
+                  {selected.occupied}
+                  {selected.onLeave > 0 ? ` · ${selected.onLeave} on leave` : null}
+                </dd>
               </div>
               <div>
                 <dt>Total beds</dt>
@@ -374,7 +425,8 @@ export function StatisticsCapacityChart({
               </div>
             </dl>
             <p className={styles.definition}>
-              Held beds are empty but not allocatable. Out-of-service beds are not recorded.
+              Pulled: {BED_STATE_DETAILS.pulled.toLowerCase()}. Closed: {BED_STATE_DETAILS.closed.toLowerCase()}. On
+              leave is already counted in Occupied.
             </p>
             <div className={styles.wardList}>
               {selected.units.map((unit) => {
