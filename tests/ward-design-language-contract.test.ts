@@ -572,6 +572,10 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // own root, which paints the ground beneath them; neither file has a `.screen` root.
     "statistics/statistics-family.module.css",
     "statistics/statistics-insight-chart.module.css",
+    // ADDED 2026-10-04 (stranded-patient prompts): first rule is `.panel`, a bordered, rounded
+    // disclosure the ward board mounts inside its own root, which paints the ground beneath it.
+    // A component, not a page root; the file has no `.screen` equivalent.
+    "board/stranded-prompts.module.css",
     // ⚠️ ADDED 2026-09-07 — the standing strip and the tasks drawer/opener, the chrome that now
     // mounts on every one of the 29 renderable routes. Same shape as `ward-panel.module.css` at
     // the top of this set, and the distinction is worth stating because these three are the first

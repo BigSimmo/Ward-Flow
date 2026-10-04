@@ -57,6 +57,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
+import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
@@ -1941,6 +1942,15 @@ export function WardBoard({
             })}
           </dl>
         </section>
+
+        {/* Stranded-patient prompts (smart feature 12): long stays with no expected date, and people
+            ready to leave but waiting on something outside the ward. Scoped to this ward. */}
+        <StrandedPrompts
+          admissions={admissionsForUnit(admissions, unit.id)}
+          now={now}
+          nameFor={nameFor}
+          onOpen={setSelectedKey}
+        />
 
         {/*
          * NEEDS A LOOK THIS SHIFT — the owner asked for the board's exceptions condensed into one
