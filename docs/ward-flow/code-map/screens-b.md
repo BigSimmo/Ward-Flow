@@ -98,6 +98,13 @@ repo-wide guards.
   `groupNetworkWardRowsByService`, `networkServiceGroupTotals`. Header comment: deliberately
   aggregate-only — "answers WHERE IS THE MISMATCH, never WHERE COULD THIS PERSON GO"; never
   imports `ward-eligibility.ts`.
+- **`src/components/ward-management/capacity/bed-meeting-derivations.ts`** (added 4 October 2026) —
+  `bedMeetingSheet`, the one-page morning bed-meeting summary: capacity, expected discharges, people
+  waiting in ED and the top delays. Re-derives nothing: it narrows `networkWardRows`,
+  `groupDischarges`, `edOpenSummaries` and `delayGroups` to the chosen service and caps each list.
+- **`src/components/ward-management/capacity/bed-meeting-sheet.tsx`** and its `.module.css` — the
+  "Bed-meeting sheet" button on Capacity, its preview dialog and the sheet-only A4 print rules.
+  Tested by `tests/ward-bed-meeting-sheet.dom.test.tsx`.
 - **`src/components/ward-management/capacity/beds-forecast.ts`** — smart feature 10, tomorrow's
   beds: `bedsForecast` (24 and 48 hour estimates from beds ready now, confirmed and expected
   discharges, minus people still needing a bed, with a low/likely/high range), `forecastFigureText`
