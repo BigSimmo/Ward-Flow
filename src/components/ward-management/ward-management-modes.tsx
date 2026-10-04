@@ -532,7 +532,7 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
       <main id="main-content" className={styles.modeContent}>
         {mode !== "governance" && <RoleFocus role={role} />}
         <ModeBody mode={mode} />
-        <WardPrototypeFooter testId={mode === "governance" ? "ward-mode-governance" : "ward-mode-network"} />
+        <WardPrototypeFooter testId={`ward-mode-${mode}-disclosure`} />
       </main>
     </div>
   );

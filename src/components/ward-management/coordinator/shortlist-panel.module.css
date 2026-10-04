@@ -6,6 +6,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The body is a scrolling flex column (coordinator.module.css .shortlistBody). Its sections must
+   keep their own height and let the body scroll: an `overflow: hidden` child such as
+   .detailDisclosure otherwise has a zero automatic minimum and was crushed to its 2px border once
+   the Candidates list was opened, leaving "Eligibility checks" and "Declines" unclickable. */
+.body > * {
+  flex-shrink: 0;
+}
+
 .subjectHeader {
   gap: 0.625rem;
   border: 0.0625rem solid var(--line);
