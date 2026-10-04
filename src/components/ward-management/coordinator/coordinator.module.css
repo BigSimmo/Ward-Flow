@@ -4059,3 +4059,51 @@
     overflow: visible !important;
   }
 }
+
+/*
+ * Smart feature 9: "Since you last looked". `.body` is a two-row grid (strip, then regions); the
+ * list adds a content-sized row between them only while it is on screen.
+ */
+.body:has(> [data-testid="ward-since-last-look"]) {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.sinceLastLook {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  padding: 0.5rem 1rem 0.625rem;
+}
+
+.sinceLastLookHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sinceLastLookHeader h2 {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.sinceLastLookList {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.sinceLastLookQuiet {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
