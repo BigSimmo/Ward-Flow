@@ -16,11 +16,11 @@ function renderDelays() {
   );
 }
 
-/** The wait timeline is one of the overview switcher's views (combined with the PR 48 view modes). */
+/** The persistent runway sits above the three graph tabs. */
 function showWaitTimeline(): HTMLElement {
-  const switcher = screen.getByRole("group", { name: "Executive Overview Mode" });
-  fireEvent.click(within(switcher).getByRole("button", { name: "Wait timeline" }));
-  expect(within(switcher).getByRole("button", { name: "Wait timeline" })).toHaveAttribute("aria-pressed", "true");
+  const switcher = screen.getByRole("tablist", { name: "Delay graph" });
+  fireEvent.click(within(switcher).getByRole("tab", { name: "Wait Timeline" }));
+  expect(within(switcher).getByRole("tab", { name: "Wait Timeline" })).toHaveAttribute("aria-selected", "true");
   return screen.getByRole("region", { name: "Wait timeline" });
 }
 
@@ -29,7 +29,7 @@ describe("the selected delay data views", () => {
     renderDelays();
     expect(screen.queryByRole("region", { name: "Wait timeline" })).not.toBeInTheDocument();
     const timeline = showWaitTimeline();
-    const currentGraph = screen.getByRole("region", { name: "Who is holding people up" });
+    const currentGraph = screen.getByRole("region", { name: "Delay graphs" });
     expect(currentGraph).toContainElement(timeline);
     expect(
       timeline.compareDocumentPosition(screen.getByRole("region", { name: "Waiting" })) &
