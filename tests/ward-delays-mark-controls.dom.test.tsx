@@ -6,8 +6,15 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+/**
+ * The Delays redesign (PR 48) opens on the "Action Runway" overview; the owner cards, the duration
+ * band and the measured-none sentence these tests read live in the "Summary Cards" view, unchanged.
+ */
+function showSummaryCards() {
+  fireEvent.click(screen.getByRole("button", { name: "Summary Cards" }));
+}
 
 /**
  * WF-27 — THREE MARK SOURCES (a chip, an owner card, a cause row) ALL WRITE ONE HEADER FIGURE, AND
@@ -123,6 +130,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const lockedChip = screen.getByRole("button", { name: `Needs a locked bed ${locked.length}` });
     fireEvent.click(lockedChip);
@@ -149,6 +157,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerCard = screen.getByTestId("delays-owner-yours");
     fireEvent.click(ownerCard);
@@ -168,7 +177,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
     const escalatedIds = new Set<string>(escalated.map((movement) => movement.id));
     let markedRows = 0;
     for (const row of rows) {
-      const id = (row.getAttribute("data-record-key") ?? "");
+      const id = row.getAttribute("data-record-key") ?? "";
       const saysMarked = (row.textContent ?? "").includes("Marked: Escalated");
       if (escalatedIds.has(id)) {
         expect(saysMarked, `${id} is escalated and the pressed chip must name it as marked`).toBe(true);
@@ -186,6 +195,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerCard = screen.getByTestId("delays-owner-yours");
     fireEvent.click(ownerCard);
@@ -210,6 +220,7 @@ describe("the Delays screen's three mark sources never leave a stale one pressed
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     fireEvent.click(screen.getByTestId("delays-owner-ed"));
 

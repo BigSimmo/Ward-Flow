@@ -6,7 +6,6 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -15,6 +14,14 @@ import {
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
+
+/**
+ * The Delays redesign (PR 48) opens on the "Action Runway" overview; the owner cards, the duration
+ * band and the measured-none sentence these tests read live in the "Summary Cards" view, unchanged.
+ */
+function showSummaryCards() {
+  fireEvent.click(screen.getByRole("button", { name: "Summary Cards" }));
+}
 
 /**
  * The `ADVANCE_CLOCK` scaffold `tests/ward-delays-legal-deadline.dom.test.tsx` established: moves
@@ -136,9 +143,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
       MEMBER_OPEN.length,
     );
 
-    const renderedIds = new Set(
-      rows.map((row) => (row.getAttribute("data-record-key") ?? "")),
-    );
+    const renderedIds = new Set(rows.map((row) => row.getAttribute("data-record-key") ?? ""));
     for (const movement of MEMBER_OPEN) {
       expect(renderedIds.has(movement.id), `${movement.id} belongs to South Metro and must be on the list`).toBe(true);
     }
@@ -175,6 +180,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
         <DelaysScreen />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     const ownerId = MARKABLE_OWNER!.id;
     const ownerCard = screen.getByTestId(`delays-owner-${ownerId}`);
@@ -192,7 +198,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
     let markedRows = 0;
     for (const row of rows) {
-      const id = (row.getAttribute("data-record-key") ?? "");
+      const id = row.getAttribute("data-record-key") ?? "";
       const saysMarked = (row.textContent ?? "").includes(`Marked: ${MARKABLE_OWNER!.name}`);
       expect(saysMarked, `${id}'s marked state disagrees with the scoped owner grouping`).toBe(
         memberIdsForOwner.has(id),
@@ -241,9 +247,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     // WRONG rows (swap two movements of equal group size, say) — it was a length check only until
     // this task. Comparing the full, sorted list of rendered ids is a property that can actually
     // fail on that mutation, not only on a dropped or duplicated row.
-    const renderedIds = rows
-      .map((row) => (row.getAttribute("data-record-key") ?? ""))
-      .sort();
+    const renderedIds = rows.map((row) => row.getAttribute("data-record-key") ?? "").sort();
     expect(renderedIds).toEqual(OPEN.map((movement) => movement.id).sort());
   });
 });
@@ -358,6 +362,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
         <DelaysScreen movements={[]} />
       </WardFlowProvider>,
     );
+    showSummaryCards();
 
     // D-a: the exact zero-case sentence, stating the definition.
     expect(screen.getByTestId("ward-service-scope-bar-urgent")).toHaveTextContent(
