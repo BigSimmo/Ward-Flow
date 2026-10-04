@@ -611,7 +611,8 @@ describe("Activity distinguishes demo provenance from published figure checks", 
   it("labels Command activity as synthetic demo state without claiming reconciliation", () => {
     renderBarOnly();
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
-    expect(trigger.textContent ?? "").toContain("synthetic activity at demo time");
+    expect(trigger.textContent ?? "").toContain("synthetic activity");
+    expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
     expect(trigger.textContent ?? "").not.toMatch(/reconcil/i);
     const dot = trigger.querySelector('[data-tone][aria-hidden="true"]');
     expect(dot).toHaveAttribute("data-tone", "good");
