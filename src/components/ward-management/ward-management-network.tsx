@@ -63,7 +63,12 @@ import {
   type TravelBandGroupCounts,
   referralPersonFacts,
 } from "@/components/ward-management/ward-referrals";
-import { siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { PLACEMENT_REASON_GROUPS, placementReason } from "@/components/ward-management/ward-placement-reasons";
+import {
+  REFERENCE_DISTANCE_CAVEAT,
+  referenceDistance,
+} from "@/components/ward-management/reference/ward-reference-distances";
 import { FlowDiagram } from "@/components/ward-management/coordinator/flow-diagram";
 import { PressureStrip } from "@/components/ward-management/coordinator/pressure-strip";
 
@@ -689,6 +694,7 @@ function WardNetworkPlacementWorkspace() {
     [movements, selectedPatientId],
   );
   const candidates = useMemo(() => (patient ? candidatesFor(patient, units, now) : []), [patient, units, now]);
+  const originEd = patient ? allEmergencyDepartments().find((ed) => ed.id === patient.originEdId) : undefined;
 
   /*
    * Task 7 (spec D8-5). Referral selection sits ALONGSIDE the movement selection above: the
@@ -1331,6 +1337,36 @@ function WardNetworkPlacementWorkspace() {
                         );
                       })}
                     </tr>
+                    {/* Why each ward fits or does not (owner request, 4 October 2026), read straight
+                        from the same eligibility verdict as the gate list below, in plain groups. */}
+                    {PLACEMENT_REASON_GROUPS.map((group) => (
+                      <tr key={group.key} data-testid={`ward-network-reason-${group.key}`}>
+                        <th scope="row">{group.heading}</th>
+                        {candidates.map((candidate) => {
+                          const reason = placementReason(candidate.verdict, group);
+                          return (
+                            <td key={candidate.unit.id} data-tone={reason.tone}>
+                              {reason.label}
+                              <span className={styles.reasonDetail}>{reason.detail}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    <tr data-testid="ward-network-reason-distance">
+                      <th scope="row">Road distance from presenting ED</th>
+                      {candidates.map((candidate) => {
+                        const route = referenceDistance(
+                          originEd?.referenceEdId,
+                          siteByCode(candidate.unit.siteCode)?.referenceSiteId,
+                        );
+                        return (
+                          <td key={candidate.unit.id}>
+                            {route === null ? "No measured route" : `${route.km} km, about ${route.min} min`}
+                          </td>
+                        );
+                      })}
+                    </tr>
                     <tr>
                       <th scope="row">Current bed state</th>
                       {candidates.map((candidate) => (
@@ -1355,14 +1391,22 @@ function WardNetworkPlacementWorkspace() {
                     <tr>
                       <th scope="row">Eligibility</th>
                       {candidates.map((candidate) => (
-                        <td key={candidate.unit.id} title={candidateReason(candidate.verdict)}>
+                        <td key={candidate.unit.id}>
                           <strong>{candidate.verdict.eligible ? "Eligible" : "Not eligible"}</strong>
+                          {/* Visible text, not a `title`: a tooltip reaches nobody on a touch screen. */}
+                          <span className={styles.reasonDetail}>{candidateReason(candidate.verdict)}</span>
                         </td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <p className={styles.reasonNote} data-testid="ward-network-reason-caveat">
+                Each reason repeats the eligibility checks below; none ranks a ward. The health-service row compares
+                the presenting emergency department, not where the person lives: home catchment and where family
+                live are not recorded in this prototype. {REFERENCE_DISTANCE_CAVEAT}
+              </p>
 
               <p className={styles.tierNote}>
                 <span

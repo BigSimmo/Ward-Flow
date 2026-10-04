@@ -724,6 +724,25 @@
   font-weight: 700;
 }
 
+.compareTable td[data-tone="neutral"] {
+  color: var(--net-muted);
+  font-weight: 700;
+}
+
+/* The engine's own sentence under each verdict: quieter than the verdict, never hidden. */
+.reasonDetail {
+  display: block;
+  margin-top: var(--net-space-2);
+  color: var(--net-muted);
+  font-weight: 400;
+}
+
+.reasonNote {
+  margin: var(--net-space-6) 0 0;
+  color: var(--net-muted);
+  font-size: var(--text-3xs);
+}
+
 .tierNote {
   display: flex;
   align-items: flex-start;
