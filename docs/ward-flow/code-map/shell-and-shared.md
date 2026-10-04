@@ -270,13 +270,25 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   tally; Tasks — `WardTasksDrawer` fed by `buildActionInbox`; Tools — demonstration controls, role
   switcher, ward/ED contact tables), and the bar's one primary action
   (`resolveWardPrimaryAction`/`WARD_PRIMARY_ACTIONS` from `ward-nav.ts`). Key exports: `WardBar`,
-  `WardBarClock`, `WardBarMount` (the route-aware wrapper `layout.tsx` actually mounts —
+  `WardBarMount` (the route-aware wrapper `layout.tsx` actually mounts —
   see §5), `useAppearanceStore`/`applyAppearance` (the one light/dark/auto preference writer,
   `localStorage` key kept private so a second writer cannot exist by construction). Owns the
   Escape-key order standard §7.3/§7.6 describes: an open drawer/popover closes first; then search;
   the chosen **service is never cleared by Escape**, only announced. 6 importers.
 - **`shell/ward-bar.module.css`** (2,180 lines) — `WardBar`'s styles; composes
   `wardShellTokens` from `../../../app/ward-flow-shell-tokens.module.css`.
+  The October 2026 header reference update uses larger outline action icons, a clipboard-check
+  Tasks icon and unboxed header actions. New referral also stays unboxed, with a divider and
+  right chevron, following the owner's clarification.
+  The full referral label appears on desktop; the existing compact phone target, source menu,
+  drawers, header layout and surrounding app styling are preserved.
+  The owner's subsequent header refinement removes the clocks beside the title and Activity;
+  recorded event times and freshness information remain in the Activity drawer.
+  The final polish centres the Tasks badge, evens icon spacing and label weight, keeps status
+  dots steady, and adds colour-only hover feedback and inset keyboard focus. The referral
+  chevron turns down while its menu is open; reduced-motion preferences suppress transitions.
+  Contextual decision, contact and export actions use the same unboxed label, divider and chevron;
+  their route-specific labels and existing popover behaviour remain intact.
 - **`shell/ward-rail.tsx`** (1,230 lines) — the left rail: four fixed groups (Operations, Service
   Hubs, Care Coordination, Oversight) built from `ward-nav.ts`'s lists and reordered within each
   group by role (`ward-nav-role-order.ts`), open/closed state (`localStorage`, open by default —
