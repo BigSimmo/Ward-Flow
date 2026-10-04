@@ -5,7 +5,9 @@
   background: var(--ground);
   color: var(--ink);
   font-family: var(--body);
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 
   --text: var(--ink);
   --text-heading: var(--ink);
@@ -26,12 +28,13 @@
 }
 
 .workspace {
-  padding: 16px 20px 32px;
-  display: grid;
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   gap: 16px;
   min-width: 0;
   box-sizing: border-box;
-  min-height: 20rem;
   scroll-padding: 0.5rem;
 }
 

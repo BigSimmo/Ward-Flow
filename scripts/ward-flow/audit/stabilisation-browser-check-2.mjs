@@ -149,10 +149,6 @@ async function main() {
   const allChip = page.locator('[data-testid="ward-bar-activity-filter-all"]');
   const escChip = page.locator('[data-testid="ward-bar-activity-filter-escalation"]');
   log(`activity chips visible: all=${await allChip.isVisible()} esc=${await escChip.isVisible()}`);
-  // Count list items before/after
-  const listSel =
-    '[data-testid^="ward-bar-activity-"], [class*="activityList"] li, [class*="changeList"] li, [class*="timeline"] li';
-  const countItems = async () => page.locator("li").filter({ hasText: /.+/ }).count();
   // Prefer activity sheet content
   const sheet = page.locator('[role="dialog"], [class*="sheet"], [class*="drawer"]').filter({ hasText: "All" }).first();
   const beforeText = await sheet.innerText().catch(() => "");

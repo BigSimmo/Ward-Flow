@@ -52,7 +52,6 @@ import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 function meaningfulBlocker(movement: Movement): string | null {
   const blocker = movement.blocker.trim();
@@ -375,7 +374,6 @@ export function MovementsScreen() {
   const openMovements = movements.filter(isOpen);
   const openStages = journeyStages(openMovements, now);
   const waitingMovements = byLongestWait(openMovements, now);
-  const noOwnerMovements = openMovements.filter((movement) => movement.owner.trim().length === 0);
   const unacceptedTransport = byLongestWait(
     openMovements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
     now,
@@ -571,7 +569,6 @@ export function MovementsScreen() {
             <span className={styles.liveDot} aria-hidden="true" />
             Movements
           </h1>
-          <LegalLimitsNotChecked />
         </header>
 
         {/*

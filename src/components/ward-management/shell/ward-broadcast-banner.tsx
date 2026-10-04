@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, AlertTriangle, Check, ExternalLink, Info, Radio, ShieldAlert } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, ExternalLink, Info } from "lucide-react";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   getActiveBroadcastAlert,
   formatTimeRemaining,
-  type BroadcastAlert,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import styles from "./ward-broadcast-banner.module.css";
@@ -106,11 +105,7 @@ export function WardBroadcastBanner({ currentUnitId }: WardBroadcastBannerProps)
             </button>
           )}
 
-          <Link
-            href={WARD_ALERTS_HREF}
-            className={styles.btnSm}
-            title="Open Operational Inbox & Alerts Center"
-          >
+          <Link href={WARD_ALERTS_HREF} className={styles.btnSm} title="Open Operational Inbox & Alerts Center">
             Alerts
             <ExternalLink size={12} aria-hidden="true" />
           </Link>

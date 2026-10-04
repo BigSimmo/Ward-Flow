@@ -82,7 +82,6 @@ export function LiveTracker() {
 
   const openMovements = movements.filter(isOpen);
   const vehicles = openMovements.filter((movement) => movement.transport !== undefined);
-  const withoutTransport = openMovements.length - vehicles.length;
 
   return (
     <div className={styles.screen} data-testid="ward-mode-transport">
