@@ -7,7 +7,9 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { HEALTH_SERVICES, type BedRelease, type Unit } from "@/components/ward-management/ward-model";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { bedReleases } from "@/components/ward-management/ward-movements";
+import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -34,16 +36,28 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     }
   });
 
-  it("reads every figure from unitCapacity/bedsPendingPreparation and counts nothing of its own", () => {
-    const wards = bedMapWards(units, bedReleases);
+  it("reads every figure from bedStates/bedsPendingPreparation and counts nothing of its own", () => {
+    const wards = bedMapWards(units, bedReleases, wardAdmissions, leaveBeds);
     expect(wards.length).toBe(units.length);
     for (const ward of wards) {
-      const capacity = unitCapacity(ward.unit, bedReleases);
-      expect(ward.ready, ward.unit.id).toBe(capacity.available);
-      expect(ward.held, ward.unit.id).toBe(capacity.held);
-      expect(ward.blocked, ward.unit.id).toBe(capacity.blocked);
-      expect(ward.occupied, ward.unit.id).toBe(capacity.occupied);
+      const states = bedStates(ward.unit, wardAdmissions, bedReleases, leaveBeds);
+      expect(ward.ready, ward.unit.id).toBe(unitCapacity(ward.unit, bedReleases).available);
+      expect(ward.ready, ward.unit.id).toBe(states.ready);
+      expect(ward.pulled, ward.unit.id).toBe(states.pulled);
+      expect(ward.closed, ward.unit.id).toBe(states.closed);
+      expect(ward.occupied, ward.unit.id).toBe(states.occupied);
+      expect(ward.onLeave, ward.unit.id).toBe(states.onLeave);
+      expect(ward.ready + ward.pulled + ward.closed + ward.occupied, ward.unit.id).toBe(ward.unit.beds);
       expect(ward.pendingPreparation, ward.unit.id).toBe(bedsPendingPreparation(ward.unit.id, bedReleases));
+    }
+  });
+
+  it("without admissions, counts no bed as Pulled and leaves Occupied as unitCapacity reports it", () => {
+    for (const ward of bedMapWards(units, bedReleases)) {
+      const capacity = unitCapacity(ward.unit, bedReleases);
+      expect(ward.pulled, ward.unit.id).toBe(0);
+      expect(ward.closed, ward.unit.id).toBe(capacity.held + capacity.blocked);
+      expect(ward.occupied, ward.unit.id).toBe(capacity.occupied);
     }
   });
 
@@ -189,9 +203,10 @@ describe("groupBedMapWardsByService — grouping ward blocks by health service",
     const orphanWard: BedMapWard = {
       unit: { ...wards[0].unit, id: "test-orphan-unit", siteCode: "NOT-A-REAL-SITE" },
       ready: 0,
-      held: 0,
-      blocked: 0,
+      pulled: 0,
+      closed: 0,
       occupied: 0,
+      onLeave: 0,
       pendingPreparation: 0,
     };
     expect(() => groupBedMapWardsByService([orphanWard])).toThrow(/no site matches/iu);

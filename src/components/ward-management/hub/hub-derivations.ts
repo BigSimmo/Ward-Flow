@@ -1,8 +1,10 @@
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
-import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { HOME_REGIONS, type BedRelease, type Unit } from "@/components/ward-management/ward-model";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { HOME_REGIONS, type BedRelease, type LeaveBed, type Unit } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 /**
@@ -11,7 +13,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  * summaries; it renders nothing and owns no state.
  *
  * Every number below is READ from the model's own derivations, never re-derived:
- * `unitCapacity` (ward-derivations.ts) for Ready, `bedsPendingPreparation`
+ * `bedStates` (ward-bed-states.ts) for the four ruled bed boxes, `bedsPendingPreparation`
  * (ward-bed-availability.ts) for the pending-preparation count. The one piece of arithmetic this
  * file DOES own — `security()` — has no home elsewhere: `Unit.lockedBeds` is a raw count, and
  * nothing in `ward-bed-designation.ts` classifies a unit as Open/Locked/Mixed from it (that file
@@ -39,27 +41,24 @@ export type HubEntry = {
   beds?: number;
   ready?: number;
   /**
-   * ⚠️ **VACANT BUT NOT YET CLEARED — A DIFFERENT FACT FROM `pendingPreparation`, AND BOTH ARE REAL.**
+   * The ruled bed boxes (`ward-bed-states.ts`) — ward only. Ready · Pulled · Closed · Occupied add
+   * up to `beds`. Out-of-service beds are not recorded in the model and fold into Closed.
    *
-   * `held` is `unitCapacity().held` — physically empty beds the ward has NOT made allocatable,
-   * computed from `empty` against `allocatable`. `pendingPreparation` is narrower and comes from a
-   * different source entirely: bed releases flagged `preparing`, i.e. discharged and being cleaned.
-   *
-   * **A screen that shows one and calls it the other is wrong**, and the two genuinely differ in the
-   * fixture — Mental Health Unit is 2 ready / 3 vacant-not-cleared / 0 being cleaned. Keeping both here
-   * is what lets the hub show each under its own words instead of picking one and hoping.
+   * ⚠️ **CLOSED IS A DIFFERENT FACT FROM `pendingPreparation`, AND BOTH ARE REAL.** `closed` is
+   * physically empty beds the ward is NOT offering (and no one is pulled into) — the box once
+   * mislabelled "Held". `pendingPreparation` is narrower and comes from a different source
+   * entirely: bed releases flagged `preparing`, i.e. discharged and being cleaned, and it sits
+   * INSIDE Ready. **A screen that shows one and calls it the other is wrong**, and the two
+   * genuinely differ in the fixture — Mental Health Unit is 2 ready / 3 closed / 0 being cleaned.
    */
-  held?: number;
+  pulled?: number;
+  closed?: number;
+  occupied?: number;
+  /** Inside `occupied`: beds held for a patient on leave. A marker, never a fifth box. */
+  onLeave?: number;
   pendingPreparation?: number;
   confirmedAt?: Instant;
   stale?: boolean;
-  /**
-   * Beds out of service — ward only. A DIFFERENT fact again from `held` and `pendingPreparation`:
-   * this bed is not coming back today at all, where the other two are empty beds on their way to
-   * being usable. The mockup's ward notes state it in words rather than folding it into any total,
-   * and so does this screen.
-   */
-  blocked?: number;
   /** How many of the ward's beds are designated locked. Ward only; `wardSecurity` reduces this to
    *  Open/Locked/Mixed for the badge, but the NUMBER is what a coordinator placing a specific
    *  patient needs, so it is carried too. */
@@ -153,16 +152,24 @@ function communityHref(teamId: string): string {
 }
 
 /**
- * The flat, searchable list the hub renders from. `units` and `bedReleases` are supplied by the
- * caller (typically `allUnits()` and live bed-release state) — EDs and community teams are read
- * from their own fixed sources internally, since nothing else varies them.
+ * The flat, searchable list the hub renders from. `units`, `bedReleases`, `admissions` and
+ * `leaveBeds` are supplied by the caller (typically `allUnits()` and live reducer state) — EDs and
+ * community teams are read from their own fixed sources internally, since nothing else varies them.
+ * Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled patient stays inside
+ * Occupied.
  */
-export function hubEntries(input: { units: Unit[]; bedReleases: BedRelease[]; now: Instant }): HubEntry[] {
-  const { units, bedReleases, now } = input;
+export function hubEntries(input: {
+  units: Unit[];
+  bedReleases: BedRelease[];
+  admissions?: readonly Admission[];
+  leaveBeds?: readonly LeaveBed[];
+  now: Instant;
+}): HubEntry[] {
+  const { units, bedReleases, admissions = [], leaveBeds = [], now } = input;
 
   const wardEntries: HubEntry[] = units.map((unit) => {
     const site = siteByCode(unit.siteCode);
-    const capacity = unitCapacity(unit, bedReleases);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
     return {
       id: unit.id,
       kind: "ward",
@@ -174,11 +181,14 @@ export function hubEntries(input: { units: Unit[]; bedReleases: BedRelease[]; no
       security: wardSecurity(unit),
       authorised: unit.authorised,
       beds: unit.beds,
-      // `.available` IS Ready — never reduced by pending-preparation beds. A bed the feed calls
-      // free but the ward is still cleaning is still Ready; `pendingPreparation` sits beside it as
-      // its own number, per the owner's 2026-09-05 ruling.
-      ready: capacity.available,
-      held: capacity.held,
+      // `bedStates().ready` IS Ready — never reduced by pending-preparation beds. A bed the feed
+      // calls free but the ward is still cleaning is still Ready; `pendingPreparation` sits beside
+      // it as its own number, per the owner's 2026-09-05 ruling.
+      ready: states.ready,
+      pulled: states.pulled,
+      closed: states.closed,
+      occupied: states.occupied,
+      onLeave: states.onLeave,
       pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
       confirmedAt: unit.allocatable.confirmedAt,
       stale: isStale(unit, now),
@@ -337,33 +347,36 @@ export function needsAttention(entries: HubEntry[]): AttentionRow[] {
 /**
  * The network's beds in one row — the figure a coordinator opens this screen wanting.
  *
- * ⚠️ **FOUR NUMBERS THAT ARE NEVER ADDED TOGETHER ON SCREEN, AND THIS FUNCTION DOES NOT ADD THEM.**
- * Ready is what can be filled now. Vacant-not-cleared is empty but not allocatable. Out of service
- * is not coming back today. Beds is the network's size. Ready + vacant is the physically-empty
- * total, which reads as availability and is not, because the reducer refuses `PULL_PATIENT` into
- * the second group — the same trap the per-ward panel exists to avoid, one level up.
+ * The ruled boxes (`ward-bed-states.ts`), summed over the network's wards: Ready · Pulled · Closed
+ * · Occupied add up to `beds`. Ready is what can be filled now; Closed is empty but not offered.
+ * ⚠️ **Ready + Closed is the physically-empty total, which reads as availability and is not**,
+ * because the reducer refuses `PULL_PATIENT` into the second group — the same trap the per-ward
+ * panel exists to avoid, one level up. This function never adds them, and nor does the screen.
  */
 export function networkBeds(entries: HubEntry[]): {
   ready: number;
-  held: number;
-  blocked: number;
+  pulled: number;
+  closed: number;
+  occupied: number;
   beds: number;
   wards: number;
 } {
   let ready = 0;
-  let held = 0;
-  let blocked = 0;
+  let pulled = 0;
+  let closed = 0;
+  let occupied = 0;
   let beds = 0;
   let wards = 0;
   for (const entry of entries) {
     if (entry.kind !== "ward") continue;
     wards += 1;
     ready += entry.ready ?? 0;
-    held += entry.held ?? 0;
-    blocked += entry.blocked ?? 0;
+    pulled += entry.pulled ?? 0;
+    closed += entry.closed ?? 0;
+    occupied += entry.occupied ?? 0;
     beds += entry.beds ?? 0;
   }
-  return { ready, held, blocked, beds, wards };
+  return { ready, pulled, closed, occupied, beds, wards };
 }
 
 /**

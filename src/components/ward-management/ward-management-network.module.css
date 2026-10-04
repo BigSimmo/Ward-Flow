@@ -740,7 +740,7 @@
 .reasonNote {
   margin: var(--net-space-6) 0 0;
   color: var(--net-muted);
-  font-size: var(--text-3xs);
+  font-size: var(--text-xs);
 }
 
 .tierNote {

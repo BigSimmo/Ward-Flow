@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, BarChart2, Search, Star } from "lucide-react";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   groupedResults,
   hubCounts,
@@ -139,7 +140,7 @@ function kindBadgeClass(kind: HubKind): string {
 
 export function HubScreen() {
   usePrintableDisclosures();
-  const { units, bedReleases } = useWardFlow();
+  const { units, bedReleases, admissions, leaveBeds } = useWardFlow();
   const now = useWardFlowClock();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -169,7 +170,10 @@ export function HubScreen() {
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [selectedId, query]);
 
-  const entries = useMemo(() => hubEntries({ units, bedReleases, now }), [units, bedReleases, now]);
+  const entries = useMemo(
+    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
+    [units, bedReleases, admissions, leaveBeds, now],
+  );
   const results = useMemo(() => searchHub(entries, query, kind), [entries, query, kind]);
   const counts = useMemo(() => hubCounts(entries, query), [entries, query]);
   /**
@@ -577,12 +581,13 @@ export function HubScreen() {
                     </div>
                   </div>
                   {/*
-                    ⚠️ **FOUR NUMBERS THAT ARE NEVER ADDED UP, ONE LEVEL ABOVE THE WARD PANEL.**
-                    Ready + vacant-not-cleared is the physically-empty total, which reads as
-                    availability and is not: the reducer refuses `PULL_PATIENT` into the second
-                    group. Out-of-service beds are not coming back today at all. The bar draws all
-                    three as proportions of the network's size, and the legend names each in words
-                    — a bar segment a reader cannot name is decoration.
+                    ⚠️ **THE FOUR RULED BOXES (`ward-bed-states.ts`), ONE LEVEL ABOVE THE WARD
+                    PANEL.** Ready · Pulled · Closed · Occupied add up to the network's beds, but
+                    Ready + Closed is the physically-empty total, which reads as availability and is
+                    not: the reducer refuses `PULL_PATIENT` into Closed, so the screen never prints
+                    that sum. The bar draws Ready, Pulled and Closed as proportions of the network's
+                    size; the rest of the bar is Occupied. The legend names each in words — a bar
+                    segment a reader cannot name is decoration.
                   */}
                   {/*
                     ⚠️ **PINNED AND RECENTLY OPENED LIVE HERE, AND THE MOCKUP PUT "RECENTLY VIEWED"
@@ -605,12 +610,20 @@ export function HubScreen() {
                         <span className={styles.capacityNum}>{network.ready}</span>
                       </div>
                       <div className={styles.capacityCell}>
-                        <span className={styles.capacityLbl}>Vacant, not yet cleared</span>
-                        <span className={styles.capacityNum}>{network.held}</span>
+                        <span className={styles.capacityLbl}>{BED_STATE_LABELS.pulled}</span>
+                        <span className={styles.capacityNum}>{network.pulled}</span>
+                      </div>
+                      <div className={styles.capacityCell}>
+                        <span className={styles.capacityLbl}>{BED_STATE_LABELS.closed}, not offered</span>
+                        <span className={styles.capacityNum}>{network.closed}</span>
+                      </div>
+                      <div className={styles.capacityCell}>
+                        <span className={styles.capacityLbl}>{BED_STATE_LABELS.occupied}</span>
+                        <span className={styles.capacityNum}>{network.occupied}</span>
                       </div>
                     </div>
                     {/*
-                      ⚠️ **ONE `style` ATTRIBUTE, THREE VALUES, AND THAT IS NOT A STYLE PREFERENCE.**
+                      ⚠️ **ONE `style` ATTRIBUTE, NOT ONE PER SEGMENT, AND THAT IS NOT A STYLE PREFERENCE.**
                       `check:design-drift-ratchet` caps inline `style` attributes repository-wide at
                       232 and the repository stands at 230; three separate ones would have broken the
                       build. Custom properties carry the widths and the stylesheet consumes them, so
@@ -618,7 +631,7 @@ export function HubScreen() {
 
                       `aria-hidden` because every figure the bar draws is stated as a number in the
                       cells above and named again in the legend below — a screen reader announcing
-                      three unlabelled proportions would be repeating, worse, what it already read.
+                      unlabelled proportions would be repeating, worse, what it already read.
                     */}
                     <div
                       className={styles.capacityBar}
@@ -626,28 +639,30 @@ export function HubScreen() {
                       style={
                         {
                           "--bar-ready": barWidth(network.ready, network.beds),
-                          "--bar-not-yet": barWidth(network.held, network.beds),
-                          "--bar-blocked": barWidth(network.blocked, network.beds),
+                          "--bar-pulled": barWidth(network.pulled, network.beds),
+                          "--bar-not-yet": barWidth(network.closed, network.beds),
                         } as CSSProperties
                       }
                     >
                       <span className={styles.barReady} />
+                      <span className={styles.barPulled} />
                       <span className={styles.barNotYet} />
-                      <span className={styles.barBlocked} />
                     </div>
                     <p className={styles.barLegend}>
                       <span className={styles.legendItem}>
                         <span className={`${styles.legendSwatch} ${styles.barReady}`} /> Ready {network.ready}
                       </span>
                       <span className={styles.legendItem}>
-                        <span className={`${styles.legendSwatch} ${styles.barNotYet}`} /> Not yet cleared {network.held}
+                        <span className={`${styles.legendSwatch} ${styles.barPulled}`} /> {BED_STATE_LABELS.pulled}{" "}
+                        {network.pulled}
                       </span>
                       <span className={styles.legendItem}>
-                        <span className={`${styles.legendSwatch} ${styles.barBlocked}`} /> Out of service not recorded
+                        <span className={`${styles.legendSwatch} ${styles.barNotYet}`} /> {BED_STATE_LABELS.closed}{" "}
+                        {network.closed}
                       </span>
                     </p>
                     <p className={styles.capacityTotal}>
-                      Of {network.beds} beds across {network.wards} wards, the rest are occupied or not reported.
+                      Of {network.beds} beds across {network.wards} wards, the rest are {network.occupied} occupied.
                     </p>
                   </div>
 
@@ -837,15 +852,24 @@ export function HubScreen() {
                           <span className={styles.capacityLbl}>Ready to admit</span>
                         </div>
                         {/*
-                          ⚠️ **THREE FIGURES, NOT ONE, AND NEVER THEIR SUM.** Ready is what a
-                          coordinator can fill now. Vacant-not-cleared is empty but not yet
-                          allocatable. Beds is the ward's size. Adding Ready to Vacant produces the
-                          physically-empty total — a number that reads as availability and is not,
-                          because the reducer refuses `PULL_PATIENT` into the second group.
+                          ⚠️ **THE RULED BOXES, NEVER A SUM OF READY AND CLOSED.** Ready is what a
+                          coordinator can fill now. Pulled is allocated to someone not yet arrived.
+                          Closed is empty but not offered. Occupied has someone in it. Beds is the
+                          ward's size. Adding Ready to Closed produces the physically-empty total — a
+                          number that reads as availability and is not, because the reducer refuses
+                          `PULL_PATIENT` into Closed.
                         */}
                         <div className={styles.capacityCell}>
-                          <span className={styles.capacityNum}>{selected.held ?? 0}</span>
-                          <span className={styles.capacityLbl}>Vacant, not yet cleared</span>
+                          <span className={styles.capacityNum}>{selected.pulled ?? 0}</span>
+                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.pulled}</span>
+                        </div>
+                        <div className={styles.capacityCell}>
+                          <span className={styles.capacityNum}>{selected.closed ?? 0}</span>
+                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.closed}, not offered</span>
+                        </div>
+                        <div className={styles.capacityCell}>
+                          <span className={styles.capacityNum}>{selected.occupied ?? 0}</span>
+                          <span className={styles.capacityLbl}>{BED_STATE_LABELS.occupied}</span>
                         </div>
                         <div className={styles.capacityCell}>
                           <span className={styles.capacityNumMuted}>{selected.beds ?? 0}</span>
@@ -908,12 +932,12 @@ export function HubScreen() {
                     an emergency department and a community team each rendered a SECOND "Notes"
                     heading with nothing under it — a heading over an empty list, which reads as a
                     section that failed to load rather than one that does not apply. Every fact in
-                    it (bed confirmation, out-of-service, locked beds, being cleaned) is a fact
+                    it (bed confirmation, on leave, locked beds, being cleaned) is a fact
                     about a ward; none of the three has any meaning for the other two kinds.
                   */}
                   {selected.kind !== "ward" ? null : (
                     // ⚠️ **AND EVERY LINE IN IT IS A FACT WITH A LABEL, NEVER A BARE NUMBER**, shown
-                    // only when there is something to say. A ward with nothing out of service gets no
+                    // only when there is something to say. A ward with nobody on leave gets no
                     // line rather than a line reading "0" — a zero standing where a fact belongs is
                     // read as a measurement, and this screen cannot distinguish "none" from "unknown"
                     // unless it says which.
@@ -930,10 +954,11 @@ export function HubScreen() {
                             <span className={styles.metaTimestamp}>{formatElapsed(now - selected.confirmedAt)}</span>).
                           </li>
                         )}
-                        {selected.blocked === undefined || selected.blocked === 0 ? null : (
+                        {selected.onLeave === undefined || selected.onLeave === 0 ? null : (
                           <li>
-                            <b>Out of service</b> {selected.blocked} {selected.blocked === 1 ? "bed is" : "beds are"}{" "}
-                            out of service — not counted as ready or vacant, and not coming back today.
+                            <b>{BED_STATE_LABELS.onLeave}</b> {selected.onLeave}{" "}
+                            {selected.onLeave === 1 ? "bed is" : "beds are"} held for a patient on leave — already
+                            counted in Occupied.
                           </li>
                         )}
                         {selected.lockedBeds === undefined || selected.lockedBeds === 0 ? null : (
@@ -1038,8 +1063,8 @@ export function HubScreen() {
               <div className={styles.srOnly}>
                 <h4>What is invented</h4>
                 <p>
-                  Every bed figure — ready to admit, vacant but not yet cleared, and out of service — is invented for
-                  this prototype and reflects no real hospital&rsquo;s state.
+                  Every bed figure — ready, pulled, closed and occupied — is invented for this prototype and reflects no
+                  real hospital&rsquo;s state.
                 </p>
               </div>
             </section>

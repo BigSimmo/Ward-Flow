@@ -2,16 +2,16 @@
 //
 // The network's whole bed supply, drawn as one square per bed — MERGE 02's Capacity screen gains
 // a picture the table beside it cannot show: whether every ready bed tonight sits in one health
-// service, or whether blocked beds are piling up at two sites. Design lock reference: the mockup
+// service, or whether closed beds are piling up at two sites. Design lock reference: the mockup
 // named in the build brief that added this section, "Bed map", beneath the existing network table.
 //
-// ⚠️ **EVERY COUNT HERE IS READ FROM AN EXISTING DERIVATION, NEVER COUNTED AGAIN.** `unitCapacity`
-// (`ward-derivations.ts`) already partitions every unit into `available + held + blocked +
-// occupied === unit.beds` — the same partition `src/components/ward-management/board/board.module.css`
-// names as the reason ITS OWN per-bed tiles follow it "rather than a second one invented here", and
-// the same partition `ward-management-network.tsx`'s service clusters already sum for their own
-// "N ready" header. This file draws the third picture from that one partition rather than inventing
-// a fourth.
+// ⚠️ **EVERY COUNT HERE IS READ FROM AN EXISTING DERIVATION, NEVER COUNTED AGAIN.** `bedStates`
+// (`ward-bed-states.ts`) partitions every unit into the owner's ruled boxes, `ready + pulled +
+// closed + occupied === unit.beds`, built on `unitCapacity` (`ward-derivations.ts`) — the same
+// partition the bed board's per-bed tiles and `ward-management-network.tsx`'s service clusters read.
+// This file draws one more picture from that one partition rather than inventing another.
+// "Held" is not a square here: it means only a bed kept for a patient on leave, already inside
+// Occupied, and is shown as an "on leave" marker beside the squares, never a fifth state.
 //
 // 🔴 **DELIBERATELY NOT `NetworkWardRow.ready` (`capacity-derivations.ts`), AND THE REASON IS
 // WRITTEN DOWN RATHER THAN LEFT FOR THE NEXT PERSON TO REDISCOVER.** `NetworkWardRow.ready` is
@@ -26,24 +26,31 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import type { BedRelease, HealthService, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { countCellText } from "./capacity-derivations";
 import styles from "./bed-map.module.css";
 
-/** The four states a bed is drawn in. A `ready` square additionally carries `preparing` — see
+/** The four ruled states a bed is drawn in. A `ready` square additionally carries `preparing` — see
  *  `BedSquare` below — never a fifth state of its own. */
-export type BedSquareState = "ready" | "held" | "blocked" | "occupied";
+export type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
 
 export type BedMapWard = {
   unit: Unit;
   /** `unitCapacity(unit, releases).available` — see the file header for why this is not
    *  `NetworkWardRow.ready`. */
   ready: number;
-  held: number;
-  blocked: number;
+  /** `bedStates().pulled` — allocated to a named patient who has not arrived yet. */
+  pulled: number;
+  /** `bedStates().closed` — physically empty, not offered (out-of-service beds fold in here). */
+  closed: number;
+  /** `bedStates().occupied` — someone is in it; excludes a pulled patient. */
   occupied: number;
+  /** Inside `occupied`: beds held for a patient on leave. A marker beside the squares, never one. */
+  onLeave: number;
   /**
    * Of `ready`, how many are still being made ready — `bedsPendingPreparation`, the same function
    * whose result gates `PULL_PATIENT` in the reducer. **Never subtracted from `ready`**: owner
@@ -63,8 +70,9 @@ export type BedMapServiceGroup = {
 };
 
 /**
- * One row per unit, reading `unitCapacity` and `bedsPendingPreparation` — nothing here computes a
- * bed count of its own.
+ * One row per unit, reading `bedStates`, `unitCapacity` and `bedsPendingPreparation` — nothing here
+ * computes a bed count of its own. Without `admissions` no pull can be told apart, so Pulled is 0
+ * and a seeded pulled patient stays inside Occupied (the same fallback as `networkWardRows`).
  *
  * 🔴 **THROWS IF A WARD'S PENDING-PREPARATION COUNT EXCEEDS ITS READY COUNT.** A bed cannot be
  * "still being made ready" and also not counted among the ready beds — `bedsPendingPreparation`
@@ -74,9 +82,15 @@ export type BedMapServiceGroup = {
  * throws rather than silently drawing more hatched squares than green ones — the same "contract on
  * the call site" discipline `WardBar` and `WardGroupHeading` already hold elsewhere in this app.
  */
-export function bedMapWards(units: Unit[], bedReleases: BedRelease[]): BedMapWard[] {
+export function bedMapWards(
+  units: Unit[],
+  bedReleases: BedRelease[],
+  admissions: readonly Admission[] = [],
+  leaveBeds: readonly LeaveBed[] = [],
+): BedMapWard[] {
   return units.map((unit) => {
     const capacity = unitCapacity(unit, bedReleases);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
     const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
     if (pendingPreparation > capacity.available) {
       throw new Error(
@@ -86,10 +100,11 @@ export function bedMapWards(units: Unit[], bedReleases: BedRelease[]): BedMapWar
     }
     return {
       unit,
-      ready: capacity.available,
-      held: capacity.held,
-      blocked: capacity.blocked,
-      occupied: capacity.occupied,
+      ready: states.ready,
+      pulled: states.pulled,
+      closed: states.closed,
+      occupied: states.occupied,
+      onLeave: states.onLeave,
       pendingPreparation,
     };
   });
@@ -137,11 +152,11 @@ function buildSquares(ward: BedMapWard): BedSquare[] {
   for (let index = 0; index < ward.ready; index += 1) {
     squares.push({ key: `${ward.unit.id}-ready-${index}`, state: "ready", preparing: index < ward.pendingPreparation });
   }
-  for (let index = 0; index < ward.held; index += 1) {
-    squares.push({ key: `${ward.unit.id}-held-${index}`, state: "held", preparing: false });
+  for (let index = 0; index < ward.pulled; index += 1) {
+    squares.push({ key: `${ward.unit.id}-pulled-${index}`, state: "pulled", preparing: false });
   }
-  for (let index = 0; index < ward.blocked; index += 1) {
-    squares.push({ key: `${ward.unit.id}-blocked-${index}`, state: "blocked", preparing: false });
+  for (let index = 0; index < ward.closed; index += 1) {
+    squares.push({ key: `${ward.unit.id}-closed-${index}`, state: "closed", preparing: false });
   }
   for (let index = 0; index < ward.occupied; index += 1) {
     squares.push({ key: `${ward.unit.id}-occupied-${index}`, state: "occupied", preparing: false });
@@ -184,9 +199,21 @@ function bedKindsServed(unit: Unit): string {
 
 const SQUARE_LABEL: Record<BedSquareState, string> = {
   ready: "Ready bed",
-  held: "Held bed — not offered",
-  blocked: "Blocked bed — out of service",
+  pulled: "Pulled bed — patient not yet arrived",
+  closed: "Closed bed — not offered",
   occupied: "Occupied bed",
+};
+
+/**
+ * Each ruled state's existing stylesheet class. Closed keeps the dotted "not offered" look the
+ * mislabelled "held" box always had; Pulled is a bed spoken for, so it takes the occupied fill and
+ * is told apart by its own glyph and words. No new colour is introduced for either.
+ */
+const SQUARE_CLASS: Record<BedSquareState, string | undefined> = {
+  ready: styles.ready,
+  pulled: styles.occupied,
+  closed: styles.held,
+  occupied: styles.occupied,
 };
 
 function squareLabel(square: BedSquare): string {
@@ -194,7 +221,7 @@ function squareLabel(square: BedSquare): string {
 }
 
 function squareClassName(square: BedSquare): string {
-  const base = `${styles.square} ${styles[square.state]}`;
+  const base = `${styles.square} ${SQUARE_CLASS[square.state]}`;
   return square.preparing ? `${base} ${styles.preparing}` : base;
 }
 
@@ -211,9 +238,9 @@ const LEGEND_ITEMS: { key: string; state: BedSquareState; preparing?: boolean; l
     preparing: true,
     label: "Ready — still being made ready (counted as ready; not yet pullable)",
   },
-  { key: "held", state: "held", label: "Held — not offered" },
-  { key: "blocked", state: "blocked", label: "Blocked — out of service" },
-  { key: "occupied", state: "occupied", label: "Occupied" },
+  { key: "pulled", state: "pulled", label: `${BED_STATE_LABELS.pulled} — patient not yet arrived` },
+  { key: "closed", state: "closed", label: `${BED_STATE_LABELS.closed} — not offered` },
+  { key: "occupied", state: "occupied", label: BED_STATE_LABELS.occupied },
 ];
 
 function BedMapLegend() {
@@ -225,8 +252,8 @@ function BedMapLegend() {
             aria-hidden="true"
             className={
               item.preparing
-                ? `${styles.legendSwatch} ${styles[item.state]} ${styles.preparing}`
-                : `${styles.legendSwatch} ${styles[item.state]}`
+                ? `${styles.legendSwatch} ${SQUARE_CLASS[item.state]} ${styles.preparing}`
+                : `${styles.legendSwatch} ${SQUARE_CLASS[item.state]}`
             }
           />
           {item.label}
@@ -269,14 +296,14 @@ function WardBlock({
   const total = ward.unit.beds;
   const pureReady = Math.max(0, ward.ready - ward.pendingPreparation);
   const turnover = ward.pendingPreparation;
-  const held = ward.held;
-  const blocked = ward.blocked;
+  const pulled = ward.pulled;
+  const closed = ward.closed;
   const occupied = ward.occupied;
 
   const pureReadyPct = total > 0 ? (pureReady / total) * 100 : 0;
   const turnoverPct = total > 0 ? (turnover / total) * 100 : 0;
-  const heldPct = total > 0 ? (held / total) * 100 : 0;
-  const blockedPct = total > 0 ? (blocked / total) * 100 : 0;
+  const pulledPct = total > 0 ? (pulled / total) * 100 : 0;
+  const closedPct = total > 0 ? (closed / total) * 100 : 0;
   const occupiedPct = total > 0 ? (occupied / total) * 100 : 0;
 
   const handleBedFocus = (
@@ -365,8 +392,14 @@ function WardBlock({
             </span>
           ) : null}
 
-          {ward.held > 0 ? (
-            <span className={styles.chipHeld}>
+          {ward.pulled > 0 ? (
+            <span className={styles.chipOccupied} title={BED_STATE_DETAILS.pulled}>
+              {countCellText(ward.pulled)} pulled
+            </span>
+          ) : null}
+
+          {ward.closed > 0 ? (
+            <span className={styles.chipHeld} title={BED_STATE_DETAILS.closed}>
               <svg
                 width="12"
                 height="12"
@@ -379,25 +412,13 @@ function WardBlock({
                 <rect x="5" y="10" width="14" height="11" rx="2" />
                 <path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v3" />
               </svg>{" "}
-              {countCellText(ward.held)} held
+              {countCellText(ward.closed)} closed
             </span>
           ) : null}
 
-          {ward.blocked > 0 ? (
-            <span className={styles.chipBlocked}>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="m6 6 12 12" />
-              </svg>{" "}
-              {countCellText(ward.blocked)} blocked
+          {ward.onLeave > 0 ? (
+            <span className={styles.chipOccupied} title={BED_STATE_DETAILS.onLeave}>
+              {ward.onLeave} on leave
             </span>
           ) : null}
         </div>
@@ -407,7 +428,7 @@ function WardBlock({
       <div
         className={styles.capacityRibbon}
         role="progressbar"
-        aria-label={`${ward.unit.name} capacity: ${ward.ready} ready, ${ward.held} held, ${ward.blocked} blocked, ${ward.occupied} occupied`}
+        aria-label={`${ward.unit.name} capacity: ${ward.ready} ready, ${ward.pulled} pulled, ${ward.closed} closed, ${ward.occupied} occupied`}
         aria-valuenow={ward.occupied}
         aria-valuemin={0}
         aria-valuemax={ward.unit.beds}
@@ -426,18 +447,18 @@ function WardBlock({
             title={`${turnover} turnover`}
           />
         )}
-        {heldPct > 0 && (
+        {pulledPct > 0 && (
           <div
-            className={`${styles.ribbonSegment} ${styles.ribbonHeld}`}
-            style={{ width: `${heldPct}%` }}
-            title={`${held} held`}
+            className={`${styles.ribbonSegment} ${styles.ribbonOccupied}`}
+            style={{ width: `${pulledPct}%` }}
+            title={`${pulled} pulled`}
           />
         )}
-        {blockedPct > 0 && (
+        {closedPct > 0 && (
           <div
-            className={`${styles.ribbonSegment} ${styles.ribbonBlocked}`}
-            style={{ width: `${blockedPct}%` }}
-            title={`${blocked} blocked`}
+            className={`${styles.ribbonSegment} ${styles.ribbonHeld}`}
+            style={{ width: `${closedPct}%` }}
+            title={`${closed} closed`}
           />
         )}
         {occupiedPct > 0 && (
@@ -506,15 +527,15 @@ function WardBlock({
                         ⚙
                       </span>
                     )}
-                    {square.state === "held" && (
+                    {square.state === "closed" && (
                       <svg className={styles.bedIcon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                     )}
-                    {square.state === "blocked" && (
+                    {square.state === "pulled" && (
                       <span className={styles.bedGlyph} aria-hidden="true">
-                        ✕
+                        →
                       </span>
                     )}
                     {square.state === "occupied" && <span className={styles.occupiedDot} aria-hidden="true" />}
@@ -544,10 +565,10 @@ function WardBlock({
               ? "Turnover (Cleaning underway)"
               : hoveredBed.square.state === "ready"
                 ? "Ready (Available to pull)"
-                : hoveredBed.square.state === "held"
-                  ? "Held (Ringfenced / Not offered)"
-                  : hoveredBed.square.state === "blocked"
-                    ? "Blocked (Out of service)"
+                : hoveredBed.square.state === "pulled"
+                  ? "Pulled (Patient not yet arrived)"
+                  : hoveredBed.square.state === "closed"
+                    ? "Closed (Empty, not offered)"
                     : "Occupied (Inpatient)"}
           </span>
           <span className={styles.tooltipMeta}>{bedKindsServed(ward.unit)}</span>
@@ -591,7 +612,7 @@ function ServiceGroup({
 
   const totalBeds = group.wards.reduce((sum, w) => sum + w.unit.beds, 0);
   const totalReady = group.wards.reduce((sum, w) => sum + w.ready, 0);
-  const totalHeld = group.wards.reduce((sum, w) => sum + w.held, 0);
+  const totalClosed = group.wards.reduce((sum, w) => sum + w.closed, 0);
   const totalOccupied = group.wards.reduce((sum, w) => sum + w.occupied, 0);
   const occPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
 
@@ -731,7 +752,7 @@ function ServiceGroup({
             </span>
           </h3>
           <span className={styles.serviceCapacityBadge}>
-            {totalReady > 0 ? `${totalReady} ready` : "none ready"} · {totalHeld} held · {occPct}% occupancy
+            {totalReady > 0 ? `${totalReady} ready` : "none ready"} · {totalClosed} closed · {occPct}% occupancy
           </span>
         </div>
 
@@ -881,6 +902,8 @@ function ServiceGroup({
 export function BedMap({
   units,
   bedReleases,
+  admissions,
+  leaveBeds,
   selectedUnitId,
   onSelectWard,
   service,
@@ -891,6 +914,9 @@ export function BedMap({
   initialBedDetail?: boolean;
   units: Unit[];
   bedReleases: BedRelease[];
+  /** For Pulled and the on-leave marker — see `bedMapWards`. */
+  admissions?: readonly Admission[];
+  leaveBeds?: readonly LeaveBed[];
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
   service?: HealthService | null;
@@ -899,7 +925,7 @@ export function BedMap({
   const [bedDetail, setBedDetail] = useState(initialBedDetail);
   const [activeService, setActiveService] = useState<string>();
   const mapRef = useRef<HTMLDivElement>(null);
-  const wards = bedMapWards(units, bedReleases);
+  const wards = bedMapWards(units, bedReleases, admissions, leaveBeds);
   const groups = groupBedMapWardsByService(wards);
   const renderedGroups = service ? groups.filter((group) => group.service === service) : groups;
   useEffect(() => {

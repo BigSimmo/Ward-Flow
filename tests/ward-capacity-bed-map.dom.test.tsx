@@ -6,12 +6,13 @@ import { describe, expect, it, vi } from "vitest";
 import { BedMap, bedMapWards, groupBedMapWardsByService } from "@/components/ward-management/capacity/bed-map";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { bedReleases } from "@/components/ward-management/ward-movements";
+import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 const units = allUnits();
 
-function squaresIn(wardBlock: HTMLElement, state: "ready" | "held" | "blocked" | "occupied"): HTMLElement[] {
+function squaresIn(wardBlock: HTMLElement, state: "ready" | "pulled" | "closed" | "occupied"): HTMLElement[] {
   return Array.from(wardBlock.querySelectorAll(`[data-bed-map-state="${state}"]`));
 }
 
@@ -25,16 +26,20 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
    * state as the derivations report, per ward — walked over every real unit, not one hand-picked
    * example.
    */
-  it("draws exactly as many squares of each state as unitCapacity reports, for every ward", () => {
-    const expected = bedMapWards(units, bedReleases);
-    render(<BedMap units={units} bedReleases={bedReleases} />);
+  it("draws exactly as many squares of each ruled state as bedStates reports, for every ward", () => {
+    const expected = bedMapWards(units, bedReleases, wardAdmissions, leaveBeds);
+    expect(
+      expected.reduce((sum, ward) => sum + ward.pulled, 0),
+      "no ward has a pulled bed — the Pulled squares are untested",
+    ).toBeGreaterThan(0);
+    render(<BedMap units={units} bedReleases={bedReleases} admissions={wardAdmissions} leaveBeds={leaveBeds} />);
     for (const ward of expected) {
       const block = screen.getByTestId(`ward-bed-map-ward-${ward.unit.id}`);
       expect(squaresIn(block, "ready"), ward.unit.id).toHaveLength(ward.ready);
-      expect(squaresIn(block, "held"), ward.unit.id).toHaveLength(ward.held);
-      expect(squaresIn(block, "blocked"), ward.unit.id).toHaveLength(ward.blocked);
+      expect(squaresIn(block, "pulled"), ward.unit.id).toHaveLength(ward.pulled);
+      expect(squaresIn(block, "closed"), ward.unit.id).toHaveLength(ward.closed);
       expect(squaresIn(block, "occupied"), ward.unit.id).toHaveLength(ward.occupied);
-      const total = ward.ready + ward.held + ward.blocked + ward.occupied;
+      const total = ward.ready + ward.pulled + ward.closed + ward.occupied;
       expect(total, `${ward.unit.id}: drawn squares do not sum to its ${ward.unit.beds} beds`).toBe(ward.unit.beds);
     }
   });
@@ -121,8 +126,10 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     const legend = screen.getByLabelText("Bed map legend");
     expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
     expect(within(legend).getByText(/still being made ready/iu)).toBeInTheDocument();
-    expect(within(legend).getByText(/Held/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/Blocked/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Pulled/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Closed/u)).toBeInTheDocument();
+    // "Held" now means only a bed kept for a patient on leave, which is never a square of its own.
+    expect(within(legend).queryByText(/Held|Blocked/u)).not.toBeInTheDocument();
     expect(within(legend).getByText(/^Occupied$/u)).toBeInTheDocument();
   });
 
@@ -130,10 +137,10 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     render(<BedMap units={units} bedReleases={bedReleases} />);
     const readyBeds = screen.getAllByRole("img", { name: "Ready bed" });
     const preparingBeds = screen.getAllByRole("img", { name: "Ready bed — still being made ready" });
-    const heldBeds = screen.getAllByRole("img", { name: "Held bed — not offered" });
+    const closedBeds = screen.getAllByRole("img", { name: "Closed bed — not offered" });
     const occupiedBeds = screen.getAllByRole("img", { name: "Occupied bed" });
     expect(readyBeds.length + preparingBeds.length).toBeGreaterThan(0);
-    expect(heldBeds.length).toBeGreaterThan(0);
+    expect(closedBeds.length).toBeGreaterThan(0);
     expect(occupiedBeds.length).toBeGreaterThan(0);
   });
 

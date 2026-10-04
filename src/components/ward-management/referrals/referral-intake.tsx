@@ -19,7 +19,7 @@ import {
   type TentativeDiagnosisBlock,
 } from "@/components/ward-management/ward-diagnosis";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   patientDisplayName,
@@ -1348,8 +1348,19 @@ function readPatientId(searchParams: ReturnType<typeof useSearchParams>): string
 }
 
 export function ReferralIntakeForm() {
-  const { dayZero, dispatch, rejections, units, bedReleases, referrals, patients, configuration, movements } =
-    useWardFlow();
+  const {
+    dayZero,
+    dispatch,
+    rejections,
+    units,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    referrals,
+    patients,
+    configuration,
+    movements,
+  } = useWardFlow();
   const now = useWardFlowClock();
   const currentDate = useMemo(
     () => (dayZero ? new Date(dayZero.getTime() + now * 60 * 1000) : new Date()),
@@ -1909,17 +1920,19 @@ export function ReferralIntakeForm() {
     return units.find((unit) => needle.test(unit.name)) ?? units[0];
   }, [draft.homeRegion, units]);
 
+  // The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied add up to `total`.
   const radarWard = useMemo(() => {
-    if (!radarUnit) return { name: "No ward recorded", ready: 0, held: 0, occ: 0, total: 0 };
-    const capacity = unitCapacity(radarUnit, bedReleases);
+    if (!radarUnit) return { name: "No ward recorded", ready: 0, pulled: 0, closed: 0, occ: 0, total: 0 };
+    const states = bedStates(radarUnit, admissions, bedReleases, leaveBeds);
     return {
       name: radarUnit.name,
-      ready: capacity.available,
-      held: capacity.held,
-      occ: capacity.occupied,
+      ready: states.ready,
+      pulled: states.pulled,
+      closed: states.closed,
+      occ: states.occupied,
       total: radarUnit.beds,
     };
-  }, [bedReleases, radarUnit]);
+  }, [admissions, bedReleases, leaveBeds, radarUnit]);
 
   /**
    * Owner ruling 2026-09-05: a screen that prints a ready-bed figure must also say how many of
@@ -4063,8 +4076,13 @@ export function ReferralIntakeForm() {
                     </div>
                     <div
                       className={pageStyles.radarMeterBar}
-                      aria-label={`Beds: ${radarWard.ready} ready, ${radarWard.held} held, ${radarWard.occ} occupied`}
+                      aria-label={`Beds: ${radarWard.ready} ready, ${radarWard.pulled} pulled, ${radarWard.closed} closed, ${radarWard.occ} occupied`}
                     >
+                      {/*
+                        `data-kind` keys the existing stylesheet's colours: Pulled takes the accent
+                        segment and Closed the warn segment, matching Closed's warn tone on the
+                        capacity screens. `data-bed-state` names the ruled box itself.
+                      */}
                       <div
                         className={pageStyles.meterSeg}
                         data-kind="ready"
@@ -4074,8 +4092,16 @@ export function ReferralIntakeForm() {
                       <div
                         className={pageStyles.meterSeg}
                         data-kind="held"
-                        style={{ width: `${(radarWard.held / Math.max(radarWard.total, 1)) * 100}%` }}
-                        title={`${radarWard.held} Held beds`}
+                        data-bed-state="pulled"
+                        style={{ width: `${(radarWard.pulled / Math.max(radarWard.total, 1)) * 100}%` }}
+                        title={`${radarWard.pulled} Pulled beds`}
+                      />
+                      <div
+                        className={pageStyles.meterSeg}
+                        data-kind="blocked"
+                        data-bed-state="closed"
+                        style={{ width: `${(radarWard.closed / Math.max(radarWard.total, 1)) * 100}%` }}
+                        title={`${radarWard.closed} Closed beds`}
                       />
                       <div
                         className={pageStyles.meterSeg}
@@ -4086,8 +4112,8 @@ export function ReferralIntakeForm() {
                     </div>
                     <div className={pageStyles.radarUnitFoot}>
                       <span id="radarWardDetail">
-                        {radarWard.ready} ready &middot; {radarWard.held} held &middot; {radarWard.occ} occ /{" "}
-                        {radarWard.total} beds
+                        {radarWard.ready} ready &middot; {radarWard.pulled} pulled &middot; {radarWard.closed} closed
+                        &middot; {radarWard.occ} occ / {radarWard.total} beds
                       </span>
                       <span className="mono" id="radarWardResponse">
                         Answer time not recorded

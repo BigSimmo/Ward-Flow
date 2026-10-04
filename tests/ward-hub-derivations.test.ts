@@ -54,21 +54,25 @@ describe("networkBeds — the network's beds in one row, never added together", 
    * `hubEntries` actually carries), or dropping/double-counting a ward when summing `beds`.
    *
    * The two wards are picked because their figures are independently known and asymmetric on
-   * every axis (ready, held, blocked, beds all differ between the two), so a mutation that
+   * every axis (ready, closed, beds all differ between the two), so a mutation that
    * transposes any pair of these fields changes at least one number in a way this test would see.
    */
-  it("sums ready, held, blocked and beds correctly over a hand-picked two-ward subset with known, asymmetric figures", () => {
-    const scghAdultOpen = entryById("scgh-adult-open"); // ready 2, held 3, blocked 0, beds 24 — same figures tests/ward-hub-screen.dom.test.tsx pins via unitCapacity.
-    // ready 1, held 1, beds 14 — read straight off ward-sites.ts (empty 2, allocatable 1). Owner ruling
-    // 2026-09-25: its former blocked bed is an empty, held bed, and out-of-service beds are not recorded.
+  it("sums the ruled boxes and beds correctly over a hand-picked two-ward subset with known, asymmetric figures", () => {
+    const scghAdultOpen = entryById("scgh-adult-open"); // ready 2, closed 3, beds 24 — same figures tests/ward-hub-screen.dom.test.tsx pins via unitCapacity.
+    // ready 1, closed 1, beds 14 — read straight off ward-sites.ts (empty 2, allocatable 1). Owner ruling
+    // 2026-09-25: its former blocked bed is an empty bed the ward is not offering (now Closed), and
+    // out-of-service beds are not recorded.
     const rphOlderAdult = entryById("rph-older-adult");
 
     const result = networkBeds([scghAdultOpen, rphOlderAdult]);
 
     expect(result.ready).toBe(3);
-    expect(result.held).toBe(4);
-    // Nothing records an out-of-service bed, so no ward contributes one.
-    expect(result.blocked).toBe(0);
+    // The box once mislabelled "Held": empty and not offered. Out-of-service beds fold in here.
+    expect(result.closed).toBe(4);
+    // ENTRIES was built without admissions, so no pull can be told apart.
+    expect(result.pulled).toBe(0);
+    expect(result.occupied).toBe(31);
+    expect(result.ready + result.pulled + result.closed + result.occupied).toBe(result.beds);
     expect(result.beds).toBe(38);
     expect(result.wards).toBe(2);
   });

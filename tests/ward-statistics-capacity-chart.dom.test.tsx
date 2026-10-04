@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { StatisticsCapacityChart } from "@/components/ward-management/statistics/statistics-capacity-chart";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import type { Unit } from "@/components/ward-management/ward-model";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 
 vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
@@ -30,7 +31,9 @@ function chart() {
 describe("current-capacity explorer", () => {
   it("aggregates hospitals, exposes ward-level evidence, and clears a selected bar", () => {
     chart();
-    const bar = screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready, 14 occupied, 2 held of 20 beds/ });
+    const bar = screen.getByRole("button", {
+      name: /Royal Perth Hospital: 4 ready, 0 pulled, 2 closed, 14 occupied of 20 beds/,
+    });
     fireEvent.click(bar);
     const details = within(screen.getByTestId("capacity-details"));
     expect(details.getByRole("link", { name: /Alpha/ })).toHaveAttribute(
@@ -42,6 +45,25 @@ describe("current-capacity explorer", () => {
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();
   });
 
+  it("uses the ruled boxes: a pulled patient is Pulled, not Occupied, and the empty unoffered bed is Closed", () => {
+    // A seeded pulled admission (`movementId: null`) sits inside the occupied count until
+    // `bedStates` takes it out — see `ward-bed-states.ts`.
+    const pulled = { id: "AD-PULLED-1", unitId: "Alpha", state: "pulled", movementId: null } as unknown as Admission;
+    render(<StatisticsCapacityChart units={units} bedReleases={[]} admissions={[pulled]} />);
+    const bar = screen.getByRole("button", {
+      name: /Royal Perth Hospital: 4 ready, 1 pulled, 2 closed, 13 occupied of 20 beds/,
+    });
+    fireEvent.click(bar);
+    const details = within(screen.getByTestId("capacity-details"));
+    expect(details.getByText("Pulled")).toBeInTheDocument();
+    expect(details.getByText("Closed")).toBeInTheDocument();
+    // "Held" now means only a bed kept for a patient on leave; it never labels the empty unoffered box.
+    expect(details.queryByText("Held")).not.toBeInTheDocument();
+    const legend = within(screen.getByLabelText("Bed status legend"));
+    for (const word of ["Ready", "Pulled", "Closed", "Occupied"]) expect(legend.getByText(word)).toBeInTheDocument();
+    expect(legend.queryByText("Held")).not.toBeInTheDocument();
+  });
+
   it("filters both the plotted population and summary, without keeping hidden detail", () => {
     chart();
     fireEvent.click(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ }));
@@ -50,7 +72,7 @@ describe("current-capacity explorer", () => {
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();
     expect(screen.getByText("5 beds · 1 hospital matched")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready, 5 occupied, 0 held/ }),
+      screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready, 0 pulled, 0 closed, 5 occupied/ }),
     ).toBeInTheDocument();
   });
 
@@ -58,7 +80,9 @@ describe("current-capacity explorer", () => {
     chart();
     fireEvent.click(screen.getByRole("button", { name: "Wards" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Beta" } });
-    expect(screen.getByRole("button", { name: /Beta: 1 ready, 8 occupied, 1 held of 10 beds/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Beta: 1 ready, 0 pulled, 1 closed, 8 occupied of 10 beds/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText("10 beds · 1 ward matched")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Alpha: 3 ready/ })).not.toBeInTheDocument();
   });

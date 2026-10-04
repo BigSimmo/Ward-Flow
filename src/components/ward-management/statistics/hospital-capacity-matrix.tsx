@@ -4,13 +4,14 @@ import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import styles from "./statistics-third-edition.module.css";
 
-type SortColumn = "name" | "service" | "beds" | "occupied" | "rate" | "ready" | "held";
+type SortColumn = "name" | "service" | "beds" | "occupied" | "rate" | "ready" | "pulled" | "closed";
 type SortDirection = "asc" | "desc";
 
 interface UnitCapacityRow {
@@ -24,12 +25,29 @@ interface UnitCapacityRow {
   occRate: number;
   ready: number;
   pendingPreparation: number;
-  held: number;
+  pulled: number;
+  closed: number;
+  onLeave: number;
   statusLabel: "No ready beds" | "Near Limit" | "Ready beds recorded";
   statusTone: "danger" | "warn" | "good";
 }
 
-export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; bedReleases: BedRelease[] }) {
+/**
+ * Bed figures are the ruled boxes from `bedStates` — Ready · Pulled · Closed · Occupied add up to
+ * each unit's beds. Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled
+ * patient stays inside Occupied.
+ */
+export function HospitalCapacityMatrix({
+  units,
+  bedReleases,
+  admissions = [],
+  leaveBeds = [],
+}: {
+  units: Unit[];
+  bedReleases: BedRelease[];
+  admissions?: readonly Admission[];
+  leaveBeds?: readonly LeaveBed[];
+}) {
   const [filterText, setFilterText] = useState("");
   const [sortCol, setSortCol] = useState<SortColumn>("name");
   const [sortDir, setSortDir] = useState<SortDirection>("asc");
@@ -38,13 +56,12 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
   const rows: UnitCapacityRow[] = useMemo(() => {
     return units.map((u) => {
       const site = siteByCode(u.siteCode);
-      const cap = unitCapacity(u, bedReleases);
+      const states = bedStates(u, admissions, bedReleases, leaveBeds);
       const beds = u.beds;
-      const occupied = cap.occupied;
+      const occupied = states.occupied;
       const occRate = beds > 0 ? Math.round((occupied / beds) * 100) : 0;
-      const ready = cap.available;
+      const ready = states.ready;
       const pendingPreparation = bedsPendingPreparation(u.id, bedReleases);
-      const held = cap.held;
 
       let statusLabel: "No ready beds" | "Near Limit" | "Ready beds recorded" = "Ready beds recorded";
       let statusTone: "danger" | "warn" | "good" = "good";
@@ -68,12 +85,14 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
         occRate,
         ready,
         pendingPreparation,
-        held,
+        pulled: states.pulled,
+        closed: states.closed,
+        onLeave: states.onLeave,
         statusLabel,
         statusTone,
       };
     });
-  }, [units, bedReleases]);
+  }, [units, bedReleases, admissions, leaveBeds]);
 
   const filteredRows = useMemo(() => {
     const q = filterText.trim().toLowerCase();
@@ -111,9 +130,12 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
       } else if (sortCol === "ready") {
         av = a.ready;
         bv = b.ready;
-      } else if (sortCol === "held") {
-        av = a.held;
-        bv = b.held;
+      } else if (sortCol === "pulled") {
+        av = a.pulled;
+        bv = b.pulled;
+      } else if (sortCol === "closed") {
+        av = a.closed;
+        bv = b.closed;
       }
 
       if (av < bv) return -1 * dir;
@@ -199,7 +221,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                 className={`${styles.tableSortBtn} ${styles.n}`}
                 onClick={() => handleSort("occupied")}
               >
-                Occupied
+                {BED_STATE_LABELS.occupied}
                 <span aria-hidden="true">{getSortIndicator("occupied")}</span>
               </button>
             </th>
@@ -214,14 +236,28 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                 className={`${styles.tableSortBtn} ${styles.n}`}
                 onClick={() => handleSort("ready")}
               >
-                Available
+                {BED_STATE_LABELS.ready}
                 <span aria-hidden="true">{getSortIndicator("ready")}</span>
               </button>
             </th>
-            <th scope="col" className={styles.n} aria-sort={getSortAria("held")}>
-              <button type="button" className={`${styles.tableSortBtn} ${styles.n}`} onClick={() => handleSort("held")}>
-                Pending/Held
-                <span aria-hidden="true">{getSortIndicator("held")}</span>
+            <th scope="col" className={styles.n} aria-sort={getSortAria("pulled")} title={BED_STATE_DETAILS.pulled}>
+              <button
+                type="button"
+                className={`${styles.tableSortBtn} ${styles.n}`}
+                onClick={() => handleSort("pulled")}
+              >
+                {BED_STATE_LABELS.pulled}
+                <span aria-hidden="true">{getSortIndicator("pulled")}</span>
+              </button>
+            </th>
+            <th scope="col" className={styles.n} aria-sort={getSortAria("closed")} title={BED_STATE_DETAILS.closed}>
+              <button
+                type="button"
+                className={`${styles.tableSortBtn} ${styles.n}`}
+                onClick={() => handleSort("closed")}
+              >
+                {BED_STATE_LABELS.closed}
+                <span aria-hidden="true">{getSortIndicator("closed")}</span>
               </button>
             </th>
             <th scope="col">Status</th>
@@ -230,7 +266,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
         <tbody>
           {sortedRows.length === 0 ? (
             <tr>
-              <td colSpan={8} className={styles.emptyNote} style={{ textAlign: "center", padding: "1.5rem" }}>
+              <td colSpan={9} className={styles.emptyNote} style={{ textAlign: "center", padding: "1.5rem" }}>
                 No units match &ldquo;{filterText}&rdquo;
               </td>
             </tr>
@@ -253,7 +289,10 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                 </th>
                 <td>{r.service}</td>
                 <td className={styles.n}>{r.beds}</td>
-                <td className={styles.n}>{r.occupied}</td>
+                <td className={styles.n}>
+                  {r.occupied}
+                  {r.onLeave > 0 ? <span className={styles.note}> · {r.onLeave} on leave</span> : null}
+                </td>
                 <td className={styles.n}>
                   <span className={styles.statusPill} data-tone={r.statusTone}>
                     {r.occRate}%
@@ -265,7 +304,8 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                     <span className={styles.note}> · {r.pendingPreparation} being made ready (not deducted)</span>
                   ) : null}
                 </td>
-                <td className={styles.n}>{r.held > 0 ? r.held : <span className={styles.zero}>none</span>}</td>
+                <td className={styles.n}>{r.pulled > 0 ? r.pulled : <span className={styles.zero}>none</span>}</td>
+                <td className={styles.n}>{r.closed > 0 ? r.closed : <span className={styles.zero}>none</span>}</td>
                 <td>
                   <span className={styles.statusPill} data-tone={r.statusTone}>
                     {r.statusLabel}

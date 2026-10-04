@@ -22,6 +22,7 @@ import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-f
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -81,7 +82,7 @@ export function StatisticsOverviewScreen() {
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
-  const { admissions, movements, bedReleases, units, scenario } = useWardFlow();
+  const { admissions, movements, bedReleases, leaveBeds, units, scenario } = useWardFlow();
   const now = useWardFlowClock();
   const service = useServiceScope();
 
@@ -161,13 +162,17 @@ export function StatisticsOverviewScreen() {
     let beds = 0;
     let occupied = 0;
     let ready = 0;
-    let held = 0;
+    let pulled = 0;
+    let closed = 0;
+    // The ruled boxes (`ward-bed-states.ts`), summed over the service's units: Ready · Pulled ·
+    // Closed · Occupied add up to its beds.
     for (const u of hsUnits) {
-      const cap = unitCapacity(u, bedReleases);
+      const states = bedStates(u, admissions, bedReleases, leaveBeds);
       beds += u.beds;
-      occupied += cap.occupied;
-      ready += cap.available;
-      held += cap.held;
+      occupied += states.occupied;
+      ready += states.ready;
+      pulled += states.pulled;
+      closed += states.closed;
     }
     const occPct = beds > 0 ? Math.round((occupied / beds) * 100) : 0;
     // No occupancy target until one has a source (Josh, 26 Sept 2026, question 14: the 85% target
@@ -190,7 +195,8 @@ export function StatisticsOverviewScreen() {
       beds,
       occupied,
       ready,
-      held,
+      pulled,
+      closed,
       occPct,
       badgeTone,
       badgeBg,
@@ -307,11 +313,14 @@ export function StatisticsOverviewScreen() {
                 <span>
                   <strong>{s.ready}</strong> Ready
                 </span>
-                <span>
-                  <strong>{s.held}</strong> Pending
+                <span title={BED_STATE_DETAILS.pulled}>
+                  <strong>{s.pulled}</strong> {BED_STATE_LABELS.pulled}
                 </span>
-                <span>
-                  <strong>{s.ready + s.held}</strong> Headroom
+                <span title={BED_STATE_DETAILS.closed}>
+                  <strong>{s.closed}</strong> {BED_STATE_LABELS.closed}
+                </span>
+                <span title="Physically empty and not pulled: Ready plus Closed">
+                  <strong>{s.ready + s.closed}</strong> Headroom
                 </span>
               </div>
             </Link>
@@ -320,7 +329,7 @@ export function StatisticsOverviewScreen() {
       </section>
 
       {/* ══════════ HOSPITAL & INPATIENT UNIT CAPACITY MATRIX ══════════ */}
-      <HospitalCapacityMatrix units={units} bedReleases={bedReleases} />
+      <HospitalCapacityMatrix units={units} bedReleases={bedReleases} admissions={admissions} leaveBeds={leaveBeds} />
 
       <StatisticsInsightChart
         title="Admission stages"
