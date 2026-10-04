@@ -978,6 +978,7 @@ export function MovementsScreen() {
                             key={leg.movement.id}
                             type="button"
                             className={styles.transportRunCard}
+                            data-tone={legTone}
                             onClick={() => {
                               openDetail(leg.movement.id);
                               revealMovement(leg.movement.id);
@@ -991,11 +992,15 @@ export function MovementsScreen() {
                               <span className={styles[`transportRunPill_${legTone}`]}>{stateLabel}</span>
                             </div>
                             <div className={styles.transportRunCorridor}>
-                              <span className={styles.transportRunNode}>{originLabel}</span>
+                              <span className={styles.transportRunNode} title={originLabel}>
+                                {originLabel}
+                              </span>
                               <span className={styles.transportRunArrow} aria-hidden="true">
                                 →
                               </span>
-                              <span className={styles.transportRunNode}>{destinationLabel}</span>
+                              <span className={styles.transportRunNode} title={destinationLabel}>
+                                {destinationLabel}
+                              </span>
                             </div>
                             <div className={styles.transportRunFooter}>
                               <span className={styles.transportRunProvider}>{leg.provider}</span>
