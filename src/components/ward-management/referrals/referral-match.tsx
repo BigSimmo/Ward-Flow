@@ -53,6 +53,8 @@ import {
   referralDestinationLabels,
   referralAddressingStateLabel,
   referralSuburbLabel,
+  referralSenderRole,
+  referralWithdrawable,
 } from "@/components/ward-management/ward-referrals";
 import { createBrowserStore } from "@/lib/client-store-factory";
 
@@ -163,12 +165,18 @@ const DECLINE_REASON_UNCHOSEN_COMMUNITY =
 
 const OVERRIDE_REASON_UNCHOSEN = "Choose the reason for accepting despite this ward's assessment before recording it.";
 
-const MATCH_VIEW_DECISION_EVENTS = ["ACCEPT_REFERRAL", "DECLINE_REFERRAL", "RECORD_LOCAL_BED_SOUGHT"] as const;
+const MATCH_VIEW_DECISION_EVENTS = [
+  "ACCEPT_REFERRAL",
+  "DECLINE_REFERRAL",
+  "RECORD_LOCAL_BED_SOUGHT",
+  "RECORD_REFERRER_WITHDRAWAL",
+] as const;
 
 const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[number], string> = {
   ACCEPT_REFERRAL: "Acceptance",
   DECLINE_REFERRAL: "Decline",
   RECORD_LOCAL_BED_SOUGHT: "Local bed search",
+  RECORD_REFERRER_WITHDRAWAL: "Withdrawal",
 };
 
 function formatUmrn(umrn: string): string {
@@ -398,6 +406,13 @@ export function ReferralMatchView({
     undefined,
   );
   const [edAcceptConfirmOpen, setEdAcceptConfirmOpen] = useState(false);
+  /**
+   * Who is recording the referrer's whole-referral withdrawal. Owner, 4 October 2026: the community
+   * team and the ED may record it "if they are cancelling their referral", so the choice offered is
+   * the coordinator or the side that sent THIS referral (`referralSenderRole`), never the other side.
+   */
+  const [withdrawRecorder, setWithdrawRecorder] = useState<"coordinator" | "sender">("coordinator");
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
   const [lastRejection, setLastRejection] = useState<Rejection | undefined>(undefined);
   // Same async-detection pattern as `referral-intake.tsx`'s own `checkToken`/`priorRejectionCountRef`
   // pair (see that file's doc comment for the full reasoning) — `dispatch` never returns whether
@@ -450,6 +465,69 @@ export function ReferralMatchView({
   const communityAddressing = referral.destinations.find(
     (candidate) => candidate.destination.kind === "community_team",
   );
+  const senderRole = referralSenderRole(referral);
+  const senderLabel = senderRole === "ed" ? "The referring emergency department" : "The referring community team";
+  function handleWholeWithdraw() {
+    priorRejectionCountRef.current = rejections.length;
+    dispatch({
+      type: "RECORD_REFERRER_WITHDRAWAL",
+      role: withdrawRecorder === "sender" ? senderRole : "coordinator",
+      now,
+      referralId: referral.id,
+    });
+    setWithdrawConfirmOpen(false);
+    setCheckToken((token) => token + 1);
+  }
+  /*
+   * FD-5: the referrer takes back the WHOLE referral. Every destination still waiting is marked
+   * withdrawn; any answer already given stands. Offered only while the reducer would accept it.
+   */
+  const wholeWithdrawControl = referralWithdrawable(referral) ? (
+    <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
+      <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
+        Referrer cancelled this referral — recorded by
+      </label>
+      <select
+        id="ward-referral-match-withdraw-recorder"
+        data-testid="ward-referral-match-withdraw-recorder"
+        className={styles.select}
+        value={withdrawRecorder}
+        onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
+      >
+        <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
+        <option value="sender">{senderLabel}</option>
+      </select>
+      {!withdrawConfirmOpen ? (
+        <button
+          type="button"
+          className={styles.declineButton}
+          data-testid="ward-referral-match-withdraw"
+          onClick={() => setWithdrawConfirmOpen(true)}
+        >
+          Withdraw referral
+        </button>
+      ) : (
+        <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+          <button
+            type="button"
+            className={styles.declineButton}
+            data-testid="ward-referral-match-confirm-withdraw"
+            onClick={handleWholeWithdraw}
+          >
+            Confirm withdrawal
+          </button>
+          <button
+            type="button"
+            className={styles.acceptButton}
+            data-testid="ward-referral-match-cancel-withdraw"
+            onClick={() => setWithdrawConfirmOpen(false)}
+          >
+            Keep referral
+          </button>
+        </div>
+      )}
+    </div>
+  ) : null;
   if (!ward) {
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
@@ -619,6 +697,7 @@ export function ReferralMatchView({
             ) : null}
           </div>
         ) : null}
+        {wholeWithdrawControl}
         {lastRejection ? (
           <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
             {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
@@ -940,6 +1019,13 @@ export function ReferralMatchView({
               </span>
             ) : null}
           </div>
+        ) : null}
+        {wholeWithdrawControl}
+        {lastRejection ? (
+          <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
+            {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
+            recorded: {lastRejection.reason}
+          </p>
         ) : null}
         <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
       </section>
@@ -1553,6 +1639,8 @@ export function ReferralMatchView({
           </div>
         </>
       ) : null}
+
+      {wholeWithdrawControl}
 
       {lastRejection ? (
         <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">

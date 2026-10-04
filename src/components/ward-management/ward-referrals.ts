@@ -84,6 +84,40 @@ import type {
  * destination is still QUEUED, genuinely awaiting an answer". Once none is, a destination that HAS
  * accepted — community included — is the referral's outcome, exactly as it always was.
  */
+/**
+ * WHICH FRONT-DOOR ROLE SENT THIS REFERRAL — the referrer's own side, for "a referrer may cancel
+ * their own referral" (owner, 4 October 2026: the community team and the ED may record a withdrawal
+ * "if they are cancelling their referral").
+ *
+ * Mirrors the one pairing `RECEIVE_REFERRAL` enforces (R9, owner item 23): only `ed_medical` is
+ * raised as `ed`; every other source, GP and ward transfer included, is raised as `community`. The
+ * referral records no team or department identity beyond that, so this answers at role level only.
+ * The one source raised either way (`ed_medical`, which a community intake may also raise) resolves
+ * to `ed`; the coordinator can still record that withdrawal for them.
+ */
+export function referralSenderRole(referral: Referral): "ed" | "community" {
+  return referral.source === "ed_medical" ? "ed" : "community";
+}
+
+/**
+ * Whether the whole-referral withdrawal (`RECORD_REFERRER_WITHDRAWAL` with no `destinationKind`)
+ * would be accepted — the reducer's own three refusals, read once so a screen does not offer a
+ * control the reducer would refuse.
+ */
+export function referralWithdrawable(referral: Referral): boolean {
+  if (referralState(referral) === "accepted") return false;
+  if (
+    referral.destinations.some(
+      (addressing) => addressing.destination.kind !== "community_team" && addressing.withdrawnAt !== undefined,
+    )
+  ) {
+    return false;
+  }
+  return referral.destinations.some(
+    (addressing) => addressing.state === "queued" && addressing.withdrawnAt === undefined,
+  );
+}
+
 export function referralState(referral: Referral): ReferralState {
   const nonCommunityStillOpen = referral.destinations.some(
     (addressing) => addressing.destination.kind !== "community_team" && isAwaitingAnswer(addressing),

@@ -60,6 +60,7 @@ import {
 import {
   COMMUNITY_DECLINE_REASON_LABELS,
   DECLINE_REASON_LABELS,
+  referralSenderRole,
   referralState,
   referralSuburbIsAnswered,
 } from "@/components/ward-management/ward-referrals";
@@ -6784,6 +6785,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_REFERRER_WITHDRAWAL": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
+
+      /*
+       * Owner, 4 October 2026: the community team and the ED may record a withdrawal "if they are
+       * cancelling their referral" — their OWN referral, never another side's. Checked before both
+       * branches below, so it scopes the community-arm withdrawal and the whole-referral one alike.
+       * The coordinator may still record it for any referral.
+       */
+      if (event.role === "community" || event.role === "ed") {
+        const sender = referralSenderRole(referral);
+        if (event.role !== sender) {
+          return reject(
+            state,
+            event,
+            `referral ${referral.id} was sent by the ${sender === "ed" ? "emergency department" : "community side"}, so role ${event.role} cannot withdraw it`,
+          );
+        }
+      }
 
       /*
        * 🔴 OWNER RULING 11 (2026-09-17) — THE SCOPED BRANCH, checked first and returned from
