@@ -1,0 +1,92 @@
+/*
+ * Stranded-patient prompts (smart feature 12). A quiet list beneath the ward's figures: the same
+ * bordered surface the triage bar uses, warning tone only on the small reason text so the panel
+ * reads as a prompt rather than an alarm. Screen chrome only; dropped from print.
+ */
+.panel {
+  margin: 0 0 0.875rem;
+  border: var(--ward-space-1) solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--ward-tap, 3rem);
+  gap: var(--ward-space-8);
+  cursor: pointer;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+.count {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.lead {
+  margin: 0 0 var(--ward-space-8);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+}
+
+.list {
+  display: grid;
+  gap: var(--ward-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  border-top: var(--ward-space-1) solid var(--ward-divider);
+}
+
+.open {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ward-space-4) var(--ward-space-12);
+  width: 100%;
+  min-height: var(--ward-tap, 3rem);
+  border: 0;
+  background: transparent;
+  padding: var(--ward-space-8) 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:focus-visible {
+  outline: var(--ward-space-2) solid var(--focus-ring, currentColor);
+  outline-offset: var(--ward-space-2);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.days {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.reason {
+  color: var(--warn);
+  font-size: var(--t-1);
+}
+
+.barrier {
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+}
+
+@media print {
+  .panel {
+    display: none;
+  }
+}
