@@ -2085,7 +2085,7 @@
 @media screen and (min-width: 1101px) {
   .columns {
     min-height: 54rem;
-    height: var(--ward-movements-workspace-height, clamp(54rem, calc(100dvh - 5rem), 68rem));
+    height: var(--ward-workspace-height, clamp(54rem, calc(100dvh - 5rem), 68rem));
     align-items: stretch;
   }
 
