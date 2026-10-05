@@ -264,20 +264,20 @@ export function SettingsScreen() {
   const [genderMixProtection, setGenderMixProtection] = useState(true);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
-  // Real functional Accessibility & Ergonomic preferences
-  const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("ward-flow-reduced-motion") === "true";
-  });
-  const [highContrast, setHighContrast] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("ward-flow-high-contrast") === "true";
-  });
+  // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
+  // DOM attributes synced below without setState-in-effect).
+  const [reducedMotion, setReducedMotion] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-reduced-motion") === "true",
+  );
+  const [highContrast, setHighContrast] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-high-contrast") === "true",
+  );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
+    else document.documentElement.removeAttribute("data-reduced-motion");
     if (highContrast) document.documentElement.setAttribute("data-high-contrast", "true");
+    else document.documentElement.removeAttribute("data-high-contrast");
   }, [reducedMotion, highContrast]);
 
   const handleToggleReducedMotion = (enabled: boolean) => {

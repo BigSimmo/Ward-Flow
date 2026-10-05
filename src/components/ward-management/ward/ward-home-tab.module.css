@@ -1,3 +1,7 @@
+.alertLegalNote {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-0);
+}
 /* Ward Home Tab Styles */
 .homeWrap {
   display: flex;
@@ -318,4 +322,11 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media print {
+  .pillBadgePurple {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
 }

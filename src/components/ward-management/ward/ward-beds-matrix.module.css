@@ -909,3 +909,10 @@
     min-height: 44px;
   }
 }
+
+@media print {
+  .badgePurple {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}

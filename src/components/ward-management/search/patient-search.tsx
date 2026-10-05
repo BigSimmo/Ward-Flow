@@ -783,7 +783,7 @@ Clinical Note: ${p.clinicalNote}`;
                   title="Filter to patients waiting over 24 hours"
                 >
                   <span className={`${styles.glassDot} ${styles.red}`} />
-                  <span>{yieldMetrics.breaches} &gt;24h</span>
+                  <span>{yieldMetrics.breaches} waiting over 24 hours</span>
                 </button>
               </div>
             </div>

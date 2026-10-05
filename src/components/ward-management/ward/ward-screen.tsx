@@ -3800,7 +3800,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     {unit.name} &middot; Ward Daily Sheet &amp; Morning Handoff
                   </h2>
                   <p className={styles.dailySheetModalSub}>
-                    Executive clinical census &middot; 24h patient movement ledger
+                    Executive clinical census &middot; day patient movement ledger
                   </p>
                 </div>
                 <div className={styles.dailySheetModalActions}>

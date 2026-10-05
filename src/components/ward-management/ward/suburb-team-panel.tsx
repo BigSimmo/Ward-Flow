@@ -260,7 +260,7 @@ export function SuburbTeamPanel() {
         <span className={styles.badgePill}>Community Catchment Directory</span>
       </div>
 
-      <p className="sr-only" aria-hidden="true">
+      <p className={styles.suburbQualifier} data-testid="ward-suburb-team-qualifier">
         {QUALIFIER}
       </p>
 

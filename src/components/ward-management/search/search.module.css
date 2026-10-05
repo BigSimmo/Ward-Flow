@@ -2257,7 +2257,7 @@
 .glassTypeaheadSlot input {
   font-family: var(--body) !important;
   font-size: var(--t-2) !important;
-  color: var(--ink) !important;
+  color: var(--ink);
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
