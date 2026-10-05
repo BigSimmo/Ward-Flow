@@ -82,6 +82,9 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
+import { AlertsProposal } from "@/components/ward-management/flow-proposals/alerts-proposal";
+import { DelaysProposal } from "@/components/ward-management/flow-proposals/delays-proposal";
+import { OnCallProposal } from "@/components/ward-management/flow-proposals/on-call-proposal";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -225,6 +228,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    * is how `/morning` was found too. The count above moved 36 → 37 in the same change.
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
+  { route: `${ROUTE_PREFIX}/on-call/proposal`, render: () => createElement(OnCallProposal) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
@@ -252,9 +256,11 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
   { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
+  { route: `${ROUTE_PREFIX}/delays/proposal`, render: () => createElement(DelaysProposal) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
+  { route: `${ROUTE_PREFIX}/alerts/proposal`, render: () => createElement(AlertsProposal) },
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
 ];

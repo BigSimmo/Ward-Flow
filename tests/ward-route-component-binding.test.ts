@@ -80,6 +80,7 @@ const PINNED: Record<string, string | null> = {
   // and did not know this one existed. A route tally kept by hand in three files is three chances
   // to be complete and one chance to be caught.
   alerts: "AlertsScreen",
+  "alerts/proposal": "AlertsProposal",
   "board/[unitId]": "WardBoard",
   capacity: "CapacityScreen",
   command: "redirect:/mockups/ward-flow",
@@ -87,8 +88,10 @@ const PINNED: Record<string, string | null> = {
   "community/[teamId]": "CommunityScreen",
   constellation: "redirect:/mockups/ward-flow/network",
   delays: "DelaysScreen",
+  "delays/proposal": "DelaysProposal",
   discharges: "DischargeBoard",
   "on-call": "OnCallScreen",
+  "on-call/proposal": "OnCallProposal",
   ed: "redirect:/mockups/ward-flow/ed/peel-ed",
   "ed/[edId]": "EdScreen",
   escalation: "redirect:/mockups/ward-flow/delays?from=escalation",

@@ -460,6 +460,15 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * at /mockups/ward-flow/delays. Each of the three old routes now redirects there rather than
    * being deleted, so an existing bookmark or deep link does not 404 — the same reasoning
    * `/constellation` above already sets for a retired route kept as a redirect stub. */
+  /* 5 October 2026 redesign previews for Delays, Alerts and On-call. Review-only routes beside the
+   * current screens; reached from the preview bar, not the rail. */
+  ...["delays", "alerts", "on-call"].map(
+    (screen) =>
+      [
+        `/mockups/ward-flow/${screen}/proposal`,
+        "A redesign preview for review beside the current screen, not a destination in its own right.",
+      ] as const,
+  ),
   [
     "/mockups/ward-flow/queue",
     "A deliberate redirect to /delays (MERGE 01), documented in its own route file (queue/page.tsx) — not a destination in its own right.",

@@ -78,6 +78,9 @@ import { DelaysScreen } from "@/components/ward-management/delays/delays-screen"
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
+import { AlertsProposal } from "@/components/ward-management/flow-proposals/alerts-proposal";
+import { DelaysProposal } from "@/components/ward-management/flow-proposals/delays-proposal";
+import { OnCallProposal } from "@/components/ward-management/flow-proposals/on-call-proposal";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 
 import {
@@ -1306,6 +1309,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    * is how `/morning` was found too. The count above moved 36 → 37 in the same change.
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
+  { route: `${ROUTE_PREFIX}/on-call/proposal`, render: () => createElement(OnCallProposal) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
@@ -1334,8 +1338,10 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
   { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
+  { route: `${ROUTE_PREFIX}/delays/proposal`, render: () => createElement(DelaysProposal) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
+  { route: `${ROUTE_PREFIX}/alerts/proposal`, render: () => createElement(AlertsProposal) },
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
 ];
 
@@ -1423,7 +1429,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 39, not 36: the Delays, Alerts and On-call redesign previews (5 October 2026) added three /proposal routes.
+    expect(RENDERABLE_ROUTES.length).toBe(39);
   });
 });
 
