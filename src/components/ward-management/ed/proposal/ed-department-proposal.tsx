@@ -6,7 +6,10 @@ import { createPortal } from "react-dom";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { stageCopy, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import type { HealthService } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edArrivedFor, edExpectsFor } from "@/components/ward-management/ward-referrals";
@@ -19,13 +22,13 @@ import {
   ED_STEPS,
   edCounts,
   edRows,
-  fittingWards,
+  hubRows,
   readyBeds,
   recentEvents,
+  type EdEvent,
   type EdPatientRow,
-  type EdStep,
 } from "./ed-proposal-figures";
-import { Answer, edProposalHref, KpiStrip, Panel, ProposalHeader, Tag, useEdProposalWorld } from "./ed-proposal-parts";
+import { edProposalHref, KpiStrip, Panel, ProposalHeader, Tag, useEdProposalWorld } from "./ed-proposal-parts";
 import styles from "./ed-proposal.module.css";
 
 const NOT_WIRED = "Not wired in this prototype.";
@@ -36,7 +39,7 @@ type Sort = "longest" | "urgency" | "step";
 const FILTERS: { id: Filter; label: string; test: (row: EdPatientRow) => boolean }[] = [
   { id: "everyone", label: "Everyone", test: () => true },
   { id: "not_reviewed", label: "Not reviewed", test: (row) => !row.reviewed && row.step !== "closed_here" },
-  { id: "no_bed", label: "No bed yet", test: (row) => row.step === "no_bed" },
+  { id: "no_bed", label: "No destination", test: (row) => row.step === "no_bed" },
   { id: "under_form", label: "Under a form", test: (row) => row.form !== undefined && row.step !== "closed_here" },
   { id: "past_target", label: "Past target", test: (row) => row.pastTarget },
 ];
@@ -54,6 +57,50 @@ const CLEARANCE_LABELS: Record<EdPatientRow["cleared"], string> = {
   not_recorded: "Not recorded",
 };
 
+type ListTab = "review" | "clearance" | "expects" | "forms" | "referred";
+
+const LIST_TABS: { id: ListTab; label: string }[] = [
+  { id: "review", label: "Review" },
+  { id: "clearance", label: "Med clear" },
+  { id: "expects", label: "Expects" },
+  { id: "forms", label: "Forms" },
+  { id: "referred", label: "Referred" },
+];
+
+/** One department list: initials, a grey detail line and a quiet link to the record. */
+function RowList({
+  rows,
+  detail,
+  onOpen,
+}: {
+  rows: readonly EdPatientRow[];
+  detail: (row: EdPatientRow) => string;
+  onOpen: (movementId: string) => void;
+}) {
+  if (rows.length === 0)
+    return (
+      <div className={styles.panelBody}>
+        <p className={styles.none}>None recorded.</p>
+      </div>
+    );
+  return (
+    <ul className={styles.list}>
+      {rows.map((row) => (
+        <li key={row.movement.id} className={styles.rowItem}>
+          <span className={styles.who}>
+            <span className={styles.whoName}>{row.initials}</span>
+            <span className={styles.sub}>{detail(row)}</span>
+          </span>
+          <span className={`${styles.sub} ${styles.num}`}>{splitDuration(row.sinceReferral)}</span>
+          <button type="button" className={styles.attentionOpen} onClick={() => onOpen(row.movement.id)}>
+            View record<span className="sr-only">: {row.initials}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function shortName(name: string): string {
   return name.replace(" Emergency Department", "");
 }
@@ -63,7 +110,9 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const { world, now, accessTarget, asAt } = useEdProposalWorld();
   const department = edById(edId);
   const [filter, setFilter] = useState<Filter>("everyone");
-  const [step, setStep] = useState<EdStep | undefined>(undefined);
+  const [listTab, setListTab] = useState<ListTab>("review");
+  const [eventKind, setEventKind] = useState<"all" | EdEvent["kind"]>("all");
+  const [service, setService] = useState<"all" | HealthService>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("longest");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
@@ -105,16 +154,25 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const target = accessTarget % 60 === 0 ? `${accessTarget / 60}-hour` : splitDuration(accessTarget);
   const ready = readyBeds(world.units, world.bedReleases);
   const preparing = bedsBeingPrepared(world.units, world.bedReleases);
-  const waitingCohorts = rows.filter((row) => row.step === "no_bed").map((row) => row.movement.cohort);
-  const fits = fittingWards(world.units, world.bedReleases, waitingCohorts);
+  const others = hubRows(world, now, accessTarget).filter((row) => row.ed.id !== department.id);
+  const live = rows.filter((row) => row.step !== "closed_here");
+  const notReviewed = live.filter((row) => !row.reviewed);
+  const notCleared = live.filter((row) => row.cleared === "not_cleared");
+  const underForm = live.filter((row) => row.form !== undefined);
+  const stillToMove = rows.filter((row) => ["no_bed", "accepted", "pulled", "handover_ready"].includes(row.step));
+  const listCounts: Record<ListTab, number> = {
+    review: notReviewed.length,
+    clearance: notCleared.length,
+    expects: expects.length,
+    forms: underForm.length,
+    referred: stillToMove.length,
+  };
   const events = recentEvents(rows, world.units, now);
 
-  const activeStep = step && counts.steps[step] > 0 ? step : undefined;
   const filterTest = FILTERS.find((entry) => entry.id === filter)!.test;
   const needle = query.trim().toLowerCase();
   const visible = rows
     .filter(filterTest)
-    .filter((row) => (activeStep ? row.step === activeStep : true))
     .filter(
       (row) =>
         !needle ||
@@ -131,23 +189,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
     );
   const selected = rows.find((row) => row.movement.id === selectedId);
 
-  const lead =
-    counts.onList === 0
-      ? `Nobody from ${shortName(department.name)} is on the psychiatry list.`
-      : `${counts.onList} ${counts.onList === 1 ? "person is" : "people are"} on the psychiatry list: ${[
-          `${counts.noBed} with no bed yet`,
-          `${counts.bedFound} with a bed found but still here`,
-          counts.inTransit ? `${counts.inTransit} left and in transit` : "",
-          counts.steps.closed_here ? `${counts.steps.closed_here} with an outcome recorded` : "",
-        ]
-          .filter(Boolean)
-          .join(", ")}.`;
-  const sub =
-    attention.length === 0
-      ? "Nothing recorded needs action right now."
-      : `${attention.length} ${attention.length === 1 ? "thing needs" : "things need"} action now${
-          counts.pastTarget ? `, including ${counts.pastTarget} past the ${target} access target` : ""
-        }.`;
+  const shownEvents = eventKind === "all" ? events : events.filter((event) => event.kind === eventKind);
 
   return (
     <main id="main-content" className={styles.page} data-testid="ed-department-proposal">
@@ -180,60 +222,52 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
         }
       />
 
-      <Answer lead={lead} sub={sub} />
-
       <KpiStrip
         label="Department figures"
         items={[
-          { label: "On the list", value: counts.onList, note: "Includes anyone who has left and is in transit" },
+          { label: "On the board", value: counts.onList, note: "Includes anyone who has left and is in transit" },
           {
-            label: "No bed yet",
-            value: counts.noBed,
-            note: "No ward has accepted",
-            tone: counts.noBed ? "warn" : undefined,
+            label: "Accepted, waiting to move",
+            value: counts.steps.accepted + counts.steps.pulled,
+            note: "A ward said yes; still here",
           },
-          { label: "Bed found, still here", value: counts.bedFound, note: "Accepted, pulled or handover ready" },
-          { label: "Not yet reviewed", value: counts.notReviewed, note: "No examination recorded" },
           {
-            label: `Past ${target} target`,
-            value: counts.pastTarget,
-            note: "Your default, not a legal limit",
-            tone: counts.pastTarget ? "danger" : undefined,
+            label: "Review referrals",
+            value: awaitingReview.length,
+            note: "Referrals waiting for psychiatric review",
           },
+          { label: "Expected", value: expects.length, note: "Referred here, not arrived" },
+          { label: "Under a form", value: counts.underForm, note: "Form recorded on the movement" },
           {
             label: "Longest since referral",
             value: counts.longest === undefined ? "None" : splitDuration(counts.longest),
-            note: "Access clock, not time in the building",
+            note: counts.pastTarget
+              ? `${counts.pastTarget} past the ${target} target, your default`
+              : "Access clock, not time in the building",
+            tone: counts.pastTarget ? "danger" : undefined,
           },
         ]}
       />
 
-      <div className={styles.grid2}>
-        <Panel
-          title="Where everyone is up to"
-          question="Each person is in exactly one step. Choose a step to filter the list below."
-          meta={`${counts.onList} people`}
-          flush
-        >
-          <div className={styles.steps}>
-            {ED_STEPS.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                className={styles.stepButton}
-                aria-pressed={activeStep === entry.id}
-                disabled={counts.steps[entry.id] === 0}
-                onClick={() => setStep((current) => (current === entry.id ? undefined : entry.id))}
-              >
-                <span className={styles.stepCount}>{counts.steps[entry.id]}</span>
-                <span className={styles.stepLabel}>{entry.label}</span>
-                <span className={styles.stepHint}>{entry.hint}</span>
-              </button>
-            ))}
-          </div>
-        </Panel>
+      <nav className={styles.otherEds} aria-label="Other emergency departments">
+        <span className={styles.otherEdsLabel}>Other EDs</span>
+        <ul>
+          {others.map((other) => (
+            <li key={other.ed.id}>
+              <a className={styles.link} href={edProposalHref(other.ed.id)}>
+                {shortName(other.ed.name)}
+                <span className={styles.filterCount}>{other.counts.onList}</span>
+                {other.counts.pastTarget ? (
+                  <span className="sr-only">, {other.counts.pastTarget} past target</span>
+                ) : null}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-        <Panel title="Needs action now" meta={attention.length ? `${attention.length}` : "None"} flush>
+      <div className={styles.grid2}>
+        <Panel title="Needs attention" meta={attention.length ? `${attention.length}` : "None recorded"} flush>
           {attention.length === 0 ? (
             <div className={styles.panelBody}>
               <p className={styles.none}>None recorded.</p>
@@ -258,7 +292,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       className={styles.attentionOpen}
                       onClick={() => setSelectedId(item.movementId)}
                     >
-                      Open
+                      View record
                     </button>
                   ) : (
                     <span />
@@ -268,11 +302,103 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
             </ul>
           )}
         </Panel>
+
+        <Panel title="Department lists" meta={`${notReviewed.length} awaiting review`} flush>
+          <div className={styles.toolbar} role="group" aria-label="Choose a list">
+            {LIST_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={styles.filter}
+                aria-pressed={listTab === tab.id}
+                onClick={() => setListTab(tab.id)}
+              >
+                {tab.label} <span className={styles.filterCount}>{listCounts[tab.id]}</span>
+              </button>
+            ))}
+          </div>
+          {listTab === "review" ? (
+            <>
+              {awaitingReview.length ? (
+                <>
+                  <p className={styles.sectionLabel}>Referrals · {awaitingReview.length}</p>
+                  <ul className={styles.list}>
+                    {awaitingReview.map(({ referral }) => (
+                      <li key={referral.id} className={styles.listItem}>
+                        <span className={styles.who}>
+                          <span className={styles.whoName}>{referralInitials(referral)}</span>
+                          <span className={styles.sub}>{urgencyTierLabel(referral.urgency)}</span>
+                        </span>
+                        <span className={styles.sub}>
+                          {rows.some((row) => row.movement.referralId === referral.id && row.reviewed)
+                            ? "Examination already recorded on the movement"
+                            : referral.triagedAt !== undefined
+                              ? `${splitDuration(Math.max(now - referral.triagedAt, 0))} since triage`
+                              : "Triage not recorded"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              <p className={styles.sectionLabel}>Awaiting review · {notReviewed.length}</p>
+              <RowList
+                rows={notReviewed}
+                detail={(row) => `${row.movement.cohort} · Examination not recorded`}
+                onOpen={setSelectedId}
+              />
+            </>
+          ) : listTab === "clearance" ? (
+            <RowList rows={notCleared} detail={() => "Medically not cleared"} onOpen={setSelectedId} />
+          ) : listTab === "expects" ? (
+            expects.length === 0 ? (
+              <div className={styles.panelBody}>
+                <p className={styles.none}>No expected arrival is recorded.</p>
+              </div>
+            ) : (
+              <ul className={styles.list}>
+                {expects.map(({ referral }) => (
+                  <li key={referral.id} className={styles.listItem}>
+                    <span className={styles.who}>
+                      <span className={styles.whoName}>{referralInitials(referral)}</span>
+                      <span className={styles.sub}>
+                        Referred {splitDuration(Math.max(now - referral.raisedAt, 0))} ago
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.buttonQuiet}
+                      onClick={() =>
+                        world.dispatch({
+                          type: "RECORD_ARRIVED_IN_DEPARTMENT",
+                          role: "ed",
+                          now,
+                          referralId: referral.id,
+                        })
+                      }
+                    >
+                      Mark arrived
+                      <span className="sr-only"> (changes the shared synthetic record)</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : listTab === "forms" ? (
+            <RowList rows={underForm} detail={(row) => `Form ${row.form}`} onOpen={setSelectedId} />
+          ) : (
+            <RowList
+              rows={stillToMove}
+              detail={(row) => ED_STEPS.find((entry) => entry.id === row.step)!.label}
+              onOpen={setSelectedId}
+            />
+          )}
+        </Panel>
       </div>
 
       <Panel
-        title="Psychiatry list"
-        question="Oldest referral first. Select a person to see their record and next step."
+        title="ED psychiatry board"
+        question="Oldest referral first. Select a person to see their record."
         meta={`${visible.length} of ${rows.length}`}
         flush
       >
@@ -317,12 +443,12 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
           <div className={styles.panelBody}>
             <p className={styles.none}>
               {rows.length === 0
-                ? "Nobody is on this department's psychiatry list. This means none is recorded, not that the department is empty."
+                ? "Nobody is on this department's board. This means none is recorded, not that the department is empty."
                 : "Nobody matches these filters."}
             </p>
           </div>
         ) : (
-          <div className={styles.tableScroll} role="region" aria-label="Psychiatry list table" tabIndex={0}>
+          <div className={styles.tableScroll} role="region" aria-label="ED psychiatry board table" tabIndex={0}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -330,11 +456,11 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                   <th scope="col" className={styles.num}>
                     Since referral
                   </th>
-                  <th scope="col">Step</th>
-                  <th scope="col">Destination</th>
                   <th scope="col">Form</th>
                   <th scope="col">Medically cleared</th>
-                  <th scope="col">Next step, from the record</th>
+                  <th scope="col">Presentation</th>
+                  <th scope="col">Next step</th>
+                  <th scope="col">Destination</th>
                 </tr>
               </thead>
               <tbody>
@@ -364,8 +490,6 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       {splitDuration(row.sinceReferral)}
                       {row.pastTarget ? <span className={styles.sub}> past target</span> : null}
                     </td>
-                    <td>{ED_STEPS.find((s) => s.id === row.step)!.label}</td>
-                    <td>{row.destination ?? <span className={styles.sub}>None yet</span>}</td>
                     <td>{row.form ? `Form ${row.form}` : <span className={styles.sub}>None recorded</span>}</td>
                     <td>
                       {row.cleared === "cleared" ? (
@@ -375,8 +499,15 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       )}
                     </td>
                     <td>
+                      <span className={styles.who}>
+                        <span>{row.reviewed ? "Examination recorded" : "Awaiting review"}</span>
+                        <span className={styles.sub}>{ED_STEPS.find((s) => s.id === row.step)!.label}</span>
+                      </span>
+                    </td>
+                    <td>
                       <Tag tone={row.next.tone}>{row.next.label}</Tag>
                     </td>
+                    <td>{row.destination ?? <span className={styles.sub}>None yet</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -385,165 +516,133 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
         )}
       </Panel>
 
-      <div className={styles.grid2}>
-        <div className={styles.stack}>
-          <Panel
-            title="Recorded in the last 24 hours"
-            question="What was recorded for this department's list, newest first."
-            flush
-          >
-            <details className={styles.details}>
-              <summary>
-                {events.length} recorded {events.length === 1 ? "event" : "events"}:{" "}
-                {(["Referral", "Review", "Bed search", "Movement"] as const)
-                  .map((kind) => `${kind} ${events.filter((e) => e.kind === kind).length}`)
-                  .join(" · ")}
-              </summary>
-              {events.length === 0 ? (
-                <div className={styles.panelBody}>
-                  <p className={styles.none}>Nothing was recorded in the last 24 hours.</p>
-                </div>
-              ) : (
-                <ol className={styles.timeline}>
-                  {events.map((event, index) => (
-                    <li key={`${event.at}-${index}`} className={styles.timelineItem}>
-                      <span className={styles.time}>{formatInstantWithDay(event.at, now)}</span>
-                      <span className={styles.sub}>{event.kind}</span>
-                      <span>
-                        <strong>{event.who}</strong> {event.text}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </details>
-          </Panel>
+      <Panel
+        title="Seen in the last 24 hours"
+        question="What was recorded for this department's board, newest first. Not everything that happened."
+        meta={`${events.length} ${events.length === 1 ? "event" : "events"}`}
+        flush
+      >
+        <div className={styles.toolbar} role="group" aria-label="Filter events">
+          {(["all", "Referral", "Review", "Bed search", "Movement"] as const).map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              className={styles.filter}
+              aria-pressed={eventKind === kind}
+              onClick={() => setEventKind(kind)}
+            >
+              {kind === "all" ? "All events" : kind}{" "}
+              <span className={styles.filterCount}>
+                {kind === "all" ? events.length : events.filter((event) => event.kind === kind).length}
+              </span>
+            </button>
+          ))}
         </div>
-        <div className={styles.stack}>
-          <Panel
-            title="Referrals waiting for review"
-            question="Counted from referrals, separately from the list; one person can appear in both."
-            meta={awaitingReview.length ? `${awaitingReview.length} waiting` : "None recorded"}
-            flush
-          >
-            {awaitingReview.length === 0 ? (
-              <div className={styles.panelBody}>
-                <p className={styles.none}>None recorded.</p>
-              </div>
-            ) : (
-              <ul className={styles.list}>
-                {awaitingReview.map(({ referral }) => (
-                  <li key={referral.id} className={styles.listItem}>
-                    <span className={styles.who}>
-                      <span className={styles.whoName}>
-                        {referral.id} · {referralInitials(referral)}
-                      </span>
-                      <span className={styles.sub}>{urgencyTierLabel(referral.urgency)}</span>
-                    </span>
-                    {rows.some((row) => row.movement.referralId === referral.id && row.reviewed) ? (
-                      <Tag tone="quiet">Examination already recorded on the movement</Tag>
-                    ) : null}
-                    <span className={styles.sub}>
-                      {referral.triagedAt !== undefined
-                        ? `${splitDuration(Math.max(now - referral.triagedAt, 0))} since triage`
-                        : "Triage not recorded"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+        {shownEvents.length === 0 ? (
+          <div className={styles.panelBody}>
+            <p className={styles.none}>Nothing was recorded in the last 24 hours.</p>
+          </div>
+        ) : (
+          <ol className={styles.timeline}>
+            {shownEvents.map((event, index) => (
+              <li key={`${event.at}-${index}`} className={styles.timelineItem}>
+                <span className={styles.time}>{formatInstantWithDay(event.at, now)}</span>
+                <span className={styles.sub}>{event.kind}</span>
+                <span>
+                  <strong>{event.who}</strong> {event.text}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Panel>
 
-          <Panel
-            title="Expected arrivals"
-            question="Referred here and not arrived. Mark arrived changes the shared synthetic record."
-            meta={expects.length ? `${expects.length} expected` : "None recorded"}
-            flush
-          >
-            {expects.length === 0 ? (
-              <div className={styles.panelBody}>
-                <p className={styles.none}>No expected arrival is recorded.</p>
-              </div>
-            ) : (
-              <ul className={styles.list}>
-                {expects.map(({ referral }) => (
-                  <li key={referral.id} className={styles.listItem}>
-                    <span className={styles.who}>
-                      <span className={styles.whoName}>
-                        {referral.id} · {referralInitials(referral)}
-                      </span>
-                      <span className={styles.sub}>
-                        Referred {splitDuration(Math.max(now - referral.raisedAt, 0))} ago
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      className={styles.buttonQuiet}
-                      onClick={() =>
-                        world.dispatch({
-                          type: "RECORD_ARRIVED_IN_DEPARTMENT",
-                          role: "ed",
-                          now,
-                          referralId: referral.id,
-                        })
-                      }
-                    >
-                      Mark arrived
-                      <span className="sr-only"> (changes the shared synthetic record)</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          <Panel
-            title="Beds that fit who is waiting"
-            question={
-              waitingCohorts.length
-                ? `Ready now for ${[...new Set(waitingCohorts)].join(" or ").toLowerCase()} patients with no bed yet.`
-                : "Nobody here is waiting for a bed."
-            }
-            meta={`${ready} ready statewide · ${preparing} still being made ready`}
-            flush
-            foot={
-              <>
-                <span>Ward-confirmed capacity; the same source as Capacity.</span>
-                <a className={styles.link} href="/mockups/ward-flow/capacity">
-                  Capacity ›
-                </a>
-              </>
-            }
-          >
-            {fits.length === 0 ? (
-              <div className={styles.panelBody}>
-                <p className={styles.none}>
-                  {waitingCohorts.length ? "No ward has a ready bed for these cohorts." : "No match needed."}
-                </p>
-              </div>
-            ) : (
-              <ul className={styles.list}>
-                {fits.slice(0, 6).map((fit) => (
-                  <li key={fit.unit.id} className={styles.listItem}>
-                    <span className={styles.who}>
-                      <span className={styles.whoName}>{fit.unit.name}</span>
-                      <span className={styles.sub}>
-                        {fit.service} · {fit.unit.cohort}
-                        {fit.pendingPreparation > 0 ? ` · ${fit.pendingPreparation} still being made ready` : ""}
-                      </span>
-                    </span>
-                    <span className={styles.num}>{fit.ready} ready</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+      <Panel
+        title={`Statewide capacity · ${world.units.length} units`}
+        question="Ward-confirmed capacity for context. Read-only; the same source as Capacity."
+        meta={`${ready} beds ready now${preparing ? ` · ${preparing} still being made ready` : ""}`}
+        flush
+      >
+        <div className={styles.toolbar} role="group" aria-label="Filter units by health service">
+          {(["all", ...wardServiceOrder] as const).map((entry) => (
+            <button
+              key={entry}
+              type="button"
+              className={styles.filter}
+              aria-pressed={service === entry}
+              onClick={() => setService(entry)}
+            >
+              {entry === "all" ? "All services" : entry}{" "}
+              <span className={styles.filterCount}>
+                {entry === "all"
+                  ? world.units.length
+                  : world.units.filter((unit) => siteByCode(unit.siteCode)?.service === entry).length}
+              </span>
+            </button>
+          ))}
         </div>
-      </div>
+        <div className={styles.tableScroll} role="region" aria-label="Statewide capacity table" tabIndex={0}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Unit</th>
+                <th scope="col">Cohort</th>
+                <th scope="col">Security</th>
+                <th scope="col" className={styles.num}>
+                  Ready
+                </th>
+                <th scope="col" className={styles.num}>
+                  Beds
+                </th>
+                <th scope="col">
+                  <span className="sr-only">Share of beds in use</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {wardServiceOrder
+                .filter((entry) => service === "all" || entry === service)
+                .flatMap((entry) =>
+                  world.units
+                    .filter((unit) => siteByCode(unit.siteCode)?.service === entry)
+                    .map((unit) => {
+                      const capacity = unitCapacity(unit, world.bedReleases);
+                      const pending = bedsPendingPreparation(unit.id, world.bedReleases);
+                      return (
+                        <tr key={unit.id} className={styles.row}>
+                          <th scope="row">
+                            <span className={styles.who}>
+                              <span className={styles.whoName}>{unit.name}</span>
+                              <span className={styles.sub}>{entry}</span>
+                            </span>
+                          </th>
+                          <td>{unit.cohort}</td>
+                          <td className={styles.sub}>{designationSummary(unit)}</td>
+                          <td className={styles.num}>
+                            {capacity.available}
+                            {pending ? <span className={styles.sub}> · {pending} being made ready</span> : null}
+                          </td>
+                          <td className={styles.num}>{unit.beds}</td>
+                          <td aria-hidden="true">
+                            <span className={styles.hbarTrack}>
+                              <span
+                                className={styles.hbar}
+                                style={{
+                                  width: `${Math.min(100, Math.round(((unit.beds - capacity.available) / Math.max(unit.beds, 1)) * 100))}%`,
+                                }}
+                              />
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }),
+                )}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
 
-      <p className={styles.footer}>
-        Synthetic prototype · Not a medical device · Figures are not live clinical records
-      </p>
+      <p className={styles.footer}>Synthetic prototype · Emergency department census · Not a medical device</p>
 
       {selected ? (
         <PatientDrawer row={selected} now={now} edId={department.id} units={world.units} onClose={closeSheet} />

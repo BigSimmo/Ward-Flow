@@ -763,3 +763,56 @@
   font-size: 0.75rem;
   text-align: center;
 }
+
+/* Other EDs: one quiet line of links, the polished form of today's department browser. */
+
+.otherEds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8125rem;
+}
+
+.otherEdsLabel {
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.otherEds ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.otherEds .link {
+  gap: 0.375rem;
+  color: var(--ink-soft);
+}
+
+/* Department list rows: who, time since referral and the record link on one line. */
+
+.rowItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--spacing-tap, 3rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.rowItem .attentionOpen {
+  white-space: nowrap;
+}
+
+.list + .sectionLabel,
+.toolbar + .sectionLabel {
+  margin-top: 0.75rem;
+}
