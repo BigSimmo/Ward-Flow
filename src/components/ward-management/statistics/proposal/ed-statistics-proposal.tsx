@@ -1,15 +1,27 @@
 "use client";
 
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { unitById } from "@/components/ward-management/ward-sites";
 
-import { KpiStrip, Panel, ProposalHeader, proposalHref } from "./statistics-proposal-parts";
+import { KpiStrip, Panel, ProposalHeader, Verdict, type Attention, proposalHref } from "./statistics-proposal-parts";
 import { SERVICE_COLOUR, edShort, hoursLabel } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
 const DAY = 24 * 60;
+
+function ordinal(value: number): string {
+  const suffix =
+    value % 10 === 1 && value !== 11
+      ? "st"
+      : value % 10 === 2 && value !== 12
+        ? "nd"
+        : value % 10 === 3 && value !== 13
+          ? "rd"
+          : "th";
+  return `${value}${suffix}`;
+}
 
 /**
  * Proposed emergency-department statistics. The current page draws the same few people four times
@@ -22,6 +34,16 @@ export function EdStatisticsProposal({ edId }: { edId?: string }) {
   const figures = edWaitFigures(world.movements, ed.id, now);
   const scaleMax = Math.max(DAY * 2, ...figures.waitingMovements.map((entry) => entry.waitMinutes)) * 1.05;
   const ranked = eds.slice().sort((a, b) => b.longestMinutes - a.longestMinutes);
+  const bands = edWaitBands(world.movements, ed.id, now);
+  const bandMax = Math.max(1, ...bands.map((band) => band.count));
+  const rank = ranked.findIndex((row) => row.id === ed.id) + 1;
+  const networkWaiting = eds.reduce((sum, row) => sum + row.waiting, 0);
+  const attention: Attention[] = [];
+  if (ed.over24h) attention.push({ tone: "danger", label: `${ed.over24h} waiting over 24 hours` });
+  if (ed.unplaced) attention.push({ tone: "warn", label: `${ed.unplaced} with no ward yet` });
+  if (ed.urgent) attention.push({ tone: "warn", label: `${ed.urgent} marked urgent` });
+  if (ed.waiting - ed.unplaced)
+    attention.push({ tone: "good", label: `${ed.waiting - ed.unplaced} accepted, awaiting transfer` });
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-ed">
@@ -35,6 +57,22 @@ export function EdStatisticsProposal({ edId }: { edId?: string }) {
         swatch={ed.service ? SERVICE_COLOUR[ed.service] : undefined}
         asAt={asAt}
       />
+
+      <Verdict attention={attention}>
+        {ed.waiting ? (
+          <>
+            <strong>
+              {ed.waiting} {ed.waiting === 1 ? "person is" : "people are"} waiting for a mental health bed
+            </strong>
+            , the longest for {hoursLabel(ed.longestMinutes)}. This department has the{" "}
+            {rank === 1 ? "" : `${ordinal(rank)} `}
+            longest wait in the network and {Math.round((ed.waiting / Math.max(1, networkWaiting)) * 100)}% of everyone
+            waiting.
+          </>
+        ) : (
+          <strong>Nobody from this department is waiting for a mental health bed.</strong>
+        )}
+      </Verdict>
 
       <KpiStrip
         label="Emergency department headline figures"
@@ -111,6 +149,25 @@ export function EdStatisticsProposal({ edId }: { edId?: string }) {
             </ul>
           </>
         )}
+      </Panel>
+
+      <Panel title="How long people have waited" question="Everyone waiting, by band. Each person counted once.">
+        <div className={styles.columns}>
+          {bands.map((band) => (
+            <div className={styles.column} key={band.label}>
+              <span className={styles.columnValue}>{band.count}</span>
+              <span
+                className={`${styles.columnBar} ${band.label === "Over 24 hours" ? styles.meterDanger : ""}`}
+                style={{ height: `${(band.count / bandMax) * 8}rem` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className={styles.columnLabels}>
+          {bands.map((band) => (
+            <span key={band.label}>{band.label}</span>
+          ))}
+        </div>
       </Panel>
 
       <Panel title="All emergency departments" question="Where this department sits in the network." flush>

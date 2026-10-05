@@ -12,10 +12,19 @@ import {
   OccupancyPill,
   Panel,
   ProposalHeader,
+  ReleaseTimeline,
+  Verdict,
   ReadyPill,
   proposalHref,
 } from "./statistics-proposal-parts";
-import { SERVICE_COLOUR, edShort, hoursLabel, percent } from "./statistics-proposal-figures";
+import {
+  SERVICE_COLOUR,
+  edShort,
+  hoursLabel,
+  percent,
+  releasesToday,
+  totalReleases,
+} from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -42,6 +51,9 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
     else destination.other += 1;
   }
 
+  const releases = totalReleases(service.wards);
+  const freeToday = releasesToday(releases);
+
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-service">
       <ProposalHeader
@@ -50,6 +62,44 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
         swatch={SERVICE_COLOUR[service.service]}
         asAt={asAt}
       />
+
+      <Verdict
+        attention={[
+          ...service.wards
+            .filter((ward) => ward.ready === 0)
+            .map((ward) => ({
+              tone: "danger" as const,
+              label: `${ward.unit.name}: no ready bed`,
+              href: proposalHref("ward", ward.unit.id),
+            })),
+          ...(destination.none
+            ? [{ tone: "warn" as const, label: `${destination.none} waiting here with no ward yet` }]
+            : []),
+          ...ownEds
+            .filter((ed) => ed.over24h)
+            .map((ed) => ({
+              tone: "danger" as const,
+              label: `${edShort(ed.name)}: ${ed.over24h} over 24 hours`,
+              href: proposalHref("ed", ed.id),
+            })),
+          { tone: "good" as const, label: `${freeToday} beds expected free today` },
+        ]}
+      >
+        {service.beds ? (
+          <>
+            <strong>
+              {service.service} is {percent(service.occupancy, 1)} occupied with {service.ready} ready beds
+            </strong>{" "}
+            for {service.edWaiting} people waiting in its emergency departments. {destination.own} of them have been
+            accepted by a {service.service} ward.
+          </>
+        ) : (
+          <>
+            <strong>{service.service} has no inpatient mental health wards.</strong> {service.edWaiting} people are
+            waiting in its emergency departments for a bed elsewhere.
+          </>
+        )}
+      </Verdict>
 
       <KpiStrip
         label="Health service headline figures"
@@ -60,6 +110,7 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
             value: service.beds ? percent(service.occupancy, 1) : "–",
             note: `${service.occupied} occupied · ${service.onLeave} on leave`,
             keyClass: styles.segOccupied,
+            meter: { value: service.occupancy },
           },
           { label: "Ready", value: service.ready, tone: "good", keyClass: styles.segReady },
           { label: "Pulled", value: service.pulled, keyClass: styles.segPulled },
@@ -109,6 +160,9 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
                     Ready
                   </th>
                   <th scope="col" className={styles.num}>
+                    Free today
+                  </th>
+                  <th scope="col" className={styles.num}>
                     Average stay
                   </th>
                 </tr>
@@ -135,6 +189,7 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
                       <td className={styles.num}>
                         <ReadyPill value={ward.ready} />
                       </td>
+                      <td className={styles.num}>{releasesToday(ward.releases)}</td>
                       <td className={styles.num}>
                         {ward.averageStayDays === null ? "–" : `${ward.averageStayDays.toFixed(0)} days`}
                       </td>
@@ -204,6 +259,16 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
           </dl>
         </Panel>
       </div>
+
+      {service.beds ? (
+        <Panel
+          title="Beds coming free"
+          question={`Discharges recorded on ${service.service} wards. Solid is confirmed, pale is expected.`}
+          meta={`${freeToday} today`}
+        >
+          <ReleaseTimeline releases={releases} />
+        </Panel>
+      ) : null}
 
       <Definitions />
     </main>

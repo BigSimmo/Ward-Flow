@@ -13,7 +13,7 @@ import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { unitById } from "@/components/ward-management/ward-sites";
 
-import { KpiStrip, Panel, ProposalHeader, proposalHref } from "./statistics-proposal-parts";
+import { KpiStrip, Panel, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -40,6 +40,16 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
     counted[0];
   const { lists, team } = chosen;
   const unlinked = admissionsWithNoCommunityTeam(admissions, referrals).length;
+  const week = 7 * 24 * 60;
+  const timing = {
+    passed: lists.currentlyAdmitted.filter((a) => a.expectedDischargeAt !== null && a.expectedDischargeAt < now).length,
+    week: lists.currentlyAdmitted.filter(
+      (a) => a.expectedDischargeAt !== null && a.expectedDischargeAt >= now && a.expectedDischargeAt < now + week,
+    ).length,
+    later: lists.currentlyAdmitted.filter((a) => a.expectedDischargeAt !== null && a.expectedDischargeAt >= now + week)
+      .length,
+    none: lists.currentlyAdmitted.filter((a) => a.expectedDischargeAt === null).length,
+  };
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-community">
@@ -77,6 +87,26 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
         </label>
       </div>
 
+      <Verdict
+        attention={[
+          ...(timing.passed ? [{ tone: "danger" as const, label: `${timing.passed} past their discharge date` }] : []),
+          ...(timing.none ? [{ tone: "warn" as const, label: `${timing.none} with no discharge date` }] : []),
+          ...(timing.week ? [{ tone: "good" as const, label: `${timing.week} due back within 7 days` }] : []),
+        ]}
+      >
+        {lists.currentlyAdmitted.length ? (
+          <>
+            <strong>
+              {lists.currentlyAdmitted.length} people linked to {team.name} are in a bed
+            </strong>
+            . {timing.week} are due back within a week and {timing.passed} are already past the date written for them,
+            so follow-up should be ready now.
+          </>
+        ) : (
+          <strong>Nobody in a bed is linked to {team.name}.</strong>
+        )}
+      </Verdict>
+
       <KpiStrip
         label="Community team headline figures"
         items={[
@@ -91,6 +121,45 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
           { label: "Left another way", value: lists.otherDepartures.length, note: "transfer or other departure" },
         ]}
       />
+
+      <Panel title="When people are due back" question="Expected discharge dates for this team's people in a bed.">
+        <div className={styles.split} style={{ height: "1rem" }} aria-hidden="true">
+          <span
+            className={styles.meterDanger}
+            style={{ width: `${(timing.passed / Math.max(1, lists.currentlyAdmitted.length)) * 100}%` }}
+          />
+          <span
+            className={styles.segReady}
+            style={{ width: `${(timing.week / Math.max(1, lists.currentlyAdmitted.length)) * 100}%` }}
+          />
+          <span
+            className={styles.segOccupied}
+            style={{ width: `${(timing.later / Math.max(1, lists.currentlyAdmitted.length)) * 100}%` }}
+          />
+          <span
+            className={styles.segClosed}
+            style={{ width: `${(timing.none / Math.max(1, lists.currentlyAdmitted.length)) * 100}%` }}
+          />
+        </div>
+        <dl className={styles.facts} style={{ marginTop: "0.875rem" }}>
+          <div className={styles.fact}>
+            <dt>Date already passed</dt>
+            <dd className={styles.toneDanger}>{timing.passed}</dd>
+          </div>
+          <div className={styles.fact}>
+            <dt>Within 7 days</dt>
+            <dd className={styles.toneGood}>{timing.week}</dd>
+          </div>
+          <div className={styles.fact}>
+            <dt>Later</dt>
+            <dd>{timing.later}</dd>
+          </div>
+          <div className={styles.fact}>
+            <dt>No date</dt>
+            <dd>{timing.none}</dd>
+          </div>
+        </dl>
+      </Panel>
 
       <Panel
         title="People in a bed"

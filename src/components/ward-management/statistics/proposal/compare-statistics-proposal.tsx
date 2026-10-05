@@ -5,15 +5,17 @@ import { useMemo, useState } from "react";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 
 import { Panel, ProposalHeader, proposalHref } from "./statistics-proposal-parts";
-import { SERVICE_COLOUR, percent, type WardFigures } from "./statistics-proposal-figures";
+import { SERVICE_COLOUR, percent, releasesToday, type WardFigures } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
-type Measure = "occupancy" | "ready" | "stay" | "asked";
+type Measure = "occupancy" | "ready" | "free" | "closed" | "stay" | "asked";
 
 const MEASURES: { id: Measure; label: string; question: string }[] = [
   { id: "occupancy", label: "Occupancy", question: "Occupied beds as a share of each ward's beds." },
   { id: "ready", label: "Ready beds", question: "Beds each ward can take a patient into now." },
+  { id: "free", label: "Free today", question: "Beds each ward expects to come free before midnight." },
+  { id: "closed", label: "Closed beds", question: "Empty beds each ward is not offering." },
   { id: "stay", label: "Average stay", question: "Average length of stay, in days. Case mix differs between wards." },
   { id: "asked", label: "Asked for a bed", question: "Open requests that name each ward." },
 ];
@@ -22,6 +24,8 @@ function valueOf(ward: WardFigures, measure: Measure): number | null {
   if (measure === "occupancy") return ward.occupancy;
   if (measure === "ready") return ward.ready;
   if (measure === "stay") return ward.averageStayDays;
+  if (measure === "free") return releasesToday(ward.releases);
+  if (measure === "closed") return ward.closed;
   return ward.askedAndWaiting;
 }
 

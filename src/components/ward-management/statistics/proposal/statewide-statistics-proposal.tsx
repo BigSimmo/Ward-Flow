@@ -11,9 +11,19 @@ import {
   Panel,
   ProposalHeader,
   ReadyPill,
+  ReleaseTimeline,
+  Verdict,
   proposalHref,
 } from "./statistics-proposal-parts";
-import { SERVICE_COLOUR, edShort, hoursLabel, percent, todayReferralFigures } from "./statistics-proposal-figures";
+import {
+  SERVICE_COLOUR,
+  edShort,
+  hoursLabel,
+  percent,
+  releasesToday,
+  todayReferralFigures,
+  totalReleases,
+} from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -31,6 +41,12 @@ export function StatewideStatisticsProposal() {
   const over24 = eds.reduce((sum, ed) => sum + ed.over24h, 0);
   const longest = eds.reduce((max, ed) => (ed.longestMinutes > max.longestMinutes ? ed : max), eds[0]);
   const maxServiceBeds = Math.max(...services.map((service) => service.beds));
+  const releases = totalReleases(wards);
+  const freeToday = releasesToday(releases);
+  const noReady = wards.filter((ward) => ward.ready === 0);
+  const tightest = services
+    .filter((service) => service.beds > 0)
+    .reduce((max, service) => (service.occupancy > max.occupancy ? service : max));
 
   const pressure = useMemo(
     () =>
@@ -41,11 +57,32 @@ export function StatewideStatisticsProposal() {
     [wards],
   );
   const edsByWait = useMemo(() => eds.slice().sort((a, b) => b.longestMinutes - a.longestMinutes), [eds]);
-  const maxEdWait = Math.max(DAY * 2, ...eds.map((ed) => ed.longestMinutes));
+  const maxEdWait = DAY * 3; // bars beyond three days run off the end and say so
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-statewide">
       <ProposalHeader crumbs={[{ label: "Statistics" }]} title="Across Western Australia" asAt={asAt} />
+
+      <Verdict
+        attention={[
+          ...(longest && longest.longestMinutes >= DAY
+            ? [
+                {
+                  tone: "danger" as const,
+                  label: `${edShort(longest.name)}: longest wait ${hoursLabel(longest.longestMinutes)}`,
+                  href: proposalHref("ed", longest.id),
+                },
+              ]
+            : []),
+          { tone: "danger", label: `${noReady.length} wards with no ready bed`, href: proposalHref("network") },
+          { tone: "warn", label: `${over24} people waiting over 24 hours`, href: proposalHref("flow") },
+          { tone: "good", label: `${freeToday} beds expected free by midnight`, href: proposalHref("network") },
+        ]}
+      >
+        The network is <strong>{percent(network.occupied / network.beds, 1)} occupied</strong> with{" "}
+        <strong>{network.ready} beds ready</strong> for <strong>{waiting} people waiting</strong>. {tightest.service} is
+        the tightest service at {percent(tightest.occupancy)}.
+      </Verdict>
 
       <KpiStrip
         label="Network headline figures"
@@ -56,6 +93,7 @@ export function StatewideStatisticsProposal() {
             value: percent(network.beds ? network.occupied / network.beds : 0, 1),
             note: `${network.occupied} occupied · ${network.onLeave} on leave`,
             keyClass: styles.segOccupied,
+            meter: { value: network.occupied / network.beds },
           },
           {
             label: "Ready",
@@ -112,6 +150,9 @@ export function StatewideStatisticsProposal() {
                 Ready
               </th>
               <th scope="col" className={styles.num}>
+                Free today
+              </th>
+              <th scope="col" className={styles.num}>
                 Waiting in ED
               </th>
             </tr>
@@ -142,6 +183,7 @@ export function StatewideStatisticsProposal() {
                 <td className={styles.num}>{service.beds || "–"}</td>
                 <td className={styles.num}>{service.beds > 0 ? <OccupancyPill value={service.occupancy} /> : "–"}</td>
                 <td className={styles.num}>{service.beds > 0 ? <ReadyPill value={service.ready} /> : "–"}</td>
+                <td className={styles.num}>{service.beds > 0 ? releasesToday(totalReleases(service.wards)) : "–"}</td>
                 <td className={styles.num}>{service.edWaiting}</td>
               </tr>
             ))}
@@ -153,6 +195,7 @@ export function StatewideStatisticsProposal() {
               <td className={styles.num}>{network.beds}</td>
               <td className={styles.num}>{percent(network.beds ? network.occupied / network.beds : 0, 1)}</td>
               <td className={styles.num}>{network.ready}</td>
+              <td className={styles.num}>{freeToday}</td>
               <td className={styles.num}>{waiting}</td>
             </tr>
           </tfoot>
@@ -212,7 +255,12 @@ export function StatewideStatisticsProposal() {
           title="Emergency department waits"
           question="Who has waited longest for a mental health bed?"
           meta={`${waiting} waiting · ${eds.length} departments`}
-          foot={<span>Dashed lines mark 24 and 48 hours. Bars show each department&apos;s longest current wait.</span>}
+          foot={
+            <span>
+              Dashed lines mark 24 and 48 hours; the scale ends at 72 hours. Bars show each department&apos;s longest
+              current wait.
+            </span>
+          }
         >
           <div className={styles.scaleRow} aria-hidden="true" style={{ marginBottom: "1rem" }}>
             <span />
@@ -247,7 +295,7 @@ export function StatewideStatisticsProposal() {
                   <span className={styles.hbarTrack}>
                     <span
                       className={`${styles.hbarFill} ${tone}`}
-                      style={{ width: `${(ed.longestMinutes / maxEdWait) * 100}%` }}
+                      style={{ width: `${Math.min(1, ed.longestMinutes / maxEdWait) * 100}%` }}
                     />
                     <span className={styles.hbarMarker} style={{ left: `${(DAY / maxEdWait) * 100}%` }} />
                     <span className={styles.hbarMarker} style={{ left: `${((DAY * 2) / maxEdWait) * 100}%` }} />
@@ -261,7 +309,11 @@ export function StatewideStatisticsProposal() {
       </div>
 
       <div className={styles.grid2Even}>
-        <Panel title="Referrals for a bed today" question="Raised today with a ward as the destination.">
+        <Panel
+          title="Referrals for a bed today"
+          question="Raised today with a ward as the destination."
+          foot={<a href={proposalHref("flow")}>Referrals and discharges ›</a>}
+        >
           <dl className={styles.facts}>
             <div className={styles.fact}>
               <dt>Raised</dt>
@@ -281,14 +333,13 @@ export function StatewideStatisticsProposal() {
             </div>
           </dl>
         </Panel>
-        <Panel title="Community teams" question="People in a bed who are linked to a community team.">
-          <p className={styles.empty}>
-            Only admissions whose referral named a community team can be linked. Open a team to see its people in beds,
-            expected discharges and follow-up.{" "}
-            <a className={styles.link} href={proposalHref("community")}>
-              Choose a community team ›
-            </a>
-          </p>
+        <Panel
+          title="Beds coming free"
+          question="Ward discharges by when the bed should be free. Solid is confirmed, pale is expected."
+          meta={`${freeToday} by midnight`}
+          foot={<a href={proposalHref("network")}>See every ward ›</a>}
+        >
+          <ReleaseTimeline releases={releases} />
         </Panel>
       </div>
 

@@ -3,6 +3,8 @@
 import { CommunityStatisticsProposal } from "./community-statistics-proposal";
 import { CompareStatisticsProposal } from "./compare-statistics-proposal";
 import { EdStatisticsProposal } from "./ed-statistics-proposal";
+import { FlowStatisticsProposal } from "./flow-statistics-proposal";
+import { NetworkStatisticsProposal } from "./network-statistics-proposal";
 import { ServiceStatisticsProposal } from "./service-statistics-proposal";
 import { StatewideStatisticsProposal } from "./statewide-statistics-proposal";
 import { proposalHref, type ProposalScreen } from "./statistics-proposal-parts";
@@ -11,10 +13,12 @@ import styles from "./statistics-proposal.module.css";
 
 const SCREENS: { id: ProposalScreen; label: string }[] = [
   { id: "statewide", label: "Statewide" },
+  { id: "network", label: "Network overview" },
   { id: "service", label: "Health service" },
   { id: "ward", label: "Ward" },
   { id: "ed", label: "Emergency department" },
   { id: "community", label: "Community team" },
+  { id: "flow", label: "Referrals and discharges" },
   { id: "compare", label: "Compare" },
 ];
 
@@ -42,6 +46,8 @@ export function StatisticsProposalPreview({ screen, id }: { screen?: string; id?
       {active === "ed" ? <EdStatisticsProposal edId={id} /> : null}
       {active === "community" ? <CommunityStatisticsProposal teamId={id} /> : null}
       {active === "compare" ? <CompareStatisticsProposal /> : null}
+      {active === "network" ? <NetworkStatisticsProposal /> : null}
+      {active === "flow" ? <FlowStatisticsProposal /> : null}
     </>
   );
 }

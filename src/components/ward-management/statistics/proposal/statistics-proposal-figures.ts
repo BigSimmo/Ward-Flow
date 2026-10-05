@@ -2,6 +2,7 @@ import { edWaitFigures } from "@/components/ward-management/statistics/statistic
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
 import { daysInBed, STAY_BANDS, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates, type BedStateCounts } from "@/components/ward-management/ward-bed-states";
+import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import {
@@ -34,7 +35,57 @@ export type WardFigures = BedFigures & {
   occupancy: number;
   askedAndWaiting: number;
   averageStayDays: number | null;
+  /** Discharges not yet happened, by when the bed is expected to come free (today and tomorrow). */
+  releases: ReleaseCounts;
 };
+
+export type ReleaseCounts = Record<ReleaseBand, { confirmed: number; expected: number }>;
+
+export const RELEASE_BAND_LABELS: Record<ReleaseBand, string> = {
+  now: "Due now",
+  "by-midday": "By midday",
+  "by-1600": "By 16:00",
+  tonight: "Tonight",
+  tomorrow: "Tomorrow",
+};
+
+function emptyReleases(): ReleaseCounts {
+  return Object.fromEntries(RELEASE_BANDS.map((band) => [band, { confirmed: 0, expected: 0 }])) as ReleaseCounts;
+}
+
+export function addReleases(a: ReleaseCounts, b: ReleaseCounts): ReleaseCounts {
+  const sum = emptyReleases();
+  for (const band of RELEASE_BANDS) {
+    sum[band] = {
+      confirmed: a[band].confirmed + b[band].confirmed,
+      expected: a[band].expected + b[band].expected,
+    };
+  }
+  return sum;
+}
+
+export function releasesFor(unitId: string, bedReleases: readonly BedRelease[], now: Instant): ReleaseCounts {
+  const counts = emptyReleases();
+  for (const release of bedReleases) {
+    if (release.unitId !== unitId || release.state === "discharged") continue;
+    const band = releaseBand(release, now);
+    if (band === "beyond-today") continue;
+    if (release.state === "confirmed") counts[band].confirmed += 1;
+    else counts[band].expected += 1;
+  }
+  return counts;
+}
+
+export function releasesToday(counts: ReleaseCounts): number {
+  return RELEASE_BANDS.filter((band) => band !== "tomorrow").reduce(
+    (sum, band) => sum + counts[band].confirmed + counts[band].expected,
+    0,
+  );
+}
+
+export function totalReleases(wards: readonly { releases: ReleaseCounts }[]): ReleaseCounts {
+  return wards.reduce((sum, ward) => addReleases(sum, ward.releases), emptyReleases());
+}
 
 export type ServiceFigures = BedFigures & {
   service: HealthService;
@@ -95,6 +146,7 @@ export function wardFigures(
       occupancy: occupancyOf(figures),
       askedAndWaiting: wardReferralTally(movements, unit.id).askedAndWaiting,
       averageStayDays: wardStatistics(unit.id, admissions, now).averageLengthOfStayDays,
+      releases: releasesFor(unit.id, bedReleases, now),
     };
   });
 }

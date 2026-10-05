@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
-import type { BedFigures } from "./statistics-proposal-figures";
+import { RELEASE_BANDS } from "@/components/ward-management/ward-bed-availability";
+
+import { RELEASE_BAND_LABELS, type BedFigures, type ReleaseCounts } from "./statistics-proposal-figures";
 import styles from "./statistics-proposal.module.css";
 
 /** Where a proposal screen links to. Preview routes today; the real statistics routes on approval. */
-export type ProposalScreen = "statewide" | "service" | "ward" | "ed" | "community" | "compare";
+export type ProposalScreen = "statewide" | "network" | "service" | "ward" | "ed" | "community" | "flow" | "compare";
 
 export function proposalHref(screen: ProposalScreen, id?: string): string {
   const query = new URLSearchParams({ screen });
@@ -58,6 +60,7 @@ export type Kpi = {
   note?: ReactNode;
   tone?: "good" | "warn" | "danger";
   keyClass?: string;
+  meter?: { value: number; tone?: "accent" | "good" | "warn" | "danger" };
 };
 
 export function KpiStrip({ items, label }: { items: Kpi[]; label: string }) {
@@ -82,6 +85,7 @@ export function KpiStrip({ items, label }: { items: Kpi[]; label: string }) {
           >
             {item.value}
           </p>
+          {item.meter ? <Meter value={item.meter.value} tone={item.meter.tone} /> : null}
           {item.note ? <p className={styles.kpiNote}>{item.note}</p> : null}
         </div>
       ))}
@@ -195,5 +199,130 @@ export function Definitions() {
         <dd>Open requests from emergency departments. The same number on every screen.</dd>
       </div>
     </dl>
+  );
+}
+
+export type Attention = { tone: "danger" | "warn" | "good" | "info"; label: string; href?: string };
+
+/** The answer first: one plain sentence, then the few things that need someone's attention now. */
+export function Verdict({ children, attention = [] }: { children: ReactNode; attention?: Attention[] }) {
+  const toneClass = {
+    danger: styles.attnDanger,
+    warn: styles.attnWarn,
+    good: styles.attnGood,
+    info: styles.attnInfo,
+  };
+  return (
+    <section className={styles.verdict} aria-label="Summary">
+      <p className={styles.verdictText}>{children}</p>
+      {attention.length ? (
+        <ul className={styles.attention} aria-label="Needs attention">
+          {attention.map((item) => (
+            <li key={item.label} className={`${styles.attn} ${toneClass[item.tone]}`}>
+              <span className={styles.attnDot} aria-hidden="true" />
+              {item.href ? <a href={item.href}>{item.label}</a> : item.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+/** One square per bed, in the ruled order, so a ward's state reads at a glance. */
+export function BedGrid({ figures, size = "md" }: { figures: BedFigures; size?: "sm" | "md" }) {
+  const cells: { key: string; className: string; title: string }[] = [];
+  const push = (count: number, className: string, title: string) => {
+    for (let index = 0; index < count; index += 1) cells.push({ key: `${title}-${index}`, className, title });
+  };
+  push(figures.occupied - figures.onLeave, styles.cellOccupied, "Occupied");
+  push(figures.onLeave, `${styles.cellOccupied} ${styles.cellLeave}`, "Occupied, patient on leave");
+  push(figures.pulled, styles.cellPulled, "Pulled");
+  push(figures.closed, styles.cellClosed, "Closed");
+  push(figures.ready - figures.beingMadeReady, styles.cellReady, "Ready");
+  push(figures.beingMadeReady, `${styles.cellReady} ${styles.cellPreparing}`, "Ready, being made ready");
+  return (
+    <div
+      className={`${styles.bedGrid} ${size === "sm" ? styles.bedGridSm : ""}`}
+      role="img"
+      aria-label={`${figures.beds} beds: ${figures.occupied} occupied (${figures.onLeave} on leave), ${figures.pulled} pulled, ${figures.closed} closed, ${figures.ready} ready`}
+    >
+      {cells.map((cell) => (
+        <span key={cell.key} className={`${styles.cell} ${cell.className}`} title={cell.title} />
+      ))}
+    </div>
+  );
+}
+
+export function BedGridLegend() {
+  return (
+    <ul className={styles.legend}>
+      <li>
+        <span className={`${styles.cell} ${styles.cellOccupied}`} aria-hidden="true" />
+        Occupied
+      </li>
+      <li>
+        <span className={`${styles.cell} ${styles.cellOccupied} ${styles.cellLeave}`} aria-hidden="true" />
+        On leave (bed held)
+      </li>
+      <li>
+        <span className={`${styles.cell} ${styles.cellPulled}`} aria-hidden="true" />
+        Pulled
+      </li>
+      <li>
+        <span className={`${styles.cell} ${styles.cellClosed}`} aria-hidden="true" />
+        Closed
+      </li>
+      <li>
+        <span className={`${styles.cell} ${styles.cellReady}`} aria-hidden="true" />
+        Ready
+      </li>
+      <li>
+        <span className={`${styles.cell} ${styles.cellReady} ${styles.cellPreparing}`} aria-hidden="true" />
+        Being made ready
+      </li>
+    </ul>
+  );
+}
+
+/** Beds expected to come free, by the ward's own release bands. Confirmed solid, expected pale. */
+export function ReleaseTimeline({ releases }: { releases: ReleaseCounts }) {
+  const max = Math.max(1, ...RELEASE_BANDS.map((band) => releases[band].confirmed + releases[band].expected));
+  return (
+    <div className={styles.timeline}>
+      {RELEASE_BANDS.map((band) => {
+        const { confirmed, expected } = releases[band];
+        return (
+          <div className={styles.timelineCol} key={band}>
+            <span className={styles.columnValue}>{confirmed + expected}</span>
+            <span className={styles.timelineStack} aria-hidden="true">
+              <span className={styles.timelineExpected} style={{ height: `${(expected / max) * 6}rem` }} />
+              <span className={styles.timelineConfirmed} style={{ height: `${(confirmed / max) * 6}rem` }} />
+            </span>
+            <span className={styles.timelineLabel}>{RELEASE_BAND_LABELS[band]}</span>
+            <span className={styles.rowSub}>
+              {confirmed} confirmed
+              <br />
+              {expected} expected
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A thin proportion meter for a headline tile. */
+export function Meter({ value, tone = "accent" }: { value: number; tone?: "accent" | "good" | "warn" | "danger" }) {
+  const fill = {
+    accent: styles.segOccupied,
+    good: styles.segReady,
+    warn: styles.segPulled,
+    danger: styles.meterDanger,
+  };
+  return (
+    <span className={styles.meter} aria-hidden="true">
+      <span className={fill[tone]} style={{ width: `${Math.min(1, Math.max(0, value)) * 100}%` }} />
+    </span>
   );
 }

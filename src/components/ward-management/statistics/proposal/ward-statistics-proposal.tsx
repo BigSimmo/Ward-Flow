@@ -4,15 +4,18 @@ import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-r
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
 
 import {
-  BedBar,
-  BedLegend,
+  BedGrid,
+  BedGridLegend,
   Definitions,
   KpiStrip,
   Panel,
   ProposalHeader,
+  ReleaseTimeline,
+  Verdict,
+  type Attention,
   proposalHref,
 } from "./statistics-proposal-parts";
-import { SERVICE_COLOUR, percent, stayBandCounts } from "./statistics-proposal-figures";
+import { SERVICE_COLOUR, percent, releasesToday, stayBandCounts } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -38,6 +41,19 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
   const referrals = wardReferralTally(world.movements, ward.unit.id);
   const stays = wards.map((candidate) => candidate.averageStayDays).filter((days): days is number => days !== null);
   const networkStay = stays.length ? stays.reduce((sum, days) => sum + days, 0) / stays.length : null;
+  const freeToday = releasesToday(ward.releases);
+  const datePassed = current.filter(
+    (admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now,
+  ).length;
+  const readyLocked = Math.min(ward.unit.allocatableLocked, ward.ready);
+  const heldUp = blocked.reduce((sum, row) => sum + row.count, 0);
+  const attention: Attention[] = [];
+  if (ward.ready === 0) attention.push({ tone: "danger", label: "No ready bed" });
+  if (referrals.askedAndWaiting)
+    attention.push({ tone: "warn", label: `${referrals.askedAndWaiting} asking for a bed here` });
+  if (datePassed) attention.push({ tone: "warn", label: `${datePassed} past their discharge date` });
+  if (heldUp) attention.push({ tone: "warn", label: `${heldUp} discharges held up` });
+  if (freeToday) attention.push({ tone: "good", label: `${freeToday} beds expected free today` });
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-ward">
@@ -52,6 +68,18 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
         asAt={asAt}
       />
 
+      <Verdict attention={attention}>
+        <strong>
+          {ward.unit.name} is {percent(ward.occupancy)} occupied with {ward.ready} ready{" "}
+          {ward.ready === 1 ? "bed" : "beds"}
+        </strong>
+        {ward.ready ? ` (${readyLocked} locked, ${ward.ready - readyLocked} open)` : ""}. {freeToday} more{" "}
+        {freeToday === 1 ? "is" : "are"} expected to come free today
+        {networkStay !== null && ward.averageStayDays !== null
+          ? `, and stays here average ${ward.averageStayDays.toFixed(0)} days against ${networkStay.toFixed(0)} across the network.`
+          : "."}
+      </Verdict>
+
       <KpiStrip
         label="Ward headline figures"
         items={[
@@ -65,12 +93,13 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
             value: percent(ward.occupancy, 0),
             note: `${ward.occupied} occupied · ${ward.onLeave} on leave`,
             keyClass: styles.segOccupied,
+            meter: { value: ward.occupancy },
           },
           {
             label: "Ready",
             value: ward.ready,
             tone: ward.ready === 0 ? "danger" : "good",
-            note: ward.beingMadeReady ? `${ward.beingMadeReady} being made ready` : "none being made ready",
+            note: ward.ready ? `${readyLocked} locked · ${ward.ready - readyLocked} open` : "none to offer",
             keyClass: styles.segReady,
           },
           { label: "Pulled", value: ward.pulled, note: "bed given, not yet arrived", keyClass: styles.segPulled },
@@ -91,10 +120,20 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
         ]}
       />
 
-      <Panel title="Beds now" question="The ward's beds, adding up to the total." meta={`${ward.beds} beds`}>
-        <BedBar figures={ward} large />
-        <BedLegend figures={ward} />
-      </Panel>
+      <div className={styles.grid2}>
+        <Panel title="Beds now" question="One square per bed." meta={`${ward.beds} beds`} foot={<BedGridLegend />}>
+          <div className={styles.bedGridLarge}>
+            <BedGrid figures={ward} />
+          </div>
+        </Panel>
+        <Panel
+          title="Beds coming free"
+          question="Discharges this ward has recorded. Solid is confirmed, pale is expected."
+          meta={`${freeToday} today`}
+        >
+          <ReleaseTimeline releases={ward.releases} />
+        </Panel>
+      </div>
 
       <div className={styles.grid2Even}>
         <Panel
@@ -126,6 +165,10 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
             <div className={styles.fact}>
               <dt>Without one</dt>
               <dd className={current.length - withDate > 0 ? styles.toneWarn : ""}>{current.length - withDate}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Past their date</dt>
+              <dd className={datePassed ? styles.toneDanger : ""}>{datePassed}</dd>
             </div>
             <div className={styles.fact}>
               <dt>Discharge held up</dt>
