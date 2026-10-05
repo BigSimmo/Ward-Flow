@@ -1,5 +1,8 @@
 .screen {
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  composes: wardFixedPalette from "../../../app/ward-flow-shell-tokens.module.css";
+  --ward-fixed-white: var(--wf-fixed-white);
+  --ward-shadow-rgb: 0 0 0;
   min-width: 0;
   min-height: 100%;
   background: var(--ground);
@@ -67,8 +70,8 @@
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow:
-    0 4px 6px -1px rgba(15, 23, 42, 0.07),
-    0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    0 4px 6px -1px rgb(var(--ward-shadow-rgb) / 0.07),
+    0 2px 4px -2px rgb(var(--ward-shadow-rgb) / 0.05);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -76,11 +79,11 @@
 }
 
 /* =====================================================================
-   TIER 1: DARK HERO HEADER (#0b1329)
+   TIER 1: DARK HERO HEADER (var(--ward-preview-midnight))
    ===================================================================== */
 .heroHeader {
-  background: #0b1329;
-  color: #ffffff;
+  background: var(--ward-preview-midnight);
+  color: var(--ward-fixed-white);
   padding: 18px 24px;
   display: flex;
   align-items: center;
@@ -103,16 +106,16 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7dd3fc;
+  color: var(--ward-preview-sky-300);
 }
 
 .badgeDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #0284c7;
+  background: var(--ward-preview-sky-600);
   display: inline-block;
-  box-shadow: 0 0 6px #38bdf8;
+  box-shadow: 0 0 6px var(--ward-preview-sky-400);
 }
 
 .shiftTitleRow {
@@ -126,7 +129,7 @@
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   margin: 0;
   line-height: 1.2;
 }
@@ -134,9 +137,9 @@
 .shiftTime {
   font-size: 12px;
   font-weight: 700;
-  color: #38bdf8;
-  background: rgba(14, 165, 233, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--ward-preview-sky-400);
+  background: var(--ward-preview-sky-soft);
+  border: 1px solid var(--ward-preview-sky-ring);
   padding: 2px 10px;
   border-radius: 9999px;
   white-space: nowrap;
@@ -144,15 +147,15 @@
 
 .handoffTeams {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ward-preview-slate-400);
 }
 
 .handoffTeams strong {
-  color: #f1f5f9;
+  color: var(--ward-preview-slate-100);
 }
 
 .takenAtMeta {
-  color: #64748b;
+  color: var(--ward-preview-slate-500);
   font-size: 11.5px;
 }
 
@@ -170,27 +173,27 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--ward-preview-slate-50);
+  background: var(--ward-fixed-white-10);
+  border: 1px solid var(--ward-fixed-white-16);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .btnAction:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  background: var(--ward-fixed-white-18);
+  border-color: var(--ward-fixed-white-25);
+  color: var(--ward-fixed-white);
 }
 
 /* =====================================================================
-   TIER 2: DARK TELEMETRY DECK (#17243b)
+   TIER 2: DARK TELEMETRY DECK (var(--ward-preview-dark-deck))
    ===================================================================== */
 .telemetryDeck {
-  background: #17243b;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ward-preview-dark-deck);
+  border-top: 1px solid var(--ward-fixed-white-08);
+  border-bottom: 1px solid var(--ward-fixed-white-08);
   padding: 10px 24px;
   display: flex;
   align-items: center;
@@ -214,7 +217,7 @@
 }
 
 .metricLabel {
-  color: #94a3b8;
+  color: var(--ward-preview-slate-400);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -224,31 +227,31 @@
   font-family: var(--mono, monospace);
   font-size: 14.5px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   letter-spacing: -0.01em;
 }
 
 .goodVal {
-  color: #4ade80 !important;
+  color: var(--ward-preview-green-400) !important;
 }
 
 .warnVal {
-  color: #fbbf24 !important;
+  color: var(--ward-preview-amber-400) !important;
 }
 
 .dangerVal {
-  color: #f87171 !important;
+  color: var(--ward-preview-red-400) !important;
 }
 
 .metricSep {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--ward-fixed-white-20);
   font-size: 13px;
   user-select: none;
 }
 
 .liveSyncRoster {
   font-size: 11.5px;
-  color: #7dd3fc;
+  color: var(--ward-preview-sky-300);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -259,9 +262,9 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #38bdf8;
+  background: var(--ward-preview-sky-400);
   display: inline-block;
-  box-shadow: 0 0 6px #38bdf8;
+  box-shadow: 0 0 6px var(--ward-preview-sky-400);
 }
 
 /* =====================================================================
@@ -315,13 +318,13 @@
   height: 34px;
   min-height: 34px;
   border-radius: 6px;
-  border: 1px solid var(--line-strong, #cbd5e1);
+  border: 1px solid var(--line-strong);
   background: var(--surface);
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.05);
   padding: 0 22px 0 28px;
   appearance: none;
   -webkit-appearance: none;
@@ -331,12 +334,12 @@
 }
 
 .controlToolbarDeck .wardSelect:hover {
-  border-color: #94a3b8;
+  border-color: var(--ward-preview-slate-400);
 }
 
 .controlToolbarDeck .wardSelect:focus {
-  outline: 2px solid rgba(2, 132, 199, 0.2);
-  border-color: #0284c7;
+  outline: 2px solid var(--ward-preview-sky-focus);
+  border-color: var(--ward-preview-sky-600);
 }
 
 .controlToolbarDeck .scopeSelectIcon {
@@ -344,7 +347,7 @@
   left: 9px;
   width: 14px;
   height: 14px;
-  color: #64748b;
+  color: var(--ward-preview-slate-500);
   pointer-events: none;
   z-index: 1;
 }
@@ -354,7 +357,7 @@
   right: 8px;
   width: 11px;
   height: 11px;
-  color: #64748b;
+  color: var(--ward-preview-slate-500);
   pointer-events: none;
   z-index: 1;
 }
@@ -363,13 +366,13 @@
 .selectThin {
   height: 34px;
   border-radius: 6px;
-  border: 1px solid var(--line-strong, #cbd5e1);
+  border: 1px solid var(--line-strong);
   background: var(--surface);
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.05);
   appearance: none;
   -webkit-appearance: none;
   transition: all 0.15s ease;
@@ -379,12 +382,12 @@
 }
 
 .selectThin:hover {
-  border-color: #94a3b8;
+  border-color: var(--ward-preview-slate-400);
 }
 
 .selectThin:focus {
-  outline: 2px solid rgba(2, 132, 199, 0.2);
-  border-color: #0284c7;
+  outline: 2px solid var(--ward-preview-sky-focus);
+  border-color: var(--ward-preview-sky-600);
 }
 
 .selectWards {
@@ -415,9 +418,9 @@
   background-size:
     14px 14px,
     11px 11px;
-  color: var(--accent-ink, #0369a1);
-  background-color: var(--accent-soft, #e0f2fe);
-  border-color: var(--accent-border, #bae6fd);
+  color: var(--accent-ink);
+  background-color: var(--accent-soft);
+  border-color: var(--accent-border);
   font-weight: 700;
 }
 
@@ -426,11 +429,11 @@
   height: 34px;
   padding: 0 11px;
   border-radius: 6px;
-  border: 1px solid var(--line, #e2e8f0);
-  background: var(--surface-2, #f1f5f9);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink-soft, #334155);
+  color: var(--ward-preview-slate-700);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -440,9 +443,9 @@
 }
 
 .btnResetIntuitive:hover {
-  background: var(--surface-3, #e2e8f0);
-  color: var(--ink, #0f172a);
-  border-color: var(--line-strong, #cbd5e1);
+  background: var(--surface-3);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 /* Shift Switcher Pills (Far Right) */
@@ -450,10 +453,10 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: var(--surface-2, #f1f5f9);
+  background: var(--surface-2);
   padding: 3px;
   border-radius: 8px;
-  border: 1px solid var(--line, #e2e8f0);
+  border: 1px solid var(--line);
 }
 
 .shiftBtnLight {
@@ -464,7 +467,7 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted, #64748b);
+  color: var(--muted);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -473,40 +476,40 @@
 }
 
 .shiftBtnLight:hover {
-  color: var(--ink, #0f172a);
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink);
+  background: var(--ward-shadow-black-04);
 }
 
 .shiftBtnLight.active {
-  background: #0284c7;
-  color: #ffffff;
-  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.35);
+  background: var(--ward-preview-sky-600);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 1px 4px var(--ward-preview-sky-glow);
 }
 
 .shiftBtnLight.active .shiftSubtime {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ward-fixed-white-85);
 }
 
 .deckShiftDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--ward-fixed-white);
 }
 
 .shiftSubtime {
   font-size: 10px;
   font-family: var(--mono, monospace);
-  color: var(--muted, #64748b);
+  color: var(--muted);
 }
 
 .countChip {
   font-size: 11px;
   font-family: var(--mono, monospace);
   font-weight: 700;
-  color: var(--muted, #64748b);
-  background: var(--surface-2, #f1f5f9);
-  border: 1px solid var(--line, #e2e8f0);
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   padding: 5px 10px;
   border-radius: 9999px;
   white-space: nowrap;
@@ -519,7 +522,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #0284c7;
+  background: var(--ward-preview-sky-600);
 }
 
 .tabNavHidden {
