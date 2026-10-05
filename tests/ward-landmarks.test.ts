@@ -13,6 +13,8 @@ import { parseFragment, type DefaultTreeAdapterTypes } from "parse5";
 import { describe, expect, it, vi } from "vitest";
 import { CommunityScreen } from "../src/components/ward-management/community/community-screen";
 import { CommunityIndex } from "../src/components/ward-management/community/community-index";
+import { CommunityHubProposal } from "../src/components/ward-management/community/proposal/community-hub-proposal";
+import { CommunityTeamProposal } from "../src/components/ward-management/community/proposal/community-team-proposal";
 import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/community/community-derivations";
 
 /**
@@ -251,6 +253,11 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
+  { route: `${ROUTE_PREFIX}/community/proposal`, render: () => createElement(CommunityHubProposal) },
+  {
+    route: `${ROUTE_PREFIX}/community/proposal/[teamId]`,
+    render: () => createElement(CommunityTeamProposal, { teamId: "midland" }),
+  },
   { route: `${ROUTE_PREFIX}/delays`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
