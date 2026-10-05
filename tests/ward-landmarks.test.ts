@@ -1,4 +1,8 @@
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
+import { HubProposal } from "@/components/ward-management/people-proposal/hub-proposal";
+import { PatientsProposal } from "@/components/ward-management/people-proposal/patients-proposal";
+import { PatientProposal } from "@/components/ward-management/people-proposal/patient-proposal";
+import { AddPatientProposal } from "@/components/ward-management/people-proposal/add-patient-proposal";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsWardScreen } from "../src/components/ward-management/statistics/statistics-ward-screen";
@@ -247,6 +251,10 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   },
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralIntakeForm) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
+  { route: `${ROUTE_PREFIX}/hub/proposal`, render: () => createElement(HubProposal) },
+  { route: `${ROUTE_PREFIX}/search/proposal`, render: () => createElement(PatientsProposal) },
+  { route: `${ROUTE_PREFIX}/people/proposal`, render: () => createElement(PatientProposal, { id: "PT-001" }) },
+  { route: `${ROUTE_PREFIX}/people/new/proposal`, render: () => createElement(AddPatientProposal) },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },

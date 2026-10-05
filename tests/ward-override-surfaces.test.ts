@@ -664,6 +664,9 @@ describe("ward override-surface guard", () => {
       "src/components/ward-management/coordinator/shortlist-panel.tsx::REFER_TO_UNITS": 3,
       // Patient transit deck (PR #69): ordinary first attempt plus override re-dispatch for each
       // overridable placement event, matching ward-screen / shortlist shape.
+      // Search-and-patient redesign proposal (5 Oct 2026, preview route): ordinary first attempt plus
+      // the override re-dispatch after a refusal, the same shape as patient-transit-operations.tsx.
+      "src/components/ward-management/people-proposal/patient-proposal.tsx::PULL_PATIENT": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::PULL_PATIENT": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::REFER_TO_UNITS": 2,
