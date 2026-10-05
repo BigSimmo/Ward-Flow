@@ -167,8 +167,9 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   Arrival alone is not a later recorded change. Shared worklist filters, selection, pagination and
   the canonical table cell rules remain in use. The optional cell divider token draws the
   embedded timeline's column boundaries; long scales keep the review label beside the column title.
-  coordination tools remain in place. The Delays-only header variants reuse `WardRail` and `WardBar`;
-  `data-delay-layout` controls Focus/Action shell variants without restyling other routes.
+  Coordination tools remain in place. Focus table and Action workspace switch only the lower
+  worklist layout; both retain the approved shared `WardRail`/`WardBar`, backdrop and graph geometry.
+  The screen does not expose a table-layout flag to the legacy global shell-variant selectors.
 - **`src/components/ward-management/delays/delays-view-model.ts`** — pure origin counts,
   radar precedence/intervals/outliers and common linear timeline geometry. All durations use minutes.
   Exact window-end records stay in the final interval; longer waits are never clamped onto the axis.
