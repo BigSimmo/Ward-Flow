@@ -132,7 +132,7 @@ describe("settings screen configuration draft", () => {
     expect(Number(edSlider().min)).toBe(ED_ACCESS_TARGET_RANGE_MINUTES.min);
   });
 
-  it('"Restore all defaults" writes an audited change back to the product owner\'s defaults', () => {
+  it('"Restore Settings defaults" writes an audited change back to the product owner\'s defaults', () => {
     renderSettings();
     const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);
 
@@ -142,14 +142,16 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
-    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Restore Settings defaults" }).at(-1)!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Restore Settings defaults" }).at(-1)!);
 
     const defaults = defaultWardConfiguration();
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(String(defaults.edAccessTargetMinutes));
     expect(screen.getByTestId("probe-pull-hold").textContent).toBe(String(defaults.pullHoldMinutes));
     expect(screen.getByTestId("probe-parallel-cap").textContent).toBe(String(defaults.parallelReferralCap));
-    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(String(defaults.morningRollupDeadlineMinutes ?? 570));
+    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(
+      String(defaults.morningRollupDeadlineMinutes ?? 570),
+    );
     // Save (accepted) + Reset (accepted) = two recorded configuration audit events.
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 2);
   });

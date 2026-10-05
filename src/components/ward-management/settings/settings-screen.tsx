@@ -276,11 +276,16 @@ export function SettingsScreen() {
   // Operator Switcher Modal state
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
 
-  // Operational Surge Mode state
+  // Existing operational draft preset; this does not create clinical capacity.
+  const surgePreset = {
+    parallelReferralCap: PARALLEL_REFERRAL_CAP_RANGE.max,
+    edAccessTargetMinutes: ED_ACCESS_TARGET_RANGE_MINUTES.min,
+    pullHoldMinutes: 120,
+  };
   const isSurgePreset = (value: WardConfiguration) =>
     value.parallelReferralCap === PARALLEL_REFERRAL_CAP_RANGE.max &&
     value.edAccessTargetMinutes === ED_ACCESS_TARGET_RANGE_MINUTES.min &&
-    value.pullHoldMinutes === 120;
+    value.pullHoldMinutes === surgePreset.pullHoldMinutes;
   const isSurge = isSurgePreset(draft);
   const savedSurge = isSurgePreset(configuration);
   const hasUnsavedRules =
@@ -326,63 +331,48 @@ export function SettingsScreen() {
   const domainMatchCounts = useMemo(() => countMatchesByDomain(matchedEntryIds), [matchedEntryIds]);
   const totalMatches = matchedEntryIds.size;
 
-  // Storage Quota Estimation (SSR-safe, client-mount resolved)
-  const [storageEstimate, setStorageEstimate] = useState<{
-    usedFormatted: string;
-    quotaFormatted: string;
-    percent: number;
-  }>({
-    usedFormatted: "48 KB",
-    quotaFormatted: "5.0 MB",
-    percent: 1,
-  });
+  // Browser-reported origin estimate; absence never establishes a capacity or cache health.
+  const [storageEstimate, setStorageEstimate] = useState<
+    | { status: "checking" }
+    | { status: "unavailable" }
+    | { status: "available"; usedFormatted: string; quotaFormatted: string; percent: number }
+  >({ status: "checking" });
 
   useEffect(() => {
     let mounted = true;
     async function checkStorage() {
-      if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.estimate) {
-        try {
-          const estimate = await navigator.storage.estimate();
-          if (mounted && estimate.quota && estimate.usage !== undefined) {
-            const usedKB = Math.round(estimate.usage / 1024);
-            const quotaMB = Math.round(estimate.quota / (1024 * 1024));
-            const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
-            setStorageEstimate({
-              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
-              quotaFormatted: `${quotaMB} MB`,
-              percent: Math.max(1, pct),
-            });
+      try {
+        if (typeof navigator.storage?.estimate === "function") {
+          const { usage, quota } = await navigator.storage.estimate();
+          if (
+            typeof usage === "number" &&
+            Number.isFinite(usage) &&
+            usage >= 0 &&
+            typeof quota === "number" &&
+            Number.isFinite(quota) &&
+            quota > 0 &&
+            Number.isFinite((usage / quota) * 100)
+          ) {
+            const formatBytes = (bytes: number) =>
+              bytes < 1024 * 1024
+                ? `${Number((bytes / 1024).toFixed(1))} KB`
+                : `${Number((bytes / (1024 * 1024)).toFixed(1))} MB`;
+            if (mounted)
+              setStorageEstimate({
+                status: "available",
+                usedFormatted: formatBytes(usage),
+                quotaFormatted: formatBytes(quota),
+                percent: Number(((usage / quota) * 100).toFixed(1)),
+              });
             return;
           }
-        } catch {
-          // Fallback to storage measurement below
         }
+      } catch {
+        // Unsupported or denied estimation leaves usage and capacity unknown.
       }
-      if (typeof window !== "undefined") {
-        let bytes = 0;
-        try {
-          for (let i = 0; i < window.localStorage.length; i++) {
-            const k = window.localStorage.key(i);
-            if (k) bytes += (k.length + (window.localStorage.getItem(k)?.length ?? 0)) * 2;
-          }
-          for (let i = 0; i < window.sessionStorage.length; i++) {
-            const k = window.sessionStorage.key(i);
-            if (k) bytes += (k.length + (window.sessionStorage.getItem(k)?.length ?? 0)) * 2;
-          }
-        } catch {
-          bytes = 49152;
-        }
-        const kb = Math.max(16, Math.round(bytes / 1024));
-        if (mounted) {
-          setStorageEstimate({
-            usedFormatted: `${kb} KB`,
-            quotaFormatted: "5.0 MB",
-            percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
-          });
-        }
-      }
+      if (mounted) setStorageEstimate({ status: "unavailable" });
     }
-    checkStorage();
+    void checkStorage();
     return () => {
       mounted = false;
     };
@@ -609,9 +599,7 @@ export function SettingsScreen() {
     if (next) {
       setDraft((prev) => ({
         ...prev,
-        parallelReferralCap: PARALLEL_REFERRAL_CAP_RANGE.max,
-        edAccessTargetMinutes: ED_ACCESS_TARGET_RANGE_MINUTES.min,
-        pullHoldMinutes: 120,
+        ...surgePreset,
       }));
       showToast("Surge values selected in the draft. Save coordination rules to apply them.");
     } else {
@@ -636,7 +624,7 @@ export function SettingsScreen() {
   const handleConfirmReset = () => {
     const defaults = defaultWardConfiguration();
     dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: defaults });
-    setDraft({ ...defaults, morningRollupDeadlineMinutes: 570 });
+    setDraft({ ...defaults });
     setAudioBuzzAlerts(true);
     setAudioBuzzPreference(true);
     setWallboardRefresh("off");
@@ -653,7 +641,7 @@ export function SettingsScreen() {
     applyAppearance("auto");
     setRailOpenPreference(true);
     setIsResetModalOpen(false);
-    showToast("Configuration restored to baseline.");
+    showToast("Settings defaults restored. Configuration request recorded in the session event log.");
   };
 
   const handleClearLedger = () => {
@@ -845,10 +833,10 @@ export function SettingsScreen() {
                 className={styles.btnRestoreRibbon}
                 onClick={() => setIsResetModalOpen(true)}
                 aria-haspopup="dialog"
-                title="Restore all defaults"
+                title="Restore Settings defaults"
               >
                 <RotateCcw size={13} aria-hidden="true" />
-                <span>Restore all defaults</span>
+                <span>Restore Settings defaults</span>
               </button>
 
               <button
@@ -897,8 +885,8 @@ export function SettingsScreen() {
             },
             {
               id: "kpi-mode",
-              label: "Mode",
-              value: savedSurge ? "Surge Mode" : "Standard",
+              label: "Saved preset",
+              value: savedSurge ? "Surge preset" : "Other saved values",
               tone: savedSurge ? "danger" : "normal",
             },
             {
@@ -1257,30 +1245,29 @@ export function SettingsScreen() {
                         <div className={styles.surgeBannerHeader}>
                           <div className={styles.surgeBannerTitleGroup}>
                             <div className={styles.surgeBannerTitleRow}>
-                              <span className={styles.surgeBannerTitle}>Surge Mode &amp; Escalation Capacity</span>
+                              <span className={styles.surgeBannerTitle}>Surge Draft Preset</span>
                               {isSurge ? (
                                 <span className={styles.statusPillSurge}>
-                                  <span className={styles.statusDotSurge} /> SURGE ACTIVE IN DRAFT
+                                  <span className={styles.statusDotSurge} /> SURGE PRESET SELECTED IN DRAFT
                                 </span>
                               ) : (
                                 <span className={styles.statusPillStandard}>
-                                  <span className={styles.statusDotStandard} /> STANDARD BASELINE
+                                  <span className={styles.statusDotStandard} /> OTHER DRAFT VALUES
                                 </span>
                               )}
                             </div>
                             <p className={styles.surgeBannerDesc}>
-                              Rapidly switches operational parameters between standard baseline thresholds and emergency
-                              surge capacity. Toggling modifies draft levers below; changes only take effect upon
-                              saving.
+                              Selects a draft preset for the ED access target, parallel referral cap and pulled-bed
+                              hold. Save coordination rules to apply it. This does not add beds or verify staffing.
                             </p>
                           </div>
                           <button
                             type="button"
                             className={styles.bannerPresetBtn}
-                            aria-label={isSurge ? "Restore standard preset" : "Apply emergency surge preset"}
+                            aria-label={isSurge ? "Select default draft preset" : "Select surge draft preset"}
                             onClick={handleToggleSurge}
                           >
-                            {isSurge ? "Reset Draft to Standard Baseline" : "Apply Emergency Surge Preset"}
+                            {isSurge ? "Select Default Draft Preset" : "Select Surge Draft Preset"}
                           </button>
                         </div>
 
@@ -1289,36 +1276,42 @@ export function SettingsScreen() {
                             <span className={styles.surgeDiffLabel}>ED Access Target</span>
                             <div className={styles.surgeDiffValues}>
                               <span className={styles.surgeDiffStandard}>
-                                {defaultWardConfiguration().edAccessTargetMinutes / 60}h standard
+                                {defaultWardConfiguration().edAccessTargetMinutes / 60}h default
                               </span>
                               <span className={styles.surgeDiffSurge}>
-                                {ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h surge
+                                {surgePreset.edAccessTargetMinutes / 60}h preset
                               </span>
                             </div>
                             <span className={styles.surgeDiffEffect}>
-                              Halves dwell ceiling to accelerate mental health clearance from ED.
+                              Changes the operational access target. No clinical clearance is recorded by this control.
                             </span>
                           </div>
 
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
                             <span className={styles.surgeDiffLabel}>Parallel Referral Cap</span>
                             <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>3 units</span>
-                              <span className={styles.surgeDiffSurge}>5 units</span>
+                              <span className={styles.surgeDiffStandard}>
+                                {defaultWardConfiguration().parallelReferralCap} destinations default
+                              </span>
+                              <span className={styles.surgeDiffSurge}>
+                                {surgePreset.parallelReferralCap} destinations preset
+                              </span>
                             </div>
                             <span className={styles.surgeDiffEffect}>
-                              Broadens referral circulation across adult inpatient units simultaneously.
+                              Sets the maximum destinations per referral; this preset does not increase that limit.
                             </span>
                           </div>
 
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
                             <span className={styles.surgeDiffLabel}>Pull Hold Buffer</span>
                             <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>90m standard</span>
-                              <span className={styles.surgeDiffSurge}>45m surge</span>
+                              <span className={styles.surgeDiffStandard}>
+                                {defaultWardConfiguration().pullHoldMinutes}m default
+                              </span>
+                              <span className={styles.surgeDiffSurge}>{surgePreset.pullHoldMinutes}m preset</span>
                             </div>
                             <span className={styles.surgeDiffEffect}>
-                              Compresses bed reservation hold window to release unconfirmed beds rapidly.
+                              Changes the duration of a pulled-bed hold; it does not confirm a bed release.
                             </span>
                           </div>
                         </div>
@@ -2710,38 +2703,43 @@ export function SettingsScreen() {
                             </div>
                             <span className={styles.cacheHealthBadge}>
                               <span className={styles.statusDotLive} aria-hidden="true" />
-                              Cache Healthy
+                              Browser storage estimate
                             </span>
                           </div>
 
                           <p className={styles.telemetryDesc}>
-                            Ward Flow client-side caching maintains active bed coordination states, ephemeral search
-                            logs, and governance audit trails. Zero identifiable patient records leave this browser
-                            without explicit export.
+                            Browser-reported storage estimate for this origin. This is not a measurement of Ward Flow
+                            records or cache health.
                           </p>
 
-                          {/* Visual Storage Quota Bar */}
+                          {/* Only measured browser estimates have a numeric quota and progress bar. */}
                           <div className={styles.quotaSection}>
                             <div className={styles.quotaHeader}>
-                              <span className={styles.quotaLabel}>Browser Cache &amp; Storage Quota</span>
-                              <span className={styles.quotaValue}>
-                                {storageEstimate.usedFormatted} of {storageEstimate.quotaFormatted} (
-                                {storageEstimate.percent}%)
+                              <span className={styles.quotaLabel}>Browser-Reported Origin Storage</span>
+                              <span className={styles.quotaValue} role="status">
+                                {storageEstimate.status === "checking"
+                                  ? "Checking browser storage estimate…"
+                                  : storageEstimate.status === "unavailable"
+                                    ? "Storage estimate unavailable. Quota not reported."
+                                    : `${storageEstimate.usedFormatted} of ${storageEstimate.quotaFormatted} (${storageEstimate.percent}%)`}
                               </span>
                             </div>
-                            <div
-                              className={styles.quotaBarTrack}
-                              role="progressbar"
-                              aria-valuenow={storageEstimate.percent}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-label="Browser storage quota usage"
-                            >
+                            {storageEstimate.status === "available" && (
                               <div
-                                className={styles.quotaBarFill}
-                                style={{ width: `${Math.max(2, storageEstimate.percent)}%` }}
-                              />
-                            </div>
+                                className={styles.quotaBarTrack}
+                                role="progressbar"
+                                aria-valuenow={Math.min(100, storageEstimate.percent)}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuetext={`${storageEstimate.percent}% of the browser-reported quota`}
+                                aria-label="Browser storage quota usage"
+                              >
+                                <div
+                                  className={styles.quotaBarFill}
+                                  style={{ width: `${Math.min(100, storageEstimate.percent)}%` }}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Cache Health Metrics Grid */}
@@ -2820,12 +2818,11 @@ export function SettingsScreen() {
                               <AlertTriangle size={18} aria-hidden="true" />
                             </div>
                             <div className={styles.dangerZoneMeta}>
-                              <h3 className={styles.dangerZoneTitle}>Baseline Reset &amp; Disaster Recovery</h3>
+                              <h3 className={styles.dangerZoneTitle}>Restore Settings Defaults</h3>
                               <p className={styles.dangerZoneDesc}>
-                                Restoring the factory baseline overwrites all coordination thresholds (ED target,
-                                parallel cap, pull hold buffer, morning rollup, due-time alerts) back to WA Health
-                                clinical standards, resets UI appearance and rail preferences, and records an audited
-                                governance entry.
+                                Restores this prototype’s coordination defaults and local Settings preferences,
+                                including appearance and navigation. The configuration request is recorded in the
+                                session event log. Referrals and movements are not reset.
                               </p>
                             </div>
                           </div>
@@ -2839,11 +2836,11 @@ export function SettingsScreen() {
                               className={styles.btnDanger}
                               onClick={() => setIsResetModalOpen(true)}
                               aria-haspopup="dialog"
-                              aria-label="Restore all defaults"
+                              aria-label="Restore Settings defaults"
                               data-testid="btn-restore-baseline"
                             >
                               <RotateCcw size={15} aria-hidden="true" />
-                              <span>Restore all defaults</span>
+                              <span>Restore Settings defaults</span>
                             </button>
                           </div>
                         </div>
