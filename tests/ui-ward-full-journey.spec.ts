@@ -113,6 +113,11 @@ async function ensureToolsOpen(page: Page) {
   if ((await trigger.getAttribute("aria-expanded")) !== "true") {
     await trigger.click();
   }
+  await page
+    .getByRole("dialog", { name: "Tools" })
+    .getByRole("group", { name: "Tools sections" })
+    .getByRole("button", { name: "Demo", exact: true })
+    .click();
 }
 
 async function ensureToolsClosed(page: Page) {

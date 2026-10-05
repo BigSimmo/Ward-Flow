@@ -115,3 +115,33 @@ describe("Activity category filter chips", () => {
     expect(within(feed).queryByText(/without a category/u)).toBeNull();
   });
 });
+
+describe("Activity workspace search", () => {
+  it("combines search with category filtering and resets both from an empty result", async () => {
+    const { user, sheet } = await openActivityDrawer();
+    await user.type(within(sheet).getByRole("textbox", { name: "Search activity" }), "WF-1");
+    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(feed).getByText("WF-1 escalated to on-call.")).toBeVisible();
+    await user.click(within(sheet).getByTestId("ward-bar-activity-filter-decline"));
+    expect(within(sheet).getByText("No matching events")).toBeVisible();
+    await user.click(within(sheet).getByRole("button", { name: "Clear event filters" }));
+    expect(within(sheet).getByRole("textbox", { name: "Search activity" })).toHaveValue("");
+    expect(within(sheet).getByTestId("ward-bar-activity-filter-all")).toHaveAttribute("aria-pressed", "true");
+    expect(within(within(sheet).getByRole("list", { name: "Recent changes" })).getAllByRole("listitem")).toHaveLength(
+      MIXED_ACTIVITY.changes.length,
+    );
+  });
+
+  it("preserves the feed filters while visiting the live tally", async () => {
+    const { user, sheet } = await openActivityDrawer();
+    await user.type(within(sheet).getByRole("textbox", { name: "Search activity" }), "manager");
+    await user.click(within(sheet).getByRole("button", { name: /Live tally/ }));
+    expect(within(sheet).getByText("Ward 2K now")).toBeVisible();
+    await user.click(within(sheet).getByRole("button", { name: /^Activity/ }));
+    expect(within(sheet).getByRole("textbox", { name: "Search activity" })).toHaveValue("manager");
+    expect(within(within(sheet).getByRole("list", { name: "Recent changes" })).getAllByRole("listitem")).toHaveLength(
+      1,
+    );
+  });
+});
