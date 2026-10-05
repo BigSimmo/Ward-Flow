@@ -530,7 +530,7 @@ function DischargeWorkspace() {
             </time>
           </div>
           <div className={pageStyles.boardHeaderActions}>
-            <div className={pageStyles.srOnly} aria-label="Discharge population">
+            <div className={pageStyles.populationSwitch} aria-label="Discharge population">
               <button
                 type="button"
                 aria-pressed={population === "releases"}

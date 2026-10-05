@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import {
   admissionsForUnit,
   bedIsOccupied,
@@ -371,11 +372,15 @@ export function WardDailySheet({
   onPrint,
 }: WardDailySheetProps) {
   const currentNow = now ?? 0;
+  // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
+  // path; the frozen seed is only a last resort for isolated renders without a provider.
+  const liveAdmissions = useContext(WardFlowContext)?.admissions;
+  const admissionSource = liveAdmissions ?? wardAdmissions;
 
   const resolvedPeople = useMemo(() => {
     if (people !== undefined) return people;
     if (!unit) return [];
-    return admissionsForUnit(wardAdmissions, unit.id)
+    return admissionsForUnit(admissionSource, unit.id)
       .filter(bedIsOccupied)
       .map((admission) => ({
         key: admission.id,
@@ -396,19 +401,19 @@ export function WardDailySheet({
             : null,
         blockReason: admission.blockReason,
       }));
-  }, [people, unit, currentNow]);
+  }, [people, unit, currentNow, admissionSource]);
 
   const resolvedMovement = useMemo(() => {
     if (movement !== undefined) return movement;
-    if (unit) return sinceYesterday(admissionsForUnit(wardAdmissions, unit.id), currentNow);
+    if (unit) return sinceYesterday(admissionsForUnit(admissionSource, unit.id), currentNow);
     return { discharged: 0, pulled: 0, datesMoved: 0 };
-  }, [movement, unit, currentNow]);
+  }, [movement, unit, currentNow, admissionSource]);
 
   const resolvedDestinations = useMemo(() => {
     if (destinations !== undefined) return destinations;
-    if (unit) return arrowTargets(admissionsForUnit(wardAdmissions, unit.id), currentNow);
+    if (unit) return arrowTargets(admissionsForUnit(admissionSource, unit.id), currentNow);
     return [];
-  }, [destinations, unit, currentNow]);
+  }, [destinations, unit, currentNow, admissionSource]);
 
   const resolvedIncomingPulled = incomingPulled ?? 0;
   const resolvedIncomingWaitlisted = incomingWaitlisted ?? 0;

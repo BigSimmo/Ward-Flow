@@ -1,7 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import Link from "next/link";
 
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
@@ -316,6 +324,8 @@ export function resolveAdmissionPatient(
  * Task 4 / Master Standard: The Statewide Clinical Handover & Bedflow Coordination Page.
  * Sovereign Clinical Console Standard (Platinum Raised Cool palette, 100/100 Rubric).
  */
+const TABLE_SECTION_TABS = ["longest", "pulled", "open", "transit", "placement", "all"] as const;
+
 export function HandoverPage() {
   usePrintableDisclosures();
   const { movements, units, referrals, patients, dayZero, admissions, dispatch } = useWardFlow();
@@ -387,6 +397,26 @@ export function HandoverPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const onTableSectionKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const tabs = TABLE_SECTION_TABS;
+      const idx = tabs.indexOf(activeTableSection);
+      let next = activeTableSection;
+      if (event.key === "Home") next = tabs[0];
+      else if (event.key === "End") next = tabs[tabs.length - 1];
+      else {
+        const step = event.key === "ArrowRight" ? 1 : -1;
+        next = tabs[(idx + step + tabs.length) % tabs.length];
+      }
+      setActiveTableSection(next);
+      const tab = event.currentTarget.querySelector(`#tableTab-${next}`);
+      if (tab instanceof HTMLButtonElement) tab.focus();
+    },
+    [activeTableSection],
+  );
 
   /**
    * Opens the movement drawer from any patient control on the sheet. Callers record the activating
@@ -1953,12 +1983,15 @@ export function HandoverPage() {
                   data-print-hide
                   role="tablist"
                   aria-label="Handover table sections"
+                  onKeyDown={onTableSectionKeyDown}
                 >
                   <button
                     type="button"
                     role="tab"
                     id="tableTab-longest"
                     aria-selected={activeTableSection === "longest"}
+                    aria-controls="tablePanel-longest"
+                    tabIndex={activeTableSection === "longest" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "longest" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("longest")}
                   >
@@ -1970,6 +2003,8 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-pulled"
                     aria-selected={activeTableSection === "pulled"}
+                    aria-controls="tablePanel-pulled"
+                    tabIndex={activeTableSection === "pulled" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "pulled" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("pulled")}
                   >
@@ -1981,6 +2016,8 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-open"
                     aria-selected={activeTableSection === "open"}
+                    aria-controls="tablePanel-open"
+                    tabIndex={activeTableSection === "open" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "open" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("open")}
                   >
@@ -1992,6 +2029,8 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-transit"
                     aria-selected={activeTableSection === "transit"}
+                    aria-controls="tablePanel-transit"
+                    tabIndex={activeTableSection === "transit" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "transit" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("transit")}
                   >
@@ -2003,6 +2042,8 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-placement"
                     aria-selected={activeTableSection === "placement"}
+                    aria-controls="tablePanel-placement"
+                    tabIndex={activeTableSection === "placement" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "placement" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("placement")}
                   >
@@ -2018,6 +2059,8 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-all"
                     aria-selected={activeTableSection === "all"}
+                    aria-controls="tablePanel-all"
+                    tabIndex={activeTableSection === "all" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "all" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("all")}
                   >
@@ -2027,6 +2070,9 @@ export function HandoverPage() {
 
                 <div
                   className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "longest" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-longest"
+                  aria-labelledby="tableTab-longest"
                 >
                   <LongestWaitsSection
                     snapshot={snapshot}
@@ -2042,6 +2088,9 @@ export function HandoverPage() {
                 </div>
                 <div
                   className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "pulled" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-pulled"
+                  aria-labelledby="tableTab-pulled"
                 >
                   <PulledBedsSection
                     snapshot={snapshot}
@@ -2056,6 +2105,9 @@ export function HandoverPage() {
                 </div>
                 <div
                   className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "open" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-open"
+                  aria-labelledby="tableTab-open"
                 >
                   <OpenBeforeShiftEndSection
                     items={openBeforeShiftEnd}
@@ -2070,6 +2122,9 @@ export function HandoverPage() {
                 </div>
                 <div
                   className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "transit" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-transit"
+                  aria-labelledby="tableTab-transit"
                 >
                   <InTransitSection
                     snapshot={snapshot}
@@ -2085,6 +2140,9 @@ export function HandoverPage() {
                 </div>
                 <div
                   className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "placement" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-placement"
+                  aria-labelledby="tableTab-placement"
                 >
                   <PlacementGoneWrongSection
                     snapshot={snapshot}

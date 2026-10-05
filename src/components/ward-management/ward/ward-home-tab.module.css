@@ -1,3 +1,7 @@
+.alertLegalNote {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-0);
+}
 /* Ward Home Tab Styles */
 .homeWrap {
   display: flex;

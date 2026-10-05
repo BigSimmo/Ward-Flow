@@ -3,6 +3,7 @@
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import React, { useState } from "react";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
 import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
@@ -128,6 +129,11 @@ export function WardHomeTab({
   return (
     <div className={styles.homeWrap}>
       <span className="sr-only">{pendingPreparation} being made ready</span>
+      {liveFormAlerts.length > 0 ? (
+        <div className={styles.alertLegalNote}>
+          <LegalLimitsNotChecked variant="tag" />
+        </div>
+      ) : null}
       {liveFormAlerts.map((alert) => (
         <div className={styles.alertStrip} key={alert.key} data-tone={alert.tone}>
           <div className={styles.alertMain}>

@@ -4078,6 +4078,14 @@
   margin: 0;
 }
 
+.suburbQualifier {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+
 .suburbSearchRow {
   display: flex;
   align-items: center;

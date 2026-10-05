@@ -20,6 +20,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 
 import styles from "./community-index.module.css";
 
@@ -184,6 +185,40 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, [allTeams]);
 
+  // Suburb aliases + service labels so typeahead matches the PR's promised fields, not only names.
+  const teamSearchHaystack = useMemo(() => {
+    const suburbByClinicKey = new Map<string, Set<string>>();
+    const clinicKey = (name: string) =>
+      name.toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
+        const key = clinicKey(clinic);
+        if (!key) continue;
+        const set = suburbByClinicKey.get(key) ?? new Set<string>();
+        set.add(row.suburb);
+        suburbByClinicKey.set(key, set);
+      }
+    }
+    const map = new Map<string, string>();
+    for (const team of allTeams) {
+      const mapping = mapClinicToServiceAndHospital(team.name);
+      const suburbs = suburbByClinicKey.get(clinicKey(team.name));
+      map.set(
+        team.name,
+        [
+          team.name,
+          mapping.code,
+          mapping.name,
+          mapping.displayName,
+          ...(suburbs ? [...suburbs] : []),
+        ]
+          .join(" ")
+          .toLowerCase(),
+      );
+    }
+    return map;
+  }, [allTeams]);
+
   // The family panel is deliberately NOT scoped to the `teams` prop: it is the same derivation
   // regardless of which subset of pages a caller happens to be rendering (a test overriding `teams`
   // to `[]` still gets an honest, real family panel rather than an empty one that looks like a
@@ -283,10 +318,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     () =>
       allTeams.filter((team) => {
         if (serviceFilter !== "all" && teamServiceMap.get(team.name) !== serviceFilter) return false;
-        if (normalizedQuery && !team.name.toLowerCase().includes(normalizedQuery)) return false;
+        if (normalizedQuery) {
+          const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
+          if (!haystack.includes(normalizedQuery)) return false;
+        }
         return true;
       }),
-    [allTeams, serviceFilter, teamServiceMap, normalizedQuery],
+    [allTeams, serviceFilter, teamServiceMap, teamSearchHaystack, normalizedQuery],
   );
 
   const grouped = useMemo(() => {
