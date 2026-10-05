@@ -821,3 +821,21 @@
   flex: none;
   width: 6rem;
 }
+
+.textButton:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.notWired {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.5rem;
+}
+
+.notWiredNote {
+  color: var(--muted);
+  font-size: var(--s12);
+}

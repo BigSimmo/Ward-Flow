@@ -12,6 +12,7 @@ import {
   NotWiredButton,
   PageHeader,
   Section,
+  WardNotFound,
   WardSubnav,
   plural,
   wardPagesHref,
@@ -34,9 +35,10 @@ const needsLook = (bed: WardBed) => bed.pastDate || bed.heldUp || bed.awayAtEd;
  * instead of a separate page.
  */
 export function BoardProposal({ unitId }: { unitId?: string }) {
-  const { ward, detail, asAt, now, world } = useWardPagesProposal(unitId);
+  const { ward, detail, asAt, now, world, missing } = useWardPagesProposal(unitId);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  if (missing) return <WardNotFound />;
   if (!ward || !detail) return <p className={styles.empty}>No wards in this network.</p>;
   const { unit } = ward;
   const { beds } = detail;
@@ -154,7 +156,13 @@ export function BoardProposal({ unitId }: { unitId?: string }) {
                   <span className={styles.bedTop}>
                     <span>{initials(tile.bed)}</span>
                     <span>
-                      <span className={styles.bedDays}>{tile.bed.days ?? "–"}</span> days
+                      {tile.bed.days === null ? (
+                        "Days not recorded"
+                      ) : (
+                        <>
+                          <span className={styles.bedDays}>{tile.bed.days}</span> days
+                        </>
+                      )}
                     </span>
                   </span>
                   <span className={styles.rowSub}>
@@ -201,7 +209,7 @@ export function BoardProposal({ unitId }: { unitId?: string }) {
               <>
                 <dl className={styles.factList}>
                   <dt>In bed</dt>
-                  <dd className={styles.num}>{chosen.days ?? "Not recorded"} days</dd>
+                  <dd className={styles.num}>{chosen.days === null ? "Days not recorded" : `${chosen.days} days`}</dd>
                   <dt>Stay band</dt>
                   <dd>{chosen.stayLabel}</dd>
                   <dt>Ward&rsquo;s expected date</dt>
@@ -214,7 +222,7 @@ export function BoardProposal({ unitId }: { unitId?: string }) {
                   <dd>
                     {release
                       ? `${release.state === "confirmed" ? "Confirmed" : "Expected"} ${formatInstantWithDay(release.expectedAt, now)}`
-                      : "None planned"}
+                      : "No discharge recorded"}
                   </dd>
                   <dt>Held up by</dt>
                   <dd>{chosen.admission.blockReason ?? "Nothing recorded"}</dd>

@@ -13,7 +13,10 @@ import { wardDetail } from "./ward-pages-proposal-figures";
 export function useWardPagesProposal(unitId?: string) {
   const stats = useStatisticsProposal();
   const { world, now, wards } = stats;
-  const ward = wards.find((candidate) => candidate.unit.id === unitId) ?? wards[0];
+  // No id opens the first ward (the preview's default). A given id that matches nothing never falls
+  // back to another ward: an answer or a confirmation must not land on a ward nobody chose.
+  const found = unitId ? wards.find((candidate) => candidate.unit.id === unitId) : wards[0];
+  const ward = found ?? null;
   const detail = useMemo(
     () =>
       ward
@@ -21,5 +24,5 @@ export function useWardPagesProposal(unitId?: string) {
         : null,
     [ward, world.admissions, world.bedReleases, world.leaveBeds, world.movements, now],
   );
-  return { ...stats, ward, detail };
+  return { ...stats, ward, detail, missing: Boolean(unitId) && !found };
 }

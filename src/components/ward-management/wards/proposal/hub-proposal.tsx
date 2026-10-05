@@ -12,7 +12,7 @@ import {
 import statStyles from "@/components/ward-management/statistics/proposal/statistics-proposal.module.css";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 
-import { requestsFor } from "./ward-pages-proposal-figures";
+import { peopleAwaitingAnswer, requestsFor } from "./ward-pages-proposal-figures";
 import {
   Answer,
   Figures,
@@ -49,7 +49,12 @@ export function HubProposal() {
     [wards, world.movements, now],
   );
 
-  const totalRequests = rows.reduce((sum, row) => sum + row.requests, 0);
+  // One person asked of several wards is one person waiting; the rows still count per ward.
+  const totalRequests = peopleAwaitingAnswer(
+    wards.map((ward) => ward.unit.id),
+    world.movements,
+    now,
+  );
   const totalFreeToday = rows.reduce((sum, row) => sum + row.freeToday, 0);
   const totalOverdue = rows.reduce((sum, row) => sum + row.overdue, 0);
   const noReady = rows.filter((row) => row.ward.ready === 0);
@@ -89,7 +94,7 @@ export function HubProposal() {
         .join(", ")}`,
     });
   if (totalRequests)
-    attention.push({ tone: "warn", label: `${plural(totalRequests, "request")} waiting for a ward's answer` });
+    attention.push({ tone: "warn", label: `${plural(totalRequests, "person", "people")} waiting for a ward's answer` });
   if (totalOverdue)
     attention.push({
       tone: "warn",
@@ -131,14 +136,14 @@ export function HubProposal() {
           {
             label: "Ready",
             value: network.ready,
-            note: `${noReady.length} wards with none`,
+            note: `${plural(noReady.length, "ward")} with none`,
             keyClass: statStyles.segReady,
             tone: "good",
           },
           { label: "Pulled", value: network.pulled, note: "given, not arrived", keyClass: statStyles.segPulled },
           { label: "Closed", value: network.closed, note: "empty, not offered", keyClass: statStyles.segClosed },
           { label: "Free today", value: totalFreeToday, note: "confirmed and expected" },
-          { label: "Bed requests", value: totalRequests, note: "waiting for an answer" },
+          { label: "Bed requests", value: totalRequests, note: "people waiting for an answer" },
         ]}
       />
 
@@ -221,7 +226,7 @@ export function HubProposal() {
                   Free today
                 </th>
                 <th scope="col" className={styles.numCol}>
-                  Requests
+                  Bed requests
                 </th>
                 <th scope="col">
                   <span className={styles.srOnly}>Open</span>

@@ -4,8 +4,14 @@ import {
   releasesToday,
   wardFigures,
 } from "@/components/ward-management/statistics/proposal/statistics-proposal-figures";
-import { requestsFor, wardDetail } from "@/components/ward-management/wards/proposal/ward-pages-proposal-figures";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  peopleAwaitingAnswer,
+  requestsFor,
+  waitlistFor,
+  wardDetail,
+} from "@/components/ward-management/wards/proposal/ward-pages-proposal-figures";
+import { refusalSentence } from "@/components/ward-management/wards/proposal/ward-pages-proposal-parts";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -50,5 +56,43 @@ describe("ward pages proposal figures", () => {
         expect(detail.beds).toContain(bed);
       }
     }
+  });
+
+  it("counts a person asked of several wards once in the network total", () => {
+    const ids = wards.map((ward) => ward.unit.id);
+    const perWard = ids.reduce((sum, id) => sum + requestsFor(id, state.movements, now).length, 0);
+    const people = peopleAwaitingAnswer(ids, state.movements, now);
+    expect(people).toBeLessThanOrEqual(perWard);
+    expect(people).toBe(
+      new Set(ids.flatMap((id) => requestsFor(id, state.movements, now).map((request) => request.movementId))).size,
+    );
+  });
+
+  it("moves a 'no bed' answer to the wait list instead of leaving it waiting for an answer", () => {
+    const ward = wards.find((candidate) => requestsFor(candidate.unit.id, state.movements, now).length > 0);
+    expect(ward, "the seed has a ward with a request").toBeDefined();
+    const unitId = ward!.unit.id;
+    const [request] = requestsFor(unitId, state.movements, now);
+    const next = wardFlowReducer(state, {
+      type: "DECLINE",
+      role: "ward",
+      now,
+      movementId: request.movementId,
+      unitId,
+      reason: "no_bed",
+    });
+    expect(next.rejections.length).toBe(state.rejections.length);
+    expect(requestsFor(unitId, next.movements, now).map((entry) => entry.movementId)).not.toContain(request.movementId);
+    expect(waitlistFor(unitId, next.movements, now).map((entry) => entry.movementId)).toContain(request.movementId);
+  });
+
+  it("words an engine refusal without journey numbers", () => {
+    const sentence = refusalSentence(
+      "movement WF-013 is stale. This placement needs a recorded override reason",
+      "Ward A",
+    );
+    expect(sentence).not.toMatch(/WF-\d+/);
+    expect(sentence.startsWith("Not recorded. This request is stale.")).toBe(true);
+    expect(sentence.endsWith(".")).toBe(true);
   });
 });

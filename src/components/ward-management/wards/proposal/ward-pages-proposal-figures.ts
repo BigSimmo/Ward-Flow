@@ -7,8 +7,8 @@ import {
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import type { BedRelease, LeaveBed, Movement } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
+import type { BedRelease, LeaveBed, Movement } from "@/components/ward-management/ward-model";
 
 /**
  * Ward pages redesign proposal (5 October 2026). Everything a ward screen lists, derived once from
@@ -53,6 +53,7 @@ export type WardBed = {
 
 export type WardDetail = {
   requests: WardRequest[];
+  waitlisted: WardRequest[];
   arrivals: WardArrival[];
   departures: WardDeparture[];
   /** Occupied beds, longest stay first. The count always equals `bedStates().occupied`'s source rows. */
@@ -65,21 +66,43 @@ export type WardDetail = {
 
 const TODAY_BANDS: readonly ReleaseBand[] = ["now", "by-midday", "by-1600", "tonight"];
 
-/** Awaiting this ward's answer: the same rule the current answer screen uses (`ward-answer-view.tsx`). */
+function openForWard(movement: Movement, unitId: string): boolean {
+  return isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unitId);
+}
+
+function asRequest(movement: Movement, now: Instant): WardRequest {
+  return {
+    movementId: movement.id,
+    waitedMinutes: Math.max(0, now - movement.openedAt),
+    urgent: movement.flaggedUrgent,
+    sex: movement.sex,
+    movement,
+  };
+}
+
+/**
+ * Awaiting this ward's answer: the current answer screen's rule (`ward-answer-view.tsx`), less the
+ * people this ward has already put on its wait list (a "no bed" decline keeps the referral live).
+ */
 export function requestsFor(unitId: string, movements: readonly Movement[], now: Instant): WardRequest[] {
   return movements
-    .filter(
-      (movement) =>
-        isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unitId),
-    )
-    .map((movement) => ({
-      movementId: movement.id,
-      waitedMinutes: Math.max(0, now - movement.openedAt),
-      urgent: movement.flaggedUrgent,
-      sex: movement.sex,
-      movement,
-    }))
+    .filter((movement) => openForWard(movement, unitId) && !movement.waitlistedUnitIds?.includes(unitId))
+    .map((movement) => asRequest(movement, now))
     .sort((a, b) => Number(b.urgent) - Number(a.urgent) || b.waitedMinutes - a.waitedMinutes);
+}
+
+/** People this ward answered "no bed" for: still referred here, waiting for a bed to come free. */
+export function waitlistFor(unitId: string, movements: readonly Movement[], now: Instant): WardRequest[] {
+  return movements
+    .filter((movement) => openForWard(movement, unitId) && movement.waitlistedUnitIds?.includes(unitId))
+    .map((movement) => asRequest(movement, now))
+    .sort((a, b) => b.waitedMinutes - a.waitedMinutes);
+}
+
+/** Distinct people waiting for any ward's answer: one person asked of three wards counts once. */
+export function peopleAwaitingAnswer(unitIds: readonly string[], movements: readonly Movement[], now: Instant): number {
+  return new Set(unitIds.flatMap((unitId) => requestsFor(unitId, movements, now).map((request) => request.movementId)))
+    .size;
 }
 
 /** Accepted here and not yet arrived: accepted awaiting a bed, pulled, ready for handover or moving. */
@@ -153,6 +176,7 @@ export function wardDetail(
 
   return {
     requests: requestsFor(unitId, movements, now),
+    waitlisted: waitlistFor(unitId, movements, now),
     arrivals: arrivalsFor(unitId, movements, now),
     departures,
     beds,

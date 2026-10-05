@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 
 import { ignoreUnavailableActivation } from "@/components/primitive-recipes/recipes";
 
@@ -184,20 +186,54 @@ export function Row({ title, sub, end }: { title: ReactNode; sub?: ReactNode; en
   );
 }
 
-/** A control the prototype does not connect. Says so, per D4, and does nothing. */
+/** A control the prototype does not connect. Says so on screen when used, per D4, and does nothing. */
 export function NotWiredButton({ children }: { children: ReactNode }) {
+  const [said, setSaid] = useState(false);
   return (
-    <button
-      type="button"
-      className={styles.textButton}
-      aria-disabled="true"
-      title={NOT_WIRED}
-      onClick={ignoreUnavailableActivation}
-    >
-      {children}
-      <span className={styles.srOnly}> ({NOT_WIRED})</span>
-    </button>
+    <span className={styles.notWired}>
+      <button
+        type="button"
+        className={styles.textButton}
+        aria-disabled="true"
+        title={NOT_WIRED}
+        onClick={(event) => {
+          ignoreUnavailableActivation(event);
+          setSaid(true);
+        }}
+      >
+        {children}
+        {said ? null : <span className={styles.srOnly}> ({NOT_WIRED})</span>}
+      </button>
+      {said ? (
+        <span className={styles.notWiredNote} role="status">
+          {NOT_WIRED}
+        </span>
+      ) : null}
+    </span>
   );
+}
+
+export function WardNotFound() {
+  return (
+    <main id="main-content" className={styles.page}>
+      <h1 className={styles.title}>Ward not found</h1>
+      <p className={styles.empty}>
+        No ward in this network has that link.{" "}
+        <a className={styles.link} href={wardPagesHref("hub")}>
+          Back to Ward Hub
+        </a>
+      </p>
+    </main>
+  );
+}
+
+/** The engine's refusal in plain words, without journey numbers or unit ids. */
+export function refusalSentence(reason: string, wardName: string): string {
+  const plain = reason
+    .replace(/\bmovement\s+WF-\d+\b/gi, "this request")
+    .replace(/\bWF-\d+\b/g, "this request")
+    .replace(/\b[a-z]+(?:-[a-z]+)+\b(?= does not| is )/g, wardName);
+  return `Not recorded. ${plain.charAt(0).toUpperCase()}${plain.slice(1)}${/[.!?]$/.test(plain) ? "" : "."}`;
 }
 
 export function plural(count: number, one: string, many = `${one}s`): string {

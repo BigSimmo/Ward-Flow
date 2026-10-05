@@ -1,11 +1,14 @@
 "use client";
 
+import { Fragment } from "react";
+
+import { BedGrid, BedGridLegend } from "@/components/ward-management/statistics/proposal/statistics-proposal-parts";
 import {
-  BedGrid,
-  BedGridLegend,
-  ReleaseTimeline,
-} from "@/components/ward-management/statistics/proposal/statistics-proposal-parts";
-import { SERVICE_COLOUR, percent } from "@/components/ward-management/statistics/proposal/statistics-proposal-figures";
+  RELEASE_BAND_LABELS,
+  SERVICE_COLOUR,
+  percent,
+} from "@/components/ward-management/statistics/proposal/statistics-proposal-figures";
+import { RELEASE_BANDS } from "@/components/ward-management/ward-bed-availability";
 import statStyles from "@/components/ward-management/statistics/proposal/statistics-proposal.module.css";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
 import { dayOf, formatInstantWithDay, minutesUntil } from "@/components/ward-management/ward-clock";
@@ -18,6 +21,7 @@ import {
   PageHeader,
   Row,
   Section,
+  WardNotFound,
   WardSubnav,
   plural,
   wardPagesHref,
@@ -32,7 +36,8 @@ import styles from "./ward-pages-proposal.module.css";
  * list printed under it.
  */
 export function WardProposal({ unitId }: { unitId?: string }) {
-  const { ward, detail, asAt, now, world } = useWardPagesProposal(unitId);
+  const { ward, detail, asAt, now, world, missing } = useWardPagesProposal(unitId);
+  if (missing) return <WardNotFound />;
   if (!ward || !detail) return <p className={styles.empty}>No wards in this network.</p>;
   const { unit } = ward;
   const initials = (subject: Parameters<typeof world.resolvePatientIdentity>[0]) =>
@@ -80,7 +85,7 @@ export function WardProposal({ unitId }: { unitId?: string }) {
     ...pastDate.map((bed) => ({
       key: `past-${bed.admission.id}`,
       title: <>{initials(bed.admission)} · past the ward&rsquo;s expected date</>,
-      sub: `${bed.days ?? "Unknown"} days in bed${bed.admission.blockReason ? ` · held up: ${bed.admission.blockReason.toLowerCase()}` : ""}`,
+      sub: `${bed.days === null ? "Days not recorded" : `${bed.days} days in bed`}${bed.admission.blockReason ? ` · held up: ${bed.admission.blockReason.toLowerCase()}` : ""}`,
       end: <NotWiredButton>Update date</NotWiredButton>,
       tone: styles.warnText,
       tag: "Date passed",
@@ -270,7 +275,29 @@ export function WardProposal({ unitId }: { unitId?: string }) {
             <BedGridLegend />
           </Section>
           <Section title="When beds come free" meta="today and tomorrow" sheet>
-            <ReleaseTimeline releases={ward.releases} />
+            <dl className={styles.factList}>
+              {RELEASE_BANDS.map((band) => {
+                const { confirmed, expected } = ward.releases[band];
+                return (
+                  <Fragment key={band}>
+                    <dt>{RELEASE_BAND_LABELS[band]}</dt>
+                    <dd className={styles.num}>
+                      {confirmed + expected === 0 ? (
+                        <span className={styles.inlineNote}>None</span>
+                      ) : (
+                        `${confirmed} confirmed · ${expected} expected`
+                      )}
+                    </dd>
+                  </Fragment>
+                );
+              })}
+            </dl>
+            {ward.releases.overdue.expected ? (
+              <p className={styles.note}>
+                Not counted above: {plural(ward.releases.overdue.expected, "discharge")} expected on an earlier day and
+                never confirmed. They are listed under Going out.
+              </p>
+            ) : null}
           </Section>
           <Section title="Today's numbers" sheet>
             <dl className={styles.factList}>
