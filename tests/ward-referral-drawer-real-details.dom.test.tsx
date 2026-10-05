@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -11,6 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { Sheet } from "@/components/ui/sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -37,6 +38,22 @@ function renderDrawer() {
 }
 
 describe("the referral drawer shows only what the record holds", () => {
+  it("closes patient search before requesting that its enclosing Sheet close", () => {
+    const close = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Sheet open title="Referrals" onClose={close} portal={false}>
+          <WardReferralDrawer onClose={close} />
+        </Sheet>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    const search = screen.getByRole("searchbox", { name: "Search sample patients" });
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(close).not.toHaveBeenCalled();
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(close).toHaveBeenCalledTimes(1);
+  });
   it("lists only wards that exist in the network, under their own names", () => {
     const { container } = renderDrawer();
     const rows = [...container.querySelectorAll('[role="listitem"]')].filter((row) =>
@@ -71,10 +88,34 @@ describe("the referral drawer shows only what the record holds", () => {
 
   it("starts the free-text fields empty and says the search covers sample patients only", () => {
     renderDrawer();
-    expect(screen.getByText("Search sample patients")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search sample patients" })).toBeInTheDocument();
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
     expect(document.body.textContent).toMatch(/Diag:\s*Not recorded/);
     expect(screen.queryByText("Code Black")).not.toBeInTheDocument();
+  });
+
+  it("retains the clinical draft and placement choice when switching sections", () => {
+    renderDrawer();
+    const sections = within(screen.getByRole("group", { name: "Referral sections" }));
+    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
+    const clinician = screen.getByLabelText(/Referring Clinician & Origin Unit/);
+    fireEvent.change(clinician, { target: { value: "Synthetic clinician draft" } });
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Placement Destination Tier/), { target: { value: "community" } });
+    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
+    expect(clinician).toHaveValue("Synthetic clinician draft");
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Placement Destination Tier/)).toHaveValue("community");
+  });
+
+  it("shows no diagnosis selected when the sample record has none", () => {
+    renderDrawer();
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
+        name: "Clinical",
+      }),
+    );
+    expect(screen.getByLabelText(/Provisional Psychiatric Diagnosis/)).toHaveValue("");
   });
 
   // 26 Sept 2026: the urgency picker offered typed hour windows ("< 2 hours · Active Breach", and a

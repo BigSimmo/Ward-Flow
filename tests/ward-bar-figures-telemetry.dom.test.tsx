@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,65 +48,76 @@ function renderBarWithAdvance(minutes = 0) {
   return result;
 }
 
-describe("WardBar Figures Telemetry Trigger & Drawer", () => {
+describe("Figures in the Tools workspace", () => {
   beforeEach(() => {
     resetWardLiveRegionForTests();
   });
 
-  it("renders the Figures telemetry trigger in WardBar drawerTriggers", () => {
-    renderBarWithAdvance(0);
-    const trigger = screen.getByTestId("ward-bar-figures-trigger");
-    expect(trigger).toBeInTheDocument();
-    expect(trigger).toHaveTextContent("Figures");
-    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  function openTools(minutes = 0) {
+    renderBarWithAdvance(minutes);
+    expect(within(screen.getByTestId("ward-bar")).queryByTestId("ward-bar-figures-trigger")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+    return screen.getByRole("dialog", { name: "Tools" });
+  }
+
+  it("removes Figures from the header and offers it inside Tools", () => {
+    const tools = openTools();
+    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Figures");
+    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Nothing flagged");
   });
 
-  it("shows nominal status when no legal deadlines are approaching or passed", () => {
-    renderBarWithAdvance(0);
-    const trigger = screen.getByTestId("ward-bar-figures-trigger");
-    expect(trigger).toHaveAttribute("title", "Clinical telemetry: Nominal");
-    expect(trigger.querySelector('[data-tone="good"]')).toBeInTheDocument();
+  it("keeps deadline status reactive when the demonstration clock advances", () => {
+    const tools = openTools();
+    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
+    fireEvent.click(within(tools).getByTestId("ward-demo-controls-trigger"));
+    fireEvent.click(within(tools).getByTestId("ward-demo-advance-60"));
+    fireEvent.click(within(tools).getByRole("button", { name: "Overview" }));
+    expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/deadline passed|due within/i);
   });
 
-  it("shows active alarm badge when a legal deadline becomes critical", () => {
-    renderBarWithAdvance(70);
-    const trigger = screen.getByTestId("ward-bar-figures-trigger");
-    const badge = trigger.querySelector('[data-tone="danger"]');
-    expect(badge).toBeInTheDocument();
-    expect(badge?.textContent).toMatch(/\d+/);
-    expect(trigger.getAttribute("title")).toMatch(/deadline passed|due within/i);
+  it("shows deadline flags and all figure clusters within the same Tools dialog", () => {
+    const tools = openTools(70);
+    const launch = within(tools).getByTestId("ward-bar-figures-trigger");
+    expect(launch.textContent).toMatch(/deadline passed|due within/i);
+    fireEvent.click(launch);
+    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(tools).getByTestId("ward-stats-drawer-content")).toBeVisible();
+    for (const heading of ["Risk & Statutory Clocks", "Supply & Capacity", "Demand & Flow"]) {
+      expect(within(tools).getByText(heading)).toBeVisible();
+    }
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
   });
 
-  it("opens the Figures & Telemetry drawer on click and renders all metric clusters", () => {
-    renderBarWithAdvance(70);
-    const trigger = screen.getByTestId("ward-bar-figures-trigger");
-    fireEvent.click(trigger);
-
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    const sheet = screen.getByTestId("ward-bar-figures-sheet");
-    expect(sheet).toBeInTheDocument();
-
-    const drawerContent = screen.getByTestId("ward-stats-drawer-content");
-    expect(drawerContent).toBeInTheDocument();
-
-    // Verify all 3 Swiss clusters are present
-    expect(screen.getByText("Risk & Statutory Clocks")).toBeInTheDocument();
-    expect(screen.getByText("Supply & Capacity")).toBeInTheDocument();
-    expect(screen.getByText("Demand & Flow")).toBeInTheDocument();
-
-    // Verify legal disclaimer is rendered
-    expect(screen.getByText(/Figures derived continuously from live clinical arrivals/i)).toBeInTheDocument();
+  it("keeps utilities and demo controls accessible through their sections", () => {
+    const tools = openTools();
+    fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
+    expect(within(tools).getByText("Catchment resolver")).toBeVisible();
+    expect(within(tools).getByText("Form date review")).toBeVisible();
+    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
+    expect(within(tools).getByRole("button", { name: /change view/i })).toBeVisible();
   });
 
-  it("closes the drawer when clicking the close button", () => {
-    renderBarWithAdvance(0);
-    const trigger = screen.getByTestId("ward-bar-figures-trigger");
-    fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  it("filters the directory without losing its navigation links", () => {
+    const tools = openTools();
+    fireEvent.click(within(tools).getByRole("button", { name: "Directory" }));
+    const wardList = within(tools).getByRole("list", { name: "Ward contacts" });
+    const firstLink = within(wardList).getAllByRole("link")[0];
+    const name = firstLink.querySelector("span")!.textContent!;
+    const href = firstLink.getAttribute("href");
+    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), { target: { value: name } });
+    expect(within(wardList).getByRole("link", { name: new RegExp(name) })).toHaveAttribute("href", href);
+    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), {
+      target: { value: "no-such-unit" },
+    });
+    expect(within(wardList).queryAllByRole("link")).toHaveLength(0);
+    expect(within(tools).getByText(/No matching locations/)).toBeVisible();
+  });
 
-    const closeBtn = screen.getByRole("button", { name: /^close$/i });
-    fireEvent.click(closeBtn);
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  it("closes Tools from Figures without leaving a second drawer open", () => {
+    const tools = openTools();
+    fireEvent.click(within(tools).getByTestId("ward-bar-figures-trigger"));
+    fireEvent.click(within(tools).getByRole("button", { name: /^close$/i }));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -156,3 +156,19 @@ describe("Item 48, Q2 — the Activity drawer's Mark as read control", () => {
     });
   });
 });
+
+it("filters unread notices explicitly and preserves read notices under All", async () => {
+  const { user, sheet } = await openActivityDrawer();
+  const notices = within(sheet).getByRole("list", { name: "Notices" });
+  expect(within(notices).getAllByRole("listitem")).toHaveLength(2);
+  const before = dispatch.mock.calls.length;
+  await user.click(within(sheet).getByRole("button", { name: "Unread only" }));
+  expect(within(notices).getAllByRole("listitem")).toHaveLength(1);
+  expect(within(notices).getByText(UNREAD_NOTICE.sentence)).toBeVisible();
+  expect(dispatch.mock.calls).toHaveLength(before);
+  await user.click(within(sheet).getByRole("button", { name: "Unread only" }));
+  expect(within(notices).getByText(READ_NOTICE.sentence)).toBeVisible();
+  await user.type(within(sheet).getByRole("textbox", { name: "Search activity" }), "accepted");
+  expect(within(notices).getAllByRole("listitem")).toHaveLength(1);
+  expect(within(notices).getByText(READ_NOTICE.sentence)).toBeVisible();
+});
