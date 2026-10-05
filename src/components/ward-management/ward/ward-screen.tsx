@@ -43,6 +43,7 @@ import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 /**
  * ⚠️ **OWNER RULING, CLINICIAN CHECK R7 (2026-09-06), AND THE SCREEN IS OBLIGED TO SAY IT.**
  * He confirmed a ward is routinely waiting on more than one thing, and chose to keep recording
@@ -1683,6 +1684,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               />
             </header>
             <div className={styles.actionBtnsLeft}>
+              <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`} data-testid="ward-screen-nav">
+                <span aria-current="page">Ward home</span>
+                <Link href={wardBoardHref(unit.id)}>Bed board</Link>
+              </nav>
+
+              <div className={styles.actionDivider} aria-hidden="true" />
+
               <button
                 type="button"
                 className={styles.btnEnterWard}
