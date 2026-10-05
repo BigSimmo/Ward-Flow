@@ -1,4 +1,18 @@
 .coordination {
+  /* The shared shell declares legacy surface roles locally. Resolve this approved
+     graph workspace through its theme-aware palette without changing the worklist. */
+  --surface: var(--ward-delays-surface);
+  --surface-2: var(--ward-delays-toolbar-surface);
+  --ink: var(--ward-delays-ink);
+  --ink-soft: var(--ward-delays-ink);
+  --muted: var(--ward-delays-muted);
+  --accent: var(--ward-delays-blue);
+  --accent-ink: var(--ward-delays-ink);
+  --accent-soft: var(--ward-delays-timeline-selection);
+  --line: var(--ward-delays-border);
+  --line-strong: var(--ward-delays-axis);
+  --sunk: var(--ward-delays-toolbar-surface);
+  --on-accent: var(--ward-delays-surface);
   --dc-ink: var(--accent-ink);
   --dc-muted: var(--muted);
   --dc-blue: var(--ward-delays-blue);
