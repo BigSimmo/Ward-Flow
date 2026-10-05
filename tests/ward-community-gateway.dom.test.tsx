@@ -32,6 +32,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
 
 /**
@@ -186,12 +187,32 @@ describe("Community gateway — an unmarked name is stated, in words, as no guar
 });
 
 describe("Community gateway — live search narrows to exactly the matching set", () => {
-  it("shows exactly the teams whose name contains the typed text, live, with a truthful visible count", () => {
+  it("shows exactly the teams matching name, service, or catchment suburb text, live, with a truthful visible count", () => {
     renderGateway();
     const sampleWord = COMMUNITY_TEAM_PAGES[0].name.split(" ")[0].toLowerCase();
-    const expectedNames = COMMUNITY_TEAM_PAGES.filter((team) => team.name.toLowerCase().includes(sampleWord)).map(
-      (team) => team.name,
-    );
+    const clinicKey = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, " ")
+        .trim();
+    const suburbByClinicKey = new Map<string, Set<string>>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
+        const key = clinicKey(clinic);
+        if (!key) continue;
+        const set = suburbByClinicKey.get(key) ?? new Set<string>();
+        set.add(row.suburb);
+        suburbByClinicKey.set(key, set);
+      }
+    }
+    const expectedNames = COMMUNITY_TEAM_PAGES.filter((team) => {
+      const mapping = mapClinicToServiceAndHospital(team.name);
+      const suburbs = suburbByClinicKey.get(clinicKey(team.name));
+      const haystack = [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(sampleWord);
+    }).map((team) => team.name);
     expect(expectedNames.length, "the sampled search term matches nothing — this test proves nothing").toBeGreaterThan(
       0,
     );
