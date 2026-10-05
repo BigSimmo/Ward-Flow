@@ -433,7 +433,11 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   </button>
                 ) : (
                   <Link
-                    href="/mockups/ward-flow/referrals/new"
+                    href={
+                      livePatient
+                        ? `/mockups/ward-flow/referrals/new?patientId=${encodeURIComponent(livePatient.id)}`
+                        : "/mockups/ward-flow/referrals/new"
+                    }
                     className={`${styles.ctl} ${styles.ctlPrimary}`}
                     data-testid="ward-person-refer-outpatient"
                   >
@@ -506,9 +510,11 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 </strong>
                 <small>
                   {isLiveBedflow
-                    ? displayCadNumber
-                      ? `CAD ${displayCadNumber}`
-                      : "CAD not recorded"
+                    ? liveMovement?.arrivalDetails?.trackingNumber
+                      ? liveMovement.arrivalDetails.trackingNumber
+                      : displayCadNumber
+                        ? `CAD ${displayCadNumber}`
+                        : "CAD not recorded"
                     : "Recorded catchment · care status unconfirmed"}
                 </small>
               </div>
@@ -1098,6 +1104,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                       movement={liveMovement}
                       patient={livePatient}
                       record={record}
+                      receivingWardName={acceptingUnit?.name}
                       bedState={
                         admissions.find((a) => a.id === liveMovement.admissionId || a.movementId === liveMovement.id)
                           ?.state
@@ -1354,7 +1361,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-community"
                 hidden={activeTab !== "community"}
               >
-                <PatientCommunityTab record={record} patient={livePatient} movement={liveMovement} />
+                <PatientCommunityTab record={record} patient={livePatient} movement={liveMovement} receivingWardName={acceptingUnit?.name} />
               </div>
 
               {/* Tab 4: DETAILS */}

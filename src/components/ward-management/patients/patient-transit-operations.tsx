@@ -21,10 +21,11 @@ import {
 import {
   GENDER_PLACEMENT_REASONS,
   type GenderPlacementReason,
+  OVERRIDE_REASONS,
+  type OverrideReason,
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
 } from "../ward-change-reasons";
-import type { WardFlowEvent } from "../ward-flow-events";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
@@ -42,6 +43,9 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
   const [wardQuery, setWardQuery] = useState("");
   const [filter, setFilter] = useState<"eligible" | "all" | "referred">("eligible");
   const [submitted, setSubmitted] = useState<{ rejections: number; audit: number }>();
+  const [overrideReason, setOverrideReason] = useState<OverrideReason | "">("");
+  const [overrideUnitId, setOverrideUnitId] = useState<string>("");
+  const [overrideUnitIds, setOverrideUnitIds] = useState<string[]>([]);
   const [booking, setBooking] = useState(false);
   const [provider, setProvider] = useState<TransportProvider | "">("");
   const [cad, setCad] = useState("");
@@ -106,14 +110,105 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
         .at(-1)
     : undefined;
 
-  function send(event: WardFlowEvent) {
+  function noteAttempt() {
     setSubmitted({ rejections: rejections.length, audit: auditEvents.length });
-    dispatch(event);
   }
+
+  const lastActionRejection = errors
+    .slice()
+    .reverse()
+    .find(
+      (e) =>
+        e.attempted === "ACCEPT_IN_PRINCIPLE" ||
+        e.attempted === "PULL_PATIENT" ||
+        e.attempted === "REFER_TO_UNITS",
+    );
   function closeBooking() {
     setBooking(false);
     requestAnimationFrame(() => bookTriggerRef.current?.focus());
   }
+
+  
+  const overridePanel =
+    lastActionRejection &&
+    (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE" ||
+      lastActionRejection.attempted === "PULL_PATIENT" ||
+      lastActionRejection.attempted === "REFER_TO_UNITS") ? (
+      <section className={styles.card} aria-labelledby="override-title">
+        <div className={styles.cardHeader}>
+          <div>
+            <span className={styles.eyebrow}>CLINICAL OVERRIDE</span>
+            <h3 id="override-title">Record why this is going ahead anyway</h3>
+          </div>
+        </div>
+        <div className={styles.cardBody}>
+          <p className={styles.deckHint} role="status">
+            {lastActionRejection.reason}
+          </p>
+          <label>
+            Override reason
+            <select
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value as OverrideReason | "")}
+            >
+              <option value="">Choose reason</option>
+              {OVERRIDE_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className={styles.primary}
+            disabled={!overrideReason}
+            onClick={() => {
+              if (!overrideReason || !lastActionRejection) return;
+              const reason = overrideReason;
+              noteAttempt();
+              if (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE") {
+                const unitId = overrideUnitId || destination?.id;
+                if (!unitId) return;
+                dispatch({
+                  type: "ACCEPT_IN_PRINCIPLE",
+                  role: "ward",
+                  now,
+                  movementId: movement.id,
+                  unitId,
+                  overrideReason: reason,
+                });
+              } else if (lastActionRejection.attempted === "PULL_PATIENT") {
+                const unitId = overrideUnitId || destination?.id;
+                if (!unitId) return;
+                dispatch({
+                  type: "PULL_PATIENT",
+                  role: "coordinator",
+                  now,
+                  movementId: movement.id,
+                  unitId,
+                  overrideReason: reason,
+                });
+              } else if (lastActionRejection.attempted === "REFER_TO_UNITS") {
+                const unitIds = overrideUnitIds.length > 0 ? overrideUnitIds : selectedTargets;
+                if (unitIds.length === 0) return;
+                dispatch({
+                  type: "REFER_TO_UNITS",
+                  role: "coordinator",
+                  now,
+                  movementId: movement.id,
+                  unitIds,
+                  overrideReason: reason,
+                });
+              }
+              setOverrideReason("");
+            }}
+          >
+            Record reason and continue
+          </button>
+        </div>
+      </section>
+    ) : null;
 
   const candidatePanel = (
     <section className={styles.card} aria-labelledby="candidate-title">
@@ -146,7 +241,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           </button>
         ))}
       </div>
-      <p className={styles.hint}>
+      <p className={styles.deckHint}>
         Current {movement.cohort.toLowerCase()} cohort · eligibility recalculates with capacity and legal status.
       </p>
       <div className={styles.candidates}>
@@ -205,15 +300,17 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   type="button"
                   className={styles.secondary}
                   disabled={!verdict.eligible}
-                  onClick={() =>
-                    send({
+                  onClick={() => {
+                    setOverrideUnitId(unit.id);
+                    noteAttempt();
+                    dispatch({
                       type: "ACCEPT_IN_PRINCIPLE",
                       role: "ward",
                       now,
                       movementId: movement.id,
                       unitId: unit.id,
-                    })
-                  }
+                    });
+                  }}
                 >
                   Accept bed <ArrowRight size={15} aria-hidden="true" />
                 </button>
@@ -224,7 +321,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
       </div>
       {canRefer && needsGenderPlacement && (
         <div className={styles.cardBody}>
-          <p className={styles.hint}>Record the placement plan agreed with the selected wards.</p>
+          <p className={styles.deckHint}>Record the placement plan agreed with the selected wards.</p>
           <label>
             Ward placement reason
             <select value={genderReason} onChange={(e) => setGenderReason(e.target.value as GenderPlacementReason)}>
@@ -249,7 +346,9 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
             !canRefer || selectedTargets.length === 0 || (needsGenderPlacement && (!genderReason || !wardChecked))
           }
           onClick={() => {
-            send({
+            setOverrideUnitIds(selectedTargets);
+            noteAttempt();
+            dispatch({
               type: "REFER_TO_UNITS",
               role: "coordinator",
               now,
@@ -302,15 +401,17 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
             <button
               type="button"
               className={styles.primary}
-              onClick={() =>
-                send({
+              onClick={() => {
+                setOverrideUnitId(destination.id);
+                noteAttempt();
+                dispatch({
                   type: "PULL_PATIENT",
                   role: "coordinator",
                   now,
                   movementId: movement.id,
                   unitId: destination.id,
-                })
-              }
+                });
+              }}
             >
               Pull patient into bed
             </button>
@@ -371,7 +472,8 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   Number(eta) < 0
                 )
                   return;
-                send({
+                noteAttempt();
+                dispatch({
                   type: "BOOK_TRANSPORT",
                   role: "ed",
                   now,
@@ -435,7 +537,8 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
               className={styles.primary}
               onClick={() => {
                 closeBooking();
-                send({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
+                noteAttempt();
+                dispatch({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
               }}
             >
               Mark handover ready · sending team
@@ -443,12 +546,12 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           )}
           {open && movement.stage === "handover_ready" && activeJob && (
             <div className={styles.actionStack}>
-              <p className={styles.hint}>Transport officer · record each confirmed milestone.</p>
+              <p className={styles.deckHint}>Transport officer · record each confirmed milestone.</p>
               <button
                 type="button"
                 className={styles.secondary}
                 disabled={job.acceptedAt !== undefined}
-                onClick={() => send({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id })}
+                onClick={() => { noteAttempt(); dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id }); }}
               >
                 Provider accepted job
               </button>
@@ -456,7 +559,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                 type="button"
                 className={styles.secondary}
                 disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined}
-                onClick={() => send({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id })}
+                onClick={() => { noteAttempt(); dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id }); }}
               >
                 Vehicle en route
               </button>
@@ -464,7 +567,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                 type="button"
                 className={styles.primary}
                 disabled={job.enRouteAt === undefined}
-                onClick={() => send({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id })}
+                onClick={() => { noteAttempt(); dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id }); }}
               >
                 Mark moving · patient collected
               </button>
@@ -476,21 +579,22 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
               <button
                 type="button"
                 className={styles.primary}
-                onClick={() =>
-                  send({
+                onClick={() => {
+                  noteAttempt();
+                  dispatch({
                     type: "PATIENT_ARRIVED",
                     role: "ward",
                     now,
                     movementId: movement.id,
                     actingUnitId: destination.id,
-                  })
-                }
+                  });
+                }}
               >
                 Confirm arrival · receiving ward
               </button>
             )}
           {!destination && (
-            <p className={styles.hint}>Select eligible wards and refer. Record acceptance before pulling a bed.</p>
+            <p className={styles.deckHint}>Select eligible wards and refer. Record acceptance before pulling a bed.</p>
           )}
         </div>
       </section>
@@ -522,20 +626,21 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   className={styles.secondary}
                   disabled={!releaseReason || !!activeJob || job?.collectedAt !== undefined}
                   onClick={() => {
-                    if (releaseReason)
-                      send({
-                        type: "RELEASE_PULL",
-                        role: "coordinator",
-                        now,
-                        movementId: movement.id,
-                        reason: releaseReason,
-                      });
+                    if (!releaseReason) return;
+                    noteAttempt();
+                    dispatch({
+                      type: "RELEASE_PULL",
+                      role: "coordinator",
+                      now,
+                      movementId: movement.id,
+                      reason: releaseReason,
+                    });
                   }}
                 >
                   Release pull
                 </button>
                 {activeJob && (
-                  <p className={styles.hint}>
+                  <p className={styles.deckHint}>
                     Cancel the transport job in additional controls before releasing the bed.
                   </p>
                 )}
@@ -544,7 +649,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
             {MOVEMENT_STAGES.indexOf(movement.stage) > 0 && (
               <details>
                 <summary>Step back with recorded reason</summary>
-                <p className={styles.hint}>
+                <p className={styles.deckHint}>
                   Corrects the stage record. Held beds and transport bookings remain until explicitly released or
                   cancelled.
                 </p>
@@ -575,15 +680,16 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   className={styles.secondary}
                   disabled={!backTo || !backReason}
                   onClick={() => {
-                    if (backTo && backReason)
-                      send({
-                        type: "STEP_BACK_STAGE",
-                        role: "coordinator",
-                        now,
-                        movementId: movement.id,
-                        to: backTo,
-                        reason: backReason,
-                      });
+                    if (!backTo || !backReason) return;
+                    noteAttempt();
+                    dispatch({
+                      type: "STEP_BACK_STAGE",
+                      role: "coordinator",
+                      now,
+                      movementId: movement.id,
+                      to: backTo,
+                      reason: backReason,
+                    });
                   }}
                 >
                   Record step-back
@@ -593,7 +699,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
             {canRefer && (
               <details>
                 <summary>Withdraw referral</summary>
-                <p className={styles.hint}>Ends the bed search and withdraws every open ward referral.</p>
+                <p className={styles.deckHint}>Ends the bed search and withdraws every open ward referral.</p>
                 <label className={styles.pick}>
                   <input
                     type="checkbox"
@@ -606,7 +712,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   type="button"
                   className={styles.secondary}
                   disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
-                  onClick={() => send({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id })}
+                  onClick={() => { noteAttempt(); dispatch({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id }); }}
                 >
                   Withdraw referral
                 </button>
@@ -679,6 +785,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           Journey complete. The recorded placement and transport remain visible; operational actions are closed.
         </p>
       )}
+      {overridePanel}
       <div className={styles.columns} data-assigned={Boolean(destination)}>
         {destination ? dispatchPanel : candidatePanel}
         {destination ? candidatePanel : dispatchPanel}

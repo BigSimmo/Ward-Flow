@@ -2,8 +2,9 @@ import { ClipboardCheck, ShieldCheck, Stethoscope, Users } from "lucide-react";
 import type { MouseEvent } from "react";
 import type { Movement } from "../ward-model";
 import type { Patient } from "../ward-patients";
-import { edById, unitById } from "../ward-sites";
+import { edById } from "../ward-sites";
 import { legalFormName } from "../ward-legal-forms";
+import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import styles from "./patient-dossier-tabs.module.css";
 
@@ -12,6 +13,7 @@ export function PatientClinicalSummary({
   patient,
   record,
   bedState,
+  receivingWardName,
   onClearance,
   onCoordinate,
 }: {
@@ -19,6 +21,7 @@ export function PatientClinicalSummary({
   patient?: Patient;
   record: PatientNowRecord;
   bedState?: string;
+  receivingWardName?: string;
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onCoordinate: () => void;
 }) {
@@ -79,7 +82,13 @@ export function PatientClinicalSummary({
             <dd>{movement.legalForm ? legalFormName(movement.legalForm) : "No legal form recorded"}</dd>
             <dt>Paper expiry</dt>
             <dd>
-              {movement.legalForm?.dueAt !== undefined ? `${clock(movement.legalForm.dueAt)} AWST` : "Not recorded"}
+              {movement.legalForm?.dueAt !== undefined ? (
+                <>
+                  {`${clock(movement.legalForm.dueAt)} AWST`} <LegalLimitsNotChecked variant="tag" />
+                </>
+              ) : (
+                "Not recorded"
+              )}
             </dd>
           </dl>
           <button type="button" onClick={onClearance}>
@@ -101,9 +110,7 @@ export function PatientClinicalSummary({
           <div className={styles.contact}>
             <span>RECEIVING WARD</span>
             <strong>
-              {movement.acceptedUnitId
-                ? (unitById(movement.acceptedUnitId)?.name ?? "Not recorded")
-                : "Destination under review"}
+              {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
             </strong>
             <small>Catchment: {patient?.catchmentCommunityTeam ?? "Not recorded"}</small>
           </div>

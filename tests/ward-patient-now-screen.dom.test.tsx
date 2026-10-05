@@ -130,7 +130,7 @@ describe("the patient-now screen", () => {
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/referrals/new",
+      "/mockups/ward-flow/referrals/new?patientId=PT-005",
     );
     expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
     expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();

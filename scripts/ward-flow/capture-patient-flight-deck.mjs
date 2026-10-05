@@ -161,7 +161,7 @@ try {
     await capture(page, "withdraw-referral-form", width);
     await page.getByText("Eligibility breakdown", { exact: false }).first().click();
     await capture(page, "eligibility-gates", width);
-    await page.goto(new URL("/mockups/ward-flow/people/WF-012?view=governed", base).href, { waitUntil: "networkidle" });
+    await page.goto(new URL("/mockups/ward-flow/people/PT-053?view=governed", base).href, { waitUntil: "networkidle" });
     await capture(page, "governed-dossier", width);
     await page.goto(new URL("/mockups/ward-flow/people/PT-005", base).href, { waitUntil: "networkidle" });
     await capture(page, "inactive-first-page", width);

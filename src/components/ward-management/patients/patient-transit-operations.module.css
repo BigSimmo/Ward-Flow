@@ -18,7 +18,7 @@
   margin: 5px 0 6px;
 }
 .heading p,
-.hint {
+.deckHint {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
@@ -148,9 +148,9 @@
 .filters button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 4px #00000014;
+  box-shadow: 0 1px 4px var(--shadow);
 }
-.card > .hint {
+.card > .deckHint {
   padding: 0 18px 14px;
 }
 .candidates {
@@ -465,7 +465,7 @@
 .deck {
   padding: 14px 16px;
   gap: 12px;
-  background: #f9fbfc;
+  background: var(--surface);
 }
 .heading {
   align-items: center;
@@ -491,7 +491,7 @@
 }
 .metrics {
   border-radius: 16px;
-  background: #edf4f5;
+  background: var(--surface-2);
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .metrics > div {
@@ -520,11 +520,11 @@
 .card {
   border-radius: 17px;
   overflow: hidden;
-  box-shadow: 0 3px 12px #163e5310;
+  box-shadow: 0 3px 12px var(--line);
 }
 .cardHeader {
   padding: 13px 14px;
-  background: #f1f6f7;
+  background: var(--surface-2);
 }
 .cardHeader h3 {
   font-size: 16px;
@@ -543,7 +543,7 @@
   border-radius: 9px;
   font-size: 11px;
 }
-.card > .hint {
+.card > .deckHint {
   padding: 0 14px 10px;
   font-size: 11px;
 }
@@ -566,12 +566,12 @@
   padding: 12px 14px;
   flex-wrap: wrap;
   gap: 7px;
-  background: #f8fbfa;
+  background: var(--surface);
 }
 .destination {
   border-radius: 12px;
   padding: 12px;
-  background: #edf5f3;
+  background: var(--good-soft);
 }
 .deck input:not([type="checkbox"]),
 .deck select {
@@ -644,12 +644,12 @@
 }
 /* Unified dossier workspace: quiet joinery, compact lists, clear next action. */
 .deck {
-  background: #fff;
+  background: var(--surface);
   padding: 20px;
   gap: 16px;
 }
 .heading {
-  border-bottom: 1px solid #e2e9ed;
+  border-bottom: 1px solid var(--line);
   padding-bottom: 14px;
   align-items: center;
 }
@@ -665,13 +665,13 @@
 .heading p {
   font-size: 12px;
   margin: 5px 0 0;
-  color: #556977;
+  color: var(--muted);
 }
 .stage {
   border: 0;
   border-radius: 7px;
-  background: #edf5f1;
-  color: #2b715e;
+  background: var(--good-soft);
+  color: var(--good);
   font-size: 10px;
   padding: 5px 9px;
 }
@@ -683,16 +683,16 @@
   gap: 14px;
 }
 .card {
-  border: 1px solid #e0e8ed;
+  border: 1px solid var(--line);
   border-radius: 13px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: none;
   overflow: hidden;
 }
 .cardHeader {
   padding: 14px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e5ebef;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
 }
 .cardHeader h3 {
   font-size: 15px;
@@ -702,17 +702,17 @@
 }
 .cardHeader .eyebrow {
   font-size: 8px;
-  color: #556977;
+  color: var(--muted);
   letter-spacing: 0.08em;
 }
 .cardHeader > svg {
   width: 18px;
   height: 18px;
-  color: #66928a;
+  color: var(--muted);
 }
 .filters {
   margin: 9px 13px 4px;
-  background: #f4f8fa;
+  background: var(--surface-2);
   border: 0;
   border-radius: 8px;
   padding: 3px;
@@ -724,11 +724,11 @@
 }
 .deck label.wardSearch {
   margin: 12px 13px 0;
-  border-color: #e0e7eb;
+  border-color: var(--line);
   border-radius: 9px;
-  background: #fbfcfd;
+  background: var(--surface);
 }
-.card > .hint {
+.card > .deckHint {
   padding: 4px 13px 9px;
   font-size: 10px;
 }
@@ -763,19 +763,19 @@
   padding: 3px 6px;
 }
 .verdict[data-pass="true"] {
-  background: #eaf5ee;
-  color: #2b745c;
+  background: var(--good-soft);
+  color: var(--good);
 }
 .destination {
-  background: #f0f7f4;
+  background: var(--good-soft);
   border: 0;
-  border-left: 3px solid #45957d;
+  border-left: 3px solid var(--good);
   border-radius: 0 9px 9px 0;
   padding: 12px;
 }
 .destination strong {
   font-size: 15px;
-  color: #274d60;
+  color: var(--ink);
 }
 .destination span,
 .destination p {
@@ -788,7 +788,7 @@
   padding: 14px;
 }
 .hold {
-  background: #f6f9fb;
+  background: var(--surface-2);
   border-radius: 8px;
   border: 0;
   font-size: 11px;
@@ -799,7 +799,7 @@
   row-gap: 7px;
 }
 .facts dt {
-  color: #637986;
+  color: var(--muted);
 }
 .primary,
 .secondary,
@@ -809,13 +809,13 @@
   font-size: 11px;
 }
 .primary {
-  background: #276951;
-  border-color: #276951;
+  background: var(--good);
+  border-color: var(--good);
 }
 .cardFooter {
-  background: #fbfcfd;
+  background: var(--surface);
   padding: 10px 13px;
-  border-top: 1px solid #e5ebef;
+  border-top: 1px solid var(--line);
   position: static;
   gap: 8px;
 }
@@ -824,7 +824,7 @@
 }
 .additional {
   box-shadow: none;
-  background: #f8fafb;
+  background: var(--surface);
 }
 .additional > summary {
   min-height: 44px;
@@ -845,8 +845,8 @@
 }
 .booking {
   border-radius: 10px;
-  background: #f6f9fa;
-  border-color: #e1e8ed;
+  background: var(--surface-2);
+  border-color: var(--line);
 }
 .deck input:not([type="checkbox"]),
 .deck select {

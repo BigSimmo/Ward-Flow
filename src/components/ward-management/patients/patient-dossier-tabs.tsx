@@ -4,8 +4,9 @@ import { useState } from "react";
 import { ArrowUpRight, Clipboard, FileText, History, MapPin, Search, ShieldCheck, Users, Contact } from "lucide-react";
 import type { Movement } from "../ward-model";
 import type { Patient } from "../ward-patients";
-import { edById, unitById } from "../ward-sites";
+import { edById } from "../ward-sites";
 import { legalFormName } from "../ward-legal-forms";
+import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import styles from "./patient-dossier-tabs.module.css";
 
@@ -114,7 +115,7 @@ export function PatientHistoryTab({ record, movement }: { record: PatientNowReco
             {label}
           </button>
         ))}
-        <span role="status">{items.length} shown</span>
+        <span role="status">{items.length} synthetic records shown</span>
       </div>
       <div className={styles.historyGrid}>
         <div className={styles.episodes}>
@@ -222,10 +223,12 @@ export function PatientCommunityTab({
   record,
   patient,
   movement,
+  receivingWardName,
 }: {
   record: PatientNowRecord;
   patient?: Patient;
   movement?: Movement;
+  receivingWardName?: string;
 }) {
   const summary = `GP: ${patient?.generalPractitioner ?? "Not recorded"}\nCatchment: ${patient?.catchmentCommunityTeam ?? "Not recorded"}\nFollow-up: ${record.community.followUp}`;
   return (
@@ -315,9 +318,7 @@ export function PatientCommunityTab({
             <div className={styles.contact}>
               <span>RECEIVING WARD</span>
               <strong>
-                {movement.acceptedUnitId
-                  ? (unitById(movement.acceptedUnitId)?.name ?? "Not recorded")
-                  : "Destination under review"}
+                {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
               </strong>
               <small>
                 {movement.owner?.trim() ? `Movement owner: ${movement.owner}` : "Movement owner not recorded"}
@@ -526,7 +527,15 @@ export function PatientDocumentsTab({
         </section>
         <section className={styles.surface} data-attention={expired}>
           <span className={styles.label}>PAPER EXPIRY</span>
-          <strong className={styles.lead}>{due === undefined ? "Not recorded" : `${clock(due)} AWST`}</strong>
+          <strong className={styles.lead}>
+            {due === undefined ? (
+              "Not recorded"
+            ) : (
+              <>
+                {`${clock(due)} AWST`} <LegalLimitsNotChecked variant="tag" />
+              </>
+            )}
+          </strong>
           <p className={styles.muted}>
             {due === undefined
               ? "No expiry has been entered; validity is not inferred."
@@ -534,6 +543,7 @@ export function PatientDocumentsTab({
                 ? "Recorded expiry has passed. Review authority before progressing."
                 : "Recorded expiry is shown without inferring legal validity."}
           </p>
+          {due !== undefined ? <LegalLimitsNotChecked /> : null}
         </section>
       </div>
       <div className={styles.toolbar}>
@@ -562,7 +572,7 @@ export function PatientDocumentsTab({
             {label}
           </button>
         ))}
-        <span role="status">{rows.length} shown</span>
+        <span role="status">{rows.length} synthetic records shown</span>
       </div>
       <div className={styles.documentList}>
         {rows.map((d) => (

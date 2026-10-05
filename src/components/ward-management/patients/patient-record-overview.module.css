@@ -1,8 +1,7 @@
 .hub {
   padding: 18px;
   color: var(--ink);
-  background: #f8fafb;
-  display: grid;
+    display: grid;
   gap: 14px;
 }
 .heading {
@@ -16,7 +15,7 @@
   font-size: 9px;
   font-weight: 750;
   letter-spacing: 0.09em;
-  color: #526c7c;
+  color: var(--muted);
 }
 .heading h2 {
   font-size: 22px;
@@ -26,7 +25,7 @@
 .recordBadge {
   padding: 8px 10px;
   border-radius: 30px;
-  background: #e9eef4;
+  background: var(--surface-2);
   white-space: nowrap;
 }
 .grid {
@@ -46,7 +45,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #315a68;
+  color: var(--muted);
   margin-bottom: 15px;
 }
 .cardHeading h3 {
@@ -75,7 +74,7 @@
   overflow-wrap: anywhere;
 }
 .care {
-  background: #eef6f4;
+  background: var(--surface-2);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -89,7 +88,7 @@
 .note {
   font-size: 11px;
   line-height: 1.6;
-  color: #506775;
+  color: var(--muted);
   margin: 0;
 }
 .profile button,
@@ -97,7 +96,7 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: #17675c;
+  color: var(--good);
   font-weight: 650;
   font-size: 12px;
   min-height: 44px;
@@ -121,7 +120,7 @@
   text-align: left;
   padding: 16px;
   background: var(--surface);
-  color: #315a68;
+  color: var(--muted);
   border: 1px solid var(--line);
   border-radius: 16px;
   min-height: 74px;
@@ -141,7 +140,7 @@
   font-size: 11px;
 }
 .hub button:hover {
-  background: #e3efec;
+  background: var(--surface-2);
 }
 .hub button:focus-visible {
   outline: 2px solid var(--focus);
@@ -166,11 +165,11 @@
 /* Record-only patients share the same joined dossier surface. */
 .hub {
   padding: 20px;
-  background: #fff;
+  background: var(--surface);
   gap: 16px;
 }
 .heading {
-  border-bottom: 1px solid #e2e9ed;
+  border-bottom: 1px solid var(--line);
   padding-bottom: 14px;
 }
 .heading > div > span {
@@ -185,14 +184,14 @@
 .recordBadge {
   border-radius: 7px;
   font-size: 9px;
-  background: #edf3f5;
+  background: var(--surface-2);
   padding: 5px 8px;
 }
 .grid {
   gap: 0;
-  border: 1px solid #e1e9ed;
+  border: 1px solid var(--line);
   border-radius: 14px;
-  background: #f9fbfc;
+  background: var(--surface);
   overflow: hidden;
 }
 .profile,
@@ -203,7 +202,7 @@
   padding: 16px;
 }
 .care {
-  border-left: 1px solid #e1e9ed;
+  border-left: 1px solid var(--line);
 }
 .cardHeading h3 {
   font-size: 13px;
@@ -225,7 +224,7 @@
 }
 .profile > button,
 .care > button {
-  background: #fff;
+  background: var(--surface);
   border-radius: 9px;
   font-size: 11px;
   min-height: 44px;
@@ -235,7 +234,7 @@
 }
 .links > button {
   border-radius: 12px;
-  background: #f7fafb;
+  background: var(--surface-2);
   box-shadow: none;
   padding: 13px;
 }
@@ -257,6 +256,6 @@
   }
   .care {
     border-left: 0;
-    border-top: 1px solid #e1e9ed;
+    border-top: 1px solid var(--line);
   }
 }
