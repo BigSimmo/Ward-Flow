@@ -134,7 +134,7 @@ export function HubProposal() {
               label: BED_STATE_LABELS.pulled,
               value: summary.pulled,
               key: styles.keyPulled,
-              note: "Held for someone not yet arrived",
+              note: "Given to someone not yet arrived",
             },
             {
               label: BED_STATE_LABELS.closed,
