@@ -14,30 +14,30 @@ import {
   collectedBlockedReason,
   enRouteBlockedReason,
 } from "@/components/ward-management/officer/officer-screen";
-import { edShort, tierTone } from "@/components/ward-management/movements/proposal/movements-board-proposal";
+import { edShort, tierTone } from "@/components/ward-management/movements/movements-board";
 import {
   JOB_STATES,
   JOB_STATE_LABEL,
   jobState,
   type JobState,
-} from "@/components/ward-management/movements/proposal/movement-proposal-figures";
+} from "@/components/ward-management/movements/movement-flow-figures";
 import {
   Definitions,
   KpiStrip,
   NOT_WIRED,
-  PROPOSAL_ROUTES,
+  FLOW_ROUTES,
   Panel,
   Pill,
-  ProposalHeader,
+  FlowHeader,
   Verdict,
   patientInitials,
   plainRefusal,
   plural,
   waited,
   type Attention,
-} from "@/components/ward-management/movements/proposal/movement-proposal-parts";
-import { useMovementProposal } from "@/components/ward-management/movements/proposal/use-movement-proposal";
-import styles from "@/components/ward-management/movements/proposal/movement-proposal.module.css";
+} from "@/components/ward-management/movements/movement-flow-parts";
+import { useMovementFlow } from "@/components/ward-management/movements/use-movement-flow";
+import styles from "@/components/ward-management/movements/movement-flow.module.css";
 
 type Filter = JobState | "escort" | "noCad" | "all";
 
@@ -75,8 +75,8 @@ function sinceStep(movement: Movement): number | undefined {
  * Proposed Transport Hub. One answer line, one strip of the four job states (the same rule the
  * movements screen uses), a compact job list and a single job sheet that offers only the next step.
  */
-export function TransportHubProposal() {
-  const { world, now, transport, asAt, scopeLabel, scoped } = useMovementProposal();
+export function TransportHub() {
+  const { world, now, transport, asAt, scopeLabel, scoped } = useMovementFlow();
   const { dispatch, units, rejections } = world;
   const [filter, setFilter] = useState<Filter>("all");
   const [provider, setProvider] = useState<string>("all");
@@ -210,8 +210,8 @@ export function TransportHubProposal() {
   ];
 
   return (
-    <main id="main-content" className={styles.page} data-testid="transport-hub-proposal">
-      <ProposalHeader
+    <main id="main-content" className={styles.page} data-testid="transport-hub">
+      <FlowHeader
         crumbs={[{ label: "Service hubs" }, { label: "Transport Hub" }]}
         title="Transport Hub"
         badges={<Pill tone="quiet">{scopeLabel}</Pill>}
@@ -221,7 +221,10 @@ export function TransportHubProposal() {
             <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
               Dispatch comms
             </button>
-            <a className={styles.textButton} href={PROPOSAL_ROUTES.board}>
+            <a className={styles.textButton} href={FLOW_ROUTES.officerView}>
+              Officer view
+            </a>
+            <a className={styles.textButton} href={FLOW_ROUTES.board}>
               Movements
             </a>
           </>
@@ -392,7 +395,7 @@ export function TransportHubProposal() {
               title={`Job sheet · ${who}`}
               question={`${selected.id} · ${selected.transport.provider}`}
               meta={<Pill tone={tierTone(selected.urgency)}>{urgencyTierLabel(selected.urgency)}</Pill>}
-              foot={<a href={PROPOSAL_ROUTES.movement(selected.id)}>Open movement</a>}
+              foot={<a href={FLOW_ROUTES.movement(selected.id)}>Open movement</a>}
             >
               <ol className={styles.jobSteps} aria-label="Job steps">
                 {JOB_STATES.map((state, index) => {

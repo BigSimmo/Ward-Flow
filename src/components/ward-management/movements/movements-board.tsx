@@ -10,27 +10,28 @@ import {
   type Movement,
   type MovementStage,
 } from "@/components/ward-management/ward-model";
+import { useWardChecksPublisher } from "@/components/ward-management/shell/ward-checks";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 
-import { byLongestWait, isExpiringLegalAuthority, waitedMinutes } from "../movements-derivations";
-import { JOB_STATES, JOB_STATE_LABEL, jobState, stageLongestWait } from "./movement-proposal-figures";
+import { byLongestWait, isExpiringLegalAuthority, waitedMinutes } from "./movements-derivations";
+import { JOB_STATES, JOB_STATE_LABEL, jobState, stageLongestWait } from "./movement-flow-figures";
 import {
   Definitions,
   KpiStrip,
-  PROPOSAL_ROUTES,
+  FLOW_ROUTES,
   Panel,
   Pill,
-  ProposalHeader,
+  FlowHeader,
   Segmented,
   Verdict,
   patientInitials,
   plural,
   waited,
   type Attention,
-} from "./movement-proposal-parts";
-import { useMovementProposal } from "./use-movement-proposal";
-import styles from "./movement-proposal.module.css";
+} from "./movement-flow-parts";
+import { useMovementFlow } from "./use-movement-flow";
+import styles from "./movement-flow.module.css";
 
 type Focus = "open" | "tier1" | "awaitingWard" | "readyNoTransport" | "resolved";
 type Order = "wait" | "tier" | "stage";
@@ -56,8 +57,8 @@ export function edShort(originEdId: string) {
  * Proposed movements board. Answers "who is waiting longest and what is holding them" first, then
  * the journey as one pipeline that filters the worklist, then transport and corridors beside it.
  */
-export function MovementsBoardProposal() {
-  const { world, now, board, transport, asAt, scopeLabel, scoped } = useMovementProposal();
+export function MovementsBoard() {
+  const { world, now, board, transport, asAt, scopeLabel, scoped } = useMovementFlow();
   const [focus, setFocus] = useState<Focus>("open");
   const [showAllPlanned, setShowAllPlanned] = useState(false);
   const [stage, setStage] = useState<MovementStage | null>(null);
@@ -71,6 +72,18 @@ export function MovementsBoardProposal() {
     (movement) => READY_STAGES.includes(movement.stage) && !movement.transport,
   );
   const noTransportAwaitingWard = board.noTransport.filter((movement) => board.awaitingWard.includes(movement)).length;
+  // The shell's reconciliation line reads this: the six open stages partition the open movements,
+  // so their lengths must add up to the Open figure. The same check the timeline view publishes.
+  const checks = useMemo(
+    () => [
+      {
+        label: "Every open movement appears exactly once across the six stages",
+        ok: board.stages.reduce((sum, entry) => sum + entry.movements.length, 0) === board.open.length,
+      },
+    ],
+    [board],
+  );
+  useWardChecksPublisher(checks);
   const maxStage = Math.max(1, ...board.stages.map((entry) => entry.movements.length));
 
   const rows = useMemo(() => {
@@ -113,7 +126,7 @@ export function MovementsBoardProposal() {
     ...board.tierOne.slice(0, 3).map((movement) => ({
       label: `${patientInitials(movement, world)} · tier 1 · ${waited(waitedMinutes(movement, now))}`,
       tone: "danger" as const,
-      href: PROPOSAL_ROUTES.movement(movement.id),
+      href: FLOW_ROUTES.movement(movement.id),
     })),
     ...(readyNoTransport.length
       ? [
@@ -132,7 +145,7 @@ export function MovementsBoardProposal() {
           {
             label: `${transport.byState.Requested} transport requests not yet accepted`,
             tone: "warn" as const,
-            href: PROPOSAL_ROUTES.transport,
+            href: FLOW_ROUTES.transport,
           },
         ]
       : []),
@@ -167,15 +180,15 @@ export function MovementsBoardProposal() {
   });
 
   return (
-    <main id="main-content" className={styles.page} data-testid="movements-board-proposal">
-      <ProposalHeader
+    <main id="main-content" className={styles.page} data-testid="movements-board">
+      <FlowHeader
         crumbs={[{ label: "Operations" }, { label: "Movements" }]}
         title="Movements"
         badges={<Pill tone="quiet">{scopeLabel}</Pill>}
         asAt={asAt}
         actions={
           <>
-            <Link className={styles.textButton} href="/mockups/ward-flow/movements">
+            <Link className={styles.textButton} href={FLOW_ROUTES.timeline}>
               Movement timeline
             </Link>
             <a className={styles.buttonPrimary} href="/mockups/ward-flow/referrals/new">
@@ -358,7 +371,7 @@ export function MovementsBoardProposal() {
                       <tr key={movement.id}>
                         <td>
                           <span className={styles.rowName}>
-                            <a href={PROPOSAL_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
+                            <a href={FLOW_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
                             <span className={styles.rowSub}>{movement.id}</span>
                           </span>
                         </td>
@@ -404,7 +417,7 @@ export function MovementsBoardProposal() {
             title="Transport right now"
             question="Open transport jobs by state."
             meta={`${transport.jobs.length} open`}
-            foot={<a href={PROPOSAL_ROUTES.transport}>Open Transport Hub</a>}
+            foot={<a href={FLOW_ROUTES.transport}>Open Transport Hub</a>}
           >
             <ul className={styles.list}>
               {JOB_STATES.map((state) => (
@@ -474,7 +487,7 @@ export function MovementsBoardProposal() {
                 {(showAllPlanned ? planned : planned.slice(0, 6)).map((movement) => (
                   <li key={movement.id} className={styles.listRow}>
                     <span className={styles.rowName}>
-                      <a href={PROPOSAL_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
+                      <a href={FLOW_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
                       <span className={styles.rowSub}>
                         {edShort(movement.originEdId)} → {unitName(movement.acceptedUnitId) ?? "No ward yet"}
                       </span>

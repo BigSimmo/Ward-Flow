@@ -7,13 +7,13 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 
-import { boardFigures, transportFigures } from "./movement-proposal-figures";
+import { boardFigures, transportFigures } from "./movement-flow-figures";
 
 /**
  * Every proposal screen reads the live shared state through this one hook, filtered by the same
  * service scope the shell's switcher sets, so the three screens cannot disagree.
  */
-export function useMovementProposal() {
+export function useMovementFlow() {
   const world = useWardFlow();
   const now = useWardFlowClock();
   const service = useServiceScope();

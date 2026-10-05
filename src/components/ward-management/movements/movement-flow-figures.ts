@@ -11,7 +11,7 @@ import {
   transportCounts,
   transportLegs,
   waitedMinutes,
-} from "../movements-derivations";
+} from "./movements-derivations";
 
 /**
  * Figures for the 5 October 2026 movements and transport proposal. Every count here is read

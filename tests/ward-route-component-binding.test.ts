@@ -103,7 +103,7 @@ const PINNED: Record<string, string | null> = {
   // The `morning` row was removed here on 2026-09-17 (item 41, owner-approved): the route itself
   // was deleted outright, not merely repointed to redirect, so there is no page.tsx left on disk
   // for `routeFiles`/`found` to discover and no binding left to pin.
-  movements: "MovementsScreen",
+  movements: "MovementsBoard",
   "movements/proposal": "MovementProposalPreview",
   "movements/[movementId]": "WardMovementNotFound",
   network: "WardModeWorkspace",
@@ -134,7 +134,7 @@ const PINNED: Record<string, string | null> = {
   "statistics/community/[teamId]": "StatisticsCommunityScreen",
   "statistics/ward/[unitId]": "StatisticsWardScreen",
   transport: "redirect:/mockups/ward-flow/movements",
-  "transport/officer": "OfficerScreen",
+  "transport/officer": "TransportHub",
   "ward/[unitId]": "WardScreen",
   // The Answer presentation is a distinct reachable route over the same authoritative WardScreen;
   // the route selects presentation only and does not copy its reducer or actions.

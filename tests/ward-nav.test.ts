@@ -58,8 +58,8 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
-import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
-import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
+import { MovementsBoard } from "@/components/ward-management/movements/movements-board";
+import { TransportHub } from "@/components/ward-management/officer/transport-hub";
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
@@ -1293,7 +1293,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: ROUTE_PREFIX, render: () => createElement(CoordinatorScreen) },
   { route: `${ROUTE_PREFIX}/capacity`, render: () => createElement(CapacityScreen) },
   { route: `${ROUTE_PREFIX}/governance`, render: () => createElement(WardModeWorkspace, { mode: "governance" }) },
-  { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsScreen) },
+  { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsBoard) },
   { route: `${ROUTE_PREFIX}/movements/proposal`, render: () => createElement(MovementProposalPreview, {}) },
   { route: `${ROUTE_PREFIX}/network`, render: () => createElement(WardModeWorkspace, { mode: "network" }) },
   { route: `${ROUTE_PREFIX}/ed/[edId]`, render: () => createElement(EdScreen, { edId: "peel-ed" }) },
@@ -1311,7 +1311,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
-  { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
+  { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(TransportHub) },
   { route: `${ROUTE_PREFIX}/ward/[unitId]`, render: () => createElement(WardScreen, { unitId: "rph-adult-secure" }) },
   {
     route: `${ROUTE_PREFIX}/ward/[unitId]/answer`,

@@ -79,7 +79,8 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
-import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
+import { MovementsBoard } from "@/components/ward-management/movements/movements-board";
+import { MovementProposalPreview } from "@/components/ward-management/movements/proposal/movement-proposal-preview";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
@@ -96,7 +97,7 @@ import { StatisticsOverviewScreen } from "@/components/ward-management/statistic
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
-import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
+import { TransportHub } from "@/components/ward-management/officer/transport-hub";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 
@@ -143,7 +144,11 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     "/mockups/ward-flow/legal-forms",
     { concrete: "/mockups/ward-flow/legal-forms", render: () => <LegalFormsScreen /> },
   ],
-  ["/mockups/ward-flow/movements", { concrete: "/mockups/ward-flow/movements", render: () => <MovementsScreen /> }],
+  ["/mockups/ward-flow/movements", { concrete: "/mockups/ward-flow/movements", render: () => <MovementsBoard /> }],
+  [
+    "/mockups/ward-flow/movements/proposal",
+    { concrete: "/mockups/ward-flow/movements/proposal", render: () => <MovementProposalPreview /> },
+  ],
   [
     "/mockups/ward-flow/movements/[movementId]",
     {
@@ -208,7 +213,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ],
   [
     "/mockups/ward-flow/transport/officer",
-    { concrete: "/mockups/ward-flow/transport/officer", render: () => <OfficerScreen /> },
+    { concrete: "/mockups/ward-flow/transport/officer", render: () => <TransportHub /> },
   ],
   [
     "/mockups/ward-flow/ward/[unitId]",

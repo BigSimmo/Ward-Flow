@@ -4,7 +4,8 @@ import {
   boardFigures,
   transportFigures,
   JOB_STATES,
-} from "@/components/ward-management/movements/proposal/movement-proposal-figures";
+} from "@/components/ward-management/movements/movement-flow-figures";
+import { plainRefusal, plural } from "@/components/ward-management/movements/movement-flow-parts";
 import { transportCounts, transportLegs } from "@/components/ward-management/movements/movements-derivations";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -46,5 +47,27 @@ describe("movement and transport proposal figures", () => {
   it("orders tier 1 movements longest wait first", () => {
     expect(board.tierOne.every((movement) => movement.urgency === 1)).toBe(true);
     expect(board.tierOne.length).toBe(board.open.filter((movement) => movement.urgency === 1).length);
+  });
+});
+
+describe("movement flow figures with no data, and the plain-English helpers", () => {
+  it("reports zero rather than failing when there are no movements", () => {
+    const empty = boardFigures([], NOW_ANCHOR);
+    expect(empty.open).toHaveLength(0);
+    expect(empty.stages.every((stage) => stage.movements.length === 0)).toBe(true);
+    expect(empty.longest).toBeUndefined();
+    const none = transportFigures([]);
+    expect(none.jobs).toHaveLength(0);
+    expect(JOB_STATES.every((job) => none.byState[job] === 0)).toBe(true);
+  });
+
+  it("writes counts with the right plural and refusals without internal field names", () => {
+    expect(plural(1, "job")).toBe("1 job");
+    expect(plural(2, "ward is", "wards are")).toBe("2 wards are");
+    expect(plainRefusal("REFER_TO_UNITS overrideReason must be chosen from OVERRIDE_REASONS")).toBe(
+      "Choose a reason from the list before going ahead anyway.",
+    );
+    expect(plainRefusal(undefined)).toBe("The step was not recorded.");
+    expect(plainRefusal("TRANSPORT_EN_ROUTE needs an accepted job")).not.toMatch(/[A-Z]+_[A-Z]+/);
   });
 });

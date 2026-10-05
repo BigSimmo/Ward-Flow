@@ -7,16 +7,18 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
-import styles from "./movement-proposal.module.css";
+import styles from "./movement-flow.module.css";
 
-/** Preview routes today; the real movement and transport routes on approval. */
-export const PROPOSAL_ROUTES = {
-  board: "/mockups/ward-flow/movements/proposal",
-  movement: (id: string) => `/mockups/ward-flow/movements/proposal?screen=movement&id=${encodeURIComponent(id)}`,
-  transport: "/mockups/ward-flow/movements/proposal?screen=transport",
+/** The live movement and transport routes these screens link between. */
+export const FLOW_ROUTES = {
+  board: "/mockups/ward-flow/movements",
+  timeline: "/mockups/ward-flow/movements?view=timeline",
+  movement: (id: string) => `/mockups/ward-flow/movements/${encodeURIComponent(id)}`,
+  transport: "/mockups/ward-flow/transport/officer",
+  officerView: "/mockups/ward-flow/transport/officer?view=officer",
 } as const;
 
-/** Initials only on the proposal screens, so no screenshot of them carries a full name. */
+/** Initials only on the movement and transport screens, so no screenshot of them carries a full name. */
 export function patientInitials(
   movement: Movement,
   world: Pick<WardFlowState, "patients" | "referrals" | "movements">,
@@ -45,37 +47,7 @@ export function waited(minutes: number) {
   return splitDuration(Math.max(0, minutes));
 }
 
-/** Preview-only frame: a banner and screen switcher around the proposed screens. */
-export function ProposalPreviewBar({
-  active,
-  current,
-}: {
-  active: "board" | "movement" | "transport";
-  current: string;
-}) {
-  const tabs = [
-    { id: "board", label: "Movements", href: PROPOSAL_ROUTES.board },
-    { id: "movement", label: "One movement", href: PROPOSAL_ROUTES.movement("WF-001") },
-    { id: "transport", label: "Transport Hub", href: PROPOSAL_ROUTES.transport },
-  ] as const;
-  return (
-    <div className={styles.previewBar} data-testid="movement-proposal-preview-bar">
-      <strong>Proposed movement and transport redesign (preview)</strong>
-      <nav className={styles.previewTabs} aria-label="Proposed movement screens">
-        {tabs.map((tab) => (
-          <a key={tab.id} href={tab.href} aria-current={tab.id === active ? "page" : undefined}>
-            {tab.label}
-          </a>
-        ))}
-      </nav>
-      <a className={styles.link} href={current}>
-        Current screen ›
-      </a>
-    </div>
-  );
-}
-
-export function ProposalHeader({
+export function FlowHeader({
   crumbs,
   title,
   badges,
