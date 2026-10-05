@@ -4,51 +4,6 @@
   gap: var(--ward-space-12);
 }
 
-.governanceBanner {
-  display: flex;
-  min-height: var(--ward-tap, 44px);
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-12);
-  border: 0.0625rem solid var(--line);
-  border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface-2);
-  padding: var(--ward-space-8) var(--ward-space-16);
-  box-shadow: var(--lift);
-}
-
-.governanceBanner p {
-  min-width: 0;
-  flex: 1 1 12rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-body, 1.4);
-}
-
-.governanceBanner strong {
-  color: var(--ink);
-}
-
-.prototypeBadge {
-  display: inline-flex;
-  min-height: 1.5rem;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--ward-space-6);
-  border: 0.0625rem solid var(--accent);
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--accent-soft);
-  padding: var(--ward-space-2) var(--ward-space-8);
-  color: var(--accent-ink);
-  font-size: var(--t-0);
-  font-weight: 680;
-  line-height: var(--ward-leading-compact, 1.1);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .viewTabs {
   display: flex;
   min-width: 0;

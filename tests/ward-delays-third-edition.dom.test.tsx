@@ -91,7 +91,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     // The wait timeline is a view inside "Who is holding people up" (the PR 48 overview switcher),
     // so the default overview does not render it as a panel of its own.
     expect(panelTitlesInOrder()).toEqual([
-      "Who is holding people up",
+      "Action runway",
+      "Delay graphs",
       "Waiting",
       "What the blocker is",
       "Escalations and resolved",
@@ -102,7 +103,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
     expect(panelTitlesInOrder()).toEqual([
-      "Who is holding people up",
+      "Action runway",
+      "Delay graphs",
       "Waiting",
       "Why this person is waiting",
       "What the blocker is",
@@ -112,13 +114,13 @@ describe("Delays — the drawing's panel names (task D1)", () => {
 
     // Choosing the Wait timeline view places the timeline inside the overview panel, ahead of the worklist.
     fireEvent.click(
-      within(screen.getByRole("group", { name: "Executive Overview Mode" })).getByRole("button", {
-        name: "Wait timeline",
+      within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", {
+        name: "Wait Timeline",
       }),
     );
     expect(panelTitlesInOrder()).toEqual([
-      "Who is holding people up",
-      "Wait timeline",
+      "Action runway",
+      "Delay graphs",
       "Waiting",
       "Why this person is waiting",
       "What the blocker is",

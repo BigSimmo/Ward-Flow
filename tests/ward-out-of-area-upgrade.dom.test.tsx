@@ -55,10 +55,14 @@ function renderBoard() {
 }
 
 describe("out-of-area upgrade — functional layout and clean presentation", () => {
-  it("omits disclaimer banners from the functional view", () => {
+  it("shows the shared prototype footer at the bottom of the board", () => {
     renderBoard();
-    const banner = screen.queryByTestId("ward-out-of-area-governance");
-    expect(banner).not.toBeInTheDocument();
+    const banner = screen.getByTestId("ward-out-of-area-governance");
+    expect(banner.tagName).toBe("FOOTER");
+    expect(banner).toHaveTextContent("Synthetic prototype");
+    expect(banner).toHaveTextContent("Not a medical device");
+    expect(screen.queryByTestId("ward-out-of-area-threshold-notice")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-out-of-area-synthetic-notice")).not.toBeInTheDocument();
   });
 
   it("keeps the phone card list as a second, independently keyed rendering of every entry", () => {

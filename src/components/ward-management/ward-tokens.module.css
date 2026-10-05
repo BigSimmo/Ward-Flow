@@ -12,6 +12,50 @@
  * v2 palette, not a second palette. A raw hex here is the start of a fork.
  */
 .wardTokens {
+  /* Approved Delays-only palette, resolved through the app token layer. */
+  --ward-delays-ink: var(--delays-ink);
+  --ward-delays-blue: var(--delays-blue);
+  --ward-delays-amber: var(--delays-amber);
+  --ward-delays-muted: var(--delays-muted);
+  --ward-delays-border: var(--delays-border);
+  --ward-delays-surface: var(--delays-surface);
+  --ward-delays-attention-summary-surface: var(--delays-attention-summary-surface);
+  --ward-delays-attention-summary-ink: var(--delays-attention-summary-ink);
+  --ward-delays-urgent-surface: var(--delays-urgent-surface);
+  --ward-delays-urgent-border: var(--delays-urgent-border);
+  --ward-delays-urgent-edge: var(--delays-urgent-edge);
+  --ward-delays-urgent-ink: var(--delays-urgent-ink);
+  --ward-delays-wait-under-eight: var(--delays-wait-under-eight);
+  --ward-delays-wait-eight-to-day: var(--delays-wait-eight-to-day);
+  --ward-delays-wait-over-day: var(--delays-wait-over-day);
+  --ward-delays-wait-under-eight-key: var(--delays-wait-under-eight-key);
+  --ward-delays-wait-over-day-key: var(--delays-wait-over-day-key);
+  --ward-delays-axis: var(--delays-axis);
+  --ward-delays-selection-edge: var(--delays-selection-edge);
+  --ward-delays-stat-amber: var(--delays-stat-amber);
+  --ward-delays-radar-axis: var(--delays-radar-axis);
+  --ward-delays-radar-review-line: var(--delays-radar-review-line);
+  --ward-delays-radar-review-surface: var(--delays-radar-review-surface);
+  --ward-delays-radar-quiet: var(--delays-radar-quiet);
+  --ward-delays-radar-due-ink: var(--delays-radar-due-ink);
+  --ward-delays-radar-due-dot: var(--delays-radar-due-dot);
+  --ward-delays-radar-due-halo: var(--delays-radar-due-halo);
+  --ward-delays-radar-detail-due: var(--delays-radar-detail-due);
+  --ward-delays-radar-triage-surface: var(--delays-radar-triage-surface);
+  --ward-delays-radar-triage-ink: var(--delays-radar-triage-ink);
+  --ward-delays-radar-outlier-ink: var(--delays-radar-outlier-ink);
+  --ward-delays-inspector-surface: var(--delays-inspector-surface);
+  --ward-delays-owner-wash: var(--delays-owner-wash);
+  --ward-delays-toolbar-surface: var(--delays-toolbar-surface);
+  --ward-delays-radar-lane: var(--delays-radar-lane);
+  --ward-delays-panel-shadow: var(--delays-panel-shadow);
+  --ward-delays-timeline-review-line: var(--delays-timeline-review-line);
+  --ward-delays-timeline-review-ink: var(--delays-timeline-review-ink);
+  --ward-delays-timeline-review-surface: var(--delays-timeline-review-surface);
+  --ward-delays-timeline-grid: var(--delays-timeline-grid);
+  --ward-delays-timeline-selection: var(--delays-timeline-selection);
+  --ward-delays-ground: var(--delays-ground);
+
   /* ---- domain hues: WHO is holding a patient up -------------------------
      Aliased 2026-09-07 from the v2 layer, where the raw values live because
      tests/ward-raw-colour.test.ts forbids a raw colour anywhere in THIS file —
@@ -180,6 +224,7 @@
   --ward-table-min-width: 0;
   /* Third-edition cell inset. Dense tables override this on their local table class. */
   --ward-table-cell-inset: 0.5rem 1rem;
+  --ward-table-cell-inline-divider: none;
 
   /* 🔴 DOMAIN HUES — WHO OWNS A DELAY — REQUESTED, ATTEMPTED, AND REVERTED. NOT ADDED HERE.
    *
