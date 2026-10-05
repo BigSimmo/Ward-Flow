@@ -11,11 +11,7 @@ import {
   stayDayNumber,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
-import {
-  ARROW_HORIZON_DAYS,
-  arrowTargets,
-  sinceYesterday,
-} from "@/components/ward-management/ward-board-derivations";
+import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
 
 import styles from "./board.module.css";
 
@@ -200,10 +196,15 @@ function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: str
         {person.dayNumber === null ? (
           "No stay yet — not arrived"
         ) : (
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>Day {person.dayNumber}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            Day {person.dayNumber}
+          </span>
         )}
         {person.bandLabel !== null && (
-          <span className={styles.sheetRowBand} style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          <span
+            className={styles.sheetRowBand}
+            style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
+          >
             {person.bandLabel}
           </span>
         )}
@@ -241,7 +242,10 @@ function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: str
       {person.blockReason !== null && <p className={styles.sheetRowLine}>Held up by: {person.blockReason}.</p>}
       {person.pastDate && person.expectedDays !== null && (
         <p className={styles.sheetRowLine}>
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{-person.expectedDays}</span> day
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            {-person.expectedDays}
+          </span>{" "}
+          day
           {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
         </p>
       )}
@@ -281,7 +285,8 @@ function SheetGroup({
           emptyText
         ) : (
           <>
-            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{people.length}</span> on this ward.
+            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{people.length}</span>{" "}
+            on this ward.
           </>
         )}
       </p>
@@ -370,7 +375,6 @@ export function WardDailySheet({
   shiftTimestamp,
   unit,
   onPrint,
-  onClose,
 }: WardDailySheetProps) {
   const currentNow = now ?? 0;
 
@@ -464,7 +468,10 @@ export function WardDailySheet({
           data-testid="ward-daily-sheet-shift-timestamp"
           style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
         >
-          Shift timestamp: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedTimestamp}</span>
+          Shift timestamp:{" "}
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            {resolvedTimestamp}
+          </span>
         </p>
       ) : null}
 
@@ -473,10 +480,20 @@ export function WardDailySheet({
         data-testid="ward-daily-sheet-since"
         style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
       >
-        Since yesterday: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedMovement.discharged}</span> left this
-        ward, <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedMovement.pulled}</span> bed
+        Since yesterday:{" "}
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.discharged}
+        </span>{" "}
+        left this ward,{" "}
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.pulled}
+        </span>{" "}
+        bed
         {resolvedMovement.pulled === 1 ? "" : "s"} given away,{" "}
-        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedMovement.datesMoved}</span> expected date
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.datesMoved}
+        </span>{" "}
+        expected date
         {resolvedMovement.datesMoved === 1 ? "" : "s"} moved.
       </p>
 
@@ -502,10 +519,18 @@ export function WardDailySheet({
               "Nobody is recorded as coming in to this ward."
             ) : (
               <>
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{incomingTotal}</span> coming in:{" "}
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedIncomingPulled}</span> with the bed already given
-                away, <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedIncomingWaitlisted}</span> waiting with no
-                bed given.
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {incomingTotal}
+                </span>{" "}
+                coming in:{" "}
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {resolvedIncomingPulled}
+                </span>{" "}
+                with the bed already given away,{" "}
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {resolvedIncomingWaitlisted}
+                </span>{" "}
+                waiting with no bed given.
               </>
             )}
           </p>
@@ -533,7 +558,11 @@ export function WardDailySheet({
             data-testid="ward-daily-sheet-out-count"
             style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
           >
-            {resolvedOutgoingBasis}: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedOutgoingCount}</span> bed
+            {resolvedOutgoingBasis}:{" "}
+            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+              {resolvedOutgoingCount}
+            </span>{" "}
+            bed
             {resolvedOutgoingCount === 1 ? "" : "s"} expected to free today.
           </p>
           {resolvedDestinations.length === 0 ? (
@@ -549,13 +578,20 @@ export function WardDailySheet({
                   data-testid={`ward-daily-sheet-destination-${target.region}`}
                   style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
                 >
-                  {target.region}: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{target.count}</span>{" "}
+                  {target.region}:{" "}
+                  <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                    {target.count}
+                  </span>{" "}
                   {target.count === 1 ? "person" : "people"}, soonest{" "}
                   {target.nearestDays === 0 ? (
                     "due now or overdue"
                   ) : (
                     <>
-                      in <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{target.nearestDays}</span> day
+                      in{" "}
+                      <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                        {target.nearestDays}
+                      </span>{" "}
+                      day
                       {target.nearestDays === 1 ? "" : "s"}
                     </>
                   )}

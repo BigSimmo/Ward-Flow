@@ -1,0 +1,2468 @@
+<!doctype html>
+<html lang="en-AU" class="ckb-v2" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow — Drawer & Daily Sheet Overhaul Mockup Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ==========================================================================
+       WARD FLOW DESIGN TOKENS & SYSTEM BASE
+       ========================================================================== */
+      :root {
+        --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+
+        /* Light Theme Palette */
+        --bg-page: #f8fafc;
+        --bg-surface: #ffffff;
+        --bg-surface-subtle: #f1f5f9;
+        --bg-surface-elevated: #ffffff;
+        --bg-input: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --text-subtle: #94a3b8;
+        --border: #e2e8f0;
+        --border-subtle: #cbd5e1;
+        --border-focus: #0284c7;
+
+        /* Clinical Brand & Status Tints */
+        --primary: #0284c7;
+        --primary-hover: #0369a1;
+        --primary-light: #e0f2fe;
+        --primary-text: #0369a1;
+
+        --good: #059669;
+        --good-light: #d1fae5;
+        --good-text: #065f46;
+
+        --warning: #d97706;
+        --warning-light: #fef3c7;
+        --warning-text: #92400e;
+
+        --danger: #dc2626;
+        --danger-light: #fee2e2;
+        --danger-text: #991b1b;
+
+        --neutral-badge: #f1f5f9;
+        --neutral-badge-text: #334155;
+
+        /* Shadows & Radii */
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --radius-xl: 20px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -4px rgba(0, 0, 0, 0.06);
+        --shadow-drawer: -10px 0 35px -5px rgba(15, 23, 42, 0.16);
+      }
+
+      [data-theme="dark"] {
+        --bg-page: #0b0f19;
+        --bg-surface: #111827;
+        --bg-surface-subtle: #1e293b;
+        --bg-surface-elevated: #1f2937;
+        --bg-input: #1e293b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-subtle: #64748b;
+        --border: #334155;
+        --border-subtle: #475569;
+        --border-focus: #38bdf8;
+
+        --primary: #38bdf8;
+        --primary-hover: #7dd3fc;
+        --primary-light: rgba(56, 189, 248, 0.15);
+        --primary-text: #7dd3fc;
+
+        --good: #34d399;
+        --good-light: rgba(52, 211, 153, 0.15);
+        --good-text: #6ee7b7;
+
+        --warning: #fbbf24;
+        --warning-light: rgba(251, 191, 36, 0.15);
+        --warning-text: #fde68a;
+
+        --danger: #f87171;
+        --danger-light: rgba(248, 113, 113, 0.15);
+        --danger-text: #fca5a5;
+
+        --neutral-badge: #1e293b;
+        --neutral-badge-text: #cbd5e1;
+        --shadow-drawer: -10px 0 40px -5px rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-page);
+        color: var(--text-main);
+        line-height: 1.5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ==========================================================================
+       TOP CONTROL HEADER (SWITCHER FOR 3 DESIGNS & STATES)
+       ========================================================================== */
+      .mockup-controller-bar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: var(--bg-surface);
+        border-bottom: 2px solid var(--border);
+        padding: 12px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .brand-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--text-main);
+        color: var(--bg-surface);
+        padding: 4px 10px;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-badge span {
+        color: #38bdf8;
+      }
+
+      .section-selector-group {
+        display: flex;
+        background: var(--bg-surface-subtle);
+        padding: 3px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+      }
+
+      .btn-tab-mode {
+        border: none;
+        background: transparent;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .btn-tab-mode.active {
+        background: var(--bg-surface);
+        color: var(--text-main);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .variant-selector-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .variant-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-subtle);
+      }
+
+      .btn-concept {
+        border: 1px solid var(--border);
+        background: var(--bg-surface);
+        color: var(--text-muted);
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+
+      .btn-concept:hover {
+        border-color: var(--border-subtle);
+        color: var(--text-main);
+      }
+
+      .btn-concept.active {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-text);
+        font-weight: 700;
+      }
+
+      .state-selector-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .theme-toggle-btn {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
+        color: var(--text-main);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      /* ==========================================================================
+       VIEWPORT WORKSPACE
+       ========================================================================== */
+      .workspace-stage {
+        flex: 1;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+
+      .stage-canvas-wrap {
+        width: 100%;
+        max-width: 1380px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        min-height: 800px;
+        position: relative;
+      }
+
+      /* Background ward dashboard backdrop for the drawer view */
+      .ward-home-backdrop {
+        padding: 24px;
+        opacity: 0.45;
+        pointer-events: none;
+        filter: blur(1.5px);
+        user-select: none;
+      }
+
+      .backdrop-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+      }
+
+      .backdrop-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .backdrop-card {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        height: 90px;
+        padding: 10px;
+      }
+
+      /* Drawer Shell Base */
+      .drawer-overlay-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 50;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      /* Common Drawer Panel */
+      .drawer-panel {
+        background: var(--bg-surface);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-drawer);
+        border-left: 1px solid var(--border);
+        animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow-y: auto;
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+
+      /* Drawer Concept 1: Executive Command Dossier (540px) */
+      .drawer-concept-1 {
+        width: 540px;
+      }
+      /* Drawer Concept 2: Tabbed Clinical Dossier (560px) */
+      .drawer-concept-2 {
+        width: 560px;
+      }
+      /* Drawer Concept 3: Care Journey Stepper (530px) */
+      .drawer-concept-3 {
+        width: 530px;
+      }
+
+      /* ==========================================================================
+       DRAWER CONCEPT 1: EXECUTIVE COMMAND DOSSIER STYLES
+       ========================================================================== */
+      .dossier-header-bar {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-surface);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+
+      .bed-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .bed-icon-badge {
+        background: var(--primary-light);
+        color: var(--primary-text);
+        font-weight: 800;
+        font-size: 14px;
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
+        letter-spacing: -0.01em;
+        border: 1px solid rgba(2, 132, 199, 0.25);
+      }
+
+      .bed-title-text {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .bed-status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+      }
+
+      .btn-close-drawer {
+        border: 1px solid var(--border);
+        background: var(--bg-surface-subtle);
+        color: var(--text-muted);
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.15s ease;
+      }
+
+      .btn-close-drawer:hover {
+        background: var(--danger-light);
+        color: var(--danger-text);
+        border-color: var(--danger);
+      }
+
+      .dossier-body-scroll {
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex: 1;
+      }
+
+      /* Hero Stay Banner with Progress Meter */
+      .hero-stay-meter-card {
+        background: linear-gradient(135deg, var(--bg-surface-subtle) 0%, var(--bg-surface) 100%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+      }
+
+      .hero-stay-top-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .stay-headline-group {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+
+      .stay-big-num {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main);
+        font-family: var(--font-mono);
+        line-height: 1;
+      }
+
+      .stay-label-here {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+      }
+
+      .stay-benchmark-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        background: var(--neutral-badge);
+        color: var(--neutral-badge-text);
+        border: 1px solid var(--border);
+      }
+
+      /* Multi-segment stay runway bar */
+      .stay-runway-track {
+        height: 8px;
+        background: var(--border);
+        border-radius: 9999px;
+        overflow: hidden;
+        display: flex;
+        position: relative;
+      }
+
+      .stay-runway-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+      }
+
+      .stay-runway-target-tick {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 70%;
+        width: 2px;
+        background: var(--text-main);
+        opacity: 0.5;
+      }
+
+      .stay-runway-legend {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      /* Patient Identity Block */
+      .patient-hero-identity {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .patient-hero-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.01em;
+      }
+
+      .patient-chips-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .patient-chip {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-surface-subtle);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .patient-chip.umrn {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--primary-text);
+        background: var(--primary-light);
+        border-color: rgba(2, 132, 199, 0.3);
+      }
+
+      .patient-chip.legal {
+        color: var(--good-text);
+        background: var(--good-light);
+        border-color: rgba(5, 150, 105, 0.3);
+      }
+
+      .patient-chip.legal-invol {
+        color: var(--warning-text);
+        background: var(--warning-light);
+        border-color: rgba(217, 119, 6, 0.3);
+      }
+
+      /* Barrier Alert */
+      .barrier-alert-banner {
+        background: var(--warning-light);
+        border: 1px solid rgba(217, 119, 6, 0.3);
+        color: var(--warning-text);
+        padding: 10px 12px;
+        border-radius: var(--radius-md);
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .barrier-alert-banner svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      /* Structured Section Card */
+      .section-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .section-card-header {
+        padding: 10px 14px;
+        background: var(--bg-surface-subtle);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .section-card-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .section-card-content {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* 4-cell Care Team Grid */
+      .mdt-tiles-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .mdt-tile {
+        background: var(--bg-surface-subtle);
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+      }
+
+      .mdt-tile-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-subtle);
+        margin-bottom: 2px;
+      }
+
+      .mdt-tile-value {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      /* Clinical Trajectory Block */
+      .clinical-fact-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .clinical-fact-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-subtle);
+      }
+
+      .clinical-fact-val {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .diagnosis-pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .icd10-code {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--primary-text);
+        background: var(--primary-light);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+
+      /* Departure Action Panel */
+      .departure-action-box {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .departure-action-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .departure-select {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-surface);
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .btn-record-departure {
+        width: 100%;
+        background: var(--text-main);
+        color: var(--bg-surface);
+        border: none;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: opacity 0.15s ease;
+      }
+
+      .btn-record-departure:hover {
+        opacity: 0.92;
+      }
+
+      /* Vacant Bed State View */
+      .vacant-console-card {
+        background: linear-gradient(135deg, var(--good-light) 0%, var(--bg-surface) 100%);
+        border: 1px solid rgba(5, 150, 105, 0.3);
+        border-radius: var(--radius-md);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .vacant-badge-header {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--good-text);
+      }
+
+      .vacant-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--text-main);
+      }
+
+      .vacant-description {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      .btn-pull-referral-cta {
+        background: var(--good);
+        color: #ffffff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Drawer Footer Sticky Bar */
+      .dossier-footer-bar {
+        padding: 14px 24px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-surface);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+      }
+
+      .btn-link-handover {
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-done-primary {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        padding: 8px 18px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      /* ==========================================================================
+       DRAWER CONCEPT 2: TABBED CLINICAL DOSSIER STYLES
+       ========================================================================== */
+      .tabbed-nav-bar {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-surface-subtle);
+        padding: 0 16px;
+        gap: 6px;
+      }
+
+      .tabbed-nav-btn {
+        border: none;
+        background: transparent;
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .tabbed-nav-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        font-weight: 700;
+        background: var(--bg-surface);
+      }
+
+      /* Tab 2: Legal & Governance Card */
+      .legal-status-spotlight {
+        background: var(--warning-light);
+        border: 1px solid rgba(217, 119, 6, 0.3);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .legal-status-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--warning-text);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* ==========================================================================
+       DRAWER CONCEPT 3: CARE JOURNEY STEPPER STYLES
+       ========================================================================== */
+      .journey-stepper {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+        margin: 8px 0;
+      }
+
+      .journey-step-item {
+        display: flex;
+        gap: 12px;
+        position: relative;
+        padding-bottom: 18px;
+      }
+
+      .journey-step-item:last-child {
+        padding-bottom: 0;
+      }
+
+      .journey-step-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 24px;
+      }
+
+      .journey-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: var(--bg-surface);
+        border: 2px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        z-index: 2;
+      }
+
+      .journey-dot.completed {
+        background: var(--good);
+        border-color: var(--good);
+        color: white;
+      }
+
+      .journey-dot.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+
+      .journey-dot.upcoming {
+        background: var(--bg-surface-subtle);
+        border-color: var(--border-subtle);
+        color: var(--text-subtle);
+      }
+
+      .journey-line {
+        flex: 1;
+        width: 2px;
+        background: var(--border);
+        margin: 4px 0;
+      }
+
+      .journey-step-content {
+        flex: 1;
+      }
+
+      .journey-step-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .journey-step-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      /* ==========================================================================
+       WARD DAILY SHEET OVERHAUL MODAL & DESIGNS
+       ========================================================================== */
+      .sheet-modal-container {
+        width: 100%;
+        height: 100%;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: var(--bg-page);
+        overflow-y: auto;
+      }
+
+      .sheet-modal-wrapper {
+        width: 100%;
+        max-width: 1180px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sheet-top-header {
+        padding: 20px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(180deg, var(--bg-surface-subtle) 0%, var(--bg-surface) 100%);
+      }
+
+      .sheet-brand-titles h1 {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .sheet-brand-titles p {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .sheet-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn-sheet-action {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        padding: 8px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-sheet-action:hover {
+        background: var(--bg-surface-subtle);
+      }
+
+      .btn-sheet-action.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+
+      /* 24-Hour KPI Command Strip */
+      .sheet-kpi-ribbon {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        padding: 20px 28px;
+        background: var(--bg-surface-subtle);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .kpi-top-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .kpi-num {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text-main);
+        font-family: var(--font-mono);
+        line-height: 1;
+      }
+
+      .kpi-delta-tag {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: var(--good-light);
+        color: var(--good-text);
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-subtle);
+        margin-top: 6px;
+      }
+
+      .kpi-caption {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      /* Sheet Concept 1: Executive 4-Quadrant Board */
+      .sheet-quad-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 24px 28px;
+      }
+
+      .quad-column {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .quad-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 10px;
+      }
+
+      .quad-title {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .quad-count-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        background: var(--border);
+        color: var(--text-main);
+      }
+
+      .patient-quad-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .patient-quad-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .patient-quad-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .patient-quad-stay {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+      }
+
+      .patient-quad-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      .patient-quad-barrier-tag {
+        align-self: flex-start;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: var(--warning-light);
+        color: var(--warning-text);
+        border: 1px solid rgba(217, 119, 6, 0.3);
+      }
+
+      /* Sheet Concept 2: High-Density Census Table */
+      .sheet-table-wrap {
+        padding: 20px 28px;
+        overflow-x: auto;
+      }
+
+      .sheet-data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+      }
+
+      .sheet-data-table th {
+        background: var(--bg-surface-subtle);
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-subtle);
+        border-bottom: 2px solid var(--border);
+        text-align: left;
+      }
+
+      .sheet-data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+        vertical-align: middle;
+      }
+
+      .sheet-data-table tr:hover td {
+        background: var(--bg-surface-subtle);
+      }
+
+      /* Sheet Concept 3: Clipboard Nursing Ledger */
+      .clipboard-print-sheet {
+        padding: 30px;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+        background: var(--bg-surface);
+      }
+
+      .clipboard-side-rail {
+        background: var(--bg-surface-subtle);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .checklist-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-main);
+      }
+
+      .checklist-checkbox {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1px solid var(--border-subtle);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ==========================================================================
+       TOP INTERACTIVE CONTROLLER (Concept & State Switcher)
+       ========================================================================== -->
+    <header class="mockup-controller-bar">
+      <div class="brand-section">
+        <div class="brand-badge">WARD FLOW <span>MOCKUP SUITE</span></div>
+        <div class="section-selector-group">
+          <button type="button" class="btn-tab-mode active" id="btnModeDrawer" onclick="switchSection('drawer')">
+            1. Patient Dossier Drawer (3 Designs)
+          </button>
+          <button type="button" class="btn-tab-mode" id="btnModeSheet" onclick="switchSection('sheet')">
+            2. Ward Daily Sheet (3 Designs)
+          </button>
+        </div>
+      </div>
+
+      <!-- Variant selector for current section -->
+      <div class="variant-selector-group" id="drawerVariantGroup">
+        <span class="variant-label">Drawer Designs:</span>
+        <button type="button" class="btn-concept active" id="btnD1" onclick="switchDrawerConcept(1)">
+          <span>Concept 1:</span> Clinical Command
+        </button>
+        <button type="button" class="btn-concept" id="btnD2" onclick="switchDrawerConcept(2)">
+          <span>Concept 2:</span> Tabbed Dossier
+        </button>
+        <button type="button" class="btn-concept" id="btnD3" onclick="switchDrawerConcept(3)">
+          <span>Concept 3:</span> Care Journey
+        </button>
+      </div>
+
+      <div class="variant-selector-group" id="sheetVariantGroup" style="display: none">
+        <span class="variant-label">Daily Sheet Designs:</span>
+        <button type="button" class="btn-concept active" id="btnS1" onclick="switchSheetConcept(1)">
+          <span>Concept 1:</span> Executive 4-Quad
+        </button>
+        <button type="button" class="btn-concept" id="btnS2" onclick="switchSheetConcept(2)">
+          <span>Concept 2:</span> Census Matrix
+        </button>
+        <button type="button" class="btn-concept" id="btnS3" onclick="switchSheetConcept(3)">
+          <span>Concept 3:</span> Handover Ledger
+        </button>
+      </div>
+
+      <!-- Bed State Simulator for Drawer -->
+      <div class="state-selector-group" id="bedStateGroup">
+        <span class="variant-label">Bed State:</span>
+        <select
+          id="selectBedState"
+          onchange="changeBedState(this.value)"
+          style="
+            padding: 5px 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-surface);
+            color: var(--text-main);
+          "
+        >
+          <option value="occupied">Bed 05 · Occupied (Anselm Heronvale, 5d)</option>
+          <option value="overdue">Bed 09 · Overdue Long-Stay (Teodor Banksiavale, 130d)</option>
+          <option value="vacant">Bed 01 · Ready Vacant Bed (Unoccupied)</option>
+        </select>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          🌓 Mode
+        </button>
+      </div>
+    </header>
+
+    <!-- ==========================================================================
+       MAIN WORKSPACE
+       ========================================================================== -->
+    <main class="workspace-stage">
+      <!-- ─────────────────────────────────────────────────────────────
+         SECTION 1: DRAWER SHOWCASE (WITH BACKDROP)
+         ───────────────────────────────────────────────────────────── -->
+      <div class="stage-canvas-wrap" id="sectionDrawerContainer">
+        <!-- Simulated Ward Home Backdrop -->
+        <div class="ward-home-backdrop">
+          <div class="backdrop-header">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 800">Dabakarn · Royal Perth Hospital (RPH)</h2>
+              <p style="font-size: 13px; color: var(--text-muted)">Adult Secure Psychiatric Inpatient Unit · 20 Beds</p>
+            </div>
+            <div style="display: flex; gap: 8px">
+              <div
+                style="
+                  background: var(--bg-surface-subtle);
+                  padding: 6px 12px;
+                  border-radius: 6px;
+                  font-size: 12px;
+                  font-weight: 700;
+                "
+              >
+                Ward Daily Sheet
+              </div>
+              <div
+                style="
+                  background: var(--primary);
+                  color: white;
+                  padding: 6px 12px;
+                  border-radius: 6px;
+                  font-size: 12px;
+                  font-weight: 700;
+                "
+              >
+                + New Referral
+              </div>
+            </div>
+          </div>
+
+          <div class="backdrop-grid">
+            <div class="backdrop-card"><strong>Bed 01</strong> · Ready Vacant</div>
+            <div class="backdrop-card"><strong>Bed 02</strong> · Luke Daviecroft (2d)</div>
+            <div class="backdrop-card"><strong>Bed 03</strong> · Keira Pell (Pulled)</div>
+            <div class="backdrop-card"><strong>Bed 04</strong> · Alaric Ferrowmoor (Past Date)</div>
+            <div class="backdrop-card" style="border: 2px solid var(--primary)">
+              <strong>Bed 05</strong> · Anselm Heronvale (Selected)
+            </div>
+            <div class="backdrop-card"><strong>Bed 06</strong> · Calder Ferrowmoor (At ED)</div>
+            <div class="backdrop-card"><strong>Bed 07</strong> · Lucan James (At ED)</div>
+            <div class="backdrop-card"><strong>Bed 08</strong> · Inpatient (14d)</div>
+            <div class="backdrop-card"><strong>Bed 09</strong> · Teodor Banksiavale (130d)</div>
+            <div class="backdrop-card"><strong>Bed 10</strong> · Sarah Jenkinwood (5d)</div>
+            <div class="backdrop-card"><strong>Bed 11</strong> · Magnus Vance (18d)</div>
+            <div class="backdrop-card"><strong>Bed 12</strong> · Inpatient (22d)</div>
+          </div>
+        </div>
+
+        <!-- Slide-over Drawer Overlay -->
+        <div class="drawer-overlay-backdrop">
+          <!-- ====================================================================
+             DRAWER VARIANT 1: "CLINICAL COMMAND DOSSIER" (Executive High-Yield)
+             ==================================================================== -->
+          <aside class="drawer-panel drawer-concept-1" id="drawerVariant1" data-testid="bed-telemetry-drawer">
+            <!-- Top Header -->
+            <div class="dossier-header-bar">
+              <div class="bed-title-wrap">
+                <span class="bed-icon-badge" id="d1BedBadge">Bed 05</span>
+                <div>
+                  <div class="bed-title-text" id="d1BedTitle">Patient Dossier</div>
+                  <div style="font-size: 11px; color: var(--text-muted)" id="d1BedRoomInfo">
+                    Room 5 · East Secure Wing
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span
+                  class="bed-status-pill"
+                  id="d1StatusPill"
+                  style="background: var(--primary-light); color: var(--primary-text)"
+                  >Occupied</span
+                >
+                <button type="button" class="btn-close-drawer" aria-label="Close bed drawer">✕</button>
+              </div>
+            </div>
+
+            <!-- Body Content -->
+            <div class="dossier-body-scroll" id="d1BodyContent">
+              <!-- STATE A & B: OCCUPIED CONTENT -->
+              <div id="d1OccupiedWrap" style="display: flex; flex-direction: column; gap: 16px">
+                <!-- 1. Hero Stay & Trajectory Card -->
+                <div class="hero-stay-meter-card">
+                  <div class="hero-stay-top-row">
+                    <div class="stay-headline-group">
+                      <span class="stay-big-num" id="d1StayDays">5d</span>
+                      <span class="stay-label-here">HERE</span>
+                    </div>
+                    <span class="stay-benchmark-badge" id="d1StayBand">Under 2 weeks</span>
+                  </div>
+
+                  <!-- Stay Visual Runway Progress -->
+                  <div class="stay-runway-track">
+                    <div class="stay-runway-fill" id="d1StayBar" style="width: 35%"></div>
+                    <div class="stay-runway-target-tick" title="Acute Benchmark (14d)"></div>
+                  </div>
+                  <div class="stay-runway-legend">
+                    <span>Day 1 (Admitted)</span>
+                    <span id="d1RunwayMid">Today: Day 5</span>
+                    <span id="d1RunwayTarget">Target &lt;14d</span>
+                  </div>
+
+                  <!-- Patient Identity & Demographics -->
+                  <div class="patient-hero-identity">
+                    <h3 class="patient-hero-name" id="d1PatientName">Anselm Heronvale</h3>
+                    <div class="patient-chips-row">
+                      <span class="patient-chip" id="d1AgeSexChip">39yo Male</span>
+                      <span class="patient-chip" id="d1CatchmentChip">Mid West (Catchment)</span>
+                      <span class="patient-chip umrn" id="d1UmrnChip">UMRN: UM100028 📋</span>
+                      <span class="patient-chip legal" id="d1LegalChip">Informal / Voluntary</span>
+                    </div>
+                  </div>
+
+                  <!-- Barrier Alert Callout (Shows if stay >= 7d or overdue) -->
+                  <div class="barrier-alert-banner" id="d1BarrierAlert" style="display: none">
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M8 2L1 14h14L8 2zM8 6v4M8 12v.5" />
+                    </svg>
+                    <div>
+                      <strong>Discharge Barrier Active:</strong>
+                      <span id="d1BarrierText"
+                        >Awaiting long-stay accommodation step-down. Governance review active.</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Immediate Departure Action Card (Where are they going?) -->
+                <div class="departure-action-box">
+                  <label for="d1LeavingDest" class="departure-action-label">Where are they going next?</label>
+                  <select id="d1LeavingDest" class="departure-select">
+                    <option value="community">Discharged to the community</option>
+                    <option value="scgh">Transfer to Sir Charles Gairdner Hospital (SCGH)</option>
+                    <option value="fsh">Transfer to Fiona Stanley Hospital (FSH)</option>
+                    <option value="stepdown">Step-down mental health facility (Subacute)</option>
+                    <option value="interstate">Statewide / Interstate release</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn-record-departure"
+                    onclick="alert('Departure recorded! Bed transition triggered.')"
+                  >
+                    Record that they have left &rarr;
+                  </button>
+                </div>
+
+                <!-- 3. Multi-Disciplinary Care Team Quadrant -->
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                        <path
+                          d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1 13s-.5 0-.5-.5 1-3.5 5-3.5.5.5.5 1-1 3-5 3z"
+                        />
+                      </svg>
+                      Treating Team & Catchment
+                    </div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="mdt-tiles-grid">
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Consultant</div>
+                        <div class="mdt-tile-value" id="d1ConsultantVal">Dr. A. Vance</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Treating Team</div>
+                        <div class="mdt-tile-value" id="d1TeamVal">Adult Inpatient Team 1</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Home Region</div>
+                        <div class="mdt-tile-value" id="d1RegionVal">Mid West</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Primary Nurse</div>
+                        <div class="mdt-tile-value">RN Sarah T. (Shift A)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 4. Clinical & Monitoring Status -->
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                        <path d="M6 2v2H2v10h12V4h-4V2H6zm1 2h2v1H7V4zm-3 4h8v2H4V8z" />
+                      </svg>
+                      Clinical & Monitoring Status
+                    </div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Tentative Diagnosis</div>
+                      <div class="diagnosis-pill-badge">
+                        <span class="icd10-code" id="d1IcdCode">F30–F39</span>
+                        <span id="d1DiagText">Mood (affective) disorders</span>
+                      </div>
+                    </div>
+
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Vital Signs & Nursing Checks</div>
+                      <div
+                        class="clinical-fact-val"
+                        style="font-size: 12px; color: var(--text-muted); font-weight: normal"
+                      >
+                        Not recorded in Ward Flow. Check the ward's physical observation chart for pulse, BP, temp, and
+                        SpO2.
+                      </div>
+                    </div>
+
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Supervision Acuity</div>
+                      <div class="clinical-fact-val" id="d1AcuityVal">
+                        <span class="patient-chip">Routine 15-min checks</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5. What is Happening Today / Trajectory -->
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">What is happening today</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Discharge Trajectory</div>
+                      <div class="clinical-fact-val" id="d1TrajectoryVal">
+                        Expected discharge in 3 days (Thursday 8 October). Step-down community mental health handover
+                        scheduled.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- STATE C: VACANT BED VIEW -->
+              <div id="d1VacantWrap" style="display: none; flex-direction: column; gap: 16px">
+                <div class="vacant-console-card">
+                  <div class="vacant-badge-header">
+                    <span
+                      style="
+                        display: inline-block;
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: var(--good);
+                      "
+                    ></span>
+                    READY VACANT BED
+                  </div>
+                  <div class="vacant-title">Ready for Allocation</div>
+                  <div class="vacant-description">
+                    Bed 01 is currently unoccupied and sanitized. Terminal cleaning verified at 08:30 by Environmental
+                    Services.
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      class="btn-pull-referral-cta"
+                      onclick="alert('Pulling highest-priority referral from ED...')"
+                    >
+                      Assign Patient from Waitlist &rarr;
+                    </button>
+                  </div>
+                </div>
+
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">Room & Bed Specifications</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="mdt-tiles-grid">
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Pod Designation</div>
+                        <div class="mdt-tile-value">Locked Secure Pod A</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Gender Mix</div>
+                        <div class="mdt-tile-value">Male / Gender-neutral</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">HDU Boundary</div>
+                        <div class="mdt-tile-value">High Acuity Capable</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Cleaning State</div>
+                        <div class="mdt-tile-value" style="color: var(--good)">Ready & Inspected</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Actions Bar -->
+            <div class="dossier-footer-bar">
+              <a href="#handover" class="btn-link-handover">Handover View &rarr;</a>
+              <button type="button" class="btn-done-primary" aria-label="Close bed drawer">Done</button>
+            </div>
+          </aside>
+
+          <!-- ====================================================================
+             DRAWER VARIANT 2: "TABBED CLINICAL DOSSIER" (Specialty Views)
+             ==================================================================== -->
+          <aside class="drawer-panel drawer-concept-2" id="drawerVariant2" style="display: none">
+            <!-- Top Header with Mini Avatar -->
+            <div class="dossier-header-bar">
+              <div class="bed-title-wrap">
+                <span class="bed-icon-badge">Bed 05</span>
+                <div>
+                  <div class="bed-title-text">Anselm Heronvale</div>
+                  <div style="font-size: 11px; color: var(--text-muted)">
+                    UM100028 &middot; 39yo Male &middot; 5d admitted
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-close-drawer">✕</button>
+            </div>
+
+            <!-- Segmented Tab Navigation -->
+            <div class="tabbed-nav-bar">
+              <button type="button" class="tabbed-nav-btn active" id="btnTab1" onclick="switchD2Tab('flow')">
+                1. Flow & Discharge
+              </button>
+              <button type="button" class="tabbed-nav-btn" id="btnTab2" onclick="switchD2Tab('clinical')">
+                2. Clinical & Acuity
+              </button>
+              <button type="button" class="tabbed-nav-btn" id="btnTab3" onclick="switchD2Tab('team')">
+                3. Care Team
+              </button>
+            </div>
+
+            <!-- Tabbed Content Panes -->
+            <div class="dossier-body-scroll">
+              <!-- TAB PANE 1: FLOW & DISCHARGE -->
+              <div id="d2PaneFlow" style="display: flex; flex-direction: column; gap: 14px">
+                <div class="hero-stay-meter-card">
+                  <div class="hero-stay-top-row">
+                    <span class="stay-big-num">5 Days Admitted</span>
+                    <span class="stay-benchmark-badge" style="background: var(--good-light); color: var(--good-text)"
+                      >Under 2 weeks</span
+                    >
+                  </div>
+                  <div class="stay-runway-track">
+                    <div class="stay-runway-fill" style="width: 35%"></div>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted)">
+                    Expected discharge: <strong>Thursday 8 Oct (3 days)</strong>
+                  </div>
+                </div>
+
+                <div class="departure-action-box">
+                  <div class="departure-action-label">Record Destination & Departure</div>
+                  <select class="departure-select">
+                    <option>Discharged to the community</option>
+                    <option>Step-down subacute mental health</option>
+                    <option>Transfer to SCGH</option>
+                  </select>
+                  <button type="button" class="btn-record-departure">Mark Patient Left Ward &rarr;</button>
+                </div>
+
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">Discharge Milestone Checklist</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="checklist-row">
+                      <input type="checkbox" checked class="checklist-checkbox" /> Medical / Psychiatric Stabilization
+                      complete
+                    </div>
+                    <div class="checklist-row">
+                      <input type="checkbox" checked class="checklist-checkbox" /> Nursing assessment & observation
+                      chart current
+                    </div>
+                    <div class="checklist-row">
+                      <input type="checkbox" class="checklist-checkbox" /> Community team step-down handover accepted
+                    </div>
+                    <div class="checklist-row">
+                      <input type="checkbox" class="checklist-checkbox" /> Pharmacy discharge medications packed
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB PANE 2: CLINICAL & ACUITY (HIDDEN INITIALLY) -->
+              <div id="d2PaneClinical" style="display: none; flex-direction: column; gap: 14px">
+                <div class="legal-status-spotlight">
+                  <div class="legal-status-title">
+                    <span>Mental Health Act Legal Status</span>
+                    <span class="patient-chip legal">Voluntary / Informal</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--warning-text)">
+                    No involuntary detention order active. Patient may discharge with clinical agreement.
+                  </div>
+                </div>
+
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">ICD-10 Diagnostic Formulation</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="diagnosis-pill-badge">
+                      <span class="icd10-code">F30–F39</span>
+                      <span>Mood (affective) disorders (Bipolar disorder current episode manic)</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
+                      Tentative ICD-10-AM block code for WA Health bed flow census.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">Observation & Supervision Schedule</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="mdt-tiles-grid">
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Observation Level</div>
+                        <div class="mdt-tile-value">15-minute General Checks</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">1:1 Specialling</div>
+                        <div class="mdt-tile-value">Not required</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB PANE 3: TEAM & CATCHMENT (HIDDEN INITIALLY) -->
+              <div id="d2PaneTeam" style="display: none; flex-direction: column; gap: 14px">
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">Treating Multi-Disciplinary Team</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="mdt-tiles-grid">
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Consultant Psychiatrist</div>
+                        <div class="mdt-tile-value">Dr. A. Vance</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Psychiatry Registrar</div>
+                        <div class="mdt-tile-value">Dr. L. Chen</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Primary Care Nurse</div>
+                        <div class="mdt-tile-value">RN Sarah T.</div>
+                      </div>
+                      <div class="mdt-tile">
+                        <div class="mdt-tile-label">Social Worker</div>
+                        <div class="mdt-tile-value">Mark Davies</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="section-card">
+                  <div class="section-card-header">
+                    <div class="section-card-title">Catchment Community Linkage</div>
+                  </div>
+                  <div class="section-card-content">
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Home Region</div>
+                      <div class="clinical-fact-val">Mid West Region &middot; Geraldton Catchment</div>
+                    </div>
+                    <div class="clinical-fact-row">
+                      <div class="clinical-fact-label">Community Mental Health Service</div>
+                      <div class="clinical-fact-val">Midwest Community Mental Health Clinic</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dossier-footer-bar">
+              <a href="#handover" class="btn-link-handover">Handover View &rarr;</a>
+              <button type="button" class="btn-done-primary">Done</button>
+            </div>
+          </aside>
+
+          <!-- ====================================================================
+             DRAWER VARIANT 3: "CARE JOURNEY STEPPER" (Visual Pathway)
+             ==================================================================== -->
+          <aside class="drawer-panel drawer-concept-3" id="drawerVariant3" style="display: none">
+            <div class="dossier-header-bar">
+              <div class="bed-title-wrap">
+                <span class="bed-icon-badge">Bed 05</span>
+                <div>
+                  <div class="bed-title-text">Care Pathway Journey</div>
+                  <div style="font-size: 11px; color: var(--text-muted)">Anselm Heronvale &middot; UM100028</div>
+                </div>
+              </div>
+              <button type="button" class="btn-close-drawer">✕</button>
+            </div>
+
+            <div class="dossier-body-scroll">
+              <!-- Admission Stepper -->
+              <div class="section-card">
+                <div class="section-card-header">
+                  <div class="section-card-title">Inpatient Journey Milestones</div>
+                </div>
+                <div class="section-card-content">
+                  <div class="journey-stepper">
+                    <div class="journey-step-item">
+                      <div class="journey-step-rail">
+                        <div class="journey-dot completed">✓</div>
+                        <div class="journey-line"></div>
+                      </div>
+                      <div class="journey-step-content">
+                        <div class="journey-step-title">Day 1: Emergency Admission</div>
+                        <div class="journey-step-meta">
+                          Transferred from RPH ED &middot; Acute stabilization initiated
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="journey-step-item">
+                      <div class="journey-step-rail">
+                        <div class="journey-dot completed">✓</div>
+                        <div class="journey-line"></div>
+                      </div>
+                      <div class="journey-step-content">
+                        <div class="journey-step-title">Day 3: MDT Diagnostic Formulation</div>
+                        <div class="journey-step-meta">Dr. Vance round &middot; F30–F39 Mood disorder confirmed</div>
+                      </div>
+                    </div>
+
+                    <div class="journey-step-item">
+                      <div class="journey-step-rail">
+                        <div class="journey-dot active">5</div>
+                        <div class="journey-line"></div>
+                      </div>
+                      <div class="journey-step-content">
+                        <div class="journey-step-title">Day 5 (Today): Step-down Preparation</div>
+                        <div class="journey-step-meta">Social worker assessing Mid West supported accommodation</div>
+                      </div>
+                    </div>
+
+                    <div class="journey-step-item">
+                      <div class="journey-step-rail">
+                        <div class="journey-dot upcoming">8</div>
+                      </div>
+                      <div class="journey-step-content">
+                        <div class="journey-step-title">Day 8: Target Discharge</div>
+                        <div class="journey-step-meta">Scheduled community release &middot; CMHT handover</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Departure Bento Card -->
+              <div class="departure-action-box">
+                <div class="departure-action-label">Ready to Execute Departure?</div>
+                <select class="departure-select">
+                  <option>Discharged to the community</option>
+                  <option>Transferred to other facility</option>
+                </select>
+                <button type="button" class="btn-record-departure">Complete Departure & Mark Bed Freed &rarr;</button>
+              </div>
+            </div>
+
+            <div class="dossier-footer-bar">
+              <a href="#handover" class="btn-link-handover">Handover View &rarr;</a>
+              <button type="button" class="btn-done-primary">Done</button>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────────────────────
+         SECTION 2: WARD DAILY SHEET SHOWCASE (3 CONCEPTS)
+         ───────────────────────────────────────────────────────────── -->
+      <div class="sheet-modal-container" id="sectionSheetContainer" style="display: none">
+        <div class="sheet-modal-wrapper">
+          <!-- Universal Sheet Top Bar -->
+          <div class="sheet-top-header">
+            <div class="sheet-brand-titles">
+              <h1><span>Dabakarn</span> &middot; Ward Daily Sheet & Morning Census</h1>
+              <p>
+                Executive psychiatric flow briefing &middot; Live snapshot current as at 08:30 AWST Monday 5 Oct 2026
+              </p>
+            </div>
+            <div class="sheet-header-actions">
+              <button type="button" class="btn-sheet-action" onclick="window.print()">🖨️ Print for Clipboard</button>
+              <button
+                type="button"
+                class="btn-sheet-action primary"
+                onclick="alert('PDF Generated for Handover Binder')"
+              >
+                📥 Export Handoff PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- 24-Hour KPI Ribbon (Shared across sheet designs) -->
+          <div class="sheet-kpi-ribbon">
+            <div class="kpi-card">
+              <div class="kpi-top-row">
+                <span class="kpi-num">3</span>
+                <span class="kpi-delta-tag">+1 vs Sun</span>
+              </div>
+              <span class="kpi-label">Discharged (24h)</span>
+              <span class="kpi-caption">2 Community &middot; 1 Hospital transfer</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top-row">
+                <span class="kpi-num">2</span>
+                <span class="kpi-delta-tag" style="background: var(--primary-light); color: var(--primary-text)"
+                  >Active</span
+                >
+              </div>
+              <span class="kpi-label">Beds Pulled</span>
+              <span class="kpi-caption">Allocated for incoming ED transfers</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top-row">
+                <span class="kpi-num">8</span>
+                <span class="kpi-delta-tag" style="background: var(--warning-light); color: var(--warning-text)"
+                  >Revisable</span
+                >
+              </div>
+              <span class="kpi-label">Dates Moved</span>
+              <span class="kpi-caption">Expected discharge dates adjusted</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top-row">
+                <span class="kpi-num">90%</span>
+                <span class="kpi-delta-tag" style="background: var(--good-light); color: var(--good-text)"
+                  >18 / 20</span
+                >
+              </div>
+              <span class="kpi-label">Unit Occupancy</span>
+              <span class="kpi-caption">1 Ready Vacant &middot; 1 Bed on Leave</span>
+            </div>
+          </div>
+
+          <!-- ====================================================================
+             DAILY SHEET CONCEPT 1: EXECUTIVE 4-QUADRANT BOARD
+             ==================================================================== -->
+          <div id="sheetConcept1" class="sheet-quad-grid">
+            <!-- Col 1: Who Came In (Arrivals) -->
+            <div class="quad-column">
+              <div class="quad-header">
+                <div class="quad-title" style="color: var(--primary)">
+                  <span>📥 Who Came In</span>
+                  <span class="quad-count-badge">2 Admitted</span>
+                </div>
+              </div>
+
+              <div class="patient-quad-card">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 02 &middot; Luke Daviecroft</span>
+                  <span class="patient-quad-stay">Day 2</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Admitted via RPH ED Resus. Provisional diagnosis: F20–F29 Schizophrenia spectrum. Admitting MO: Dr.
+                  Chen.
+                </div>
+              </div>
+
+              <div class="patient-quad-card">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 10 &middot; Sarah Jenkinwood</span>
+                  <span class="patient-quad-stay">Day 1</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Direct community intake from Midland CMHT. Voluntary admission for medication stabilization.
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Who Is Going (Departures Today) -->
+            <div class="quad-column">
+              <div class="quad-header">
+                <div class="quad-title" style="color: var(--good-text)">
+                  <span>📤 Who Is Going</span>
+                  <span class="quad-count-badge">3 Expected</span>
+                </div>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--good)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 04 &middot; Alaric Ferrowmoor</span>
+                  <span class="patient-quad-stay">Day 14</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Discharge destination: Home to Perth Metro with community mental health follow-up. Transport booked
+                  11:30.
+                </div>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--good)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 15 &middot; Ines Marrowby</span>
+                  <span class="patient-quad-stay">Day 12</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Discharge destination: Subacute step-down facility. Pharmacy discharge meds verified.
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 3: Who Is Stuck (Barriers & Delays) -->
+            <div class="quad-column">
+              <div class="quad-header">
+                <div class="quad-title" style="color: var(--warning-text)">
+                  <span>⚠️ Who Is Stuck</span>
+                  <span class="quad-count-badge">2 Blocked</span>
+                </div>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--warning)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 09 &middot; Teodor Banksiavale</span>
+                  <span class="patient-quad-stay">Day 130</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Medically fit for release. Blocked on supported disability accommodation (NDIS provider delay).
+                </div>
+                <span class="patient-quad-barrier-tag">Barrier: Supported Housing</span>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--warning)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 14 &middot; Fiora Ferrowmoor</span>
+                  <span class="patient-quad-stay">Day 33</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Awaiting public guardian appointment for residential aged care step-down transfer.
+                </div>
+                <span class="patient-quad-barrier-tag">Barrier: Legal / Public Guardian</span>
+              </div>
+            </div>
+
+            <!-- Col 4: Overdue & Governance -->
+            <div class="quad-column">
+              <div class="quad-header">
+                <div class="quad-title" style="color: var(--danger-text)">
+                  <span>⏱️ Overdue Review</span>
+                  <span class="quad-count-badge">3 Overdue</span>
+                </div>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--danger)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 04 &middot; Alaric Ferrowmoor</span>
+                  <span class="patient-quad-stay" style="color: var(--danger)">1d Overdue</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Expected date was 04 Oct. Delayed awaiting ambulance transport authorization.
+                </div>
+              </div>
+
+              <div class="patient-quad-card" style="border-left: 3px solid var(--danger)">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 15 &middot; Ines Marrowby</span>
+                  <span class="patient-quad-stay" style="color: var(--danger)">1d Overdue</span>
+                </div>
+                <div class="patient-quad-desc">
+                  Expected date was 04 Oct. Step-down facility bed confirmation pending today's morning census.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ====================================================================
+             DAILY SHEET CONCEPT 2: INTERACTIVE CENSUS MATRIX (Filterable Table)
+             ==================================================================== -->
+          <div id="sheetConcept2" class="sheet-table-wrap" style="display: none">
+            <table class="sheet-data-table">
+              <thead>
+                <tr>
+                  <th>Bed</th>
+                  <th>Patient Name & UMRN</th>
+                  <th>Stay Duration</th>
+                  <th>Legal Status</th>
+                  <th>Diagnosis Block</th>
+                  <th>Target Discharge</th>
+                  <th>Flow Status / Barrier</th>
+                  <th>Consultant</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color: var(--good)">Bed 01</strong></td>
+                  <td><em>Ready Vacant Bed</em></td>
+                  <td>&mdash;</td>
+                  <td>&mdash;</td>
+                  <td>Cleaned & Inspected</td>
+                  <td>Immediate Intake</td>
+                  <td><span class="patient-chip legal">Ready for Allocation</span></td>
+                  <td>&mdash;</td>
+                </tr>
+                <tr>
+                  <td><strong>Bed 02</strong></td>
+                  <td>
+                    Luke Daviecroft &middot;
+                    <span style="font-family: var(--font-mono); font-size: 11px">UM100036</span>
+                  </td>
+                  <td>
+                    <span class="patient-chip" style="background: var(--good-light); color: var(--good-text)"
+                      >2d (Under 2w)</span
+                    >
+                  </td>
+                  <td>Voluntary</td>
+                  <td>F20–F29 Schizophrenia</td>
+                  <td>12 Oct (7 days)</td>
+                  <td>Routine Inpatient Care</td>
+                  <td>Dr. Vance</td>
+                </tr>
+                <tr>
+                  <td><strong>Bed 04</strong></td>
+                  <td>
+                    Alaric Ferrowmoor &middot;
+                    <span style="font-family: var(--font-mono); font-size: 11px">UM100042</span>
+                  </td>
+                  <td>
+                    <span class="patient-chip" style="background: var(--warning-light); color: var(--warning-text)"
+                      >14d (2w–1m)</span
+                    >
+                  </td>
+                  <td>Form 1 (Involuntary)</td>
+                  <td>F30–F39 Mood Disorders</td>
+                  <td><strong style="color: var(--danger)">04 Oct (1d Past)</strong></td>
+                  <td><span class="patient-quad-barrier-tag">Awaiting Transport</span></td>
+                  <td>Dr. Vance</td>
+                </tr>
+                <tr style="background: var(--primary-light)">
+                  <td><strong>Bed 05</strong></td>
+                  <td>
+                    Anselm Heronvale &middot;
+                    <span style="font-family: var(--font-mono); font-size: 11px">UM100028</span>
+                  </td>
+                  <td>
+                    <span class="patient-chip" style="background: var(--good-light); color: var(--good-text)"
+                      >5d (Under 2w)</span
+                    >
+                  </td>
+                  <td>Voluntary</td>
+                  <td>F30–F39 Mood Disorders</td>
+                  <td>08 Oct (3 days)</td>
+                  <td>Step-down CMHT Handover</td>
+                  <td>Dr. Vance</td>
+                </tr>
+                <tr>
+                  <td><strong>Bed 09</strong></td>
+                  <td>
+                    Teodor Banksiavale &middot;
+                    <span style="font-family: var(--font-mono); font-size: 11px">UM100033</span>
+                  </td>
+                  <td>
+                    <span class="patient-chip" style="background: var(--danger-light); color: var(--danger-text)"
+                      >130d (Over 3m)</span
+                    >
+                  </td>
+                  <td>Form 3 (Involuntary)</td>
+                  <td>F70–F79 Intellectual Disability</td>
+                  <td><strong style="color: var(--danger)">Overdue (NDIS)</strong></td>
+                  <td><span class="patient-quad-barrier-tag">NDIS Supported Accommodation</span></td>
+                  <td>Dr. Vance</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ====================================================================
+             DAILY SHEET CONCEPT 3: CLINICAL HANDOVER & CLIPBOARD LEDGER
+             ==================================================================== -->
+          <div id="sheetConcept3" class="clipboard-print-sheet" style="display: none">
+            <!-- Left Summary Rail -->
+            <div class="clipboard-side-rail">
+              <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase">Charge Nurse Notes</h3>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5">
+                Shift staffing: 1 NUM, 4 Registered Nurses, 1 Enrolled Nurse. 0 specialling watches required. Full bed
+                rollup completed for 08:30 meeting.
+              </div>
+
+              <div style="border-top: 1px solid var(--border); padding-top: 12px">
+                <h4 style="font-size: 12px; font-weight: 700; margin-bottom: 6px">Key Action Items:</h4>
+                <div class="checklist-row">
+                  <input type="checkbox" checked class="checklist-checkbox" /> Confirm Bed 01 allocation for incoming ED
+                  pull
+                </div>
+                <div class="checklist-row">
+                  <input type="checkbox" class="checklist-checkbox" /> Chase ambulance transport for Bed 04 discharge
+                </div>
+                <div class="checklist-row">
+                  <input type="checkbox" class="checklist-checkbox" /> Escalation meeting with NDIS coordinator for Bed
+                  09
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Census Handoff Cards -->
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div style="display: flex; justify-content: space-between; align-items: baseline">
+                <h3 style="font-size: 15px; font-weight: 800">Patient-by-Patient Handover Census</h3>
+                <span style="font-size: 12px; color: var(--text-muted)">20 Total Beds &middot; 18 Occupied</span>
+              </div>
+
+              <!-- Card 1 -->
+              <div class="patient-quad-card">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 05 &middot; Anselm Heronvale (39yo M, UMRN UM100028)</span>
+                  <span class="patient-quad-stay">Day 5</span>
+                </div>
+                <div style="display: flex; gap: 12px; font-size: 12px; margin-top: 4px">
+                  <span><strong>Dx:</strong> F30–F39 Mood disorders</span>
+                  <span><strong>Status:</strong> Voluntary</span>
+                  <span><strong>Target:</strong> 08 Oct</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 16px;
+                    margin-top: 8px;
+                    border-top: 1px solid var(--border);
+                    padding-top: 8px;
+                  "
+                >
+                  <label class="checklist-row"
+                    ><input type="checkbox" checked class="checklist-checkbox" /> Meds charted</label
+                  >
+                  <label class="checklist-row"
+                    ><input type="checkbox" class="checklist-checkbox" /> Community team booked</label
+                  >
+                  <label class="checklist-row"
+                    ><input type="checkbox" class="checklist-checkbox" /> Next of kin updated</label
+                  >
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div class="patient-quad-card">
+                <div class="patient-quad-top">
+                  <span class="patient-quad-name">Bed 09 &middot; Teodor Banksiavale (64yo M, UMRN UM100033)</span>
+                  <span class="patient-quad-stay" style="color: var(--danger)">Day 130</span>
+                </div>
+                <div style="display: flex; gap: 12px; font-size: 12px; margin-top: 4px">
+                  <span><strong>Dx:</strong> F70–F79 Intellectual disability</span>
+                  <span><strong>Status:</strong> Involuntary (Form 3)</span>
+                  <span><strong>Barrier:</strong> NDIS Home</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 16px;
+                    margin-top: 8px;
+                    border-top: 1px solid var(--border);
+                    padding-top: 8px;
+                  "
+                >
+                  <label class="checklist-row"
+                    ><input type="checkbox" checked class="checklist-checkbox" /> CSO review signed</label
+                  >
+                  <label class="checklist-row"
+                    ><input type="checkbox" checked class="checklist-checkbox" /> Guardian notified</label
+                  >
+                  <label class="checklist-row"
+                    ><input type="checkbox" class="checklist-checkbox" /> Housing provider follow-up</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==========================================================================
+       INTERACTIVE JAVASCRIPT CONTROLLER
+       ========================================================================== -->
+    <script>
+      // State management
+      let currentSection = "drawer"; // 'drawer' or 'sheet'
+      let currentDrawerConcept = 1;
+      let currentSheetConcept = 1;
+
+      // Switch between Drawer and Daily Sheet sections
+      function switchSection(section) {
+        currentSection = section;
+        const drawerContainer = document.getElementById("sectionDrawerContainer");
+        const sheetContainer = document.getElementById("sectionSheetContainer");
+        const drawerVariants = document.getElementById("drawerVariantGroup");
+        const sheetVariants = document.getElementById("sheetVariantGroup");
+        const bedStateGroup = document.getElementById("bedStateGroup");
+
+        const btnModeDrawer = document.getElementById("btnModeDrawer");
+        const btnModeSheet = document.getElementById("btnModeSheet");
+
+        if (section === "drawer") {
+          drawerContainer.style.display = "block";
+          sheetContainer.style.display = "none";
+          drawerVariants.style.display = "flex";
+          sheetVariants.style.display = "none";
+          bedStateGroup.style.display = "flex";
+
+          btnModeDrawer.classList.add("active");
+          btnModeSheet.classList.remove("active");
+        } else {
+          drawerContainer.style.display = "none";
+          sheetContainer.style.display = "flex";
+          drawerVariants.style.display = "none";
+          sheetVariants.style.display = "flex";
+          bedStateGroup.style.display = "none";
+
+          btnModeDrawer.classList.remove("active");
+          btnModeSheet.classList.add("active");
+        }
+      }
+
+      // Switch Drawer Concepts (1, 2, 3)
+      function switchDrawerConcept(num) {
+        currentDrawerConcept = num;
+        document.querySelectorAll("#drawerVariantGroup .btn-concept").forEach((btn, i) => {
+          btn.classList.toggle("active", i + 1 === num);
+        });
+
+        document.getElementById("drawerVariant1").style.display = num === 1 ? "flex" : "none";
+        document.getElementById("drawerVariant2").style.display = num === 2 ? "flex" : "none";
+        document.getElementById("drawerVariant3").style.display = num === 3 ? "flex" : "none";
+      }
+
+      // Switch Drawer 2 Tabs
+      function switchD2Tab(tabName) {
+        document.querySelectorAll(".tabbed-nav-btn").forEach((btn) => btn.classList.remove("active"));
+        document.getElementById("d2PaneFlow").style.display = "none";
+        document.getElementById("d2PaneClinical").style.display = "none";
+        document.getElementById("d2PaneTeam").style.display = "none";
+
+        if (tabName === "flow") {
+          document.getElementById("btnTab1").classList.add("active");
+          document.getElementById("d2PaneFlow").style.display = "flex";
+        } else if (tabName === "clinical") {
+          document.getElementById("btnTab2").classList.add("active");
+          document.getElementById("d2PaneClinical").style.display = "flex";
+        } else if (tabName === "team") {
+          document.getElementById("btnTab3").classList.add("active");
+          document.getElementById("d2PaneTeam").style.display = "flex";
+        }
+      }
+
+      // Switch Sheet Concepts (1, 2, 3)
+      function switchSheetConcept(num) {
+        currentSheetConcept = num;
+        document.querySelectorAll("#sheetVariantGroup .btn-concept").forEach((btn, i) => {
+          btn.classList.toggle("active", i + 1 === num);
+        });
+
+        document.getElementById("sheetConcept1").style.display = num === 1 ? "grid" : "none";
+        document.getElementById("sheetConcept2").style.display = num === 2 ? "block" : "none";
+        document.getElementById("sheetConcept3").style.display = num === 3 ? "grid" : "none";
+      }
+
+      // Switch Bed State for Drawer (Occupied vs Overdue vs Vacant)
+      function changeBedState(state) {
+        const occupiedWrap = document.getElementById("d1OccupiedWrap");
+        const vacantWrap = document.getElementById("d1VacantWrap");
+        const d1BedBadge = document.getElementById("d1BedBadge");
+        const d1BedTitle = document.getElementById("d1BedTitle");
+        const d1StatusPill = document.getElementById("d1StatusPill");
+
+        if (state === "occupied") {
+          occupiedWrap.style.display = "flex";
+          vacantWrap.style.display = "none";
+          d1BedBadge.textContent = "Bed 05";
+          d1BedTitle.textContent = "Patient Dossier";
+          d1StatusPill.textContent = "Occupied";
+          d1StatusPill.style.background = "var(--primary-light)";
+          d1StatusPill.style.color = "var(--primary-text)";
+
+          document.getElementById("d1StayDays").textContent = "5d";
+          document.getElementById("d1StayBand").textContent = "Under 2 weeks";
+          document.getElementById("d1PatientName").textContent = "Anselm Heronvale";
+          document.getElementById("d1AgeSexChip").textContent = "39yo Male";
+          document.getElementById("d1CatchmentChip").textContent = "Mid West (Catchment)";
+          document.getElementById("d1UmrnChip").textContent = "UMRN: UM100028 📋";
+          document.getElementById("d1LegalChip").textContent = "Informal / Voluntary";
+          document.getElementById("d1LegalChip").className = "patient-chip legal";
+          document.getElementById("d1StayBar").style.width = "35%";
+          document.getElementById("d1BarrierAlert").style.display = "none";
+          document.getElementById("d1IcdCode").textContent = "F30–F39";
+          document.getElementById("d1DiagText").textContent = "Mood (affective) disorders";
+          document.getElementById("d1TrajectoryVal").textContent =
+            "Expected discharge in 3 days (Thursday 8 October). Step-down CMHT handover scheduled.";
+        } else if (state === "overdue") {
+          occupiedWrap.style.display = "flex";
+          vacantWrap.style.display = "none";
+          d1BedBadge.textContent = "Bed 09";
+          d1BedTitle.textContent = "Patient Dossier";
+          d1StatusPill.textContent = "▲ PAST DATE";
+          d1StatusPill.style.background = "var(--danger-light)";
+          d1StatusPill.style.color = "var(--danger-text)";
+
+          document.getElementById("d1StayDays").textContent = "130d";
+          document.getElementById("d1StayBand").textContent = "Over 3 months";
+          document.getElementById("d1PatientName").textContent = "Teodor Banksiavale";
+          document.getElementById("d1AgeSexChip").textContent = "64yo Male";
+          document.getElementById("d1CatchmentChip").textContent = "Great Southern (Catchment)";
+          document.getElementById("d1UmrnChip").textContent = "UMRN: UM100033 📋";
+          document.getElementById("d1LegalChip").textContent = "Form 3 (Involuntary)";
+          document.getElementById("d1LegalChip").className = "patient-chip legal-invol";
+          document.getElementById("d1StayBar").style.width = "100%";
+          document.getElementById("d1StayBar").style.background = "var(--danger)";
+          document.getElementById("d1BarrierAlert").style.display = "flex";
+          document.getElementById("d1BarrierText").textContent =
+            "Stay ≥ 7d & 1d past expected date. Awaiting supported disability accommodation (NDIS).";
+          document.getElementById("d1IcdCode").textContent = "F70–F79";
+          document.getElementById("d1DiagText").textContent = "Intellectual disability";
+          document.getElementById("d1TrajectoryVal").textContent =
+            "Overdue by 1 day. Medically fit for discharge; awaiting NDIS accommodation transfer.";
+        } else if (state === "vacant") {
+          occupiedWrap.style.display = "none";
+          vacantWrap.style.display = "flex";
+          d1BedBadge.textContent = "Bed 01";
+          d1BedTitle.textContent = "Ready Bed Console";
+          d1StatusPill.textContent = "READY VACANT";
+          d1StatusPill.style.background = "var(--good-light)";
+          d1StatusPill.style.color = "var(--good-text)";
+        }
+      }
+
+      // Toggle theme
+      function toggleTheme() {
+        const html = document.documentElement;
+        const nextTheme = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", nextTheme);
+      }
+    </script>
+  </body>
+</html>

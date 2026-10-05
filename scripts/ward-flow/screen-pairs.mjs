@@ -93,6 +93,20 @@ export const PAIRS = [
   ["delays-perfected-third-edition.html", null, null, false],
   ["notification-popup-third-edition.html", null, null, false],
   ["ward-before-after-redesign.html", null, null, false],
+  ["perfected-synthetic-prototype-mockup.html", null, null, false],
+  ["delays-mockup-catchment.html", null, null, false],
+  ["delays-mockup-histogram.html", null, null, false],
+  ["delays-mockup-matrix.html", null, null, false],
+  ["delays-mockup-runway.html", null, null, false],
+  ["movement-patient-popup-mockups.html", null, null, false],
+  ["patient-search-bar-mockup.html", null, null, false],
+  ["patient-search-console-alternatives.html", null, null, false],
+  ["patient-search-directions-studio.html", null, null, false],
+  ["referral-inspector-mockup.html", null, null, false],
+  ["unified-command-horizon-system.html", null, null, false],
+  ["ward-flow-complete-showcase.html", null, null, false],
+  ["ward-home-beds-mockup.html", null, null, false],
+  ["ward-redesign-mockups.html", null, null, false],
 ];
 
 /** Superseded drawings — named so they are never treated as current. */

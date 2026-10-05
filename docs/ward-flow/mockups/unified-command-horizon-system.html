@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Perfected Header & Navigation Design System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+        --ground: #f1f5f9;
+        --surface: #ffffff;
+        --surface-subtle: #f8fafc;
+        --border: #e2e8f0;
+        --border-subtle: #f1f5f9;
+        --ink: #0f172a;
+        --ink-muted: #64748b;
+        --ink-soft: #334155;
+        --accent: #1e293b;
+        --accent-hover: #0f172a;
+        --emerald-dot: #10b981;
+        --amber-dot: #f59e0b;
+        --rose-dot: #ef4444;
+        --r-card: 16px;
+        --r-pill: 9999px;
+        --r-btn: 9px;
+        --r-input: 10px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--ground);
+        color: var(--ink);
+        padding: 32px 24px;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+      .font-mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      /* Studio Meta Header */
+      .studio-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px 28px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      }
+      .studio-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--r-pill);
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+      }
+      .studio-badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #2563eb;
+      }
+      .studio-title {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+      }
+      .studio-desc {
+        font-size: 13.5px;
+        color: var(--ink-muted);
+        margin-top: 4px;
+        max-width: 820px;
+      }
+
+      /* Page Showcase Selector */
+      .page-nav-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .page-tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .page-tab-btn:hover {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        color: var(--ink);
+      }
+      .page-tab-btn.active {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+      }
+
+      /* Showcase Stage */
+      .showcase-stage {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .page-mockup-wrapper {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .page-mockup-wrapper.active {
+        display: flex;
+      }
+
+      .mockup-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+      }
+      .mockup-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-muted);
+      }
+      .mockup-specs {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .spec-pill {
+        padding: 2px 8px;
+        border-radius: var(--r-pill);
+        background: #dcfce7;
+        color: #15803d;
+        font-size: 11px;
+        font-family: var(--font-mono);
+      }
+
+      /* ======================================================== */
+      /* THE PERFECTED TWO-TIER UNIFIED HORIZON COMPONENT STYLES  */
+      /* ======================================================== */
+      .wf-unified-header {
+        background: var(--surface);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: var(--r-card);
+        box-shadow:
+          0 1px 3px rgba(15, 23, 42, 0.02),
+          0 4px 16px -2px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+        transition: all 0.2s ease;
+      }
+
+      /* TIER 1: Executive Horizon Row */
+      .wf-horizon-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 20px;
+        background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .wf-title-cluster {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .wf-pulse-beacon {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--emerald-dot);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        flex-shrink: 0;
+        position: relative;
+      }
+      .wf-pulse-beacon.pulse-amber {
+        background: var(--amber-dot);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+      }
+      .wf-pulse-beacon.pulse-rose {
+        background: var(--rose-dot);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+      }
+
+      .wf-page-title {
+        font-size: 14.5px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+      .wf-title-sep {
+        color: #cbd5e1;
+        font-size: 14px;
+        margin: 0 2px;
+      }
+      .wf-vitals-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: var(--r-pill);
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        font-size: 12px;
+        color: var(--ink-soft);
+      }
+      .wf-vitals-badge strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .wf-vitals-badge.badge-rose {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+      }
+      .wf-vitals-badge.badge-teal {
+        background: #f0fdfa;
+        border-color: #ccfbf1;
+        color: #0f766e;
+      }
+
+      .wf-telemetry-cluster {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: var(--ink-muted);
+        margin-left: 4px;
+      }
+      @media (min-width: 900px) {
+        .wf-telemetry-cluster {
+          display: inline-flex;
+        }
+      }
+      .wf-telemetry-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .wf-telemetry-item strong {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      /* Horizon Controls Cluster */
+      .wf-controls-cluster {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      /* THE PRECISION SEARCH COMPOSER */
+      .wf-search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 240px;
+        transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .wf-search-box:focus-within {
+        width: 300px;
+      }
+      .wf-search-input {
+        width: 100%;
+        height: 33px;
+        padding: 0 32px 0 32px;
+        border-radius: var(--r-input);
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+        font-size: 12px;
+        font-family: var(--font-sans);
+        color: var(--ink);
+        outline: none;
+        transition: all 0.15s ease;
+      }
+      .wf-search-input:hover {
+        background: #ffffff;
+        border-color: #94a3b8;
+      }
+      .wf-search-input:focus {
+        background: #ffffff;
+        border-color: #3b82f6;
+        box-shadow:
+          0 0 0 3px rgba(59, 130, 246, 0.15),
+          inset 0 1px 2px rgba(15, 23, 42, 0.02);
+      }
+      .wf-search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 13px;
+        height: 13px;
+        color: #94a3b8;
+        pointer-events: none;
+      }
+      .wf-search-kbd {
+        position: absolute;
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        pointer-events: none;
+      }
+
+      /* Buttons */
+      .wf-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 33px;
+        padding: 0 13px;
+        border-radius: var(--r-btn);
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        transition: all 0.15s ease;
+      }
+      .wf-btn-ghost:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: var(--ink);
+      }
+      .wf-btn-ghost:active {
+        transform: scale(0.98);
+      }
+
+      .wf-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 33px;
+        padding: 0 14px;
+        border-radius: var(--r-btn);
+        border: 1px solid #0f172a;
+        background: #1e293b;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffffff;
+        cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.18),
+          0 1px 3px rgba(15, 23, 42, 0.15);
+        transition: all 0.15s ease;
+      }
+      .wf-btn-primary:hover {
+        background: #0f172a;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.22),
+          0 2px 5px rgba(15, 23, 42, 0.2);
+      }
+      .wf-btn-primary:active {
+        transform: scale(0.98);
+      }
+      .wf-btn-primary.btn-urgent {
+        background: #b91c1c;
+        border-color: #991b1b;
+      }
+      .wf-btn-primary.btn-urgent:hover {
+        background: #991b1b;
+      }
+
+      /* TIER 2: Integrated Navigation & Telemetry Ribbon */
+      .wf-ribbon-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 8px 20px;
+        background: #fafbfd;
+        font-size: 12px;
+      }
+
+      /* SEGMENTED TRACK CONTROLLER */
+      .wf-segmented-track {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px;
+        border-radius: 11px;
+        background: #e2e8f0;
+        gap: 2px;
+      }
+      .wf-segment-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 11px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .wf-segment-pill:hover {
+        color: var(--ink);
+      }
+      .wf-segment-pill.active {
+        background: #ffffff;
+        color: var(--ink);
+        font-weight: 700;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.08),
+          0 0 1px rgba(0, 0, 0, 0.1);
+      }
+      .wf-segment-count {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        opacity: 0.75;
+      }
+      .wf-segment-pill.active .wf-segment-count {
+        opacity: 1;
+        color: #2563eb;
+        font-weight: 700;
+      }
+      .wf-segment-pill.tone-rose.active .wf-segment-count {
+        color: #dc2626;
+      }
+      .wf-segment-pill.tone-amber.active .wf-segment-count {
+        color: #d97706;
+      }
+
+      /* FACETED FILTER CHIPS CLUSTER */
+      .wf-chips-cluster {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .wf-chips-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ink-muted);
+        margin-right: 2px;
+      }
+      .wf-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3.5px 9px;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+        transition: all 0.15s ease;
+      }
+      .wf-filter-chip:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+      .wf-filter-chip.active {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+      .wf-filter-chip.chip-active-pts {
+        border-color: #86efac;
+        background: #f0fdf4;
+        color: #166534;
+        font-weight: 700;
+      }
+      .wf-chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #94a3b8;
+      }
+      .wf-filter-chip.active .wf-chip-dot {
+        background: #2563eb;
+      }
+      .wf-filter-chip.chip-active-pts .wf-chip-dot {
+        background: #16a34a;
+      }
+
+      /* Content Cards Grid Demonstration */
+      .content-stream-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+      .content-stream-desc {
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-top: 2px;
+      }
+      .demo-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 14px;
+      }
+      .demo-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      }
+      .demo-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .demo-card-tag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: #2563eb;
+      }
+      .demo-badge {
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .badge-accepted {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+      }
+      .badge-transit {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .badge-breach {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+      }
+      .badge-available {
+        background: #f0fdfa;
+        color: #0f766e;
+        border: 1px solid #99f6e4;
+      }
+
+      .demo-card-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .demo-card-meta {
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-top: 3px;
+      }
+      .demo-card-foot {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11.5px;
+      }
+
+      /* Template Architecture Table */
+      .spec-table-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px;
+        margin-top: 8px;
+      }
+      .spec-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        text-align: left;
+      }
+      .spec-table th {
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-muted);
+        border-bottom: 2px solid var(--border);
+      }
+      .spec-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--ink-soft);
+      }
+      .spec-table tr:last-child td {
+        border-bottom: none;
+      }
+      .spec-table strong {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Studio Header & Navigation -->
+      <header class="studio-card">
+        <div class="studio-badge">
+          <span class="studio-badge-dot"></span>
+          Perfected Design System Standard · 3 Screens
+        </div>
+        <h1 class="studio-title">Ward Flow — Unified Command Horizon System</h1>
+        <p class="studio-desc">
+          A perfected, production-grade template unifying top bars, precision search, micro-curves, tactile controls,
+          and contextual navigation ribbons across the core operational surfaces of Ward Flow.
+        </p>
+
+        <nav class="page-nav-bar" aria-label="Mockup Pages">
+          <button onclick="switchScreen('transit')" id="tab-transit" class="page-tab-btn active">
+            <span>🚑</span> 1. Transit Dispatch Command
+          </button>
+          <button onclick="switchScreen('delays')" id="tab-delays" class="page-tab-btn">
+            <span>⏱️</span> 2. Delays & Flow Bottlenecks
+          </button>
+          <button onclick="switchScreen('bedboard')" id="tab-bedboard" class="page-tab-btn">
+            <span>🏥</span> 3. Statewide Bed Board & Allocation
+          </button>
+        </nav>
+      </header>
+
+      <main class="showcase-stage">
+        <!-- =================================================================== -->
+        <!-- SCREEN 1: Transit Dispatch Command (The Perfected Evolution)        -->
+        <!-- =================================================================== -->
+        <section id="screen-transit" class="page-mockup-wrapper active">
+          <div class="mockup-info-row">
+            <span class="mockup-label">Screen 1 · Transit Dispatch Command</span>
+            <div class="mockup-specs">
+              <span>Navigation: <strong>Stage Stepper + Fleet Facets</strong></span>
+              <span class="spec-pill">Height: 104px (-72% space)</span>
+            </div>
+          </div>
+
+          <!-- The Component -->
+          <div class="wf-unified-header">
+            <!-- Row 1: Executive Horizon -->
+            <div class="wf-horizon-row">
+              <div class="wf-title-cluster">
+                <span class="wf-pulse-beacon" title="Live statewide transit telemetry active"></span>
+                <h2 class="wf-page-title">Transit Dispatch Command</h2>
+                <span class="wf-title-sep">&middot;</span>
+                <span class="wf-vitals-badge"> <strong class="font-mono">13</strong> active transfers statewide </span>
+                <div class="wf-telemetry-cluster">
+                  <span class="wf-telemetry-item"><strong style="color: #2563eb">5</strong> in transit</span>
+                  <span style="color: #cbd5e1">/</span>
+                  <span class="wf-telemetry-item"><strong style="color: #16a34a">8</strong> on board</span>
+                  <span style="color: #cbd5e1">/</span>
+                  <span class="wf-telemetry-item"><strong>0</strong> ED pending</span>
+                </div>
+              </div>
+
+              <div class="wf-controls-cluster">
+                <!-- Precision Search -->
+                <div class="wf-search-box">
+                  <svg class="wf-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input type="text" placeholder="Search CAD #, patient or ward..." class="wf-search-input" />
+                  <kbd class="wf-search-kbd">⌘K</kbd>
+                </div>
+
+                <!-- Action Buttons -->
+                <button type="button" class="wf-btn-ghost"><span>📞</span> Dispatch Comms</button>
+                <button type="button" class="wf-btn-primary"><span>+</span> Transport Handover</button>
+              </div>
+            </div>
+
+            <!-- Row 2: Navigation & Telemetry Ribbon -->
+            <div class="wf-ribbon-row">
+              <!-- Segmented Stage Controller -->
+              <div class="wf-segmented-track" role="tablist" aria-label="Transfer Stages">
+                <button type="button" class="wf-segment-pill active" onclick="activateSegment(this)">
+                  All Stages <span class="wf-segment-count">13</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  Accepted <span class="wf-segment-count">5</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  In Transit <span class="wf-segment-count">8</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)" style="opacity: 0.65">
+                  ED Handover <span class="wf-segment-count">0</span>
+                </button>
+              </div>
+
+              <!-- Integrated Fleet Provider Facet Chips -->
+              <div class="wf-chips-cluster">
+                <span class="wf-chips-label">Fleet:</span>
+                <button type="button" class="wf-filter-chip active" onclick="toggleChip(this)">All Fleets</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">
+                  <span class="wf-chip-dot"></span>
+                  Ambulance <span class="font-mono text-slate-400">0</span>
+                </button>
+                <button type="button" class="wf-filter-chip chip-active-pts" onclick="toggleChip(this)">
+                  <span class="wf-chip-dot"></span>
+                  PTS
+                  <span
+                    class="font-mono"
+                    style="background: rgba(22, 163, 74, 0.15); padding: 1px 5px; border-radius: 4px"
+                    >8 Active</span
+                  >
+                </button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">
+                  <span class="wf-chip-dot"></span>
+                  Escort <span class="font-mono text-slate-400">0</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demonstration Content (Visible immediately without scrolling!) -->
+          <div>
+            <div class="content-stream-title">
+              <span>📋 Active Statewide Transfer Queue</span>
+              <span class="font-mono" style="font-size: 11.5px; color: var(--ink-muted)"
+                >Instant above-fold visibility (+264px gained)</span
+              >
+            </div>
+            <p class="content-stream-desc">
+              All candidate records render immediately into view with zero header scroll fatigue.
+            </p>
+          </div>
+
+          <div class="demo-cards-grid">
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag">#WF-041</span>
+                <span class="demo-badge badge-accepted">Accepted</span>
+              </div>
+              <h3 class="demo-card-name">Marcus Chen</h3>
+              <p class="demo-card-meta">Clinical Escort Required &middot; CAD-91834</p>
+              <div class="demo-card-foot">
+                <span>Fiona Stanley ED &rarr; Fremantle B2</span>
+                <strong class="font-mono">PTS Car</strong>
+              </div>
+            </div>
+
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag">#WF-009</span>
+                <span class="demo-badge badge-transit">Collected (In Transit)</span>
+              </div>
+              <h3 class="demo-card-name">Sarah Jenkins</h3>
+              <p class="demo-card-meta">Form 1A Linked &middot; CAD-90142</p>
+              <div class="demo-card-foot">
+                <span>Royal Perth ED &rarr; Graylands Ward 5</span>
+                <strong class="font-mono">PTS Van 4</strong>
+              </div>
+            </div>
+
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag">#WF-028</span>
+                <span class="demo-badge badge-accepted">Accepted</span>
+              </div>
+              <h3 class="demo-card-name">Liam O'Connor</h3>
+              <p class="demo-card-meta">Voluntary Transfer &middot; CAD-91890</p>
+              <div class="demo-card-foot">
+                <span>Sir Charles Gairdner &rarr; Osborne Park W2</span>
+                <strong class="font-mono">PTS Car</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SCREEN 2: Delays & Flow Bottlenecks (Clinical Triage Horizons)      -->
+        <!-- =================================================================== -->
+        <section id="screen-delays" class="page-mockup-wrapper">
+          <div class="mockup-info-row">
+            <span class="mockup-label">Screen 2 · Delays & Flow Bottlenecks Console</span>
+            <div class="mockup-specs">
+              <span>Navigation: <strong>Triage Delay Horizons + Health Services Scope</strong></span>
+              <span class="spec-pill">Height: 104px (-72% space)</span>
+            </div>
+          </div>
+
+          <!-- The Component -->
+          <div class="wf-unified-header">
+            <!-- Row 1: Executive Horizon -->
+            <div class="wf-horizon-row">
+              <div class="wf-title-cluster">
+                <span class="wf-pulse-beacon pulse-amber" title="Clinical delay thresholds active"></span>
+                <h2 class="wf-page-title">Delays & Flow Bottlenecks</h2>
+                <span class="wf-title-sep">&middot;</span>
+                <span class="wf-vitals-badge badge-rose"> <strong class="font-mono">2</strong> Breached &gt;4h </span>
+                <span class="wf-vitals-badge"> <strong class="font-mono">70</strong> patients waiting </span>
+              </div>
+
+              <div class="wf-controls-cluster">
+                <!-- Precision Search -->
+                <div class="wf-search-box">
+                  <svg class="wf-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input type="text" placeholder="Search patient, UR, ED site..." class="wf-search-input" />
+                  <kbd class="wf-search-kbd">⌘K</kbd>
+                </div>
+
+                <!-- Action Buttons -->
+                <button type="button" class="wf-btn-ghost"><span>📊</span> Export SITREP</button>
+                <button type="button" class="wf-btn-primary btn-urgent"><span>⚡</span> Escalate Review</button>
+              </div>
+            </div>
+
+            <!-- Row 2: Navigation & Telemetry Ribbon -->
+            <div class="wf-ribbon-row">
+              <!-- Segmented Triage Horizons -->
+              <div class="wf-segmented-track" role="tablist" aria-label="Triage Horizons">
+                <button type="button" class="wf-segment-pill active" onclick="activateSegment(this)">
+                  All Waiting <span class="wf-segment-count">70</span>
+                </button>
+                <button
+                  type="button"
+                  class="wf-segment-pill tone-rose"
+                  onclick="activateSegment(this)"
+                  style="color: #991b1b"
+                >
+                  Breached &gt;4h <span class="wf-segment-count">2</span>
+                </button>
+                <button
+                  type="button"
+                  class="wf-segment-pill tone-amber"
+                  onclick="activateSegment(this)"
+                  style="color: #b45309"
+                >
+                  Imminent <span class="wf-segment-count">1</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  Discharge Holds <span class="wf-segment-count">4</span>
+                </button>
+              </div>
+
+              <!-- Health Service Scope Pills -->
+              <div class="wf-chips-cluster">
+                <span class="wf-chips-label">Service:</span>
+                <button type="button" class="wf-filter-chip active" onclick="toggleChip(this)">All Services</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">EMHS</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">NMHS</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">SMHS</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">WACHS</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demonstration Content -->
+          <div>
+            <div class="content-stream-title">
+              <span>⚠️ Priority Clinical Delay Queue</span>
+              <span class="font-mono" style="font-size: 11.5px; color: var(--ink-muted)">Sorted by wait duration</span>
+            </div>
+            <p class="content-stream-desc">
+              Breach cards highlighted with immediate access to clinical escalation actions.
+            </p>
+          </div>
+
+          <div class="demo-cards-grid">
+            <div class="demo-card" style="border-left: 4px solid #ef4444">
+              <div class="demo-card-head">
+                <span class="demo-card-tag" style="color: #b91c1c">#PT-9812</span>
+                <span class="demo-badge badge-breach">Breach: 5h 20m</span>
+              </div>
+              <h3 class="demo-card-name">David Thorne (Age 42)</h3>
+              <p class="demo-card-meta">Royal Perth ED &middot; Involuntary Form 1 &middot; HDU Required</p>
+              <div class="demo-card-foot">
+                <span>Pending acute bed allocation</span>
+                <button type="button" class="wf-btn-ghost" style="height: 24px; padding: 0 8px; font-size: 11px">
+                  Fast Track
+                </button>
+              </div>
+            </div>
+
+            <div class="demo-card" style="border-left: 4px solid #f59e0b">
+              <div class="demo-card-head">
+                <span class="demo-card-tag" style="color: #b45309">#PT-9401</span>
+                <span
+                  class="demo-badge badge-accepted"
+                  style="background: #fffbeb; color: #b45309; border-color: #fde68a"
+                  >Imminent: 3h 45m</span
+                >
+              </div>
+              <h3 class="demo-card-name">Aisha Morales (Age 28)</h3>
+              <p class="demo-card-meta">Fiona Stanley ED &middot; Voluntary &middot; Female Only Unit</p>
+              <div class="demo-card-foot">
+                <span>Bed offer pending confirmation</span>
+                <button type="button" class="wf-btn-ghost" style="height: 24px; padding: 0 8px; font-size: 11px">
+                  Inspect Offer
+                </button>
+              </div>
+            </div>
+
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag">#PT-9104</span>
+                <span class="demo-badge badge-accepted">Hold: 2h 10m</span>
+              </div>
+              <h3 class="demo-card-name">Robert King (Age 64)</h3>
+              <p class="demo-card-meta">Sir Charles Gairdner &middot; Discharge Transport Pending</p>
+              <div class="demo-card-foot">
+                <span>Waiting PTS vehicle pickup</span>
+                <strong class="font-mono">PTS Booked</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SCREEN 3: Statewide Bed Board & Allocation                          -->
+        <!-- =================================================================== -->
+        <section id="screen-bedboard" class="page-mockup-wrapper">
+          <div class="mockup-info-row">
+            <span class="mockup-label">Screen 3 · Statewide Bed Board & Allocation</span>
+            <div class="mockup-specs">
+              <span>Navigation: <strong>Care Level Tabs + Multi-Axis Bed Filters</strong></span>
+              <span class="spec-pill">Height: 104px (-72% space)</span>
+            </div>
+          </div>
+
+          <!-- The Component -->
+          <div class="wf-unified-header">
+            <!-- Row 1: Executive Horizon -->
+            <div class="wf-horizon-row">
+              <div class="wf-title-cluster">
+                <span class="wf-pulse-beacon" title="All 23 wards reporting live bed status"></span>
+                <h2 class="wf-page-title">Statewide Bed Board</h2>
+                <span class="wf-title-sep">&middot;</span>
+                <span class="wf-vitals-badge badge-teal"> <strong class="font-mono">94.2%</strong> Occupancy </span>
+                <span class="wf-vitals-badge">
+                  <strong class="font-mono">14</strong> beds available across 23 wards
+                </span>
+              </div>
+
+              <div class="wf-controls-cluster">
+                <!-- Precision Search -->
+                <div class="wf-search-box">
+                  <svg class="wf-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input type="text" placeholder="Search ward, site, bed #..." class="wf-search-input" />
+                  <kbd class="wf-search-kbd">⌘K</kbd>
+                </div>
+
+                <!-- Action Buttons -->
+                <button type="button" class="wf-btn-ghost"><span>🔄</span> Morning Rollup</button>
+                <button type="button" class="wf-btn-primary"><span>+</span> Allocate Bed Offer</button>
+              </div>
+            </div>
+
+            <!-- Row 2: Navigation & Telemetry Ribbon -->
+            <div class="wf-ribbon-row">
+              <!-- Segmented Ward Service / Acuity Tabs -->
+              <div class="wf-segmented-track" role="tablist" aria-label="Care Level">
+                <button type="button" class="wf-segment-pill active" onclick="activateSegment(this)">
+                  All Units <span class="wf-segment-count">23</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  Acute Adult <span class="wf-segment-count">14</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  Subacute <span class="wf-segment-count">5</span>
+                </button>
+                <button type="button" class="wf-segment-pill" onclick="activateSegment(this)">
+                  Secure Units <span class="wf-segment-count">4</span>
+                </button>
+              </div>
+
+              <!-- Attribute Filter Chips -->
+              <div class="wf-chips-cluster">
+                <span class="wf-chips-label">Filters:</span>
+                <button type="button" class="wf-filter-chip active" onclick="toggleChip(this)">
+                  Available Beds Only (14)
+                </button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">Female Beds</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">Male Beds</button>
+                <button type="button" class="wf-filter-chip" onclick="toggleChip(this)">High Dependency (HDU)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demonstration Content -->
+          <div>
+            <div class="content-stream-title">
+              <span>🏥 Live Inpatient Capacity & Availability</span>
+              <span class="font-mono" style="font-size: 11.5px; color: var(--ink-muted)"
+                >Confirmed morning reconciliation</span
+              >
+            </div>
+            <p class="content-stream-desc">
+              Ward status cards show instant allocatable beds with zero vertical wasted chrome.
+            </p>
+          </div>
+
+          <div class="demo-cards-grid">
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag" style="color: #0f766e">GRAYLANDS HOSPITAL</span>
+                <span class="demo-badge badge-available">2 Beds Open</span>
+              </div>
+              <h3 class="demo-card-name">Murchison Ward (Acute Adult)</h3>
+              <p class="demo-card-meta">22 / 24 Occupied (91.6%) &middot; North Metro Health</p>
+              <div class="demo-card-foot">
+                <span>1 Male, 1 Female Bed Available</span>
+                <button type="button" class="wf-btn-ghost" style="height: 24px; padding: 0 8px; font-size: 11px">
+                  Hold Bed
+                </button>
+              </div>
+            </div>
+
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag" style="color: #0f766e">FIONA STANLEY HOSPITAL</span>
+                <span class="demo-badge badge-available">1 Bed Open</span>
+              </div>
+              <h3 class="demo-card-name">Ward 5A (Mental Health Acute)</h3>
+              <p class="demo-card-meta">29 / 30 Occupied (96.7%) &middot; South Metro Health</p>
+              <div class="demo-card-foot">
+                <span>1 Female High Dependency Bed</span>
+                <button type="button" class="wf-btn-ghost" style="height: 24px; padding: 0 8px; font-size: 11px">
+                  Hold Bed
+                </button>
+              </div>
+            </div>
+
+            <div class="demo-card">
+              <div class="demo-card-head">
+                <span class="demo-card-tag" style="color: #b45309">ROYAL PERTH HOSPITAL</span>
+                <span
+                  class="demo-badge badge-accepted"
+                  style="background: #fffbeb; color: #b45309; border-color: #fde68a"
+                  >Full (0 Beds)</span
+                >
+              </div>
+              <h3 class="demo-card-name">Ward 2K (Psychiatric Assessment Unit)</h3>
+              <p class="demo-card-meta">16 / 16 Occupied (100%) &middot; East Metro Health</p>
+              <div class="demo-card-foot">
+                <span>1 Discharge planned at 14:00</span>
+                <span class="font-mono text-slate-500">Standby</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- ARCHITECTURAL SPECIFICATION & TOKEN MAPPING                         -->
+        <!-- =================================================================== -->
+        <section class="spec-table-card">
+          <h3 style="font-size: 16px; font-weight: 800; color: var(--ink); margin-bottom: 6px">
+            📐 Perfected Header Design System Specifications
+          </h3>
+          <p style="font-size: 12.5px; color: var(--ink-muted); margin-bottom: 20px">
+            The exact anatomical, typographic, and interactive contracts underpinning this unified structure.
+          </p>
+
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Element</th>
+                <th>Dimensions & Curves</th>
+                <th>Visual & Elevation Contract</th>
+                <th>Behavioral & Keyboard Contract</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Header Container</strong></td>
+                <td>Border-radius: <code>16px</code><br />Total Height: <code>104px</code></td>
+                <td>1px solid <code>rgba(226,232,240,0.9)</code>, subtle contact shadow + 16px ambient shadow.</td>
+                <td>Pins to top viewport smoothly when scrolled; no jarring sticky pop.</td>
+              </tr>
+              <tr>
+                <td><strong>Precision Search Composer</strong></td>
+                <td>
+                  Height: <code>33px</code><br />Radius: <code>10px</code><br />Rest width: <code>240px</code
+                  ><br />Focus width: <code>300px</code>
+                </td>
+                <td>
+                  Inset shadow <code>rgba(15,23,42,0.04)</code>, focus ring <code>3px rgba(59,130,246,0.15)</code>.
+                </td>
+                <td>
+                  Focused with <kbd>⌘K</kbd> or <kbd>/</kbd>. Clears with <kbd>Esc</kbd>. Retains query on tab switch.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Segmented Track Controller</strong></td>
+                <td>
+                  Track padding: <code>3px</code><br />Track radius: <code>11px</code><br />Pill radius:
+                  <code>8px</code>
+                </td>
+                <td>Track: <code>#e2e8f0</code>.<br />Active pill: <code>#ffffff</code> with 1px shadow.</td>
+                <td>ArrowLeft / ArrowRight keyboard navigation. Tabular numbers prevent jitter.</td>
+              </tr>
+              <tr>
+                <td><strong>Primary Action CTA</strong></td>
+                <td>Height: <code>33px</code><br />Radius: <code>9px</code><br />Padding: <code>0 14px</code></td>
+                <td>
+                  Brand slate <code>#1e293b</code> with inner top hairline highlight
+                  <code>rgba(255,255,255,0.18)</code>.
+                </td>
+                <td>Tactile press down <code>scale(0.98)</code>. Accessible aria trigger.</td>
+              </tr>
+              <tr>
+                <td><strong>Live Status Beacon</strong></td>
+                <td>Core: <code>9px</code><br />Halo: <code>3px</code></td>
+                <td>Solid state (Green: nominal, Amber: warning, Red: breach).</td>
+                <td>Screen-reader accessible status sentence via aria-label.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      function switchScreen(screenKey) {
+        document.querySelectorAll(".page-tab-btn").forEach((btn) => btn.classList.remove("active"));
+        const activeBtn = document.getElementById(`tab-${screenKey}`);
+        if (activeBtn) activeBtn.classList.add("active");
+
+        document.querySelectorAll(".page-mockup-wrapper").forEach((wrapper) => wrapper.classList.remove("active"));
+        const activeWrapper = document.getElementById(`screen-${screenKey}`);
+        if (activeWrapper) activeWrapper.classList.add("active");
+      }
+
+      function activateSegment(btn) {
+        const track = btn.closest(".wf-segmented-track");
+        if (!track) return;
+        track.querySelectorAll(".wf-segment-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+
+      function toggleChip(btn) {
+        const cluster = btn.closest(".wf-chips-cluster");
+        if (!cluster) return;
+        cluster.querySelectorAll(".wf-filter-chip").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    </script>
+  </body>
+</html>

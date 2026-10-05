@@ -1,0 +1,1889 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Referral Detail Inspector Mockup</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+        --t-0: 0.75rem; /* 12px */
+        --t-1: 0.8125rem; /* 13px */
+        --t-2: 0.875rem; /* 14px */
+        --t-3: 1rem; /* 16px */
+        --t-4: 1.125rem; /* 18px */
+        --t-5: 1.25rem; /* 20px */
+
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-xl: 12px;
+        --radius-full: 9999px;
+
+        --ground: #f8fafc;
+        --surface: #ffffff;
+        --surface-subtle: #f8fafc;
+        --surface-2: #f1f5f9;
+        --surface-3: #e2e8f0;
+        --surface-hover: rgba(0, 0, 0, 0.035);
+
+        --ink: #0f172a;
+        --ink-soft: #334155;
+        --muted: #64748b;
+        --muted-light: #94a3b8;
+
+        --line: #e2e8f0;
+        --line-strong: #cbd5e1;
+
+        --accent: #0284c7;
+        --accent-soft: #e0f2fe;
+        --accent-press: #0369a1;
+        --on-accent: #ffffff;
+
+        --good: #166534;
+        --good-soft: #f0fdf4;
+        --good-border: #bbf7d0;
+
+        --warn: #854d0e;
+        --warn-soft: #fefce8;
+        --warn-border: #fef08a;
+
+        --danger: #991b1b;
+        --danger-soft: #fef2f2;
+        --danger-border: #fecaca;
+
+        --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --lift: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --lift-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground: #0b1120;
+        --surface: #0f172a;
+        --surface-subtle: #131d31;
+        --surface-2: #1e293b;
+        --surface-3: #334155;
+        --surface-hover: rgba(255, 255, 255, 0.045);
+
+        --ink: #f8fafc;
+        --ink-soft: #cbd5e1;
+        --muted: #94a3b8;
+        --muted-light: #64748b;
+
+        --line: #1e293b;
+        --line-strong: #334155;
+
+        --accent: #38bdf8;
+        --accent-soft: #082f49;
+        --accent-press: #0284c7;
+        --on-accent: #0b1120;
+
+        --good: #4ade80;
+        --good-soft: #052e16;
+        --good-border: #166534;
+
+        --warn: #fde047;
+        --warn-soft: #422006;
+        --warn-border: #854d0e;
+
+        --danger: #f87171;
+        --danger-soft: #450a0a;
+        --danger-border: #991b1b;
+
+        --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --lift: 0 2px 4px rgba(0, 0, 0, 0.3);
+        --lift-md: 0 6px 12px rgba(0, 0, 0, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--ground);
+        color: var(--ink);
+        line-height: 1.4;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .deckWrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Control Banner */
+      .mockupControls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--lift-sm);
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .controlTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .controlTitle {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .controlBadge {
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      .controlActions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btnCtrl {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        padding: 6px 12px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btnCtrl:hover {
+        background: var(--surface-3);
+        border-color: var(--line-strong);
+      }
+
+      /* Layout */
+      .splitLayout {
+        display: grid;
+        grid-template-columns: minmax(310px, 360px) minmax(500px, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      @media (max-width: 900px) {
+        .splitLayout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Left Side Mini-Queue */
+      .queueColumn {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+
+      .queueHeader {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-1);
+        font-weight: 700;
+      }
+
+      .queueList {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .queueItem {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        transition: background 0.15s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .queueItem:hover {
+        background: var(--surface-hover);
+      }
+
+      .queueItem.selected {
+        background: var(--surface-subtle);
+        border-left: 3px solid var(--accent);
+      }
+
+      .qTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .qId {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .qName {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .qBadges {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .badgeUrgent {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+      }
+
+      .badgeTier {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .badgeWait {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        background: var(--surface-2);
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+      }
+
+      .qContextRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .badgeAwaiting {
+        font-size: 11px;
+        color: var(--warn);
+        background: var(--warn-soft);
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+      }
+
+      /* Right Side Inspector */
+      .inspectorCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+
+      /* Patient Master Header */
+      .patientMasterHeader {
+        padding: 14px 18px 12px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .masterTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .identityCluster {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .umrnTag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 2.5px 7px;
+        border-radius: var(--radius-sm);
+        color: var(--ink-soft);
+      }
+
+      .patientTitle {
+        font-size: var(--t-4);
+        font-weight: 800;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+
+      .priorityPill {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+        border-radius: var(--radius-sm);
+        padding: 2px 7px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .tierPill {
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 2px 7px;
+      }
+
+      .masterActionCluster {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .elapsedWaitChip {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        font-weight: 700;
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+        border-radius: var(--radius-sm);
+        padding: 3px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .btnCloseDetail {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+
+      .btnCloseDetail:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      /* Clinical Micro-Grid */
+      .clinicalMetaGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        background: var(--surface-subtle);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        padding: 10px 14px;
+      }
+
+      @media (max-width: 650px) {
+        .clinicalMetaGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .metaCell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .metaLabel {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .metaValue {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Tab Bar */
+      .inspectorTabBar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tabItem {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--muted);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .tabItem:hover {
+        color: var(--ink);
+        background: var(--surface-2);
+      }
+
+      .tabItem.active {
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+
+      .tabCountBadge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: inherit;
+      }
+
+      .tabItem.active .tabCountBadge {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      /* Triage HUD */
+      .unifiedTriageBanner {
+        margin: 14px 14px 10px;
+        background: var(--surface-subtle);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .triageSummaryRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .triageLeadText {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--good);
+      }
+
+      .triagePillGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .triageMiniPill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2.5px 8px;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .pillGood {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good-border);
+      }
+
+      .pillWarn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+      }
+
+      .pillMuted {
+        background: var(--surface-2);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .governanceDisclosure {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      /* ==========================================================================
+         UNIFIED TIER ACCORDION GROUP — ZERO WHITE SPACE BETWEEN CLOSED TABS
+         ========================================================================== */
+      .tierAccordionGroup {
+        margin: 10px 14px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--lift-sm);
+      }
+
+      .tierCard {
+        margin: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tierCard:last-child {
+        border-bottom: none;
+      }
+
+      .tierCardHeader {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--surface-2);
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        transition: background 0.15s ease;
+      }
+
+      .tierCardHeader:hover {
+        background: var(--surface-hover);
+      }
+
+      .tierCard.expanded .tierCardHeader {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tierCardHeaderLeft {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .tierChevronChip {
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+        background: transparent;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        font-family: var(--font-mono);
+        color: var(--ink-soft);
+        transition:
+          transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+          color 0.15s ease;
+        flex-shrink: 0;
+      }
+
+      .tierCard.expanded .tierChevronChip {
+        transform: rotate(90deg);
+        color: var(--ink);
+      }
+
+      .tierTitleGroup {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+
+      .tierTitleText {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+      }
+
+      .tierSubtitle {
+        font-size: 11.5px;
+        color: var(--muted);
+        font-weight: 500;
+        line-height: 1.2;
+      }
+
+      .tierCardHeaderRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .tierCountBadge {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2.5px 8px;
+        border-radius: var(--radius-full);
+        letter-spacing: 0.01em;
+        line-height: 1;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .tierCountBadgeActive {
+        background: var(--surface);
+        border-color: var(--line-strong);
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .tierCountBadgeZero {
+        background: transparent;
+        border-color: var(--line);
+        color: var(--muted);
+      }
+
+      /* Tier Body Content */
+      .tierBody {
+        display: none;
+        background: var(--surface);
+      }
+
+      .tierCard.expanded .tierBody {
+        display: block;
+      }
+
+      /* Contained Empty Well */
+      .tierEmptyWell {
+        padding: 14px 16px;
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .tierEmptyIconWrap {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .tierEmptyText {
+        font-size: var(--t-1);
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      /* Clean Unit Cards Inside Tiers */
+      .unitCard {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: background 0.15s ease;
+      }
+
+      .unitCard:last-child {
+        border-bottom: none;
+      }
+
+      .unitCard:hover {
+        background: var(--surface-subtle);
+      }
+
+      .unitCardTop {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .unitNameGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .unitNameRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .unitName {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .badgeReadyBeds {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        background: var(--good);
+        color: #ffffff;
+      }
+
+      .unitSub {
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+
+      .btnAcceptBed {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--good);
+        color: #ffffff;
+        border: 1px solid var(--good);
+        border-radius: var(--radius-md);
+        padding: 6px 12px;
+        font-size: var(--t-1);
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: var(--lift-sm);
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .btnAcceptBed:hover {
+        background: #14532d;
+        box-shadow: var(--lift);
+      }
+
+      .btnSubtleDisabled {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--surface-2);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        padding: 5px 10px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: not-allowed;
+        opacity: 0.8;
+      }
+
+      /* Clean Inline Telemetry Row (Zero Grey Box) */
+      .unitIntelRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: var(--muted);
+        flex-wrap: wrap;
+        padding-top: 2px;
+      }
+
+      .unitIntelRow strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .demoDot {
+        color: var(--line-strong);
+      }
+
+      /* Gate Summary Toggle */
+      .gateSummary {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 2px;
+      }
+
+      .gateToggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: transparent;
+        border: none;
+        padding: 3px 0;
+        cursor: pointer;
+        color: var(--good);
+        font-size: 11.5px;
+        font-weight: 600;
+        font-family: inherit;
+        text-align: left;
+      }
+
+      .gateToggleWarn {
+        color: var(--warn);
+      }
+
+      .gateToggleDanger {
+        color: var(--danger);
+      }
+
+      .gateGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 6px;
+        padding: 8px;
+        background: var(--surface-2);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--line);
+      }
+
+      .gatePill {
+        font-size: 11px;
+        padding: 3px 6px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .gatePillPassed {
+        color: var(--good);
+        background: var(--good-soft);
+        border: 1px solid var(--good-border);
+      }
+
+      .gatePillFailed {
+        color: var(--danger);
+        background: var(--danger-soft);
+        border: 1px solid var(--danger-border);
+      }
+
+      .gatePillPending {
+        color: var(--warn);
+        background: var(--warn-soft);
+        border: 1px solid var(--warn-border);
+      }
+
+      /* Secondary Geography Section */
+      .geographySection {
+        margin: 16px 14px 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .geographyHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+      }
+
+      .geographyTitle {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .geographyBadge {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--surface-2);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--line);
+      }
+
+      .bandGroup {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        overflow: hidden;
+      }
+
+      .bandSummary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 12px;
+        background: var(--surface-2);
+        cursor: pointer;
+        font-size: var(--t-1);
+        font-weight: 600;
+        list-style: none;
+      }
+
+      .bandSummary::-webkit-details-marker {
+        display: none;
+      }
+
+      .bandSummaryLead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .bandSummary::after {
+        content: "▼";
+        font-size: 9px;
+        color: var(--muted);
+        transition: transform 0.2s ease;
+      }
+
+      .bandGroup[open] > .bandSummary::after {
+        transform: rotate(180deg);
+      }
+
+      .bandRowList {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--surface);
+      }
+
+      .bandRowItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .bandRowItem:last-child {
+        border-bottom: none;
+      }
+
+      /* Notification Toast */
+      .toastMessage {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--lift-md);
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1000;
+      }
+
+      .toastMessage.visible {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deckWrapper">
+      <!-- Top Control Bar -->
+      <div class="mockupControls">
+        <div class="controlTitleGroup">
+          <span class="controlTitle">Ward Flow — Referral Detail Inspector</span>
+          <span class="controlBadge">Live Interactive Prototype</span>
+        </div>
+        <div class="controlActions">
+          <button type="button" class="btnCtrl" onclick="toggleAllTiers()">
+            <span id="btnToggleAllText">Collapse All Tiers</span>
+          </button>
+          <button type="button" class="btnCtrl" onclick="toggleTheme()">
+            <span id="themeBtnText">🌓 Toggle Dark/Light</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="splitLayout">
+        <!-- Left Side: Queue List -->
+        <div class="queueColumn">
+          <div class="queueHeader">
+            <span>Queued Referrals (3)</span>
+            <span style="font-family: var(--font-mono); font-weight: 600; color: var(--muted); font-size: 11px"
+              >Urgency Order</span
+            >
+          </div>
+          <div class="queueList">
+            <!-- Orla Vallowen -->
+            <div class="queueItem selected" id="queueCard0" onclick="switchReferral(0)">
+              <div class="qTopRow">
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <span class="qId">UM-RD-RD06</span>
+                  <span class="qName">Orla Vallowen</span>
+                </div>
+              </div>
+              <div class="qTopRow">
+                <div class="qBadges">
+                  <span class="badgeUrgent">Urgent</span>
+                  <span class="badgeTier">Tier 2 · urgent</span>
+                  <span class="badgeWait">55m waiting</span>
+                </div>
+              </div>
+              <div class="qContextRow">
+                <span>Adult · Female · Perth Metro</span>
+                <span class="badgeAwaiting">Awaiting bed</span>
+              </div>
+            </div>
+
+            <!-- Tilly Mossgrave -->
+            <div class="queueItem" id="queueCard1" onclick="switchReferral(1)">
+              <div class="qTopRow">
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <span class="qId">UM100079</span>
+                  <span class="qName">Tilly Mossgrave</span>
+                </div>
+              </div>
+              <div class="qTopRow">
+                <div class="qBadges">
+                  <span class="badgeUrgent">Urgent</span>
+                  <span class="badgeTier">Tier 2 · urgent</span>
+                  <span class="badgeWait">42m waiting</span>
+                </div>
+              </div>
+              <div class="qContextRow">
+                <span>Youth · Female · Perth Metro</span>
+                <span class="badgeAwaiting">Awaiting bed</span>
+              </div>
+            </div>
+
+            <!-- Bao Davenport -->
+            <div class="queueItem" id="queueCard2" onclick="switchReferral(2)">
+              <div class="qTopRow">
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <span class="qId">UM100009</span>
+                  <span class="qName">Bao Davenport</span>
+                </div>
+              </div>
+              <div class="qTopRow">
+                <div class="qBadges">
+                  <span class="badgeUrgent">Urgent</span>
+                  <span class="badgeTier">Tier 2 · urgent</span>
+                  <span class="badgeWait">37m waiting</span>
+                </div>
+              </div>
+              <div class="qContextRow">
+                <span>Adult · ED Review · Perth Metro</span>
+                <span class="badgeAwaiting">Awaiting bed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Referral Inspector Drawer -->
+        <div class="inspectorCard">
+          <!-- Patient Master Header -->
+          <div class="patientMasterHeader">
+            <div class="masterTopRow">
+              <div class="identityCluster">
+                <span class="umrnTag" id="ptUmrnDisplay">UMRN: UM-RD-RD06</span>
+                <h2 class="patientTitle" id="ptNameDisplay">Orla Vallowen</h2>
+                <span class="priorityPill">
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+                    <path
+                      d="M8 1.5 1 14h14L8 1.5ZM8 5a.9.9 0 0 1 .9.9v3.4a.9.9 0 0 1-1.8 0V5.9A.9.9 0 0 1 8 5Zm0 6.8a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"
+                    />
+                  </svg>
+                  Urgent
+                </span>
+                <span class="tierPill" id="ptTierDisplay">TIER 2 · URGENT</span>
+              </div>
+
+              <div class="masterActionCluster">
+                <div class="elapsedWaitChip">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span id="ptWaitDisplay">55m waiting</span>
+                </div>
+                <button type="button" class="btnCloseDetail" title="Close detail (Esc)" aria-label="Close detail">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Clinical Micro-Grid -->
+            <div class="clinicalMetaGrid">
+              <div class="metaCell">
+                <span class="metaLabel">Demographics</span>
+                <span class="metaValue" id="ptDemoDisplay">Adult · Female</span>
+              </div>
+              <div class="metaCell">
+                <span class="metaLabel">Origin Facility</span>
+                <span class="metaValue" id="ptOriginDisplay">Armadale Health Service</span>
+              </div>
+              <div class="metaCell">
+                <span class="metaLabel">Cohort Sought</span>
+                <span class="metaValue" id="ptCohortDisplay">Adult Acute Open</span>
+              </div>
+              <div class="metaCell">
+                <span class="metaLabel">Legal Status</span>
+                <span class="metaValue" id="ptLegalDisplay" style="color: var(--muted)">Legal status not recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Tab Bar -->
+          <div class="inspectorTabBar" role="tablist">
+            <button type="button" class="tabItem active" id="tabBtnPlacement">
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
+              </svg>
+              <span>Bed Placement</span>
+            </button>
+            <button
+              type="button"
+              class="tabItem"
+              id="tabBtnDossier"
+              onclick="showToast('Clinical Dossier view is available')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" />
+                <path d="M9 12h6M9 16h6" />
+              </svg>
+              <span>Clinical Dossier</span>
+            </button>
+            <button
+              type="button"
+              class="tabItem"
+              id="tabBtnLegal"
+              onclick="showToast('Recorded Legal Forms view is available')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path
+                  d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h18"
+                />
+              </svg>
+              <span>Recorded Legal Forms</span>
+            </button>
+          </div>
+
+          <!-- Triage HUD -->
+          <div class="unifiedTriageBanner">
+            <div class="triageSummaryRow">
+              <span class="triageLeadText" id="triageSentenceDisplay"
+                >13 of 22 units accept this referral right now.</span
+              >
+              <div class="triagePillGroup" id="triagePillGroup">
+                <span class="triageMiniPill pillGood" id="pillT1">● 13 Immediate Vacancies</span>
+                <span class="triageMiniPill pillWarn" id="pillT2">▲ 0 Blocked (No Bed)</span>
+                <span class="triageMiniPill pillMuted" id="pillT3">✕ 9 Excluded</span>
+              </div>
+            </div>
+            <div class="governanceDisclosure">
+              <span>
+                <strong>Not a medical device.</strong> Every unit is listed in fixed network order — this view places
+                nobody: a coordinator decides each placement, one at a time, and nothing is accepted until recorded ·
+                Travel times on this screen are invented.
+              </span>
+            </div>
+          </div>
+
+          <!-- UNIFIED TIER ACCORDION GROUP: ZERO WHITE SPACE BETWEEN CLOSED TABS -->
+          <div class="tierAccordionGroup">
+            <!-- TIER 1: AVAILABLE BEDS -->
+            <div class="tierCard expanded" id="tierCard1">
+              <button type="button" class="tierCardHeader" onclick="toggleTier(1)">
+                <div class="tierCardHeaderLeft">
+                  <span class="tierChevronChip" aria-hidden="true">▶</span>
+                  <div class="tierTitleGroup">
+                    <span class="tierTitleText">Available Beds</span>
+                    <span class="tierSubtitle">Immediate confirmed vacancies</span>
+                  </div>
+                </div>
+                <div class="tierCardHeaderRight">
+                  <span class="tierCountBadge tierCountBadgeActive" id="badgeTier1">13 units available</span>
+                </div>
+              </button>
+
+              <div class="tierBody" id="tierBody1">
+                <!-- Unit Card 1: Dabakarn -->
+                <div class="unitCard">
+                  <div class="unitCardTop">
+                    <div class="unitNameGroup">
+                      <div class="unitNameRow">
+                        <span class="unitName">Dabakarn</span>
+                        <span class="badgeReadyBeds">1 bed ready</span>
+                      </div>
+                      <div class="unitSub">Royal Perth Hospital · Adult · Contact: Not recorded</div>
+                    </div>
+                    <button type="button" class="btnAcceptBed" onclick="showToast('✓ Bed accepted at Dabakarn')">
+                      ✓ Accept Bed at Dabakarn
+                    </button>
+                  </div>
+                  <!-- Clean Inline Telemetry (Zero Grey Box) -->
+                  <div class="unitIntelRow">
+                    <span>Bed Allocation: <strong>Allocatable bed recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Transit: <strong>Not recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Census: <strong>18/20 (90% Occ)</strong></span>
+                  </div>
+                  <!-- Verification Gates Toggle -->
+                  <div class="gateSummary">
+                    <button type="button" class="gateToggle" onclick="toggleGateGrid('dabakarn')">
+                      <span>✓ 10/10 Statutory &amp; Clinical Criteria Met</span>
+                      <span style="font-family: var(--font-mono); font-size: 11px" id="gateToggleText-dabakarn"
+                        >▼ Show Verification Gates</span
+                      >
+                    </button>
+                    <div class="gateGrid" id="gateGrid-dabakarn" style="display: none">
+                      <div class="gatePill gatePillPassed">✓ catchment: WA State Network Open</div>
+                      <div class="gatePill gatePillPassed">✓ cohort: Adult Open Matching</div>
+                      <div class="gatePill gatePillPassed">✓ legal: Informal Voluntary Criteria Met</div>
+                      <div class="gatePill gatePillPassed">✓ acuity: General Nursing Available</div>
+                      <div class="gatePill gatePillPassed">✓ beds: 1 Allocatable Bed Confirmed</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Unit Card 2: Mental Health Unit -->
+                <div class="unitCard">
+                  <div class="unitCardTop">
+                    <div class="unitNameGroup">
+                      <div class="unitNameRow">
+                        <span class="unitName">Mental Health Unit</span>
+                        <span class="badgeReadyBeds">2 beds ready</span>
+                      </div>
+                      <div class="unitSub">Sir Charles Gairdner Hospital · Adult · Contact: Not recorded</div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btnAcceptBed"
+                      onclick="showToast('✓ Bed accepted at Mental Health Unit')"
+                    >
+                      ✓ Accept Bed at Mental
+                    </button>
+                  </div>
+                  <div class="unitIntelRow">
+                    <span>Bed Allocation: <strong>Allocatable bed recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Transit: <strong>Not recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Census: <strong>19/24 (79% Occ)</strong></span>
+                  </div>
+                  <div class="gateSummary">
+                    <button type="button" class="gateToggle" onclick="toggleGateGrid('mhu')">
+                      <span>✓ 10/10 Statutory &amp; Clinical Criteria Met</span>
+                      <span style="font-family: var(--font-mono); font-size: 11px" id="gateToggleText-mhu"
+                        >▼ Show Verification Gates</span
+                      >
+                    </button>
+                    <div class="gateGrid" id="gateGrid-mhu" style="display: none">
+                      <div class="gatePill gatePillPassed">✓ catchment: WA State Network Open</div>
+                      <div class="gatePill gatePillPassed">✓ cohort: Adult Open Matching</div>
+                      <div class="gatePill gatePillPassed">✓ beds: 2 Allocatable Beds Confirmed</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Unit Card 3: Moodjar -->
+                <div class="unitCard">
+                  <div class="unitCardTop">
+                    <div class="unitNameGroup">
+                      <div class="unitNameRow">
+                        <span class="unitName">Moodjar</span>
+                        <span class="badgeReadyBeds">2 beds ready</span>
+                      </div>
+                      <div class="unitSub">Armadale Health Service · Adult · Contact: Not recorded</div>
+                    </div>
+                    <button type="button" class="btnAcceptBed" onclick="showToast('✓ Bed accepted at Moodjar')">
+                      ✓ Accept Bed at Moodjar
+                    </button>
+                  </div>
+                  <div class="unitIntelRow">
+                    <span>Bed Allocation: <strong>Allocatable bed recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Transit: <strong>Not recorded</strong></span>
+                    <span class="demoDot">·</span>
+                    <span>Census: <strong>12/16 (75% Occ)</strong></span>
+                  </div>
+                  <div class="gateSummary">
+                    <button type="button" class="gateToggle" onclick="toggleGateGrid('moodjar')">
+                      <span>✓ 10/10 Statutory &amp; Clinical Criteria Met</span>
+                      <span style="font-family: var(--font-mono); font-size: 11px" id="gateToggleText-moodjar"
+                        >▼ Show Verification Gates</span
+                      >
+                    </button>
+                    <div class="gateGrid" id="gateGrid-moodjar" style="display: none">
+                      <div class="gatePill gatePillPassed">✓ catchment: WA State Network Open</div>
+                      <div class="gatePill gatePillPassed">✓ cohort: Adult Open Matching</div>
+                      <div class="gatePill gatePillPassed">✓ beds: 2 Allocatable Beds Confirmed</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TIER 2: CAPACITY PENDING -->
+            <div class="tierCard" id="tierCard2">
+              <button type="button" class="tierCardHeader" onclick="toggleTier(2)">
+                <div class="tierCardHeaderLeft">
+                  <span class="tierChevronChip" aria-hidden="true">▶</span>
+                  <div class="tierTitleGroup">
+                    <span class="tierTitleText">Capacity Pending</span>
+                    <span class="tierSubtitle">Outstanding capacity checks</span>
+                  </div>
+                </div>
+                <div class="tierCardHeaderRight">
+                  <span class="tierCountBadge tierCountBadgeZero" id="badgeTier2">0 units pending</span>
+                </div>
+              </button>
+
+              <div class="tierBody" id="tierBody2">
+                <div class="tierEmptyWell" id="tier2EmptyWell">
+                  <span class="tierEmptyIconWrap">○</span>
+                  <p class="tierEmptyText">No candidates have capacity checks outstanding.</p>
+                </div>
+                <!-- Dynamic Pending Unit (for Tilly Mossgrave) -->
+                <div id="tier2DynamicContent" style="display: none">
+                  <div class="unitCard">
+                    <div class="unitCardTop">
+                      <div class="unitNameGroup">
+                        <div class="unitNameRow">
+                          <span class="unitName">Bentley Adolescent Unit</span>
+                          <span
+                            style="
+                              font-size: 11px;
+                              padding: 1px 6px;
+                              border-radius: 10px;
+                              background: var(--warn-soft);
+                              color: var(--warn);
+                              font-weight: 700;
+                            "
+                            >Capacity unresolved</span
+                          >
+                        </div>
+                        <div class="unitSub">Bentley Health Service · Youth</div>
+                      </div>
+                      <button
+                        type="button"
+                        class="btnSubtleDisabled"
+                        title="Turnaround prioritisation is unavailable: scheduling workflow not recorded"
+                      >
+                        Flag Turnaround Priority
+                      </button>
+                    </div>
+                    <div class="unitIntelRow">
+                      <span
+                        >Recorded capacity checks:
+                        <strong>Bed: 0 empty beds recorded · Turnaround pending</strong></span
+                      >
+                    </div>
+                    <div class="gateSummary">
+                      <button type="button" class="gateToggle gateToggleWarn" onclick="toggleGateGrid('t2-bentley')">
+                        <span>Capacity checks outstanding · other recorded gates passed</span>
+                        <span style="font-family: var(--font-mono); font-size: 11px" id="gateToggleText-t2-bentley"
+                          >▼ Show Verification Gates</span
+                        >
+                      </button>
+                      <div class="gateGrid" id="gateGrid-t2-bentley" style="display: none">
+                        <div class="gatePill gatePillPassed">✓ cohort: Youth Admitted</div>
+                        <div class="gatePill gatePillPending">○ beds: 0 allocatable beds recorded</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TIER 3: INELIGIBLE UNITS -->
+            <div class="tierCard" id="tierCard3">
+              <button type="button" class="tierCardHeader" onclick="toggleTier(3)">
+                <div class="tierCardHeaderLeft">
+                  <span class="tierChevronChip" aria-hidden="true">▶</span>
+                  <div class="tierTitleGroup">
+                    <span class="tierTitleText">Ineligible Units</span>
+                    <span class="tierSubtitle">Clinical &amp; policy exclusions</span>
+                  </div>
+                </div>
+                <div class="tierCardHeaderRight">
+                  <span class="tierCountBadge tierCountBadgeActive" id="badgeTier3">9 units excluded</span>
+                </div>
+              </button>
+
+              <div class="tierBody" id="tierBody3">
+                <!-- Excluded Unit 1: Frankland Centre -->
+                <div class="unitCard">
+                  <div class="unitCardTop">
+                    <div class="unitNameGroup">
+                      <div class="unitNameRow">
+                        <span class="unitName">Frankland Centre</span>
+                        <span
+                          style="
+                            font-size: 11px;
+                            padding: 1px 6px;
+                            border-radius: 10px;
+                            background: var(--danger-soft);
+                            color: var(--danger);
+                            font-weight: 700;
+                          "
+                          >Statutory Exclusion</span
+                        >
+                      </div>
+                      <div class="unitSub">Graylands Hospital · Forensic</div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btnSubtleDisabled"
+                      title="Clinical override requires authorised reason-gated workflow"
+                    >
+                      Clinical Override
+                    </button>
+                  </div>
+                  <div class="unitIntelRow">
+                    <span
+                      >Statutory Barrier:
+                      <strong style="color: var(--danger)"
+                        >✕ Forensic bed: requires judicial or authorised forensic order</strong
+                      ></span
+                    >
+                  </div>
+                  <div class="gateSummary">
+                    <button type="button" class="gateToggle gateToggleDanger" onclick="toggleGateGrid('t3-frankland')">
+                      <span>✕ 1 of 10 Criteria Failed · Statutory Exclusion Breakdown</span>
+                      <span style="font-family: var(--font-mono); font-size: 11px" id="gateToggleText-t3-frankland"
+                        >▼ Show Failed Gate Breakdown</span
+                      >
+                    </button>
+                    <div class="gateGrid" id="gateGrid-t3-frankland" style="display: none">
+                      <div class="gatePill gatePillFailed">
+                        ✕ legal: Forensic order required for Frankland admission
+                      </div>
+                      <div class="gatePill gatePillPassed">✓ catchment: WA State Network Open</div>
+                      <div class="gatePill gatePillPassed">✓ acuity: High Acuity Service Available</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Excluded Unit 2: Mother and Baby Unit -->
+                <div class="unitCard">
+                  <div class="unitCardTop">
+                    <div class="unitNameGroup">
+                      <div class="unitNameRow">
+                        <span class="unitName">Mother and Baby Unit</span>
+                        <span
+                          style="
+                            font-size: 11px;
+                            padding: 1px 6px;
+                            border-radius: 10px;
+                            background: var(--danger-soft);
+                            color: var(--danger);
+                            font-weight: 700;
+                          "
+                          >Statutory Exclusion</span
+                        >
+                      </div>
+                      <div class="unitSub">King Edward Memorial Hospital · Perinatal</div>
+                    </div>
+                    <button type="button" class="btnSubtleDisabled">Clinical Override</button>
+                  </div>
+                  <div class="unitIntelRow">
+                    <span
+                      >Statutory Barrier:
+                      <strong style="color: var(--danger)"
+                        >✕ Cohort mismatch: requires specialised perinatal referral</strong
+                      ></span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Geography Breakdown Section -->
+          <section class="geographySection">
+            <div class="geographyHeader">
+              <span class="geographyTitle">Travel Band Network Triage &amp; Geography Breakdown</span>
+              <span class="geographyBadge">22 Units Mapped</span>
+            </div>
+            <!-- Travel Band Details -->
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <details class="bandGroup" open>
+                <summary class="bandSummary">
+                  <div class="bandSummaryLead">
+                    <span>Under an hour from home</span>
+                    <span
+                      style="
+                        font-size: 11px;
+                        padding: 1px 6px;
+                        border-radius: var(--radius-sm);
+                        background: var(--good);
+                        color: #fff;
+                        font-weight: 700;
+                      "
+                      >2 beds ready</span
+                    >
+                  </div>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 600"
+                    >4 units in this band · 2 accept this referral</span
+                  >
+                </summary>
+                <div class="bandRowList">
+                  <div class="bandRowItem">
+                    <span style="font-weight: 600">Dabakarn (Royal Perth Hospital)</span>
+                    <span style="color: var(--good); font-weight: 600">Accepts referral · 1 bed ready</span>
+                  </div>
+                  <div class="bandRowItem">
+                    <span style="font-weight: 600">Mental Health Unit (SCGH)</span>
+                    <span style="color: var(--good); font-weight: 600">Accepts referral · 2 beds ready</span>
+                  </div>
+                  <div class="bandRowItem">
+                    <span style="color: var(--muted)">Frankland Centre</span>
+                    <span style="color: var(--danger); font-size: 11px">Forensic exclusion</span>
+                  </div>
+                </div>
+              </details>
+
+              <details class="bandGroup">
+                <summary class="bandSummary">
+                  <div class="bandSummaryLead">
+                    <span>One to two hours from home</span>
+                  </div>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 600"
+                    >2 units in this band · 0 accept this referral</span
+                  >
+                </summary>
+                <div class="bandRowList">
+                  <div class="bandRowItem">
+                    <span style="color: var(--muted)">Joondalup Health Campus</span>
+                    <span style="color: var(--warn); font-size: 11px">Capacity pending</span>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toastMessage" id="toastMessage">
+      <span id="toastText">Action recorded</span>
+    </div>
+
+    <script>
+      // Referral Dataset
+      const referrals = [
+        {
+          name: "Orla Vallowen",
+          umrn: "UMRN: UM-RD-RD06",
+          wait: "55m waiting",
+          tier: "TIER 2 · URGENT",
+          demo: "Adult · Female",
+          origin: "Armadale Health Service",
+          cohort: "Adult Acute Open",
+          legal: "Legal status not recorded",
+          sentence: "13 of 22 units accept this referral right now.",
+          pillGood: "● 13 Immediate Vacancies",
+          pillWarn: "▲ 0 Blocked (No Bed)",
+          pillMuted: "✕ 9 Excluded",
+          t1Count: "13 units available",
+          t2Count: "0 units pending",
+          t3Count: "9 units excluded",
+          t1HasBeds: true,
+          t2HasPending: false,
+        },
+        {
+          name: "Tilly Mossgrave",
+          umrn: "UMRN: UM100079",
+          wait: "42m waiting",
+          tier: "TIER 2 · URGENT",
+          demo: "Youth · Female",
+          origin: "Armadale Health Service",
+          cohort: "Youth Acute Open",
+          legal: "Informal / Voluntary",
+          sentence: "0 of 22 units accept this referral right now.",
+          pillGood: "● 0 Immediate Vacancies",
+          pillWarn: "▲ 3 Blocked (No Bed)",
+          pillMuted: "✕ 19 Excluded",
+          t1Count: "0 units available",
+          t2Count: "3 units pending",
+          t3Count: "19 units excluded",
+          t1HasBeds: false,
+          t2HasPending: true,
+        },
+        {
+          name: "Bao Davenport",
+          umrn: "UMRN: UM100009",
+          wait: "37m waiting",
+          tier: "TIER 2 · URGENT",
+          demo: "Adult · Male",
+          origin: "Royal Perth Hospital",
+          cohort: "Emergency Psych Review",
+          legal: "Mental Health Act Assessment",
+          sentence: "Direct Presentation · Non-Inpatient Departmental Review",
+          pillGood: "● ED Triage Queued",
+          pillWarn: "▲ Assessment Active",
+          pillMuted: "✕ No Bed Shortlist",
+          t1Count: "0 units available",
+          t2Count: "0 units pending",
+          t3Count: "22 units non-applicable",
+          t1HasBeds: false,
+          t2HasPending: false,
+        },
+      ];
+
+      let currentReferralIdx = 0;
+
+      function switchReferral(idx) {
+        currentReferralIdx = idx;
+        const ref = referrals[idx];
+
+        // Update Left Queue selection
+        for (let i = 0; i < referrals.length; i++) {
+          const el = document.getElementById("queueCard" + i);
+          if (el) el.classList.toggle("selected", i === idx);
+        }
+
+        // Update Inspector Header
+        document.getElementById("ptUmrnDisplay").textContent = ref.umrn;
+        document.getElementById("ptNameDisplay").textContent = ref.name;
+        document.getElementById("ptWaitDisplay").textContent = ref.wait;
+        document.getElementById("ptTierDisplay").textContent = ref.tier;
+        document.getElementById("ptDemoDisplay").textContent = ref.demo;
+        document.getElementById("ptOriginDisplay").textContent = ref.origin;
+        document.getElementById("ptCohortDisplay").textContent = ref.cohort;
+        document.getElementById("ptLegalDisplay").textContent = ref.legal;
+
+        // Update Triage HUD
+        document.getElementById("triageSentenceDisplay").textContent = ref.sentence;
+        document.getElementById("pillT1").textContent = ref.pillGood;
+        document.getElementById("pillT2").textContent = ref.pillWarn;
+        document.getElementById("pillT3").textContent = ref.pillMuted;
+
+        // Update Tier Badges
+        document.getElementById("badgeTier1").textContent = ref.t1Count;
+        document.getElementById("badgeTier2").textContent = ref.t2Count;
+        document.getElementById("badgeTier3").textContent = ref.t3Count;
+
+        // Update Tier 1 empty well vs populated
+        const tier1Body = document.getElementById("tierBody1");
+        if (!ref.t1HasBeds) {
+          tier1Body.innerHTML = `
+            <div class="tierEmptyWell">
+              <span class="tierEmptyIconWrap">✓</span>
+              <p class="tierEmptyText">No units in the network currently meet all clinical criteria with an immediately confirmed allocatable bed.</p>
+            </div>
+          `;
+          document.getElementById("badgeTier1").className = "tierCountBadge tierCountBadgeZero";
+        } else {
+          location.reload(); // restore default populated view if switching back
+        }
+
+        // Update Tier 2
+        const t2Dynamic = document.getElementById("tier2DynamicContent");
+        const t2Empty = document.getElementById("tier2EmptyWell");
+        if (ref.t2HasPending) {
+          if (t2Dynamic) t2Dynamic.style.display = "block";
+          if (t2Empty) t2Empty.style.display = "none";
+          document.getElementById("badgeTier2").className = "tierCountBadge tierCountBadgeActive";
+          // Expand Tier 2 for Tilly to showcase pending capacity
+          document.getElementById("tierCard2").classList.add("expanded");
+        } else {
+          if (t2Dynamic) t2Dynamic.style.display = "none";
+          if (t2Empty) t2Empty.style.display = "flex";
+          document.getElementById("badgeTier2").className = "tierCountBadge tierCountBadgeZero";
+        }
+
+        showToast("Switched to " + ref.name);
+      }
+
+      // Tier Accordion Toggling
+      function toggleTier(tierNum) {
+        const card = document.getElementById("tierCard" + tierNum);
+        if (!card) return;
+        card.classList.toggle("expanded");
+      }
+
+      // Collapse / Expand All
+      let allExpanded = false;
+      function toggleAllTiers() {
+        allExpanded = !allExpanded;
+        const tiers = [1, 2, 3];
+        tiers.forEach((n) => {
+          const card = document.getElementById("tierCard" + n);
+          if (card) {
+            if (allExpanded) {
+              card.classList.add("expanded");
+            } else {
+              card.classList.remove("expanded");
+            }
+          }
+        });
+        document.getElementById("btnToggleAllText").textContent = allExpanded
+          ? "Collapse All Tiers"
+          : "Expand All Tiers";
+      }
+
+      // Verification Gates Grid Toggle
+      function toggleGateGrid(key) {
+        const grid = document.getElementById("gateGrid-" + key);
+        const toggleText = document.getElementById("gateToggleText-" + key);
+        if (!grid || !toggleText) return;
+        const isHidden = grid.style.display === "none";
+        grid.style.display = isHidden ? "grid" : "none";
+        toggleText.textContent = isHidden ? "▲ Hide Verification Gates" : "▼ Show Verification Gates";
+      }
+
+      // Dark / Light Theme Toggle
+      function toggleTheme() {
+        const root = document.documentElement;
+        const currentTheme = root.getAttribute("data-theme") || "light";
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", newTheme);
+        document.getElementById("themeBtnText").textContent = newTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+      }
+
+      // Toast Notification
+      function showToast(msg) {
+        const toast = document.getElementById("toastMessage");
+        const txt = document.getElementById("toastText");
+        if (!toast || !txt) return;
+        txt.textContent = msg;
+        toast.classList.add("visible");
+        setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2600);
+      }
+    </script>
+  </body>
+</html>

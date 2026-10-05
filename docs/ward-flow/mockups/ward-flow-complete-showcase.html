@@ -1,0 +1,3336 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Complete High-Fidelity Design Showcase (All 6 Parts)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Base & Surfaces matching ward-tokens.module.css */
+        --ground: #edf2f7;
+        --surface: #ffffff;
+        --surface-2: #f4f7fa;
+        --surface-inset: #f8fafc;
+        --surface-chrome: #ffffff;
+        --surface-subtle: #f8fafc;
+        --sunk: #e9eef4;
+        --ink: #0f172a;
+        --ink-soft: #334155;
+        --muted: #64748b;
+        --line: rgba(22, 30, 40, 0.12);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --primary: #1e3a5f;
+        --primary-soft: rgba(30, 58, 95, 0.08);
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.08);
+        --warn: #d97706;
+        --warn-soft: #fef3c7;
+        --warn-border: #fcd34d;
+        --good: #059669;
+        --good-soft: #ecfdf5;
+        --good-border: #6ee7b7;
+        --danger: #b03b2e;
+        --danger-soft: #fee2e2;
+        --danger-border: #fca5a5;
+        --purple: #7c3aed;
+        --purple-soft: #f5f3ff;
+        --purple-border: #ddd6fe;
+
+        /* Bed Stay Band Ramps (oklab derived) */
+        --band-1: #e9eff5; /* Under 2 weeks */
+        --band-2: #d3dfed; /* 2 weeks - 1 month */
+        --band-3: #bccfe5; /* 1 - 3 months */
+        --band-4: #a4bfdc; /* Over 3 months */
+
+        --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --lift: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --lift-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --r1: 8px;
+        --r2: 6px;
+        --pill: 9999px;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
+      [data-theme="dark"] {
+        --ground: #0b0f17;
+        --surface: #141b24;
+        --surface-2: #1c2533;
+        --surface-inset: #0e141d;
+        --surface-chrome: #141b24;
+        --surface-subtle: #1c2533;
+        --sunk: #090d13;
+        --ink: #f1f5f9;
+        --ink-soft: #cbd5e1;
+        --muted: #94a3b8;
+        --line: rgba(255, 255, 255, 0.1);
+        --line-strong: rgba(255, 255, 255, 0.2);
+        --primary: #60a5fa;
+        --primary-soft: rgba(96, 165, 250, 0.14);
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.14);
+        --warn: #f59e0b;
+        --warn-soft: rgba(245, 158, 11, 0.18);
+        --warn-border: rgba(245, 158, 11, 0.35);
+        --good: #10b981;
+        --good-soft: rgba(16, 185, 129, 0.18);
+        --good-border: rgba(16, 185, 129, 0.35);
+        --danger: #f87171;
+        --danger-soft: rgba(248, 113, 113, 0.18);
+        --danger-border: rgba(248, 113, 113, 0.35);
+        --purple: #a78bfa;
+        --purple-soft: rgba(167, 139, 250, 0.18);
+        --purple-border: rgba(167, 139, 250, 0.35);
+
+        --band-1: #1a2536;
+        --band-2: #21324a;
+        --band-3: #2a4161;
+        --band-4: #335078;
+
+        --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --lift: 0 2px 5px rgba(0, 0, 0, 0.4);
+        --lift-lg: 0 12px 30px rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        line-height: 1.45;
+        font-size: 14px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Master Top Switcher Bar */
+      .master-nav-strip {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: var(--surface);
+        border-bottom: 2px solid var(--primary);
+        padding: 0.6rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        box-shadow: var(--lift);
+        flex-wrap: wrap;
+      }
+
+      .master-nav-left {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+
+      .master-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--primary);
+        letter-spacing: -0.01em;
+      }
+
+      .master-logo-badge {
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: var(--r2);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+
+      .master-tabs {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--surface-2);
+        padding: 0.25rem;
+        border-radius: var(--r1);
+        border: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+
+      .master-tab-btn {
+        appearance: none;
+        border: none;
+        background: transparent;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--r2);
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .master-tab-btn:hover {
+        color: var(--ink);
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      [data-theme="dark"] .master-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .master-tab-btn.active {
+        background: var(--surface);
+        color: var(--primary);
+        box-shadow: var(--lift-sm);
+      }
+
+      .master-nav-right {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .btn-toggle-theme {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 0.4rem 0.75rem;
+        border-radius: var(--pill);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      /* Main Showcase Content Shell */
+      .showcase-viewport {
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 1.25rem 1.5rem 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        flex: 1;
+      }
+
+      /* Part Showcase Container */
+      .part-panel {
+        display: none;
+        flex-direction: column;
+        gap: 1.25rem;
+        animation: fadeIn 0.2s ease-in-out;
+      }
+
+      .part-panel.active {
+        display: flex;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(3px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Part Description Header Card */
+      .part-explainer {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: var(--r1);
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        box-shadow: var(--lift-sm);
+      }
+
+      .part-explainer-left h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .part-explainer-left p {
+        font-size: 0.825rem;
+        color: var(--muted);
+        margin-top: 0.2rem;
+      }
+
+      .part-explainer-badge {
+        background: var(--primary-soft);
+        color: var(--primary);
+        border: 1px solid var(--line-strong);
+        padding: 0.25rem 0.65rem;
+        border-radius: var(--pill);
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       COMPONENTS SHARED ACROSS PARTS
+       ═══════════════════════════════════════════════════════════════ */
+
+      /* Universal App Topbar & Sidebar simulation for Part 1 (Overall) */
+      .app-frame {
+        display: flex;
+        background: var(--ground);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        overflow: hidden;
+        box-shadow: var(--lift);
+        min-height: 780px;
+      }
+
+      .sim-sidebar {
+        width: 220px;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        padding: 1rem 0.75rem;
+        gap: 1.25rem;
+      }
+
+      .sim-sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 0.5rem;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--primary);
+      }
+
+      .sim-sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .sim-sidebar-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        padding: 0 0.5rem 0.35rem;
+      }
+
+      .sim-sidebar-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.45rem 0.6rem;
+        border-radius: var(--r2);
+        font-size: 0.825rem;
+        font-weight: 500;
+        color: var(--ink-soft);
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .sim-sidebar-link:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      .sim-sidebar-link.active {
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .sim-main-view {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        background: var(--ground);
+        padding: 1rem 1.25rem 2rem;
+        gap: 1rem;
+      }
+
+      /* Universal Ward Header */
+      .ward-header {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .ward-header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .ward-identity {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .ward-title-group h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good-border);
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--pill);
+        font-size: 0.725rem;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(0.9);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .ward-meta-sub {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.15rem;
+      }
+
+      .ward-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-action {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 0.45rem 0.8rem;
+        border-radius: var(--r2);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.15s;
+      }
+
+      .btn-action:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+      }
+
+      .btn-action-primary {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+
+      .btn-action-primary:hover {
+        background: #152b47;
+        border-color: #152b47;
+      }
+
+      /* Capacity & Acuity Strip (5 Bento Metric Cards) */
+      .capacity-summary-strip {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.75rem;
+      }
+
+      @media (max-width: 1024px) {
+        .capacity-summary-strip {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .capacity-summary-strip {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .cap-tile {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 0.75rem 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        box-shadow: var(--lift-sm);
+      }
+
+      .cap-tile-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .cap-tile-label {
+        font-size: 0.675rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .cap-tile-tag {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--r2);
+      }
+
+      .cap-tile-val {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+      }
+
+      .cap-tile-val small {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      .cap-tile-foot {
+        font-size: 0.725rem;
+        color: var(--muted);
+        border-top: 1px dashed var(--line);
+        padding-top: 0.35rem;
+        margin-top: 0.2rem;
+      }
+
+      /* Tab Navigation Bar */
+      .tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-bottom: 2px solid var(--line);
+        padding-bottom: 0.1rem;
+      }
+
+      .tab-item {
+        appearance: none;
+        border: none;
+        background: transparent;
+        padding: 0.55rem 0.9rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.15s;
+      }
+
+      .tab-item:hover {
+        color: var(--ink);
+      }
+
+      .tab-item.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        font-weight: 700;
+      }
+
+      .tab-badge {
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        padding: 0.1rem 0.45rem;
+        border-radius: var(--pill);
+        font-size: 0.725rem;
+        font-weight: 700;
+        font-family: var(--mono);
+      }
+
+      .tab-item.active .tab-badge {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       PART 4: COMPACT "NEEDS YOU THIS SHIFT" (IMAGE 4 ENHANCED)
+       ═══════════════════════════════════════════════════════════════ */
+      .shift-attention-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 0.85rem 1rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .shift-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .shift-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .shift-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--ink);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .shift-subtitle {
+        font-size: 0.775rem;
+        color: var(--muted);
+      }
+
+      .shift-toggle-group {
+        display: flex;
+        align-items: center;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 2px;
+      }
+
+      .shift-toggle-btn {
+        appearance: none;
+        border: none;
+        background: transparent;
+        padding: 0.25rem 0.65rem;
+        border-radius: var(--pill);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .shift-toggle-btn.active {
+        background: var(--surface);
+        color: var(--primary);
+        box-shadow: var(--lift-sm);
+      }
+
+      .shift-dense-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.65rem;
+      }
+
+      @media (max-width: 1100px) {
+        .shift-dense-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .shift-dense-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .shift-tile-compact {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 3.5px solid var(--accent);
+        border-radius: var(--r2);
+        padding: 0.55rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
+      }
+
+      .shift-tile-compact:hover {
+        box-shadow: var(--lift);
+        transform: translateY(-1px);
+      }
+
+      .shift-tile-compact[data-tone="danger"] {
+        border-left-color: var(--danger);
+      }
+
+      .shift-tile-compact[data-tone="warn"] {
+        border-left-color: var(--warn);
+      }
+
+      .shift-tile-compact[data-tone="info"] {
+        border-left-color: var(--accent);
+      }
+
+      .shift-tile-compact[data-tone="purple"] {
+        border-left-color: var(--purple);
+      }
+
+      .shift-tile-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+      }
+
+      .shift-tag-group {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .shift-kind-pill {
+        font-size: 0.725rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .shift-status-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.4rem;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+      }
+
+      .badge-danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border: 1px solid var(--danger-border);
+      }
+
+      .badge-warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+      }
+
+      .badge-info {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid rgba(37, 99, 235, 0.3);
+      }
+
+      .badge-purple {
+        background: var(--purple-soft);
+        color: var(--purple);
+        border: 1px solid var(--purple-border);
+      }
+
+      .shift-time-ago {
+        font-size: 0.675rem;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .shift-text-line {
+        font-size: 0.775rem;
+        color: var(--ink-soft);
+        line-height: 1.35;
+      }
+
+      .shift-tile-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.1rem;
+      }
+
+      .btn-shift-action {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 0.725rem;
+        font-weight: 600;
+        padding: 0.25rem 0.55rem;
+        border-radius: var(--r2);
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+
+      .btn-shift-action:hover {
+        background: var(--ground);
+        border-color: var(--line-strong);
+      }
+
+      .btn-shift-primary {
+        background: var(--surface);
+        border-color: var(--primary);
+        color: var(--primary);
+        font-weight: 700;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       PART 2: BEDS MATRIX & KEY (IMAGE 1 ENHANCED)
+       ═══════════════════════════════════════════════════════════════ */
+      .beds-section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1.25rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .beds-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .beds-heading-wrap h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .beds-count-text {
+        font-size: 0.8rem;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .beds-controls-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .filter-pills-group {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .filter-pill-btn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-soft);
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--pill);
+        font-size: 0.775rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.15s;
+      }
+
+      .filter-pill-btn:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      .filter-pill-btn.active {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+      }
+
+      .filter-pill-count {
+        font-size: 0.7rem;
+        opacity: 0.85;
+        font-family: var(--mono);
+      }
+
+      .order-select-label {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .order-select {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 0.3rem 0.65rem;
+        border-radius: var(--r2);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      /* 20-Bed Clinical Grid */
+      .beds-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.65rem;
+        list-style: none;
+      }
+
+      @media (max-width: 1200px) {
+        .beds-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      @media (max-width: 800px) {
+        .beds-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 520px) {
+        .beds-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .bed-card {
+        border: 1.5px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 110px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.15s ease;
+        background: var(--band-1);
+      }
+
+      .bed-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--lift);
+        border-color: var(--line-strong);
+      }
+
+      .bed-card.band-1 {
+        background: var(--band-1);
+      }
+      .bed-card.band-2 {
+        background: var(--band-2);
+      }
+      .bed-card.band-3 {
+        background: var(--band-3);
+      }
+      .bed-card.band-4 {
+        background: var(--band-4);
+      }
+
+      .bed-card.past-date {
+        border: 2px solid var(--danger);
+      }
+
+      .bed-card.selected {
+        border: 2.5px solid var(--primary);
+        box-shadow: 0 0 0 2px var(--primary-soft);
+      }
+
+      .bed-card.closed {
+        background: var(--surface);
+        border: 2px dashed var(--warn);
+      }
+
+      .bed-card.ready {
+        background: var(--surface);
+        border: 2px solid var(--good);
+      }
+
+      .bed-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+      }
+
+      .bed-state-pill {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ink-soft);
+      }
+
+      .bed-days-val {
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--ink);
+      }
+
+      .bed-patient-info {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.25;
+        margin: 0.25rem 0;
+      }
+
+      .bed-stay-band-label {
+        font-size: 0.675rem;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .bed-bottom-tags {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.35rem;
+      }
+
+      .badge-past-date {
+        background: var(--danger-soft);
+        color: var(--danger);
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--r2);
+      }
+
+      .badge-at-ed {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--r2);
+      }
+
+      .badge-pulled {
+        background: var(--purple-soft);
+        color: var(--purple);
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--r2);
+      }
+
+      .badge-selected {
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--r2);
+      }
+
+      /* Bed Key / Legend */
+      .bed-key-legend {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 0.65rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+        color: var(--ink-soft);
+      }
+
+      .key-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .key-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid var(--line);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       PART 5: PATIENT DOSSIER DRAWER (INSPECTION MODES)
+       ═══════════════════════════════════════════════════════════════ */
+      .drawer-showcase-wrap {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1.5rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1.25rem;
+        box-shadow: var(--lift-sm);
+      }
+
+      @media (max-width: 900px) {
+        .drawer-showcase-wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .drawer-picker-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-right: 1px solid var(--line);
+        padding-right: 1rem;
+      }
+
+      .drawer-picker-btn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        padding: 0.75rem 1rem;
+        border-radius: var(--r1);
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .drawer-picker-btn:hover {
+        background: var(--ground);
+      }
+
+      .drawer-picker-btn.active {
+        background: var(--primary-soft);
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      .drawer-picker-title {
+        font-weight: 700;
+        font-size: 0.875rem;
+      }
+
+      .drawer-picker-sub {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 0.2rem;
+      }
+
+      .drawer-stage-card {
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        background: var(--surface);
+        box-shadow: var(--lift);
+        max-width: 580px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .drawer-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface-2);
+      }
+
+      .drawer-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.15rem;
+        max-height: 680px;
+        overflow-y: auto;
+      }
+
+      .hero-stay-box {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.85rem;
+      }
+
+      .hero-stay-num {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--ink);
+        font-family: var(--mono);
+      }
+
+      .patient-hero-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin-top: 0.25rem;
+      }
+
+      .chips-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.35rem;
+      }
+
+      .chip-item {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--r2);
+        font-size: 0.725rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .barrier-alert-card {
+        background: var(--warn-soft);
+        border: 1px solid var(--warn-border);
+        border-radius: var(--r2);
+        padding: 0.65rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      .data-card {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.65rem 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .data-card-title {
+        font-size: 0.675rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .data-card-val {
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .departure-action-box {
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.85rem;
+        background: var(--surface-inset);
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       PART 6: WARD DECISIONS COCKPIT (METICULOUS THIRD EDITION DESIGN)
+       ═══════════════════════════════════════════════════════════════ */
+      .cockpit-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+      }
+
+      /* Non-Duplication Contract Banner */
+      .cockpit-contract-banner {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: var(--r1);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        box-shadow: var(--lift-sm);
+      }
+
+      .cockpit-contract-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--ink);
+      }
+
+      .cockpit-clock-pill {
+        font-family: var(--mono);
+        font-size: 0.775rem;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--surface-2);
+        padding: 0.25rem 0.65rem;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+
+      /* Shift Gate Ribbon */
+      .cockpit-gate-ribbon {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 0.85rem 1rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .cockpit-gate-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.65rem;
+      }
+
+      @media (max-width: 900px) {
+        .cockpit-gate-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .cockpit-gate-tile {
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.65rem 0.85rem;
+        background: var(--surface-2);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        position: relative;
+      }
+
+      .cockpit-gate-tile.done {
+        border-color: var(--good-border);
+        background: var(--good-soft);
+      }
+
+      .cockpit-gate-tile.pending {
+        border-color: var(--warn-border);
+        background: var(--warn-soft);
+      }
+
+      .cockpit-gate-num {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .cockpit-gate-title {
+        font-size: 0.825rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .cockpit-gate-status {
+        font-size: 0.725rem;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+
+      /* Handshake Bento Section */
+      .cockpit-handshake-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .handshake-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .handshake-title h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .handshake-title p {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .stepper-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.25rem 0.5rem;
+      }
+
+      .btn-step {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r2);
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-step:hover {
+        background: var(--ground);
+      }
+
+      .step-val {
+        font-size: 1.2rem;
+        font-weight: 800;
+        font-family: var(--mono);
+        min-width: 45px;
+        text-align: center;
+        color: var(--primary);
+      }
+
+      .limiters-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        padding-top: 0.5rem;
+        border-top: 1px dashed var(--line);
+      }
+
+      .limiter-chip {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-soft);
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--pill);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.15s;
+      }
+
+      .limiter-chip.active {
+        background: var(--warn-soft);
+        border-color: var(--warn-border);
+        color: #b45309;
+      }
+
+      /* Decision Action Cards Grid */
+      .cockpit-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      @media (max-width: 960px) {
+        .cockpit-cards-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .decision-action-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1rem 1.15rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        transition: box-shadow 0.15s;
+      }
+
+      .decision-action-card:hover {
+        box-shadow: var(--lift);
+      }
+
+      .decision-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .decision-badge-kind {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--r2);
+      }
+
+      .decision-card-body h4 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .decision-card-body p {
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        line-height: 1.4;
+        margin-top: 0.25rem;
+      }
+
+      .decision-btn-strip {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-decision {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 0.775rem;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--r2);
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+
+      .btn-decision:hover {
+        background: var(--ground);
+      }
+
+      .btn-decision-primary {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+
+      .btn-decision-primary:hover {
+        background: #152b47;
+      }
+
+      .btn-decision-danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-color: var(--danger-border);
+      }
+
+      /* Live Governance Audit Trail */
+      .cockpit-audit-box {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .audit-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        list-style: none;
+      }
+
+      .audit-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 0.75rem;
+        background: var(--surface-2);
+        border-radius: var(--r2);
+        font-size: 0.8rem;
+      }
+
+      .audit-left {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .audit-time {
+        font-size: 0.725rem;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+       PART 4: WARD DAILY SHEET (MODAL & EXECUTIVE PREVIEW)
+       ═══════════════════════════════════════════════════════════════ */
+      .sheet-executive-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1.5rem;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .sheet-header-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .sheet-title-h1 {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--primary);
+        letter-spacing: -0.01em;
+      }
+
+      .sheet-delta-ribbon {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.85rem;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 0.85rem 1rem;
+      }
+
+      .sheet-delta-tile {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .sheet-delta-num {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--good);
+        font-family: var(--mono);
+      }
+
+      .sheet-delta-sub {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .sheet-quad-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+
+      @media (max-width: 1024px) {
+        .sheet-quad-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .sheet-column-card {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .sheet-col-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.4rem;
+      }
+
+      .sheet-entry-tile {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+      }
+
+      /* Toast simulated notification */
+      .toast-popup {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--ink);
+        color: #fff;
+        padding: 0.75rem 1.25rem;
+        border-radius: var(--r1);
+        font-size: 0.825rem;
+        font-weight: 500;
+        box-shadow: var(--lift-lg);
+        z-index: 9999;
+        display: none;
+        animation: toastIn 0.2s ease-out;
+      }
+
+      @keyframes toastIn {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══════════════════════════════════════════════════════════════════════
+       MASTER TOP SWITCHER STRIP
+       ══════════════════════════════════════════════════════════════════════ -->
+    <header class="master-nav-strip">
+      <div class="master-nav-left">
+        <div class="master-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="M9 3v18" />
+            <path d="M15 9h6" />
+            <path d="M15 15h6" />
+          </svg>
+          <span>Ward Flow WA</span>
+          <span class="master-logo-badge">METICULOUS SUITE</span>
+        </div>
+
+        <nav class="master-tabs" role="tablist" aria-label="Component Showcase Selector">
+          <button type="button" class="master-tab-btn active" data-target="part-overall">
+            <span>🏢 1. Overall Design</span>
+          </button>
+          <button type="button" class="master-tab-btn" data-target="part-beds">
+            <span>🛏️ 2. Beds Matrix & Allocation</span>
+          </button>
+          <button type="button" class="master-tab-btn" data-target="part-header">
+            <span>🏷️ 3. Header & Capacity Bar</span>
+          </button>
+          <button type="button" class="master-tab-btn" data-target="part-bedsheet">
+            <span>📋 4. Ward Daily Sheet</span>
+          </button>
+          <button type="button" class="master-tab-btn" data-target="part-drawer">
+            <span>📂 5. Beds Patient Drawer</span>
+          </button>
+          <button type="button" class="master-tab-btn" data-target="part-decisions">
+            <span>⚖️ 6. Decisions Cockpit</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="master-nav-right">
+        <button type="button" class="btn-toggle-theme" id="btnThemeToggle" title="Toggle Light / Dark mode">
+          <span>🌓</span>
+          <span>Mode</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+       MAIN SHOWCASE VIEWPORT
+       ══════════════════════════════════════════════════════════════════════ -->
+    <main class="showcase-viewport">
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 1: OVERALL DESIGN (COMPLETE WARD HOME IN APP CONTEXT)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel active" id="part-overall">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>🏢 Part 1: Overall Ward Home Design</h2>
+            <p>
+              Full application shell integrating WA Health navigation, shift status ribbon, capacity summary,
+              operational tabs, compact shift attention, and the 20-bed matrix.
+            </p>
+          </div>
+          <div class="part-explainer-badge">FULL INTEGRATED SHELL</div>
+        </div>
+
+        <div class="app-frame">
+          <!-- Sidebar Navigation -->
+          <aside class="sim-sidebar">
+            <div class="sim-sidebar-brand">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+              <span>Ward Flow</span>
+            </div>
+
+            <div class="sim-sidebar-section">
+              <div class="sim-sidebar-title">Operations</div>
+              <a class="sim-sidebar-link"><span>Capacity</span><span class="tab-badge">26</span></a>
+              <a class="sim-sidebar-link"><span>Movement</span><span class="tab-badge">70</span></a>
+              <a class="sim-sidebar-link"
+                ><span>Delays</span><span class="tab-badge" style="color: var(--danger)">2</span></a
+              >
+              <a class="sim-sidebar-link"><span>Command</span></a>
+              <a class="sim-sidebar-link"><span>Network</span></a>
+            </div>
+
+            <div class="sim-sidebar-section">
+              <div class="sim-sidebar-title">Service Hubs</div>
+              <a class="sim-sidebar-link active"><span>Ward Hub</span></a>
+              <a class="sim-sidebar-link"><span>ED Hub</span></a>
+              <a class="sim-sidebar-link"><span>Search Hub</span></a>
+            </div>
+          </aside>
+
+          <!-- Main Body Surface -->
+          <div class="sim-main-view">
+            <!-- Ward Header -->
+            <div class="ward-header">
+              <div class="ward-header-top">
+                <div class="ward-identity">
+                  <div class="ward-title-group">
+                    <h1>
+                      <span>Dabakam (Adult Acute)</span>
+                      <span class="live-badge"><span class="live-dot"></span> 10:42 AM · 15 Aug 2026 (Live)</span>
+                    </h1>
+                    <div class="ward-meta-sub">
+                      South Metropolitan Health Service (SMHS) &middot; 20 Recorded Beds &middot; Locked Unit &middot;
+                      Adult Psychiatric
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ward-header-actions">
+                  <button type="button" class="btn-action">
+                    <span style="color: var(--danger)">🔔 2</span> Alerts
+                  </button>
+                  <button type="button" class="btn-action">✓ Answer requests</button>
+                  <button type="button" class="btn-action">+ Raise Referral</button>
+                  <button type="button" class="btn-action btn-action-primary" onclick="showMasterTab('part-bedsheet')">
+                    📋 Ward Daily Sheet
+                  </button>
+                  <button type="button" class="btn-action">🖨️ Print Handover</button>
+                </div>
+              </div>
+
+              <!-- 5 Capacity Bento Tiles -->
+              <div class="capacity-summary-strip">
+                <div class="cap-tile">
+                  <div class="cap-tile-head">
+                    <span class="cap-tile-label">Staffed Beds</span>
+                    <span class="cap-tile-tag" style="background: var(--surface-2); color: var(--muted)">Budgeted</span>
+                  </div>
+                  <div class="cap-tile-val">20 <small>beds</small></div>
+                  <div class="cap-tile-foot">Roster fully confirmed</div>
+                </div>
+
+                <div class="cap-tile">
+                  <div class="cap-tile-head">
+                    <span class="cap-tile-label">Occupancy</span>
+                    <span class="cap-tile-tag" style="background: var(--warn-soft); color: var(--warn)">90% Full</span>
+                  </div>
+                  <div class="cap-tile-val">18 <small>/ 20</small></div>
+                  <div class="cap-tile-foot">18 in bed &middot; 2 inbound</div>
+                </div>
+
+                <div class="cap-tile" style="border-color: var(--good-border)">
+                  <div class="cap-tile-head">
+                    <span class="cap-tile-label">Ready Bed Right Now</span>
+                    <span class="cap-tile-tag" style="background: var(--good-soft); color: var(--good)">Fillable</span>
+                  </div>
+                  <div class="cap-tile-val" style="color: var(--good)">1 <small>vacant</small></div>
+                  <div class="cap-tile-foot" style="color: var(--good); font-weight: 600">Open bed list &rarr;</div>
+                </div>
+
+                <div class="cap-tile">
+                  <div class="cap-tile-head">
+                    <span class="cap-tile-label">1:1 Specialling</span>
+                    <span class="cap-tile-tag" style="background: var(--surface-2); color: var(--muted)">None</span>
+                  </div>
+                  <div class="cap-tile-val">0 <small>watch</small></div>
+                  <div class="cap-tile-foot">Staffing envelope allows intake</div>
+                </div>
+
+                <div class="cap-tile">
+                  <div class="cap-tile-head">
+                    <span class="cap-tile-label">HDU & Boundary</span>
+                    <span class="cap-tile-tag" style="background: var(--danger-soft); color: var(--danger)"
+                      >Protocol Active</span
+                    >
+                  </div>
+                  <div class="cap-tile-val" style="font-size: 1.05rem; padding-top: 0.2rem">High Acuity</div>
+                  <div class="cap-tile-foot">1 Seclusion Ready</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Operational Tab Navigation -->
+            <nav class="tab-bar">
+              <button type="button" class="tab-item">Home <span class="tab-badge">0</span></button>
+              <button type="button" class="tab-item">Arrivals <span class="tab-badge">2</span></button>
+              <button type="button" class="tab-item">Discharges <span class="tab-badge">15</span></button>
+              <button type="button" class="tab-item active" onclick="showMasterTab('part-beds')">
+                Beds <span class="tab-badge">20</span>
+              </button>
+              <button type="button" class="tab-item" onclick="showMasterTab('part-decisions')">
+                Decisions <span class="tab-badge" style="color: var(--danger); font-weight: 700">2 Due</span>
+              </button>
+            </nav>
+
+            <!-- Compact Needs You This Shift -->
+            <section class="shift-attention-card">
+              <div class="shift-header-bar">
+                <div class="shift-title-group">
+                  <span class="shift-title">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="8" cy="8" r="7" />
+                      <path d="M8 4v4l2.5 2.5" />
+                    </svg>
+                    Needs you this shift
+                  </span>
+                  <span class="shift-subtitle">7 clinical and bed flow actions required before handover at 15:30</span>
+                </div>
+                <div class="shift-toggle-group">
+                  <button type="button" class="shift-toggle-btn active">This shift (7)</button>
+                  <button
+                    type="button"
+                    class="shift-toggle-btn"
+                    onclick="triggerToast('Quiet shift preview activated')"
+                  >
+                    Preview: quiet shift
+                  </button>
+                </div>
+              </div>
+
+              <div class="shift-dense-grid">
+                <div class="shift-tile-compact" data-tone="danger">
+                  <div class="shift-tile-top">
+                    <span class="shift-kind-pill">Expected discharge</span>
+                    <span class="shift-status-badge badge-danger">4d overdue</span>
+                  </div>
+                  <p class="shift-text-line">Expected out today, still here.</p>
+                  <div class="shift-tile-actions">
+                    <button
+                      type="button"
+                      class="btn-shift-action btn-shift-primary"
+                      onclick="triggerToast('Recorded patient has left')"
+                    >
+                      They have left
+                    </button>
+                    <button type="button" class="btn-shift-action" onclick="triggerToast('Opening blocker dialog...')">
+                      Record blocker
+                    </button>
+                  </div>
+                </div>
+
+                <div class="shift-tile-compact" data-tone="warn">
+                  <div class="shift-tile-top">
+                    <span class="shift-kind-pill">Confirmed discharge</span>
+                    <span class="shift-status-badge badge-warn">3d overdue</span>
+                  </div>
+                  <p class="shift-text-line">Confirmed out today. <strong>Awaiting accommodation.</strong></p>
+                  <div class="shift-tile-actions">
+                    <button
+                      type="button"
+                      class="btn-shift-action btn-shift-primary"
+                      onclick="triggerToast('Recorded patient has left')"
+                    >
+                      They have left
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-shift-action"
+                      onclick="triggerToast('Updating accommodation blocker...')"
+                    >
+                      Update blocker
+                    </button>
+                  </div>
+                </div>
+
+                <div class="shift-tile-compact" data-tone="info">
+                  <div class="shift-tile-top">
+                    <span class="shift-kind-pill">Away at an ED</span>
+                    <span class="shift-status-badge badge-info">1h away</span>
+                  </div>
+                  <p class="shift-text-line">Patient at ED. <strong>Bed still held.</strong></p>
+                  <div class="shift-tile-actions">
+                    <button
+                      type="button"
+                      class="btn-shift-action btn-shift-primary"
+                      onclick="triggerToast('Patient marked back to ward')"
+                    >
+                      Mark them back
+                    </button>
+                  </div>
+                </div>
+
+                <div class="shift-tile-compact" data-tone="purple">
+                  <div class="shift-tile-top">
+                    <span class="shift-kind-pill">Pulled bed</span>
+                    <span class="shift-status-badge badge-purple">13h travelling</span>
+                  </div>
+                  <p class="shift-text-line">Pulled for <strong>Hazelle Ferrowmoor</strong>.</p>
+                  <div class="shift-tile-actions">
+                    <button
+                      type="button"
+                      class="btn-shift-action"
+                      onclick="triggerToast('Tracking transit corridor...')"
+                    >
+                      View Transit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Quick Preview of Bed Grid -->
+            <div class="beds-section" style="padding: 1rem">
+              <div class="beds-heading-wrap" style="display: flex; justify-content: space-between; align-items: center">
+                <h3>Every bed, and who is in it (20 beds)</h3>
+                <button type="button" class="btn-action" onclick="showMasterTab('part-beds')">
+                  Open Full Bed Matrix View &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 2: BEDS MATRIX & ALLOCATION (IMAGE 1 ENHANCED)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel" id="part-beds">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>🛏️ Part 2: 20-Bed Allocation Grid & Key</h2>
+            <p>
+              Authoritative clinical allocation, length-of-stay ramps, Past Date warnings, At ED markers, Pulled beds,
+              Closed beds, and WA Health Bed Key.
+            </p>
+          </div>
+          <div class="part-explainer-badge">IMAGE 1 ENHANCED</div>
+        </div>
+
+        <div class="beds-section">
+          <div class="beds-header">
+            <div class="beds-heading-wrap">
+              <h2>Every bed, and who is in it</h2>
+              <span class="beds-count-text" id="bedsCountLabel">Showing 20 of 20 beds</span>
+            </div>
+
+            <div class="order-select-label">
+              <span>Order</span>
+              <select
+                class="order-select"
+                id="orderSelectBeds"
+                onchange="triggerToast('Sorted beds by: ' + this.value)"
+              >
+                <option value="longest" selected>Longest stay first</option>
+                <option value="shortest">Shortest stay first</option>
+                <option value="bed">Bed number order</option>
+                <option value="overdue">Most overdue first</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="beds-controls-bar">
+            <div class="filter-pills-group" role="group" aria-label="Narrow bed view">
+              <button type="button" class="filter-pill-btn active" data-beds-filter="all">
+                <span>All beds</span>
+                <span class="filter-pill-count">20</span>
+              </button>
+              <button type="button" class="filter-pill-btn" data-beds-filter="look">
+                <span>Needs a look</span>
+                <span class="filter-pill-count">9</span>
+              </button>
+              <button type="button" class="filter-pill-btn" data-beds-filter="ready">
+                <span>Ready</span>
+                <span class="filter-pill-count">1</span>
+              </button>
+              <button type="button" class="filter-pill-btn" data-beds-filter="nobody">
+                <span>Nobody due out</span>
+                <span class="filter-pill-count">2</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 20 Bed Grid -->
+          <ul class="beds-grid" id="mainBedsGrid">
+            <li class="bed-card band-4 selected" data-bed="1" onclick="showDrawerForBed(1)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">210 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Great Southern</div>
+              <div class="bed-stay-band-label">Over 3 months</div>
+              <div class="bed-bottom-tags"><span class="badge-selected">SELECTED</span></div>
+            </li>
+
+            <li class="bed-card band-4 past-date" data-bed="2" onclick="showDrawerForBed(2)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">130 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">Over 3 months</div>
+              <div class="bed-bottom-tags"><span class="badge-past-date">▲ PAST DATE</span></div>
+            </li>
+
+            <li class="bed-card band-4" data-bed="3" onclick="showDrawerForBed(3)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">95 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Wheatbelt</div>
+              <div class="bed-stay-band-label">Over 3 months</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-3" data-bed="4" onclick="showDrawerForBed(4)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">75 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Kimberley</div>
+              <div class="bed-stay-band-label">1–3 months</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-3" data-bed="5" onclick="showDrawerForBed(5)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">60 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Pilbara</div>
+              <div class="bed-stay-band-label">1–3 months</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-3" data-bed="6" onclick="showDrawerForBed(6)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">45 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">1–3 months</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-3 past-date" data-bed="7" onclick="showDrawerForBed(7)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">34 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; South West</div>
+              <div class="bed-stay-band-label">1–3 months</div>
+              <div class="bed-bottom-tags"><span class="badge-past-date">▲ PAST DATE</span></div>
+            </li>
+
+            <li class="bed-card band-3" data-bed="8" onclick="showDrawerForBed(8)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">33 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Gascoyne</div>
+              <div class="bed-stay-band-label">1–3 months</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-2" data-bed="9" onclick="showDrawerForBed(9)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">20 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">2 weeks – 1 month</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="10" onclick="showDrawerForBed(10)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">12 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Great Southern</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"><span class="badge-at-ed">◆ AT ED</span></div>
+            </li>
+
+            <li class="bed-card band-1 past-date" data-bed="11" onclick="showDrawerForBed(11)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">6 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"><span class="badge-past-date">▲ PAST DATE</span></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="12" onclick="showDrawerForBed(12)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">5 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Mid West</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="13" onclick="showDrawerForBed(13)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">5 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="14" onclick="showDrawerForBed(14)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">4 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; South West</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="15" onclick="showDrawerForBed(15)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">3 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Female &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"><span class="badge-at-ed">◆ AT ED</span></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="16" onclick="showDrawerForBed(16)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill">Occupied</span>
+                <span class="bed-days-val">2 DAYS</span>
+              </div>
+              <div class="bed-patient-info">Male &middot; Perth Metro</div>
+              <div class="bed-stay-band-label">Under 2 weeks</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="17" onclick="showDrawerForBed(17)">
+              <div class="bed-top-row">
+                <span class="badge-pulled">PULLED</span>
+                <span class="bed-days-val">IN TRANSIT</span>
+              </div>
+              <div class="bed-patient-info">Hazelle Ferrowmoor</div>
+              <div class="bed-stay-band-label">Allocated to referral</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card band-1" data-bed="18" onclick="showDrawerForBed(18)">
+              <div class="bed-top-row">
+                <span class="badge-pulled">PULLED</span>
+                <span class="bed-days-val">IN TRANSIT</span>
+              </div>
+              <div class="bed-patient-info">Bramwen Ferrowmoor</div>
+              <div class="bed-stay-band-label">Allocated to referral</div>
+              <div class="bed-bottom-tags"></div>
+            </li>
+
+            <li class="bed-card closed" data-bed="19" onclick="triggerToast('Bed 19 is empty and unoffered.')">
+              <div class="bed-top-row">
+                <span class="bed-state-pill" style="color: var(--warn); font-weight: 700">CLOSED</span>
+              </div>
+              <div class="bed-patient-info">Empty, not offered.</div>
+              <div class="bed-stay-band-label">Maintenance hold</div>
+              <div class="bed-bottom-tags"><span class="badge-warn">Unfillable</span></div>
+            </li>
+
+            <li class="bed-card ready" data-bed="20" onclick="showDrawerForBed(20)">
+              <div class="bed-top-row">
+                <span class="bed-state-pill" style="color: var(--good); font-weight: 700">READY</span>
+              </div>
+              <div class="bed-patient-info">Empty and offered.</div>
+              <div class="bed-stay-band-label">Cleaned & sanitized</div>
+              <div class="bed-bottom-tags">
+                <span class="cap-tile-tag" style="background: var(--good-soft); color: var(--good)">Fillable Now</span>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Bed Key / Legend -->
+          <div class="bed-key-legend">
+            <div class="key-item">
+              <span class="key-swatch" style="background: var(--band-1)"></span>
+              <span>Under 2 weeks</span>
+            </div>
+            <div class="key-item">
+              <span class="key-swatch" style="background: var(--band-2)"></span>
+              <span>2 weeks – 1 month</span>
+            </div>
+            <div class="key-item">
+              <span class="key-swatch" style="background: var(--band-3)"></span>
+              <span>1–3 months</span>
+            </div>
+            <div class="key-item">
+              <span class="key-swatch" style="background: var(--band-4)"></span>
+              <span>Over 3 months</span>
+            </div>
+            <div class="key-item">
+              <span style="color: var(--danger); font-weight: 700">▲</span>
+              <span>Past the ward's own expected date</span>
+            </div>
+            <div class="key-item">
+              <span style="color: var(--accent); font-weight: 700">◆</span>
+              <span>Off-ward at emergency department (bed held)</span>
+            </div>
+            <div class="key-item">
+              <span style="border: 1px dashed var(--warn); width: 12px; height: 12px; display: inline-block"></span>
+              <span>Empty, not offered — unfillable</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 3: HEADER & CAPACITY BAR (ISOLATED CLOSE-UP)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel" id="part-header">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>🏷️ Part 3: Header Part & Capacity Acuity Strip</h2>
+            <p>
+              Meticulous clinical top-bar containing unit title, live heartbeat badge, utility action bar, and the 5
+              critical bed capacity metrics.
+            </p>
+          </div>
+          <div class="part-explainer-badge">ISOLATED INSPECTION</div>
+        </div>
+
+        <div class="ward-header">
+          <div class="ward-header-top">
+            <div class="ward-identity">
+              <div class="ward-title-group">
+                <h1>
+                  <span>Dabakam (Adult Acute)</span>
+                  <span class="live-badge"><span class="live-dot"></span> 10:42 AM · 15 Aug 2026 (Live)</span>
+                </h1>
+                <div class="ward-meta-sub">
+                  South Metropolitan Health Service (SMHS) &middot; 20 Recorded Beds &middot; Locked Unit &middot; Adult
+                  Psychiatric
+                </div>
+              </div>
+            </div>
+
+            <div class="ward-header-actions">
+              <button type="button" class="btn-action"><span style="color: var(--danger)">🔔 2</span> Alerts</button>
+              <button type="button" class="btn-action" onclick="triggerToast('Opening pending referrals...')">
+                ✓ Answer requests
+              </button>
+              <button type="button" class="btn-action" onclick="triggerToast('Opening New Referral form...')">
+                + Raise Referral
+              </button>
+              <button type="button" class="btn-action btn-action-primary" onclick="showMasterTab('part-bedsheet')">
+                📋 Ward Daily Sheet
+              </button>
+              <button type="button" class="btn-action" onclick="window.print()">🖨️ Print Handover</button>
+            </div>
+          </div>
+
+          <div class="capacity-summary-strip">
+            <div class="cap-tile">
+              <div class="cap-tile-head">
+                <span class="cap-tile-label">Staffed Beds</span>
+                <span class="cap-tile-tag" style="background: var(--surface-2); color: var(--muted)">Budgeted</span>
+              </div>
+              <div class="cap-tile-val">20 <small>beds</small></div>
+              <div class="cap-tile-foot">Roster fully confirmed</div>
+            </div>
+
+            <div class="cap-tile">
+              <div class="cap-tile-head">
+                <span class="cap-tile-label">Occupancy</span>
+                <span class="cap-tile-tag" style="background: var(--warn-soft); color: var(--warn)">90% Full</span>
+              </div>
+              <div class="cap-tile-val">18 <small>/ 20</small></div>
+              <div class="cap-tile-foot">18 in bed &middot; 2 inbound</div>
+            </div>
+
+            <div class="cap-tile" style="border-color: var(--good-border)">
+              <div class="cap-tile-head">
+                <span class="cap-tile-label">Ready Bed Right Now</span>
+                <span class="cap-tile-tag" style="background: var(--good-soft); color: var(--good)">Fillable</span>
+              </div>
+              <div class="cap-tile-val" style="color: var(--good)">1 <small>vacant</small></div>
+              <div class="cap-tile-foot" style="color: var(--good); font-weight: 600">
+                Bed 20 clean &middot; fillable
+              </div>
+            </div>
+
+            <div class="cap-tile">
+              <div class="cap-tile-head">
+                <span class="cap-tile-label">1:1 Specialling</span>
+                <span class="cap-tile-tag" style="background: var(--surface-2); color: var(--muted)">None</span>
+              </div>
+              <div class="cap-tile-val">0 <small>watch</small></div>
+              <div class="cap-tile-foot">Staffing envelope allows intake</div>
+            </div>
+
+            <div class="cap-tile">
+              <div class="cap-tile-head">
+                <span class="cap-tile-label">HDU & Boundary</span>
+                <span class="cap-tile-tag" style="background: var(--danger-soft); color: var(--danger)"
+                  >Protocol Active</span
+                >
+              </div>
+              <div class="cap-tile-val" style="font-size: 1.05rem; padding-top: 0.2rem">High Acuity</div>
+              <div class="cap-tile-foot">1 Seclusion Ready</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 4: WARD DAILY SHEET (IMAGE 5 ENHANCED)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel" id="part-bedsheet">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>📋 Part 4: Ward Daily Sheet Overhaul</h2>
+            <p>
+              Complete redesign of the morning census and daily sheet with 24-hour flow delta statistics and 4
+              structured clinical flow columns.
+            </p>
+          </div>
+          <div class="part-explainer-badge">IMAGE 5 ENHANCED</div>
+        </div>
+
+        <div class="sheet-executive-card">
+          <div class="sheet-header-box">
+            <div>
+              <h1 class="sheet-title-h1">Dabakam · Ward Daily Sheet</h1>
+              <p style="color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem">
+                Morning Census & Multidisciplinary Bed Handover &middot; Friday 15 August 2026 &middot; 10:42 AWST
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem">
+              <button type="button" class="btn-action btn-action-primary" onclick="window.print()">
+                🖨️ Print Sheet
+              </button>
+              <button type="button" class="btn-action" onclick="triggerToast('Exporting Daily Sheet to PDF...')">
+                📥 Export PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- 24-Hour Delta Ribbon -->
+          <div class="sheet-delta-ribbon">
+            <div class="sheet-delta-tile">
+              <span class="cap-tile-label">Departures Today</span>
+              <div class="sheet-delta-num">
+                +2 <small style="font-size: 0.8rem; color: var(--muted)">Patients</small>
+              </div>
+              <div class="sheet-delta-sub">Both community step-downs on track</div>
+            </div>
+            <div class="sheet-delta-tile">
+              <span class="cap-tile-label">Beds Allocated</span>
+              <div class="sheet-delta-num" style="color: var(--primary)">
+                +1 <small style="font-size: 0.8rem; color: var(--muted)">Bed</small>
+              </div>
+              <div class="sheet-delta-sub">Bed 20 ready for immediate allocation</div>
+            </div>
+            <div class="sheet-delta-tile">
+              <span class="cap-tile-label">Discharge Trajectory Drift</span>
+              <div class="sheet-delta-num" style="color: var(--good)">
+                0 <small style="font-size: 0.8rem; color: var(--muted)">Moved</small>
+              </div>
+              <div class="sheet-delta-sub">Zero unapproved date pushbacks this week</div>
+            </div>
+          </div>
+
+          <!-- 4-Quadrant Flow Board -->
+          <div class="sheet-quad-grid">
+            <div class="sheet-column-card">
+              <div class="sheet-col-title">
+                <span>Who Came In</span>
+                <span class="tab-badge">2</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Aaron K. (24M)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem"
+                  >Admitted 08:30 via RPH ED · Involuntary (Form 3A)</span
+                >
+                <span class="tab-badge" style="width: fit-content; margin-top: 0.2rem">Bed 04</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Bramwen F. (31F)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem"
+                  >Transferred 04:15 from Graylands · Voluntary</span
+                >
+                <span class="tab-badge" style="width: fit-content; margin-top: 0.2rem">Bed 18</span>
+              </div>
+            </div>
+
+            <div class="sheet-column-card">
+              <div class="sheet-col-title">
+                <span>Who Is Going</span>
+                <span class="tab-badge" style="background: var(--warn-soft); color: var(--warn)">2</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Keira Pellingworth (38F)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem">Discharge ETA: 14:00 · Sub-acute step-down</span>
+                <span style="color: var(--good); font-weight: 600; font-size: 0.75rem">✓ Discharge meds dispensed</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Delia Ferrowmoor (28F)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem">Discharge ETA: 16:30 · Community return</span>
+                <span style="color: var(--warn); font-weight: 600; font-size: 0.75rem"
+                  >⚠️ Barrier: Transport pickup unconfirmed</span
+                >
+              </div>
+            </div>
+
+            <div class="sheet-column-card">
+              <div class="sheet-col-title">
+                <span>Who Is Stuck</span>
+                <span class="tab-badge" style="background: var(--danger-soft); color: var(--danger)">2</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Rowan Vance (Bed 09)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem">Stay: 130 days · Perth Metro</span>
+                <span style="color: var(--danger); font-weight: 600; font-size: 0.75rem"
+                  >Barrier: NDIS high-intensity accommodation blocked</span
+                >
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Luke Daviecroft (Bed 01)</strong>
+                <span style="color: var(--muted); font-size: 0.75rem">Stay: 210 days · Great Southern</span>
+                <span style="color: var(--danger); font-weight: 600; font-size: 0.75rem"
+                  >Barrier: Public guardian consent pending</span
+                >
+              </div>
+            </div>
+
+            <div class="sheet-column-card">
+              <div class="sheet-col-title">
+                <span>Overdue Review</span>
+                <span class="tab-badge" style="background: var(--danger-soft); color: var(--danger)">3</span>
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Bed 02 · 4d overdue</strong>
+                <span style="color: var(--muted); font-size: 0.75rem"
+                  >Expected out 4 days ago · Needs consultant sign-off</span
+                >
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Bed 07 · 3d overdue</strong>
+                <span style="color: var(--muted); font-size: 0.75rem"
+                  >Confirmed out 3 days ago · Accommodation review</span
+                >
+              </div>
+              <div class="sheet-entry-tile">
+                <strong>Bed 11 · 1d overdue</strong>
+                <span style="color: var(--muted); font-size: 0.75rem">Review trajectory today</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 5: PATIENT DOSSIER DRAWER (IMAGE 2 + IMAGE 3 FUSED)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel" id="part-drawer">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>📂 Part 5: Patient Dossier Drawer & Ready Bed Console</h2>
+            <p>
+              Fusion of clean drawer layout with clinical depth: stay duration hero, demographic chips, ICD-10 block
+              pill, discharge barrier warnings, and dedicated Vacant Bed Console.
+            </p>
+          </div>
+          <div class="part-explainer-badge">IMAGE 2 + 3 FUSED</div>
+        </div>
+
+        <div class="drawer-showcase-wrap">
+          <!-- Bed Selector Column -->
+          <div class="drawer-picker-col">
+            <div
+              style="
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+              "
+            >
+              Select Test Scenario
+            </div>
+
+            <button type="button" class="drawer-picker-btn active" onclick="switchDrawerMode('occupied-standard')">
+              <div class="drawer-picker-title">Bed 05 · Acute Stay</div>
+              <div class="drawer-picker-sub">Ferrowmoor, Delia (60d) · Standard acute</div>
+            </button>
+
+            <button type="button" class="drawer-picker-btn" onclick="switchDrawerMode('occupied-overdue')">
+              <div class="drawer-picker-title">Bed 02 · Past Expected Date</div>
+              <div class="drawer-picker-sub">Bartholomew Vance (130d) · 3d overdue</div>
+            </button>
+
+            <button type="button" class="drawer-picker-btn" onclick="switchDrawerMode('vacant-ready')">
+              <div class="drawer-picker-title">Bed 20 · Ready Vacant Bed</div>
+              <div class="drawer-picker-sub">Empty bed &middot; Direct Allocation Console</div>
+            </button>
+          </div>
+
+          <!-- Rendered Drawer Card -->
+          <div class="drawer-stage-card" id="drawerStageCard">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────────────
+         PART 6: WARD DECISIONS COCKPIT (THIRD EDITION DESIGN)
+         ────────────────────────────────────────────────────────────────── -->
+      <section class="part-panel" id="part-decisions">
+        <div class="part-explainer">
+          <div class="part-explainer-left">
+            <h2>⚖️ Part 6: Ward Decisions Cockpit</h2>
+            <p>
+              High-fidelity implementation of the Decisions tab matching the Third Edition Clinical Design System:
+              capacity handshake, intake referral triage, discharge authorisations, and live audit ledger.
+            </p>
+          </div>
+          <div class="part-explainer-badge">WARD-DECISIONS-COCKPIT</div>
+        </div>
+
+        <div class="cockpit-container">
+          <!-- Contract Banner -->
+          <div class="cockpit-contract-banner">
+            <div class="cockpit-contract-title">
+              <span class="live-dot"></span>
+              <span>Ward Bed Decisions Cockpit</span>
+              <span style="font-size: 0.75rem; color: var(--muted); font-weight: 400"
+                >— Active Shift Operational Decision Controls</span
+              >
+            </div>
+            <div class="cockpit-clock-pill">
+              <span>AWST</span>
+              <strong>10:42:18</strong>
+            </div>
+          </div>
+
+          <!-- Shift Gate Ribbon -->
+          <div class="cockpit-gate-ribbon">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--ink)">
+              Shift Milestone & Progress Gate Ribbon
+            </div>
+            <div class="cockpit-gate-grid">
+              <div class="cockpit-gate-tile done">
+                <span class="cockpit-gate-num">Gate 1</span>
+                <span class="cockpit-gate-title">Capacity Handshake</span>
+                <span class="cockpit-gate-status" style="color: var(--good)">✓ AFFIRMED (18/20)</span>
+              </div>
+              <div class="cockpit-gate-tile pending">
+                <span class="cockpit-gate-num">Gate 2</span>
+                <span class="cockpit-gate-title">Inbound Intake Triage</span>
+                <span class="cockpit-gate-status" style="color: var(--warn)">1 ACTION PENDING</span>
+              </div>
+              <div class="cockpit-gate-tile pending">
+                <span class="cockpit-gate-num">Gate 3</span>
+                <span class="cockpit-gate-title">Discharge Authorisations</span>
+                <span class="cockpit-gate-status" style="color: var(--warn)">1 AWAITING SIGN-OFF</span>
+              </div>
+              <div class="cockpit-gate-tile done">
+                <span class="cockpit-gate-num">Gate 4</span>
+                <span class="cockpit-gate-title">Leave & AWOL Monitoring</span>
+                <span class="cockpit-gate-status" style="color: var(--good)">✓ 1 ACTIVE (ON TIME)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shift Handshake Bento Section -->
+          <div class="cockpit-handshake-card">
+            <div class="handshake-top">
+              <div class="handshake-title">
+                <h3>Gate 1: Shift Capacity & Staffing Handshake</h3>
+                <p>
+                  Declare and affirm staffed capacity against 20 physical beds. Adjust for active nursing envelopes.
+                </p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.75rem">
+                <div class="stepper-control">
+                  <button type="button" class="btn-step" onclick="adjustCockpitStaffed(-1)">–</button>
+                  <div class="step-val" id="cockpitStaffedVal">18</div>
+                  <button type="button" class="btn-step" onclick="adjustCockpitStaffed(1)">+</button>
+                </div>
+                <button
+                  type="button"
+                  class="btn-action btn-action-primary"
+                  onclick="
+                    triggerToast(
+                      'Shift staffed capacity re-affirmed at ' +
+                        document.getElementById('cockpitStaffedVal').innerText +
+                        ' beds',
+                    )
+                  "
+                >
+                  ✓ Affirm Capacity
+                </button>
+              </div>
+            </div>
+
+            <div class="limiters-row">
+              <span style="font-size: 0.725rem; font-weight: 700; color: var(--muted); text-transform: uppercase"
+                >Active Capacity Limiters:</span
+              >
+              <button
+                type="button"
+                class="limiter-chip active"
+                onclick="
+                  this.classList.toggle('active');
+                  triggerToast('Toggled 1:1 Specialling limiter');
+                "
+              >
+                ⚠️ 1:1 Specialling Watch (1 Nurse)
+              </button>
+              <button
+                type="button"
+                class="limiter-chip"
+                onclick="
+                  this.classList.toggle('active');
+                  triggerToast('Toggled Staff Deficit limiter');
+                "
+              >
+                Staff Deficit (-1 RN)
+              </button>
+              <button
+                type="button"
+                class="limiter-chip"
+                onclick="
+                  this.classList.toggle('active');
+                  triggerToast('Toggled Maintenance limiter');
+                "
+              >
+                Maintenance / Infection Hold
+              </button>
+              <button
+                type="button"
+                class="limiter-chip active"
+                onclick="
+                  this.classList.toggle('active');
+                  triggerToast('Toggled Gender Lock limiter');
+                "
+              >
+                🔒 Gender / Cohort Pod Lock
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Clinical Decision Cards -->
+          <div class="cockpit-cards-grid">
+            <!-- Card 1: Intake Triage -->
+            <div class="decision-action-card" id="cockpitCardIntake">
+              <div class="decision-card-head">
+                <span class="decision-badge-kind badge-warn">Gate 2 · Inbound Intake</span>
+                <span style="font-size: 0.7rem; font-family: var(--mono); color: var(--muted)">SLA: 24m remaining</span>
+              </div>
+              <div class="decision-card-body">
+                <h4>Aaron K. (24M) · Emergency Referral</h4>
+                <p>
+                  Presenting via Royal Perth Hospital Emergency Department. Form 3A (Involuntary). Proposed allocation:
+                  <strong>Bed 04</strong> upon departure of Keira P.
+                </p>
+              </div>
+              <div class="decision-btn-strip">
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-primary"
+                  onclick="handleCockpitAccept('Aaron K.')"
+                >
+                  Accept into Bed 04
+                </button>
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-danger"
+                  onclick="triggerToast('Referral declined: Reason recorded to Central Bed Flow')"
+                >
+                  Decline Referral...
+                </button>
+                <button
+                  type="button"
+                  class="btn-decision"
+                  onclick="triggerToast('ED Review requested: SLA timer paused')"
+                >
+                  Defer for ED Review
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Discharge Authorisation -->
+            <div class="decision-action-card" id="cockpitCardDischarge">
+              <div class="decision-card-head">
+                <span class="decision-badge-kind badge-info">Gate 3 · Discharge Sign-Off</span>
+                <span style="font-size: 0.7rem; font-family: var(--mono); color: var(--muted)">Target: 14:00</span>
+              </div>
+              <div class="decision-card-body">
+                <h4>Keira Pellingworth (Bed 04, 38F)</h4>
+                <p>
+                  Medical discharge summary finalized. Community pharmacy pack ready. Step-down bed confirmed at Bentley
+                  Sub-Acute.
+                </p>
+              </div>
+              <div class="decision-btn-strip">
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-primary"
+                  onclick="handleCockpitAuthorize('Keira Pellingworth')"
+                >
+                  Authorize Departure Now
+                </button>
+                <button
+                  type="button"
+                  class="btn-decision"
+                  onclick="triggerToast('Departure delayed 1 hour for patient family transport')"
+                >
+                  Hold for Transport
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Long-Stay Barrier Escalation -->
+            <div class="decision-action-card">
+              <div class="decision-card-head">
+                <span class="decision-badge-kind badge-danger">Gate 3 · Barrier Escalation</span>
+                <span style="font-size: 0.7rem; font-family: var(--mono); color: var(--danger)">Stay: 130d</span>
+              </div>
+              <div class="decision-card-body">
+                <h4>Rowan Vance (Bed 09, 45M)</h4>
+                <p>
+                  High-intensity community support package delayed. NDIS housing provider review unfulfilled past 60
+                  days.
+                </p>
+              </div>
+              <div class="decision-btn-strip">
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-primary"
+                  onclick="triggerToast('Escalated to SMHS Executive Flow Directorate')"
+                >
+                  Escalate to Executive Flow
+                </button>
+                <button
+                  type="button"
+                  class="btn-decision"
+                  onclick="triggerToast('Re-evaluating social work barrier notes...')"
+                >
+                  Update Barrier Notes
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 4: Leave Monitoring -->
+            <div class="decision-action-card">
+              <div class="decision-card-head">
+                <span class="decision-badge-kind badge-purple">Gate 4 · Ground Leave</span>
+                <span style="font-size: 0.7rem; font-family: var(--mono); color: var(--good)"
+                  >Due back: 14:00 (1h left)</span
+                >
+              </div>
+              <div class="decision-card-body">
+                <h4>Marcus Thorne (Bed 12, 31M)</h4>
+                <p>Approved 4-hour unescorted ground leave under Section 58. Departed ward at 10:00 AWST.</p>
+              </div>
+              <div class="decision-btn-strip">
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-primary"
+                  onclick="triggerToast('Marcus Thorne marked safely returned to ward')"
+                >
+                  Mark Returned
+                </button>
+                <button type="button" class="btn-decision" onclick="triggerToast('Leave extended by +2 hours')">
+                  Extend Leave +2h
+                </button>
+                <button
+                  type="button"
+                  class="btn-decision btn-decision-danger"
+                  onclick="triggerToast('AWOL incident escalation triggered')"
+                >
+                  Declare Overdue
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Simulated Governance Audit Trail -->
+          <div class="cockpit-audit-box">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--ink)">
+              Shift Decision Governance Audit Trail
+            </div>
+            <ul class="audit-list" id="cockpitAuditList">
+              <li class="audit-item">
+                <div class="audit-left">
+                  <span style="color: var(--good); font-weight: 700">✓</span>
+                  <span
+                    ><strong>Morning Shift Roll-up Signed Off</strong> — Declared 18 staffed / 20 physical beds (1:1
+                    specialling limiter recorded)</span
+                  >
+                </div>
+                <span class="audit-time">10:22 AWST · NUM Dabakam</span>
+              </li>
+              <li class="audit-item">
+                <div class="audit-left">
+                  <span style="color: var(--good); font-weight: 700">✓</span>
+                  <span
+                    ><strong>Bed 02 Released to Turnover</strong> — Discharge handover signed off; bed cleared for
+                    sanitization</span
+                  >
+                </div>
+                <span class="audit-time">09:15 AWST · Shift Coordinator Taylor</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Universal Toast Feedback -->
+    <div class="toast-popup" id="toastBox">Action triggered</div>
+
+    <script>
+      // Tab Navigation Logic
+      const masterTabButtons = document.querySelectorAll(".master-tab-btn");
+      const partPanels = document.querySelectorAll(".part-panel");
+
+      function showMasterTab(targetId) {
+        masterTabButtons.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.target === targetId);
+        });
+        partPanels.forEach((panel) => {
+          panel.classList.toggle("active", panel.id === targetId);
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      masterTabButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          showMasterTab(btn.dataset.target);
+        });
+      });
+
+      // Theme Switcher
+      const btnThemeToggle = document.getElementById("btnThemeToggle");
+      btnThemeToggle.addEventListener("click", () => {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const nextTheme = currentTheme === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nextTheme);
+      });
+
+      // Toast Notification helper
+      let toastTimer = null;
+      function triggerToast(msg) {
+        const toast = document.getElementById("toastBox");
+        toast.innerText = msg;
+        toast.style.display = "block";
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.style.display = "none";
+        }, 3000);
+      }
+
+      // Beds Filtering
+      const bedsFilterButtons = document.querySelectorAll("[data-beds-filter]");
+      const bedsGridItems = document.querySelectorAll("#mainBedsGrid .bed-card");
+      const bedsCountLabel = document.getElementById("bedsCountLabel");
+
+      bedsFilterButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          bedsFilterButtons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const filter = btn.dataset.bedsFilter;
+          let count = 0;
+
+          bedsGridItems.forEach((item) => {
+            if (filter === "all") {
+              item.style.display = "flex";
+              count++;
+            } else if (filter === "look") {
+              const isUrgent =
+                item.classList.contains("past-date") ||
+                item.querySelector(".badge-at-ed") ||
+                item.querySelector(".badge-pulled") ||
+                item.classList.contains("closed");
+              item.style.display = isUrgent ? "flex" : "none";
+              if (isUrgent) count++;
+            } else if (filter === "ready") {
+              const isReady = item.classList.contains("ready");
+              item.style.display = isReady ? "flex" : "none";
+              if (isReady) count++;
+            } else if (filter === "nobody") {
+              const isOver3m = item.classList.contains("band-4") && !item.classList.contains("past-date");
+              item.style.display = isOver3m ? "flex" : "none";
+              if (isOver3m) count++;
+            }
+          });
+
+          bedsCountLabel.innerText = `Showing ${count} of 20 beds`;
+          triggerToast(`Filtered beds: ${btn.innerText.trim()}`);
+        });
+      });
+
+      // Drawer Modes in Part 5
+      const drawerStageCard = document.getElementById("drawerStageCard");
+      function renderDrawerContent(mode) {
+        if (mode === "occupied-standard") {
+          drawerStageCard.innerHTML = `
+          <div class="drawer-header">
+            <div>
+              <span class="cap-tile-label">Patient Dossier</span>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--ink); margin-top:0.2rem">Bed 05 &middot; Delia Ferrowmoor</h3>
+            </div>
+            <span class="tab-badge" style="background:var(--primary); color:#fff">1–3 Months</span>
+          </div>
+          <div class="drawer-body">
+            <div class="hero-stay-box">
+              <div>
+                <span class="hero-stay-num">60</span>
+                <span style="font-size:1.1rem; font-weight:700; color:var(--muted)"> days HERE</span>
+              </div>
+              <span class="cap-tile-tag" style="background:var(--accent-soft); color:var(--accent)">Acute Admission</span>
+            </div>
+
+            <div>
+              <h2 class="patient-hero-name">Ferrowmoor, Delia</h2>
+              <div class="chips-row">
+                <span class="chip-item">28 yrs</span>
+                <span class="chip-item">Female</span>
+                <span class="chip-item">Pilbara Region</span>
+                <span class="chip-item" style="font-family:var(--mono)">UMRN: UM150003</span>
+              </div>
+            </div>
+
+            <div class="barrier-alert-card">
+              <span>⚠️</span>
+              <span>Discharge barrier unrecorded (Inpatient stay &ge; 7d). Clinical review recommended.</span>
+            </div>
+
+            <div class="grid-2col">
+              <div class="data-card">
+                <span class="data-card-title">Home Region</span>
+                <span class="data-card-val">Pilbara (Port Hedland)</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Legal Status</span>
+                <span class="data-card-val" style="color:var(--good)">Voluntary</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Community Team</span>
+                <span class="data-card-val">Pilbara Mental Health</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Consultant</span>
+                <span class="data-card-val">Dr S. Chen (Team 2)</span>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <span class="data-card-title">Tentative Diagnosis (ICD-10)</span>
+              <span class="data-card-val" style="color:var(--primary); font-size:0.9rem">Mood [affective] disorders (F30–F39)</span>
+              <span style="font-size:0.7rem; color:var(--muted); margin-top:0.2rem">Broad categorization recorded at intake; provisional until discharge summary.</span>
+            </div>
+
+            <div class="departure-action-box">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--ink); text-transform:uppercase">Where are they going?</div>
+              <select class="order-select" style="width:100%">
+                <option>Discharged to the community</option>
+                <option>Transferred to step-down package</option>
+                <option>Transferred to other inpatient unit</option>
+              </select>
+              <button type="button" class="btn-action btn-action-primary" style="justify-content:center" onclick="triggerToast('Recorded that Delia Ferrowmoor has left the ward')">Record that they have left</button>
+            </div>
+          </div>
+        `;
+        } else if (mode === "occupied-overdue") {
+          drawerStageCard.innerHTML = `
+          <div class="drawer-header" style="background:var(--danger-soft); border-bottom-color:var(--danger-border)">
+            <div>
+              <span class="cap-tile-label" style="color:var(--danger)">Critical Overdue Inpatient</span>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--danger); margin-top:0.2rem">Bed 02 &middot; Bartholomew Vance</h3>
+            </div>
+            <span class="badge-danger">▲ 3d OVERDUE</span>
+          </div>
+          <div class="drawer-body">
+            <div class="hero-stay-box">
+              <div>
+                <span class="hero-stay-num" style="color:var(--danger)">130</span>
+                <span style="font-size:1.1rem; font-weight:700; color:var(--muted)"> days HERE</span>
+              </div>
+              <span class="badge-danger">Over 3 Months</span>
+            </div>
+
+            <div>
+              <h2 class="patient-hero-name">Vance, Bartholomew</h2>
+              <div class="chips-row">
+                <span class="chip-item">45 yrs</span>
+                <span class="chip-item">Male</span>
+                <span class="chip-item">Perth Metropolitan</span>
+                <span class="chip-item" style="font-family:var(--mono)">UMRN: UM100084</span>
+              </div>
+            </div>
+
+            <div class="barrier-alert-card" style="background:var(--danger-soft); border-color:var(--danger-border); color:var(--danger)">
+              <span>🚨</span>
+              <span><strong>Discharge date passed 3 days ago.</strong> Barrier: Awaiting community accommodation placement approval.</span>
+            </div>
+
+            <div class="grid-2col">
+              <div class="data-card">
+                <span class="data-card-title">Barrier Category</span>
+                <span class="data-card-val" style="color:var(--danger)">Accommodation</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Legal Status</span>
+                <span class="data-card-val">Voluntary</span>
+              </div>
+            </div>
+
+            <div class="departure-action-box">
+              <button type="button" class="btn-action btn-action-primary" style="justify-content:center; background:var(--danger); border-color:var(--danger)" onclick="triggerToast('Escalated to Executive Bed Flow for housing prioritization')">Escalate Housing Blocker</button>
+            </div>
+          </div>
+        `;
+        } else if (mode === "vacant-ready") {
+          drawerStageCard.innerHTML = `
+          <div class="drawer-header" style="background:var(--good-soft); border-bottom-color:var(--good-border)">
+            <div>
+              <span class="cap-tile-label" style="color:var(--good)">Ready Allocation Console</span>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--good); margin-top:0.2rem">Bed 20 &middot; Ready Vacant Bed</h3>
+            </div>
+            <span class="cap-tile-tag" style="background:var(--good); color:#fff">Clean & Fillable</span>
+          </div>
+          <div class="drawer-body">
+            <div class="hero-stay-box">
+              <div>
+                <span class="hero-stay-num" style="color:var(--good)">READY</span>
+                <span style="font-size:1.1rem; font-weight:700; color:var(--muted)"> for intake</span>
+              </div>
+              <span class="chip-item" style="color:var(--good); font-weight:700">Terminal Clean Done</span>
+            </div>
+
+            <p style="font-size:0.85rem; color:var(--ink-soft); line-height:1.4">
+              Bed 20 is completely sanitized, inspected by environmental services, and unlocked for direct patient intake from ED or waitlist.
+            </p>
+
+            <div class="grid-2col">
+              <div class="data-card">
+                <span class="data-card-title">Sanitation Timestamp</span>
+                <span class="data-card-val">09:45 AWST (Today)</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Pod Assignment</span>
+                <span class="data-card-val">Pod B (Female / Low Noise)</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">HDU Compatibility</span>
+                <span class="data-card-val">Standard Acute (Non-HDU)</span>
+              </div>
+              <div class="data-card">
+                <span class="data-card-title">Nurse Roster Coverage</span>
+                <span class="data-card-val" style="color:var(--good)">Staffed</span>
+              </div>
+            </div>
+
+            <div class="departure-action-box" style="background:var(--good-soft); border-color:var(--good-border)">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--good)">Allocate Inbound Referral</div>
+              <select class="order-select" style="width:100%">
+                <option>Aaron K. (24M, Form 3A, ED Inbound)</option>
+                <option>Siobhan M. (42F, Step-down Intake)</option>
+                <option>Hold bed for overnight emergency intake</option>
+              </select>
+              <button type="button" class="btn-action btn-action-primary" style="justify-content:center; background:var(--good); border-color:var(--good)" onclick="triggerToast('Patient assigned to Bed 20 successfully')">Assign Patient from Waitlist &rarr;</button>
+            </div>
+          </div>
+        `;
+        }
+      }
+
+      function switchDrawerMode(mode) {
+        document.querySelectorAll(".drawer-picker-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("onclick").includes(mode));
+        });
+        renderDrawerContent(mode);
+      }
+
+      function showDrawerForBed(bedNum) {
+        showMasterTab("part-drawer");
+        if (bedNum === 20) {
+          switchDrawerMode("vacant-ready");
+        } else if (bedNum === 2 || bedNum === 7 || bedNum === 11) {
+          switchDrawerMode("occupied-overdue");
+        } else {
+          switchDrawerMode("occupied-standard");
+        }
+      }
+
+      // Cockpit Interactive Handlers
+      function adjustCockpitStaffed(delta) {
+        const valElem = document.getElementById("cockpitStaffedVal");
+        let val = parseInt(valElem.innerText, 10) + delta;
+        val = Math.max(1, Math.min(20, val));
+        valElem.innerText = val;
+      }
+
+      function handleCockpitAccept(name) {
+        const card = document.getElementById("cockpitCardIntake");
+        card.style.opacity = "0.5";
+        card.style.pointerEvents = "none";
+
+        const auditList = document.getElementById("cockpitAuditList");
+        const li = document.createElement("li");
+        li.className = "audit-item";
+        li.innerHTML = `
+        <div class="audit-left">
+          <span style="color:var(--good); font-weight:700">✓</span>
+          <span><strong>Inbound Referral Accepted</strong> — ${name} accepted and allocated to Bed 04</span>
+        </div>
+        <span class="audit-time">Just now · NUM Dabakam</span>
+      `;
+        auditList.insertBefore(li, auditList.firstChild);
+        triggerToast(`Accepted ${name} into Bed 04! Audit trail updated.`);
+      }
+
+      function handleCockpitAuthorize(name) {
+        const card = document.getElementById("cockpitCardDischarge");
+        card.style.opacity = "0.5";
+        card.style.pointerEvents = "none";
+
+        const auditList = document.getElementById("cockpitAuditList");
+        const li = document.createElement("li");
+        li.className = "audit-item";
+        li.innerHTML = `
+        <div class="audit-left">
+          <span style="color:var(--good); font-weight:700">✓</span>
+          <span><strong>Departure Authorized</strong> — ${name} cleared for departure to step-down</span>
+        </div>
+        <span class="audit-time">Just now · NUM Dabakam</span>
+      `;
+        auditList.insertBefore(li, auditList.firstChild);
+        triggerToast(`Departure authorized for ${name}! Bed 04 moving to turnover.`);
+      }
+
+      // Initial drawer render
+      renderDrawerContent("occupied-standard");
+    </script>
+  </body>
+</html>
