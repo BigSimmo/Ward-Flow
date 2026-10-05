@@ -65,6 +65,7 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
   const [bedFilter, setBedFilter] = useState<BedFilter>("all");
   const [declineFor, setDeclineFor] = useState<string | undefined>();
   const [declineReason, setDeclineReason] = useState<CommunityDeclineReason | "">("");
+  const [contactAt, setContactAt] = useState<Instant | undefined>();
 
   const figures = useMemo(
     () => (team ? teamFigures(team, admissions, referrals, now) : null),
@@ -183,15 +184,22 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
               <button
                 type="button"
                 className={styles.button}
-                aria-disabled="true"
-                title="Not wired in this prototype."
-                onClick={(event) => event.preventDefault()}
+                onClick={() => {
+                  dispatch({ type: "RECORD_CLINICAL_CONTACT", role: "community", now, teamId: team.id });
+                  setContactAt(now);
+                }}
               >
                 Record contact
               </button>
             </>
           }
         />
+
+        {contactAt !== undefined ? (
+          <p className={styles.note} role="status">
+            Contact with {team.name} recorded at {formatSheetMoment(contactAt, dayZero)} (team, time and role only).
+          </p>
+        ) : null}
 
         <Verdict attention={attention}>{sentence}</Verdict>
 
