@@ -1,6 +1,7 @@
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
+import { BedFlowProposalPreview } from "@/components/ward-management/bed-flow-proposal/bed-flow-proposal-preview";
 import { StatisticsProposalPreview } from "@/components/ward-management/statistics/proposal/statistics-proposal-preview";
 import { StatisticsWardScreen } from "../src/components/ward-management/statistics/statistics-ward-screen";
 import { StatisticsEdScreen } from "../src/components/ward-management/statistics/statistics-ed-screen";
@@ -186,6 +187,14 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },
   { route: `${ROUTE_PREFIX}/statistics/proposal`, render: () => createElement(StatisticsProposalPreview, {}) },
+  {
+    route: `${ROUTE_PREFIX}/capacity/proposal`,
+    render: () => createElement(BedFlowProposalPreview, { screen: "capacity" }),
+  },
+  {
+    route: `${ROUTE_PREFIX}/network/proposal`,
+    render: () => createElement(BedFlowProposalPreview, { screen: "network" }),
+  },
   {
     route: `${ROUTE_PREFIX}/statistics/ward/[unitId]`,
     render: () => createElement(StatisticsWardScreen, { unitId: "rph-adult-secure" }),

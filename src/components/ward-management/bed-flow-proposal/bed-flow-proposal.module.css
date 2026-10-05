@@ -1,0 +1,641 @@
+/*
+ * Capacity and Network redesign proposal (5 October 2026). Only what the statistics proposal's
+ * stylesheet does not already provide. Third-edition tokens only.
+ */
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--accent);
+}
+
+.buttonPrimary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent, var(--surface));
+}
+
+.button:focus-visible,
+.tile:focus-visible,
+.queueRow:focus-visible,
+.edRow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Map and detail side by side; the detail stays in view while the map scrolls with the page. */
+.mapLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.sticky {
+  position: sticky;
+  top: 4.5rem;
+}
+
+.services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: start;
+}
+
+.serviceStack {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.serviceHeadSub {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--mono);
+}
+
+.tile {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
+}
+
+.tile:hover {
+  border-color: var(--accent);
+  box-shadow: var(--lift);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* A highlight marks matching wards; it never hides one. Non-matching wards dim but stay readable. */
+.tileDim {
+  opacity: 0.55;
+}
+
+.tileMatch {
+  border-color: var(--accent);
+}
+
+.tileHot {
+  border-left: 4px solid var(--danger);
+}
+
+.tileHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--t-2);
+  font-weight: 650;
+}
+
+.tileBeds {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.tileFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.tileFacts strong {
+  color: var(--ink);
+  font-family: var(--mono);
+}
+
+.tileBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-soft, var(--sunk));
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 650;
+}
+
+.warnText {
+  color: var(--warn-ink, var(--warn));
+  font-weight: 600;
+}
+
+.dangerText {
+  color: var(--danger);
+  font-weight: 650;
+}
+
+.goodText {
+  color: var(--good-ink, var(--good));
+  font-weight: 650;
+}
+
+/* Mismatch: two bars per bed kind on one shared scale, then the gap in words. */
+.gapRows {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gapRow {
+  display: grid;
+  grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr) 7rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gapName {
+  display: grid;
+  gap: 0.0625rem;
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.gapBars {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.gapBar {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.gapBar strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.gapTrack {
+  height: 0.625rem;
+  border-radius: 3px;
+  background: var(--sunk);
+}
+
+.gapFillNeed {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink-soft);
+}
+
+.gapFillFit {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--good);
+}
+
+.gapVerdict {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  text-align: right;
+}
+
+/* Forecast: the likely figure with its honest range drawn as a line, not hidden in small print. */
+.forecast {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.forecastRow {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  font-size: var(--t-2);
+}
+
+.range {
+  position: relative;
+  height: 1.75rem;
+}
+
+.rangeLine {
+  position: absolute;
+  top: 0.75rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.rangeZero {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  border-left: 2px dashed var(--muted);
+}
+
+.rangeLikely {
+  position: absolute;
+  top: 0.4375rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-left: -0.4375rem;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* Ward detail */
+.detailHead {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.detailHead h3 {
+  margin: 0;
+  font-size: var(--t-4);
+}
+
+.detailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.375rem 1rem;
+  margin: 0;
+  font-size: var(--t-2);
+}
+
+.dl dt {
+  color: var(--muted);
+}
+
+.dl dd {
+  margin: 0;
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.toolbarLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.groupRow td {
+  background: var(--surface-2);
+  font-weight: 650;
+}
+
+.selectedRow td {
+  background: var(--sunk);
+}
+
+.rowButton {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowButton:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+.rowButton::after {
+  position: absolute;
+  inset: -0.875rem -0.5rem;
+  content: "";
+}
+
+/* Network: ED pressure list */
+.edList {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edRow {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr) minmax(9rem, auto);
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--r2);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--t-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.edRow:hover {
+  background: var(--surface-2);
+}
+
+.edRow[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.edName {
+  display: grid;
+  font-weight: 600;
+}
+
+.edMeta {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stackBar {
+  display: flex;
+  height: 0.875rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--sunk);
+}
+
+.stackNeed {
+  background: var(--ink-soft);
+}
+
+.stackHas {
+  background: var(--good);
+}
+
+.legendInline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.legendInline li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legendKey {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+}
+
+/* Network: placement */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(8rem, 1.2fr);
+  gap: 0.5rem;
+}
+
+.stage {
+  display: grid;
+  gap: 0.125rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.stage:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stageLabel {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.stageValue {
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 600;
+}
+
+.stageHas {
+  border-top: 3px solid var(--good);
+}
+
+.stageNeeds {
+  border-top: 3px solid var(--ink-soft);
+}
+
+.stageLeft {
+  cursor: default;
+  background: var(--surface-2);
+}
+
+.placementLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.queue {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queueRow {
+  display: grid;
+  grid-template-columns: 5.5rem 6rem 3.5rem minmax(0, 1fr) 6.5rem 5rem;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.375rem 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--t-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.queueRow:hover {
+  background: var(--surface-2);
+}
+
+.queueRow[aria-pressed="true"] {
+  background: var(--sunk);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.queueId {
+  font-family: var(--mono);
+  font-weight: 650;
+}
+
+.queueWait {
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.tier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.375rem;
+  border-radius: 999px;
+  background: var(--sunk);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.tier1 {
+  background: var(--danger);
+  color: var(--surface);
+}
+
+.gateTable td,
+.gateTable th {
+  font-size: var(--t-1);
+}
+
+.pass {
+  color: var(--good-ink, var(--good));
+  font-weight: 650;
+}
+
+.fail {
+  color: var(--danger);
+  font-weight: 650;
+}
+
+.queueEd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.button.buttonPrimary,
+.button.buttonPrimary:hover {
+  color: var(--on-accent);
+  text-decoration: none;
+}
+
+.gateTable th {
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
