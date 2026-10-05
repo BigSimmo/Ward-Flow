@@ -1,6 +1,7 @@
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
+import { StatisticsProposalPreview } from "@/components/ward-management/statistics/proposal/statistics-proposal-preview";
 import { StatisticsWardScreen } from "../src/components/ward-management/statistics/statistics-ward-screen";
 import { StatisticsEdScreen } from "../src/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsServiceScreen } from "../src/components/ward-management/statistics/statistics-service-screen";
@@ -184,6 +185,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },
+  { route: `${ROUTE_PREFIX}/statistics/proposal`, render: () => createElement(StatisticsProposalPreview, {}) },
   {
     route: `${ROUTE_PREFIX}/statistics/ward/[unitId]`,
     render: () => createElement(StatisticsWardScreen, { unitId: "rph-adult-secure" }),
