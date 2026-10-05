@@ -2,7 +2,6 @@
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import React, { useState } from "react";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
