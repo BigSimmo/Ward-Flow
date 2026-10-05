@@ -1,9 +1,9 @@
-import stats from "@/components/ward-management/statistics/proposal/statistics-proposal.module.css";
+import styles from "./bed-flow-proposal.module.css";
 
 /** How the Capacity and Network proposal counts its figures, in the same words on both screens. */
 export function BedFlowDefinitions() {
   return (
-    <dl className={stats.definitions} aria-label="How these figures are counted">
+    <dl className={styles.definitions} aria-label="How these figures are counted">
       <div>
         <dt>Ready</dt>
         <dd>Empty and offered by the ward now. Locked ready beds are part of this figure.</dd>

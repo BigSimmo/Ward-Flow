@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "@/components/ward-management/capacity/bed-meeting-sheet";
@@ -10,14 +10,6 @@ import {
   BedGrid,
   BedGridLegend,
   BedLegend,
-  KpiStrip,
-  OccupancyPill,
-  Panel,
-  ProposalHeader,
-  ReleaseTimeline,
-  TableScroll,
-  Verdict,
-  type Attention,
 } from "@/components/ward-management/statistics/proposal/statistics-proposal-parts";
 import {
   SERVICE_COLOUR,
@@ -25,12 +17,11 @@ import {
   releasesToday,
   type WardFigures,
 } from "@/components/ward-management/statistics/proposal/statistics-proposal-figures";
-import stats from "@/components/ward-management/statistics/proposal/statistics-proposal.module.css";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
 import { BedFlowDefinitions } from "./bed-flow-definitions";
+import { Answer, FactLine, Figures, ReleaseList, Section, type Concern } from "./bed-flow-parts";
 import { confirmationIsFresh, useBedFlowProposal } from "./use-bed-flow-proposal";
 import styles from "./bed-flow-proposal.module.css";
 
@@ -38,14 +29,14 @@ type Highlight = "none" | "no-ready" | "locked-ready" | "stale" | "overdue";
 type Sort = "service" | "ready" | "occupancy" | "confirmed";
 
 /**
- * Proposed Capacity screen. Answers "where can the next person go, and where will we run short?"
- * in one sentence, then the bed-kind mismatch, when beds come free, one bed map with ward detail
- * beside it, and one ward table. Every bed figure is the statistics proposal's `bedStates` split.
+ * Proposed Capacity screen. For a bed flow coordinator at the morning bed meeting: where can the
+ * next person go, and where will we run short? One sentence answers it, then the bed-kind
+ * mismatch, when beds come free, one bed map with ward detail beside it, and one ward table.
+ * Every bed figure is the statistics proposal's `bedStates` split.
  */
 export function CapacityProposal() {
   const data = useBedFlowProposal();
   const { world, now, wards, network, asAt, gaps, gapTotals, needing, open, releases, freeToday, forecast } = data;
-  const patientOf = usePatientOf();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<Highlight>("none");
   const [sort, setSort] = useState<Sort>("service");
@@ -53,138 +44,164 @@ export function CapacityProposal() {
 
   const noReady = wards.filter((ward) => ward.ready === 0);
   const shortKinds = gaps.filter((row) => row.gap < 0).sort((a, b) => a.gap - b.gap);
+  const lockedReadyOf = (ward: WardFigures) => data.lockedReadyByUnit.get(ward.unit.id) ?? 0;
   const highlightRule: Record<Highlight, (ward: WardFigures) => boolean> = {
     none: () => false,
     "no-ready": (ward) => ward.ready === 0,
-    "locked-ready": (ward) => (data.lockedReadyByUnit.get(ward.unit.id) ?? 0) > 0,
+    "locked-ready": (ward) => lockedReadyOf(ward) > 0,
     stale: (ward) => !confirmationIsFresh(ward.unit, now),
     overdue: (ward) => ward.releases.overdue.expected > 0,
   };
   const highlightCount = wards.filter(highlightRule[highlight]).length;
+  // Spare youth beds cannot take an adult, so the shortfall adds the short kinds rather than netting them.
+  const shortfall = shortKinds.reduce((total, row) => total - row.gap, 0);
 
-  const attention: Attention[] = [
-    ...shortKinds.map((row) => ({
-      tone: "danger" as const,
-      label: `${capitalise(row.need.replace(/^An? /, ""))}: ${-row.gap} short`,
-    })),
-    ...(noReady.length ? [{ tone: "warn" as const, label: `${noReady.length} wards with no ready bed` }] : []),
-    ...(releases.overdue.expected
-      ? [{ tone: "warn" as const, label: `${releases.overdue.expected} discharges past their date, not confirmed` }]
+  const concerns: Concern[] = [
+    ...shortKinds.map((row) => ({ tone: "danger" as const, label: `${kindName(row.need)}: ${-row.gap} short` })),
+    ...(noReady.length
+      ? [
+          {
+            tone: "danger" as const,
+            label: `${noReady.length} ${noReady.length === 1 ? "ward has" : "wards have"} no ready bed`,
+          },
+        ]
       : []),
-    ...data.stale.map((ward) => ({ tone: "info" as const, label: `${ward.unit.name}: bed state needs confirming` })),
+    ...(releases.overdue.expected
+      ? [
+          {
+            tone: "warn" as const,
+            label: `${releases.overdue.expected} expected ${releases.overdue.expected === 1 ? "discharge is" : "discharges are"} past their date`,
+          },
+        ]
+      : []),
+    ...data.stale.map((ward) => ({
+      tone: "warn" as const,
+      label: `${ward.unit.name}: bed state not confirmed recently`,
+    })),
   ];
 
   return (
-    <main id="main-content" className={stats.page} data-testid="capacity-proposal">
-      <ProposalHeader crumbs={[{ label: "Operations" }, { label: "Capacity" }]} title="Capacity" asAt={asAt} />
-      <div className={styles.headerActions}>
-        <BedMeetingSheetLauncher
-          now={now}
-          buttonClassName={styles.button}
-          buildSheet={() =>
-            bedMeetingSheet({
-              units: world.units,
-              movements: world.movements,
-              bedReleases: world.bedReleases,
-              admissions: world.admissions,
-              leaveBeds: world.leaveBeds,
-              now,
-              service: null,
-              nameOf: (movement) => patientOf(movement).displayName,
-            })
-          }
-        />
-        <a className={styles.button} href="/mockups/ward-flow/network/proposal">
-          Network view ›
-        </a>
-      </div>
+    <main id="main-content" className={styles.page} data-testid="capacity-proposal">
+      <PageHeader
+        title="Capacity"
+        asAt={asAt}
+        links={
+          <>
+            <BedMeetingSheetLauncher
+              now={now}
+              buttonClassName={styles.textLink}
+              buildSheet={() =>
+                bedMeetingSheet({
+                  units: world.units,
+                  movements: world.movements,
+                  bedReleases: world.bedReleases,
+                  admissions: world.admissions,
+                  leaveBeds: world.leaveBeds,
+                  now,
+                  service: null,
+                  nameOf: (movement) => movement.id,
+                })
+              }
+            />
+            <a className={styles.textLink} href="/mockups/ward-flow/network/proposal">
+              Network
+            </a>
+          </>
+        }
+      />
 
-      <Verdict attention={attention}>
-        <strong>
-          {network.ready} beds are ready for {needing.length} people still waiting for one
-        </strong>
-        {gapTotals.gap < 0 ? `, so the network is ${-gapTotals.gap} beds short today` : ""}.{" "}
-        {shortKinds.length
-          ? `The biggest gap is ${shortKinds[0].need.replace(/^An? /, "").toLowerCase()}s (${-shortKinds[0].gap} short). `
-          : ""}
-        {freeToday} more {freeToday === 1 ? "bed is" : "beds are"} expected to come free before midnight.
-      </Verdict>
+      <Answer concerns={concerns}>
+        {needing.length === 0 ? (
+          <strong>
+            Nobody is waiting for a bed. {network.ready} {network.ready === 1 ? "bed is" : "beds are"} ready.
+          </strong>
+        ) : (
+          <>
+            <strong>
+              {network.ready} {network.ready === 1 ? "bed is" : "beds are"} ready for {needing.length}{" "}
+              {needing.length === 1 ? "person" : "people"} still waiting
+            </strong>
+            {shortfall > 0
+              ? `, but ${shortfall} ${shortfall === 1 ? "person has" : "people have"} no bed of the right kind now`
+              : ", and every person has a bed that fits"}
+            . {shortKinds.length ? `The biggest gap is ${kindName(shortKinds[0].need).toLowerCase()}s. ` : ""}
+            {freeToday} more {freeToday === 1 ? "is" : "are"} expected free before midnight.
+          </>
+        )}
+      </Answer>
 
-      <KpiStrip
+      <Figures
         label="Network bed figures"
         items={[
           { label: "Beds", value: network.beds, note: `${wards.length} wards` },
           {
             label: "Occupied",
             value: network.occupied,
-            note: `${percent(network.occupied / network.beds, 1)} · ${network.onLeave} on leave`,
-            keyClass: stats.segOccupied,
+            note: `${network.beds ? percent(network.occupied / network.beds, 1) : "0%"} · ${network.onLeave} on leave`,
           },
-          { label: "Pulled", value: network.pulled, note: "bed given, not arrived", keyClass: stats.segPulled },
-          { label: "Closed", value: network.closed, note: "empty, not offered", keyClass: stats.segClosed },
+          { label: "Pulled", value: network.pulled, note: "Bed given, not arrived" },
+          { label: "Closed", value: network.closed, note: "Empty, not offered" },
           {
             label: "Ready",
             value: network.ready,
-            tone: "good",
             note: `${data.lockedReady} locked · ${network.beingMadeReady} being made ready`,
-            keyClass: stats.segReady,
           },
           {
             label: "Still need a bed",
             value: needing.length,
             tone: needing.length > network.ready ? "danger" : undefined,
-            note: `of ${open.length} on ED lists`,
+            note: `of ${open.length} on emergency department lists`,
           },
-          { label: "Free by midnight", value: freeToday, tone: "good", note: "confirmed and expected" },
+          { label: "Free by midnight", value: freeToday, note: "Confirmed and expected" },
         ]}
       />
 
-      <div className={stats.grid2}>
-        <Panel
+      <div className={styles.twoUp}>
+        <Section
           title="Where the mismatch is"
           question="Ready beds that suit each kind of need, against the people still waiting for one."
           meta={`${gapTotals.waiting} waiting · ${gapTotals.bedsThatFit} fit`}
-          foot={
-            <span className={stats.rowSub}>
-              Counts people at placement requested, destination review or accepted. The {open.length - needing.length}{" "}
-              with a bed already pulled or on their way are not counted.
-            </span>
-          }
+          foot={`Counts people at placement requested, destination review or accepted. The ${open.length - needing.length} with a bed already pulled, or on their way, are left out.`}
         >
           <MismatchRows gaps={gaps} />
-        </Panel>
+        </Section>
 
-        <Panel title="When beds come free" question="Discharges by when the bed is expected back." meta="Whole network">
-          <ReleaseTimeline releases={releases} />
+        <Section
+          title="When beds come free"
+          question="Discharges by when the bed is expected back."
+          meta="Whole network"
+        >
+          <ReleaseList releases={releases} pastHref="/mockups/ward-flow/discharges" />
           <div className={styles.forecast}>
-            <p className={styles.sectionTitle}>Estimate after today</p>
+            <p className={styles.label}>After today (estimate)</p>
             {forecast.horizons.map((horizon) => (
               <ForecastRange key={horizon.hours} {...horizon} />
             ))}
-            <p className={stats.note}>
+            <p className={styles.note}>
               Ready beds plus discharges due, minus the {needing.length} people still waiting. New arrivals at emergency
               departments are not predicted.
             </p>
           </div>
-        </Panel>
+        </Section>
       </div>
 
-      <Panel
+      <Section
         title="Bed map"
-        question="Every ward, one square per bed. Select a ward for its detail."
+        question="Every ward, one square per bed. Select a ward to see its detail."
         meta={`${network.beds} beds · ${wards.length} wards`}
+        foot={<BedGridLegend />}
       >
         <div className={styles.toolbar}>
           <div className={styles.toolbarLabel}>
             Highlight
-            <div className={stats.segmented} role="group" aria-label="Highlight wards">
+            <div className={styles.segmented} role="group" aria-label="Highlight wards">
               {(
                 [
                   ["none", "Nothing"],
-                  ["no-ready", `No ready bed (${wards.filter(highlightRule["no-ready"]).length})`],
-                  ["locked-ready", `Locked bed ready (${wards.filter(highlightRule["locked-ready"]).length})`],
-                  ["overdue", `Discharge past date (${wards.filter(highlightRule.overdue).length})`],
-                  ["stale", `Needs confirming (${data.stale.length})`],
+                  ["no-ready", `No ready bed · ${wards.filter(highlightRule["no-ready"]).length}`],
+                  ["locked-ready", `Locked bed ready · ${wards.filter(highlightRule["locked-ready"]).length}`],
+                  ["overdue", `Discharge past date · ${wards.filter(highlightRule.overdue).length}`],
+                  ["stale", `Not confirmed recently · ${data.stale.length}`],
                 ] as [Highlight, string][]
               ).map(([id, label]) => (
                 <button key={id} type="button" aria-pressed={highlight === id} onClick={() => setHighlight(id)}>
@@ -193,9 +210,9 @@ export function CapacityProposal() {
               ))}
             </div>
           </div>
-          <span className={stats.rowSub}>
+          <span className={styles.note} aria-live="polite">
             {highlight === "none"
-              ? "Highlighting marks wards; it never hides one."
+              ? "Highlighting marks wards. It never hides one."
               : `${highlightCount} of ${wards.length} wards marked. Every ward stays on the map.`}
           </span>
         </div>
@@ -204,39 +221,44 @@ export function CapacityProposal() {
             {HEALTH_SERVICES.map((service) => {
               const own = wards.filter((ward) => ward.service === service);
               if (own.length === 0) return null;
-              const ready = own.reduce((sum, ward) => sum + ward.ready, 0);
-              const beds = own.reduce((sum, ward) => sum + ward.beds, 0);
               return (
-                <section key={service} className={styles.serviceStack} aria-label={`${service} wards`}>
-                  <div className={stats.serviceHead} style={{ borderBottomColor: SERVICE_COLOUR[service] }}>
-                    <h3>{service}</h3>
-                    <span className={styles.serviceHeadSub}>
-                      {ready} ready · {beds} beds
+                <section key={service} className={styles.service} aria-label={`${service} wards`}>
+                  <div className={styles.serviceHead}>
+                    <h3 className={styles.serviceName}>
+                      <span className={styles.dot} style={{ background: SERVICE_COLOUR[service] }} aria-hidden="true" />
+                      {service}
+                    </h3>
+                    <span className={styles.rowBeds}>
+                      {own.reduce((sum, ward) => sum + ward.ready, 0)} ready ·{" "}
+                      {own.reduce((sum, ward) => sum + ward.beds, 0)} beds
                     </span>
                   </div>
-                  {own.map((ward) => (
-                    <WardTile
-                      key={ward.unit.id}
-                      ward={ward}
-                      lockedReady={data.lockedReadyByUnit.get(ward.unit.id) ?? 0}
-                      stale={!confirmationIsFresh(ward.unit, now)}
-                      selected={ward.unit.id === selectedId}
-                      dim={highlight !== "none" && !highlightRule[highlight](ward)}
-                      match={highlight !== "none" && highlightRule[highlight](ward)}
-                      onSelect={() => setSelectedId((current) => (current === ward.unit.id ? null : ward.unit.id))}
-                    />
-                  ))}
+                  <ul className={styles.rows}>
+                    {own.map((ward) => (
+                      <li key={ward.unit.id}>
+                        <WardRow
+                          ward={ward}
+                          lockedReady={lockedReadyOf(ward)}
+                          stale={!confirmationIsFresh(ward.unit, now)}
+                          selected={ward.unit.id === selectedId}
+                          dim={highlight !== "none" && !highlightRule[highlight](ward)}
+                          match={highlight !== "none" && highlightRule[highlight](ward)}
+                          onSelect={() => setSelectedId((current) => (current === ward.unit.id ? null : ward.unit.id))}
+                        />
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               );
             })}
-            <p className={stats.rowSub}>CAHS has no inpatient unit reporting to this board.</p>
+            <p className={styles.note}>CAHS has no inpatient unit reporting to this board.</p>
           </div>
           <aside className={styles.sticky} aria-label="Ward detail">
             {selected ? (
               <WardDetail
                 ward={selected}
-                lockedReady={data.lockedReadyByUnit.get(selected.unit.id) ?? 0}
                 now={now}
+                lockedReady={lockedReadyOf(selected)}
                 onClose={() => setSelectedId(null)}
                 requestedAt={data.lastRefreshRequest(selected.unit.id)}
                 onRequest={() =>
@@ -249,50 +271,74 @@ export function CapacityProposal() {
                 }
               />
             ) : (
-              <Panel title="Network" meta={asAt.replace("As at ", "")}>
+              <Section title="Whole network" raised meta={asAt.replace("As at ", "")}>
                 <BedGrid figures={network} size="sm" />
                 <BedLegend figures={network} />
-                <p className={stats.note}>Select any ward on the map or in the table to see its detail here.</p>
-              </Panel>
+                <p className={styles.note}>Select a ward on the map or in the table to see its detail here.</p>
+              </Section>
             )}
           </aside>
         </div>
-        <div className={stats.note}>
-          <BedGridLegend />
-        </div>
-      </Panel>
+      </Section>
 
-      <Panel
+      <Section
         title="Wards"
-        question="The same figures as the map, for sorting and comparing."
-        meta={`${wards.length} wards`}
-        flush
-      >
-        <div className={styles.toolbar} style={{ padding: "0.75rem 1rem 0" }}>
+        question="The same figures as the map, to sort and compare."
+        meta={
           <label className={styles.toolbarLabel}>
             Order
-            <select className={stats.select} value={sort} onChange={(event) => setSort(event.target.value as Sort)}>
+            <select
+              id="capacity-proposal-order"
+              className={styles.select}
+              value={sort}
+              onChange={(event) => setSort(event.target.value as Sort)}
+            >
               <option value="service">By health service</option>
               <option value="ready">Most ready beds</option>
               <option value="occupancy">Highest occupancy</option>
               <option value="confirmed">Oldest confirmation</option>
             </select>
           </label>
-        </div>
+        }
+      >
         <WardTable
           wards={wards}
           sort={sort}
-          lockedReadyByUnit={data.lockedReadyByUnit}
+          lockedReadyOf={lockedReadyOf}
           selectedId={selectedId}
           onSelect={setSelectedId}
           now={now}
         />
-      </Panel>
+      </Section>
 
       <BedFlowDefinitions />
       <WardPrototypeFooter testId="capacity-proposal-governance" note="Statewide bed capacity · Not a medical device" />
     </main>
   );
+}
+
+/** The page header shared by both proposal screens: crumbs, title, as-at time, quiet links. */
+export function PageHeader({ title, asAt, links }: { title: string; asAt: string; links?: ReactNode }) {
+  return (
+    <header className={styles.header}>
+      <div>
+        <p className={styles.crumbs}>Operations › {title}</p>
+        <h1 className={styles.title}>{title}</h1>
+      </div>
+      <div className={styles.headerSide}>
+        {links}
+        <span>{asAt}</span>
+        <span className={styles.rowName}>
+          <span className={styles.dot} aria-hidden="true" />
+          Synthetic data
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function kindName(need: string): string {
+  return need.replace(/^An? /, "").replace(/^./, (first) => first.toUpperCase());
 }
 
 function MismatchRows({ gaps }: { gaps: ReturnType<typeof useBedFlowProposal>["gaps"] }) {
@@ -302,8 +348,8 @@ function MismatchRows({ gaps }: { gaps: ReturnType<typeof useBedFlowProposal>["g
       {gaps.map((row) => (
         <li key={row.id} className={styles.gapRow}>
           <span className={styles.gapName}>
-            {capitalise(row.need.replace(/^An? /, ""))}
-            <span className={stats.rowSub}>{row.who}</span>
+            {kindName(row.need)}
+            <span className={styles.factLine}>{row.who}</span>
           </span>
           <span className={styles.gapBars} aria-hidden="true">
             <span className={styles.gapBar}>
@@ -322,10 +368,10 @@ function MismatchRows({ gaps }: { gaps: ReturnType<typeof useBedFlowProposal>["g
             </span>
           </span>
           <span
-            className={`${styles.gapVerdict} ${row.gap < 0 ? styles.dangerText : styles.goodText}`}
+            className={`${styles.gapVerdict} ${row.gap < 0 ? styles.dangerText : ""}`}
             aria-label={`${row.waiting} waiting, ${row.bedsThatFit} beds that fit`}
           >
-            {row.gap < 0 ? `${-row.gap} short` : row.gap === 0 ? "Exactly enough" : `${row.gap} spare`}
+            {row.gap < 0 ? `${-row.gap} short` : row.gap === 0 ? "Enough" : `${row.gap} spare`}
           </span>
         </li>
       ))}
@@ -340,9 +386,9 @@ function ForecastRange({ hours, low, likely, high }: { hours: number; low: numbe
   const at = (value: number) => `${((value - min) / span) * 100}%`;
   return (
     <div className={styles.forecastRow}>
-      <span className={stats.rowSub}>In {hours} hours</span>
+      <span className={styles.factLine}>In {hours} hours</span>
       <div>
-        <strong className={likely < 0 ? styles.dangerText : styles.goodText}>{forecastHeadline(likely)}</strong>
+        <strong className={likely < 0 ? styles.dangerText : undefined}>{forecastHeadline(likely)}</strong>
         <div
           className={styles.range}
           role="img"
@@ -361,7 +407,7 @@ function ForecastRange({ hours, low, likely, high }: { hours: number; low: numbe
   );
 }
 
-function WardTile({
+function WardRow({
   ward,
   lockedReady,
   stale,
@@ -382,43 +428,40 @@ function WardTile({
   return (
     <button
       type="button"
-      className={`${styles.tile} ${ward.ready === 0 ? styles.tileHot : ""} ${dim ? styles.tileDim : ""} ${
-        match ? styles.tileMatch : ""
-      }`}
+      className={`${styles.row} ${dim ? styles.rowDim : ""} ${match ? styles.rowMatch : ""}`}
       aria-pressed={selected}
       onClick={onSelect}
-      aria-label={`${ward.unit.name}: ${ward.ready} ready${lockedReady ? `, ${lockedReady} locked` : ""}, ${ward.occupied} occupied, ${ward.pulled} pulled, ${ward.closed} closed, of ${ward.beds} beds`}
+      aria-label={`${ward.unit.name}${match ? " (marked)" : ""}: ${ward.ready} ready${lockedReady ? `, ${lockedReady} locked` : ""}, ${ward.occupied} occupied, ${ward.pulled} pulled, ${ward.closed} closed, of ${ward.beds} beds`}
     >
-      <span className={styles.tileHead}>
-        <span>{ward.unit.name}</span>
-        <span className={styles.tileBeds}>{ward.beds} beds</span>
+      <span className={styles.rowHead}>
+        <span className={styles.rowName}>
+          {ward.ready === 0 ? <span className={`${styles.dot} ${styles.dotDanger}`} aria-hidden="true" /> : null}
+          {ward.unit.name}
+        </span>
+        <span className={styles.rowBeds}>{ward.beds} beds</span>
       </span>
       <BedGrid figures={ward} size="sm" />
-      <span className={styles.tileFacts}>
-        <span className={ward.ready === 0 ? styles.dangerText : undefined}>
-          <strong>{ward.ready}</strong> ready{lockedReady ? ` (${lockedReady} locked)` : ""}
-        </span>
-        {today ? (
-          <span>
-            <strong>{today}</strong> free today
-          </span>
-        ) : null}
-        {ward.releases.overdue.expected ? (
-          <span className={styles.warnText}>{ward.releases.overdue.expected} past date</span>
-        ) : null}
-        {stale ? <span className={styles.warnText}>Needs confirming</span> : null}
-      </span>
+      <FactLine
+        parts={[
+          <span key="ready" className={ward.ready === 0 ? styles.dangerText : undefined}>
+            {ward.ready} ready{lockedReady ? ` (${lockedReady} locked)` : ""}
+          </span>,
+          today ? `${today} free today` : null,
+          ward.releases.overdue.expected ? <span key="past">{ward.releases.overdue.expected} past date</span> : null,
+          stale ? <span key="stale">Not confirmed recently</span> : null,
+        ]}
+      />
     </button>
   );
 }
 
 function WardDetail({
   ward,
+  now,
   lockedReady,
   requestedAt,
   onRequest,
   onClose,
-  now,
 }: {
   ward: WardFigures;
   now: number;
@@ -435,83 +478,73 @@ function WardDetail({
     ward.releases["by-1600"].confirmed +
     ward.releases.tonight.confirmed;
   return (
-    <Panel
-      title="Ward detail"
+    <Section
+      title={ward.unit.name}
+      raised
       meta={
-        <button type="button" className={styles.button} onClick={onClose}>
-          Back to network
+        <button type="button" className={styles.linkButton} onClick={onClose}>
+          Close
         </button>
       }
     >
-      <div className={stats.stack}>
-        <div className={styles.detailHead}>
-          <h3>{ward.unit.name}</h3>
-          <span className={stats.rowSub}>
-            {ward.hospital} · {ward.service}
-          </span>
-        </div>
-        <BedGrid figures={ward} />
-        <BedLegend figures={ward} />
-        <dl className={styles.dl}>
-          <dt>Ready</dt>
-          <dd>
-            {ward.ready}
-            {lockedReady ? ` (${lockedReady} locked)` : ""}
-          </dd>
-          <dt>Being made ready</dt>
-          <dd>{ward.beingMadeReady}</dd>
-          <dt>On leave (bed held)</dt>
-          <dd>{ward.onLeave}</dd>
-          <dt>Occupancy</dt>
-          <dd>
-            <OccupancyPill value={ward.occupancy} />
-          </dd>
-          <dt>Free before midnight</dt>
-          <dd>
-            {today} ({confirmedToday} confirmed)
-          </dd>
-          <dt>Discharges past their date</dt>
-          <dd className={ward.releases.overdue.expected ? styles.warnText : undefined}>
-            {ward.releases.overdue.expected}
-          </dd>
-          <dt>Asked and waiting</dt>
-          <dd>{ward.askedAndWaiting}</dd>
-        </dl>
-        <p className={stats.note}>
-          <span className={fresh ? undefined : styles.warnText}>
-            Bed state confirmed {formatInstantWithDay(ward.unit.allocatable.confirmedAt, now)}
-            {fresh ? ", within the ward's window." : ", past the ward's window."}
-          </span>
-          {requestedAt !== undefined ? ` Update requested ${formatInstantWithDay(requestedAt, now)}.` : ""}
-        </p>
-        <div className={styles.detailActions}>
-          <button type="button" className={`${styles.button} ${styles.buttonPrimary}`} onClick={onRequest}>
-            Request ward update
-          </button>
-          <a className={styles.button} href={`/mockups/ward-flow/board/${ward.unit.id}`}>
-            Open ward
-          </a>
-          <a className={styles.button} href="/mockups/ward-flow/discharges">
-            Discharges
-          </a>
-        </div>
-        <p className={stats.rowSub}>A request records who asked and when. No message leaves the prototype.</p>
+      <span className={styles.factLine}>
+        {ward.hospital} · {ward.service}
+      </span>
+      <BedGrid figures={ward} />
+      <BedLegend figures={ward} />
+      <dl className={styles.dl}>
+        <dt>Ready</dt>
+        <dd>
+          {ward.ready}
+          {lockedReady ? ` (${lockedReady} locked)` : ""}
+        </dd>
+        <dt>Being made ready</dt>
+        <dd>{ward.beingMadeReady}</dd>
+        <dt>On leave (bed held)</dt>
+        <dd>{ward.onLeave}</dd>
+        <dt>Occupancy</dt>
+        <dd>{percent(ward.occupancy)}</dd>
+        <dt>Free before midnight</dt>
+        <dd>
+          {today} ({confirmedToday} confirmed)
+        </dd>
+        <dt>Expected discharges past their date</dt>
+        <dd>{ward.releases.overdue.expected}</dd>
+        <dt>Referrals waiting for this ward&apos;s answer</dt>
+        <dd>{ward.askedAndWaiting}</dd>
+      </dl>
+      <p className={styles.note}>
+        Bed state confirmed {formatInstantWithDay(ward.unit.allocatable.confirmedAt, now)}
+        {fresh ? ", within the ward's window." : ", outside the ward's window."}
+        {requestedAt !== undefined ? ` Update requested ${formatInstantWithDay(requestedAt, now)}.` : ""}
+      </p>
+      <div className={styles.actions}>
+        <button type="button" className={styles.button} onClick={onRequest}>
+          Request ward update
+        </button>
+        <a className={styles.textLink} href={`/mockups/ward-flow/board/${ward.unit.id}`}>
+          Open ward
+        </a>
+        <a className={styles.textLink} href="/mockups/ward-flow/discharges">
+          Discharges
+        </a>
       </div>
-    </Panel>
+      <p className={styles.note}>A request records who asked and when. No message leaves the prototype.</p>
+    </Section>
   );
 }
 
 function WardTable({
   wards,
   sort,
-  lockedReadyByUnit,
+  lockedReadyOf,
   selectedId,
   onSelect,
   now,
 }: {
   wards: WardFigures[];
   sort: Sort;
-  lockedReadyByUnit: Map<string, number>;
+  lockedReadyOf: (ward: WardFigures) => number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   now: number;
@@ -530,22 +563,23 @@ function WardTable({
           (group) => group.rows.length > 0,
         )
       : [{ service: null, rows: sorted }];
-  const sum = (rows: WardFigures[], pick: (ward: WardFigures) => number) => rows.reduce((t, w) => t + pick(w), 0);
+  const sum = (pick: (ward: WardFigures) => number) => wards.reduce((total, ward) => total + pick(ward), 0);
+  const beds = sum((ward) => ward.beds);
   return (
-    <TableScroll label="Wards">
-      <table className={stats.table}>
+    <div className={styles.tableScroll} role="region" aria-label="Wards table" tabIndex={0}>
+      <table className={styles.table}>
         <thead>
           <tr>
             <th>Ward</th>
-            <th className={stats.num}>Beds</th>
-            <th className={stats.num}>Ready</th>
-            <th className={stats.num}>Locked ready</th>
-            <th className={stats.num}>Pulled</th>
-            <th className={stats.num}>Closed</th>
-            <th className={stats.num}>Occupied</th>
-            <th className={stats.num}>Occupancy</th>
-            <th className={stats.num}>Free today</th>
-            <th className={stats.num}>Past date</th>
+            <th className={styles.num}>Beds</th>
+            <th className={styles.num}>Ready</th>
+            <th className={styles.num}>Locked ready</th>
+            <th className={styles.num}>Pulled</th>
+            <th className={styles.num}>Closed</th>
+            <th className={styles.num}>Occupied</th>
+            <th className={styles.num}>Occupancy</th>
+            <th className={styles.num}>Free today</th>
+            <th className={styles.num}>Past date</th>
             <th>Confirmed</th>
           </tr>
         </thead>
@@ -555,7 +589,7 @@ function WardTable({
               key={group.service ?? "all"}
               label={group.service}
               rows={group.rows}
-              lockedReadyByUnit={lockedReadyByUnit}
+              lockedReadyOf={lockedReadyOf}
               selectedId={selectedId}
               onSelect={onSelect}
               now={now}
@@ -565,94 +599,76 @@ function WardTable({
         <tfoot>
           <tr>
             <td>Network</td>
-            <td className={stats.num}>{sum(wards, (w) => w.beds)}</td>
-            <td className={stats.num}>{sum(wards, (w) => w.ready)}</td>
-            <td className={stats.num}>{sum(wards, (w) => lockedReadyByUnit.get(w.unit.id) ?? 0)}</td>
-            <td className={stats.num}>{sum(wards, (w) => w.pulled)}</td>
-            <td className={stats.num}>{sum(wards, (w) => w.closed)}</td>
-            <td className={stats.num}>{sum(wards, (w) => w.occupied)}</td>
-            <td className={stats.num}>
-              {percent(
-                sum(wards, (w) => w.occupied) /
-                  Math.max(
-                    1,
-                    sum(wards, (w) => w.beds),
-                  ),
-                1,
-              )}
-            </td>
-            <td className={stats.num}>{sum(wards, (w) => releasesToday(w.releases))}</td>
-            <td className={stats.num}>{sum(wards, (w) => w.releases.overdue.expected)}</td>
+            <td className={styles.num}>{beds}</td>
+            <td className={styles.num}>{sum((ward) => ward.ready)}</td>
+            <td className={styles.num}>{sum(lockedReadyOf)}</td>
+            <td className={styles.num}>{sum((ward) => ward.pulled)}</td>
+            <td className={styles.num}>{sum((ward) => ward.closed)}</td>
+            <td className={styles.num}>{sum((ward) => ward.occupied)}</td>
+            <td className={styles.num}>{beds ? percent(sum((ward) => ward.occupied) / beds, 1) : "0%"}</td>
+            <td className={styles.num}>{sum((ward) => releasesToday(ward.releases))}</td>
+            <td className={styles.num}>{sum((ward) => ward.releases.overdue.expected)}</td>
             <td />
           </tr>
         </tfoot>
       </table>
-    </TableScroll>
+    </div>
   );
 }
 
 function WardGroup({
   label,
   rows,
-  lockedReadyByUnit,
+  lockedReadyOf,
   selectedId,
   onSelect,
   now,
 }: {
   label: string | null;
   rows: WardFigures[];
-  lockedReadyByUnit: Map<string, number>;
+  lockedReadyOf: (ward: WardFigures) => number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   now: number;
 }) {
-  const beds = rows.reduce((t, w) => t + w.beds, 0);
-  const ready = rows.reduce((t, w) => t + w.ready, 0);
   return (
     <>
       {label ? (
         <tr className={styles.groupRow}>
           <td colSpan={11}>
-            {label} · {rows.length} wards · {ready} ready of {beds} beds
+            {label} · {rows.length} wards · {rows.reduce((total, ward) => total + ward.ready, 0)} ready of{" "}
+            {rows.reduce((total, ward) => total + ward.beds, 0)} beds
           </td>
         </tr>
       ) : null}
       {rows.map((ward) => {
         const fresh = confirmationIsFresh(ward.unit, now);
-        const locked = lockedReadyByUnit.get(ward.unit.id) ?? 0;
         return (
           <tr key={ward.unit.id} className={ward.unit.id === selectedId ? styles.selectedRow : undefined}>
             <td>
-              <span className={stats.rowName}>
+              <span className={styles.cellName}>
                 <button type="button" className={styles.rowButton} onClick={() => onSelect(ward.unit.id)}>
                   {ward.unit.name}
                 </button>
-                <span className={stats.rowSub}>{ward.hospital}</span>
+                <span className={styles.factLine}>{ward.hospital}</span>
               </span>
             </td>
-            <td className={stats.num}>{ward.beds}</td>
-            <td className={`${stats.num} ${ward.ready === 0 ? styles.dangerText : ""}`}>{ward.ready}</td>
-            <td className={stats.num}>{locked}</td>
-            <td className={stats.num}>{ward.pulled}</td>
-            <td className={stats.num}>{ward.closed}</td>
-            <td className={stats.num}>{ward.occupied}</td>
-            <td className={stats.num}>
-              <OccupancyPill value={ward.occupancy} />
-            </td>
-            <td className={stats.num}>{releasesToday(ward.releases)}</td>
-            <td className={`${stats.num} ${ward.releases.overdue.expected ? styles.warnText : ""}`}>
-              {ward.releases.overdue.expected}
-            </td>
-            <td className={fresh ? stats.rowSub : styles.warnText}>
+            <td className={styles.num}>{ward.beds}</td>
+            <td className={`${styles.num} ${ward.ready === 0 ? styles.dangerText : ""}`}>{ward.ready}</td>
+            <td className={styles.num}>{lockedReadyOf(ward)}</td>
+            <td className={styles.num}>{ward.pulled}</td>
+            <td className={styles.num}>{ward.closed}</td>
+            <td className={styles.num}>{ward.occupied}</td>
+            <td className={styles.num}>{percent(ward.occupancy)}</td>
+            <td className={styles.num}>{releasesToday(ward.releases)}</td>
+            <td className={styles.num}>{ward.releases.overdue.expected}</td>
+            <td className={styles.factLine}>
               {formatInstantWithDay(ward.unit.allocatable.confirmedAt, now)}
+              {fresh ? "" : " · not recent"}
             </td>
           </tr>
         );
       })}
     </>
   );
-}
-
-function capitalise(text: string): string {
-  return text.replace(/^./, (first) => first.toUpperCase());
 }
