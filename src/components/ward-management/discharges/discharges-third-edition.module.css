@@ -454,7 +454,7 @@
 }
 .groupRow th {
   padding: 0.55rem 1rem;
-  background: var(--surface-1, #f8fafc);
+  background: var(--surface-2);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
