@@ -12,7 +12,7 @@
 | Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |
 |---|---|---|---|---|---|---|---|---|---|
 | `command-third-edition.html` | `/` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 38ca886993fb | not recorded |
-| `delays-third-edition.html` | `/delays` | 2026-10-05 | Codex (rendered browser and source review) | 1440, 1600, 1280, 768, 390 | light, dark | matches | UNAGEABLE - no hash recorded | not recorded | 5bbbbef8f736d150f1e6f5a2ddecdb83cef7263f |
+| `delays-third-edition.html` | `/delays` | 2026-10-05 | Codex (rendered browser and source review) | 1440, 1600, 1280, 768, 390 | light, dark | matches | UNAGEABLE - no hash recorded | not recorded | 64e6bcfa5d8da12aba4e3957dea0a42f65a53ce0 |
 | `movement-third-edition.html` | `/movements` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 5bb5b8c8b097 | not recorded |
 | `capacity-third-edition.html` | `/capacity` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | e6542c7321e3 | not recorded |
 | `ward-third-edition.html` | `/ward/[unitId]` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 078d4ec59fd2 | not recorded |
