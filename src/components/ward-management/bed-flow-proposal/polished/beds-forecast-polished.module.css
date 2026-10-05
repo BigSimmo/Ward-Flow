@@ -1,0 +1,124 @@
+.forecastSection {
+  flex: none;
+  padding: 1.125rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.forecastHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.forecastTitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.forecastScope {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--body);
+  white-space: nowrap;
+}
+
+.horizons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.horizon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.horizonHeadingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.horizonLabel {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.until {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--good);
+  line-height: 1.25;
+}
+
+.headline[data-short="true"] {
+  color: var(--danger);
+}
+
+.range {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.35;
+}
+
+/* POLISH, 5 October 2026 (preview only): the forecast range drawn on one scale. */
+.rangeTrack {
+  position: relative;
+  height: 1rem;
+  margin-block: 0.25rem;
+}
+
+.rangeLine {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  background: var(--ink-soft, var(--muted));
+  transform: translateY(-50%);
+}
+
+.rangeZero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--muted);
+}
+
+.rangeLikely {
+  position: absolute;
+  top: 50%;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+}
+
+.headline {
+  font-weight: 600;
+}

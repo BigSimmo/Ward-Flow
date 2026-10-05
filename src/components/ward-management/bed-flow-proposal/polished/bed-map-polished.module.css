@@ -1,0 +1,1750 @@
+/* src/components/ward-management/capacity/bed-map.module.css
+ *
+ * The network's whole bed supply, drawn as elevated clinical bay pods and micro-beds.
+ * Wards sit in a single-line horizontal track per health service, with sleek carousel
+ * navigation controls. Inside each ward card, all beds and bays are shown simultaneously
+ * in condensed micro-bed pods.
+ *
+ * ⚠️ BORDER STYLE CARRIES THE STATE, NOT ONLY COLOUR — dashed / dotted / solid survive greyscale,
+ * a stripped-background print and forced-colors exactly as board.module.css's own borders do.
+ */
+.map {
+  composes: wardTokens from "../../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../../app/ward-flow-shell-tokens.module.css";
+
+  --bm-square-w: 1.125rem;
+  --bm-square-h: 1.375rem;
+  --bm-hatch-line: var(--line-strong);
+  --bm-hatch-gap: var(--surface-inset);
+
+  display: grid;
+  gap: var(--ward-space-12);
+}
+
+.legend {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-ui);
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: none;
+  border-radius: var(--ward-radius-pixel, 0.1875rem);
+}
+
+.services {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0.875rem;
+}
+
+.serviceGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-bottom: 1.125rem;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.serviceGroup:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.serviceHeaderBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.serviceTitleGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.serviceHeading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--display);
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.serviceAccentIndicator {
+  width: 4px;
+  height: 1.125rem;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.serviceNameText {
+  letter-spacing: -0.01em;
+}
+
+.serviceCount {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.serviceCapacityBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--surface);
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  letter-spacing: 0.01em;
+}
+
+.serviceCarouselControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+}
+
+.serviceArrowBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.serviceArrowBtn::before {
+  content: "";
+  position: absolute;
+  inset: -0.375rem;
+}
+
+.serviceArrowBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.serviceArrowBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+.serviceCarouselIndicator {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 0.25rem;
+}
+
+.serviceAbsent {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: var(--ward-leading-relaxed);
+  color: var(--muted);
+}
+
+/* Horizontal Ward Track Container */
+.trackContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.serviceWardTrack {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.625rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.25rem 0.125rem 0.625rem 0.125rem;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.serviceWardTrack::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flanking Arrow Buttons - positioned outside the scroll track so they never cover bed tiles */
+.flankingArrow {
+  position: static;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--lift);
+  transition: all 0.15s ease;
+}
+
+.flankingArrowPrev {
+  margin-right: 0.125rem;
+}
+
+.flankingArrowNext {
+  margin-left: 0.125rem;
+}
+
+.flankingArrow:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  transform: scale(1.08);
+  box-shadow: var(--lift);
+}
+
+.flankingArrow:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.flankingArrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Condensed Ward Card */
+.wardBlock {
+  position: relative;
+  flex: 0 0 20rem;
+  width: 20rem;
+  max-width: 20rem;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.wardBlock[data-interactive="true"] {
+  cursor: pointer;
+}
+
+.wardBlock[data-interactive="true"]:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.wardBlockHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+.wardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wardSelect {
+  min-height: var(--ward-tap, var(--spacing-tap, 2.5rem));
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wardSelect:focus-visible {
+  outline: none;
+}
+
+.wardBlock:has(.wardSelect:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.wardNameText,
+.mapWardName {
+  font-family: var(--display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bedTotalBadge {
+  font-family: var(--mono);
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* Status Chips Row */
+.statusChipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.chipReady {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--line);
+}
+
+.statusDotReady {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--good);
+  flex-shrink: 0;
+}
+
+.chipZero {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.0625rem 0.25rem;
+}
+
+.chipTurnover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--good);
+  border: 1px dashed var(--good);
+}
+
+.chipHeld {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.chipBlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.chipOccupied {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.0625rem 0.25rem;
+}
+
+/* Proportional Capacity Ribbon */
+.capacityRibbon {
+  display: flex;
+  width: 100%;
+  height: 0.3125rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.ribbonSegment {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.ribbonReady {
+  background-color: var(--good);
+}
+
+.ribbonTurnover {
+  background-color: var(--good);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 0.125rem,
+    var(--surface) 0.125rem,
+    var(--surface) 0.25rem
+  );
+}
+
+.ribbonHeld {
+  background-color: var(--warn);
+}
+
+.ribbonBlocked {
+  background-color: var(--danger);
+}
+
+.ribbonOccupied {
+  background-color: var(--line-strong);
+}
+
+/* All Bays Section: Displays ALL beds simultaneously */
+.baysSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--line);
+}
+
+.baysHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.baysTitle {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.baysCount {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+}
+
+.allBaysGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+/* 4-Bed Bay Pod: boundaryless tactile pod */
+.bayPod {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.25rem 0.3125rem;
+  border: 0;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  transition: background 0.15s ease;
+}
+
+.bayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bayLabel {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.baySquares {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+}
+
+/* Tactile Micro-Bed Square */
+.square {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--bm-square-w);
+  height: var(--bm-square-h);
+  flex: none;
+  border-radius: var(--ward-radius-pixel, 0.1875rem);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.square:hover {
+  transform: translateY(-1px) scale(1.08);
+  z-index: 30;
+  box-shadow: var(--lift);
+}
+
+.square:focus-visible {
+  transform: translateY(-1px) scale(1.08);
+  z-index: 30;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pillow {
+  width: 0.4375rem;
+  height: 0.125rem;
+  border-radius: 0.0625rem;
+  background: var(--line-strong);
+  margin-bottom: 0.0625rem;
+  flex-shrink: 0;
+}
+
+.bedIcon {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+}
+
+.bedGlyph {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 900;
+  line-height: 1;
+  display: inline-block;
+  transform: scale(0.75);
+}
+
+.occupiedDot {
+  width: 0.1875rem;
+  height: 0.1875rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+
+/*
+ * READY — dashed edge, a real fill.
+ */
+.ready {
+  border: 1px dashed var(--ward-success, var(--good));
+  background-color: var(--good);
+}
+
+/*
+ * STILL BEING MADE READY — layered on .ready, never in place of it.
+ * This class sets ONLY background-image; it declares NO background-color and NO background shorthand,
+ * strictly verified by tests/ward-capacity-bed-map.dom.test.tsx.
+ */
+.preparing {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 0.0625rem,
+    var(--surface) 0.0625rem,
+    var(--surface) 0.125rem
+  );
+}
+
+/*
+ * HELD — physically empty, not offered. Dotted edge and a light dot pattern.
+ */
+.held {
+  border: 1px dotted var(--warn);
+  background-color: var(--warn);
+  background-image: radial-gradient(var(--bm-hatch-line) 0.03125rem, transparent 0.03125rem);
+  background-size: 0.1875rem 0.1875rem;
+}
+
+/*
+ * BLOCKED — out of service. Diagonal hatch.
+ */
+.blocked {
+  border: 1px solid var(--danger);
+  background-color: var(--danger);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--bm-hatch-gap),
+    var(--bm-hatch-gap) 0.09375rem,
+    var(--bm-hatch-line) 0.09375rem,
+    var(--bm-hatch-line) 0.15625rem
+  );
+}
+
+/*
+ * OCCUPIED — has a patient. Quiet matte state.
+ */
+.occupied {
+  border: 1px solid var(--line-strong);
+  background-color: var(--surface-2);
+  color: var(--muted);
+}
+
+/* Card-level floating tooltip — unclipped by horizontal scroll viewport */
+.tooltipFloating {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  z-index: 100;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.4375rem 0.625rem;
+  border-radius: var(--r1);
+  font-size: 0.75rem; /* 12px floor */
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: var(--lift);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  animation: tooltipIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 0.25rem));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 0.5rem));
+  }
+}
+
+.tooltipBedTitle {
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--display);
+}
+
+.tooltipState {
+  font-weight: 600;
+  color: var(--good);
+}
+
+.tooltipMeta {
+  font-size: 0.75rem; /* 12px floor */
+  color: var(--muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .wardBlock:has(.wardSelect) {
+    min-height: var(--ward-tap, var(--spacing-tap, 2.5rem));
+  }
+}
+
+@media (forced-colors: active) {
+  .map {
+    --bm-hatch-line: CanvasText;
+    --bm-hatch-gap: Canvas;
+  }
+  .serviceGroup,
+  .serviceHeaderBar,
+  .wardBlock[data-selected="true"] {
+    border-color: CanvasText;
+  }
+}
+
+@media print {
+  .wardSelect {
+    display: flex !important;
+  }
+  .map {
+    --bm-hatch-line: CanvasText;
+    --bm-hatch-gap: Canvas;
+  }
+}
+
+/* Quiet census cards: status first, then a legible bed map. */
+.serviceHeaderBar {
+  background: transparent;
+  border: 0;
+  padding: 0.25rem 0;
+}
+.serviceCapacityBadge,
+.bedTotalBadge {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.serviceCapacityBadge {
+  color: var(--muted);
+}
+.wardBlock {
+  box-shadow: none;
+  gap: 0.625rem;
+}
+.wardTitleRow {
+  min-height: 2.5rem;
+  align-items: start;
+}
+.wardSelect {
+  min-height: var(--ward-tap);
+}
+.wardNameText,
+.mapWardName {
+  display: block;
+  overflow: visible;
+  line-height: 1.4;
+}
+.statusChipsRow {
+  gap: 0.375rem 0.625rem;
+}
+.chipReady,
+.chipHeld,
+.chipBlocked,
+.chipTurnover {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.chipTurnover {
+  border-bottom: 1px dashed var(--good);
+}
+.chipOccupied {
+  flex-basis: auto;
+  padding: 0;
+}
+.capacityRibbon {
+  height: 0.375rem;
+  border: 0;
+  border-radius: 0;
+}
+.baysSection {
+  gap: 0.5rem;
+  padding-top: 0.625rem;
+  border-top: 0;
+}
+.baysTitle,
+.bayLabel {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.baysCount {
+  display: none;
+}
+.bayPod {
+  padding: 0.375rem;
+  gap: 0.25rem;
+}
+.baySquares {
+  justify-content: start;
+  gap: 0.1875rem;
+}
+.square:hover,
+.square:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+.serviceArrowBtn {
+  width: var(--ward-tap);
+  height: var(--ward-tap);
+}
+.flankingArrow {
+  border-radius: var(--r1);
+  box-shadow: none;
+}
+@media (max-width: 45rem) {
+  .wardBlock {
+    width: 17rem;
+    flex-basis: 17rem;
+    max-width: 17rem;
+  }
+  .serviceTitleGroup {
+    gap: 0.375rem;
+  }
+}
+@media (pointer: coarse) {
+  .square {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+  .baySquares {
+    gap: 0.125rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .serviceWardTrack {
+    scroll-behavior: auto;
+  }
+  .wardBlock,
+  .square,
+  .ribbonSegment,
+  .serviceArrowBtn,
+  .flankingArrow {
+    transition: none;
+  }
+}
+
+.services {
+  gap: 0.75rem;
+}
+.serviceGroup {
+  gap: 0.375rem;
+  padding-bottom: 0.75rem;
+}
+.wardBlock {
+  padding: 0.625rem 0.75rem;
+  gap: 0.375rem;
+}
+.baysSection {
+  padding-top: 0.375rem;
+  gap: 0.375rem;
+}
+@media (max-width: 45rem) {
+  .allBaysGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (pointer: coarse) {
+  .allBaysGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 45rem) {
+  /* Header arrows retain navigation; side arrows would clip a whole ward card. */
+  .trackContainer .flankingArrow {
+    display: none;
+  }
+}
+
+/* Comparison view: complete ward cards, one consistent service hierarchy. */
+.mapToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem 0;
+}
+.mapToolbar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.layoutSwitch {
+  display: inline-flex;
+  padding: 0.1875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+.layoutSwitch button {
+  min-height: var(--ward-tap);
+  padding: 0.375rem 0.875rem;
+  border: 0;
+  border-radius: var(--r1);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+.layoutSwitch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.layoutSwitch button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.legend {
+  background: transparent;
+  border: 0;
+  padding-top: 0.375rem;
+  padding-bottom: 0.75rem;
+}
+.services {
+  padding-top: 0;
+  gap: 1rem;
+}
+.serviceHeaderBar {
+  padding: 0.625rem 0;
+}
+.serviceHeading {
+  font-size: var(--t-2);
+}
+.serviceAccentIndicator {
+  width: 3px;
+  background: var(--accent);
+}
+.serviceCapacityBadge {
+  font-size: var(--t-0);
+}
+.serviceGroup[data-layout="grid"] .serviceWardTrack {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  overflow: visible;
+  gap: 0.625rem;
+  padding: 0;
+}
+.serviceGroup[data-layout="grid"] .wardBlock {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+}
+.serviceGroup[data-layout="grid"] .allBaysGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.wardBlock {
+  border-radius: var(--r2);
+  padding: 0.75rem;
+  background: linear-gradient(var(--surface), var(--surface-2));
+  border-color: var(--line);
+}
+.wardBlockHeader {
+  gap: 0.25rem;
+}
+.wardNameText,
+.mapWardName {
+  font-size: var(--t-1);
+  font-weight: 650;
+}
+.statusChipsRow {
+  min-height: 2rem;
+}
+.chipReady strong {
+  font-family: var(--display);
+  font-size: 1.625rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.chipReady {
+  gap: 0.375rem;
+}
+.statusDotReady {
+  display: none;
+}
+.capacityRibbon {
+  height: 3px;
+}
+.baysTitle {
+  color: var(--muted);
+  font-weight: 500;
+}
+.bayPod {
+  border-radius: var(--r1);
+  background: transparent;
+  padding: 0.25rem 0;
+}
+.bayLabel {
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+.baySquares {
+  gap: 0.25rem;
+}
+.square {
+  border-radius: 0.1875rem;
+}
+@media (min-width: 85rem) {
+  .serviceGroup[data-layout="grid"] .serviceWardTrack {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  }
+}
+@media (max-width: 45rem) {
+  .mapToolbar {
+    flex-wrap: wrap;
+  }
+  .serviceGroup[data-layout="grid"] .serviceWardTrack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media print {
+  .mapToolbar {
+    display: none;
+  }
+  .serviceGroup .serviceWardTrack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+
+/* One useful toolbar, with no separate introductory row. */
+.mapToolbar {
+  padding: 0.5rem 0.875rem;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.mapToolbar .legend {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0.375rem 0.75rem;
+}
+.layoutSwitch {
+  flex: none;
+  border-radius: 9999px;
+  padding: 0.1875rem;
+}
+.layoutSwitch button {
+  border-radius: 9999px;
+}
+.services {
+  gap: 0.625rem;
+  padding: 0.5rem 0.875rem 0.875rem;
+}
+.serviceHeaderBar {
+  padding-block: 0.375rem;
+}
+.wardBlock {
+  container-type: inline-size;
+}
+@container (min-width: 15rem) {
+  .serviceGroup[data-layout="grid"] .allBaysGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .square {
+    width: 1rem;
+  }
+}
+
+/* Overview keeps availability and constraints visible; bed geometry is an explicit detail level. */
+.map[data-bed-detail="false"] .baysSection {
+  display: none;
+}
+.map[data-bed-detail="false"] .wardBlock {
+  padding: 0.75rem;
+  gap: 0.375rem;
+}
+.map[data-bed-detail="false"] .capacityRibbon {
+  margin-block: 0.25rem;
+  height: 4px;
+}
+.map[data-bed-detail="false"] .wardTitleRow {
+  min-height: var(--ward-tap);
+}
+.wardBlock {
+  border-radius: 1rem;
+  transition:
+    border-color 150ms,
+    background-color 150ms,
+    box-shadow 150ms;
+}
+.wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.wardBlock[data-interactive="true"]:hover {
+  border-color: var(--accent);
+  box-shadow: var(--lift);
+}
+.bedTotalBadge {
+  padding: 0.1875rem 0.375rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+}
+.wardBlockHeader {
+  gap: 0.375rem;
+}
+.statusChipsRow {
+  align-items: baseline;
+  gap: 0.375rem 0.625rem;
+}
+.chipOccupied {
+  margin-inline-start: auto;
+}
+.serviceHeaderBar {
+  justify-content: start;
+  gap: 1rem;
+}
+.serviceHeading {
+  font-weight: 650;
+}
+.serviceCapacityBadge {
+  color: var(--ink-soft);
+}
+.mapToolbar {
+  background: var(--surface-2);
+}
+.legend {
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.serviceNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.serviceNav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: var(--ward-tap);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+.serviceNav button[aria-current="location"] {
+  border-color: var(--line-strong);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.serviceNav button:hover {
+  background: var(--surface-2);
+}
+.serviceNav button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.serviceNav span {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.serviceHeading {
+  scroll-margin-top: 6rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wardBlock {
+    transition: none;
+  }
+}
+@media print {
+  .serviceNav,
+  .mapToolbar {
+    display: none;
+  }
+  .map[data-bed-detail="false"] .baysSection {
+    display: flex;
+  }
+}
+
+/* Capacity composition: strong availability figures on quiet, curved ward surfaces. */
+.map {
+  gap: 0;
+}
+.services {
+  gap: 0.375rem;
+  padding: 0.875rem;
+  background: var(--surface-2);
+}
+.serviceGroup {
+  gap: 0.375rem;
+  padding-bottom: 0;
+  border: 0;
+}
+.serviceHeaderBar {
+  padding: 0.375rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.serviceTitleGroup {
+  flex: 1;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.serviceHeading {
+  font-size: 1rem;
+  color: var(--accent-ink);
+  letter-spacing: -0.025em;
+}
+.serviceAccentIndicator {
+  display: none;
+}
+.serviceCount {
+  margin-inline-start: 0.375rem;
+  font-family: var(--body);
+  font-size: var(--t-0);
+}
+.serviceCapacityBadge {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-weight: 500;
+}
+.serviceGroup[data-layout="grid"] .serviceWardTrack {
+  gap: 0.5rem;
+}
+.map .wardBlock {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 3px var(--sunk);
+  gap: 0.5rem;
+}
+.wardBlockHeader {
+  gap: 0.375rem;
+}
+.map .wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.wardTitleRow {
+  align-items: start;
+  gap: 0.5rem;
+}
+.wardNameText,
+.mapWardName {
+  font-size: var(--t-1);
+  font-weight: 650;
+  line-height: 1.3;
+}
+.wardSelect {
+  padding: 0;
+  text-align: start;
+}
+.bedTotalBadge {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  padding: 0.25rem 0;
+}
+.wardAvailability {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.wardAvailability .chipReady {
+  display: flex;
+  align-items: baseline;
+  color: var(--good);
+  font-size: var(--t-1);
+  gap: 0.5rem;
+}
+.wardAvailability .chipReady strong {
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.065em;
+}
+.wardAvailability .chipZero {
+  font-size: var(--t-1);
+  color: var(--muted);
+  font-style: normal;
+  padding-block: 0.25rem;
+}
+.wardAvailability .chipOccupied {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  margin: 0;
+  white-space: nowrap;
+}
+.statusChipsRow {
+  min-height: 0;
+  gap: 0.375rem 0.75rem;
+}
+.statusChipsRow:empty {
+  display: none;
+}
+.chipHeld,
+.chipBlocked,
+.chipTurnover {
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+.capacityRibbon {
+  order: 3;
+  height: 4px;
+  margin-top: auto;
+  border-radius: 9999px;
+}
+.map[data-bed-detail="false"] .capacityRibbon {
+  margin-block: 0.25rem 0;
+}
+.baysSection {
+  order: 2;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.serviceNav {
+  gap: 0.25rem;
+  background: var(--surface);
+  padding: 0.375rem 0.75rem;
+}
+.serviceNav button {
+  flex: 1;
+  justify-content: center;
+  padding-inline: 0.625rem;
+}
+.serviceNav button[aria-current="location"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.serviceNav button[aria-current="location"] span {
+  color: var(--on-accent);
+}
+.mapToolbar {
+  background: var(--surface);
+  padding: 0.5rem 0.875rem;
+}
+.layoutSwitch {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+.layoutSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 1px 3px var(--sunk);
+}
+@media (forced-colors: active) {
+  .map .wardBlock {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .serviceNav button[aria-current="location"] {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .serviceNav button[aria-current="location"] span {
+    color: HighlightText;
+  }
+}
+@media print {
+  .services {
+    background: var(--surface);
+  }
+  .map .wardBlock {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
+
+/* Quiet card anatomy: precise figures above a recessed bed diagram. */
+.serviceHeaderBar {
+  border-bottom: 1px solid var(--line);
+}
+.serviceHeading {
+  font-weight: 600;
+}
+.serviceCapacityBadge {
+  font-variant-numeric: tabular-nums;
+}
+.map .wardBlock {
+  box-shadow: none;
+}
+.map .wardBlock[data-interactive="true"]:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 3px 10px var(--sunk);
+}
+.map .wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.wardTitleRow {
+  align-items: center;
+}
+.bedTotalBadge {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.wardAvailability {
+  padding-bottom: 0.125rem;
+}
+.wardAvailability .chipReady strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.statusChipsRow svg {
+  flex: none;
+  vertical-align: middle;
+}
+.baysSection {
+  margin-inline: -0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+}
+.baysHeaderRow {
+  gap: 0.25rem;
+}
+.bayLabel {
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.bayPod {
+  padding-block: 0.125rem;
+}
+.capacityRibbon {
+  height: 3px;
+}
+.map .wardBlock :is(.wardSelect, .square):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  .map .wardBlock[data-selected="true"] {
+    border: 2px solid Highlight;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map .wardBlock {
+    transition: none;
+  }
+}
+
+/* Curved, layered map surfaces without increasing the compact card dimensions. */
+.mapToolbar {
+  background: var(--surface-2);
+  border-bottom-color: var(--line);
+  padding: 0.25rem 0.75rem;
+}
+.layoutSwitch {
+  background: var(--surface);
+  border-radius: 9999px;
+  padding: 0;
+}
+.layoutSwitch button {
+  border-radius: 9999px;
+}
+.layoutSwitch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 1px 4px var(--sunk);
+}
+.serviceNav {
+  background: var(--surface-2);
+  padding: 0.125rem 0.75rem;
+  gap: 0.375rem;
+}
+.serviceNav button {
+  flex: 0 1 auto;
+  padding-inline: 0.875rem;
+}
+.serviceNav button[aria-current="location"] {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--accent-ink);
+  box-shadow: 0 1px 3px var(--sunk);
+}
+.serviceNav button[aria-current="location"] span {
+  color: var(--muted);
+}
+.services {
+  background: var(--surface-2);
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+.serviceHeaderBar {
+  border-bottom: 0;
+  padding-inline: 0.25rem;
+  padding-block: 0.25rem;
+}
+.serviceHeading {
+  color: var(--accent-ink);
+}
+.serviceCapacityBadge {
+  color: var(--ink-soft);
+}
+.map .wardBlock {
+  border-radius: 0.75rem;
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 2px 6px var(--sunk);
+}
+.wardNameText,
+.mapWardName {
+  color: var(--accent-ink);
+}
+.bedTotalBadge {
+  color: var(--muted);
+}
+.map .wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 3px 12px var(--sunk);
+}
+.map .wardBlock[data-interactive="true"]:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--sunk);
+}
+.map .wardBlock[data-selected="true"]:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 4px 12px var(--sunk);
+}
+.baysSection {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+  border-bottom: 1px solid var(--line);
+}
+.capacityRibbon {
+  border-radius: 9999px;
+}
+.wardAvailability {
+  min-height: 2rem;
+  padding-bottom: 0;
+}
+.statusChipsRow,
+.statusChipsRow:empty {
+  display: flex;
+  min-height: 1.125rem;
+}
+@media (forced-colors: active) {
+  .layoutSwitch button[aria-pressed="true"] {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .map .wardBlock[data-selected="true"],
+  .map .wardBlock[data-selected="true"]:hover {
+    border: 2px solid Highlight;
+    box-shadow: none;
+  }
+}
+@media print {
+  .map .wardBlock,
+  .map .wardBlock[data-selected="true"] {
+    box-shadow: none;
+  }
+  .services,
+  .baysSection {
+    background: var(--surface);
+  }
+}
+
+/* Isolated visual mockup: one control surface and compact ward composition. */
+.map {
+  container: capacityMap / inline-size;
+}
+.mapToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.mapToolbar .layoutSwitch:first-child {
+  order: 1;
+}
+.mapToolbar .layoutSwitch:nth-child(2) {
+  order: 3;
+}
+.mapToolbar .serviceNav {
+  order: 2;
+  position: static;
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  width: auto;
+  gap: 0.125rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow-x: auto;
+}
+.mapToolbar .serviceNav button {
+  padding-inline: 0.5rem;
+  min-height: var(--ward-tap);
+  font-size: var(--t-0);
+  border-color: transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  box-shadow: none;
+}
+.mapToolbar .serviceNav button[aria-current="location"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.layoutSwitch {
+  background: var(--surface-2);
+  border-color: var(--line);
+  flex-shrink: 0;
+}
+.serviceHeaderBar {
+  padding-block: 0.375rem;
+}
+.serviceGroup[data-layout="grid"] .serviceWardTrack {
+  gap: 0.625rem;
+}
+.map[data-bed-detail="false"] .wardBlock {
+  gap: 0.25rem;
+}
+.map[data-bed-detail="false"] .wardBlockHeader {
+  gap: 0.125rem;
+}
+.map[data-bed-detail="false"] .wardAvailability {
+  min-height: 1.75rem;
+}
+.wardAvailability .chipReady strong {
+  font-size: 1.625rem;
+  letter-spacing: -0.045em;
+}
+.wardNameText,
+.mapWardName {
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+.map .wardBlock {
+  box-shadow: 0 1px 3px var(--sunk);
+}
+.map[data-bed-detail="true"] .baysSection {
+  flex: 1;
+  border-bottom: 0;
+}
+.baysHeaderRow {
+  margin-bottom: 0.375rem;
+}
+.bayPod {
+  border: 0;
+  background: transparent;
+}
+.capacityRibbon {
+  flex-shrink: 0;
+}
+@container capacityMap (max-width: 64rem) {
+  .mapToolbar .serviceNav {
+    order: 4;
+    flex-basis: 100%;
+    justify-content: start;
+  }
+}
+@media (forced-colors: active) {
+  .mapToolbar .serviceNav button[aria-current="location"] {
+    outline: 1px solid Highlight;
+  }
+}
+.serviceGroup[data-layout="grid"] .serviceWardTrack {
+  gap: 0.5rem;
+}
+@media print {
+  .mapToolbar,
+  .mapToolbar .serviceNav {
+    display: none;
+  }
+}
+
+/* POLISH, 5 October 2026 (preview only): a closed bed is a fact, not a warning, so it is grey. */
+.chipHeld {
+  color: var(--muted);
+}
+
+.mapWardName,
+.serviceHeading {
+  font-weight: 600;
+}
+
+.ribbonHeld {
+  background-color: var(--muted);
+}
