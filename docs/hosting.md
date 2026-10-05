@@ -45,6 +45,24 @@ Railway service settings hold the build and start commands. Railpack installs th
 
 The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/mockups/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
+## Separate drawer preview — 5 October 2026
+
+Owner authorised an additional preview and then requested expedited completion. The existing
+`ward-flow` service was preserved. The new `ward-flow-drawer-preview` service
+(`5bdb71a8-2399-4d3a-80c1-5e4e6d9cdfc9`) runs in the same Ward Flow project/environment, with
+its own domain: https://ward-flow-drawer-preview-production.up.railway.app/mockups/ward-flow/delays.
+It is pinned to `ea64f464920a699ce5b62988f5589cb33b466d29` on
+`codex/drawer-preview-20261005-ea56aa7`; its source tree exactly matches local `ea56aa7`.
+Deployment `c1f42ae4-1e1a-4895-8b1c-0b619fce694c` reached `SUCCESS`. The public Delays page
+was freshly fetched with HTTP 200 and the title `Delays — Ward Flow`.
+
+This preview uses the recorded build/start commands, port 8080, `/api/health`, and sleeping when
+idle. Its five variables enable the synthetic mockups and set the preview origin and runtime.
+The selected Railpack runtime was Node 24.21.0. The preceding full unit run passed 10,383 tests;
+the production browser run passed 118, skipped one and exposed one Referrals Escape defect.
+That defect was corrected, with 37 focused tests, lint/typecheck and its targeted browser
+regression passing. Broad gates were not repeated after this final fix at the owner's request.
+
 ## Known limits
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.

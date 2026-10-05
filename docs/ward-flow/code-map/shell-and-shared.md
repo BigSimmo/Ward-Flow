@@ -275,6 +275,21 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   `localStorage` key kept private so a second writer cannot exist by construction). Owns the
   Escape-key order standard §7.3/§7.6 describes: an open drawer/popover closes first; then search;
   the chosen **service is never cleared by Escape**, only announced. 6 importers.
+  October 2026 drawer workspace update: Figures is inside Tools, with Overview / Figures /
+  Utilities / Directory / Demo sections; directory groups are searchable. Activity combines
+  text search with category filtering and offers an explicit unread-notices toggle. Tasks uses
+  text/severity/acknowledgement filters and acknowledges only visible unacknowledged facts in its
+  bulk action. Acknowledged facts stay visible in the default view, and commitment completion
+  remains separate. The three drawers share the responsive visual treatment and Sheet lifecycle.
+  The owner's compact-style refinement uses floating curved panels, a full-height desktop Tools
+  overview with modular columns, a navy Figures feature, pill navigation and restrained surface
+  depth. Tasks keeps its fixed controls and independently scrolling cards; Activity uses compact
+  timeline cards. Both themes retain the same hierarchy, and interactive controls remain 48px tall.
+  The further compact pass reduces header, summary and swatch spacing. Activity categories scroll
+  horizontally on narrow screens. Tools → Raise a referral now opens the matching Referrals drawer;
+  the New referral source menu remains available. Patient / Referral / Clinical / Placement panels
+  stay mounted to retain draft values. A missing diagnosis remains explicitly unselected. Referral
+  focus returns to the actual launcher; sending keeps the existing unwired demo behaviour.
 - **`shell/ward-bar.module.css`** (2,180 lines) — `WardBar`'s styles; composes
   `wardShellTokens` from `../../../app/ward-flow-shell-tokens.module.css`.
   The October 2026 header reference update uses larger outline action icons, a clipboard-check
