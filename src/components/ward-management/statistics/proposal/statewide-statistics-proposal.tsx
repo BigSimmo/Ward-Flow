@@ -28,6 +28,7 @@ import {
   todayReferralFigures,
   totalReleases,
 } from "./statistics-proposal-figures";
+import { BedsAvailableChart } from "./statistics-proposal-capacity";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -244,6 +245,8 @@ export function StatewideStatisticsProposal() {
           </table>
         </TableScroll>
       </Panel>
+
+      <BedsAvailableChart wards={wards} />
 
       <div className={styles.grid2Even}>
         <Panel

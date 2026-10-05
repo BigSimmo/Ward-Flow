@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   edRows,
   networkFigures,
+  referralPlacement,
   releasesFor,
   releasesToday,
   serviceFigures,
@@ -12,7 +13,8 @@ import {
 import { refusedAndNothingPending } from "@/components/ward-management/statistics/statistics-derivations";
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
+import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
  * The statistics proposal promises one set of figures on every screen. These checks hold that
@@ -94,5 +96,21 @@ describe("statistics proposal figures", () => {
     );
     expect(counts.overdue.expected).toBe(0);
     expect(releasesToday(counts)).toBe(1);
+  });
+
+  it("places every referral from a service exactly once", () => {
+    let all = 0;
+    for (const service of HEALTH_SERVICES) {
+      const placement = referralPlacement(state.referrals, state.units, service);
+      const elsewhere = placement.elsewhere.reduce((sum, row) => sum + row.count, 0);
+      expect(placement.within + elsewhere + placement.noWard + placement.unresolved, service).toBe(placement.total);
+      expect(
+        placement.elsewhere.some((row) => row.service === service),
+        service,
+      ).toBe(false);
+      all += placement.total;
+    }
+    const withService = state.referrals.filter((referral) => siteByCode(referral.originSiteCode)?.service).length;
+    expect(all).toBe(withService);
   });
 });

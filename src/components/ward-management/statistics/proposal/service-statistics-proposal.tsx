@@ -1,7 +1,6 @@
 "use client";
 
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
-import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE,
   OUT_OF_AREA_BANDS,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ward-management/ward-distance";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { siteByCode, unitById } from "@/components/ward-management/ward-sites";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 
 import {
   BedBar,
@@ -29,6 +29,7 @@ import {
   edShort,
   hoursLabel,
   percent,
+  referralPlacement,
   releasesToday,
   totalReleases,
 } from "./statistics-proposal-figures";
@@ -47,16 +48,28 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
   const ownEds = eds.filter((ed) => ed.service === service.service).sort((a, b) => b.longestMinutes - a.longestMinutes);
   const maxWardBeds = Math.max(1, ...service.wards.map((ward) => ward.beds));
 
-  // Where the people waiting in this service's EDs have been accepted.
+  // Where the people waiting in this service's EDs have been accepted (used by the verdict).
   const edIds = new Set(ownEds.map((ed) => ed.id));
   const waitingHere = world.movements.filter((movement) => edIds.has(movement.originEdId) && isOpen(movement));
-  const destination = { own: 0, other: 0, none: 0 };
+  const destination = { own: 0, none: 0 };
   for (const movement of waitingHere) {
     const accepted = movement.acceptedUnitId ? unitById(movement.acceptedUnitId) : undefined;
     if (!accepted) destination.none += 1;
     else if (siteByCode(accepted.siteCode)?.service === service.service) destination.own += 1;
-    else destination.other += 1;
   }
+
+  // Where this service's own referrals were accepted (the current page's placement chart).
+  const placement = referralPlacement(world.referrals, world.units, service.service);
+  const placedElsewhere = placement.elsewhere.reduce((sum, row) => sum + row.count, 0);
+  const placementRows = [
+    { id: "within", label: `Within ${service.service}`, count: placement.within, tone: "good" as const },
+    { id: "elsewhere", label: "Another service", count: placedElsewhere, tone: undefined },
+    { id: "none", label: "No ward has accepted", count: placement.noWard, tone: "warn" as const },
+    ...(placement.unresolved
+      ? [{ id: "unresolved", label: "Ward not recognised", count: placement.unresolved, tone: undefined }]
+      : []),
+  ];
+  const placementMax = Math.max(1, ...placementRows.map((row) => row.count));
 
   const farFromHome = outOfAreaLedger(
     world.admissions,
@@ -269,23 +282,50 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
         </Panel>
 
         <Panel
-          title="Where people waiting here are going"
-          question={`${waitingHere.length} people waiting in this service's emergency departments.`}
+          title="Where this service's referrals were placed"
+          question={`${placement.total} referrals raised from ${service.service} hospitals, by the ward that accepted them.`}
+          meta="Accepted is not arrived"
         >
-          <dl className={styles.facts}>
-            <div className={styles.fact}>
-              <dt>Accepted within {service.service}</dt>
-              <dd className={styles.toneGood}>{destination.own}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>Accepted by another service</dt>
-              <dd>{destination.other}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>No ward has accepted yet</dt>
-              <dd className={destination.none ? styles.toneWarn : ""}>{destination.none}</dd>
-            </div>
-          </dl>
+          <ul className={styles.hbars}>
+            {placementRows.map((row) => (
+              <li className={styles.hbar} key={row.id}>
+                <span className={styles.hbarLabel}>{row.label}</span>
+                <span className={styles.hbarTrack}>
+                  <span
+                    className={`${styles.hbarFill} ${row.tone === "good" ? styles.hbarFillGood : row.tone === "warn" ? styles.hbarFillWarn : ""}`}
+                    style={{ width: `${(row.count / placementMax) * 100}%` }}
+                  />
+                </span>
+                <span className={styles.hbarValue}>{row.count}</span>
+              </li>
+            ))}
+          </ul>
+          {placement.elsewhere.length ? (
+            <>
+              <h3 className={styles.subHeading}>Accepted by another service</h3>
+              <ul className={styles.hbars}>
+                {placement.elsewhere.map((row) => (
+                  <li className={styles.hbar} key={row.service}>
+                    <span className={styles.hbarLabel}>
+                      <a href={proposalHref("service", row.service)}>{row.service}</a>
+                    </span>
+                    <span className={styles.hbarTrack}>
+                      <span
+                        className={styles.hbarFill}
+                        style={{
+                          width: `${(row.count / Math.max(1, placedElsewhere)) * 100}%`,
+                          background: SERVICE_COLOUR[row.service],
+                        }}
+                      />
+                    </span>
+                    <span className={styles.hbarValue}>{row.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className={styles.note}>No referral from this service has been accepted by another service.</p>
+          )}
         </Panel>
       </div>
 

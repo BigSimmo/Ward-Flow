@@ -1,13 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   COMMUNITY_TEAM_PAGES,
   admissionsWithNoCommunityTeam,
   communityHubLists,
+  communityMembershipResolution,
   communityTeamById,
 } from "@/components/ward-management/community/community-derivations";
+import { figureText } from "@/components/ward-management/statistics/statistics-absence";
+import {
+  communityFigures,
+  type CommunityFigures,
+} from "@/components/ward-management/statistics/statistics-community-figures";
 import { daysInBed } from "@/components/ward-management/ward-admissions";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -27,10 +34,16 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
   const { asAt, now, world } = useStatisticsProposal();
   const { admissions, referrals, dayZero } = world;
 
-  const counted = COMMUNITY_TEAM_PAGES.map((team) => ({
-    team,
-    lists: communityHubLists(admissions, team, referrals),
-  }));
+  const [teamMeasure, setTeamMeasure] = useState<keyof CommunityFigures>("admitted");
+  const counted = COMMUNITY_TEAM_PAGES.map((team) => {
+    const lists = communityHubLists(admissions, team, referrals);
+    // Gated exactly as the current page: a team nobody can be linked to shows "not linked", never 0.
+    return {
+      team,
+      lists,
+      figures: communityFigures(lists, communityMembershipResolution(admissions, team, referrals)),
+    };
+  });
   const withPeople = counted
     .filter((row) => row.lists.currentlyAdmitted.length + row.lists.dischargedIntoTheArea.length > 0)
     .sort((a, b) => b.lists.currentlyAdmitted.length - a.lists.currentlyAdmitted.length);
@@ -38,7 +51,30 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
     (teamId ? counted.find((row) => row.team.id === communityTeamById(teamId)?.id) : undefined) ??
     withPeople[0] ??
     counted[0];
-  const { lists, team } = chosen;
+  const { lists, team, figures } = chosen;
+  const handover = [
+    { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
+    { key: "expected", label: "of whom, a discharge date is written", figure: figures.expected, nested: true },
+    { key: "discharged", label: "Discharged into the area", figure: figures.discharged },
+    { key: "other", label: "Left the ward another way", figure: figures.other },
+  ] as const;
+  const valueOfFigure = (figure: CommunityFigures[keyof CommunityFigures]) =>
+    figure.kind === "measured" ? figure.value : 0;
+  const handoverMax = Math.max(1, ...handover.map((row) => valueOfFigure(row.figure)));
+  const TEAM_MEASURES: { id: keyof CommunityFigures; label: string }[] = [
+    { id: "admitted", label: "In a bed" },
+    { id: "expected", label: "With a date" },
+    { id: "discharged", label: "Discharged" },
+    { id: "other", label: "Left another way" },
+  ];
+  const measuredTeams = counted.filter((row) => row.figures[teamMeasure].kind === "measured");
+  const teamRows = measuredTeams
+    .map((row) => ({ ...row, value: valueOfFigure(row.figures[teamMeasure]) }))
+    .filter((row) => row.value > 0)
+    .sort((a, b) => b.value - a.value || a.team.name.localeCompare(b.team.name));
+  const teamMax = Math.max(1, ...teamRows.map((row) => row.value));
+  const zeroTeams = measuredTeams.length - teamRows.length;
+  const notLinkedTeams = counted.length - measuredTeams.length;
   const unlinked = admissionsWithNoCommunityTeam(admissions, referrals).length;
   const week = 7 * 24 * 60;
   const timing = {
@@ -120,6 +156,75 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
           { label: "Left another way", value: lists.otherDepartures.length, note: "transfer or other departure" },
         ]}
       />
+
+      <div className={styles.grid2Even}>
+        <Panel
+          title="Community handover"
+          question={`Where ${team.name}'s linked people are now: still in a bed, or already left.`}
+          meta="Current snapshot"
+        >
+          <ul className={styles.hbars}>
+            {handover.map((row) => (
+              <li className={styles.hbar} key={row.key}>
+                <span className={`${styles.hbarLabel} ${"nested" in row ? styles.hbarNested : ""}`}>{row.label}</span>
+                <span className={styles.hbarTrack}>
+                  <span
+                    className={`${styles.hbarFill} ${"nested" in row ? styles.hbarFillGood : ""}`}
+                    style={{ width: `${(valueOfFigure(row.figure) / handoverMax) * 100}%` }}
+                  />
+                </span>
+                <span className={styles.hbarValue}>{figureText(row.figure)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.note}>
+            The discharge-date row is part of the row above it, not extra people. Departures have no reporting window:
+            they are every recorded departure for this team.
+          </p>
+        </Panel>
+
+        <Panel
+          title="Where this team sits"
+          question="Every team with anyone on this measure, highest first."
+          meta={`${teamRows.length} ${teamRows.length === 1 ? "team" : "teams"}`}
+        >
+          <div className={styles.segmented} role="group" aria-label="Team measure">
+            {TEAM_MEASURES.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                aria-pressed={entry.id === teamMeasure}
+                onClick={() => setTeamMeasure(entry.id)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <ul className={`${styles.hbars} ${styles.scrollList}`}>
+            {teamRows.map((row) => (
+              <li
+                className={`${styles.hbar} ${row.team.id === team.id ? styles.hbarCurrent : ""}`}
+                key={row.team.id}
+                aria-current={row.team.id === team.id ? "true" : undefined}
+              >
+                <span className={styles.hbarLabel}>
+                  <a href={proposalHref("community", row.team.id)}>{row.team.name}</a>
+                </span>
+                <span className={styles.hbarTrack}>
+                  <span className={styles.hbarFill} style={{ width: `${(row.value / teamMax) * 100}%` }} />
+                </span>
+                <span className={styles.hbarValue}>{row.value}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.note}>
+            {zeroTeams} other {zeroTeams === 1 ? "team has" : "teams have"} none.
+            {notLinkedTeams
+              ? ` ${notLinkedTeams} ${notLinkedTeams === 1 ? "team" : "teams"} cannot be linked to anyone, so ${notLinkedTeams === 1 ? "it is" : "they are"} left out rather than shown as zero.`
+              : ""}
+          </p>
+        </Panel>
+      </div>
 
       <Panel title="When people are due back" question="Expected discharge dates for this team's people in a bed.">
         <div className={styles.split} style={{ height: "1rem" }} aria-hidden="true">

@@ -270,3 +270,46 @@ export function todayReferralFigures(referrals: readonly Referral[], now: Instan
     open: today.filter((referral) => wardAsks(referral).some((addressing) => isAwaitingAnswer(addressing))).length,
   };
 }
+
+export type ReferralPlacement = {
+  total: number;
+  within: number;
+  elsewhere: { service: HealthService; count: number }[];
+  noWard: number;
+  unresolved: number;
+};
+
+/**
+ * Where a service's own referrals (by the site they came from) have been accepted at a ward. Same
+ * rules as the current service screen's "Referral placement destinations": an acceptance is not an
+ * arrival, and a ward that cannot be resolved to a service is counted apart, never guessed.
+ */
+export function referralPlacement(
+  referrals: readonly Referral[],
+  units: readonly Unit[],
+  service: HealthService,
+): ReferralPlacement {
+  const result: ReferralPlacement = { total: 0, within: 0, elsewhere: [], noWard: 0, unresolved: 0 };
+  const elsewhere = new Map<HealthService, number>();
+  for (const referral of referrals) {
+    if (siteByCode(referral.originSiteCode)?.service !== service) continue;
+    result.total += 1;
+    const accepted = referral.destinations.find(
+      (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.acceptedUnitId !== undefined,
+    )?.acceptedUnitId;
+    if (accepted === undefined) {
+      result.noWard += 1;
+      continue;
+    }
+    const unit = units.find((candidate) => candidate.id === accepted);
+    const acceptedService = unit ? siteByCode(unit.siteCode)?.service : undefined;
+    if (acceptedService === service) result.within += 1;
+    else if (acceptedService === undefined) result.unresolved += 1;
+    else elsewhere.set(acceptedService, (elsewhere.get(acceptedService) ?? 0) + 1);
+  }
+  result.elsewhere = HEALTH_SERVICES.filter((name) => elsewhere.has(name)).map((name) => ({
+    service: name,
+    count: elsewhere.get(name) ?? 0,
+  }));
+  return result;
+}

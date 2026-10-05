@@ -198,6 +198,27 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
         </Panel>
       </div>
 
+      <Panel
+        title="Occupancy and ready beds over time"
+        question="How this ward's occupancy and ready beds have moved over the last 30 days."
+        meta="Not recorded"
+      >
+        <dl className={styles.facts}>
+          <div className={styles.fact}>
+            <dt>Occupancy today</dt>
+            <dd>{percent(ward.occupancy)}</dd>
+          </div>
+          <div className={styles.fact}>
+            <dt>Ready today</dt>
+            <dd>{ward.ready}</dd>
+          </div>
+        </dl>
+        <p className={styles.note}>
+          Not recorded. This prototype keeps only each ward&apos;s current bed state, not a day-by-day history, so there
+          is no trend line to draw. Today&apos;s figures above will become the first point once a history is kept.
+        </p>
+      </Panel>
+
       <Panel title="Referrals to this ward" question="Requests from emergency departments that name this ward.">
         <dl className={styles.facts}>
           <div className={styles.fact}>
