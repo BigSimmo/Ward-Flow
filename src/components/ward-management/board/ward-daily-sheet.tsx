@@ -1,4 +1,20 @@
+import { useContext, useMemo } from "react";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import type { Unit } from "@/components/ward-management/ward-model";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import {
+  admissionsForUnit,
+  bedIsOccupied,
+  daysInBed,
+  isPastExpectedDischarge,
+  stayBand,
+  stayDayNumber,
+} from "@/components/ward-management/ward-admissions";
+import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
+import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
+import { releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./board.module.css";
 
@@ -183,10 +199,15 @@ function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: str
         {person.dayNumber === null ? (
           "No stay yet — not arrived"
         ) : (
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>Day {person.dayNumber}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            Day {person.dayNumber}
+          </span>
         )}
         {person.bandLabel !== null && (
-          <span className={styles.sheetRowBand} style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          <span
+            className={styles.sheetRowBand}
+            style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
+          >
             {person.bandLabel}
           </span>
         )}
@@ -224,7 +245,10 @@ function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: str
       {person.blockReason !== null && <p className={styles.sheetRowLine}>Held up by: {person.blockReason}.</p>}
       {person.pastDate && person.expectedDays !== null && (
         <p className={styles.sheetRowLine}>
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{-person.expectedDays}</span> day
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            {-person.expectedDays}
+          </span>{" "}
+          day
           {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
         </p>
       )}
@@ -264,7 +288,8 @@ function SheetGroup({
           emptyText
         ) : (
           <>
-            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{people.length}</span> on this ward.
+            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{people.length}</span>{" "}
+            on this ward.
           </>
         )}
       </p>
@@ -282,25 +307,28 @@ function SheetGroup({
 
 export type WardDailySheetProps = {
   /** `sinceYesterday`, already scoped to this ward by the board. */
-  movement: { discharged: number; pulled: number; datesMoved: number };
+  movement?: { discharged: number; pulled: number; datesMoved: number };
   /** How many people are recorded as coming in — the board's own `buildIncoming` length, split by
    *  whether the bed has already gone. */
-  incomingPulled: number;
-  incomingWaitlisted: number;
+  incomingPulled?: number;
+  incomingWaitlisted?: number;
   /** How many beds the ward expects to free today, and on which of the two bases — the board's own
    *  `outgoingToday` result and the label it renders for that basis. */
-  outgoingCount: number;
-  outgoingBasisLabel: string;
+  outgoingCount?: number;
+  outgoingBasisLabel?: string;
   /** `arrowTargets` for this unit: where the people in these beds are expected to head, nearest
    *  first, already limited to the board's display horizon. */
-  destinations: readonly { region: string; count: number; nearestDays: number }[];
+  destinations?: readonly { region: string; count: number; nearestDays: number }[];
   /** The board's occupants, in the board's order. */
-  people: readonly DailySheetPerson[];
+  people?: readonly DailySheetPerson[];
   /** Optional instant or shift timestamp for the sheet */
   now?: Instant;
   shiftTimestamp?: string | null;
+  /** Optional unit for automatic derivations */
+  unit?: Unit;
   /** Optional interactive print trigger callback */
   onPrint?: () => void;
+  onClose?: () => void;
 };
 
 /**
@@ -348,10 +376,91 @@ export function WardDailySheet({
   people,
   now,
   shiftTimestamp,
+  unit,
   onPrint,
 }: WardDailySheetProps) {
-  const groups = dailySheetGroups(people);
-  const incomingTotal = incomingPulled + incomingWaitlisted;
+  const currentNow = now ?? 0;
+  // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
+  // path; the frozen seed is only a last resort for isolated renders without a provider.
+  const liveFlow = useContext(WardFlowContext);
+  const liveAdmissions = liveFlow?.admissions;
+  const liveBedReleases = liveFlow?.bedReleases;
+  const admissionSource = liveAdmissions ?? wardAdmissions;
+
+  const resolvedPeople = useMemo(() => {
+    if (people !== undefined) return people;
+    if (!unit) return [];
+    return admissionsForUnit(admissionSource, unit.id)
+      .filter(bedIsOccupied)
+      .map((admission) => ({
+        key: admission.id,
+        days: daysInBed(admission, currentNow),
+        dayNumber: stayDayNumber(daysInBed(admission, currentNow)),
+        bandLabel: stayBand(admission, currentNow)?.label ?? null,
+        pastDate: isPastExpectedDischarge(admission, currentNow),
+        sex: admission.sex,
+        homeRegion: admission.homeRegion,
+        tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
+        awayAtEdHours:
+          admission.awayAtEmergencyDepartmentSince === null
+            ? null
+            : Math.max(0, Math.floor((currentNow - admission.awayAtEmergencyDepartmentSince) / 60)),
+        expectedDays:
+          admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+            ? Math.floor((admission.expectedDischargeAt - currentNow) / 1440)
+            : null,
+        blockReason: admission.blockReason,
+      }));
+  }, [people, unit, currentNow, admissionSource]);
+
+  const resolvedMovement = useMemo(() => {
+    if (movement !== undefined) return movement;
+    // Filtered by hand, as ward-board does: `admissionsForUnit` drops departed admissions, which
+    // would pin `discharged` at zero on the unit-only path.
+    if (unit)
+      return sinceYesterday(
+        admissionSource.filter((admission) => admission.unitId === unit.id),
+        currentNow,
+      );
+    return { discharged: 0, pulled: 0, datesMoved: 0 };
+  }, [movement, unit, currentNow, admissionSource]);
+
+  const resolvedDestinations = useMemo(() => {
+    if (destinations !== undefined) return destinations;
+    if (unit) return arrowTargets(admissionsForUnit(admissionSource, unit.id), currentNow);
+    return [];
+  }, [destinations, unit, currentNow, admissionSource]);
+
+  // Unit-only path (ward-screen): count incoming and outgoing from the same live collections
+  // ward-board passes in, so the sheet does not print zeros against a ward that has arrivals or
+  // releases. Outgoing uses the board's default basis (confirmed) and its label, so the two sheets
+  // agree. Explicit props still win, and an isolated render with no provider keeps zero.
+  const liveIncoming = useMemo(() => {
+    if (!unit || liveAdmissions === undefined) return null;
+    const arriving = admissionsForUnit(liveAdmissions, unit.id);
+    return {
+      pulled: arriving.filter((admission) => admission.state === "pulled").length,
+      waitlisted: arriving.filter((admission) => admission.state === "waitlisted").length,
+    };
+  }, [unit, liveAdmissions]);
+  const liveOutgoingCount = useMemo(() => {
+    if (!unit || liveBedReleases === undefined) return null;
+    return liveBedReleases.filter(
+      (release) =>
+        release.unitId === unit.id &&
+        release.state === "confirmed" &&
+        releaseBand(release, currentNow) !== "beyond-today",
+    ).length;
+  }, [unit, liveBedReleases, currentNow]);
+
+  const resolvedIncomingPulled = incomingPulled ?? liveIncoming?.pulled ?? 0;
+  const resolvedIncomingWaitlisted = incomingWaitlisted ?? liveIncoming?.waitlisted ?? 0;
+  const resolvedOutgoingCount = outgoingCount ?? liveOutgoingCount ?? 0;
+  const resolvedOutgoingBasis =
+    outgoingBasisLabel ?? (liveOutgoingCount !== null ? CAPACITY_FIGURE_LABELS.confirmedToday : "Expected");
+
+  const groups = dailySheetGroups(resolvedPeople);
+  const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;
 
   const resolvedTimestamp = shiftTimestamp ?? (now !== undefined && asAtStamp(now).time ? asAtStamp(now).time : null);
 
@@ -372,13 +481,35 @@ export function WardDailySheet({
         Live at the moment stamped above — on screen and on paper, nothing here is held from an earlier hour.
       </p>
 
+      {/* Executive 24h KPI Delta Ribbon */}
+      <div className={styles.sheetKpiRibbon}>
+        <div className={styles.sheetKpiCard}>
+          <span className={styles.sheetKpiValue}>{resolvedMovement.discharged}</span>
+          <span className={styles.sheetKpiLabel}>Discharged · 24h</span>
+          <span className={styles.sheetKpiSub}>Left this ward</span>
+        </div>
+        <div className={styles.sheetKpiCard}>
+          <span className={styles.sheetKpiValue}>{resolvedMovement.pulled}</span>
+          <span className={styles.sheetKpiLabel}>Beds Pulled</span>
+          <span className={styles.sheetKpiSub}>Allocated for transfer</span>
+        </div>
+        <div className={styles.sheetKpiCard}>
+          <span className={styles.sheetKpiValue}>{resolvedMovement.datesMoved}</span>
+          <span className={styles.sheetKpiLabel}>Dates Moved</span>
+          <span className={styles.sheetKpiSub}>Expected dates adjusted</span>
+        </div>
+      </div>
+
       {resolvedTimestamp ? (
         <p
           className={styles.sheetNote}
           data-testid="ward-daily-sheet-shift-timestamp"
           style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
         >
-          Shift timestamp: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{resolvedTimestamp}</span>
+          Shift timestamp:{" "}
+          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+            {resolvedTimestamp}
+          </span>
         </p>
       ) : null}
 
@@ -387,11 +518,21 @@ export function WardDailySheet({
         data-testid="ward-daily-sheet-since"
         style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
       >
-        Since yesterday: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{movement.discharged}</span> left this
-        ward, <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{movement.pulled}</span> bed
-        {movement.pulled === 1 ? "" : "s"} given away,{" "}
-        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{movement.datesMoved}</span> expected date
-        {movement.datesMoved === 1 ? "" : "s"} moved.
+        Since yesterday:{" "}
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.discharged}
+        </span>{" "}
+        left this ward,{" "}
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.pulled}
+        </span>{" "}
+        bed
+        {resolvedMovement.pulled === 1 ? "" : "s"} given away,{" "}
+        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+          {resolvedMovement.datesMoved}
+        </span>{" "}
+        expected date
+        {resolvedMovement.datesMoved === 1 ? "" : "s"} moved.
       </p>
 
       <div className={styles.sheetGroups}>
@@ -416,10 +557,18 @@ export function WardDailySheet({
               "Nobody is recorded as coming in to this ward."
             ) : (
               <>
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{incomingTotal}</span> coming in:{" "}
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{incomingPulled}</span> with the bed already given
-                away, <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{incomingWaitlisted}</span> waiting with no
-                bed given.
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {incomingTotal}
+                </span>{" "}
+                coming in:{" "}
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {resolvedIncomingPulled}
+                </span>{" "}
+                with the bed already given away,{" "}
+                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                  {resolvedIncomingWaitlisted}
+                </span>{" "}
+                waiting with no bed given.
               </>
             )}
           </p>
@@ -447,29 +596,40 @@ export function WardDailySheet({
             data-testid="ward-daily-sheet-out-count"
             style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
           >
-            {outgoingBasisLabel}: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{outgoingCount}</span> bed
-            {outgoingCount === 1 ? "" : "s"} expected to free today.
+            {resolvedOutgoingBasis}:{" "}
+            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+              {resolvedOutgoingCount}
+            </span>{" "}
+            bed
+            {resolvedOutgoingCount === 1 ? "" : "s"} expected to free today.
           </p>
-          {destinations.length === 0 ? (
+          {resolvedDestinations.length === 0 ? (
             <p className={styles.sheetRowLine}>
               Nobody in these beds has an expected date inside the board&apos;s window.
             </p>
           ) : (
             <ul className={styles.sheetDestinations} data-testid="ward-daily-sheet-destinations">
-              {destinations.map((target) => (
+              {resolvedDestinations.map((target) => (
                 <li
                   key={target.region}
                   className={styles.sheetRowLine}
                   data-testid={`ward-daily-sheet-destination-${target.region}`}
                   style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
                 >
-                  {target.region}: <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{target.count}</span>{" "}
+                  {target.region}:{" "}
+                  <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                    {target.count}
+                  </span>{" "}
                   {target.count === 1 ? "person" : "people"}, soonest{" "}
                   {target.nearestDays === 0 ? (
                     "due now or overdue"
                   ) : (
                     <>
-                      in <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{target.nearestDays}</span> day
+                      in{" "}
+                      <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
+                        {target.nearestDays}
+                      </span>{" "}
+                      day
                       {target.nearestDays === 1 ? "" : "s"}
                     </>
                   )}

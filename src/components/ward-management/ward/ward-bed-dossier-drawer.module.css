@@ -1,0 +1,539 @@
+/* ─────────────────────────────────────────────────────────────
+   WARD BED DOSSIER DRAWER — OVERHAULED CLINICAL COMMAND
+   Supports Occupied Inpatient Dossier (4 tabs) and Ready Bed Console
+   ───────────────────────────────────────────────────────────── */
+
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  z-index: 80;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawerScrim.show {
+  display: block;
+  opacity: 1;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(94vw, 36rem);
+  background: var(--surface);
+  border-left: 1px solid var(--line-strong, var(--line));
+  box-shadow: -8px 0 24px rgb(var(--ward-shadow-rgb) / 0.25);
+  z-index: 90;
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer.show {
+  transform: translateX(0);
+}
+
+/* Header */
+.drawerHead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.04);
+  flex-shrink: 0;
+}
+
+.drawerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.drawerBedBadge {
+  padding: 3px 8px;
+  border-radius: var(--pill, 999px);
+  background: var(--ink);
+  color: var(--surface);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.drawerBedBadgeReady {
+  background: var(--good);
+  color: var(--text-inverse);
+}
+
+.drawerTitle {
+  font-family: var(--display, sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerCloseBtn {
+  min-height: var(--ward-tap, 40px);
+  padding: 0 12px;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.drawerCloseBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+/* Hero Banner */
+.heroBanner {
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heroStayRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.heroStayCounter {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.heroStayNumber {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--ink);
+  line-height: 1;
+}
+
+.heroStayUnit {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.heroStayBandBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--pill, 999px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  color: var(--ink-soft);
+}
+
+.patientName {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+}
+
+.chipAccent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--line);
+  font-weight: 600;
+}
+
+.alertBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--r2, 6px);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.alertDanger {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.alertWarn {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+}
+
+.alertSuccess {
+  background: var(--good-soft);
+  border: 1px solid var(--good-border);
+  color: var(--good);
+}
+
+/* Command Tabs Nav */
+.tabsNav {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  gap: 4px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.tabBtn {
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabBtn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+:global([data-theme="dark"]) .tabBtn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Drawer Body */
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 14px;
+  scrollbar-width: thin;
+}
+
+/* Clinical Cards */
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Action Card & Buttons */
+.actionCard {
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r2, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--lift-sm);
+}
+
+.actionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.selectInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong, var(--line));
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: var(--body);
+}
+
+.btnPrimaryAction {
+  padding: 9px 14px;
+  border-radius: var(--r2, 6px);
+  background: var(--ink);
+  color: var(--surface);
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btnPrimaryAction:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btnGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btnSecondary {
+  padding: 8px 10px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+}
+
+.btnSecondary:hover {
+  background: var(--surface-2);
+  border-color: var(--ink);
+}
+
+/* Fact Lists & DLs */
+.factList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.factRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.factRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.factDt {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.factDd {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  margin: 0;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Vital signs disclaimer banner */
+.vitalSignsNotice {
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Ready Vacant Bed Console */
+.readyConsoleCard {
+  background: var(--surface);
+  border: 1px solid var(--good-border);
+  border-radius: var(--r1, 8px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.readyHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.readyStatusTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--good);
+  margin: 0;
+}
+
+.readyMetaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.readyMetaItem {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.readyMetaLabel {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.readyMetaVal {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.allocationCandidateCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.candidateTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.candidateSub {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* Drawer Foot */
+.drawerFoot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.footerSyncText {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.footerLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}

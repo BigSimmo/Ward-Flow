@@ -21,6 +21,8 @@
   font-family: var(--body);
   font-size: var(--t-3);
   font-variant-numeric: tabular-nums;
+  position: relative;
+  z-index: 1;
 }
 
 .main {
@@ -34,6 +36,7 @@
   flex: 1 1 auto;
   gap: 1.75rem;
   box-sizing: border-box;
+  position: relative;
 }
 
 /* Prototype Banner */
@@ -116,7 +119,7 @@
   padding: 0.875rem 1.25rem;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: 14px;
   box-shadow:
     0 4px 16px -2px var(--ward-shadow-black-06),
     0 0 0 1px var(--line);
@@ -917,7 +920,7 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 14px;
   box-shadow:
     0 10px 32px -4px rgb(var(--ward-shadow-rgb) / 0.08),
     0 0 0 1px var(--line);
@@ -1254,7 +1257,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 14px;
   box-shadow: 0 1px 3px var(--ward-shadow-black-04);
   overflow: hidden;
   display: flex;
@@ -1315,17 +1318,75 @@
 .unwiredPill {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.4375rem;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--pill);
-  background: var(--sunk);
+  background: var(--surface-2);
   color: var(--muted);
   border: 1px solid var(--line);
+  font-family: var(--body);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin-left: 0.5rem;
+  text-transform: capitalize;
+  vertical-align: middle;
+}
+
+/* Apple/ChatGPT Segmented Control */
+.segmentedTrack {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  gap: 2px;
+}
+
+.segmentedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.75rem;
+  min-height: 1.875rem;
+  border-radius: calc(var(--r2) - 2px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.segmentedBtn:hover {
+  color: var(--ink);
+}
+
+.segmentedBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.segmentedBtnActive {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 3px var(--ward-shadow-black-06);
+}
+
+.rowSubtext {
   font-family: var(--mono);
   font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-left: 0.5rem;
-  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 /* Rows Container & Setting Rows */
@@ -1392,15 +1453,15 @@
   flex-shrink: 0;
 }
 
-/* Sliders */
+/* Sliders (Apple minimalist curved) */
 .sliderBox {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: 1rem;
   align-items: center;
   background: var(--surface-2);
-  padding: 0.875rem 1.125rem;
-  border-radius: var(--r2);
+  padding: 0.625rem 0.875rem;
+  border-radius: 10px;
   border: 1px solid var(--line);
   transition: border-color 0.15s ease;
 }
@@ -1408,39 +1469,75 @@
 @media (max-width: 860px) {
   .sliderBox {
     grid-template-columns: 1fr;
-    gap: 0.875rem;
+    gap: 0.75rem;
   }
 }
 
 .sliderLine {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .rangeSlider {
   flex: 1;
-  height: 0.5rem;
+  height: 4px;
   accent-color: var(--accent);
   cursor: pointer;
   background: var(--sunk);
-  border-radius: var(--pill);
+  border-radius: 9999px;
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: all 0.15s ease;
+}
+
+.rangeSlider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+}
+
+.rangeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.18);
+  cursor: pointer;
+  margin-top: -6px;
+  transition: transform 0.12s ease;
+}
+
+.rangeSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.rangeSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.18);
+  cursor: pointer;
 }
 
 .rangeSlider:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 .sliderVal {
   font-family: var(--mono);
-  font-size: var(--t-1);
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent-ink);
   background: var(--accent-soft);
-  padding: 0.2rem 0.625rem;
-  border-radius: var(--pill);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
   border: 1px solid var(--line);
   white-space: nowrap;
 }
@@ -1449,76 +1546,84 @@
   display: flex;
   justify-content: space-between;
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 0.6875rem;
   color: var(--muted);
   font-weight: 500;
+  padding-top: 2px;
 }
 
-/* Stepper Controls */
+/* Stepper Controls (Apple compact curved) */
 .stepperCluster {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 0.25rem;
-  box-shadow: 0 1px 2px var(--ward-shadow-black-04);
-  align-self: flex-start;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: inset 0 1px 1px var(--ward-shadow-black-02);
+  align-self: center;
 }
 
 .stepperBtn {
-  min-width: var(--ward-tap, 48px);
-  min-height: var(--ward-tap, 48px);
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r2);
+  border-radius: 6px;
   border: 1px solid transparent;
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
   padding: 0;
-  transition:
-    background 0.12s,
-    border-color 0.12s,
-    color 0.12s;
+  box-shadow: 0 1px 2px var(--ward-shadow-black-04);
+  transition: all 0.12s ease;
 }
 
-.stepperBtn:hover {
+.stepperBtn:hover:not([aria-disabled="true"]) {
+  background: var(--surface-2);
+  color: var(--accent);
+  border-color: var(--line);
+}
+
+.stepperBtn:active:not([aria-disabled="true"]) {
   background: var(--sunk);
-  border-color: var(--line-strong);
-  color: var(--ink);
+  transform: scale(0.96);
 }
 
-.stepperBtn:active {
-  background: var(--surface);
+.stepperBtn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .stepperBtn:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .stepperDisplay {
   display: flex;
   align-items: baseline;
-  gap: 0.25rem;
-  min-width: 6.5rem;
+  gap: 0.2rem;
+  min-width: 4.5rem;
   justify-content: center;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  padding: 0 0.5rem;
+  padding: 0 0.375rem;
 }
 
 .stepperVal {
-  font-size: var(--t-3);
+  font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .stepperUnit {
-  font-size: var(--t-0);
+  font-size: 0.6875rem;
   color: var(--muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -2282,26 +2387,25 @@
  * ========================================================================= */
 
 .surgeBanner {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
-  padding: 0.875rem 1rem;
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 1.125rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin: 0.75rem 0;
+  gap: 0.875rem;
+  margin: 0;
   transition: all 0.2s ease;
 }
 
 .surgeBannerActive {
   background: color-mix(in srgb, var(--danger-soft) 25%, var(--surface));
-  border-color: var(--danger);
+  border-bottom: 1px solid var(--line);
   border-left-color: var(--danger);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent),
-    var(--lift);
+  box-shadow: none;
 }
 
 .surgeBannerHeader {
@@ -2345,13 +2449,13 @@
 }
 
 .surgeDiffCard {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r2);
-  padding: 0.75rem 0.875rem;
+  padding: 0.625rem 0.875rem;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.25rem;
 }
 
 .surgeDiffCardActive {
@@ -2397,34 +2501,35 @@
 .bannerPresetBtn {
   composes: btn;
   align-self: flex-start;
-  height: 2.5rem;
+  height: 2.25rem;
   font-weight: 600;
+  font-size: var(--t-0);
 }
 
-/* Spacious Card-based Parameter Modules */
+/* Seamless Clinical Parameter Rows */
 .parameterCardsGrid {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
-  padding: 0.75rem 0 0;
+  gap: 0;
+  padding: 0;
+  background: var(--surface);
 }
 
 .paramCard {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  padding: 1.125rem 1.25rem;
+  transition: background 0.15s ease;
 }
 
 .paramCard:hover {
-  border-color: var(--line-strong);
-  box-shadow: 0 2px 8px var(--ward-shadow-black-06);
+  background: color-mix(in srgb, var(--surface-2) 35%, var(--surface));
 }
 
 .paramCardHeader {
@@ -2432,9 +2537,9 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
+  padding: 0 0 0.75rem 0;
+  background: transparent;
+  border-bottom: none;
 }
 
 .paramCardTitleCol {
@@ -2445,8 +2550,8 @@
 }
 
 .paramCardTitle {
-  font-size: var(--t-1);
-  font-weight: 700;
+  font-size: var(--t-2);
+  font-weight: 600;
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -2462,9 +2567,10 @@
 }
 
 .paramCardBody {
-  padding: 0.75rem 1rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
 }
 
 .paramReadoutBox {
@@ -2552,14 +2658,14 @@
 
 /* Visual Timeline for Due-Time Warnings */
 .timelineGraphContainer {
-  margin-top: 0.875rem;
-  padding: 1rem 1.25rem;
-  background: var(--surface-2);
+  margin-top: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
   border: 1px solid var(--line);
   border-radius: var(--r2);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .timelineGraphHeader {
@@ -2572,7 +2678,7 @@
 .timelineGraphTitle {
   font-family: var(--mono);
   font-size: var(--t-0);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-soft);
@@ -2580,48 +2686,49 @@
 
 .timelineTrack {
   position: relative;
-  height: 2.25rem;
+  height: 1.5rem;
   background: var(--sunk);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
   display: flex;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px var(--ward-shadow-black-06);
 }
 
 .timelineSegmentCalm {
   flex: 3;
-  background: color-mix(in srgb, var(--good-soft) 40%, var(--surface));
-  border-right: 1px dashed var(--line-strong);
+  background: color-mix(in srgb, var(--good) 22%, var(--surface));
+  border-right: 1px solid var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 0.6875rem;
   color: var(--good);
   font-weight: 600;
 }
 
 .timelineSegmentSoon {
   flex: 2;
-  background: color-mix(in srgb, var(--warn-soft) 60%, var(--surface));
-  border-right: 1px dashed var(--line-strong);
+  background: color-mix(in srgb, var(--warn) 25%, var(--surface));
+  border-right: 1px solid var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 0.6875rem;
   color: var(--warn);
   font-weight: 700;
 }
 
 .timelineSegmentUrgent {
   flex: 1;
-  background: color-mix(in srgb, var(--danger-soft) 80%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 30%, var(--surface));
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 0.6875rem;
   color: var(--danger-ink);
   font-weight: 700;
 }
@@ -2630,9 +2737,9 @@
   display: flex;
   justify-content: space-between;
   font-family: var(--mono);
-  font-size: var(--t-0);
-  color: var(--ink-soft);
-  font-weight: 600;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 /* Canonical Table */
@@ -2643,6 +2750,164 @@
   border-radius: var(--r1);
   box-shadow: var(--lift);
   overflow: hidden;
+}
+
+/* Seamless card embedding when inside settingsSection */
+.settingsSection .tableCard {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-top: 1px solid var(--line);
+}
+
+.settingsSection :global([data-ward-primitive="panel"]) {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
+/* Operational Defaults Full-Width Card (Apple Inset Grouped) */
+.defaultsFullCard {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: none;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+
+.defaultsToolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.defaultsTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.defaultsCardTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.defaultsHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.defaultsHeaderActions button,
+.defaultsHeaderActions .btnPrimary,
+.defaultsHeaderActions .btnSecondary,
+.defaultsHeaderActions .btnSaveRibbon,
+.defaultsHeaderActions .btnRestoreRibbon {
+  height: 1.875rem;
+  min-height: 1.875rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.12s ease;
+}
+
+.defaultsFullCard .tableWrap {
+  width: 100%;
+  border: none;
+  overflow-x: auto;
+}
+
+.defaultsFullCard .table {
+  width: 100%;
+  min-width: 54rem;
+  margin: 0;
+}
+
+.defaultNameCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.modifiedBadge {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--line);
+}
+
+.defaultEditCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.defaultInput {
+  height: 1.875rem;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  width: 10rem;
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.defaultInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.defaultResetItemBtn {
+  height: 2rem;
+  width: 2rem;
+  min-height: 2rem;
+  min-width: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s ease;
+}
+
+.defaultResetItemBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 .table {
@@ -2704,7 +2969,7 @@
 .shortcutCard {
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 14px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -3496,7 +3761,7 @@
 .storageTelemetryCard {
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 14px;
   padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -3689,7 +3954,7 @@
 .dangerZoneCard {
   background: var(--danger-soft);
   border: 1px solid var(--danger);
-  border-radius: var(--r1);
+  border-radius: 14px;
   padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;

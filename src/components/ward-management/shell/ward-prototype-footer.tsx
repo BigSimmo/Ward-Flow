@@ -24,7 +24,11 @@ export function WardPrototypeFooter({
       style={style}
     >
       <div className={styles.leftGroup}>
-        <span className={styles.prototypeBadge} data-ward-type-floor="badge">
+        <span
+          className={styles.prototypeBadge}
+          data-ward-type-floor="badge"
+          title="Synthetic clinical demonstration prototype · Not connected to live EHR"
+        >
           <span className={styles.pulseDot} aria-hidden="true" />
           Synthetic prototype
         </span>
@@ -34,7 +38,24 @@ export function WardPrototypeFooter({
       </div>
       <div className={styles.rightGroup}>
         {extra}
-        <span className={styles.authorityPill}>WA Health Clinical Flow · Synthetic data only</span>
+        <span className={styles.authorityPill} title="WA Health clinical demonstration standard">
+          <svg
+            className={styles.authorityIcon}
+            viewBox="0 0 16 16"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
+            <path d="M5.5 8l2 2 3.5-3.5" />
+          </svg>
+          <span>WA Health Clinical Flow · Synthetic data only</span>
+        </span>
       </div>
     </footer>
   );

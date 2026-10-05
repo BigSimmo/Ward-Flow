@@ -805,6 +805,9 @@
 .drawerSectionTitle {
   margin: 0 0 var(--ward-space-6);
   font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ward-heading);
 }
 
@@ -876,6 +879,264 @@
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
+}
+
+/* Perfected Spatial Movement Corridor popup styles */
+.corridorCard {
+  background: var(--surface);
+  border: 1px solid var(--ward-divider);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--ward-space-12);
+  margin: var(--ward-space-10) 0;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.05);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+}
+
+.corridorGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ward-space-8);
+  background: var(--surface);
+  border: 1px solid var(--ward-divider);
+  border-radius: var(--radius-md, 10px);
+  padding: var(--ward-space-10);
+}
+
+@media (max-width: 640px) {
+  .corridorGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.corridorHub {
+  background: var(--surface-2);
+  border: 1px solid var(--ward-divider);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--ward-space-8);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.corridorHubAccepted {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--ward-space-8);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.corridorHighway {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 0 var(--ward-space-4);
+  text-align: center;
+}
+
+.corridorTrack {
+  width: 100%;
+  height: 8px;
+  background: var(--sunk);
+  border-radius: 9999px;
+  position: relative;
+  overflow: hidden;
+  margin: var(--ward-space-4) 0;
+}
+
+.corridorProgress {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.beaconCard {
+  margin-top: var(--ward-space-10);
+  background: var(--surface);
+  border: 1.5px solid var(--accent-border);
+  border-radius: var(--radius-md, 10px);
+  padding: var(--ward-space-10);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ward-space-8);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.beaconDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+}
+
+.waypointStepper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--ward-space-4);
+  margin: var(--ward-space-8) 0;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .waypointStepper {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.waypointItem {
+  background: var(--surface-2);
+  border: 1px solid var(--ward-divider);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--ward-space-5) var(--ward-space-2);
+  font-size: 0.6875rem;
+}
+
+.waypointActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.waypointDone {
+  background: var(--ward-success-soft);
+  border-color: var(--success-border);
+  color: var(--ward-success);
+}
+
+.blockerAlert {
+  background: var(--ward-warning-soft);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--ward-space-8);
+  margin: var(--ward-space-8) 0;
+}
+
+.blockerAlertGood {
+  background: var(--ward-success-soft);
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--ward-space-8);
+  margin: var(--ward-space-8) 0;
+}
+
+.telemetryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+}
+
+@media (max-width: 640px) {
+  .telemetryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.telemetryCard {
+  background: var(--surface);
+  border: 1px solid var(--ward-divider);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--ward-space-8);
+  font-size: 0.75rem;
+}
+
+.telemetryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ward-space-3);
+}
+
+.pulseBeacon {
+  animation: pulseBeaconAnim 2s infinite;
+}
+
+@keyframes pulseBeaconAnim {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--ward-shadow-rgb) / 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgb(var(--ward-shadow-rgb) / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--ward-shadow-rgb) / 0);
+  }
+}
+
+.corridorFlowTrack {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-press) 50%, var(--accent) 100%);
+  background-size: 200% 100%;
+  animation: corridorFlowAnim 3s linear infinite;
+}
+
+@keyframes corridorFlowAnim {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulseBeacon,
+  .corridorFlowTrack {
+    animation: none !important;
+  }
+}
+
+:global([data-reduced-motion="true"]) .pulseBeacon,
+:global([data-reduced-motion="true"]) .corridorFlowTrack {
+  animation: none !important;
+}
+
+.patientMonogram {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-weight: 800;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.2);
+}
+
+.corridorHeroHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  margin-bottom: var(--ward-space-8);
+}
+
+.corridorTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-2);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /*
