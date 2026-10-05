@@ -1,21 +1,20 @@
-.horizons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  align-items: start;
-  gap: var(--ward-space-12, 0.75rem);
-}
-
-.horizon {
+.forecastSection {
+  flex: none;
+  padding: 1.125rem;
+  border-bottom: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: var(--ward-space-12, 0.75rem);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
+  gap: 0.625rem;
 }
 
-.horizonHeading {
+.forecastHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.forecastTitle {
   margin: 0;
   color: var(--muted);
   font-size: var(--t-0);
@@ -24,83 +23,66 @@
   text-transform: uppercase;
 }
 
+.forecastScope {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--body);
+  white-space: nowrap;
+}
+
+.horizons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.horizon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.horizonHeadingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.horizonLabel {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .until {
+  color: var(--muted);
+  font-size: var(--t-0);
   font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
 }
 
 .headline {
   margin: 0;
   font-family: var(--display);
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--good);
+  line-height: 1.25;
 }
 
 .headline[data-short="true"] {
   color: var(--danger);
 }
 
-.range,
-.note {
+.range {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-  line-height: 1.45;
-}
-
-.working summary {
-  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  text-decoration: underline;
-}
-
-.steps {
-  margin: 0 0 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.forecastStep {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  font-size: var(--t-1);
-  color: var(--ink);
-}
-
-.forecastStep dt,
-.forecastStep dd {
-  margin: 0;
-}
-
-.forecastStep dd {
-  font-family: var(--mono);
-}
-
-.forecastStep[data-total="true"] {
-  border-top: 1px solid var(--line-strong);
-  padding-top: 0.25rem;
-  font-weight: 700;
-}
-
-.sign {
-  display: inline-block;
-  width: 1.25em;
-  color: var(--muted);
-}
-
-.limits {
-  list-style: disc;
-  margin: var(--ward-space-12, 0.75rem) 0 0;
-  padding-left: 1.25rem;
   color: var(--muted);
   font-size: var(--t-0);
-  line-height: 1.45;
+  line-height: 1.35;
 }

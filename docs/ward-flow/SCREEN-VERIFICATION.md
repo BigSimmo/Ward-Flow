@@ -12,7 +12,7 @@
 | Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |
 |---|---|---|---|---|---|---|---|---|---|
 | `command-third-edition.html` | `/` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 38ca886993fb | not recorded |
-| `delays-third-edition.html` | `/delays` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 89d79b36931e | not recorded |
+| `delays-third-edition.html` | `/delays` | 2026-10-05 | Codex (rendered workspace review and shell regression check) | 1440 | light, dark | matches | UNAGEABLE - no hash recorded | not recorded | 52db357fb086fe8daee98bcbf025aaa7f04e8328 |
 | `movement-third-edition.html` | `/movements` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 5bb5b8c8b097 | not recorded |
 | `capacity-third-edition.html` | `/capacity` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | e6542c7321e3 | not recorded |
 | `ward-third-edition.html` | `/ward/[unitId]` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 078d4ec59fd2 | not recorded |
@@ -49,10 +49,6 @@
 ## Deviations
 
 ### `command-third-edition.html` — deviates
-
-Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified.
-
-### `delays-third-edition.html` — deviates
 
 Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified.
 

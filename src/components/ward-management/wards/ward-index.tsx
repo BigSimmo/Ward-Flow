@@ -568,14 +568,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             {/* Apple Health-caliber Telemetry Pill Capsule */}
             <div className={styles.telemetryCapsule} role="region" aria-label="Statewide Ward Telemetry">
               <div
-                className={`${styles.telemetryItem} ${styles.interactiveItem} ${selectedService === "all" && selectedAvail === "all" && selectedCohort === "all" && !searchQuery ? styles.telemetryItemActive : ""}`}
+                className={`${styles.telemetryItem} ${styles.interactiveItem}`}
                 onClick={resetFilters}
-                title="Click to view all operational wards"
+                title="Click to reset filters and view all operational wards"
                 tabIndex={0}
                 role="button"
-                aria-pressed={
-                  selectedService === "all" && selectedAvail === "all" && selectedCohort === "all" && !searchQuery
-                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -642,17 +639,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             </div>
           </div>
         </header>
-
-        {/* Natural Language Executive Statement */}
-        <div className={styles.executiveStatement} role="status" aria-atomic="true">
-          <span className={styles.statementPip} aria-hidden="true" />
-          <span className={styles.statementText}>
-            <strong>Prototype census:</strong> All figures here are invented. {units.length} operational inpatient units
-            &middot; <span className={styles.statementVal}>{totalStaffedBeds}</span> staffed beds &middot;{" "}
-            <span className={styles.statementVal}>{networkOccupancyPct}%</span> network occupancy &middot;{" "}
-            <span className={styles.statementValGood}>{totalAvailableBeds}</span> beds ready for intake
-          </span>
-        </div>
 
         {/* 2-Row Structured Filter Cockpit (Option 2 Architecture) */}
         <section className={styles.cockpitPanel} aria-label="Directory Filters">

@@ -3440,12 +3440,6 @@ input.historyField:focus-visible {
   margin-bottom: 0.75rem;
 }
 
-.boardFooter {
-  order: 4;
-  margin-top: var(--ward-space-16);
-  padding-top: var(--ward-space-8);
-}
-
 .filterGroup {
   display: flex;
   flex-wrap: wrap;

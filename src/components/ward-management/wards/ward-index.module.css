@@ -1060,6 +1060,7 @@
   gap: 6px;
   position: relative;
   transition: all 0.14s ease;
+  margin-bottom: -1px;
 }
 
 .cockpitTab:hover {
@@ -1075,10 +1076,9 @@
 .cockpitTab.active {
   color: var(--ink);
   background: var(--surface);
-  border-bottom: 2.5px solid var(--gilt);
-  box-shadow: inset 0 -2.5px 0 var(--gilt);
-  border-radius: 2px 2px 0 0;
-  font-weight: 700;
+  border-bottom: 2.5px solid var(--accent);
+  border-radius: 6px 6px 0 0;
+  font-weight: 650;
 }
 
 .clusterTabCount {
@@ -1090,17 +1090,19 @@
   background: var(--sunk);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease;
 }
 
 .cockpitTab.active .clusterTabCount {
-  background: var(--gilt-soft);
-  color: var(--gilt);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   font-weight: 700;
 }
 
 :global([data-theme="dark"]) .cockpitTab.active {
-  border-bottom-color: var(--gilt);
-  box-shadow: inset 0 -2.5px 0 var(--gilt);
+  border-bottom-color: var(--accent);
 }
 
 .cockpitControlRow {
@@ -2054,9 +2056,17 @@
   color: var(--on-accent);
   border-color: var(--accent);
 }
-.btnPrimary:hover {
+.btnPrimary:hover,
+.btnPrimary:focus-visible,
+.btnPrimary:active {
   background: var(--accent-ink);
   border-color: var(--accent-ink);
+  color: var(--on-accent);
+}
+.btnPrimary:hover span,
+.btnPrimary:focus-visible span,
+.btnPrimary:active span {
+  color: var(--on-accent);
 }
 .btnSecondary {
   border-color: var(--line-strong);

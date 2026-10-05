@@ -221,6 +221,32 @@ test.describe("@mockup Ward shell bar", () => {
     await expect(page.getByTestId("ward-rail")).toBeVisible();
   });
 
+  test("Action workspace keeps the shared navigation and page design", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    const readChrome = async () => {
+      const elements = ["ward-rail", "ward-bar", "ward-delays-page"];
+      return Promise.all(
+        elements.map((id) =>
+          page.getByTestId(id).evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            return { x: box.x, width: box.width, background: getComputedStyle(element).backgroundColor };
+          }),
+        ),
+      );
+    };
+    const before = await readChrome();
+    const graph = page.getByRole("region", { name: "Delay graphs", exact: true });
+    const graphWidth = (await graph.boundingBox())!.width;
+    await page.getByRole("tab", { name: /Action workspace/u }).click();
+    await expect(page.getByRole("complementary", { name: "Responsible team queues" })).toBeVisible();
+    await expect.poll(readChrome).toEqual(before);
+    expect((await graph.boundingBox())!.width).toBe(graphWidth);
+    await page.getByRole("tab", { name: /Focus table/u }).click();
+    await expect(page.getByRole("complementary", { name: "Responsible team queues" })).toHaveCount(0);
+    await expect.poll(readChrome).toEqual(before);
+  });
+
   /**
    * 🔴 **THE CHECK THAT WOULD HAVE CAUGHT THE REVERTED FOLD.** `toHaveCount(1)`, never
    * `toBeVisible()`. Read this file's header for the full account; the short version is that the

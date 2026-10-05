@@ -1719,7 +1719,6 @@ Clinical Note: ${p.clinicalNote}`;
 
         {/* ═══ SOVEREIGN MINIMAL FOOTER ═══ */}
         <WardPrototypeFooter
-          className={styles.governanceBanner}
           testId="ward-patient-search-governance"
           note="Demonstration records only — Not a medical device. Cross-setting index across people, movements and active referrals."
         />

@@ -1,6 +1,15 @@
 "use client";
 
-import { Fragment, useId, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -218,27 +227,22 @@ function CompactStrip({
       {timeline ? (
         <>
           <strong>
-            {patientOf(movement).formalName} <Urgency movement={movement} />
+            {patientOf(movement).formalName}
+            <span className={styles.secondary}>
+              T{movement.urgency} · {shortOrigin(movement)}
+            </span>
           </strong>
           <div>
-            <small>ED</small>
-            {shortOrigin(movement)}
-          </div>
-          <div>
-            <small>Time in ED</small>
+            <small>Waiting</small>
             <b>{splitDuration(Math.max(0, now - movement.openedAt))}</b>
           </div>
           <div>
-            <small>Last recorded update</small>
+            <small>Last change</small>
             <b>{recordedUpdate(movement, now)}</b>
           </div>
           <div>
-            <small>Current reason</small>
+            <small>Reason for wait</small>
             {SHORT_CAUSE[cause]}
-          </div>
-          <div>
-            <small>Owner</small>
-            <OwnerBadge owner={ownerOf(cause)} />
           </div>
         </>
       ) : (
@@ -404,16 +408,36 @@ export function DelaysWaitTimeline({
   now,
   onSelect,
   selectedId,
+  embedded = false,
+  onClose,
 }: {
   rows: DelayRecord[];
   now: Instant;
   onSelect: (id: string) => void;
   selectedId?: string | null;
+  embedded?: boolean;
+  onClose?: () => void;
 }) {
   const patientOf = usePatientOf();
+  const inspectionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (
+      selectedId == null ||
+      !embedded ||
+      typeof window.matchMedia !== "function" ||
+      !window.matchMedia("(max-width: 1099px)").matches
+    )
+      return;
+    window.requestAnimationFrame(() => {
+      const strip = inspectionRef.current?.querySelector<HTMLElement>('[data-delay-inspection="timeline"]');
+      strip?.scrollIntoView({ block: "nearest" });
+      strip?.focus({ preventScroll: true });
+    });
+  }, [selectedId, embedded]);
   const [query, setQuery] = useState("");
   const [owner, setOwner] = useState<DelayOwnerId | "all">("all");
   const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<"longestWait" | "triageRank">("longestWait");
   const [mode, setMode] = useState<"timeline" | "table">("timeline");
   const matching = rows
     .filter(
@@ -423,7 +447,12 @@ export function DelaysWaitTimeline({
           .toLowerCase()
           .includes(query.trim().toLowerCase()),
     )
-    .sort((a, b) => a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id));
+    .sort(
+      (a, b) =>
+        (sort === "triageRank" ? a.movement.urgency - b.movement.urgency : 0) ||
+        a.movement.openedAt - b.movement.openedAt ||
+        a.movement.id.localeCompare(b.movement.id),
+    );
   const pageSize = 6;
   const pages = Math.max(1, Math.ceil(matching.length / pageSize));
   const currentPage = Math.min(page, pages - 1);
@@ -433,16 +462,31 @@ export function DelaysWaitTimeline({
     now,
   );
   const reviewAt = (ED_SEVERE_PRESSURE_WAIT_MINUTES / scale) * 100;
-  const selected = rows.find(({ movement }) => movement.id === selectedId);
+  const selected = matching.find(({ movement }) => movement.id === selectedId);
   return (
     <section
-      className={`${styles.panel} ${styles.timelinePanel}`}
+      className={`${styles.panel} ${styles.timelinePanel} ${embedded ? styles.polishedTimeline : ""}`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && selected && onClose) {
+          event.preventDefault();
+          onClose();
+          document
+            .querySelector<HTMLButtonElement>(`[data-testid="delays-timeline-select-${selected.movement.id}"]`)
+            ?.focus();
+        }
+      }}
       role="region"
       aria-label="Wait timeline"
-      data-ward-primitive="panel"
+      data-ward-primitive={embedded ? undefined : "panel"}
     >
       <header className={styles.timelineHeader}>
-        <h2>Wait timeline</h2>
+        {embedded ? (
+          <h3 className={styles.timelineCount}>
+            {owner === "all" ? "All owners" : ownerName(owner)} · <span>{matching.length} people</span>
+          </h3>
+        ) : (
+          <h2>Wait timeline</h2>
+        )}
         <div className={styles.toolbar}>
           <SearchField
             value={query}
@@ -459,20 +503,39 @@ export function DelaysWaitTimeline({
               setPage(0);
             }}
           />
-          <span className={styles.sortHint}>
-            Sort: <b>Longest wait</b>
-            <ChevronDown aria-hidden="true" size={14} />
-          </span>
-          <div className={styles.modeSwitch} role="group" aria-label="Wait display">
-            <button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>
-              <Table2 aria-hidden="true" size={16} />
-              Table
-            </button>
-            <button type="button" aria-pressed={mode === "timeline"} onClick={() => setMode("timeline")}>
-              <ChartNoAxesColumn aria-hidden="true" size={16} />
-              Timeline
-            </button>
-          </div>
+          {embedded ? (
+            <label className={styles.selectLabel}>
+              Sort
+              <select
+                value={sort}
+                aria-label="Timeline sort"
+                onChange={(event) => {
+                  setSort(event.target.value as typeof sort);
+                  setPage(0);
+                }}
+              >
+                <option value="longestWait">Longest wait</option>
+                <option value="triageRank">Triage</option>
+              </select>
+            </label>
+          ) : (
+            <span className={styles.sortHint}>
+              Sort: <b>Longest wait</b>
+              <ChevronDown aria-hidden="true" size={14} />
+            </span>
+          )}
+          {!embedded && (
+            <div className={styles.modeSwitch} role="group" aria-label="Wait display">
+              <button type="button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>
+                <Table2 aria-hidden="true" size={16} />
+                Table
+              </button>
+              <button type="button" aria-pressed={mode === "timeline"} onClick={() => setMode("timeline")}>
+                <ChartNoAxesColumn aria-hidden="true" size={16} />
+                Timeline
+              </button>
+            </div>
+          )}
         </div>
       </header>
       <div
@@ -488,31 +551,62 @@ export function DelaysWaitTimeline({
           </caption>
           <colgroup>
             <col className={styles.timelinePatientCol} />
+            {embedded && <col className={styles.timelineTriageCol} />}
             <col />
             <col className={styles.timelineReasonCol} />
             <col className={styles.timelineOwnerCol} />
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">Patient &amp; ED</th>
+              <th scope="col">
+                {embedded ? (
+                  <>
+                    Patient<span className={styles.secondary}>ED department</span>
+                  </>
+                ) : (
+                  "Patient & ED"
+                )}
+              </th>
+              {embedded && <th scope="col">Triage</th>}
               <th scope="col" className={styles.axisCell}>
                 {mode === "timeline" ? (
-                  <div className={styles.axis} aria-label={`Linear time scale, zero to ${scale / 60} hours`}>
-                    {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
-                      <span key={fraction} style={{ left: `${fraction * 100}%` }}>
-                        {fraction === 0 ? "0h" : splitDuration(scale * fraction)}
-                      </span>
-                    ))}
-                    <span className={styles.reviewLabel} style={{ left: `${reviewAt}%` }}>
-                      {splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)} review marker
+                  <>
+                    <span className={styles.elapsedHeading}>
+                      Elapsed wait
+                      {embedded && reviewAt < 20 && (
+                        <span className={styles.compactReviewLabel}>
+                          {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h review
+                        </span>
+                      )}
                     </span>
-                  </div>
+                    <div className={styles.axis} aria-label={`Linear time scale, zero to ${scale / 60} hours`}>
+                      {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
+                        <span key={fraction} style={{ left: `${fraction * 100}%` }}>
+                          {fraction === 0
+                            ? "0h"
+                            : embedded && (scale * fraction) % 60 === 0
+                              ? `${(scale * fraction) / 60}h`
+                              : splitDuration(scale * fraction)}
+                        </span>
+                      ))}
+                      <span
+                        className={styles.reviewLabel}
+                        hidden={embedded && reviewAt < 20}
+                        style={{ left: `${reviewAt}%` }}
+                      >
+                        {embedded
+                          ? `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h`
+                          : splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)}{" "}
+                        review{embedded ? "" : " marker"}
+                      </span>
+                    </div>
+                  </>
                 ) : (
                   "Time in ED / last recorded update"
                 )}
               </th>
-              <th scope="col">Reason for delay</th>
-              <th scope="col">Owner</th>
+              <th scope="col">{embedded ? "Reason for wait" : "Reason for delay"}</th>
+              <th scope="col">Owner{embedded && <span className={styles.secondary}>Last update</span>}</th>
             </tr>
           </thead>
           <tbody>
@@ -528,10 +622,15 @@ export function DelaysWaitTimeline({
                       aria-label={`Inspect timeline for ${patientOf(movement).formalName}`}
                       data-testid={`delays-timeline-select-${movement.id}`}
                     >
-                      {patientOf(movement).formalName} <Urgency movement={movement} />
+                      {patientOf(movement).formalName} {!embedded && <Urgency movement={movement} />}
                       <span className={`${styles.secondary} ${styles.patientMeta}`}>{shortOrigin(movement)}</span>
                     </button>
                   </th>
+                  {embedded && (
+                    <td>
+                      <Urgency movement={movement} />
+                    </td>
+                  )}
                   <td className={styles.trackCell}>
                     {mode === "timeline" ? (
                       <div
@@ -539,11 +638,16 @@ export function DelaysWaitTimeline({
                         aria-label={`${splitDuration(segment.waiting)} waiting; ${segment.activity === undefined ? "no change recorded since arrival" : `${splitDuration(segment.quiet)} since last update`}`}
                       >
                         <span className={styles.reviewLine} style={{ left: `${reviewAt}%` }} aria-hidden="true" />
-                        <span className={styles.trackCaption} style={{ left: `${Math.min(segment.totalWidth, 80)}%` }}>
-                          {segment.activity === undefined
-                            ? "No update recorded"
-                            : `Last update ${recordedUpdate(movement, now)}`}
-                        </span>
+                        {(!embedded || segment.activity !== undefined) && (
+                          <span
+                            className={styles.trackCaption}
+                            style={{ left: `${Math.min(segment.totalWidth, 80)}%` }}
+                          >
+                            {segment.activity === undefined
+                              ? "No update recorded"
+                              : `Last ${embedded ? "change" : "update"} ${recordedUpdate(movement, now)}`}
+                          </span>
+                        )}
                         <span
                           className={styles.beforeUpdate}
                           style={{ width: `${segment.beforeWidth}%` }}
@@ -578,13 +682,18 @@ export function DelaysWaitTimeline({
                   </td>
                   <td>
                     <OwnerBadge owner={ownerOf(cause)} />
+                    {embedded && (
+                      <span className={styles.secondary}>
+                        {segment.activity ? `Last change ${recordedUpdate(movement, now)}` : "No update recorded"}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );
             })}
             {shown.length === 0 && (
               <tr>
-                <td colSpan={4} className={styles.empty}>
+                <td colSpan={embedded ? 5 : 4} className={styles.empty}>
                   No people match this timeline.{" "}
                   <button
                     type="button"
@@ -603,8 +712,8 @@ export function DelaysWaitTimeline({
         </table>
       </div>
       {selected && (
-        <div className={styles.timelineDetail}>
-          <CompactStrip record={selected} now={now} timeline />
+        <div ref={inspectionRef} className={styles.timelineDetail}>
+          <CompactStrip record={selected} now={now} timeline onClose={onClose} />
         </div>
       )}
       <footer className={styles.footer}>
@@ -621,10 +730,15 @@ export function DelaysWaitTimeline({
             <i className={styles.dotKey} />
             Dot: recorded update
           </span>
-          <span title={OPERATIONAL_DEFAULT_LABEL}>
-            <i className={styles.reviewKey} />
-            {splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)} review · operational default
-          </span>
+          {!embedded && (
+            <span title={OPERATIONAL_DEFAULT_LABEL}>
+              <i className={styles.reviewKey} />
+              {embedded
+                ? `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h`
+                : splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)}{" "}
+              review · operational default
+            </span>
+          )}
         </div>
         <span aria-live="polite">
           Showing {shown.length} of {matching.length} · Synthetic records

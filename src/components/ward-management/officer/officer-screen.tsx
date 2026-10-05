@@ -1412,7 +1412,6 @@ export function OfficerScreen() {
         </section>
         <WardPrototypeFooter
           testId="ward-officer-governance"
-          className={styles.governanceBanner}
           note="All outstanding jobs; closed movements excluded · Providers identify organisations · Not a medical device"
         />
       </main>
