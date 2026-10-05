@@ -26,3 +26,35 @@
   letter-spacing: normal;
   text-transform: none;
 }
+
+/* Patient: the snapshot band in the page's own neutral surface instead of solid ink, with its
+   labels at the 11 px floor so they can be read. */
+.snapshot {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.snapshot > div {
+  border-color: var(--line);
+}
+
+.snapshot span {
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+}
+
+.snapshot strong {
+  color: var(--ink);
+}
+
+.snapshot small {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.snapshot > div[data-attention="true"] strong,
+.snapshot > div[data-attention="true"] span {
+  color: var(--ink);
+}

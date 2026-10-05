@@ -21,7 +21,7 @@ import {
 import { PatientClinicalSummary } from "../patients/patient-clinical-summary";
 import { PatientTrackerFacts } from "../patients/patient-tracker-facts";
 import { PatientRecordOverview } from "../patients/patient-record-overview";
-import { PatientFlightHeader } from "../patients/patient-flight-header";
+import { PatientFlightHeader } from "./patient-header-polish";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -40,6 +40,7 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolvePatientNowRecord } from "../patients/patient-now-adapter";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "../patients/patient-now-records";
 import styles from "../patients/patient-now.module.css";
+import polish from "./polish.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -464,7 +465,7 @@ export function PatientPolish({ patientId, movementId, initialExampleId = "WF-00
                     : "No active transfer"
             }
           >
-            <div className={styles.flightSnapshot} aria-label="Current bedflow snapshot">
+            <div className={`${styles.flightSnapshot} ${polish.snapshot}`} aria-label="Current bedflow snapshot">
               <div>
                 <span>{isLiveBedflow ? "CURRENT LOCATION → DESTINATION" : "RECORD CONTEXT"}</span>
                 <strong>
