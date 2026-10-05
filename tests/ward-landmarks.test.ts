@@ -62,6 +62,10 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
+import { DischargesProposal } from "@/components/ward-management/flow-proposal/discharges-proposal";
+import { HandoverProposal } from "@/components/ward-management/flow-proposal/handover-proposal";
+import { ReferralBoardProposal } from "@/components/ward-management/flow-proposal/referral-board-proposal";
+import { ReferralIntakeProposal } from "@/components/ward-management/flow-proposal/referral-intake-proposal";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
@@ -219,6 +223,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
     render: () => createElement(CommunityScreen, { teamId: COMMUNITY_TEAM_PAGES[0].id }),
   },
   { route: `${ROUTE_PREFIX}/discharges`, render: () => createElement(DischargeBoard) },
+  { route: `${ROUTE_PREFIX}/discharges/proposal`, render: () => createElement(DischargesProposal) },
   /*
    * ⚠️ **REGISTERED HERE BECAUSE THE COVERAGE TEST WENT RED, NOT BECAUSE I REMEMBERED.** A new route
    * is invisible to this map until the filesystem scan disagrees with it — which is the design, and
@@ -226,6 +231,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
+  { route: `${ROUTE_PREFIX}/handover/proposal`, render: () => createElement(HandoverProposal) },
   { route: `${ROUTE_PREFIX}/search`, render: () => createElement(PatientSearchPage) },
   { route: `${ROUTE_PREFIX}/transport/officer`, render: () => createElement(OfficerScreen) },
   { route: `${ROUTE_PREFIX}/ward/[unitId]`, render: () => createElement(WardScreen, { unitId: "rph-adult-secure" }) },
@@ -246,8 +252,10 @@ const RENDERABLE_ROUTES: RouteRender[] = [
     render: () => createElement(PersonScreen, { patientId: seedWardFlowState().patients[0].id }),
   },
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralIntakeForm) },
+  { route: `${ROUTE_PREFIX}/referrals/new/proposal`, render: () => createElement(ReferralIntakeProposal) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
+  { route: `${ROUTE_PREFIX}/referrals/proposal`, render: () => createElement(ReferralBoardProposal) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
   { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },

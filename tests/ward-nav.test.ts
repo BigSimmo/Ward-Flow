@@ -2,6 +2,10 @@ import { SettingsScreen } from "../src/components/ward-management/settings/setti
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
+import { DischargesProposal } from "../src/components/ward-management/flow-proposal/discharges-proposal";
+import { HandoverProposal } from "../src/components/ward-management/flow-proposal/handover-proposal";
+import { ReferralBoardProposal } from "../src/components/ward-management/flow-proposal/referral-board-proposal";
+import { ReferralIntakeProposal } from "../src/components/ward-management/flow-proposal/referral-intake-proposal";
 import { StatisticsWardScreen } from "../src/components/ward-management/statistics/statistics-ward-screen";
 import { StatisticsEdScreen } from "../src/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
@@ -1267,6 +1271,10 @@ describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", 
 type RouteRender = { route: string; render: () => ReactNode };
 
 const RENDERABLE_ROUTES: RouteRender[] = [
+  { route: `${ROUTE_PREFIX}/referrals/new/proposal`, render: () => createElement(ReferralIntakeProposal) },
+  { route: `${ROUTE_PREFIX}/referrals/proposal`, render: () => createElement(ReferralBoardProposal) },
+  { route: `${ROUTE_PREFIX}/handover/proposal`, render: () => createElement(HandoverProposal) },
+  { route: `${ROUTE_PREFIX}/discharges/proposal`, render: () => createElement(DischargesProposal) },
   // 2026-09-12: the Settings screen. Listed here rather than among the redirect-only stubs because
   // it genuinely renders — it is unlisted in the RAIL, which is a different register entirely.
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
@@ -1423,7 +1431,9 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 40 = 36 + the four redesign proposal previews of 5 October 2026 (referrals/new, referrals,
+    // handover and discharges, each at `<route>/proposal`).
+    expect(RENDERABLE_ROUTES.length).toBe(40);
   });
 });
 

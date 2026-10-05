@@ -88,6 +88,8 @@ const PINNED: Record<string, string | null> = {
   constellation: "redirect:/mockups/ward-flow/network",
   delays: "DelaysScreen",
   discharges: "DischargeBoard",
+  // 5 October 2026: redesign proposal previews beside the current screens.
+  "discharges/proposal": "DischargesProposal",
   "on-call": "OnCallScreen",
   ed: "redirect:/mockups/ward-flow/ed/peel-ed",
   "ed/[edId]": "EdScreen",
@@ -95,6 +97,7 @@ const PINNED: Record<string, string | null> = {
   exceptions: "redirect:/mockups/ward-flow/delays?from=exceptions",
   governance: "WardModeWorkspace",
   handover: "HandoverPage",
+  "handover/proposal": "HandoverProposal",
   hub: "HubScreen",
   // Added 2026-09-12 with the third-edition Legal forms build. ⚠️ A reconciliation is in flight
   // that will change what this screen RENDERS (the two kinds stop being ordered against each
@@ -111,7 +114,9 @@ const PINNED: Record<string, string | null> = {
   "people/new": "AddPatientForm",
   queue: "redirect:/mockups/ward-flow/delays?from=queue",
   referrals: "ReferralBoard",
+  "referrals/proposal": "ReferralBoardProposal",
   "referrals/new": "ReferralIntakeForm",
+  "referrals/new/proposal": "ReferralIntakeProposal",
   search: "PatientSearchPage",
   // Added 2026-09-12 with the Settings screen. ⚠️ **THIS IS THE SIXTH PINNED TALLY OVER ONE
   // ROUTE, and the comment four rows below already called itself the fourth.** The other five:

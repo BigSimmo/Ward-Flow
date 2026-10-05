@@ -114,7 +114,7 @@ const URGENCY_OPTIONS: UrgencyLevel[] = [...URGENCY_LEVELS];
  * this caption cannot drift from that behaviour. It is a default the service chose, not a target
  * this record is measured against; the card's `title` says so (`OPERATIONAL_DEFAULT_LABEL`).
  */
-function urgencyWindowLabel(tier: UrgencyLevel): string {
+export function urgencyWindowLabel(tier: UrgencyLevel): string {
   const hours = OVERDUE_AFTER_MINUTES_BY_TIER[tier] / 60;
   return `Within ${hours} hour${hours === 1 ? "" : "s"} (your default)`;
 }
@@ -128,7 +128,7 @@ function urgencyWindowLabel(tier: UrgencyLevel): string {
  * carry both meanings: "Raise referral" must stay blocked until SOMEONE looks at this question,
  * even when the honest answer is that nobody has recorded a gender yet.
  */
-const NOT_RECORDED_VALUE = "not_recorded";
+export const NOT_RECORDED_VALUE = "not_recorded";
 
 /**
  * T15 (item 12, owner answer 17 September 2026): "None" — a real, deliberate answer for the
@@ -137,13 +137,13 @@ const NOT_RECORDED_VALUE = "not_recorded";
  * owner's own words, 2026-08-29, are that it "should arrive with referral" when the referrer HAS
  * one, not that every referral must name one.
  */
-const NO_DIAGNOSIS_VALUE = "none";
+export const NO_DIAGNOSIS_VALUE = "none";
 
 /** Display labels only — never the picker's own option set, which is always
  *  `SOURCE_OPTIONS.map(...)`. A source missing from this map still renders (as its own raw
  *  value, via the `??` fallback below), it just renders less prettily — so a future
  *  `ReferralSource` this map forgets is never silently dropped from the list, only unlabelled. */
-const SOURCE_LABELS: Record<ReferralSource, string> = {
+export const SOURCE_LABELS: Record<ReferralSource, string> = {
   community: "Community",
   crisis_service: "Crisis service",
   police: "Police",
@@ -468,7 +468,7 @@ function destinationsFor(
   return destinations;
 }
 
-type ReferralDraft = {
+export type ReferralDraft = {
   ageBand: Cohort | typeof UNANSWERED_VALUE;
   sex: RecordedSex | typeof UNANSWERED_VALUE;
   /**
@@ -591,7 +591,7 @@ type ReferralDraft = {
 };
 
 /** The fields exactly as `RECEIVE_REFERRAL` takes them, once every question has an answer. */
-type AnsweredDraft = {
+export type AnsweredDraft = {
   ageBand: Cohort;
   sex: RecordedSex;
   /** Widened from the draft's three-state field: `undefined` when the clinician chose
@@ -911,7 +911,7 @@ export function writtenHistoryCount(draft: ReferralDraft): number {
 
 /** The questions THIS draft is still waiting on: applicable, and unanswered. Both halves matter —
  *  naming a question that does not apply is as misleading as hiding one that does. */
-function unansweredFieldNames(draft: ReferralDraft): string[] {
+export function unansweredFieldNames(draft: ReferralDraft): string[] {
   return REQUIRED_FIELDS.filter((field) => field.appliesWhen?.(draft) ?? true)
     .filter((field) => fieldIsUnanswered(field, draft))
     .map((field) => field.name);
@@ -938,7 +938,7 @@ export function wardAndCommunityBothChosen(kinds: readonly ReferralDestinationKi
   return kinds.includes("psychiatric_ward") && kinds.includes("community_team");
 }
 
-function answeredDraft(draft: ReferralDraft): AnsweredDraft | undefined {
+export function answeredDraft(draft: ReferralDraft): AnsweredDraft | undefined {
   const {
     ageBand,
     sex,
@@ -1148,7 +1148,7 @@ function prefilledOriginSite(searchParams: ReturnType<typeof useSearchParams>): 
   return department?.siteCode ?? UNANSWERED_VALUE;
 }
 
-type ReferralDraftPrefill = Partial<Pick<ReferralDraft, "sex" | "gender" | "suburb">> & {
+export type ReferralDraftPrefill = Partial<Pick<ReferralDraft, "sex" | "gender" | "suburb">> & {
   source: ReferralSource | typeof UNANSWERED_VALUE;
   originSiteCode: string | typeof UNANSWERED_VALUE;
 };
@@ -1169,7 +1169,9 @@ type ReferralDraftPrefill = Partial<Pick<ReferralDraft, "sex" | "gender" | "subu
  * same four values as `REFERRAL_GENDERS`, so a recorded non-binary gender prefills too. Sex
  * prefills from `RECORDED_SEXES` only. PT-007 records sex and no gender, so gender stays unchosen.)
  */
-function patientDraftPrefill(patient: Patient | undefined): Pick<ReferralDraftPrefill, "sex" | "gender" | "suburb"> {
+export function patientDraftPrefill(
+  patient: Patient | undefined,
+): Pick<ReferralDraftPrefill, "sex" | "gender" | "suburb"> {
   if (patient === undefined) return {};
 
   const sex =
@@ -1186,7 +1188,7 @@ function patientDraftPrefill(patient: Patient | undefined): Pick<ReferralDraftPr
   };
 }
 
-function initialDraft(prefill?: ReferralDraftPrefill): ReferralDraft {
+export function initialDraft(prefill?: ReferralDraftPrefill): ReferralDraft {
   return {
     ageBand: UNANSWERED_VALUE,
     sex: prefill?.sex ?? UNANSWERED_VALUE,

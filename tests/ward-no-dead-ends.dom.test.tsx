@@ -91,6 +91,10 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsCompareScreen } from "@/components/ward-management/statistics/statistics-compare-screen";
+import { DischargesProposal } from "@/components/ward-management/flow-proposal/discharges-proposal";
+import { HandoverProposal } from "@/components/ward-management/flow-proposal/handover-proposal";
+import { ReferralBoardProposal } from "@/components/ward-management/flow-proposal/referral-board-proposal";
+import { ReferralIntakeProposal } from "@/components/ward-management/flow-proposal/referral-intake-proposal";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
@@ -171,6 +175,22 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   [
     "/mockups/ward-flow/sovereign",
     { concrete: "/mockups/ward-flow/sovereign", render: () => <SovereignShowcaseScreen /> },
+  ],
+  [
+    "/mockups/ward-flow/referrals/new/proposal",
+    { concrete: "/mockups/ward-flow/referrals/new/proposal", render: () => <ReferralIntakeProposal /> },
+  ],
+  [
+    "/mockups/ward-flow/referrals/proposal",
+    { concrete: "/mockups/ward-flow/referrals/proposal", render: () => <ReferralBoardProposal /> },
+  ],
+  [
+    "/mockups/ward-flow/handover/proposal",
+    { concrete: "/mockups/ward-flow/handover/proposal", render: () => <HandoverProposal /> },
+  ],
+  [
+    "/mockups/ward-flow/discharges/proposal",
+    { concrete: "/mockups/ward-flow/discharges/proposal", render: () => <DischargesProposal /> },
   ],
   ["/mockups/ward-flow/statistics", { concrete: "/mockups/ward-flow/statistics", render: () => <StatisticsScreen /> }],
   [

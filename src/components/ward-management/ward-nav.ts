@@ -484,6 +484,24 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "/mockups/ward-flow/ed",
     "A deliberate redirect to /mockups/ward-flow/ed/peel-ed, documented in its own route file (ed/page.tsx) — not a destination in its own right.",
   ],
+  /* Redesign proposals, 5 October 2026: preview routes beside the current screens, reached from
+   * the preview strip on each proposal. Not destinations until the owner approves a design. */
+  [
+    "/mockups/ward-flow/referrals/new/proposal",
+    "Redesign proposal preview beside the current screen; reached from the proposal preview strip, not the rail.",
+  ],
+  [
+    "/mockups/ward-flow/referrals/proposal",
+    "Redesign proposal preview beside the current screen; reached from the proposal preview strip, not the rail.",
+  ],
+  [
+    "/mockups/ward-flow/handover/proposal",
+    "Redesign proposal preview beside the current screen; reached from the proposal preview strip, not the rail.",
+  ],
+  [
+    "/mockups/ward-flow/discharges/proposal",
+    "Redesign proposal preview beside the current screen; reached from the proposal preview strip, not the rail.",
+  ],
 ]);
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
