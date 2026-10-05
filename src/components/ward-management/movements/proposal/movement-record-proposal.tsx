@@ -30,6 +30,8 @@ import {
   Segmented,
   Verdict,
   patientInitials,
+  plainRefusal,
+  plural,
   waited,
   type Attention,
 } from "./movement-proposal-parts";
@@ -38,6 +40,13 @@ import styles from "./movement-proposal.module.css";
 
 type Filter = "eligible" | "all" | "referred";
 const TRANSPORT_STEPS = ["Requested", "Accepted", "En route", "Collected", "Arrived"] as const;
+const TRANSPORT_STEP_LABEL: Record<(typeof TRANSPORT_STEPS)[number], string> = {
+  Requested: "Requested",
+  Accepted: "Accepted",
+  "En route": "On the way",
+  Collected: "Patient on board",
+  Arrived: "Arrived",
+};
 
 /**
  * Proposed record for one movement. Leads with where this person is and what happens next, keeps
@@ -85,13 +94,11 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
     }));
   const eligibleCount = candidates.filter((candidate) => candidate.verdict.eligible).length;
   const referredCount = movement.referredUnitIds.length;
+  const askedIds = new Set([...movement.referredUnitIds, ...movement.declines.map((decline) => decline.unitId)]);
+  const respondedCount = units.filter((unit) => unit.cohort === movement.cohort && askedIds.has(unit.id)).length;
   const shown = candidates
     .filter((candidate) =>
-      filter === "all"
-        ? true
-        : filter === "referred"
-          ? movement.referredUnitIds.includes(candidate.unit.id)
-          : candidate.verdict.eligible,
+      filter === "all" ? true : filter === "referred" ? askedIds.has(candidate.unit.id) : candidate.verdict.eligible,
     )
     .sort(
       (a, b) =>
@@ -121,7 +128,10 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
     moving: job?.collectedAt,
     arrived: job?.arrivedAt,
   };
-  const currentIndex = open ? MOVEMENT_STAGES.indexOf(movement.stage) : MOVEMENT_STAGES.length;
+  const arrived = !open && movement.closure?.outcome === "arrived";
+  // A movement that did not proceed stops at the stage it reached; later stages stay untouched.
+  const reachedIndex = MOVEMENT_STAGES.indexOf(movement.stage);
+  const currentIndex = open ? reachedIndex : arrived ? MOVEMENT_STAGES.length : reachedIndex + 1;
   const refused =
     rejectionBaseline === null
       ? []
@@ -129,9 +139,11 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
   const wait = waited(waitedMinutes(movement, now));
 
   const answer = !open
-    ? `This movement is resolved${movement.closure ? `: ${movement.closure.outcome === "arrived" ? "arrived" : "did not proceed"}` : ""}.`
+    ? arrived
+      ? `Arrived. This movement is resolved.`
+      : `This movement did not proceed. It stopped at ${stageCopy[movement.stage].label.toLowerCase()}.`
     : movement.stage === "placement_requested" || movement.stage === "destination_review"
-      ? `Waiting ${wait} for a ward. ${eligibleCount} wards are eligible now; ${referredCount} referred, ${movement.declines.length} declined.`
+      ? `Waiting ${wait} for a ward. ${plural(eligibleCount, "ward is", "wards are")} eligible now; ${referredCount} referred, ${movement.declines.length} declined.`
       : movement.stage === "accepted_awaiting_bed"
         ? `Accepted by ${destination?.name ?? "a ward not found"}; waiting for the bed to be pulled. Open ${wait}.`
         : movement.stage === "moving"
@@ -139,20 +151,19 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
           : `Bed at ${destination?.name ?? "a ward not found"} is held. Transport: ${state ? JOB_STATE_LABEL[state].label.toLowerCase() : "not booked"}.`;
 
   const attention: Attention[] = [
-    ...(blocker ? [{ label: blocker, tone: "warn" as const }] : []),
+    ...(open && blocker ? [{ label: blocker, tone: "warn" as const }] : []),
     ...(open && ["pulled", "handover_ready"].includes(movement.stage) && !job
       ? [{ label: "No transport booked", tone: "warn" as const }]
       : []),
-    ...(movement.medicalClearance === undefined
-      ? [{ label: "Medical clearance not recorded", tone: "info" as const }]
+    ...(open && movement.declines.length
+      ? [{ label: `${movement.declines.length} declined`, tone: "info" as const }]
       : []),
-    ...(movement.declines.length ? [{ label: `${movement.declines.length} declined`, tone: "info" as const }] : []),
   ];
 
   const refer = () => {
     setRejectionBaseline(rejections.length);
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId: movement.id, unitIds: targets });
-    setMessage(`Referral sent to ${targets.length} ward${targets.length === 1 ? "" : "s"} for ${initials}.`);
+    setMessage(`Referral sent to ${plural(targets.length, "ward")} for ${initials}.`);
     setLastTargets(targets);
     setSelected([]);
   };
@@ -181,16 +192,16 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
         badges={
           <>
             <Pill tone={tierTone(movement.urgency)}>{urgencyTierLabel(movement.urgency)}</Pill>
-            <Pill tone="accent">{open ? stageCopy[movement.stage].label : "Resolved"}</Pill>
+            <Pill>{open ? stageCopy[movement.stage].label : "Resolved"}</Pill>
           </>
         }
         asAt={asAt}
         actions={
           <>
-            <button className={styles.button} type="button" onClick={() => setMessage(NOT_WIRED)}>
+            <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
               Copy handover
             </button>
-            <a className={styles.button} href={`/mockups/ward-flow/movements/${encodeURIComponent(movement.id)}`}>
+            <a className={styles.textButton} href={`/mockups/ward-flow/movements/${encodeURIComponent(movement.id)}`}>
               Full record
             </a>
           </>
@@ -201,11 +212,9 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
         <strong>{answer}</strong>
       </Verdict>
 
-      {message ? (
-        <p className={styles.toast} role="status">
-          {message}
-        </p>
-      ) : null}
+      <p className={message && !refused.length ? styles.toast : styles.srOnly} role="status">
+        {refused.length ? "" : message}
+      </p>
 
       <Panel
         title="Journey"
@@ -215,7 +224,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
         <ol className={styles.stepper} aria-label="Journey stages">
           {MOVEMENT_STAGES.map((id, index) => {
             const at = stageAt[id];
-            const status = index < currentIndex ? "done" : index === currentIndex ? "now" : "next";
+            const status = index < currentIndex ? "done" : index === currentIndex && open ? "now" : "next";
             return (
               <li
                 key={id}
@@ -227,8 +236,10 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                   {at !== undefined && index <= currentIndex
                     ? formatInstantWithDay(at, now)
                     : status === "now"
-                      ? `Now · ${wait}`
-                      : ""}
+                      ? `Open ${wait}`
+                      : !open && !arrived && index === reachedIndex
+                        ? "Did not proceed"
+                        : ""}
                 </span>
               </li>
             );
@@ -240,47 +251,57 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
         <Panel
           title="Destination options"
           question="Wards for this person's cohort, eligible first. Beds are the capacity screen's beds ready now."
-          meta={`${eligibleCount} eligible of ${candidates.length}`}
+          meta={open ? `${eligibleCount} eligible of ${candidates.length}` : "Resolved"}
           flush
           foot={
             <>
               <span>
                 {!canRefer
-                  ? destination
-                    ? `Accepted by ${destination.name}.`
-                    : "Referral is closed at this stage."
+                  ? !open
+                    ? "This movement is resolved."
+                    : destination
+                      ? `Accepted by ${destination.name}.`
+                      : "Referral is closed at this stage."
                   : genderCheckNeeded
                     ? "A gender placement check is needed for a selected ward. Refer from the full record."
                     : `${targets.length} selected`}
               </span>
-              <button
-                className={styles.buttonPrimary}
-                type="button"
-                disabled={!canRefer || targets.length === 0 || genderCheckNeeded}
-                onClick={refer}
-              >
-                Refer to selected wards
-              </button>
+              {open ? (
+                <button
+                  className={styles.buttonPrimary}
+                  type="button"
+                  disabled={!canRefer || targets.length === 0 || genderCheckNeeded}
+                  onClick={refer}
+                >
+                  Refer to selected wards
+                </button>
+              ) : null}
             </>
           }
         >
-          <div className={styles.toolbar}>
-            <Segmented<Filter>
-              label="Show wards"
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { id: "eligible", label: "Eligible", count: eligibleCount },
-                { id: "referred", label: "Referred", count: referredCount },
-                { id: "all", label: "All", count: candidates.length },
-              ]}
-            />
-          </div>
-          {shown.length === 0 ? (
+          {open ? (
+            <div className={styles.toolbar}>
+              <Segmented<Filter>
+                label="Show wards"
+                value={filter}
+                onChange={setFilter}
+                options={[
+                  { id: "eligible", label: "Eligible", count: eligibleCount },
+                  { id: "referred", label: "Referred or declined", count: respondedCount },
+                  { id: "all", label: "All", count: candidates.length },
+                ]}
+              />
+            </div>
+          ) : null}
+          {!open ? (
+            <div className={styles.panelBody}>
+              <p className={styles.empty}>Ward options are shown only while a ward is still being found.</p>
+            </div>
+          ) : shown.length === 0 ? (
             <div className={styles.panelBody}>
               <p className={styles.empty}>
                 {filter === "referred"
-                  ? "No ward has been referred yet."
+                  ? "No ward has been referred or has declined yet."
                   : "No ward is eligible now. Choose All to see why."}
               </p>
             </div>
@@ -306,7 +327,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                     const declined = movement.declines.some((decline) => decline.unitId === unit.id);
                     const selectable = canRefer && verdict.eligible && !referred;
                     return (
-                      <tr key={unit.id} aria-selected={selected.includes(unit.id)}>
+                      <tr key={unit.id}>
                         <td className={styles.checkboxCell}>
                           <label>
                             <span className={styles.srOnly}>Select {unit.name}</span>
@@ -337,11 +358,11 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                           {accepted ? (
                             <Pill tone="good">Accepted</Pill>
                           ) : declined ? (
-                            <Pill tone="danger">Declined</Pill>
+                            <Pill>Declined</Pill>
                           ) : referred ? (
-                            <Pill tone="accent">Referred</Pill>
+                            <Pill>Referred</Pill>
                           ) : verdict.eligible ? (
-                            <Pill tone="good">Eligible</Pill>
+                            <Pill>Eligible</Pill>
                           ) : (
                             <span className={styles.barrier}>{candidateReason(verdict)}</span>
                           )}
@@ -357,7 +378,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
           {refused.length ? (
             <div className={styles.panelBody}>
               <p className={styles.refused} role="alert">
-                Refused: {refused.at(-1)?.reason}
+                Not recorded. {plainRefusal(refused.at(-1)?.reason)}
               </p>
               {refused.at(-1)?.attempted === "REFER_TO_UNITS" && lastTargets.length ? (
                 <p className={styles.note}>
@@ -377,7 +398,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                       </option>
                     ))}
                   </select>{" "}
-                  <button className={styles.button} type="button" disabled={!overrideReason} onClick={referAnyway}>
+                  <button className={styles.textButton} type="button" disabled={!overrideReason} onClick={referAnyway}>
                     Refer anyway
                   </button>
                 </p>
@@ -390,7 +411,9 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
           <Panel
             title="Transport"
             question={job ? "This movement's transport job." : "No transport job is recorded."}
-            meta={leg ?? "None"}
+            meta={
+              leg === undefined ? "None" : leg === "Cancelled" || leg === "Arrived" ? leg : JOB_STATE_LABEL[leg].label
+            }
             foot={
               job && leg !== "Arrived" ? (
                 <a href={PROPOSAL_ROUTES.transport}>Work this job in Transport Hub</a>
@@ -408,7 +431,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                         className={`${styles.jobStep} ${index < at ? styles.jobStepDone : index === at ? styles.jobStepNow : ""}`}
                         aria-current={index === at ? "step" : undefined}
                       >
-                        {step}
+                        {TRANSPORT_STEP_LABEL[step]}
                       </li>
                     );
                   })}
@@ -439,15 +462,19 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
             ) : (
               <>
                 <p className={styles.empty}>
-                  {["pulled", "handover_ready"].includes(movement.stage)
-                    ? "The bed is held and no transport is booked."
-                    : "Transport is booked once a bed is pulled."}
+                  {!open
+                    ? "No transport was booked before this movement was resolved."
+                    : ["pulled", "handover_ready"].includes(movement.stage)
+                      ? "The bed is held and no transport is booked."
+                      : "Transport is booked once a bed is pulled."}
                 </p>
-                <p className={styles.note}>
-                  <button className={styles.button} type="button" onClick={() => setMessage(NOT_WIRED)}>
-                    Log a booking
-                  </button>
-                </p>
+                {open ? (
+                  <p className={styles.note}>
+                    <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
+                      Log a booking
+                    </button>
+                  </p>
+                ) : null}
               </>
             )}
           </Panel>
@@ -468,23 +495,25 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
                     : "Medical clearance not recorded",
                 },
                 {
-                  ok: movement.legalForm !== undefined || movement.legalStatus === "Voluntary",
+                  ok: null,
                   label: `Legal status as recorded: ${movement.legalStatus}`,
                 },
                 {
-                  ok: true,
+                  ok: null,
                   label: `Needs ${movement.security.toLowerCase()} ward · ${movement.cohort}${movement.specialling ? " · specialling" : ""}${movement.highAcuity ? " · high acuity" : ""}`,
                 },
               ].map((check) => (
                 <li key={check.label} className={styles.check}>
                   <span
-                    className={`${styles.checkMark} ${check.ok ? styles.checkOk : styles.checkOpen}`}
+                    className={`${styles.checkMark} ${check.ok === false ? styles.checkOpen : styles.checkOk}`}
                     aria-hidden="true"
                   >
-                    {check.ok ? "✓" : "!"}
+                    {check.ok === null ? "·" : check.ok ? "✓" : "!"}
                   </span>
                   <span>
-                    <span className={styles.srOnly}>{check.ok ? "Recorded: " : "Open: "}</span>
+                    <span className={styles.srOnly}>
+                      {check.ok === null ? "As recorded: " : check.ok ? "Recorded: " : "Open: "}
+                    </span>
                     {check.label}
                   </span>
                 </li>
@@ -498,7 +527,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
         <Panel
           title="History"
           question="Recorded events, newest first."
-          meta={`${movementTimeline(movement).length} events`}
+          meta={plural(movementTimeline(movement).length, "event")}
         >
           <ol className={styles.timeline}>
             {[...movementTimeline(movement)]
@@ -532,7 +561,7 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
             </div>
           </dl>
           <p className={styles.note}>
-            <button className={styles.button} type="button" onClick={() => setMessage(NOT_WIRED)}>
+            <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
               Open documents
             </button>
           </p>

@@ -31,6 +31,8 @@ import {
   ProposalHeader,
   Verdict,
   patientInitials,
+  plainRefusal,
+  plural,
   waited,
   type Attention,
 } from "@/components/ward-management/movements/proposal/movement-proposal-parts";
@@ -59,13 +61,14 @@ const REFUSAL_LABEL: Record<string, string> = {
 };
 
 function stateTone(state: JobState | undefined) {
-  return state === "Requested" ? "warn" : state === "Collected" ? "good" : "accent";
+  return state === "Requested" ? "warn" : "quiet";
 }
 
 /** Time since the step that put the job in its current state, so "waiting" always has a start. */
 function sinceStep(movement: Movement): number | undefined {
   const job = movement.transport;
-  return job?.collectedAt ?? job?.enRouteAt ?? job?.acceptedAt ?? movement.referredAt ?? movement.openedAt;
+  // No job records when it was requested, so a waiting request has no start to count from.
+  return job?.collectedAt ?? job?.enRouteAt ?? job?.acceptedAt;
 }
 
 /**
@@ -107,7 +110,9 @@ export function TransportHubProposal() {
       (text) => text.toLowerCase().includes(q),
     );
   });
-  const selected = rows.find((movement) => movement.id === selectedId) ?? rows[0];
+  // Once a job is chosen the sheet stays on it, even when a step moves it out of the filter, so
+  // the next click can never land on a different patient. A delivered job leaves the sheet empty.
+  const selected = selectedId ? jobs.find((movement) => movement.id === selectedId) : rows[0];
   const selectedState = selected ? jobState(selected) : undefined;
   const destination = selected ? units.find((unit) => unit.id === selected.acceptedUnitId) : undefined;
   const who = selected ? patientInitials(selected, world) : undefined;
@@ -147,6 +152,7 @@ export function TransportHubProposal() {
       dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: selected.id });
     else dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: selected.id });
     setConfirmDelivery(false);
+    setSelectedId(selected.id);
     setMessage(`${step.label} recorded for ${who}.`);
   };
 
@@ -175,7 +181,7 @@ export function TransportHubProposal() {
       ? [
           {
             label: `${transport.byState.Requested} waiting for a provider`,
-            tone: "danger" as const,
+            tone: "warn" as const,
             onClick: () => setFilter("Requested"),
           },
         ]
@@ -183,7 +189,7 @@ export function TransportHubProposal() {
     ...(transport.escort
       ? [
           {
-            label: `${transport.escort} need a clinical escort`,
+            label: `${plural(transport.escort, "job needs", "jobs need")} a clinical escort`,
             tone: "warn" as const,
             onClick: () => setFilter("escort"),
           },
@@ -192,14 +198,14 @@ export function TransportHubProposal() {
     ...(transport.noCad
       ? [
           {
-            label: `${transport.noCad} have no dispatch (CAD) number`,
+            label: `${plural(transport.noCad, "job has", "jobs have")} no dispatch (CAD) number`,
             tone: "info" as const,
             onClick: () => setFilter("noCad"),
           },
         ]
       : []),
     ...(officerRefusals.length
-      ? [{ label: `${officerRefusals.length} refused actions this session`, tone: "danger" as const }]
+      ? [{ label: `${plural(officerRefusals.length, "step")} not recorded this session`, tone: "warn" as const }]
       : []),
   ];
 
@@ -212,10 +218,10 @@ export function TransportHubProposal() {
         asAt={asAt}
         actions={
           <>
-            <button className={styles.button} type="button" onClick={() => setMessage(NOT_WIRED)}>
+            <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
               Dispatch comms
             </button>
-            <a className={styles.button} href={PROPOSAL_ROUTES.board}>
+            <a className={styles.textButton} href={PROPOSAL_ROUTES.board}>
               Movements
             </a>
           </>
@@ -223,16 +229,15 @@ export function TransportHubProposal() {
       />
 
       <Verdict attention={attention}>
-        <strong>{transport.jobs.length} transport jobs are open:</strong> {transport.byState.Requested} waiting for a
-        provider, {transport.byState.Accepted} accepted but not yet left, {transport.byState["En route"]} on the way to
-        collect and {transport.byState.Collected} with the patient on board.
+        <strong>{plural(transport.jobs.length, "transport job is", "transport jobs are")} open:</strong>{" "}
+        {transport.byState.Requested} waiting for a provider, {transport.byState.Accepted} accepted but not yet left,{" "}
+        {transport.byState["En route"]} on the way to collect and {transport.byState.Collected} with the patient on
+        board.
       </Verdict>
 
-      {message ? (
-        <p className={styles.toast} role="status">
-          {message}
-        </p>
-      ) : null}
+      <p className={message && !newRefusal ? styles.toast : styles.srOnly} role="status">
+        {newRefusal ? "" : message}
+      </p>
 
       <KpiStrip
         label="Transport job figures"
@@ -240,7 +245,7 @@ export function TransportHubProposal() {
           ...JOB_STATES.map((state) => ({
             label: JOB_STATE_LABEL[state].label,
             value: transport.byState[state],
-            tone: state === "Requested" && transport.byState[state] ? ("danger" as const) : undefined,
+            tone: state === "Requested" && transport.byState[state] ? ("warn" as const) : undefined,
             note: JOB_STATE_LABEL[state].meaning,
             ...toggle(state),
           })),
@@ -334,7 +339,7 @@ export function TransportHubProposal() {
                     const job = movement.transport;
                     const since = sinceStep(movement);
                     return (
-                      <tr key={movement.id} aria-selected={selected?.id === movement.id}>
+                      <tr key={movement.id}>
                         <td>
                           <span className={styles.rowName}>
                             <button
@@ -364,12 +369,14 @@ export function TransportHubProposal() {
                         </td>
                         <td>
                           {job?.escortRequired ? (
-                            <Pill tone="warn">Escort</Pill>
+                            <Pill tone="warn">Required</Pill>
                           ) : (
                             <span className={styles.rowSub}>None</span>
                           )}
                         </td>
-                        <td className={styles.num}>{since !== undefined ? waited(now - since) : "Not recorded"}</td>
+                        <td className={styles.num}>
+                          {since !== undefined ? waited(now - since) : "Start not recorded"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -396,7 +403,7 @@ export function TransportHubProposal() {
                       className={`${styles.jobStep} ${index < at ? styles.jobStepDone : index === at ? styles.jobStepNow : ""}`}
                       aria-current={index === at ? "step" : undefined}
                     >
-                      {state === "Collected" ? "On board" : state}
+                      {state === "Collected" ? "Patient on board" : state === "En route" ? "On the way" : state}
                     </li>
                   );
                 })}
@@ -461,7 +468,7 @@ export function TransportHubProposal() {
                       {confirmDelivery ? `Confirm delivered to ${destination?.name ?? "the ward"}` : step.label}
                     </button>{" "}
                     {confirmDelivery ? (
-                      <button className={styles.button} type="button" onClick={() => setConfirmDelivery(false)}>
+                      <button className={styles.textButton} type="button" onClick={() => setConfirmDelivery(false)}>
                         Cancel
                       </button>
                     ) : null}
@@ -474,18 +481,22 @@ export function TransportHubProposal() {
               ) : null}
               {newRefusal ? (
                 <p className={styles.refused} role="alert">
-                  Refused: {newRefusal.reason}
+                  Not recorded. {plainRefusal(newRefusal.reason)}
                 </p>
               ) : null}
               <p className={styles.note}>
-                <button className={styles.button} type="button" onClick={() => setMessage(NOT_WIRED)}>
+                <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
                   Check the form
                 </button>
               </p>
             </Panel>
           ) : (
             <Panel title="Job sheet">
-              <p className={styles.empty}>Select a job to see its details and next step.</p>
+              <p className={styles.empty}>
+                {selectedId && !selected
+                  ? "That job is delivered and has left the open list. Select the next job."
+                  : "Select a job to see its details and next step."}
+              </p>
             </Panel>
           )}
 
@@ -529,7 +540,7 @@ export function TransportHubProposal() {
                     <span>
                       {REFUSAL_LABEL[rejection.attempted]} for{" "}
                       {movement ? patientInitials(movement, world) : rejection.movementId}
-                      <span className={styles.checkSub}>{rejection.reason}</span>
+                      <span className={styles.checkSub}>{plainRefusal(rejection.reason)}</span>
                     </span>
                     <span className={styles.num}>{formatInstantWithDay(rejection.at, now)}</span>
                   </li>
@@ -579,7 +590,7 @@ export function TransportHubProposal() {
           {
             term: "In this state",
             meaning:
-              "Time since the step that put the job in its current state, or since the movement opened if no step is recorded.",
+              'Time since the step that put the job in its current state. A waiting request shows "Start not recorded" because no job records when it was requested.',
           },
           { term: "Delivered", meaning: "The officer's word for the arrival event. Other screens call it Arrived." },
         ]}

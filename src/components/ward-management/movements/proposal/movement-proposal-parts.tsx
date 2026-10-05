@@ -25,6 +25,22 @@ export function patientInitials(
   return info.patient ? info.initials : "Not recorded";
 }
 
+/** "1 job", "2 jobs": counts on these screens are live, so a fixed plural reads wrong at 1. */
+export function plural(count: number, one: string, many = `${one}s`) {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** The engine's refusal text names internal fields; show people a plain sentence instead. */
+export function plainRefusal(reason: string | undefined) {
+  if (!reason) return "The step was not recorded.";
+  if (/overrideReason/.test(reason)) return "Choose a reason from the list before going ahead anyway.";
+  if (/no movement found/i.test(reason)) return "This movement could not be found. It may have been closed.";
+  const text = reason
+    .replace(/\b[A-Z]+(?:_[A-Z]+)+\b/g, "this step")
+    .replace(/\b[a-z]+[A-Z]\w*\b/g, "a required field");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function waited(minutes: number) {
   return splitDuration(Math.max(0, minutes));
 }
@@ -111,16 +127,27 @@ export type Attention = {
   onClick?: () => void;
 };
 
+/**
+ * The answer line: one sentence, then what needs attention as one quiet line ("a · b · c").
+ * A dot carries meaning only for a real warning (amber) or an urgent item (red).
+ */
 export function Verdict({ children, attention = [] }: { children: ReactNode; attention?: Attention[] }) {
-  const toneClass = { danger: styles.attnDanger, warn: styles.attnWarn, good: styles.attnGood, info: styles.attnInfo };
+  const dotClass = { danger: styles.dotDanger, warn: styles.dotWarn, good: "", info: "" };
   return (
     <section className={styles.verdict} aria-label="Summary">
       <p className={styles.verdictText}>{children}</p>
       {attention.length ? (
         <ul className={styles.attention} aria-label="Needs attention">
           {attention.map((item) => (
-            <li key={item.label} className={`${styles.attn} ${toneClass[item.tone]}`}>
-              <span className={styles.attnDot} aria-hidden="true" />
+            <li key={item.label} className={styles.attn}>
+              {dotClass[item.tone] ? (
+                <span className={`${styles.dot} ${dotClass[item.tone]}`} aria-hidden="true" />
+              ) : null}
+              {item.tone === "danger" ? (
+                <span className={styles.srOnly}>Urgent: </span>
+              ) : item.tone === "warn" ? (
+                <span className={styles.srOnly}>Warning: </span>
+              ) : null}
               {item.href ? (
                 <a href={item.href}>{item.label}</a>
               ) : item.onClick ? (
@@ -217,6 +244,10 @@ export function Panel({
   );
 }
 
+/**
+ * A quiet status label: grey text, with a small dot only when the status means something
+ * (red urgent, amber warning, green done). No tinted chips.
+ */
 export function Pill({
   tone = "quiet",
   children,
@@ -224,14 +255,19 @@ export function Pill({
   tone?: "good" | "warn" | "danger" | "quiet" | "accent";
   children: ReactNode;
 }) {
-  const toneClass = {
-    good: styles.pillGood,
-    warn: styles.pillWarn,
-    danger: styles.pillDanger,
-    quiet: styles.pillQuiet,
-    accent: styles.pillAccent,
+  const dotClass = {
+    good: styles.dotGood,
+    warn: styles.dotWarn,
+    danger: styles.dotDanger,
+    quiet: "",
+    accent: styles.dotAccent,
   };
-  return <span className={`${styles.pill} ${toneClass[tone]}`}>{children}</span>;
+  return (
+    <span className={`${styles.pill} ${tone === "danger" || tone === "warn" ? styles.pillStrong : ""}`}>
+      {dotClass[tone] ? <span className={`${styles.dot} ${dotClass[tone]}`} aria-hidden="true" /> : null}
+      {children}
+    </span>
+  );
 }
 
 export function Segmented<T extends string>({

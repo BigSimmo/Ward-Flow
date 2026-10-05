@@ -69,7 +69,7 @@ export type JourneyStage = {
  * A movement with no `legalForm.dueAt` at all (every Form 1A and 3B in this model) has no legal
  * clock to be running out, so it never qualifies — absence is not urgency.
  */
-function isExpiringLegalAuthority(movement: Movement, now: Instant): boolean {
+export function isExpiringLegalAuthority(movement: Movement, now: Instant): boolean {
   const dueAt = movement.legalForm?.dueAt;
   if (dueAt === undefined) return false;
   const state = clockState(dueAt, now);
@@ -646,4 +646,3 @@ export function deriveMovementHorizonLanes(
     (a, b) => b.events.length - a.events.length || a.name.localeCompare(b.name),
   );
 }
-

@@ -13,7 +13,7 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 
-import { byLongestWait, waitedMinutes } from "../movements-derivations";
+import { byLongestWait, isExpiringLegalAuthority, waitedMinutes } from "../movements-derivations";
 import { JOB_STATES, JOB_STATE_LABEL, jobState, stageLongestWait } from "./movement-proposal-figures";
 import {
   Definitions,
@@ -25,6 +25,7 @@ import {
   Segmented,
   Verdict,
   patientInitials,
+  plural,
   waited,
   type Attention,
 } from "./movement-proposal-parts";
@@ -58,6 +59,7 @@ export function edShort(originEdId: string) {
 export function MovementsBoardProposal() {
   const { world, now, board, transport, asAt, scopeLabel, scoped } = useMovementProposal();
   const [focus, setFocus] = useState<Focus>("open");
+  const [showAllPlanned, setShowAllPlanned] = useState(false);
   const [stage, setStage] = useState<MovementStage | null>(null);
   const [order, setOrder] = useState<Order>("wait");
   const [query, setQuery] = useState("");
@@ -68,6 +70,7 @@ export function MovementsBoardProposal() {
   const readyNoTransport = board.open.filter(
     (movement) => READY_STAGES.includes(movement.stage) && !movement.transport,
   );
+  const noTransportAwaitingWard = board.noTransport.filter((movement) => board.awaitingWard.includes(movement)).length;
   const maxStage = Math.max(1, ...board.stages.map((entry) => entry.movements.length));
 
   const rows = useMemo(() => {
@@ -92,10 +95,12 @@ export function MovementsBoardProposal() {
           (unitName(movement.acceptedUnitId) ?? "").toLowerCase().includes(q)),
     );
     const byWait = byLongestWait(filtered, now);
-    if (order === "tier") return [...byWait].sort((a, b) => a.urgency - b.urgency);
+    const legalFirst = (a: Movement, b: Movement) =>
+      Number(isExpiringLegalAuthority(b, now)) - Number(isExpiringLegalAuthority(a, now));
+    if (order === "tier") return [...byWait].sort((a, b) => legalFirst(a, b) || a.urgency - b.urgency);
     if (order === "stage") {
       const stages = board.stages.map((entry) => entry.id);
-      return [...byWait].sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
+      return [...byWait].sort((a, b) => legalFirst(a, b) || stages.indexOf(a.stage) - stages.indexOf(b.stage));
     }
     return byWait;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- unitName reads world.units, already a dependency
@@ -170,7 +175,7 @@ export function MovementsBoardProposal() {
         asAt={asAt}
         actions={
           <>
-            <Link className={styles.button} href="/mockups/ward-flow/movements">
+            <Link className={styles.textButton} href="/mockups/ward-flow/movements">
               Movement timeline
             </Link>
             <a className={styles.buttonPrimary} href="/mockups/ward-flow/referrals/new">
@@ -181,10 +186,10 @@ export function MovementsBoardProposal() {
       />
 
       <Verdict attention={attention}>
-        <strong>{board.open.length} movements are open.</strong>{" "}
+        <strong>{plural(board.open.length, "movement is", "movements are")} open.</strong>{" "}
         {board.tierOne.length > 0 && longestTierOne ? (
           <>
-            {board.tierOne.length} are tier 1; the longest tier 1 wait is{" "}
+            {board.tierOne.length} {board.tierOne.length === 1 ? "is" : "are"} tier 1; the longest tier 1 wait is{" "}
             <strong>
               {patientInitials(longestTierOne, world)}, {waited(waitedMinutes(longestTierOne, now))}
             </strong>{" "}
@@ -193,7 +198,7 @@ export function MovementsBoardProposal() {
         ) : (
           "No tier 1 movement is open. "
         )}
-        {board.awaitingWard.length} are still waiting for a ward to accept.
+        {board.awaitingWard.length} {board.awaitingWard.length === 1 ? "is" : "are"} still waiting for a ward to accept.
       </Verdict>
 
       <KpiStrip
@@ -208,7 +213,7 @@ export function MovementsBoardProposal() {
           {
             label: "Tier 1 open",
             value: board.tierOne.length,
-            tone: board.tierOne.length ? "danger" : "good",
+            tone: board.tierOne.length ? "danger" : undefined,
             note: "Most urgent",
             ...focusKpi("tier1"),
           },
@@ -221,19 +226,18 @@ export function MovementsBoardProposal() {
           {
             label: "Ready, no transport",
             value: readyNoTransport.length,
-            tone: readyNoTransport.length ? "warn" : "good",
+            tone: readyNoTransport.length ? "warn" : undefined,
             note: "Bed pulled or handover ready",
             ...focusKpi("readyNoTransport"),
           },
           {
-            label: "Transport booked",
-            value: board.liveLegCount,
-            note: `${board.legsLive.Accepted} accepted · ${board.legsLive["En route"]} on the way · ${board.legsLive.Collected} on board`,
+            label: "Transport jobs",
+            value: transport.jobs.length,
+            note: `${transport.byState.Requested} requested · ${transport.byState.Accepted} accepted · ${transport.byState["En route"] + transport.byState.Collected} moving`,
           },
           {
             label: "Resolved today",
             value: board.closedToday.length,
-            tone: "good",
             note: `${board.arrivedToday.length} delivered by transport`,
             ...focusKpi("resolved"),
           },
@@ -275,7 +279,9 @@ export function MovementsBoardProposal() {
                   />
                 </span>
                 <span className={styles.pipeMeta}>
-                  {entry.movements.length ? `Longest ${waited(stageLongestWait(entry.movements, now))}` : "None here"}
+                  {entry.movements.length
+                    ? `Longest open ${waited(stageLongestWait(entry.movements, now))}`
+                    : "None here"}
                 </span>
               </button>
             </li>
@@ -327,9 +333,7 @@ export function MovementsBoardProposal() {
           </div>
           {shown.length === 0 ? (
             <div className={styles.panelBody}>
-              <p className={styles.empty}>
-                No movement matches this filter{query ? ` and the search "${query}"` : ""}.
-              </p>
+              <p className={styles.empty}>No movement matches this filter{query ? " and search" : ""}.</p>
             </div>
           ) : (
             <div className={styles.tableScroll} role="region" aria-label="Movement worklist table" tabIndex={0}>
@@ -365,7 +369,7 @@ export function MovementsBoardProposal() {
                         <td>
                           <span className={styles.route}>
                             <span>{edShort(movement.originEdId)}</span>
-                            <span className={styles.routeTo}>
+                            <span className={styles.routeTo} title={to ?? undefined}>
                               →{" "}
                               {to ??
                                 (movement.referredUnitIds.length
@@ -374,8 +378,16 @@ export function MovementsBoardProposal() {
                             </span>
                           </span>
                         </td>
-                        <td className={styles.barrier}>
-                          {meaningfulBlocker(movement) ?? (state ? JOB_STATE_LABEL[state].label : "Nothing recorded")}
+                        <td>
+                          <span className={styles.barrier}>
+                            {isExpiringLegalAuthority(movement, now) ? (
+                              <span className={styles.legalFlag}>
+                                <span className={`${styles.dot} ${styles.dotDanger}`} aria-hidden="true" />
+                                Legal authority running out ·{" "}
+                              </span>
+                            ) : null}
+                            {meaningfulBlocker(movement) ?? (state ? JOB_STATE_LABEL[state].label : "Nothing recorded")}
+                          </span>
                         </td>
                         <td className={styles.num}>{waited(waitedMinutes(movement, now))}</td>
                       </tr>
@@ -413,14 +425,15 @@ export function MovementsBoardProposal() {
               </li>
             </ul>
             <p className={styles.note}>
-              {board.noTransport.length} open movements have no transport job yet; most are still waiting for a ward.
+              {board.noTransport.length} open movements have no transport job yet; {noTransportAwaitingWard} of them are
+              still waiting for a ward.
             </p>
           </Panel>
 
           <Panel
             title="Busiest ED-to-ward routes"
             question="Open movements with an accepting ward."
-            meta={`${board.corridorPairs} routes`}
+            meta={`Top ${corridorRows.length} of ${board.corridorPairs}`}
           >
             {corridorRows.length === 0 ? (
               <p className={styles.empty}>No open movement has an accepting ward yet.</p>
@@ -438,16 +451,27 @@ export function MovementsBoardProposal() {
               </ul>
             )}
             <p className={styles.note}>
-              {board.declined.length} routes had a decline today. Declines are listed on each movement.
+              {plural(board.declined.length, "route")} had a decline today. Declines are listed on each movement.
             </p>
           </Panel>
 
-          <Panel title="Planned moves" question="Moves with a planned time recorded." meta={`${planned.length}`}>
+          <Panel
+            title="Planned moves"
+            question="Moves with a planned time recorded, soonest first."
+            meta={`${Math.min(planned.length, showAllPlanned ? planned.length : 6)} of ${planned.length}`}
+            foot={
+              planned.length > 6 ? (
+                <button className={styles.linkButton} type="button" onClick={() => setShowAllPlanned(!showAllPlanned)}>
+                  {showAllPlanned ? "Show fewer" : `Show all ${planned.length}`}
+                </button>
+              ) : undefined
+            }
+          >
             {planned.length === 0 ? (
               <p className={styles.empty}>No planned move time is recorded.</p>
             ) : (
               <ul className={styles.list}>
-                {planned.slice(0, 6).map((movement) => (
+                {(showAllPlanned ? planned : planned.slice(0, 6)).map((movement) => (
                   <li key={movement.id} className={styles.listRow}>
                     <span className={styles.rowName}>
                       <a href={PROPOSAL_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
@@ -477,8 +501,9 @@ export function MovementsBoardProposal() {
           },
           { term: "Tier", meaning: "The urgency recorded on the movement: tier 1 most urgent, tier 3 least urgent." },
           {
-            term: "Transport booked",
-            meaning: "Open transport jobs a provider has accepted, counted by the same rule as the Transport Hub.",
+            term: "Transport jobs",
+            meaning:
+              "Open transport jobs, requested or under way, counted by the same rule as the Transport Hub. Ready, no transport counts movements with no job at all.",
           },
           {
             term: "Scope",
