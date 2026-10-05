@@ -513,7 +513,6 @@ export function HandoverPage() {
   const snapshot = useMemo(() => handoverSnapshot(filteredMovements, units, now), [filteredMovements, units, now]);
   const scopeSnapshot = useMemo(() => handoverSnapshot(inScopeMovements, units, now), [inScopeMovements, units, now]);
   const networkSnapshot = useMemo(() => handoverSnapshot(movements, units, now), [movements, units, now]);
-  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const openBeforeShiftEnd = useMemo(() => openWorkBeforeShiftEnd(filteredMovements, now), [filteredMovements, now]);
 
   const includedOpenCount = snapshot.longestWaits.length;
