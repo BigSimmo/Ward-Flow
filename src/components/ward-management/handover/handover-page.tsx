@@ -1251,7 +1251,7 @@ export function HandoverPage() {
                     aria-label="Clinical Focus"
                     className={pageStyles.compactSelect}
                     value={focusFilter}
-                    onChange={(e) => setFocusFilter(e.target.value as any)}
+                    onChange={(e) => setFocusFilter(e.target.value as typeof focusFilter)}
                   >
                     <option value="all">All Records ({scopeIncludedCount})</option>
                     <option value="referrals">Current Referrals ({currentReferralsCount})</option>

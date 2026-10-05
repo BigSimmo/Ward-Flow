@@ -136,14 +136,6 @@ const APPEARANCE_CHOICES: readonly {
   { value: "auto", label: "Auto", description: "Follows system theme" },
 ];
 
-const DOMAIN_SNIPPETS: Record<SettingsDomainId, string> = {
-  "cat-appearance": "Theme mode & rail width",
-  "cat-thresholds": "Emergency dwell & due warnings",
-  "cat-allocation": "Hold timers & referral caps",
-  "cat-notifications": "Urgent buzz, roles & telemetry",
-  "cat-reset": "Handover sheets & baseline reset",
-};
-
 interface RolePermission {
   readonly role: string;
   readonly scope: string;
@@ -272,19 +264,21 @@ export function SettingsScreen() {
   const [genderMixProtection, setGenderMixProtection] = useState(true);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
-  // Real functional Accessibility & Ergonomic preferences
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
-  const [highContrast, setHighContrast] = useState<boolean>(false);
+  // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
+  // DOM attributes synced below without setState-in-effect).
+  const [reducedMotion, setReducedMotion] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-reduced-motion") === "true",
+  );
+  const [highContrast, setHighContrast] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-high-contrast") === "true",
+  );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const rm = window.localStorage.getItem("ward-flow-reduced-motion") === "true";
-    const hc = window.localStorage.getItem("ward-flow-high-contrast") === "true";
-    setReducedMotion(rm);
-    setHighContrast(hc);
-    if (rm) document.documentElement.setAttribute("data-reduced-motion", "true");
-    if (hc) document.documentElement.setAttribute("data-high-contrast", "true");
-  }, []);
+    if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
+    else document.documentElement.removeAttribute("data-reduced-motion");
+    if (highContrast) document.documentElement.setAttribute("data-high-contrast", "true");
+    else document.documentElement.removeAttribute("data-high-contrast");
+  }, [reducedMotion, highContrast]);
 
   const handleToggleReducedMotion = (enabled: boolean) => {
     setReducedMotion(enabled);
@@ -314,11 +308,9 @@ export function SettingsScreen() {
 
   // Operational Defaults Editability state (Image 4)
   const [isEditingDefaults, setIsEditingDefaults] = useState(false);
-  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    setCustomDefaults(loadCustomOperationalDefaults());
-  }, []);
+  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>(
+    () => loadCustomOperationalDefaults(),
+  );
 
   const handleDefaultChange = (name: string, value: string) => {
     setCustomDefaults((prev) => ({ ...prev, [name]: value }));

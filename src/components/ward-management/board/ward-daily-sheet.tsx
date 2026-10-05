@@ -12,7 +12,6 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import {
-  ARROW_HORIZON_DAYS,
   arrowTargets,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
@@ -370,7 +369,6 @@ export function WardDailySheet({
   shiftTimestamp,
   unit,
   onPrint,
-  onClose,
 }: WardDailySheetProps) {
   const currentNow = now ?? 0;
 
