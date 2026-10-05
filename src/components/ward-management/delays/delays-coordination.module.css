@@ -645,7 +645,7 @@
   border: 2px solid var(--surface);
   border-radius: 50%;
   background: var(--dc-blue);
-  color: white;
+  color: var(--ward-delays-surface);
   font: inherit;
   font-size: 15px;
   font-weight: 650;
