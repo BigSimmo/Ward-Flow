@@ -75,16 +75,6 @@ export function WardBedsMatrix({
 
   // Specific counts
   const readyCount = useMemo(() => bedsList.filter((b) => b.status === "ready").length, [bedsList]);
-  const occupiedCount = useMemo(
-    () => bedsList.filter((b) => b.patientAlias || b.status === "occupied").length,
-    [bedsList],
-  );
-  const leaveCount = useMemo(
-    () =>
-      bedsList.filter((b) => b.status === "leave" || (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined))
-        .length,
-    [bedsList],
-  );
   const lockedCount = useMemo(() => bedsList.filter((b) => b.podId === "locked").length, [bedsList]);
   const openCount = useMemo(() => bedsList.filter((b) => b.podId === "open").length, [bedsList]);
 
