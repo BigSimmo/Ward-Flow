@@ -840,11 +840,11 @@ Clinical Note: ${p.clinicalNote}`;
 
             {/* Embedded Dropdown 1: Location */}
             <div className={styles.glassEmbeddedSelectWrap}>
-              <label className="sr-only" htmlFor="cockpit-master-location">
+              <label className="sr-only" htmlFor="ward-patient-search-location">
                 Location: Setting &amp; Service
               </label>
               <select
-                id="cockpit-master-location"
+                id="ward-patient-search-location"
                 className={`${styles.glassEmbeddedSelect} ${locationValue !== "all" ? styles.isFiltered : ""}`}
                 value={locationValue}
                 onChange={(e) => handleLocationChange(e.target.value)}
@@ -887,11 +887,11 @@ Clinical Note: ${p.clinicalNote}`;
 
             {/* Embedded Dropdown 2: Status & Priority */}
             <div className={styles.glassEmbeddedSelectWrap}>
-              <label className="sr-only" htmlFor="cockpit-master-status">
+              <label className="sr-only" htmlFor="ward-patient-search-status">
                 Status: Legal, Acuity &amp; Wait
               </label>
               <select
-                id="cockpit-master-status"
+                id="ward-patient-search-status"
                 className={`${styles.glassEmbeddedSelect} ${statusValue !== "all" ? styles.isFiltered : ""}`}
                 value={statusValue}
                 onChange={(e) => handleStatusChange(e.target.value)}
