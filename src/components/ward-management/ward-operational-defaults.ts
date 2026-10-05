@@ -179,7 +179,10 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Shift pattern (every screen)", display: "07:00, 15:00 and 23:00" },
   { name: "Leave bed flagged to consider opening after", display: hoursText(LEAVE_BED_OPEN_WARNING_MINUTES) },
   { name: "Bed hold flagged for review after", display: hoursText(BED_HOLD_EXPIRY_MINUTES) },
-  { name: "Patient search wait bands", display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over` },
+  {
+    name: "Patient search wait bands",
+    display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over`,
+  },
   {
     name: "Expected arrival flagged after",
     display: `${hoursText(EXPECT_FLAG_VOLUNTARY_MINUTES)} (voluntary), 7 days (involuntary)`,
@@ -193,3 +196,44 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   },
   ...OPERATIONAL_DEFAULTS_FIX,
 ];
+
+export const OPERATIONAL_DEFAULTS_STORAGE_KEY = "ward-flow-operational-defaults";
+
+/**
+ * Reads any user-customized operational defaults saved in this browser's localStorage.
+ */
+export function loadCustomOperationalDefaults(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(OPERATIONAL_DEFAULTS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Saves user-customized operational defaults into this browser's localStorage.
+ */
+export function saveCustomOperationalDefaults(customDefaults: Record<string, string>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(OPERATIONAL_DEFAULTS_STORAGE_KEY, JSON.stringify(customDefaults));
+  } catch {
+    // Quota or private-mode storage failures leave the in-memory draft as the only copy; nothing to surface.
+  }
+}
+
+/**
+ * Clears custom operational defaults from localStorage, restoring standard defaults.
+ */
+export function clearCustomOperationalDefaults(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(OPERATIONAL_DEFAULTS_STORAGE_KEY);
+  } catch {
+    // Clearing is best-effort; a locked or unavailable store still leaves defaults restored in memory.
+  }
+}

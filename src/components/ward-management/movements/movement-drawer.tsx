@@ -10,7 +10,7 @@ import { isOpen, referralForMovement, stageCopy } from "@/components/ward-manage
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
 import {
@@ -136,6 +136,65 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function getStageIndex(stage: Movement["stage"]): number {
+  switch (stage) {
+    case "placement_requested":
+      return 0;
+    case "destination_review":
+      return 1;
+    case "accepted_awaiting_bed":
+      return 2;
+    case "pulled":
+      return 3;
+    case "handover_ready":
+      return 4;
+    case "moving":
+      return 5;
+    case "arrived":
+      return 6;
+  }
+}
+
+function getProgressPercent(stage: Movement["stage"]): string {
+  switch (stage) {
+    case "placement_requested":
+      return "15%";
+    case "destination_review":
+      return "30%";
+    case "accepted_awaiting_bed":
+      return "45%";
+    case "pulled":
+      return "60%";
+    case "handover_ready":
+      return "75%";
+    case "moving":
+      return "88%";
+    case "arrived":
+      return "100%";
+  }
+}
+
+function getWhereaboutsText(movement: Movement, originEdName: string, acceptedUnitName: string | undefined): string {
+  if (movement.stage === "moving") {
+    const provider = movement.transport?.provider ?? "Transport Service";
+    const escort = movement.transport?.escortRequired ? "Escort onboard." : "No escort required.";
+    return `En route on Highway transfer corridor via ${provider}. ${escort} Departed ${originEdName}.`;
+  }
+  if (movement.stage === "handover_ready") {
+    const transportStatus = movement.transport
+      ? `awaiting ${movement.transport.provider} collection.`
+      : "awaiting transport booking.";
+    return `Physically present in ${originEdName}. Clinical handover complete; ${transportStatus}`;
+  }
+  if (movement.stage === "arrived") {
+    return `Arrived and admitted to ${acceptedUnitName ?? "destination ward"}.`;
+  }
+  if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") {
+    return `At ${originEdName}. Bed allocated at ${acceptedUnitName ?? "destination ward"}; preparing transfer packet.`;
+  }
+  return `In ${originEdName} undergoing destination placement review. Awaiting receiving ward agreement.`;
+}
+
 export function MovementDrawer({
   movement,
   now,
@@ -188,8 +247,386 @@ export function MovementDrawer({
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
   const subjectPatient = resolveSubjectPatient(movement, { patients, referrals });
 
+  const sIndex = getStageIndex(movement.stage);
+  const originFullName = departmentLabel(movement.originEdId, originEd?.name);
+  const originShort = originEd?.name ?? movement.originEdId;
+  const isNoBlocker =
+    !movement.blocker ||
+    movement.blocker === "No blocker" ||
+    movement.blocker.startsWith("None —") ||
+    movement.blocker.startsWith("None -");
+  const blockerAlertClass = isNoBlocker ? styles.blockerAlertGood : styles.blockerAlert;
+
+  const intakeDone = sIndex >= 0;
+  const intakeTime = formatInstantWithDay(movement.openedAt, now);
+
+  const allocationDone = sIndex >= 2;
+  const allocationActive = sIndex === 1;
+  const allocationStatus = allocationDone ? "✓ Accepted" : allocationActive ? "● In Review" : "—";
+  const allocationTime = movement.acceptedAt
+    ? formatInstantWithDay(movement.acceptedAt, now)
+    : allocationActive
+      ? "In Review"
+      : "—";
+
+  const handoverDone = sIndex >= 4;
+  const handoverActive = sIndex === 3;
+  const handoverStatus = handoverDone ? "✓ Ready" : handoverActive ? "● Pulled" : "—";
+  const handoverTime = handoverDone ? "Handover Ready" : handoverActive ? "Bed Pulled" : "—";
+
+  const transportDone = sIndex >= 6;
+  const transportActive = sIndex === 5;
+  const transportBooked = sIndex === 4 && movement.transport !== undefined;
+  const transportStatus = transportActive ? "● Driving" : transportBooked ? "Booked" : transportDone ? "✓ Done" : "—";
+  const transportTime = movement.transport?.cadNumber ?? (movement.transport?.provider ? "Booked" : "—");
+
+  const admissionDone = sIndex >= 6;
+  const admissionStatus = admissionDone ? "✓ Arrived" : "Pending";
+  const admissionTime = accepted ? accepted.name : "Pending Bed";
+
   return (
     <Sheet open onClose={onClose} title={`${subjectPatient.formalName} — what is recorded`}>
+      {/* 🚀 Visual Hero: Spatial Horizon Corridor */}
+      <div className={styles.corridorCard}>
+        <div className={styles.corridorHeroHeader}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div className={styles.patientMonogram}>{subjectPatient.formalName.charAt(0)}</div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <strong style={{ fontSize: "1rem", color: "var(--ward-heading, var(--ink))" }}>
+                  {subjectPatient.formalName}
+                </strong>
+                {subjectPatient.umrn ? (
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono, monospace)",
+                      fontSize: "0.75rem",
+                      padding: "1px 5px",
+                      background: "var(--surface-2, #f1f5f9)",
+                      borderRadius: "4px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {subjectPatient.umrn}
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--ward-muted, #64748b)", marginTop: "2px" }}>
+                {movement.cohort} · {movement.sex} · {movement.security === "Secure" ? "Needs locked bed" : "Open ward"}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+            <span
+              className={styles.corridorTag}
+              style={{
+                background: movement.flaggedUrgent ? "var(--ward-danger-soft, #fee2e2)" : "var(--accent-soft, #eff6ff)",
+                color: movement.flaggedUrgent ? "var(--ward-danger, #dc2626)" : "var(--accent-ink, #1d4ed8)",
+                border: `1px solid ${movement.flaggedUrgent ? "var(--ward-danger-border, #fca5a5)" : "var(--accent-border, #bfdbfe)"}`,
+              }}
+            >
+              {movement.flaggedUrgent ? "● URGENT FLAG" : stageCopy[movement.stage].label}
+            </span>
+            <span style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)" }}>
+              Urgency {movement.urgency} of 3
+            </span>
+          </div>
+        </div>
+
+        {/* Dual Hub Spatial Corridor */}
+        <div className={styles.corridorGrid}>
+          {/* Origin Hub */}
+          <div className={styles.corridorHub}>
+            <div
+              style={{
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: "var(--ward-muted, #64748b)",
+              }}
+            >
+              Departure Origin
+            </div>
+            <div
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 800,
+                color: "var(--ward-heading, var(--ink))",
+                marginTop: "2px",
+              }}
+            >
+              {originShort}
+            </div>
+            <div
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--ward-muted, #64748b)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {originFullName}
+            </div>
+            <div
+              style={{
+                marginTop: "6px",
+                paddingTop: "4px",
+                borderTop: "1px solid var(--ward-divider, #e2e8f0)",
+                fontSize: "0.6875rem",
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span style={{ color: "var(--ward-muted, #64748b)" }}>Department:</span>
+              <strong style={{ color: "var(--ward-heading, var(--ink))" }}>Emergency</strong>
+            </div>
+          </div>
+
+          {/* Transit Vector / Highway */}
+          <div className={styles.corridorHighway}>
+            <span
+              style={{
+                background: "var(--accent-soft, #dbeafe)",
+                color: "var(--accent-ink, #1e40af)",
+                fontSize: "0.625rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                padding: "2px 8px",
+                borderRadius: "9999px",
+                marginBottom: "4px",
+              }}
+            >
+              {movement.transport?.provider ??
+                (movement.transportNeed?.needed === false ? "Walking Transfer" : "Transport Leg")}
+            </span>
+            <div className={styles.corridorTrack}>
+              <div className={styles.corridorFlowTrack} style={{ position: "absolute", inset: 0 }} />
+              <div className={styles.corridorProgress} style={{ width: getProgressPercent(movement.stage) }} />
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-mono, monospace)",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                color: "var(--ward-heading, var(--ink))",
+                marginTop: "4px",
+              }}
+            >
+              {movement.transport?.cadNumber ?? "—"}
+            </div>
+            <div style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)" }}>
+              {stageCopy[movement.stage].label}
+            </div>
+          </div>
+
+          {/* Destination Hub */}
+          <div className={accepted ? styles.corridorHubAccepted : styles.corridorHub}>
+            <div
+              style={{
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: accepted ? "var(--accent-ink, #1d4ed8)" : "var(--ward-muted, #64748b)",
+              }}
+            >
+              {accepted ? "Accepted Destination" : "Pending Acceptance"}
+            </div>
+            <div
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 800,
+                color: "var(--ward-heading, var(--ink))",
+                marginTop: "2px",
+              }}
+            >
+              {accepted ? accepted.name : "Awaiting Ward"}
+            </div>
+            <div
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--ward-muted, #64748b)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {accepted ? (siteByCode(accepted.siteCode)?.name ?? accepted.name) : "Statewide mental health bed pool"}
+            </div>
+            {accepted ? (
+              <div
+                style={{
+                  marginTop: "6px",
+                  paddingTop: "4px",
+                  borderTop: "1px solid var(--accent-border, #bfdbfe)",
+                  fontSize: "0.6875rem",
+                }}
+              >
+                <Link
+                  href={`/mockups/ward-flow/board/${accepted.id}`}
+                  className={styles.jumpToWardLink}
+                  title={`Open ${accepted.name} Bed Board`}
+                >
+                  Open on Ward Board →
+                </Link>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Where is Patient Right Now? Live Beacon Card */}
+        <div className={`${styles.beaconCard} ${styles.pulseBeacon}`}>
+          <div className={styles.beaconDot}>📍</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span
+                style={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  color: "var(--accent-ink, #1d4ed8)",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Where is {subjectPatient.formalName.split(",")[1]?.trim() || subjectPatient.formalName} right now?
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: "0.6875rem",
+                  color: "var(--ward-muted, #64748b)",
+                }}
+              >
+                Live Movement Status
+              </span>
+            </div>
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: "0.8125rem",
+                fontWeight: 600,
+                color: "var(--ward-heading, var(--ink))",
+                lineHeight: 1.4,
+              }}
+            >
+              {getWhereaboutsText(movement, originFullName, accepted?.name)}
+            </p>
+          </div>
+        </div>
+
+        {/* 5-Waypoint Journey Track Stepper */}
+        <div style={{ marginTop: "12px" }}>
+          <div
+            style={{
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              color: "var(--ward-muted, #64748b)",
+              marginBottom: "4px",
+            }}
+          >
+            5-Waypoint Movement Vector
+          </div>
+          <div className={styles.waypointStepper}>
+            <div className={`${styles.waypointItem} ${intakeDone ? styles.waypointDone : ""}`}>
+              <div style={{ fontWeight: 700 }}>1. INTAKE</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>✓ Opened</div>
+              <div style={{ color: "var(--ward-muted, #64748b)" }}>{intakeTime}</div>
+            </div>
+            <div
+              className={`${styles.waypointItem} ${allocationDone ? styles.waypointDone : allocationActive ? styles.waypointActive : ""}`}
+            >
+              <div style={{ fontWeight: 700 }}>2. ALLOCATE</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>{allocationStatus}</div>
+              <div style={{ color: "var(--ward-muted, #64748b)" }}>{allocationTime}</div>
+            </div>
+            <div
+              className={`${styles.waypointItem} ${handoverDone ? styles.waypointDone : handoverActive ? styles.waypointActive : ""}`}
+            >
+              <div style={{ fontWeight: 700 }}>3. HANDOVER</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>{handoverStatus}</div>
+              <div style={{ color: "var(--ward-muted, #64748b)" }}>{handoverTime}</div>
+            </div>
+            <div
+              className={`${styles.waypointItem} ${transportDone ? styles.waypointDone : transportActive ? styles.waypointActive : ""}`}
+            >
+              <div style={{ fontWeight: 700 }}>4. TRANSPORT</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>{transportStatus}</div>
+              <div style={{ color: "var(--ward-muted, #64748b)" }}>{transportTime}</div>
+            </div>
+            <div className={`${styles.waypointItem} ${admissionDone ? styles.waypointDone : ""}`}>
+              <div style={{ fontWeight: 700 }}>5. ADMISSION</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>{admissionStatus}</div>
+              <div style={{ color: "var(--ward-muted, #64748b)" }}>{admissionTime}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Blocker Alert & Dispatch Telemetry */}
+        <div className={styles.telemetryGrid}>
+          <div className={blockerAlertClass}>
+            <div
+              style={{
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: isNoBlocker ? "var(--ward-success, #15803d)" : "var(--ward-warning, #b45309)",
+                marginBottom: "2px",
+              }}
+            >
+              Active Movement Barrier
+            </div>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ward-heading, var(--ink))" }}>
+              {movement.blocker}
+            </div>
+            <div style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)", marginTop: "2px" }}>
+              {isNoBlocker ? "No clinical or dispatch impediment." : "Identified operational delay factor."}
+            </div>
+          </div>
+
+          <div className={styles.telemetryCard}>
+            <div
+              style={{
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: "var(--ward-muted, #64748b)",
+                marginBottom: "6px",
+              }}
+            >
+              Dispatch & Legal Telemetry
+            </div>
+            <div className={styles.telemetryRow}>
+              <span style={{ color: "var(--ward-muted, #64748b)" }}>Carrier:</span>
+              <strong style={{ color: "var(--ward-heading, var(--ink))" }}>
+                {movement.transport?.provider ?? "None booked"}
+              </strong>
+            </div>
+            <div className={styles.telemetryRow}>
+              <span style={{ color: "var(--ward-muted, #64748b)" }}>Escort:</span>
+              <strong
+                style={{
+                  color: movement.transport?.escortRequired
+                    ? "var(--ward-danger, #dc2626)"
+                    : "var(--ward-heading, var(--ink))",
+                }}
+              >
+                {movement.transport?.escortRequired ? "Escort Required" : "Not Required"}
+              </strong>
+            </div>
+            {movement.legalForm ? (
+              <div
+                className={styles.telemetryRow}
+                style={{ paddingTop: "4px", borderTop: "1px solid var(--ward-divider, #e2e8f0)", marginBottom: 0 }}
+              >
+                <span style={{ color: "var(--ward-muted, #64748b)" }}>Legal Authority:</span>
+                <strong style={{ color: "var(--accent-ink, #1d4ed8)" }}>{legalFormName(movement.legalForm)}</strong>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
       <Section title="Person">
         <p className={styles.drawerLine}>{personLine(movement, referrals, patients)}</p>
         <ul className={styles.drawerList}>

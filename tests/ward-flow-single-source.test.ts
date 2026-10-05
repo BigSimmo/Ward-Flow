@@ -88,6 +88,11 @@ const ADMISSION_SEED_ALLOWLIST = new Set([
   // `ward-board.tsx` above — verified by grep (`dispatch(`, `useWardFlow`, `useState`, `useReducer`
   // all absent) — and the companion assertion below still enforces it going forward.
   "src/components/ward-management/ward-movements.ts",
+  // Added for PR #66 unblock: `ward-daily-sheet.tsx` falls back to the admission seed when the
+  // board does not pass `people`/`destinations` props. Same read-only shape as `ward-board.tsx` —
+  // no `dispatch`, `useWardFlow`, or `useReducer` (verified by grep). The companion assertion
+  // below still refuses any seed reader that also dispatches.
+  "src/components/ward-management/board/ward-daily-sheet.tsx",
 ]);
 
 /**

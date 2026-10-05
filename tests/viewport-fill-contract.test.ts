@@ -132,15 +132,6 @@ const EXEMPTIONS: Exemption[] = [
     count: 1,
     reason: "mockup-only Ward Flow specimen, no production route imports it",
   },
-  {
-    // Ward Flow hub screen. `HubScreen` is imported only by `src/app/mockups/ward-flow/**`
-    // and tests -- no production route reaches it -- so this is design scratch whose stylesheet
-    // happens to sit outside a mockups path.
-    file: "src/components/ward-management/hub/hub.module.css",
-    match: "height: calc(100dvh - 5.375rem)",
-    count: 1,
-    reason: "mockup-only Ward Flow hub screen, no production route imports it",
-  },
 ];
 
 function walk(dir: string): string[] {

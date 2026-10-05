@@ -19,6 +19,8 @@ import panelStyles from "@/components/ward-management/ward-panel.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 
 import styles from "./community-index.module.css";
 
@@ -143,6 +145,14 @@ import styles from "./community-index.module.css";
  * render time, the same discipline the surrounding doc comment already holds this file to for the
  * team count itself.
  */
+export const COMMUNITY_SERVICE_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "NMHS", label: "North Metro (NMHS)" },
+  { value: "SMHS", label: "South Metro (SMHS)" },
+  { value: "EMHS", label: "East Metro (EMHS)" },
+  { value: "WACHS", label: "Country Health (WACHS)" },
+] as const;
+
 export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: readonly CommunityTeam[] }) {
   // Sorted here rather than trusted from upstream. `communityTeamOptions()` happens to return its
   // names sorted today, but this page is the surface making the alphabetical CLAIM — in its own
@@ -166,6 +176,46 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, []);
 
+  // Pre-map every community team name to its health service code ("NMHS" | "SMHS" | "EMHS" | "WACHS")
+  const teamServiceMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const team of allTeams) {
+      map.set(team.name, mapClinicToServiceAndHospital(team.name).code);
+    }
+    return map;
+  }, [allTeams]);
+
+  // Suburb aliases + service labels so typeahead matches the PR's promised fields, not only names.
+  const teamSearchHaystack = useMemo(() => {
+    const suburbByClinicKey = new Map<string, Set<string>>();
+    const clinicKey = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, " ")
+        .trim();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
+        const key = clinicKey(clinic);
+        if (!key) continue;
+        const set = suburbByClinicKey.get(key) ?? new Set<string>();
+        set.add(row.suburb);
+        suburbByClinicKey.set(key, set);
+      }
+    }
+    const map = new Map<string, string>();
+    for (const team of allTeams) {
+      const mapping = mapClinicToServiceAndHospital(team.name);
+      const suburbs = suburbByClinicKey.get(clinicKey(team.name));
+      map.set(
+        team.name,
+        [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
+          .join(" ")
+          .toLowerCase(),
+      );
+    }
+    return map;
+  }, [allTeams]);
+
   // The family panel is deliberately NOT scoped to the `teams` prop: it is the same derivation
   // regardless of which subset of pages a caller happens to be rendering (a test overriding `teams`
   // to `[]` still gets an honest, real family panel rather than an empty one that looks like a
@@ -173,9 +223,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const familyGroups = useMemo(() => communityNameCollisions(), []);
 
   const [query, setQuery] = useState("");
-  const [nameFilter, setNameFilter] = useState("all");
-  const alikeOnly = nameFilter === "alike";
-  const recentOnly = nameFilter === "recent";
+  const [serviceFilter, setServiceFilter] = useState("all");
 
   // `useSyncExternalStore` (via `createBrowserStore`, module scope below), not a `useState` fed
   // from an effect: an effect that calls `setState` in its own body — which is exactly what a
@@ -266,12 +314,14 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const filteredTeams = useMemo(
     () =>
       allTeams.filter((team) => {
-        if (alikeOnly && !collisionByName.has(team.name)) return false;
-        if (recentOnly && !recentNames.includes(team.name)) return false;
-        if (normalizedQuery && !team.name.toLowerCase().includes(normalizedQuery)) return false;
+        if (serviceFilter !== "all" && teamServiceMap.get(team.name) !== serviceFilter) return false;
+        if (normalizedQuery) {
+          const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
+          if (!haystack.includes(normalizedQuery)) return false;
+        }
         return true;
       }),
-    [allTeams, alikeOnly, recentOnly, recentNames, normalizedQuery, collisionByName],
+    [allTeams, serviceFilter, teamServiceMap, teamSearchHaystack, normalizedQuery],
   );
 
   const grouped = useMemo(() => {
@@ -284,14 +334,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     }
     return map;
   }, [filteredTeams]);
-
-  // Scoped to `allTeams`, not to the full real derivation: this is the count the "Names that read
-  // alike" CHIP shows, and the chip is a filter over `allTeams`, so its own count should describe
-  // what that filter will actually show rather than a figure from a different population.
-  const namesInCollisionsAmongAll = useMemo(
-    () => allTeams.filter((team) => collisionByName.has(team.name)).length,
-    [allTeams, collisionByName],
-  );
 
   return (
     <div className={styles.screen} data-testid="community-index">
@@ -411,66 +453,95 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               data-ward-primitive="panel"
             >
               <header className={styles.directoryHeader} data-ward-primitive="panel-header">
-                <h2 className={styles.directoryTitle}>A–Z directory</h2>
-                <div className={styles.searchRow}>
-                  <div className={styles.searchBox}>
-                    <label className={styles.searchField}>
-                      <Search aria-hidden="true" className={styles.searchIcon} />
-                      <input
-                        ref={searchInputRef}
-                        type="search"
-                        className={styles.searchInput}
-                        placeholder="Search team names"
-                        autoComplete="off"
-                        aria-label="Search team names"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Escape" && query) {
-                            event.stopPropagation();
+                <div className={styles.headerControlsLeft}>
+                  <h2 className={styles.directoryTitle}>A–Z directory</h2>
+                  <span className={styles.headerDivider} aria-hidden="true" />
+                  <div className={styles.searchRow}>
+                    <div className={styles.searchBox}>
+                      <label className={styles.searchField}>
+                        <Search aria-hidden="true" className={styles.searchIcon} />
+                        <input
+                          ref={searchInputRef}
+                          type="search"
+                          className={styles.searchInput}
+                          placeholder="Search team names"
+                          autoComplete="off"
+                          aria-label="Search team names"
+                          value={query}
+                          onChange={(event) => setQuery(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape" && query) {
+                              event.stopPropagation();
+                              setQuery("");
+                            }
+                          }}
+                        />
+                      </label>
+                      {query ? (
+                        <button
+                          type="button"
+                          className={styles.clearButton}
+                          aria-label="Clear search"
+                          onClick={() => {
                             setQuery("");
-                          }
-                        }}
-                      />
-                    </label>
-                    {query ? (
-                      <button
-                        type="button"
-                        className={styles.clearButton}
-                        aria-label="Clear search"
-                        onClick={() => {
-                          setQuery("");
-                          searchInputRef.current?.focus();
-                        }}
-                      >
-                        Clear
-                      </button>
-                    ) : null}
-                    <kbd className={styles.kbdHint} aria-hidden="true">
-                      /
-                    </kbd>
-                  </div>
+                            searchInputRef.current?.focus();
+                          }}
+                        >
+                          Clear
+                        </button>
+                      ) : null}
+                      <kbd className={styles.kbdHint} aria-hidden="true">
+                        /
+                      </kbd>
+                    </div>
 
-                  <div className={styles.nameFilter}>
-                    <select
-                      className={styles.filterSelect}
-                      aria-label="Filter team names"
-                      value={nameFilter}
-                      onChange={(event) => setNameFilter(event.target.value)}
-                    >
-                      <option value="all">All names ({allTeams.length})</option>
-                      <option value="recent">Recently opened ({recentNames.length})</option>
-                      <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
-                    </select>
-                    <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                    <div className={styles.nameFilter}>
+                      <select
+                        className={styles.filterSelect}
+                        aria-label="Filter team names"
+                        value={serviceFilter}
+                        onChange={(event) => setServiceFilter(event.target.value)}
+                      >
+                        {COMMUNITY_SERVICE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+                    </div>
                   </div>
                 </div>
 
-                <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-                  <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
-                  {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
-                  {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
-                </p>
+                <div className={styles.headerStatusRight}>
+                  <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
+                    {filteredTeams.length === allTeams.length ? (
+                      <>
+                        <strong>{filteredTeams.length}</strong> synthetic team results
+                      </>
+                    ) : (
+                      <>
+                        <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team results
+                      </>
+                    )}
+                  </p>
+
+                  {(query.trim() !== "" || serviceFilter !== "all") && (
+                    <button
+                      type="button"
+                      className={styles.resetButton}
+                      onClick={() => {
+                        setQuery("");
+                        setServiceFilter("all");
+                        searchInputRef.current?.focus();
+                      }}
+                      aria-label="Reset all search and filter parameters"
+                      title="Clear active search and filter"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </header>
               {allTeams.length === 0 ? (
                 /*
@@ -493,17 +564,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </p>
                 </div>
               ) : filteredTeams.length === 0 ? (
-                recentOnly ? (
-                  <div className={styles.emptyNotice}>
-                    <p>
-                      {normalizedQuery
-                        ? "No recently opened teams match this search."
-                        : "No teams opened yet. Open a team from All names to add it here."}
-                    </p>
-                  </div>
-                ) : (
-                  <SearchEmptyNotice alikeOnly={alikeOnly} query={query.trim()} />
-                )
+                <SearchEmptyNotice query={query.trim()} />
               ) : (
                 <div className={styles.letterGroups} role="region" aria-label="Community team directory" tabIndex={0}>
                   {[...grouped.keys()].sort().map((letter) => (
@@ -928,39 +989,26 @@ function FamilyCard({ family, onVisit }: { family: CommunityNameCollision; onVis
  * alike-only alone, and a plain query. Every variant states the absence in words and offers the
  * next step, never a bare blank.
  */
-function SearchEmptyNotice({ alikeOnly, query }: { alikeOnly: boolean; query: string }) {
-  if (alikeOnly && query) {
+function SearchEmptyNotice({ query }: { query: string }) {
+  if (query) {
     return (
       <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
         <p>
-          <strong>No name that reads like another contains &ldquo;{query}&rdquo;.</strong>
+          <strong>No team name contains &ldquo;{query}&rdquo;.</strong>
         </p>
         <p>
-          The list is filtered to entries whose name reads like another. A team matching &ldquo;{query}&rdquo; may well
-          be in the full list — clear the &ldquo;Names that read alike&rdquo; filter to see it.
+          The list holds names as they reach this page, so a team may be recorded under a spelling you would not expect.
+          Try a shorter fragment.
         </p>
-      </div>
-    );
-  }
-  if (alikeOnly) {
-    return (
-      <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
-        <p>
-          <strong>No name in this list reads like another.</strong>
-        </p>
-        <p>The spelling check found no near-duplicates at all, which would be a change worth noticing.</p>
       </div>
     );
   }
   return (
     <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
       <p>
-        <strong>No team name contains &ldquo;{query}&rdquo;.</strong>
+        <strong>No teams found matching active filters.</strong>
       </p>
-      <p>
-        The list holds names as they reach this page, so a team may be recorded under a spelling you would not expect.
-        Try a shorter fragment.
-      </p>
+      <p>Try resetting the filter to view all teams.</p>
     </div>
   );
 }

@@ -94,10 +94,6 @@ export function WardArrivalsCorridor({
       <div className={styles.panelHead}>
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Coming in</h2>
-          <p className={styles.subtitle}>
-            Inbound Transit Corridor &amp; Intake Gate &middot; Track transit progress, clinical safeguards, and bed
-            reservations.
-          </p>
         </div>
         <span className={styles.statusTag} data-type="mode" style={{ fontSize: "12px", padding: "4px 10px" }}>
           {accepted.length} Inbound En Route

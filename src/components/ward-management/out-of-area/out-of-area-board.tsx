@@ -564,12 +564,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 <div className={pageStyles.searchBox}>
                   <svg
                     className={pageStyles.searchIcon}
-                    width="14"
-                    height="14"
+                    width="15"
+                    height="15"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
@@ -593,7 +593,20 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       className={pageStyles.searchClearBtn}
                       aria-label="Clear search"
                     >
-                      &times;
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
                   )}
                 </div>

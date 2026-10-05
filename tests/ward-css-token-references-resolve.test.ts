@@ -393,16 +393,16 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
          */
         "--ease",
         /*
-         * Recorded 2026-09-25 (test fixer): nine names that 22–25 September stylesheets read with a
+         * Recorded 2026-09-25 (test fixer): names that 22–25 September stylesheets read with a
          * fallback and that no layer declares. Each renders its fallback today, and the latest
          * folded app is the design reference, so declaring them would change what shows. Pinned,
          * not declared; declaring any of them is a design decision.
+         * 2026-10-05: `--accent-hover` and `--surface-hover` left this list when PR #66 declared
+         * them on the shell token layer (aliases of `--accent-press` / `--surface-2`).
          */
-        "--accent-hover",
         "--danger-line",
         "--r3",
         "--radius-card",
-        "--surface-hover",
         "--svc-east-soft",
         "--svc-north-soft",
         "--svc-south-soft",

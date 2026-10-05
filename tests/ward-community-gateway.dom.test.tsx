@@ -32,6 +32,8 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
 
 /**
  * THE COMMUNITY GATEWAY (redesign v1) — guarded on the CLAIM and the CLINICAL PROPERTY, never on
@@ -185,12 +187,32 @@ describe("Community gateway — an unmarked name is stated, in words, as no guar
 });
 
 describe("Community gateway — live search narrows to exactly the matching set", () => {
-  it("shows exactly the teams whose name contains the typed text, live, with a truthful visible count", () => {
+  it("shows exactly the teams matching name, service, or catchment suburb text, live, with a truthful visible count", () => {
     renderGateway();
     const sampleWord = COMMUNITY_TEAM_PAGES[0].name.split(" ")[0].toLowerCase();
-    const expectedNames = COMMUNITY_TEAM_PAGES.filter((team) => team.name.toLowerCase().includes(sampleWord)).map(
-      (team) => team.name,
-    );
+    const clinicKey = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, " ")
+        .trim();
+    const suburbByClinicKey = new Map<string, Set<string>>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
+        const key = clinicKey(clinic);
+        if (!key) continue;
+        const set = suburbByClinicKey.get(key) ?? new Set<string>();
+        set.add(row.suburb);
+        suburbByClinicKey.set(key, set);
+      }
+    }
+    const expectedNames = COMMUNITY_TEAM_PAGES.filter((team) => {
+      const mapping = mapClinicToServiceAndHospital(team.name);
+      const suburbs = suburbByClinicKey.get(clinicKey(team.name));
+      const haystack = [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(sampleWord);
+    }).map((team) => team.name);
     expect(expectedNames.length, "the sampled search term matches nothing — this test proves nothing").toBeGreaterThan(
       0,
     );
@@ -205,19 +227,15 @@ describe("Community gateway — live search narrows to exactly the matching set"
     expect(resultLine.textContent ?? "").toContain(String(expectedNames.length));
   });
 
-  it("narrows further to only colliding names when the reads-alike filter is also on", () => {
+  it("narrows further to teams in the selected health service", () => {
     renderGateway();
-    fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "alike" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "EMHS" } });
 
-    const collisions = collisionByName();
     const anchors = screen.getAllByTestId("community-index-link");
-    expect(
-      anchors.length,
-      "the reads-alike filter left nothing visible — the floor test says some team must collide",
-    ).toBeGreaterThan(0);
+    expect(anchors.length).toBe(16);
     for (const anchor of anchors) {
       const name = (anchor.textContent ?? "").trim();
-      expect(collisions.has(name), `"${name}" is shown under the reads-alike filter but does not collide`).toBe(true);
+      expect(mapClinicToServiceAndHospital(name).code).toBe("EMHS");
     }
   });
 });
@@ -404,22 +422,53 @@ describe("Community gateway — a way in, not a caseload: no row carries anythin
   });
 });
 
-describe("Community gateway — recently opened filter", () => {
-  it("shows only visited source teams and combines with search", () => {
+describe("Community gateway — recently opened strip", () => {
+  it("shows visited source teams in recently opened strip", () => {
     const team = COMMUNITY_TEAM_PAGES[0]!;
     window.localStorage.setItem("ward-community-gateway-recent", JSON.stringify([team.name, "Not a source team"]));
     try {
       renderGateway();
-      fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "recent" } });
-      expect(screen.getAllByTestId("community-index-link")).toHaveLength(1);
-      expect(screen.getByTestId("community-index-link")).toHaveTextContent(team.name);
-      fireEvent.change(screen.getByRole("searchbox", { name: "Search team names" }), {
-        target: { value: "zzzz-no-match" },
-      });
-      expect(screen.queryAllByTestId("community-index-link")).toHaveLength(0);
-      expect(screen.getByText("No recently opened teams match this search.")).toBeInTheDocument();
+      const recentLinks = screen.getAllByTestId("community-gateway-recent-link");
+      expect(recentLinks).toHaveLength(1);
+      expect(recentLinks[0]).toHaveTextContent(team.name);
     } finally {
       window.localStorage.removeItem("ward-community-gateway-recent");
     }
+  });
+});
+
+describe("Community gateway — directory header layout and service filtering", () => {
+  it("filters by health service and updates results count", () => {
+    renderGateway();
+    const resultLine = screen.getByTestId("community-gateway-result-line");
+    expect(resultLine).toHaveTextContent("64 synthetic team results");
+
+    const combobox = screen.getByRole("combobox", { name: "Filter team names" });
+    fireEvent.change(combobox, { target: { value: "NMHS" } });
+
+    expect(resultLine).toHaveTextContent("6 of 64 synthetic team results");
+    expect(screen.getAllByTestId("community-index-link")).toHaveLength(6);
+
+    const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
+    expect(resetBtn).toBeInTheDocument();
+
+    fireEvent.click(resetBtn);
+    expect(combobox).toHaveValue("all");
+    expect(resultLine).toHaveTextContent("64 synthetic team results");
+  });
+
+  it("shows the reset button when search or filter is active, and resets on click", () => {
+    renderGateway();
+    expect(screen.queryByRole("button", { name: /reset all search and filter/i })).toBeNull();
+
+    const searchInput = screen.getByRole("searchbox", { name: "Search team names" });
+    fireEvent.change(searchInput, { target: { value: "test" } });
+
+    const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
+    expect(resetBtn).toBeInTheDocument();
+
+    fireEvent.click(resetBtn);
+    expect(searchInput).toHaveValue("");
+    expect(screen.queryByRole("button", { name: /reset all search and filter/i })).toBeNull();
   });
 });

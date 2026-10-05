@@ -44,6 +44,9 @@ import {
   DUE_SOON_URGENT_RANGE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
   OPERATIONAL_DEFAULTS,
+  loadCustomOperationalDefaults,
+  saveCustomOperationalDefaults,
+  clearCustomOperationalDefaults,
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { publishedThresholds, type ThresholdState } from "./settings-thresholds";
@@ -132,14 +135,6 @@ const APPEARANCE_CHOICES: readonly {
   { value: "dark", label: "Dark", description: "Low-glare night shift" },
   { value: "auto", label: "Auto", description: "Follows system theme" },
 ];
-
-const DOMAIN_SNIPPETS: Record<SettingsDomainId, string> = {
-  "cat-appearance": "Theme mode & rail width",
-  "cat-thresholds": "Emergency dwell & due warnings",
-  "cat-allocation": "Hold timers & referral caps",
-  "cat-notifications": "Urgent buzz, roles & telemetry",
-  "cat-reset": "Handover sheets & baseline reset",
-};
 
 interface RolePermission {
   readonly role: string;
@@ -268,6 +263,79 @@ export function SettingsScreen() {
   const [statutoryExpiryAlerts, setStatutoryExpiryAlerts] = useState(true);
   const [genderMixProtection, setGenderMixProtection] = useState(true);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
+
+  // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
+  // DOM attributes synced below without setState-in-effect).
+  const [reducedMotion, setReducedMotion] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-reduced-motion") === "true",
+  );
+  const [highContrast, setHighContrast] = useState<boolean>(
+    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-high-contrast") === "true",
+  );
+
+  useEffect(() => {
+    if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
+    else document.documentElement.removeAttribute("data-reduced-motion");
+    if (highContrast) document.documentElement.setAttribute("data-high-contrast", "true");
+    else document.documentElement.removeAttribute("data-high-contrast");
+  }, [reducedMotion, highContrast]);
+
+  const handleToggleReducedMotion = (enabled: boolean) => {
+    setReducedMotion(enabled);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("ward-flow-reduced-motion", enabled ? "true" : "false");
+      if (enabled) {
+        document.documentElement.setAttribute("data-reduced-motion", "true");
+      } else {
+        document.documentElement.removeAttribute("data-reduced-motion");
+      }
+    }
+    showToast(`Reduced motion ${enabled ? "enabled" : "disabled"}.`);
+  };
+
+  const handleToggleHighContrast = (enabled: boolean) => {
+    setHighContrast(enabled);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("ward-flow-high-contrast", enabled ? "true" : "false");
+      if (enabled) {
+        document.documentElement.setAttribute("data-high-contrast", "true");
+      } else {
+        document.documentElement.removeAttribute("data-high-contrast");
+      }
+    }
+    showToast(`High contrast mode ${enabled ? "enabled" : "disabled"}.`);
+  };
+
+  // Operational Defaults Editability state (Image 4)
+  const [isEditingDefaults, setIsEditingDefaults] = useState(false);
+  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>(() => loadCustomOperationalDefaults());
+
+  const handleDefaultChange = (name: string, value: string) => {
+    setCustomDefaults((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveCustomDefaults = () => {
+    saveCustomOperationalDefaults(customDefaults);
+    setIsEditingDefaults(false);
+    showToast("Operational defaults saved for this browser.");
+  };
+
+  const handleResetSingleDefault = (name: string) => {
+    setCustomDefaults((prev) => {
+      const copy = { ...prev };
+      delete copy[name];
+      saveCustomOperationalDefaults(copy);
+      return copy;
+    });
+    showToast(`Restored default for "${name}".`);
+  };
+
+  const handleResetAllDefaults = () => {
+    clearCustomOperationalDefaults();
+    setCustomDefaults({});
+    setIsEditingDefaults(false);
+    showToast("All operational defaults restored to standard baseline.");
+  };
 
   // Audio & Visual Urgent Buzz Alerts state (browser-store backed, SSR-safe)
   const [audioBuzzAlerts, setAudioBuzzAlerts] = useAudioBuzzPreference();
@@ -685,15 +753,12 @@ export function SettingsScreen() {
                 <div className={styles.profileNameRow}>
                   <h2 className={styles.profileName}>Dr S. Chen</h2>
                   <span className={styles.profileCreds}>(MBBS, FRANZCP)</span>
-                  <span className={styles.profileBadgePrimary}>Consultant</span>
-                  <span className={styles.profileBadgeSecondary}>Perth Central Desk</span>
+                  <span className={styles.profileBadgePrimary}>Duty Coordinator</span>
                 </div>
                 <p className={styles.profileSub}>
-                  <span>Duty Coordinator</span>
+                  <span>Perth Central Desk</span>
                   <span className={styles.profileDotSep}>·</span>
-                  <span>Day Shift 08:00–16:30 AWST</span>
-                  <span className={styles.profileDotSep}>·</span>
-                  <span className={styles.profileLiveStatus}>Active Session</span>
+                  <span className={styles.profileLiveStatus}>On Duty</span>
                 </p>
               </div>
             </div>
@@ -796,11 +861,11 @@ export function SettingsScreen() {
             <div className={styles.telemetryLeftGroup}>
               <div className={styles.telemetryTag}>
                 <Activity size={12} className={styles.telemetryPulseIcon} aria-hidden="true" />
-                <span>Live Telemetry</span>
+                <span>Telemetry</span>
               </div>
               <div className={styles.telemetryValuesRow}>
                 <span>
-                  ED Dwell: <b>{draft.edAccessTargetMinutes / 60}h</b>
+                  ED: <b>{draft.edAccessTargetMinutes / 60}h</b>
                 </span>
                 <span aria-hidden="true">·</span>
                 <span>
@@ -1049,14 +1114,13 @@ export function SettingsScreen() {
                   onClick={() => handleDomainClick("all")}
                 >
                   <div className={styles.catIconBox} aria-hidden="true">
-                    <Sliders size={15} className={styles.catIcon} aria-hidden="true" />
+                    <Sliders size={14} className={styles.catIcon} aria-hidden="true" />
                   </div>
                   <div className={styles.catItemContent}>
                     <div className={styles.catTitleRow}>
-                      <span className={styles.catTitle}>All Levers</span>
+                      <span className={styles.catTitle}>All Settings</span>
                       <span className={styles.catCount}>{totalMatches}</span>
                     </div>
-                    <span className={styles.catSnippet}>All configuration levers &amp; rules</span>
                   </div>
                 </button>
 
@@ -1078,7 +1142,6 @@ export function SettingsScreen() {
                           <span className={styles.catTitle}>{domain.navLabel}</span>
                           <span className={styles.catCount}>{count}</span>
                         </div>
-                        <span className={styles.catSnippet}>{DOMAIN_SNIPPETS[domain.id]}</span>
                       </div>
                     </button>
                   );
@@ -1090,11 +1153,10 @@ export function SettingsScreen() {
             <div className={styles.contentPane}>
               {totalMatches === 0 ? (
                 <div className={styles.emptySearchState} role="status">
-                  <Search className={styles.emptySearchIcon} size={40} aria-hidden="true" />
-                  <h3 className={styles.emptySearchTitle}>No matching settings found</h3>
+                  <Search className={styles.emptySearchIcon} size={36} aria-hidden="true" />
+                  <h3 className={styles.emptySearchTitle}>No matching settings</h3>
                   <p className={styles.emptySearchText}>
-                    No configuration parameter matches &quot;{searchQuery}&quot;. Try searching for keywords such as
-                    &quot;threshold&quot;, &quot;hold&quot;, &quot;rail&quot;, or &quot;appearance&quot;.
+                    No configuration parameter matches &quot;{searchQuery}&quot;.
                   </p>
                   <button type="button" className={styles.btnSecondary} onClick={() => setSearchQuery("")}>
                     Clear Filter
@@ -1107,29 +1169,35 @@ export function SettingsScreen() {
                     <section id="cat-appearance" className={styles.settingsSection} aria-labelledby="appearance-title">
                       <header className={styles.sectionHeader}>
                         <div>
-                          <span className={styles.secEyebrow}>Domain 1 · Presentation</span>
                           <h2 id="appearance-title" className={styles.secTitle}>
                             Appearance &amp; Theme
                           </h2>
-                          <p className={styles.secDesc}>
-                            Console display presentation, daylight and dark contrast modes, and navigation rail density.
-                          </p>
                         </div>
-                        <span className={styles.rowTag}>2 Controls</span>
                       </header>
 
-                      <div className={styles.preferenceGrid}>
+                      <div className={styles.rowsContainer}>
                         {isRowVisible("setting-appearance-theme") && (
-                          <WardPanel title="Appearance" testId="ward-settings-appearance">
-                            <div className={styles.preferenceBody}>
-                              <div className={styles.shrunkThemeControl} role="group" aria-label="Appearance">
+                          <div className={styles.settingRow} data-testid="ward-settings-appearance">
+                            <div className={styles.rowMeta}>
+                              <span className={styles.rowTitle}>Theme</span>
+                              <span className={styles.rowDesc}>Light, Dark, or System mode.</span>
+                              <div className={styles.rowSubtext}>
+                                <span>Current:</span>
+                                <strong data-testid="ward-settings-appearance-now">
+                                  {APPEARANCE_CHOICES.find((choice) => choice.value === appearance)?.label ??
+                                    appearance}
+                                </strong>
+                              </div>
+                            </div>
+                            <div className={styles.rowControl}>
+                              <div className={styles.segmentedTrack} role="group" aria-label="Appearance">
                                 {APPEARANCE_CHOICES.map((choice) => {
                                   const isSelected = appearance === choice.value;
                                   return (
                                     <button
                                       key={choice.value}
                                       type="button"
-                                      className={`${styles.shrunkThemeBtn} ${isSelected ? styles.shrunkThemeBtnActive : ""}`}
+                                      className={`${styles.segmentedBtn} ${isSelected ? styles.segmentedBtnActive : ""}`}
                                       aria-pressed={isSelected}
                                       aria-label={choice.label}
                                       data-testid={`ward-settings-appearance-${choice.value}`}
@@ -1139,37 +1207,32 @@ export function SettingsScreen() {
                                       }}
                                     >
                                       {choice.value === "light" ? (
-                                        <Sun size={13} aria-hidden="true" />
+                                        <Sun size={12} aria-hidden="true" />
                                       ) : choice.value === "dark" ? (
-                                        <Moon size={13} aria-hidden="true" />
+                                        <Moon size={12} aria-hidden="true" />
                                       ) : (
-                                        <Monitor size={13} aria-hidden="true" />
+                                        <Monitor size={12} aria-hidden="true" />
                                       )}
                                       <span>{choice.label}</span>
                                     </button>
                                   );
                                 })}
                               </div>
-
-                              <div className={styles.preferenceStatus}>
-                                <span>Current</span>
-                                <strong data-testid="ward-settings-appearance-now">
-                                  {APPEARANCE_CHOICES.find((choice) => choice.value === appearance)?.label ??
-                                    appearance}
-                                </strong>
-                              </div>
-                              <p className={styles.note}>Auto follows this device.</p>
                             </div>
-                          </WardPanel>
+                          </div>
                         )}
 
                         {isRowVisible("setting-rail-density") && (
-                          <WardPanel title="Navigation rail" testId="ward-settings-rail">
-                            <div className={styles.preferenceBody}>
-                              <div className={styles.preferenceStatus}>
-                                <span>Current</span>
+                          <div className={styles.settingRow} data-testid="ward-settings-rail">
+                            <div className={styles.rowMeta}>
+                              <span className={styles.rowTitle}>Sidebar Rail</span>
+                              <span className={styles.rowDesc}>Full sidebar or compact icons.</span>
+                              <div className={styles.rowSubtext}>
+                                <span>Current:</span>
                                 <strong data-testid="ward-settings-rail-now">{railOpen ? "Open" : "Closed"}</strong>
                               </div>
+                            </div>
+                            <div className={styles.rowControl}>
                               <button
                                 type="button"
                                 className={`${styles.choice} ${styles.railChoice} ${styles.railToggleBtn}`}
@@ -1182,44 +1245,64 @@ export function SettingsScreen() {
                               >
                                 {railOpen ? "Close the rail" : "Open the rail"}
                               </button>
-                              <p className={styles.note}>Remembered for this browser.</p>
                             </div>
-                          </WardPanel>
+                          </div>
                         )}
-                      </div>
 
-                      {/* High Contrast & Motion Indicators */}
-                      <div className={styles.accessibilityBadgesGrid}>
-                        <div className={styles.a11yCard}>
-                          <div className={styles.a11yCardHeader}>
-                            <span className={styles.a11yTitle}>Text contrast target</span>
-                            <span className={styles.badge} data-tone="good">
-                              4.5:1
-                            </span>
+                        {/* Functional Ergonomic & Accessibility Toggles (Replacing Vanity Badges) */}
+                        <div className={styles.settingRow}>
+                          <div className={styles.rowMeta}>
+                            <span className={styles.rowTitle}>Reduce Motion</span>
+                            <span className={styles.rowDesc}>Disable interface animations.</span>
                           </div>
-                          <p className={styles.a11yDesc}>Normal text in light and dark themes.</p>
+                          <div className={styles.rowControl}>
+                            <label className={styles.switchToggle}>
+                              <input
+                                type="checkbox"
+                                checked={reducedMotion}
+                                onChange={(e) => handleToggleReducedMotion(e.target.checked)}
+                                aria-label="Reduce Motion"
+                              />
+                              <span className={styles.switchSlider} />
+                            </label>
+                          </div>
                         </div>
-                        <div className={styles.a11yCard}>
-                          <div className={styles.a11yCardHeader}>
-                            <span className={styles.a11yTitle}>Forced Colors</span>
-                            <span className={styles.badge} data-tone="good">
-                              Supported
-                            </span>
+
+                        <div className={styles.settingRow}>
+                          <div className={styles.rowMeta}>
+                            <span className={styles.rowTitle}>High Contrast Mode</span>
+                            <span className={styles.rowDesc}>Enhanced border and text contrast.</span>
                           </div>
-                          <p className={styles.a11yDesc}>
-                            Adheres to Windows High Contrast mode and system forced-color palettes automatically.
-                          </p>
+                          <div className={styles.rowControl}>
+                            <label className={styles.switchToggle}>
+                              <input
+                                type="checkbox"
+                                checked={highContrast}
+                                onChange={(e) => handleToggleHighContrast(e.target.checked)}
+                                aria-label="High Contrast Mode"
+                              />
+                              <span className={styles.switchSlider} />
+                            </label>
+                          </div>
                         </div>
-                        <div className={styles.a11yCard}>
-                          <div className={styles.a11yCardHeader}>
-                            <span className={styles.a11yTitle}>Reduced Motion</span>
-                            <span className={styles.badge} data-tone="good">
-                              Respected
-                            </span>
+
+                        <div className={styles.settingRow}>
+                          <div className={styles.rowMeta}>
+                            <span className={styles.rowTitle}>Tabular Figures</span>
+                            <span className={styles.rowDesc}>Fixed-width numerals for timers.</span>
                           </div>
-                          <p className={styles.a11yDesc}>
-                            Transitions and layout animations disable instantly when prefers-reduced-motion is active.
-                          </p>
+                          <div className={styles.rowControl}>
+                            <label className={styles.switchToggle}>
+                              <input
+                                type="checkbox"
+                                checked
+                                disabled
+                                title="Mandatory design system invariant"
+                                aria-label="Monospace Tabular Figure Alignment"
+                              />
+                              <span className={styles.switchSlider} />
+                            </label>
+                          </div>
                         </div>
                       </div>
                     </section>
@@ -1240,16 +1323,10 @@ export function SettingsScreen() {
                     <section id="cat-thresholds" className={styles.settingsSection} aria-labelledby="thresholds-title">
                       <header className={styles.sectionHeader}>
                         <div>
-                          <span className={styles.secEyebrow}>Domain 2 · Operational Limits</span>
                           <h2 id="thresholds-title" className={styles.secTitle}>
-                            Clinical Escalation &amp; Operational Thresholds
+                            Operational Thresholds
                           </h2>
-                          <p className={styles.secDesc}>
-                            Emergency department dwell targets, warning windows, medical clearance buffers, and
-                            published operational safeguards.
-                          </p>
                         </div>
-                        <span className={styles.rowTag}>Operational Safeguards</span>
                       </header>
 
                       {/* Surge Mode Banner */}
@@ -1257,21 +1334,19 @@ export function SettingsScreen() {
                         <div className={styles.surgeBannerHeader}>
                           <div className={styles.surgeBannerTitleGroup}>
                             <div className={styles.surgeBannerTitleRow}>
-                              <span className={styles.surgeBannerTitle}>Surge Mode &amp; Escalation Capacity</span>
+                              <span className={styles.surgeBannerTitle}>Surge Mode</span>
                               {isSurge ? (
                                 <span className={styles.statusPillSurge}>
-                                  <span className={styles.statusDotSurge} /> SURGE ACTIVE IN DRAFT
+                                  <span className={styles.statusDotSurge} /> ACTIVE IN DRAFT
                                 </span>
                               ) : (
                                 <span className={styles.statusPillStandard}>
-                                  <span className={styles.statusDotStandard} /> STANDARD BASELINE
+                                  <span className={styles.statusDotStandard} /> STANDARD
                                 </span>
                               )}
                             </div>
                             <p className={styles.surgeBannerDesc}>
-                              Rapidly switches operational parameters between standard baseline thresholds and emergency
-                              surge capacity. Toggling modifies draft levers below; changes only take effect upon
-                              saving.
+                              Accelerates flow across ED targets, referral caps, and hold windows.
                             </p>
                           </div>
                           <button
@@ -1280,13 +1355,13 @@ export function SettingsScreen() {
                             aria-label={isSurge ? "Restore standard preset" : "Apply emergency surge preset"}
                             onClick={handleToggleSurge}
                           >
-                            {isSurge ? "Reset Draft to Standard Baseline" : "Apply Emergency Surge Preset"}
+                            {isSurge ? "Restore Standard" : "Apply Surge Preset"}
                           </button>
                         </div>
 
                         <div className={styles.surgeDiffGrid}>
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>ED Access Target</span>
+                            <span className={styles.surgeDiffLabel}>ED Target</span>
                             <div className={styles.surgeDiffValues}>
                               <span className={styles.surgeDiffStandard}>
                                 {defaultWardConfiguration().edAccessTargetMinutes / 60}h standard
@@ -1295,31 +1370,22 @@ export function SettingsScreen() {
                                 {ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h surge
                               </span>
                             </div>
-                            <span className={styles.surgeDiffEffect}>
-                              Halves dwell ceiling to accelerate mental health clearance from ED.
-                            </span>
                           </div>
 
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>Parallel Referral Cap</span>
+                            <span className={styles.surgeDiffLabel}>Parallel Cap</span>
                             <div className={styles.surgeDiffValues}>
                               <span className={styles.surgeDiffStandard}>3 units</span>
                               <span className={styles.surgeDiffSurge}>5 units</span>
                             </div>
-                            <span className={styles.surgeDiffEffect}>
-                              Broadens referral circulation across adult inpatient units simultaneously.
-                            </span>
                           </div>
 
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>Pull Hold Buffer</span>
+                            <span className={styles.surgeDiffLabel}>Hold Buffer</span>
                             <div className={styles.surgeDiffValues}>
                               <span className={styles.surgeDiffStandard}>90m standard</span>
                               <span className={styles.surgeDiffSurge}>45m surge</span>
                             </div>
-                            <span className={styles.surgeDiffEffect}>
-                              Compresses bed reservation hold window to release unconfirmed beds rapidly.
-                            </span>
                           </div>
                         </div>
                       </div>
@@ -1351,9 +1417,7 @@ export function SettingsScreen() {
                                     Saved: {configuration.edAccessTargetMinutes / 60}h
                                   </span>
                                 </div>
-                                <p className={styles.paramCardRationale}>
-                                  Access-target benchmark for mental health clearance in emergency departments.
-                                </p>
+                                <p className={styles.paramCardRationale}>Mental health clearance dwell ceiling.</p>
                               </div>
                             </div>
                             <div className={styles.paramCardBody}>
@@ -1373,7 +1437,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={15} aria-hidden="true" />
+                                    <Minus size={13} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
                                     <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}h</span>
@@ -1392,7 +1456,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={15} aria-hidden="true" />
+                                    <Plus size={13} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1414,9 +1478,9 @@ export function SettingsScreen() {
                                     <span className={styles.sliderVal}>{draft.edAccessTargetMinutes / 60}h</span>
                                   </div>
                                   <div className={styles.sliderFoot}>
-                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h (min)</span>
+                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h</span>
                                     <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
-                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h (max)</span>
+                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h</span>
                                   </div>
                                 </div>
                               </div>
@@ -1446,7 +1510,7 @@ export function SettingsScreen() {
                                   </span>
                                 </div>
                                 <p className={styles.paramCardRationale}>
-                                  Maximum inpatient wards a single referral circulates to simultaneously.
+                                  Maximum simultaneous inpatient unit referrals.
                                 </p>
                               </div>
                             </div>
@@ -1467,7 +1531,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={15} aria-hidden="true" />
+                                    <Minus size={13} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
                                     <span className={styles.stepperVal}>{draft.parallelReferralCap} units</span>
@@ -1486,7 +1550,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={15} aria-hidden="true" />
+                                    <Plus size={13} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1508,9 +1572,9 @@ export function SettingsScreen() {
                                     <span className={styles.sliderVal}>{draft.parallelReferralCap} units</span>
                                   </div>
                                   <div className={styles.sliderFoot}>
-                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit (min)</span>
+                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit</span>
                                     <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
-                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units (max)</span>
+                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units</span>
                                   </div>
                                 </div>
                               </div>
@@ -1544,7 +1608,7 @@ export function SettingsScreen() {
                                   </span>
                                 </div>
                                 <p className={styles.paramCardRationale}>
-                                  Buffer window an accepting unit&rsquo;s bed stays reserved before hold expires.
+                                  Buffer window before bed reservation expires.
                                 </p>
                               </div>
                             </div>
@@ -1565,7 +1629,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Minus size={15} aria-hidden="true" />
+                                    <Minus size={13} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
                                     <span className={styles.stepperVal}>{draft.pullHoldMinutes}m</span>
@@ -1584,7 +1648,7 @@ export function SettingsScreen() {
                                       }));
                                     }}
                                   >
-                                    <Plus size={15} aria-hidden="true" />
+                                    <Plus size={13} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1606,9 +1670,9 @@ export function SettingsScreen() {
                                     <span className={styles.sliderVal}>{draft.pullHoldMinutes}m</span>
                                   </div>
                                   <div className={styles.sliderFoot}>
-                                    <span>{PULL_HOLD_RANGE_MINUTES.min}m (min)</span>
+                                    <span>{PULL_HOLD_RANGE_MINUTES.min}m</span>
                                     <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
-                                    <span>{PULL_HOLD_RANGE_MINUTES.max}m (max)</span>
+                                    <span>{PULL_HOLD_RANGE_MINUTES.max}m</span>
                                   </div>
                                 </div>
                               </div>
@@ -1634,8 +1698,7 @@ export function SettingsScreen() {
                                   </span>
                                 </div>
                                 <p className={styles.paramCardRationale} data-testid="setting-morning-rollup-desc">
-                                  Time by which inpatient wards confirm morning census and available beds (
-                                  {OPERATIONAL_DEFAULT_LABEL}).
+                                  Inpatient census confirmation deadline ({OPERATIONAL_DEFAULT_LABEL}).
                                 </p>
                               </div>
                             </div>
@@ -1652,7 +1715,7 @@ export function SettingsScreen() {
                                       setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
                                     }}
                                   >
-                                    <Minus size={15} aria-hidden="true" />
+                                    <Minus size={13} aria-hidden="true" />
                                   </button>
                                   <div className={styles.stepperDisplay}>
                                     <span className={styles.stepperVal} data-testid="morning-rollup-display">
@@ -1669,7 +1732,7 @@ export function SettingsScreen() {
                                       setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
                                     }}
                                   >
-                                    <Plus size={15} aria-hidden="true" />
+                                    <Plus size={13} aria-hidden="true" />
                                   </button>
                                 </div>
                                 <div className={styles.sliderTickTrack}>
@@ -1693,9 +1756,9 @@ export function SettingsScreen() {
                                     </span>
                                   </div>
                                   <div className={styles.sliderFoot}>
-                                    <span>08:00 AM (earliest)</span>
+                                    <span>08:00 AM</span>
                                     <span>09:30 AM (default)</span>
-                                    <span>11:00 AM (latest)</span>
+                                    <span>11:00 AM</span>
                                   </div>
                                 </div>
                               </div>
@@ -1708,19 +1771,13 @@ export function SettingsScreen() {
                           <div className={styles.paramCard}>
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
-                                <span className={styles.paramCardTitle}>
-                                  Due-Time Warning Intervals
-                                  <span className={styles.rowTag}>2 Thresholds</span>
-                                </span>
-                                <p className={styles.paramCardRationale}>
-                                  Configures visual warnings before recorded legal due times. Your default, not a legal
-                                  limit. The urgent warning is automatically clamped strictly below the standard
-                                  warning.
-                                </p>
+                                <div className={styles.paramTitleRow}>
+                                  <span className={styles.paramCardTitle}>Due-Time Warning Intervals</span>
+                                  <span className={styles.badge} data-tone="accent">
+                                    Auto-Clamped
+                                  </span>
+                                </div>
                               </div>
-                              <span className={styles.badge} data-tone="accent">
-                                Auto-Clamped
-                              </span>
                             </div>
 
                             {/* Sub-Card 1: First warning (urgent) */}
@@ -1728,7 +1785,7 @@ export function SettingsScreen() {
                               <div
                                 className={`${styles.settingRow} ${styles.vertical}`}
                                 data-testid="setting-due-soon-urgent-row"
-                                style={{ borderBottom: "1px solid var(--line)", padding: "1.25rem" }}
+                                style={{ borderBottom: "1px solid var(--line)", padding: "1rem" }}
                               >
                                 <div className={styles.rowMeta}>
                                   <span className={styles.rowTitle}>
@@ -1762,7 +1819,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Minus size={16} aria-hidden="true" />
+                                      <Minus size={13} aria-hidden="true" />
                                     </button>
                                     <div className={styles.stepperDisplay}>
                                       <span className={styles.stepperVal} data-testid="due-soon-urgent-display">
@@ -1787,7 +1844,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Plus size={16} aria-hidden="true" />
+                                      <Plus size={13} aria-hidden="true" />
                                     </button>
                                   </div>
                                   <div className={styles.sliderTickTrack}>
@@ -1817,9 +1874,9 @@ export function SettingsScreen() {
                                       </span>
                                     </div>
                                     <div className={styles.sliderFoot}>
-                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)} (min)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)}</span>
                                       <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)} (max)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -1831,7 +1888,7 @@ export function SettingsScreen() {
                               <div
                                 className={`${styles.settingRow} ${styles.vertical}`}
                                 data-testid="setting-due-soon-row"
-                                style={{ padding: "1.25rem" }}
+                                style={{ padding: "1rem" }}
                               >
                                 <div className={styles.rowMeta}>
                                   <span className={styles.rowTitle}>
@@ -1867,7 +1924,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Minus size={15} aria-hidden="true" />
+                                      <Minus size={13} aria-hidden="true" />
                                     </button>
                                     <div className={styles.stepperDisplay}>
                                       <span className={styles.stepperVal} data-testid="due-soon-display">
@@ -1894,7 +1951,7 @@ export function SettingsScreen() {
                                         });
                                       }}
                                     >
-                                      <Plus size={15} aria-hidden="true" />
+                                      <Plus size={13} aria-hidden="true" />
                                     </button>
                                   </div>
                                   <div className={styles.sliderTickTrack}>
@@ -1925,9 +1982,9 @@ export function SettingsScreen() {
                                       </span>
                                     </div>
                                     <div className={styles.sliderFoot}>
-                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)} (min)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)}</span>
                                       <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)} (max)</span>
+                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -1935,16 +1992,9 @@ export function SettingsScreen() {
                             )}
 
                             {/* Visual Timeline Countdown Simulation (0 buttons) */}
-                            <div
-                              className={styles.timelineGraphContainer}
-                              aria-hidden="true"
-                              style={{ margin: "0 1.25rem 1.25rem" }}
-                            >
+                            <div className={styles.timelineGraphContainer} aria-hidden="true">
                               <div className={styles.timelineGraphHeader}>
-                                <span className={styles.timelineGraphTitle}>Warning Threshold Cascade</span>
-                                <span className={styles.badge} data-tone="accent">
-                                  Visual Countdown
-                                </span>
+                                <span className={styles.timelineGraphTitle}>Warning Cascade</span>
                               </div>
                               <div className={styles.timelineTrack}>
                                 <div className={styles.timelineSegmentCalm}>
@@ -1959,14 +2009,11 @@ export function SettingsScreen() {
                                 </div>
                               </div>
                               <div className={styles.timelineMilestonesRow}>
+                                <span>T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}</span>
                                 <span>
-                                  T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)} (Second Warning)
+                                  T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
                                 </span>
-                                <span>
-                                  T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}{" "}
-                                  (First Warning)
-                                </span>
-                                <span>T - 0 (Deadline)</span>
+                                <span>T - 0</span>
                               </div>
                             </div>
                           </div>
@@ -1984,16 +2031,15 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Recorded Form 4A expiry warning (demo)
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
-                                <span className={styles.rowTag}>{statutoryWarningHours} Hours</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
+                                <span className={styles.rowTag}>{statutoryWarningHours}h</span>
                               </span>
                               <span
                                 id="setting-form4a-warn-desc"
                                 className={styles.rowDesc}
                                 data-testid="setting-form4a-warn-desc"
                               >
-                                Would set how far ahead of a recorded Form 4A transport-form expiry a warning appears.
-                                Not wired in this prototype.
+                                Form 4A transport expiry warning window. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.sliderBox}>
@@ -2009,11 +2055,10 @@ export function SettingsScreen() {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
                                   }}
                                 >
-                                  <Minus size={16} aria-hidden="true" />
+                                  <Minus size={13} aria-hidden="true" />
                                 </button>
                                 <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal}>{statutoryWarningHours}</span>
-                                  <span className={styles.stepperUnit}>hours prior</span>
+                                  <span className={styles.stepperVal}>{statutoryWarningHours}h</span>
                                 </div>
                                 <button
                                   type="button"
@@ -2026,7 +2071,7 @@ export function SettingsScreen() {
                                     showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
                                   }}
                                 >
-                                  <Plus size={16} aria-hidden="true" />
+                                  <Plus size={13} aria-hidden="true" />
                                 </button>
                               </div>
                               <div className={styles.sliderLine}>
@@ -2046,10 +2091,6 @@ export function SettingsScreen() {
                                 />
                                 <span className={styles.sliderVal}>{statutoryWarningHours}h prior</span>
                               </div>
-                              <div className={styles.sliderFoot}>
-                                <span>1h</span>
-                                <span>12h</span>
-                              </div>
                             </div>
                           </div>
                         )}
@@ -2060,11 +2101,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Automated Multi-Service Escalation Broadcast
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-auto-escalate-desc">
-                                Would notify the Duty Consultant Psychiatrist and statewide bed desk when a threshold is
-                                passed. Not wired in this prototype.
+                                Automated multi-service broadcast. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2092,11 +2132,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Medical Clearance Bed Release Buffer
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-medical-release-desc">
-                                Would set how long a psychiatric bed reservation survives while emergency medical
-                                clearance is pending. Not wired in this prototype.
+                                Medical clearance bed release buffer. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2109,9 +2148,9 @@ export function SettingsScreen() {
                                 }}
                                 aria-label="Medical Clearance Bed Release Buffer — not wired in this prototype"
                               >
-                                <option value={60}>60 Minutes</option>
-                                <option value={120}>120 Minutes</option>
-                                <option value={180}>180 Minutes</option>
+                                <option value={60}>60m</option>
+                                <option value={120}>120m</option>
+                                <option value={180}>180m</option>
                               </select>
                             </div>
                           </div>
@@ -2172,42 +2211,135 @@ export function SettingsScreen() {
                         </WardPanel>
                       )}
 
-                      {/* Operational Defaults List */}
+                      {/* Operational Defaults List (Interactive & Full-Width Apple Card) */}
                       {isRowVisible("setting-operational-defaults") && (
-                        <WardPanel title="Operational defaults">
-                          <div className={styles.referenceBody}>
-                            <div className={styles.calloutCard} data-tone="accent">
-                              <p className={styles.calloutText}>
-                                Read-only for now. Each is {OPERATIONAL_DEFAULT_LABEL}.
-                              </p>
+                        <div className={styles.defaultsFullCard} role="region" aria-label="Operational defaults">
+                          <div className={styles.defaultsToolbarRow}>
+                            <div className={styles.defaultsTitleGroup}>
+                              <span className={styles.defaultsCardTitle}>Operational Defaults</span>
+                              <span className={styles.rowTag}>{OPERATIONAL_DEFAULTS.length} Parameters</span>
                             </div>
-                            <div
-                              className={styles.tableWrap}
-                              role="region"
-                              aria-label="Operational defaults"
-                              tabIndex={0}
-                            >
-                              <table className={styles.table}>
-                                <thead>
-                                  <tr>
-                                    <th scope="col">Default</th>
-                                    <th scope="col">Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {OPERATIONAL_DEFAULTS.map((item) => (
-                                    <tr key={item.name} data-testid={`ward-settings-operational-default-${item.name}`}>
-                                      <td>{item.name}</td>
-                                      <td>
-                                        <strong>{item.display}</strong>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                            <div className={styles.defaultsHeaderActions}>
+                              {isEditingDefaults ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={styles.btnSaveRibbon}
+                                    onClick={handleSaveCustomDefaults}
+                                    title="Save customized operational defaults"
+                                  >
+                                    <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+                                    <span>Save Defaults</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={styles.btnSecondary}
+                                    onClick={() => {
+                                      setCustomDefaults(loadCustomOperationalDefaults());
+                                      setIsEditingDefaults(false);
+                                    }}
+                                    title="Cancel editing"
+                                  >
+                                    <span>Cancel</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={styles.btnRestoreRibbon}
+                                    onClick={handleResetAllDefaults}
+                                    title="Restore standard baseline defaults"
+                                  >
+                                    <RotateCcw size={12} aria-hidden="true" />
+                                    <span>Restore Baseline</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={styles.btnPrimary}
+                                    onClick={() => setIsEditingDefaults(true)}
+                                    title="Customize operational defaults"
+                                  >
+                                    <Sliders size={12} aria-hidden="true" />
+                                    <span>Edit Defaults</span>
+                                  </button>
+                                  {Object.keys(customDefaults).length > 0 && (
+                                    <button
+                                      type="button"
+                                      className={styles.btnRestoreRibbon}
+                                      onClick={handleResetAllDefaults}
+                                      title="Restore all operational defaults to standard"
+                                    >
+                                      <RotateCcw size={12} aria-hidden="true" />
+                                      <span>Reset to Baseline</span>
+                                    </button>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
-                        </WardPanel>
+
+                          <div
+                            className={styles.tableWrap}
+                            role="region"
+                            aria-label="Operational defaults table"
+                            tabIndex={0}
+                          >
+                            <table className={styles.table}>
+                              <thead>
+                                <tr>
+                                  <th scope="col" style={{ width: "55%" }}>
+                                    Default Setting
+                                  </th>
+                                  <th scope="col" style={{ width: "45%" }}>
+                                    Value
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {OPERATIONAL_DEFAULTS.map((item) => {
+                                  const customVal = customDefaults[item.name];
+                                  const isModified = Boolean(customVal && customVal !== item.display);
+                                  return (
+                                    <tr key={item.name} data-testid={`ward-settings-operational-default-${item.name}`}>
+                                      <td>
+                                        <div className={styles.defaultNameCell}>
+                                          <span>{item.name}</span>
+                                          {isModified && <span className={styles.modifiedBadge}>Customized</span>}
+                                        </div>
+                                      </td>
+                                      <td>
+                                        {isEditingDefaults ? (
+                                          <div className={styles.defaultEditCell}>
+                                            <input
+                                              type="text"
+                                              className={styles.defaultInput}
+                                              value={customVal ?? item.display}
+                                              onChange={(e) => handleDefaultChange(item.name, e.target.value)}
+                                              aria-label={`Edit ${item.name}`}
+                                            />
+                                            {isModified && (
+                                              <button
+                                                type="button"
+                                                className={styles.defaultResetItemBtn}
+                                                title={`Reset "${item.name}" to standard default`}
+                                                onClick={() => handleResetSingleDefault(item.name)}
+                                              >
+                                                <RotateCcw size={12} aria-hidden="true" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <strong>{customVal ?? item.display}</strong>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       )}
                     </section>
                   )}
@@ -2220,9 +2352,9 @@ export function SettingsScreen() {
                           <h2 id="allocation-title" className={styles.secTitle}>
                             Bed Allocation &amp; Capacity Rules
                           </h2>
-                          <p className={styles.secDesc}>Bay integrity enforcement and ward acuity profile limits.</p>
+                          <p className={styles.secDesc}>Bay integrity and acuity limits.</p>
                         </div>
-                        <span className={styles.rowTag}>2 Parameters (Demo)</span>
+                        <span className={styles.rowTag}>2 Parameters</span>
                       </header>
 
                       <div className={styles.rowsContainer}>
@@ -2232,11 +2364,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Gender Designation &amp; Bay Integrity Enforcement
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-gender-mix-desc">
-                                Would flag placement into a mixed-gender multi-bed bay unless a Ward NUM override is
-                                recorded. Not wired in this prototype.
+                                Gender and bay integrity rules. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2264,11 +2395,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Ward Acuity &amp; 1:1 Specialling Ceiling
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-acuity-ceiling-desc">
-                                Would set how many concurrent high-dependency 1:1 specialling patients a ward may hold.
-                                Not wired in this prototype.
+                                Ward acuity and specialling limits. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2314,8 +2444,7 @@ export function SettingsScreen() {
                             Notifications, Access Matrix &amp; Telemetry
                           </h2>
                           <p className={styles.secDesc}>
-                            Clinical escalation notifications, AHPRA-aligned role scopes, keyboard accelerators, and
-                            search access telemetry.
+                            Urgent buzz alerts, wallboard timers, and clinical role scopes.
                           </p>
                         </div>
                         <span className={styles.rowTag}>Clinical Governance</span>
@@ -2328,8 +2457,7 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>Audio &amp; Visual Urgent Buzz Alerts</span>
                               <span className={styles.rowDesc} data-testid="setting-buzz-alert-desc">
-                                Sound an audible chime and display a visual flash when an urgent coordinator buzz is
-                                received by a ward.
+                                Sound an audible chime and display a visual flash when an urgent buzz is received.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2361,8 +2489,7 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>Wallboard Auto-Refresh Timer</span>
                               <span className={styles.rowDesc} data-testid="setting-wallboard-refresh-desc">
-                                Automatically refresh countdown clocks and telemetry for unattended wall displays in EDs
-                                and Coordinator desks.
+                                Auto-refresh interval for unattended displays.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2408,11 +2535,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Require a Form 1A before an involuntary admission
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-form1a-strict-desc">
-                                Would flag a Form 1A referral for examination once it runs past its window. Not wired in
-                                this prototype.
+                                Referral examination window check. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2439,11 +2565,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Escort required before transport advances (demo)
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-form4a-escort-desc">
-                                Would require an escort to be assigned before a recorded Form 4A transport advances. Not
-                                wired in this prototype.
+                                Escort assignment before transport. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2470,11 +2595,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Authorised Hospital Involuntary Bed Validation
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-auth-hospital-desc">
-                                Would flag an involuntary patient being directed to a non-gazetted mental health
-                                facility. Not wired in this prototype.
+                                Authorised facility destination check. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2501,11 +2625,10 @@ export function SettingsScreen() {
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Audit Log for Chief Psychiatrist
-                                <span className={styles.unwiredPill}>Not wired (Demo)</span>
+                                <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-cp-audit-desc">
-                                Would append a timestamped record of any override or delayed examination for governance
-                                review. Not wired in this prototype.
+                                Chief Psychiatrist governance audit trail. Not wired in this prototype.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
@@ -2649,10 +2772,7 @@ export function SettingsScreen() {
                           <h2 id="reset-domain-title" className={styles.secTitle}>
                             Local Storage, Workspace &amp; Baseline Reset
                           </h2>
-                          <p className={styles.secDesc}>
-                            Browser session memory, clinical handover sheet output configuration, and audited
-                            configuration baseline restoration.
-                          </p>
+                          <p className={styles.secDesc}>Session storage, handover export, and baseline reset.</p>
                         </div>
                         <span className={styles.rowTag}>Persistence &amp; Reset</span>
                       </header>
@@ -2715,9 +2835,7 @@ export function SettingsScreen() {
                           </div>
 
                           <p className={styles.telemetryDesc}>
-                            Ward Flow client-side caching maintains active bed coordination states, ephemeral search
-                            logs, and governance audit trails. Zero identifiable patient records leave this browser
-                            without explicit export.
+                            Browser cache usage, active bed state telemetry, and configuration exports.
                           </p>
 
                           {/* Visual Storage Quota Bar */}
@@ -2822,10 +2940,7 @@ export function SettingsScreen() {
                             <div className={styles.dangerZoneMeta}>
                               <h3 className={styles.dangerZoneTitle}>Baseline Reset &amp; Disaster Recovery</h3>
                               <p className={styles.dangerZoneDesc}>
-                                Restoring the factory baseline overwrites all coordination thresholds (ED target,
-                                parallel cap, pull hold buffer, morning rollup, due-time alerts) back to WA Health
-                                clinical standards, resets UI appearance and rail preferences, and records an audited
-                                governance entry.
+                                Restores all coordination thresholds, theme, and rail preferences to standard.
                               </p>
                             </div>
                           </div>

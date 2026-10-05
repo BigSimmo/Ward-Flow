@@ -989,3 +989,19 @@
     color: CanvasText !important;
   }
 }
+
+/* Existing exception handlers can be hosted inside the Patient Now dossier. */
+.embeddedActions {
+  padding: 18px;
+  min-width: 0;
+}
+.embeddedActions :is(input, select, textarea) {
+  max-width: 100%;
+}
+.embeddedActions button {
+  min-height: 44px;
+}
+.embeddedActions :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

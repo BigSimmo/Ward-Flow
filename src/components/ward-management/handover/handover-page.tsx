@@ -70,6 +70,7 @@ import {
 
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -1060,6 +1061,7 @@ export function HandoverPage() {
                 >
                   {breachedOnSheetCount + urgentOutsideFilter.length}
                 </span>
+                <LegalLimitsNotChecked variant="tag" />
               </div>
               <span className={pageStyles.metricSep}>|</span>
               <div className={pageStyles.metricItem}>

@@ -1,0 +1,179 @@
+.facts {
+  padding: 12px 2px 0;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+}
+.progress {
+  display: flex;
+  gap: 4px;
+}
+.progress span {
+  height: 4px;
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: 20px;
+}
+.progress span[data-state="recorded"] {
+  background: var(--warn);
+}
+.progress span[data-state="current"] {
+  background: var(--good);
+}
+.destination {
+  display: grid;
+  gap: 6px;
+  padding: 5px 2px;
+}
+.destination span {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  font-weight: 750;
+}
+.destination strong {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.tile > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.tile svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.tile span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.tile strong {
+  font-size: 12px;
+}
+.tile small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.tile[data-attention="true"] {
+  background: var(--surface-2);
+  border-color: var(--surface-2);
+  color: var(--warn);
+}
+.facts button {
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 11px;
+  background: var(--good);
+  color: white;
+  border: 1px solid var(--good);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+.facts button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.facts p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+}
+/* Compact operational ledger inside the tracker, not nested cards. */
+.facts {
+  gap: 8px;
+}
+.destination {
+  gap: 4px;
+  padding: 3px 2px;
+}
+.destination span {
+  font-size: 8px;
+}
+.destination strong {
+  font-size: 12px;
+}
+.tile {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 6px 2px;
+  gap: 8px;
+  align-items: center;
+}
+.tile > div {
+  gap: 2px;
+}
+.tile svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+.tile span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.tile strong {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.tile small {
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.facts button {
+  border-radius: 8px;
+  background: var(--good-soft);
+  border: 1px solid var(--line);
+  color: var(--good);
+  font-size: 10px;
+  min-height: 44px;
+}
+.facts p {
+  font-size: 9px;
+}
+.tile[data-attention="true"] {
+  background: var(--warn-soft);
+  border-radius: 8px;
+  padding: 8px;
+}
+.tile[data-attention="true"] strong {
+  color: var(--warn);
+}
+.tile > div {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+}
+.tile {
+  padding: 4px 2px;
+}
+.tile > div > span {
+  font-size: 8px;
+}
+.tile small {
+  font-size: 9px;
+}
+.facts {
+  gap: 6px;
+}
+.facts p {
+  line-height: 1.4;
+}

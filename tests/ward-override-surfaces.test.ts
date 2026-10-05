@@ -662,6 +662,11 @@ describe("ward override-surface guard", () => {
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason
       // on the existing override site, which still carries one.
       "src/components/ward-management/coordinator/shortlist-panel.tsx::REFER_TO_UNITS": 3,
+      // Patient transit deck (PR #69): ordinary first attempt plus override re-dispatch for each
+      // overridable placement event, matching ward-screen / shortlist shape.
+      "src/components/ward-management/patients/patient-transit-operations.tsx::ACCEPT_IN_PRINCIPLE": 2,
+      "src/components/ward-management/patients/patient-transit-operations.tsx::PULL_PATIENT": 2,
+      "src/components/ward-management/patients/patient-transit-operations.tsx::REFER_TO_UNITS": 2,
       // RB5 (item 16): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
       // overrideReason) is joined by handleCommunityAccept (community_team, needs none, the
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).

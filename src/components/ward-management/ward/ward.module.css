@@ -2368,12 +2368,13 @@
 .topActionBarWrap {
   background: var(--surface);
   border: 1px solid var(--line);
-  padding: 14px 20px 12px;
+  padding: 14px 20px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
   border-radius: var(--r1, 10px);
   box-shadow: var(--lift);
+  overflow: hidden;
 }
 
 .topIdentityBanner {
@@ -2753,14 +2754,11 @@
 }
 
 .tabBarWrap {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  box-shadow: var(--lift-sm);
-  padding: 4px 8px;
-  border-radius: var(--r1, 10px) var(--r1, 10px) 0 0;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  margin: 6px -20px 0;
+  padding: 6px 14px;
+  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
 }
 
 .tabList {
@@ -4037,20 +4035,65 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.suburbHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suburbHeaderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r2, 6px);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suburbHeaderTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suburbHeaderMainTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.suburbHeaderSubText {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.suburbQualifier {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
 }
 
 .suburbSearchRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .suburbInputWrapper {
   position: relative;
-  flex: 1 1 280px;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
 }
@@ -4067,10 +4110,12 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
-  padding: 9px 14px 9px 36px !important;
+  padding: 0 14px 0 36px !important;
   font-size: 13.5px;
   color: var(--ink);
+  height: 42px;
   min-height: 42px;
+  box-sizing: border-box;
   transition: all 0.15s ease;
   outline: none;
 }
@@ -4084,16 +4129,22 @@
 .btnLookupAction {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
   background: var(--accent);
-  color: var(--on-accent);
+  color: var(--text-inverse);
   border: 1px solid var(--accent);
   border-radius: var(--r2, 6px);
-  padding: 8px 18px;
+  padding: 0 18px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  height: 42px;
   min-height: 42px;
+  box-sizing: border-box;
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.12s ease;
 }
 
@@ -4262,44 +4313,65 @@
 
 /* 09:30 Morning Bed Rollup Deadline & Notification Center */
 .morningRollupOverdueBanner {
-  margin: 0.6rem 0;
-  padding: 8px 14px;
+  margin: 10px 0 6px;
+  padding: 10px 16px;
   background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  border-left: 4px solid var(--warn);
-  border-radius: var(--r2, 6px);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--r1, 8px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  box-shadow: var(--lift-sm);
+  gap: 14px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 .morningRollupBannerContent {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1 1 auto;
 }
 
 .morningRollupBannerIcon {
-  font-size: 1.1rem;
-  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r2, 6px);
+  background: var(--warn-soft);
+  color: var(--warn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .morningRollupBannerText {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
   flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.morningRollupPill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--warn);
+  color: var(--text-inverse);
+  padding: 2px 7px;
+  border-radius: var(--pill, 999px);
+  font-family: var(--mono);
+}
+
+.morningRollupDesc {
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .morningRollupBannerText strong {
-  font-size: var(--t-2, 13.5px);
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -4313,28 +4385,26 @@
 }
 
 .btnConfirmMorningRollup {
-  background: var(--accent);
-  color: var(--on-accent);
-  min-height: 2.125rem;
-  padding: 0 12px;
+  background: var(--warn);
+  color: var(--text-inverse);
+  min-height: 34px;
+  padding: 0 14px;
   font-weight: 600;
-  font-size: var(--t-1, 13px);
+  font-size: 12.5px;
   border-radius: var(--r2, 6px);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--warn-border);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: var(--lift-sm);
-  transition:
-    background 0.15s,
-    transform 0.1s;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.15);
+  transition: all 0.12s ease;
   white-space: nowrap;
 }
 
 .btnConfirmMorningRollup:hover {
-  background: var(--accent-press, var(--accent));
+  filter: brightness(0.92);
   transform: translateY(-1px);
 }
 
@@ -4439,7 +4509,7 @@
 .censusCommandCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   box-shadow: var(--lift);
   display: flex;
   flex-direction: column;
@@ -4931,7 +5001,7 @@
 .pipelineColumn {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   display: flex;
   flex-direction: column;
   box-shadow: var(--lift);
@@ -5117,7 +5187,7 @@
 .leaveSectionCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   padding: 16px 18px;
   box-shadow: var(--lift);
   display: flex;
@@ -5189,7 +5259,7 @@
 .ledgerCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   padding: 16px 18px;
   box-shadow: var(--lift);
   display: flex;
@@ -5296,4 +5366,242 @@
   .btnCardAction {
     border: 1px solid Highlight;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   WARD DAILY SHEET BUTTON & MODAL
+   ───────────────────────────────────────────────────────────── */
+.btnDailySheet {
+  min-height: 2.125rem;
+  padding: 5px 12px;
+  border-radius: var(--r2, 6px);
+  background: var(--ink);
+  color: var(--text-inverse);
+  border: 1px solid var(--ink);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
+  white-space: nowrap;
+}
+
+.btnDailySheet:hover {
+  background: var(--ink);
+  opacity: 0.92;
+  color: var(--text-inverse);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.3);
+}
+
+:global([data-theme="dark"]) .btnDailySheet {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+
+.dailySheetModalContent {
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift-lg, var(--lift));
+  width: 100%;
+  max-width: 1280px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dailySheetModalHeader {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.dailySheetModalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.dailySheetModalSub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.dailySheetModalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dailySheetModalBody {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ENHANCED PATIENT DOSSIER DRAWER (IMAGE 2 + IMAGE 3 FUSED)
+   ───────────────────────────────────────────────────────────── */
+.dossierHeroCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heroStayRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.heroStayDays {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroStayUnit {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.heroStayBadge {
+  margin-left: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: var(--pill, 999px);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dossierPatientName {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.dossierChipsWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dossierChip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 999px);
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.dossierBarrierAlert {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+  border-radius: var(--r2, 6px);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.factItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.factDt {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.factDd {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dossierActionCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossierActionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.dossierSelect {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong, var(--line));
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.btnRecordLeft {
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--r2, 6px);
+  border: none;
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btnRecordLeft:hover {
+  opacity: 0.9;
 }

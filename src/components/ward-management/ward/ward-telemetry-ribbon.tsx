@@ -33,7 +33,7 @@ export function WardTelemetryRibbon({
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
-      <p className={styles.preparationNote}>{pendingPreparation} being made ready</p>
+      <span className="sr-only">{pendingPreparation} being made ready</span>
       {/* 1. Staffed Beds */}
       <div className={styles.cell} data-state="accent">
         <div className={styles.topRow}>
