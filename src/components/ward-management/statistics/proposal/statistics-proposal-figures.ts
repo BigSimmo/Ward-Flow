@@ -39,7 +39,14 @@ export type WardFigures = BedFigures & {
   releases: ReleaseCounts;
 };
 
-export type ReleaseCounts = Record<ReleaseBand, { confirmed: number; expected: number }>;
+/**
+ * `overdue` holds expected (unconfirmed) discharges dated on an earlier day. The ruled
+ * `releaseBand` files them under "now" so a ward acts on them, but they are not beds anyone has
+ * said will come free, so the proposal counts them apart and never adds them to "free today".
+ */
+export type ReleaseCounts = Record<ReleaseBand | "overdue", { confirmed: number; expected: number }>;
+
+const RELEASE_KEYS = [...RELEASE_BANDS, "overdue"] as const;
 
 export const RELEASE_BAND_LABELS: Record<ReleaseBand, string> = {
   now: "Due now",
@@ -50,12 +57,12 @@ export const RELEASE_BAND_LABELS: Record<ReleaseBand, string> = {
 };
 
 function emptyReleases(): ReleaseCounts {
-  return Object.fromEntries(RELEASE_BANDS.map((band) => [band, { confirmed: 0, expected: 0 }])) as ReleaseCounts;
+  return Object.fromEntries(RELEASE_KEYS.map((band) => [band, { confirmed: 0, expected: 0 }])) as ReleaseCounts;
 }
 
 export function addReleases(a: ReleaseCounts, b: ReleaseCounts): ReleaseCounts {
   const sum = emptyReleases();
-  for (const band of RELEASE_BANDS) {
+  for (const band of RELEASE_KEYS) {
     sum[band] = {
       confirmed: a[band].confirmed + b[band].confirmed,
       expected: a[band].expected + b[band].expected,
@@ -70,6 +77,10 @@ export function releasesFor(unitId: string, bedReleases: readonly BedRelease[], 
     if (release.unitId !== unitId || release.state === "discharged") continue;
     const band = releaseBand(release, now);
     if (band === "beyond-today") continue;
+    if (release.state !== "confirmed" && dayOf(release.expectedAt) < dayOf(now)) {
+      counts.overdue.expected += 1;
+      continue;
+    }
     if (release.state === "confirmed") counts[band].confirmed += 1;
     else counts[band].expected += 1;
   }

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 
-import { Panel, ProposalHeader, proposalHref } from "./statistics-proposal-parts";
+import { Panel, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
 import { SERVICE_COLOUR, percent, releasesToday, type WardFigures } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
@@ -56,6 +56,8 @@ export function CompareStatisticsProposal() {
   const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
   const max = measure === "occupancy" ? 1 : Math.max(1, ...values) * 1.1;
   const current = MEASURES.find((entry) => entry.id === measure) ?? MEASURES[0];
+  const top = rows[0];
+  const aboveAverage = rows.filter((row) => row.value !== null && row.value > average).length;
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-compare">
@@ -64,6 +66,15 @@ export function CompareStatisticsProposal() {
         title="Compare wards"
         asAt={asAt}
       />
+
+      {top && top.value !== null ? (
+        <Verdict>
+          <strong>
+            {top.ward.unit.name} is highest on {current.label.toLowerCase()} at {label(top.value, measure)}
+          </strong>
+          . {aboveAverage} of {rows.length} wards are above the network average of {label(average, measure)}.
+        </Verdict>
+      ) : null}
 
       <div className={styles.header}>
         <div className={styles.segmented} role="group" aria-label="Measure">
@@ -95,7 +106,7 @@ export function CompareStatisticsProposal() {
         title={current.label}
         question={current.question}
         meta={`${rows.length} wards · highest first`}
-        foot={<span>Dashed line: average across wards ({label(average, measure)}).</span>}
+        foot={<span>Dashed line: network average ({label(average, measure)}).</span>}
       >
         <ul className={styles.hbars}>
           {rows.map(({ ward, value }) => (

@@ -41,11 +41,23 @@ export function NetworkStatisticsProposal() {
             label: `${ward.unit.name}: no ready bed`,
             href: proposalHref("ward", ward.unit.id),
           })),
-          { tone: "good", label: `${freeToday} beds expected to come free today` },
+          { tone: "good", label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected to come free today` },
+          ...(releases.overdue.expected
+            ? [
+                {
+                  tone: "warn" as const,
+                  label: `${releases.overdue.expected} discharges overdue, not confirmed`,
+                  href: proposalHref("flow"),
+                },
+              ]
+            : []),
         ]}
       >
         <strong>{network.ready} beds are ready</strong> across {wards.length} wards, and {freeToday} more are expected
-        to come free before midnight. {noReady.length} wards have no ready bed.
+        to come free before midnight.{" "}
+        {noReady.length === 0
+          ? "Every ward has a ready bed."
+          : `${noReady.length} ${noReady.length === 1 ? "ward has" : "wards have"} no ready bed.`}
       </Verdict>
 
       <KpiStrip

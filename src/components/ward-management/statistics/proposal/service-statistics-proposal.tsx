@@ -11,6 +11,7 @@ import {
   KpiStrip,
   OccupancyPill,
   Panel,
+  TableScroll,
   ProposalHeader,
   ReleaseTimeline,
   Verdict,
@@ -82,7 +83,14 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
               label: `${edShort(ed.name)}: ${ed.over24h} over 24 hours`,
               href: proposalHref("ed", ed.id),
             })),
-          { tone: "good" as const, label: `${freeToday} beds expected free today` },
+          ...(freeToday
+            ? [
+                {
+                  tone: "good" as const,
+                  label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected free today`,
+                },
+              ]
+            : []),
         ]}
       >
         {service.beds ? (
@@ -145,98 +153,102 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
               <BedBar figures={service} large />
               <BedLegend figures={service} />
             </div>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Ward</th>
-                  <th scope="col">Beds now</th>
-                  <th scope="col" className={styles.num}>
-                    Beds
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Occupancy
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Ready
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Free today
-                  </th>
-                  <th scope="col" className={styles.num}>
-                    Average stay
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {service.wards
-                  .slice()
-                  .sort((a, b) => a.ready - b.ready || b.occupancy - a.occupancy)
-                  .map((ward) => (
-                    <tr key={ward.unit.id}>
-                      <td>
-                        <span className={styles.rowName}>
-                          <a href={proposalHref("ward", ward.unit.id)}>{ward.unit.name}</a>
-                          <span className={styles.rowSub}>{ward.hospital}</span>
-                        </span>
-                      </td>
-                      <td className={styles.barCell}>
-                        <BedBar figures={ward} scaleTo={maxWardBeds} />
-                      </td>
-                      <td className={styles.num}>{ward.beds}</td>
-                      <td className={styles.num}>
-                        <OccupancyPill value={ward.occupancy} />
-                      </td>
-                      <td className={styles.num}>
-                        <ReadyPill value={ward.ready} />
-                      </td>
-                      <td className={styles.num}>{releasesToday(ward.releases)}</td>
-                      <td className={styles.num}>
-                        {ward.averageStayDays === null ? "–" : `${ward.averageStayDays.toFixed(0)} days`}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <TableScroll label="Wards">
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Ward</th>
+                    <th scope="col">Beds now</th>
+                    <th scope="col" className={styles.num}>
+                      Beds
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Occupancy
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Ready
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Free today
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      Average stay
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {service.wards
+                    .slice()
+                    .sort((a, b) => a.ready - b.ready || b.occupancy - a.occupancy)
+                    .map((ward) => (
+                      <tr key={ward.unit.id}>
+                        <td>
+                          <span className={styles.rowName}>
+                            <a href={proposalHref("ward", ward.unit.id)}>{ward.unit.name}</a>
+                            <span className={styles.rowSub}>{ward.hospital}</span>
+                          </span>
+                        </td>
+                        <td className={styles.barCell}>
+                          <BedBar figures={ward} scaleTo={maxWardBeds} />
+                        </td>
+                        <td className={styles.num}>{ward.beds}</td>
+                        <td className={styles.num}>
+                          <OccupancyPill value={ward.occupancy} />
+                        </td>
+                        <td className={styles.num}>
+                          <ReadyPill value={ward.ready} />
+                        </td>
+                        <td className={styles.num}>{releasesToday(ward.releases)}</td>
+                        <td className={styles.num}>
+                          {ward.averageStayDays === null ? "–" : `${ward.averageStayDays.toFixed(0)} days`}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </TableScroll>
           </>
         )}
       </Panel>
 
       <div className={styles.grid2Even}>
         <Panel title="Emergency departments" question="Waiting for a mental health bed now." flush>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Department</th>
-                <th scope="col" className={styles.num}>
-                  Waiting
-                </th>
-                <th scope="col" className={styles.num}>
-                  No ward yet
-                </th>
-                <th scope="col" className={styles.num}>
-                  Over 24h
-                </th>
-                <th scope="col" className={styles.num}>
-                  Longest
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ownEds.map((ed) => (
-                <tr key={ed.id}>
-                  <td>
-                    <span className={styles.rowName}>
-                      <a href={proposalHref("ed", ed.id)}>{edShort(ed.name)}</a>
-                    </span>
-                  </td>
-                  <td className={styles.num}>{ed.waiting}</td>
-                  <td className={styles.num}>{ed.unplaced}</td>
-                  <td className={`${styles.num} ${ed.over24h ? styles.toneDanger : ""}`}>{ed.over24h}</td>
-                  <td className={styles.num}>{ed.waiting ? hoursLabel(ed.longestMinutes) : "none"}</td>
+          <TableScroll label="Emergency departments">
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Department</th>
+                  <th scope="col" className={styles.num}>
+                    Waiting
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    No ward yet
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Over 24h
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Longest
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ownEds.map((ed) => (
+                  <tr key={ed.id}>
+                    <td>
+                      <span className={styles.rowName}>
+                        <a href={proposalHref("ed", ed.id)}>{edShort(ed.name)}</a>
+                      </span>
+                    </td>
+                    <td className={styles.num}>{ed.waiting}</td>
+                    <td className={styles.num}>{ed.unplaced}</td>
+                    <td className={`${styles.num} ${ed.over24h ? styles.toneDanger : ""}`}>{ed.over24h}</td>
+                    <td className={styles.num}>{ed.waiting ? hoursLabel(ed.longestMinutes) : "none"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         </Panel>
 
         <Panel

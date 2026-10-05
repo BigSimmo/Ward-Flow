@@ -9,6 +9,7 @@ import {
   KpiStrip,
   OccupancyPill,
   Panel,
+  TableScroll,
   ProposalHeader,
   ReadyPill,
   ReleaseTimeline,
@@ -74,9 +75,38 @@ export function StatewideStatisticsProposal() {
                 },
               ]
             : []),
-          { tone: "danger", label: `${noReady.length} wards with no ready bed`, href: proposalHref("network") },
-          { tone: "warn", label: `${over24} people waiting over 24 hours`, href: proposalHref("flow") },
-          { tone: "good", label: `${freeToday} beds expected free by midnight`, href: proposalHref("network") },
+          ...(noReady.length
+            ? [
+                {
+                  tone: "danger" as const,
+                  label: `${noReady.length} ${noReady.length === 1 ? "ward" : "wards"} with no ready bed`,
+                  href: proposalHref("network"),
+                },
+              ]
+            : []),
+          ...(over24
+            ? [
+                {
+                  tone: "warn" as const,
+                  label: `${over24} ${over24 === 1 ? "person" : "people"} waiting over 24 hours`,
+                  href: proposalHref("flow"),
+                },
+              ]
+            : []),
+          {
+            tone: "good",
+            label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected free by midnight`,
+            href: proposalHref("network"),
+          },
+          ...(releases.overdue.expected
+            ? [
+                {
+                  tone: "warn" as const,
+                  label: `${releases.overdue.expected} discharges overdue, not confirmed`,
+                  href: proposalHref("flow"),
+                },
+              ]
+            : []),
         ]}
       >
         The network is <strong>{percent(network.occupied / network.beds, 1)} occupied</strong> with{" "}
@@ -135,85 +165,12 @@ export function StatewideStatisticsProposal() {
           <BedBar figures={network} large />
           <BedLegend figures={network} />
         </div>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Health service</th>
-              <th scope="col">Beds now</th>
-              <th scope="col" className={styles.num}>
-                Beds
-              </th>
-              <th scope="col" className={styles.num}>
-                Occupancy
-              </th>
-              <th scope="col" className={styles.num}>
-                Ready
-              </th>
-              <th scope="col" className={styles.num}>
-                Free today
-              </th>
-              <th scope="col" className={styles.num}>
-                Waiting in ED
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {services.map((service) => (
-              <tr key={service.service}>
-                <td>
-                  <span className={styles.rowName}>
-                    <a href={proposalHref("service", service.service)}>
-                      <span
-                        className={styles.swatch}
-                        style={{ background: SERVICE_COLOUR[service.service], display: "inline-block", marginRight: 8 }}
-                        aria-hidden="true"
-                      />
-                      {service.service}
-                    </a>
-                    <span className={styles.rowSub}>
-                      {service.wards.length === 0
-                        ? "No inpatient mental health wards"
-                        : `${service.wards.length} ward${service.wards.length === 1 ? "" : "s"}`}
-                    </span>
-                  </span>
-                </td>
-                <td className={styles.barCell}>
-                  {service.beds > 0 ? <BedBar figures={service} scaleTo={maxServiceBeds} /> : null}
-                </td>
-                <td className={styles.num}>{service.beds || "–"}</td>
-                <td className={styles.num}>{service.beds > 0 ? <OccupancyPill value={service.occupancy} /> : "–"}</td>
-                <td className={styles.num}>{service.beds > 0 ? <ReadyPill value={service.ready} /> : "–"}</td>
-                <td className={styles.num}>{service.beds > 0 ? releasesToday(totalReleases(service.wards)) : "–"}</td>
-                <td className={styles.num}>{service.edWaiting}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>All services</td>
-              <td />
-              <td className={styles.num}>{network.beds}</td>
-              <td className={styles.num}>{percent(network.beds ? network.occupied / network.beds : 0, 1)}</td>
-              <td className={styles.num}>{network.ready}</td>
-              <td className={styles.num}>{freeToday}</td>
-              <td className={styles.num}>{waiting}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </Panel>
-
-      <div className={styles.grid2Even}>
-        <Panel
-          title="Wards under most pressure"
-          question="Fewest ready beds first, then highest occupancy."
-          meta={`${wards.filter((ward) => ward.ready === 0).length} wards with no ready bed`}
-          flush
-          foot={<a href={proposalHref("compare")}>All {wards.length} wards ›</a>}
-        >
+        <TableScroll label="Beds by health service">
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Ward</th>
+                <th scope="col">Health service</th>
+                <th scope="col">Beds now</th>
                 <th scope="col" className={styles.num}>
                   Beds
                 </th>
@@ -224,31 +181,112 @@ export function StatewideStatisticsProposal() {
                   Ready
                 </th>
                 <th scope="col" className={styles.num}>
-                  Asked for a bed
+                  Free today
+                </th>
+                <th scope="col" className={styles.num}>
+                  Waiting in ED
                 </th>
               </tr>
             </thead>
             <tbody>
-              {pressure.map((ward) => (
-                <tr key={ward.unit.id}>
+              {services.map((service) => (
+                <tr key={service.service}>
                   <td>
                     <span className={styles.rowName}>
-                      <a href={proposalHref("ward", ward.unit.id)}>{ward.unit.name}</a>
-                      <span className={styles.rowSub}>{ward.hospital}</span>
+                      <a href={proposalHref("service", service.service)}>
+                        <span
+                          className={styles.swatch}
+                          style={{
+                            background: SERVICE_COLOUR[service.service],
+                            display: "inline-block",
+                            marginRight: 8,
+                          }}
+                          aria-hidden="true"
+                        />
+                        {service.service}
+                      </a>
+                      <span className={styles.rowSub}>
+                        {service.wards.length === 0
+                          ? "No inpatient mental health wards"
+                          : `${service.wards.length} ward${service.wards.length === 1 ? "" : "s"}`}
+                      </span>
                     </span>
                   </td>
-                  <td className={styles.num}>{ward.beds}</td>
-                  <td className={styles.num}>
-                    <OccupancyPill value={ward.occupancy} />
+                  <td className={styles.barCell}>
+                    {service.beds > 0 ? <BedBar figures={service} scaleTo={maxServiceBeds} /> : null}
                   </td>
-                  <td className={styles.num}>
-                    <ReadyPill value={ward.ready} />
-                  </td>
-                  <td className={styles.num}>{ward.askedAndWaiting}</td>
+                  <td className={styles.num}>{service.beds || "–"}</td>
+                  <td className={styles.num}>{service.beds > 0 ? <OccupancyPill value={service.occupancy} /> : "–"}</td>
+                  <td className={styles.num}>{service.beds > 0 ? <ReadyPill value={service.ready} /> : "–"}</td>
+                  <td className={styles.num}>{service.beds > 0 ? releasesToday(totalReleases(service.wards)) : "–"}</td>
+                  <td className={styles.num}>{service.edWaiting}</td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td>All services</td>
+                <td />
+                <td className={styles.num}>{network.beds}</td>
+                <td className={styles.num}>{percent(network.beds ? network.occupied / network.beds : 0, 1)}</td>
+                <td className={styles.num}>{network.ready}</td>
+                <td className={styles.num}>{freeToday}</td>
+                <td className={styles.num}>{waiting}</td>
+              </tr>
+            </tfoot>
           </table>
+        </TableScroll>
+      </Panel>
+
+      <div className={styles.grid2Even}>
+        <Panel
+          title="Wards under most pressure"
+          question="Fewest ready beds first, then highest occupancy."
+          meta={`${wards.filter((ward) => ward.ready === 0).length} wards with no ready bed`}
+          flush
+          foot={<a href={proposalHref("compare")}>All {wards.length} wards ›</a>}
+        >
+          <TableScroll label="Wards under most pressure">
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Ward</th>
+                  <th scope="col" className={styles.num}>
+                    Beds
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Occupancy
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Ready
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Asked for a bed
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {pressure.map((ward) => (
+                  <tr key={ward.unit.id}>
+                    <td>
+                      <span className={styles.rowName}>
+                        <a href={proposalHref("ward", ward.unit.id)}>{ward.unit.name}</a>
+                        <span className={styles.rowSub}>{ward.hospital}</span>
+                      </span>
+                    </td>
+                    <td className={styles.num}>{ward.beds}</td>
+                    <td className={styles.num}>
+                      <OccupancyPill value={ward.occupancy} />
+                    </td>
+                    <td className={styles.num}>
+                      <ReadyPill value={ward.ready} />
+                    </td>
+                    <td className={styles.num}>{ward.askedAndWaiting}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         </Panel>
 
         <Panel

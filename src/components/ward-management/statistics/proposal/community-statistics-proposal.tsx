@@ -13,7 +13,7 @@ import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { unitById } from "@/components/ward-management/ward-sites";
 
-import { KpiStrip, Panel, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
+import { KpiStrip, Panel, TableScroll, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -99,8 +99,7 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
             <strong>
               {lists.currentlyAdmitted.length} people linked to {team.name} are in a bed
             </strong>
-            . {timing.week} are due back within a week and {timing.passed} are already past the date written for them,
-            so follow-up should be ready now.
+            . {timing.week} are due back within a week and {timing.passed} are already past the date written for them.
           </>
         ) : (
           <strong>Nobody in a bed is linked to {team.name}.</strong>
@@ -172,50 +171,52 @@ export function CommunityStatisticsProposal({ teamId }: { teamId?: string }) {
             <p className={styles.empty}>Nobody in a bed is linked to this team.</p>
           </div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Person</th>
-                <th scope="col">Ward</th>
-                <th scope="col" className={styles.num}>
-                  Days in bed
-                </th>
-                <th scope="col">Expected discharge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lists.currentlyAdmitted
-                .slice()
-                .sort((a, b) => (a.expectedDischargeAt ?? Infinity) - (b.expectedDischargeAt ?? Infinity))
-                .map((admission) => (
-                  <tr key={admission.id}>
-                    <td>
-                      <strong>{resolveSubjectPatient(admission, world).initials}</strong>
-                    </td>
-                    <td>
-                      <a className={styles.link} href={proposalHref("ward", admission.unitId)}>
-                        {unitById(admission.unitId)?.name ?? admission.unitId}
-                      </a>
-                    </td>
-                    <td className={styles.num}>{daysInBed(admission, now) ?? "–"}</td>
-                    <td>
-                      {admission.expectedDischargeAt === null ? (
-                        <span className={`${styles.pill} ${styles.pillWarn}`}>No date</span>
-                      ) : (
-                        <>
-                          {formatSheetMoment(admission.expectedDischargeAt, dayZero)}
-                          {admission.expectedDischargeAt < now ? (
-                            <span className={`${styles.pill} ${styles.pillDanger}`} style={{ marginLeft: 8 }}>
-                              Date passed
-                            </span>
-                          ) : null}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <TableScroll label="People in a bed">
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Person</th>
+                  <th scope="col">Ward</th>
+                  <th scope="col" className={styles.num}>
+                    Days in bed
+                  </th>
+                  <th scope="col">Expected discharge</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lists.currentlyAdmitted
+                  .slice()
+                  .sort((a, b) => (a.expectedDischargeAt ?? Infinity) - (b.expectedDischargeAt ?? Infinity))
+                  .map((admission) => (
+                    <tr key={admission.id}>
+                      <td>
+                        <strong>{resolveSubjectPatient(admission, world).initials}</strong>
+                      </td>
+                      <td>
+                        <a className={styles.link} href={proposalHref("ward", admission.unitId)}>
+                          {unitById(admission.unitId)?.name ?? admission.unitId}
+                        </a>
+                      </td>
+                      <td className={styles.num}>{daysInBed(admission, now) ?? "–"}</td>
+                      <td>
+                        {admission.expectedDischargeAt === null ? (
+                          <span className={`${styles.pill} ${styles.pillWarn}`}>No date</span>
+                        ) : (
+                          <>
+                            {formatSheetMoment(admission.expectedDischargeAt, dayZero)}
+                            {admission.expectedDischargeAt < now ? (
+                              <span className={`${styles.pill} ${styles.pillDanger}`} style={{ marginLeft: 8 }}>
+                                Date passed
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
       </Panel>
 

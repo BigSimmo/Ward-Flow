@@ -123,6 +123,15 @@ export function Panel({
   );
 }
 
+/** A table that scrolls sideways on a narrow screen instead of being cut off by its panel. */
+export function TableScroll({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className={styles.tableScroll} role="region" aria-label={`${label} table`} tabIndex={0}>
+      {children}
+    </div>
+  );
+}
+
 /** Ready · Pulled · Closed · Occupied, always in that order and always adding up to the beds. */
 export function BedBar({
   figures,
@@ -288,27 +297,39 @@ export function BedGridLegend() {
 /** Beds expected to come free, by the ward's own release bands. Confirmed solid, expected pale. */
 export function ReleaseTimeline({ releases }: { releases: ReleaseCounts }) {
   const max = Math.max(1, ...RELEASE_BANDS.map((band) => releases[band].confirmed + releases[band].expected));
+  const overdue = releases.overdue.expected;
   return (
-    <div className={styles.timeline}>
-      {RELEASE_BANDS.map((band) => {
-        const { confirmed, expected } = releases[band];
-        return (
-          <div className={styles.timelineCol} key={band}>
-            <span className={styles.columnValue}>{confirmed + expected}</span>
-            <span className={styles.timelineStack} aria-hidden="true">
-              <span className={styles.timelineExpected} style={{ height: `${(expected / max) * 6}rem` }} />
-              <span className={styles.timelineConfirmed} style={{ height: `${(confirmed / max) * 6}rem` }} />
-            </span>
-            <span className={styles.timelineLabel}>{RELEASE_BAND_LABELS[band]}</span>
-            <span className={styles.rowSub}>
-              {confirmed} confirmed
-              <br />
-              {expected} expected
-            </span>
-          </div>
-        );
-      })}
-    </div>
+    <>
+      <div className={styles.timeline}>
+        {RELEASE_BANDS.map((band) => {
+          const { confirmed, expected } = releases[band];
+          return (
+            <div className={styles.timelineCol} key={band}>
+              <span className={styles.columnValue}>{confirmed + expected}</span>
+              <span className={styles.timelineStack} aria-hidden="true">
+                <span className={styles.timelineExpected} style={{ height: `${(expected / max) * 6}rem` }} />
+                <span className={styles.timelineConfirmed} style={{ height: `${(confirmed / max) * 6}rem` }} />
+              </span>
+              <span className={styles.timelineLabel}>{RELEASE_BAND_LABELS[band]}</span>
+              <span className={styles.rowSub}>
+                {confirmed} confirmed
+                <br />
+                {expected} expected
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {overdue ? (
+        <p className={styles.overdueNote}>
+          <strong>Not counted above: {overdue}</strong> {overdue === 1 ? "discharge was" : "discharges were"} expected
+          on an earlier day and {overdue === 1 ? "has" : "have"} not been confirmed.{" "}
+          <a className={styles.link} href={proposalHref("flow")}>
+            Who is past their date ›
+          </a>
+        </p>
+      ) : null}
+    </>
   );
 }
 

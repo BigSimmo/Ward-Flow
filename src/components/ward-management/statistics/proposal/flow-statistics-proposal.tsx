@@ -69,6 +69,15 @@ export function FlowStatisticsProposal() {
   const datePassed = inBed.filter(
     (admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now,
   ).length;
+  const pastByWard = units
+    .map((unit) => ({
+      label: unit.name,
+      count: inBed.filter(
+        (admission) =>
+          admission.unitId === unit.id && admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now,
+      ).length,
+    }))
+    .filter((row) => row.count > 0);
   const noDate = inBed.filter((admission) => admission.expectedDischargeAt === null).length;
   const leftToday = admissions.filter(
     (admission) => admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now),
@@ -208,17 +217,30 @@ export function FlowStatisticsProposal() {
         </Panel>
       </div>
 
-      <Panel
-        title="What is holding discharges up"
-        question="People in a bed whose discharge has a recorded blocker, by reason."
-        meta={`${blockers.totalCount} people`}
-      >
-        <RankedBars
-          rows={blockers.tallies.map((tally) => ({ label: tally.reason, count: tally.count }))}
-          tone={styles.hbarFillWarn}
-          unit={["person", "people"]}
-        />
-      </Panel>
+      <div className={styles.grid2Even}>
+        <Panel
+          title="What is holding discharges up"
+          question="People in a bed whose discharge has a recorded blocker, by reason."
+          meta={`${blockers.totalCount} people`}
+        >
+          <RankedBars
+            rows={blockers.tallies.map((tally) => ({ label: tally.reason, count: tally.count }))}
+            tone={styles.hbarFillWarn}
+            unit={["person", "people"]}
+          />
+        </Panel>
+
+        <Panel
+          title="Past their discharge date"
+          question="People still in a bed after the discharge date written for them, by ward."
+          meta={`${datePassed} people`}
+        >
+          <RankedBars rows={pastByWard} tone={styles.hbarFillWarn} unit={["person", "people"]} />
+          <p className={styles.note}>
+            The date is the ward&apos;s own plan, not a clinical judgement that the person is ready to leave.
+          </p>
+        </Panel>
+      </div>
     </main>
   );
 }

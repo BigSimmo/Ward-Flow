@@ -4,7 +4,15 @@ import { edWaitBands, edWaitFigures } from "@/components/ward-management/statist
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { unitById } from "@/components/ward-management/ward-sites";
 
-import { KpiStrip, Panel, ProposalHeader, Verdict, type Attention, proposalHref } from "./statistics-proposal-parts";
+import {
+  KpiStrip,
+  Panel,
+  TableScroll,
+  ProposalHeader,
+  Verdict,
+  type Attention,
+  proposalHref,
+} from "./statistics-proposal-parts";
 import { SERVICE_COLOUR, edShort, hoursLabel } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
@@ -171,42 +179,44 @@ export function EdStatisticsProposal({ edId }: { edId?: string }) {
       </Panel>
 
       <Panel title="All emergency departments" question="Where this department sits in the network." flush>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Department</th>
-              <th scope="col">Service</th>
-              <th scope="col" className={styles.num}>
-                Waiting
-              </th>
-              <th scope="col" className={styles.num}>
-                Over 24h
-              </th>
-              <th scope="col" className={styles.num}>
-                Longest
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((row) => (
-              <tr key={row.id} aria-current={row.id === ed.id ? "true" : undefined}>
-                <td>
-                  <span className={styles.rowName}>
-                    {row.id === ed.id ? (
-                      <strong>{edShort(row.name)} (this department)</strong>
-                    ) : (
-                      <a href={proposalHref("ed", row.id)}>{edShort(row.name)}</a>
-                    )}
-                  </span>
-                </td>
-                <td>{row.service ?? "–"}</td>
-                <td className={styles.num}>{row.waiting}</td>
-                <td className={`${styles.num} ${row.over24h ? styles.toneDanger : ""}`}>{row.over24h}</td>
-                <td className={styles.num}>{row.waiting ? hoursLabel(row.longestMinutes) : "none"}</td>
+        <TableScroll label="All emergency departments">
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Department</th>
+                <th scope="col">Service</th>
+                <th scope="col" className={styles.num}>
+                  Waiting
+                </th>
+                <th scope="col" className={styles.num}>
+                  Over 24h
+                </th>
+                <th scope="col" className={styles.num}>
+                  Longest
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ranked.map((row) => (
+                <tr key={row.id} aria-current={row.id === ed.id ? "true" : undefined}>
+                  <td>
+                    <span className={styles.rowName}>
+                      {row.id === ed.id ? (
+                        <strong>{edShort(row.name)} (this department)</strong>
+                      ) : (
+                        <a href={proposalHref("ed", row.id)}>{edShort(row.name)}</a>
+                      )}
+                    </span>
+                  </td>
+                  <td>{row.service ?? "–"}</td>
+                  <td className={styles.num}>{row.waiting}</td>
+                  <td className={`${styles.num} ${row.over24h ? styles.toneDanger : ""}`}>{row.over24h}</td>
+                  <td className={styles.num}>{row.waiting ? hoursLabel(row.longestMinutes) : "none"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
       </Panel>
     </main>
   );

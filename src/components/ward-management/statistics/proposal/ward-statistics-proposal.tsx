@@ -53,7 +53,8 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
     attention.push({ tone: "warn", label: `${referrals.askedAndWaiting} asking for a bed here` });
   if (datePassed) attention.push({ tone: "warn", label: `${datePassed} past their discharge date` });
   if (heldUp) attention.push({ tone: "warn", label: `${heldUp} discharges held up` });
-  if (freeToday) attention.push({ tone: "good", label: `${freeToday} beds expected free today` });
+  if (freeToday)
+    attention.push({ tone: "good", label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected free today` });
 
   return (
     <main id="main-content" className={styles.page} data-testid="statistics-proposal-ward">
