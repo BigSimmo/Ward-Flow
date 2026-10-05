@@ -247,7 +247,7 @@ test.describe("@mockup Transport officer screen", () => {
    */
   test("gives the officer four actions and nothing else", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/mockups/ward-flow/transport/officer?view=officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -275,7 +275,7 @@ test.describe("@mockup Transport officer screen", () => {
    */
   test("states it is showing every job rather than inventing an officer to own them", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/mockups/ward-flow/transport/officer?view=officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
 
     // Worded "All outstanding jobs..." on screen now, not "every" — same claim, different word.
@@ -307,7 +307,7 @@ test.describe("@mockup Transport officer screen", () => {
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/mockups/ward-flow/transport/officer?view=officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-officer-governance")).toBeVisible();
@@ -373,7 +373,7 @@ test.describe("@mockup Movements — transport panel", () => {
    */
   test("tracks every vehicle by leg and by how long since the last stamp", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
-    await page.goto("/mockups/ward-flow/movements?view=timeline", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
 
     // ⚠️ **RETARGETED, 2026-09-17.** This panel used to render `WardRecordRow`
@@ -419,7 +419,7 @@ test.describe("@mockup Movements — transport panel", () => {
    */
   test("lists exactly the movements that carry a transport job, and states the rest explicitly", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
-    await page.goto("/mockups/ward-flow/movements?view=timeline", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
 
     // 2026-09-25 re-measure: the rulings overlay (1b1c5bb2ba/6e4ba553f3) adds 17 open movements,
@@ -459,7 +459,7 @@ test.describe("@mockup Movements — operating structure in dark, forced-colours
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/mockups/ward-flow/movements?view=timeline", { waitUntil: "domcontentloaded" });
+    await page.goto("/mockups/ward-flow/movements", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

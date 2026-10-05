@@ -10,28 +10,27 @@ import {
   type Movement,
   type MovementStage,
 } from "@/components/ward-management/ward-model";
-import { useWardChecksPublisher } from "@/components/ward-management/shell/ward-checks";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 
-import { byLongestWait, isExpiringLegalAuthority, waitedMinutes } from "./movements-derivations";
-import { JOB_STATES, JOB_STATE_LABEL, jobState, stageLongestWait } from "./movement-flow-figures";
+import { byLongestWait, isExpiringLegalAuthority, waitedMinutes } from "../movements-derivations";
+import { JOB_STATES, JOB_STATE_LABEL, jobState, stageLongestWait } from "./movement-proposal-figures";
 import {
   Definitions,
   KpiStrip,
-  FLOW_ROUTES,
+  PROPOSAL_ROUTES,
   Panel,
   Pill,
-  FlowHeader,
+  ProposalHeader,
   Segmented,
   Verdict,
   patientInitials,
   plural,
   waited,
   type Attention,
-} from "./movement-flow-parts";
-import { useMovementFlow } from "./use-movement-flow";
-import styles from "./movement-flow.module.css";
+} from "./movement-proposal-parts";
+import { useMovementProposal } from "./use-movement-proposal";
+import styles from "./movement-proposal.module.css";
 
 type Focus = "open" | "tier1" | "awaitingWard" | "readyNoTransport" | "resolved";
 type Order = "wait" | "tier" | "stage";
@@ -57,8 +56,8 @@ export function edShort(originEdId: string) {
  * Proposed movements board. Answers "who is waiting longest and what is holding them" first, then
  * the journey as one pipeline that filters the worklist, then transport and corridors beside it.
  */
-export function MovementsBoard() {
-  const { world, now, board, transport, asAt, scopeLabel, scoped } = useMovementFlow();
+export function MovementsBoardProposal() {
+  const { world, now, board, transport, asAt, scopeLabel, scoped } = useMovementProposal();
   const [focus, setFocus] = useState<Focus>("open");
   const [showAllPlanned, setShowAllPlanned] = useState(false);
   const [stage, setStage] = useState<MovementStage | null>(null);
@@ -72,18 +71,6 @@ export function MovementsBoard() {
     (movement) => READY_STAGES.includes(movement.stage) && !movement.transport,
   );
   const noTransportAwaitingWard = board.noTransport.filter((movement) => board.awaitingWard.includes(movement)).length;
-  // The shell's reconciliation line reads this: the six open stages partition the open movements,
-  // so their lengths must add up to the Open figure. The same check the timeline view publishes.
-  const checks = useMemo(
-    () => [
-      {
-        label: "Every open movement appears exactly once across the six stages",
-        ok: board.stages.reduce((sum, entry) => sum + entry.movements.length, 0) === board.open.length,
-      },
-    ],
-    [board],
-  );
-  useWardChecksPublisher(checks);
   const maxStage = Math.max(1, ...board.stages.map((entry) => entry.movements.length));
 
   const rows = useMemo(() => {
@@ -120,14 +107,13 @@ export function MovementsBoard() {
   }, [focus, stage, order, query, board, readyNoTransport, now, world]);
 
   const shown = showAll ? rows : rows.slice(0, PAGE);
-  // The tier 1 list puts an expiring legal authority first; the sentence names the longest wait.
-  const longestTierOne = [...board.tierOne].sort((a, b) => waitedMinutes(b, now) - waitedMinutes(a, now))[0];
+  const longestTierOne = board.tierOne[0];
 
   const attention: Attention[] = [
     ...board.tierOne.slice(0, 3).map((movement) => ({
       label: `${patientInitials(movement, world)} · tier 1 · ${waited(waitedMinutes(movement, now))}`,
       tone: "danger" as const,
-      href: FLOW_ROUTES.movement(movement.id),
+      href: PROPOSAL_ROUTES.movement(movement.id),
     })),
     ...(readyNoTransport.length
       ? [
@@ -146,7 +132,7 @@ export function MovementsBoard() {
           {
             label: `${transport.byState.Requested} transport requests not yet accepted`,
             tone: "warn" as const,
-            href: FLOW_ROUTES.transport,
+            href: PROPOSAL_ROUTES.transport,
           },
         ]
       : []),
@@ -181,15 +167,15 @@ export function MovementsBoard() {
   });
 
   return (
-    <main id="main-content" className={styles.page} data-testid="movements-board">
-      <FlowHeader
+    <main id="main-content" className={styles.page} data-testid="movements-board-proposal">
+      <ProposalHeader
         crumbs={[{ label: "Operations" }, { label: "Movements" }]}
         title="Movements"
         badges={<Pill tone="quiet">{scopeLabel}</Pill>}
         asAt={asAt}
         actions={
           <>
-            <Link className={styles.textButton} href={FLOW_ROUTES.timeline}>
+            <Link className={styles.textButton} href="/mockups/ward-flow/movements">
               Movement timeline
             </Link>
             <a className={styles.buttonPrimary} href="/mockups/ward-flow/referrals/new">
@@ -322,11 +308,11 @@ export function MovementsBoard() {
         >
           <div className={styles.toolbar}>
             <div className={styles.toolbarGroup}>
-              <label className={styles.srOnly} htmlFor="movements-board-search">
+              <label className={styles.srOnly} htmlFor="movement-proposal-search">
                 Search movements
               </label>
               <input
-                id="movements-board-search"
+                id="movement-proposal-search"
                 className={styles.search}
                 type="search"
                 placeholder="Search initials, WF number, ED or ward"
@@ -372,7 +358,7 @@ export function MovementsBoard() {
                       <tr key={movement.id}>
                         <td>
                           <span className={styles.rowName}>
-                            <a href={FLOW_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
+                            <a href={PROPOSAL_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
                             <span className={styles.rowSub}>{movement.id}</span>
                           </span>
                         </td>
@@ -418,7 +404,7 @@ export function MovementsBoard() {
             title="Transport right now"
             question="Open transport jobs by state."
             meta={`${transport.jobs.length} open`}
-            foot={<a href={FLOW_ROUTES.transport}>Open Transport Hub</a>}
+            foot={<a href={PROPOSAL_ROUTES.transport}>Open Transport Hub</a>}
           >
             <ul className={styles.list}>
               {JOB_STATES.map((state) => (
@@ -488,7 +474,7 @@ export function MovementsBoard() {
                 {(showAllPlanned ? planned : planned.slice(0, 6)).map((movement) => (
                   <li key={movement.id} className={styles.listRow}>
                     <span className={styles.rowName}>
-                      <a href={FLOW_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
+                      <a href={PROPOSAL_ROUTES.movement(movement.id)}>{patientInitials(movement, world)}</a>
                       <span className={styles.rowSub}>
                         {edShort(movement.originEdId)} → {unitName(movement.acceptedUnitId) ?? "No ward yet"}
                       </span>

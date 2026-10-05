@@ -507,7 +507,7 @@
 /* Tables */
 
 .tableScroll {
-  composes: tableScroll from "../ward-table/ward-table.module.css";
+  composes: tableScroll from "../../ward-table/ward-table.module.css";
   overflow-x: auto;
   overscroll-behavior-x: contain;
   border-top: 1px solid var(--line);
@@ -519,7 +519,7 @@
 }
 
 .table {
-  composes: table from "../ward-table/ward-table.module.css";
+  composes: table from "../../ward-table/ward-table.module.css";
   font-size: var(--fs-14);
 }
 

@@ -14,30 +14,30 @@ import {
   collectedBlockedReason,
   enRouteBlockedReason,
 } from "@/components/ward-management/officer/officer-screen";
-import { edShort, tierTone } from "@/components/ward-management/movements/movements-board";
+import { edShort, tierTone } from "@/components/ward-management/movements/proposal/movements-board-proposal";
 import {
   JOB_STATES,
   JOB_STATE_LABEL,
   jobState,
   type JobState,
-} from "@/components/ward-management/movements/movement-flow-figures";
+} from "@/components/ward-management/movements/proposal/movement-proposal-figures";
 import {
   Definitions,
   KpiStrip,
   NOT_WIRED,
-  FLOW_ROUTES,
+  PROPOSAL_ROUTES,
   Panel,
   Pill,
-  FlowHeader,
+  ProposalHeader,
   Verdict,
   patientInitials,
   plainRefusal,
   plural,
   waited,
   type Attention,
-} from "@/components/ward-management/movements/movement-flow-parts";
-import { useMovementFlow } from "@/components/ward-management/movements/use-movement-flow";
-import styles from "@/components/ward-management/movements/movement-flow.module.css";
+} from "@/components/ward-management/movements/proposal/movement-proposal-parts";
+import { useMovementProposal } from "@/components/ward-management/movements/proposal/use-movement-proposal";
+import styles from "@/components/ward-management/movements/proposal/movement-proposal.module.css";
 
 type Filter = JobState | "escort" | "noCad" | "all";
 
@@ -45,13 +45,12 @@ type Filter = JobState | "escort" | "noCad" | "all";
 const STEPS: {
   from: JobState;
   label: string;
-  done: string;
   event: "TRANSPORT_ACCEPTED" | "TRANSPORT_EN_ROUTE" | "PATIENT_COLLECTED" | "PATIENT_ARRIVED";
 }[] = [
-  { from: "Requested", label: "Accept job", done: "Job accepted", event: "TRANSPORT_ACCEPTED" },
-  { from: "Accepted", label: "Mark en route", done: "Marked en route", event: "TRANSPORT_EN_ROUTE" },
-  { from: "En route", label: "Mark collected", done: "Marked collected", event: "PATIENT_COLLECTED" },
-  { from: "Collected", label: "Mark delivered", done: "Delivery recorded", event: "PATIENT_ARRIVED" },
+  { from: "Requested", label: "Accept job", event: "TRANSPORT_ACCEPTED" },
+  { from: "Accepted", label: "Mark en route", event: "TRANSPORT_EN_ROUTE" },
+  { from: "En route", label: "Mark collected", event: "PATIENT_COLLECTED" },
+  { from: "Collected", label: "Mark delivered", event: "PATIENT_ARRIVED" },
 ];
 
 const REFUSAL_LABEL: Record<string, string> = {
@@ -76,15 +75,14 @@ function sinceStep(movement: Movement): number | undefined {
  * Proposed Transport Hub. One answer line, one strip of the four job states (the same rule the
  * movements screen uses), a compact job list and a single job sheet that offers only the next step.
  */
-export function TransportHub() {
-  const { world, now, transport, asAt, scopeLabel, scoped } = useMovementFlow();
+export function TransportHubProposal() {
+  const { world, now, transport, asAt, scopeLabel, scoped } = useMovementProposal();
   const { dispatch, units, rejections } = world;
   const [filter, setFilter] = useState<Filter>("all");
   const [provider, setProvider] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  // Holds the job being confirmed, so a confirmation can never carry over to another job.
-  const [confirmFor, setConfirmFor] = useState<string | null>(null);
+  const [confirmDelivery, setConfirmDelivery] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [baseline, setBaseline] = useState<number | null>(null);
 
@@ -131,10 +129,7 @@ export function TransportHub() {
       : undefined;
 
   const officerRefusals = rejections.filter((rejection) => REFUSAL_LABEL[rejection.attempted] !== undefined).reverse();
-  const latest = baseline !== null && rejections.length > baseline ? rejections.at(-1) : undefined;
-  // Only the job the refusal was for shows it; another patient's sheet must not read as refused.
-  const newRefusal = latest && latest.movementId === selected?.id ? latest : undefined;
-  const confirmDelivery = confirmFor !== null && confirmFor === selected?.id && step?.event === "PATIENT_ARRIVED";
+  const newRefusal = baseline !== null && rejections.length > baseline ? rejections.at(-1) : undefined;
   const cancelled = scoped.flatMap((movement) =>
     (movement.unwinds ?? [])
       .filter((unwind) => unwind.kind === "transport_cancelled")
@@ -144,8 +139,7 @@ export function TransportHub() {
   const runStep = () => {
     if (!selected || !step || blocked) return;
     if (step.event === "PATIENT_ARRIVED" && !confirmDelivery) {
-      setSelectedId(selected.id);
-      setConfirmFor(selected.id);
+      setConfirmDelivery(true);
       return;
     }
     setBaseline(rejections.length);
@@ -157,9 +151,9 @@ export function TransportHub() {
     else if (step.event === "PATIENT_COLLECTED")
       dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: selected.id });
     else dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: selected.id });
-    setConfirmFor(null);
+    setConfirmDelivery(false);
     setSelectedId(selected.id);
-    setMessage(`${step.done} for ${who}.`);
+    setMessage(`${step.label} recorded for ${who}.`);
   };
 
   const providers = TRANSPORT_PROVIDERS.map((name) => {
@@ -178,7 +172,7 @@ export function TransportHub() {
     onSelect: () => {
       setFilter(filter === next ? "all" : next);
       setSelectedId(undefined);
-      setConfirmFor(null);
+      setConfirmDelivery(false);
     },
   });
 
@@ -216,8 +210,8 @@ export function TransportHub() {
   ];
 
   return (
-    <main id="main-content" className={styles.page} data-testid="transport-hub">
-      <FlowHeader
+    <main id="main-content" className={styles.page} data-testid="transport-hub-proposal">
+      <ProposalHeader
         crumbs={[{ label: "Service hubs" }, { label: "Transport Hub" }]}
         title="Transport Hub"
         badges={<Pill tone="quiet">{scopeLabel}</Pill>}
@@ -227,10 +221,7 @@ export function TransportHub() {
             <button className={styles.textButton} type="button" onClick={() => setMessage(NOT_WIRED)}>
               Dispatch comms
             </button>
-            <a className={styles.textButton} href={FLOW_ROUTES.officerView}>
-              Officer view
-            </a>
-            <a className={styles.textButton} href={FLOW_ROUTES.board}>
+            <a className={styles.textButton} href={PROPOSAL_ROUTES.board}>
               Movements
             </a>
           </>
@@ -295,22 +286,22 @@ export function TransportHub() {
         >
           <div className={styles.toolbar}>
             <div className={styles.toolbarGroup}>
-              <label className={styles.srOnly} htmlFor="transport-hub-search">
+              <label className={styles.srOnly} htmlFor="transport-proposal-search">
                 Search transport jobs
               </label>
               <input
-                id="transport-hub-search"
+                id="transport-proposal-search"
                 className={styles.search}
                 type="search"
-                placeholder="Initials, WF number, ward or CAD"
+                placeholder="Search initials, WF number, ED, ward or CAD"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
-              <label className={styles.srOnly} htmlFor="transport-hub-provider">
+              <label className={styles.srOnly} htmlFor="transport-proposal-provider">
                 Provider
               </label>
               <select
-                id="transport-hub-provider"
+                id="transport-proposal-provider"
                 className={styles.select}
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
@@ -357,7 +348,7 @@ export function TransportHub() {
                               aria-pressed={selected?.id === movement.id}
                               onClick={() => {
                                 setSelectedId(movement.id);
-                                setConfirmFor(null);
+                                setConfirmDelivery(false);
                               }}
                             >
                               {patientInitials(movement, world)}
@@ -401,7 +392,7 @@ export function TransportHub() {
               title={`Job sheet · ${who}`}
               question={`${selected.id} · ${selected.transport.provider}`}
               meta={<Pill tone={tierTone(selected.urgency)}>{urgencyTierLabel(selected.urgency)}</Pill>}
-              foot={<a href={FLOW_ROUTES.movement(selected.id)}>Open movement</a>}
+              foot={<a href={PROPOSAL_ROUTES.movement(selected.id)}>Open movement</a>}
             >
               <ol className={styles.jobSteps} aria-label="Job steps">
                 {JOB_STATES.map((state, index) => {
@@ -477,7 +468,7 @@ export function TransportHub() {
                       {confirmDelivery ? `Confirm delivered to ${destination?.name ?? "the ward"}` : step.label}
                     </button>{" "}
                     {confirmDelivery ? (
-                      <button className={styles.textButton} type="button" onClick={() => setConfirmFor(null)}>
+                      <button className={styles.textButton} type="button" onClick={() => setConfirmDelivery(false)}>
                         Cancel
                       </button>
                     ) : null}

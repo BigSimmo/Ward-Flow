@@ -19,14 +19,14 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 
 import { waitedMinutes } from "../movements-derivations";
-import { meaningfulBlocker, tierTone } from "../movements-board";
-import { JOB_STATE_LABEL, jobState } from "../movement-flow-figures";
+import { meaningfulBlocker, tierTone } from "./movements-board-proposal";
+import { JOB_STATE_LABEL, jobState } from "./movement-proposal-figures";
 import {
   NOT_WIRED,
-  FLOW_ROUTES,
+  PROPOSAL_ROUTES,
   Panel,
   Pill,
-  FlowHeader,
+  ProposalHeader,
   Segmented,
   Verdict,
   patientInitials,
@@ -34,9 +34,9 @@ import {
   plural,
   waited,
   type Attention,
-} from "../movement-flow-parts";
-import { useMovementFlow } from "../use-movement-flow";
-import styles from "../movement-flow.module.css";
+} from "./movement-proposal-parts";
+import { useMovementProposal } from "./use-movement-proposal";
+import styles from "./movement-proposal.module.css";
 
 type Filter = "eligible" | "all" | "referred";
 const TRANSPORT_STEPS = ["Requested", "Accepted", "En route", "Collected", "Arrived"] as const;
@@ -53,7 +53,7 @@ const TRANSPORT_STEP_LABEL: Record<(typeof TRANSPORT_STEPS)[number], string> = {
  * the journey, destination options and transport on one page, and puts history and facts below.
  */
 export function MovementRecordProposal({ movementId }: { movementId: string }) {
-  const { world, now, asAt } = useMovementFlow();
+  const { world, now, asAt } = useMovementProposal();
   const { dispatch, units, bedReleases, referrals, rejections } = world;
   const [filter, setFilter] = useState<Filter>("eligible");
   const [selected, setSelected] = useState<string[]>([]);
@@ -66,14 +66,14 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
   if (!movement) {
     return (
       <main id="main-content" className={styles.page} data-testid="movement-record-proposal">
-        <FlowHeader
-          crumbs={[{ label: "Movements", href: FLOW_ROUTES.board }, { label: movementId }]}
+        <ProposalHeader
+          crumbs={[{ label: "Movements", href: PROPOSAL_ROUTES.board }, { label: movementId }]}
           title="Movement not found"
           asAt={asAt}
         />
         <p className={styles.empty}>
           No movement is recorded with this number.{" "}
-          <a className={styles.link} href={FLOW_ROUTES.board}>
+          <a className={styles.link} href={PROPOSAL_ROUTES.board}>
             Back to movements
           </a>
         </p>
@@ -186,8 +186,8 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
 
   return (
     <main id="main-content" className={styles.page} data-testid="movement-record-proposal">
-      <FlowHeader
-        crumbs={[{ label: "Movements", href: FLOW_ROUTES.board }, { label: movement.id }]}
+      <ProposalHeader
+        crumbs={[{ label: "Movements", href: PROPOSAL_ROUTES.board }, { label: movement.id }]}
         title={initials}
         badges={
           <>
@@ -415,7 +415,9 @@ export function MovementRecordProposal({ movementId }: { movementId: string }) {
               leg === undefined ? "None" : leg === "Cancelled" || leg === "Arrived" ? leg : JOB_STATE_LABEL[leg].label
             }
             foot={
-              job && leg !== "Arrived" ? <a href={FLOW_ROUTES.transport}>Work this job in Transport Hub</a> : undefined
+              job && leg !== "Arrived" ? (
+                <a href={PROPOSAL_ROUTES.transport}>Work this job in Transport Hub</a>
+              ) : undefined
             }
           >
             {job ? (
