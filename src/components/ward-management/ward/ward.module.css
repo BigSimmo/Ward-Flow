@@ -2368,12 +2368,13 @@
 .topActionBarWrap {
   background: var(--surface);
   border: 1px solid var(--line);
-  padding: 14px 20px 12px;
+  padding: 14px 20px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
   border-radius: var(--r1, 10px);
   box-shadow: var(--lift);
+  overflow: hidden;
 }
 
 .topIdentityBanner {
@@ -2753,14 +2754,11 @@
 }
 
 .tabBarWrap {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  box-shadow: var(--lift-sm);
-  padding: 4px 8px;
-  border-radius: var(--r1, 10px) var(--r1, 10px) 0 0;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  margin: 6px -20px 0;
+  padding: 6px 14px;
+  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
 }
 
 .tabList {
@@ -4308,44 +4306,65 @@
 
 /* 09:30 Morning Bed Rollup Deadline & Notification Center */
 .morningRollupOverdueBanner {
-  margin: 0.6rem 0;
-  padding: 8px 14px;
+  margin: 10px 0 6px;
+  padding: 10px 16px;
   background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  border-left: 4px solid var(--warn);
-  border-radius: var(--r2, 6px);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--r1, 8px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  box-shadow: var(--lift-sm);
+  gap: 14px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 .morningRollupBannerContent {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1 1 auto;
 }
 
 .morningRollupBannerIcon {
-  font-size: 1.1rem;
-  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r2, 6px);
+  background: var(--warn-soft);
+  color: var(--warn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .morningRollupBannerText {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
   flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.morningRollupPill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--warn);
+  color: var(--text-inverse);
+  padding: 2px 7px;
+  border-radius: var(--pill, 999px);
+  font-family: var(--mono);
+}
+
+.morningRollupDesc {
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .morningRollupBannerText strong {
-  font-size: var(--t-2, 13.5px);
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -4359,28 +4378,26 @@
 }
 
 .btnConfirmMorningRollup {
-  background: var(--accent);
-  color: var(--on-accent);
-  min-height: 2.125rem;
-  padding: 0 12px;
+  background: var(--warn);
+  color: var(--text-inverse);
+  min-height: 34px;
+  padding: 0 14px;
   font-weight: 600;
-  font-size: var(--t-1, 13px);
+  font-size: 12.5px;
   border-radius: var(--r2, 6px);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--warn-border);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: var(--lift-sm);
-  transition:
-    background 0.15s,
-    transform 0.1s;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.15);
+  transition: all 0.12s ease;
   white-space: nowrap;
 }
 
 .btnConfirmMorningRollup:hover {
-  background: var(--accent-press, var(--accent));
+  filter: brightness(0.92);
   transform: translateY(-1px);
 }
 
@@ -4485,7 +4502,7 @@
 .censusCommandCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   box-shadow: var(--lift);
   display: flex;
   flex-direction: column;
@@ -4977,7 +4994,7 @@
 .pipelineColumn {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   display: flex;
   flex-direction: column;
   box-shadow: var(--lift);
@@ -5163,7 +5180,7 @@
 .leaveSectionCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   padding: 16px 18px;
   box-shadow: var(--lift);
   display: flex;
@@ -5235,7 +5252,7 @@
 .ledgerCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  border-radius: var(--r1, 10px);
   padding: 16px 18px;
   box-shadow: var(--lift);
   display: flex;

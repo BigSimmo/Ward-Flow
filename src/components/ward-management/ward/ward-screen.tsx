@@ -1684,13 +1684,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               />
             </header>
             <div className={styles.actionBtnsLeft}>
-              <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`} data-testid="ward-screen-nav">
-                <span aria-current="page">Ward home</span>
-                <Link href={wardBoardHref(unit.id)}>Bed board</Link>
-              </nav>
-
-              <div className={styles.actionDivider} aria-hidden="true" />
-
               <button
                 type="button"
                 className={styles.btnEnterWard}
@@ -1833,6 +1826,103 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             acceptedCount={accepted.length}
             onOpenBedList={() => setActiveTab("return")}
           />
+
+          {/* Operational Tab Navigation Bar Integrated at Bottom of Command Horizon */}
+          <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
+            <ul className={styles.tabList} role="tablist" id="mainTabList">
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-attn"
+                  aria-selected={activeTab === "attn"}
+                  aria-controls="tab-attn"
+                  aria-label="Home (Worth Your Attention)"
+                  onClick={() => setActiveTab("attn")}
+                >
+                  <span>Home</span>
+                  <span className={styles.tabBadge} id="badgeAttn">
+                    {incoming.length}
+                  </span>
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-coming"
+                  aria-selected={activeTab === "coming"}
+                  aria-controls="tab-coming"
+                  aria-label="Arrivals (Coming in)"
+                  onClick={() => setActiveTab("coming")}
+                >
+                  <span>Arrivals</span>
+                  <span className={styles.tabBadge} id="badgeComing">
+                    {accepted.length}
+                  </span>
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-out"
+                  aria-selected={activeTab === "out"}
+                  aria-controls="tab-out"
+                  aria-label="Discharges (On the way out)"
+                  onClick={() => setActiveTab("out")}
+                >
+                  <span>Discharges</span>
+                  <span className={styles.tabBadge} id="badgeOut">
+                    {pendingBedReleases.length + unitLeaveBeds.length}
+                  </span>
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-beds"
+                  aria-selected={activeTab === "beds"}
+                  aria-controls="tab-beds"
+                  aria-label="Beds (Bed Board & Roster)"
+                  onClick={() => setActiveTab("beds")}
+                >
+                  <span>Beds</span>
+                  <span className={styles.tabBadge} id="badgeBeds">
+                    {unit.beds}
+                  </span>
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-return"
+                  aria-selected={activeTab === "return"}
+                  aria-controls="tab-return"
+                  aria-label="Decisions (Ward record)"
+                  onClick={() => setActiveTab("return")}
+                >
+                  <span>Decisions</span>
+                  <span
+                    className={styles.tabBadge}
+                    id="badgeReturn"
+                    style={{ color: "var(--danger)", fontWeight: 700 }}
+                    title="2 decisions due this shift"
+                    aria-label="2 decisions due this shift"
+                  >
+                    2 Due
+                  </span>
+                </button>
+              </li>
+            </ul>
+          </nav>
         </section>
 
         {/* 09:30 Morning Bed Rollup Deadline Banner */}
@@ -1848,11 +1938,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <span className="sr-only">These counts are invented figures.</span>
             <div className={styles.morningRollupBannerContent}>
               <span className={styles.morningRollupBannerIcon} aria-hidden="true">
-                ⚠️
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10 2L1 18h18L10 2z" />
+                  <path d="M10 8v5M10 15h.01" />
+                </svg>
               </span>
               <div className={styles.morningRollupBannerText}>
+                <span className={styles.morningRollupPill}>Action Required</span>
                 <strong>{morningRollupTimeLabel} Morning Bed Rollup Overdue</strong>
-                <span>
+                <span className={styles.morningRollupDesc}>
                   Today&rsquo;s planned discharge numbers and allocatable beds have not yet been confirmed for{" "}
                   {unit.name}. State Bed Flow Coordination is awaiting morning census.
                 </span>
@@ -1891,103 +1985,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </button>
           </div>
         ) : null}
-
-        {/* Operational Tab Navigation Bar */}
-        <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
-          <ul className={styles.tabList} role="tablist" id="mainTabList">
-            <li role="presentation">
-              <button
-                type="button"
-                className={styles.tabBtn}
-                role="tab"
-                id="tabBtn-attn"
-                aria-selected={activeTab === "attn"}
-                aria-controls="tab-attn"
-                aria-label="Home (Worth Your Attention)"
-                onClick={() => setActiveTab("attn")}
-              >
-                <span>Home</span>
-                <span className={styles.tabBadge} id="badgeAttn">
-                  {incoming.length}
-                </span>
-              </button>
-            </li>
-            <li role="presentation">
-              <button
-                type="button"
-                className={styles.tabBtn}
-                role="tab"
-                id="tabBtn-coming"
-                aria-selected={activeTab === "coming"}
-                aria-controls="tab-coming"
-                aria-label="Arrivals (Coming in)"
-                onClick={() => setActiveTab("coming")}
-              >
-                <span>Arrivals</span>
-                <span className={styles.tabBadge} id="badgeComing">
-                  {accepted.length}
-                </span>
-              </button>
-            </li>
-            <li role="presentation">
-              <button
-                type="button"
-                className={styles.tabBtn}
-                role="tab"
-                id="tabBtn-out"
-                aria-selected={activeTab === "out"}
-                aria-controls="tab-out"
-                aria-label="Discharges (On the way out)"
-                onClick={() => setActiveTab("out")}
-              >
-                <span>Discharges</span>
-                <span className={styles.tabBadge} id="badgeOut">
-                  {pendingBedReleases.length + unitLeaveBeds.length}
-                </span>
-              </button>
-            </li>
-            <li role="presentation">
-              <button
-                type="button"
-                className={styles.tabBtn}
-                role="tab"
-                id="tabBtn-beds"
-                aria-selected={activeTab === "beds"}
-                aria-controls="tab-beds"
-                aria-label="Beds (Bed Board & Roster)"
-                onClick={() => setActiveTab("beds")}
-              >
-                <span>Beds</span>
-                <span className={styles.tabBadge} id="badgeBeds">
-                  {unit.beds}
-                </span>
-              </button>
-            </li>
-            <li role="presentation">
-              <button
-                type="button"
-                className={styles.tabBtn}
-                role="tab"
-                id="tabBtn-return"
-                aria-selected={activeTab === "return"}
-                aria-controls="tab-return"
-                aria-label="Decisions (Ward record)"
-                onClick={() => setActiveTab("return")}
-              >
-                <span>Decisions</span>
-                <span
-                  className={styles.tabBadge}
-                  id="badgeReturn"
-                  style={{ color: "var(--danger)", fontWeight: 700 }}
-                  title="2 decisions due this shift"
-                  aria-label="2 decisions due this shift"
-                >
-                  2 Due
-                </span>
-              </button>
-            </li>
-          </ul>
-        </nav>
 
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <section
@@ -2042,16 +2039,35 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           data-active={activeTab === "return"}
         >
           <WardDecisionsCockpit unit={unit} demonstration />
-          <div className={styles.censusCommandCard} style={{ marginTop: "1rem", padding: "16px 20px" }}>
+          <div className={styles.censusCommandCard} style={{ marginTop: "1rem" }}>
             <details
               className={styles.clinicalDisclosure}
               open
               style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}
             >
-              <summary style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", cursor: "pointer" }}>
-                Update allocatable count directly
+              <summary
+                className={styles.commandHeader}
+                style={{
+                  cursor: "pointer",
+                  listStyle: "none",
+                  userSelect: "none",
+                }}
+              >
+                <div className={styles.commandTitleGroup}>
+                  <h2 className={styles.commandMainTitle}>
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="3" width="12" height="10" rx="1" />
+                      <path d="M5 8h6M8 5v6" />
+                    </svg>
+                    <span>Update allocatable count directly</span>
+                  </h2>
+                  <span className={styles.commandSubTitle}>Fast capacity override for {unit.name}</span>
+                </div>
+                <span className={styles.returnStatusChip}>Quick override</span>
               </summary>
-              <div style={{ marginTop: "10px" }}>{presentation !== "answer" ? capacityConfirmationForm() : null}</div>
+              <div style={{ padding: "16px 20px" }}>
+                {presentation !== "answer" ? capacityConfirmationForm() : null}
+              </div>
             </details>
           </div>
           {/* Operational controls remain visible and keyboard reachable alongside the summary. */}
@@ -2529,7 +2545,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 style={{
                   background: "var(--surface)",
                   border: "1px solid var(--line)",
-                  borderRadius: "var(--r1, 8px)",
+                  borderRadius: "var(--r1, 10px)",
                   padding: "16px 18px",
                   boxShadow: "var(--lift)",
                   margin: "0 0 16px 0",
@@ -3285,11 +3301,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 onSubmit={submitLeaveBed}
                 data-testid="ward-leave-bed-form"
                 style={{
-                  background: "var(--surface-2)",
+                  background: "var(--surface)",
                   border: "1px solid var(--line)",
-                  borderRadius: "var(--r2, 6px)",
-                  padding: "14px 16px",
-                  margin: "0 0 12px 0",
+                  borderRadius: "var(--r1, 10px)",
+                  padding: "16px 18px",
+                  boxShadow: "var(--lift)",
+                  margin: "0 0 16px 0",
                 }}
               >
                 <span className={styles.capacityLabel}>Record a bed on leave at {unit.name}</span>
