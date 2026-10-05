@@ -66,7 +66,11 @@ export function PatientProposal({ id }: { id: string }) {
   const ed = movement ? edById(movement.originEdId) : undefined;
   const service = ed ? siteByCode(ed.siteCode)?.service : undefined;
   const stageIndex = movement ? MOVEMENT_STAGES.indexOf(movement.stage) : -1;
-  const hours = movement ? waitedHours(movement, now) : 0;
+  const hours = movement
+    ? movement.closure
+      ? Math.max(0, (movement.closure.at - movement.openedAt) / 60)
+      : waitedHours(movement, now)
+    : 0;
   const lastRejection =
     attemptedAt !== null && movement
       ? rejections.find((entry) => entry.movementId === movement.id && entry.at >= attemptedAt)
@@ -205,13 +209,16 @@ export function PatientProposal({ id }: { id: string }) {
                       </>
                     ) : (
                       <>
-                        <p>{journeySentence(movement, ward?.name)}</p>
-                        <p className={styles.mutedText}>
-                          The controls for this step are on the current patient screen.{" "}
-                          <a className={styles.textLink} href={currentHref}>
-                            Open coordination controls
-                          </a>
-                        </p>
+                        {open ? (
+                          <p className={styles.mutedText}>
+                            The controls for this step stay on the current patient screen in this preview.{" "}
+                            <a className={styles.textLink} href={currentHref}>
+                              Open coordination controls
+                            </a>
+                          </p>
+                        ) : (
+                          <p className={styles.mutedText}>Nothing more to do on this journey.</p>
+                        )}
                       </>
                     )}
                   </div>
@@ -230,7 +237,7 @@ export function PatientProposal({ id }: { id: string }) {
               </div>
 
               <div className={styles.stack}>
-                <Panel title="Now">
+                <Panel title={open ? "Now" : "Summary"}>
                   <dl className={styles.facts}>
                     <dt>In</dt>
                     <dd>
@@ -240,10 +247,10 @@ export function PatientProposal({ id }: { id: string }) {
                         <span className={styles.num}>{formatInstantWithDay(movement.openedAt, now)}</span>
                       </span>
                     </dd>
-                    <dt>Waited</dt>
+                    <dt>{open ? "Waited" : "Journey took"}</dt>
                     <dd>
                       <span className={styles.num}>{hours.toFixed(1)} h</span>{" "}
-                      {hours >= LONG_WAIT_HOURS ? (
+                      {open && hours >= LONG_WAIT_HOURS ? (
                         <span className={styles.warnText}>Over {LONG_WAIT_HOURS} hours</span>
                       ) : null}
                     </dd>
