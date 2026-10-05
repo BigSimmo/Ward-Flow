@@ -563,6 +563,48 @@
   .ckb-v2.ckb-v2,
   .dark .ckb-v2.ckb-v2,
   .ckb-v2.dark.ckb-v2 {
+    --delays-ink: CanvasText;
+    --delays-blue: LinkText;
+    --delays-amber: CanvasText;
+    --delays-muted: CanvasText;
+    --delays-border: CanvasText;
+    --delays-surface: Canvas;
+    --delays-attention-summary-surface: Canvas;
+    --delays-attention-summary-ink: CanvasText;
+    --delays-urgent-surface: Canvas;
+    --delays-urgent-border: CanvasText;
+    --delays-urgent-edge: CanvasText;
+    --delays-urgent-ink: CanvasText;
+    --delays-wait-under-eight: Canvas;
+    --delays-wait-eight-to-day: Canvas;
+    --delays-wait-over-day: Canvas;
+    --delays-wait-under-eight-key: CanvasText;
+    --delays-wait-over-day-key: CanvasText;
+    --delays-axis: CanvasText;
+    --delays-selection-edge: Canvas;
+    --delays-stat-amber: CanvasText;
+    --delays-radar-axis: CanvasText;
+    --delays-radar-review-line: CanvasText;
+    --delays-radar-review-surface: Canvas;
+    --delays-radar-quiet: CanvasText;
+    --delays-radar-due-ink: CanvasText;
+    --delays-radar-due-dot: CanvasText;
+    --delays-radar-due-halo: Canvas;
+    --delays-radar-detail-due: CanvasText;
+    --delays-radar-triage-surface: Canvas;
+    --delays-radar-triage-ink: CanvasText;
+    --delays-radar-outlier-ink: CanvasText;
+    --delays-inspector-surface: Canvas;
+    --delays-owner-wash: Canvas;
+    --delays-toolbar-surface: Canvas;
+    --delays-radar-lane: Canvas;
+    --delays-panel-shadow: none;
+    --delays-timeline-review-line: CanvasText;
+    --delays-timeline-review-ink: CanvasText;
+    --delays-timeline-review-surface: Canvas;
+    --delays-timeline-grid: CanvasText;
+    --delays-timeline-selection: Canvas;
+    --delays-ground: Canvas;
     --background: Canvas;
     --surface: Canvas;
     --surface-chrome: Canvas;
@@ -665,54 +707,5 @@
     --rule-warning: inset var(--rule-w) 0 0 CanvasText;
     --spine-current: LinkText;
     --spine-stale: CanvasText;
-  }
-}
-
-@media (forced-colors: active) {
-  .ckb-v2.ckb-v2,
-  .dark .ckb-v2.ckb-v2,
-  .ckb-v2.dark.ckb-v2 {
-    --delays-ink: CanvasText;
-    --delays-blue: LinkText;
-    --delays-amber: CanvasText;
-    --delays-muted: CanvasText;
-    --delays-border: CanvasText;
-    --delays-surface: Canvas;
-    --delays-attention-summary-surface: Canvas;
-    --delays-attention-summary-ink: CanvasText;
-    --delays-urgent-surface: Canvas;
-    --delays-urgent-border: CanvasText;
-    --delays-urgent-edge: CanvasText;
-    --delays-urgent-ink: CanvasText;
-    --delays-wait-under-eight: Canvas;
-    --delays-wait-eight-to-day: Canvas;
-    --delays-wait-over-day: Canvas;
-    --delays-wait-under-eight-key: CanvasText;
-    --delays-wait-over-day-key: CanvasText;
-    --delays-axis: CanvasText;
-    --delays-selection-edge: Canvas;
-    --delays-stat-amber: CanvasText;
-    --delays-radar-axis: CanvasText;
-    --delays-radar-review-line: CanvasText;
-    --delays-radar-review-surface: Canvas;
-    --delays-radar-quiet: CanvasText;
-    --delays-radar-due-ink: CanvasText;
-    --delays-radar-due-dot: CanvasText;
-    --delays-radar-due-halo: Canvas;
-    --delays-radar-detail-due: CanvasText;
-    --delays-radar-triage-surface: Canvas;
-    --delays-radar-triage-ink: CanvasText;
-    --delays-radar-outlier-ink: CanvasText;
-    --delays-inspector-surface: Canvas;
-    --delays-owner-wash: Canvas;
-    --delays-toolbar-surface: Canvas;
-    --delays-radar-lane: Canvas;
-    --delays-panel-shadow: none;
-    --delays-timeline-review-line: CanvasText;
-    --delays-timeline-review-ink: CanvasText;
-    --delays-timeline-review-surface: Canvas;
-    --delays-timeline-grid: CanvasText;
-    --delays-timeline-selection: Canvas;
-    --delays-ground: Canvas;
   }
 }
