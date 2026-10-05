@@ -1,3 +1,4 @@
+import { MovementProposalPreview } from "@/components/ward-management/movements/proposal/movement-proposal-preview";
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
@@ -212,6 +213,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/capacity`, render: () => createElement(CapacityScreen) },
   { route: `${ROUTE_PREFIX}/governance`, render: () => createElement(WardModeWorkspace, { mode: "governance" }) },
   { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsScreen) },
+  { route: `${ROUTE_PREFIX}/movements/proposal`, render: () => createElement(MovementProposalPreview, {}) },
   { route: `${ROUTE_PREFIX}/network`, render: () => createElement(WardModeWorkspace, { mode: "network" }) },
   { route: `${ROUTE_PREFIX}/ed/[edId]`, render: () => createElement(EdScreen, { edId: "peel-ed" }) },
   {

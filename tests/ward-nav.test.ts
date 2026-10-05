@@ -1,3 +1,4 @@
+import { MovementProposalPreview } from "@/components/ward-management/movements/proposal/movement-proposal-preview";
 import { SettingsScreen } from "../src/components/ward-management/settings/settings-screen";
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
@@ -1293,6 +1294,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/capacity`, render: () => createElement(CapacityScreen) },
   { route: `${ROUTE_PREFIX}/governance`, render: () => createElement(WardModeWorkspace, { mode: "governance" }) },
   { route: `${ROUTE_PREFIX}/movements`, render: () => createElement(MovementsScreen) },
+  { route: `${ROUTE_PREFIX}/movements/proposal`, render: () => createElement(MovementProposalPreview, {}) },
   { route: `${ROUTE_PREFIX}/network`, render: () => createElement(WardModeWorkspace, { mode: "network" }) },
   { route: `${ROUTE_PREFIX}/ed/[edId]`, render: () => createElement(EdScreen, { edId: "peel-ed" }) },
   {
@@ -1423,7 +1425,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 37, not 36: 5 October 2026 added the review-only `/movements/proposal` preview route.
+    expect(RENDERABLE_ROUTES.length).toBe(37);
   });
 });
 

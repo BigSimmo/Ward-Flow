@@ -104,6 +104,7 @@ const PINNED: Record<string, string | null> = {
   // was deleted outright, not merely repointed to redirect, so there is no page.tsx left on disk
   // for `routeFiles`/`found` to discover and no binding left to pin.
   movements: "MovementsScreen",
+  "movements/proposal": "MovementProposalPreview",
   "movements/[movementId]": "WardMovementNotFound",
   network: "WardModeWorkspace",
   "out-of-area": "OutOfAreaBoard",

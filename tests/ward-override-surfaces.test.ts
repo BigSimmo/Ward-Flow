@@ -667,6 +667,9 @@ describe("ward override-surface guard", () => {
       "src/components/ward-management/patients/patient-transit-operations.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::PULL_PATIENT": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::REFER_TO_UNITS": 2,
+      // 5 October 2026 movements proposal preview: ordinary referral plus the override re-dispatch,
+      // the same two-site shape as the patient transit deck above.
+      "src/components/ward-management/movements/proposal/movement-record-proposal.tsx::REFER_TO_UNITS": 2,
       // RB5 (item 16): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
       // overrideReason) is joined by handleCommunityAccept (community_team, needs none, the
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).
