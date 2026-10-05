@@ -11,7 +11,7 @@ import { HEALTH_SERVICES, type BedRelease, type HealthService } from "@/componen
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 
-import { dischargeFigures, headlineFigures } from "./flow-proposal-figures";
+import { dischargeFigures } from "./flow-proposal-figures";
 import { KpiStrip, NOT_WIRED, Panel, Pill, PreviewBar, ProposalHeader, Verdict, plural } from "./flow-proposal-parts";
 import styles from "./flow-proposal.module.css";
 
@@ -38,8 +38,11 @@ export function DischargesProposal() {
   const { units, admissions, patients = [], referrals, movements, dayZero } = world;
   const [service, setService] = useState<"all" | HealthService>("all");
   const [chosenId, setChosenId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<GroupId[]>([]);
+  const limitFor = (id: GroupId) => (expanded.includes(id) ? Number.POSITIVE_INFINITY : id === "later" ? 6 : 12);
+  const toggleGroup = (id: GroupId) =>
+    setExpanded((current) => (current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]));
 
-  const headline = headlineFigures(world, now);
   const figures = useMemo(() => dischargeFigures(world, now), [world, now]);
   const unitsById = useMemo(() => new Map(units.map((unit) => [unit.id, unit])), [units]);
   const inService = (release: BedRelease) => {
@@ -59,6 +62,7 @@ export function DischargesProposal() {
     freed: groups["discharged-today"].filter(inService),
   };
   const all = (Object.keys(grouped) as GroupId[]).flatMap((id) => grouped[id]);
+  const expectedCount = grouped.late.length + grouped.later.length;
   const selected = all.find((release) => release.id === chosenId) ?? all[0];
 
   const blockerCounts = new Map<string, number>();
@@ -95,7 +99,7 @@ export function DischargesProposal() {
           actions={
             <button
               type="button"
-              className={styles.button}
+              className={styles.buttonQuiet}
               title={NOT_WIRED}
               onClick={() => announceToWardShell(NOT_WIRED)}
             >
@@ -104,21 +108,43 @@ export function DischargesProposal() {
           }
         />
 
+        <div className={`${styles.toolbar} ${styles.noPrint}`}>
+          <label className={styles.fieldHint} htmlFor="discharge-proposal-service">
+            Discharges for
+          </label>
+          <select
+            id="discharge-proposal-service"
+            className={styles.select}
+            value={service}
+            onChange={(event) => setService(event.target.value as "all" | HealthService)}
+          >
+            <option value="all">Whole network</option>
+            {HEALTH_SERVICES.map((entry) => (
+              <option key={entry} value={entry}>
+                {entry}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <Verdict
           attention={[
             ...blockers
               .slice(0, 3)
-              .map(([reason, count]) => ({ tone: "danger" as const, label: `${count} ${reason.toLowerCase()}` })),
-            ...(late.length ? [{ tone: "warn" as const, label: `${late.length} past the written time` }] : []),
+              .map(([reason, count]) => ({ tone: "warn" as const, label: `${count} ${reason.toLowerCase()}` })),
+            ...(grouped.late.length
+              ? [{ tone: "warn" as const, label: `${grouped.late.length} past the written time` }]
+              : []),
           ]}
         >
           <strong>
-            {headline.dischargesHeldUp === 0
+            {service === "all" ? "" : `For ${service}: `}
+            {grouped.held.length === 0
               ? "No discharge is held up."
-              : `${plural(headline.dischargesHeldUp, "discharge")} ${headline.dischargesHeldUp === 1 ? "is" : "are"} held up`}
+              : `${plural(grouped.held.length, "discharge")} ${grouped.held.length === 1 ? "is" : "are"} held up`}
           </strong>
-          {headline.dischargesHeldUp === 0 ? " " : " and need someone to act. "}
-          {groups.confirmed.length} confirmed, and {groups.expected.length} more expected by tomorrow, {late.length} of
+          {grouped.held.length === 0 ? " " : " and need someone to act. "}
+          {grouped.confirmed.length} confirmed, and {expectedCount} more expected by tomorrow, {grouped.late.length} of
           them already past the time the ward wrote.
         </Verdict>
 
@@ -127,19 +153,23 @@ export function DischargesProposal() {
           items={[
             {
               label: "Held up",
-              value: groups.blocked.length,
-              tone: groups.blocked.length ? "danger" : "good",
-              note: "Same figure as the sidebar",
+              value: grouped.held.length,
+              tone: grouped.held.length ? "warn" : "good",
+              note: "A recorded reason stops them leaving",
             },
-            { label: "Confirmed", value: groups.confirmed.length, note: "Not held up" },
+            { label: "Confirmed", value: grouped.confirmed.length, note: "Not held up" },
             {
               label: "Expected by tomorrow",
-              value: groups.expected.length,
-              note: `${late.length} past the written time`,
-              tone: late.length ? "warn" : undefined,
+              value: expectedCount,
+              note: `${grouped.late.length} past the written time`,
+              tone: grouped.late.length ? "warn" : undefined,
             },
-            { label: "Freed, last 24 hours", value: groups["discharged-today"].length },
-            { label: "Expected later", value: groups.excludedBeyondToday, note: "Two or more days away" },
+            { label: "Freed, last 24 hours", value: grouped.freed.length },
+            {
+              label: "Expected later",
+              value: groups.excludedBeyondToday,
+              note: service === "all" ? "Two or more days away" : "Whole network; not split by service",
+            },
           ]}
         />
 
@@ -147,7 +177,7 @@ export function DischargesProposal() {
           <Panel
             title="Discharge worklist"
             question="Grouped by what needs doing, held up first."
-            meta={`${all.length} of ${figures.shown} shown`}
+            meta={service === "all" ? `${all.length} listed` : `${all.length} of ${figures.shown} listed`}
             flush
             foot={
               <>
@@ -159,33 +189,19 @@ export function DischargesProposal() {
               </>
             }
           >
-            <div className={styles.panelBody}>
-              <div className={styles.toolbar}>
-                <label className={styles.fieldHint} htmlFor="discharge-proposal-service">
-                  Health service
-                </label>
-                <select
-                  id="discharge-proposal-service"
-                  className={styles.select}
-                  value={service}
-                  onChange={(event) => setService(event.target.value as "all" | HealthService)}
-                >
-                  <option value="all">All services</option>
-                  {HEALTH_SERVICES.map((entry) => (
-                    <option key={entry} value={entry}>
-                      {entry}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {service !== "all" && !units.some((unit) => unitHealthService(unit) === service) ? (
+              <p className={styles.callout} style={{ margin: "0 1rem 0.75rem" }}>
+                This prototype holds no {service} wards, so nothing is listed. That is missing sample data, not an empty
+                service.
+              </p>
+            ) : null}
             {(Object.keys(grouped) as GroupId[]).map((id) => (
               <section key={id} aria-label={GROUP_COPY[id].title}>
                 <h3 className={styles.groupHead}>
                   <span>
                     <strong>{GROUP_COPY[id].title}</strong> · {grouped[id].length}
                   </span>
-                  <span>{GROUP_COPY[id].note}</span>
+                  <span className={styles.groupNote}>{GROUP_COPY[id].note}</span>
                 </h3>
                 {grouped[id].length === 0 ? (
                   <p className={styles.note} style={{ margin: "0.5rem 1rem 0.75rem" }}>
@@ -193,7 +209,7 @@ export function DischargesProposal() {
                   </p>
                 ) : (
                   <ul className={styles.rows}>
-                    {grouped[id].slice(0, id === "later" ? 6 : 12).map((release) => (
+                    {grouped[id].slice(0, limitFor(id)).map((release) => (
                       <li key={release.id}>
                         <button
                           type="button"
@@ -213,7 +229,7 @@ export function DischargesProposal() {
                             </span>
                           </span>
                           <span className={styles.rowAside}>
-                            {release.blocker ? <Pill tone="danger">{release.blocker}</Pill> : null}
+                            {release.blocker ? <Pill tone="warn">{release.blocker}</Pill> : null}
                             {!release.blocker && release.waitingOn ? <Pill>{release.waitingOn}</Pill> : null}
                             {release.state === "confirmed" && !release.blocker ? (
                               <Pill tone="good">Confirmed</Pill>
@@ -225,10 +241,16 @@ export function DischargesProposal() {
                   </ul>
                 )}
                 {grouped[id].length > (id === "later" ? 6 : 12) ? (
-                  <p className={styles.note} style={{ margin: "0 1rem 0.75rem" }}>
-                    {grouped[id].length - (id === "later" ? 6 : 12)} more not shown. Narrow by health service to see
-                    them.
-                  </p>
+                  <div className={styles.panelFoot}>
+                    <span>
+                      {expanded.includes(id)
+                        ? `All ${grouped[id].length} shown`
+                        : `${limitFor(id)} of ${grouped[id].length} shown`}
+                    </span>
+                    <button type="button" className={styles.buttonQuiet} onClick={() => toggleGroup(id)}>
+                      {expanded.includes(id) ? "Show fewer" : `Show all ${grouped[id].length}`}
+                    </button>
+                  </div>
                 ) : null}
               </section>
             ))}
@@ -250,7 +272,7 @@ export function DischargesProposal() {
                     </span>
                   </h3>
                   {selected.blocker ? (
-                    <Pill tone="danger">Held up</Pill>
+                    <Pill tone="warn">Held up</Pill>
                   ) : (
                     <Pill>
                       {selected.state === "discharged"
@@ -301,7 +323,7 @@ export function DischargesProposal() {
                   </a>
                   <button
                     type="button"
-                    className={styles.button}
+                    className={styles.buttonQuiet}
                     title={NOT_WIRED}
                     onClick={() => announceToWardShell(NOT_WIRED)}
                   >
@@ -322,10 +344,7 @@ export function DischargesProposal() {
                     <li key={reason} className={styles.hbar}>
                       <span className={styles.hbarLabel}>{reason}</span>
                       <span className={styles.hbarTrack}>
-                        <span
-                          className={`${styles.hbarFill} ${styles.hbarFillDanger}`}
-                          style={{ width: `${(count / maxBlocker) * 100}%` }}
-                        />
+                        <span className={styles.hbarFill} style={{ width: `${(count / maxBlocker) * 100}%` }} />
                       </span>
                       <span className={styles.hbarValue}>{count}</span>
                     </li>
@@ -338,7 +357,9 @@ export function DischargesProposal() {
 
             <dl className={styles.definitions}>
               <dt>Held up</dt>
-              <dd>A recorded reason is stopping the person leaving. The sidebar counts these.</dd>
+              <dd>
+                A recorded reason is stopping the person leaving. The Discharges count in the menu is this figure.
+              </dd>
               <dt>Expected</dt>
               <dd>The ward has written a time but not confirmed it. A passed time is not a confirmed discharge.</dd>
               <dt>Freed</dt>

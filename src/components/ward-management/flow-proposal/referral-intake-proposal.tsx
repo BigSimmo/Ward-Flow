@@ -250,8 +250,8 @@ export function ReferralIntakeProposal() {
           title="Make a referral"
           asAt={`As at ${formatSheetMoment(now, dayZero)}`}
           actions={
-            <a className={styles.button} href={PROPOSAL_ROUTES.board.href}>
-              Referral board
+            <a className={styles.buttonQuiet} href={PROPOSAL_ROUTES.board.href}>
+              Open the referral board
             </a>
           }
         />

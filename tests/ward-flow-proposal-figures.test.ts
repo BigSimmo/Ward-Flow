@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  currentShift,
   dischargeFigures,
   handoverFigures,
   headlineFigures,
@@ -75,5 +76,28 @@ describe("flow proposal figures", () => {
     expect(discharges.shown + discharges.groups.excludedBeyondToday + discharges.groups.completedBeforeToday).toBe(
       discharges.total,
     );
+  });
+
+  it("names the running shift and its handover, including the night shift ending tomorrow", () => {
+    expect(currentShift(10 * 60 + 42)).toMatchObject({
+      name: "Day shift",
+      endsAt: "15:00",
+      minutesLeft: 258,
+      endsTomorrow: false,
+    });
+    expect(currentShift(15 * 60)).toMatchObject({ name: "Evening shift", endsAt: "23:00", minutesLeft: 480 });
+    expect(currentShift(23 * 60 + 30)).toMatchObject({
+      name: "Night shift",
+      endsAt: "07:00",
+      minutesLeft: 450,
+      endsTomorrow: true,
+    });
+    expect(currentShift(3 * 60)).toMatchObject({
+      name: "Night shift",
+      endsAt: "07:00",
+      minutesLeft: 240,
+      endsTomorrow: false,
+    });
+    expect(currentShift(-60)).toMatchObject({ name: "Night shift", minutesLeft: 480, endsTomorrow: true });
   });
 });

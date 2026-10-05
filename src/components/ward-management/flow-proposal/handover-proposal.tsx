@@ -4,15 +4,14 @@ import { useMemo, useState } from "react";
 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
-import { formatSheetMoment, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { HEALTH_SERVICES, type Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 
-import { handoverFigures, type ProposalScope } from "./flow-proposal-figures";
+import { currentShift, handoverFigures, type ProposalScope } from "./flow-proposal-figures";
 import {
   KpiStrip,
   NOT_WIRED,
@@ -29,7 +28,6 @@ import styles from "./flow-proposal.module.css";
 const LIST_LIMIT = 10;
 
 /** The day shift's end as a clock face. A fixed rule of the roster, not an instant on any day. */
-const SHIFT_END_LABEL = `${String(Math.floor(DAY_SHIFT_END_MINUTE / 60)).padStart(2, "0")}:${String(DAY_SHIFT_END_MINUTE % 60).padStart(2, "0")}`;
 
 /**
  * Proposed shift handover: one printable sheet in the order a receiving coordinator reads it. What
@@ -43,6 +41,7 @@ export function HandoverProposal() {
   const { units, patients = [], referrals, movements, dayZero } = world;
   const [scope, setScope] = useState<ProposalScope>("network");
   const [showAllWaiting, setShowAllWaiting] = useState(false);
+  const [showAllInbound, setShowAllInbound] = useState(false);
   const [notes, setNotes] = useState("");
 
   const figures = useMemo(() => handoverFigures(world, scope, now), [world, scope, now]);
@@ -52,11 +51,8 @@ export function HandoverProposal() {
   const unitName = (id: string | undefined) =>
     id ? (units.find((unit) => unit.id === id)?.name ?? id) : "No ward yet";
   const waited = (movement: Movement) => splitDuration(Math.max(0, now - movement.openedAt));
-  const minutesToHandover = DAY_SHIFT_END_MINUTE - minuteOfDay(now);
-  const handoverLine =
-    minutesToHandover > 0
-      ? `Handing over at ${SHIFT_END_LABEL}, in ${splitDuration(minutesToHandover)}`
-      : "Day shift handover time has passed";
+  const shift = currentShift(now);
+  const handoverLine = `${shift.name} hands over at ${shift.endsAt}${shift.endsTomorrow ? " tomorrow" : ""}, in ${splitDuration(shift.minutesLeft)}`;
 
   const waitingShown = showAllWaiting ? figures.waitingForWard : figures.waitingForWard.slice(0, LIST_LIMIT);
 
@@ -82,12 +78,14 @@ export function HandoverProposal() {
 
   function copySheet() {
     const text = sheetText();
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(
-        () => announceToWardShell("Handover copied as text, initials only."),
-        () => announceToWardShell("Copy did not work in this browser."),
-      );
+    if (typeof navigator === "undefined" || !navigator.clipboard) {
+      announceToWardShell("Copy did not work in this browser. Use Print instead.");
+      return;
     }
+    navigator.clipboard.writeText(text).then(
+      () => announceToWardShell("Handover copied as text, initials only."),
+      () => announceToWardShell("Copy did not work in this browser. Use Print instead."),
+    );
   }
 
   return (
@@ -100,7 +98,7 @@ export function HandoverProposal() {
           asAt={`As at ${formatSheetMoment(now, dayZero)} · ${handoverLine}`}
           actions={
             <span className={`${styles.toolbar} ${styles.noPrint}`}>
-              <button type="button" className={styles.button} onClick={copySheet}>
+              <button type="button" className={styles.buttonQuiet} onClick={copySheet}>
                 Copy as text
               </button>
               <button type="button" className={styles.buttonPrimary} onClick={() => window.print()}>
@@ -159,6 +157,12 @@ export function HandoverProposal() {
               : []),
           ]}
         >
+          {figures.unitCount === 0 ? (
+            <>
+              <strong>This prototype holds no {scopeLabel} wards,</strong> so every figure below is zero. That is
+              missing sample data, not an empty service.{" "}
+            </>
+          ) : null}
           <strong>
             For {scopeLabel}: {figures.waitingForWard.length} still need a ward to accept them
           </strong>{" "}
@@ -182,14 +186,14 @@ export function HandoverProposal() {
               label: "Time limit or nowhere to go",
               value: figures.severeCount,
               tone: figures.severeCount ? "danger" : "good",
-              note: "Same rule as the sidebar's Delays",
+              note: "Recorded form time, or no bed anywhere",
             },
-            { label: "Beds ready now", value: figures.bedsReadyNow, note: "Same rule as the sidebar's Capacity" },
+            { label: "Beds ready now", value: figures.bedsReadyNow, note: "Free, staffed and confirmed by the ward" },
             {
               label: "Discharges held up",
               value: figures.dischargesHeldUp,
               tone: figures.dischargesHeldUp ? "warn" : undefined,
-              note: "Same rule as the sidebar's Discharges",
+              note: "A recorded reason stops them leaving",
             },
           ]}
         />
@@ -202,22 +206,17 @@ export function HandoverProposal() {
               {figures.severe.flatMap((group) =>
                 group.movements.map((movement) => (
                   <li key={`${group.cause}-${movement.id}`} className={styles.candidate}>
-                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-                      <span className={styles.avatar} aria-hidden="true">
-                        {person(movement).initials}
-                      </span>
-                      <div>
-                        <p className={styles.candidateName}>
-                          {person(movement).initials} <span className={styles.mono}>{person(movement).umrn}</span>
-                        </p>
-                        <p className={styles.candidateLine}>
-                          {group.title} · {edName(movement)} · {stageCopy[movement.stage].label} · waited{" "}
-                          {waited(movement)}
-                        </p>
-                      </div>
+                    <div>
+                      <p className={styles.candidateName}>
+                        {person(movement).initials} <span className={styles.mono}>{person(movement).umrn}</span>
+                      </p>
+                      <p className={styles.candidateLine}>
+                        {group.title} · {edName(movement)} · {stageCopy[movement.stage].label} · waited{" "}
+                        {waited(movement)}
+                      </p>
                     </div>
-                    <a className={styles.button} href={movementHref(movement.id)}>
-                      Open
+                    <a className={styles.buttonQuiet} href={movementHref(movement.id)}>
+                      Open movement
                     </a>
                   </li>
                 )),
@@ -253,9 +252,25 @@ export function HandoverProposal() {
               label="Waiting for a ward"
             />
           </Panel>
-          <Panel title="On the way in" question="A ward has said yes." meta={`${figures.inbound.length} people`} flush>
+          <Panel
+            title="On the way in"
+            question="A ward has said yes. Longest wait first."
+            meta={`${figures.inbound.length} people`}
+            flush
+            foot={
+              figures.inbound.length > LIST_LIMIT ? (
+                <button
+                  type="button"
+                  className={`${styles.buttonQuiet} ${styles.noPrint}`}
+                  onClick={() => setShowAllInbound((value) => !value)}
+                >
+                  {showAllInbound ? "Show the longest ten" : `Show all ${figures.inbound.length}`}
+                </button>
+              ) : undefined
+            }
+          >
             <MovementTable
-              rows={figures.inbound.slice(0, LIST_LIMIT)}
+              rows={showAllInbound ? figures.inbound : figures.inbound.slice(0, LIST_LIMIT)}
               person={person}
               edName={edName}
               waited={waited}
@@ -322,7 +337,7 @@ export function HandoverProposal() {
           <div className={styles.toolbar} style={{ marginTop: "0.75rem" }}>
             <button
               type="button"
-              className={styles.button}
+              className={styles.buttonQuiet}
               title={NOT_WIRED}
               onClick={() => announceToWardShell(NOT_WIRED)}
             >
@@ -343,7 +358,7 @@ export function HandoverProposal() {
             limits.
           </dd>
           <dt>Beds ready now</dt>
-          <dd>Beds a ward has confirmed are free and allocatable, from the same rollup as the sidebar.</dd>
+          <dd>Beds a ward has confirmed are free and can be given out. The same count as Capacity in the menu.</dd>
         </dl>
       </main>
     </>

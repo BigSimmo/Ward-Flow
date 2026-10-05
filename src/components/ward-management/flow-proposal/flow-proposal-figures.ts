@@ -12,6 +12,7 @@ import type {
   Referral,
   Unit,
 } from "@/components/ward-management/ward-model";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { serviceRollup, type UnitRollup } from "@/components/ward-management/ward-morning-rollup";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { decidedReferrals, referralQueueOrder, referralState } from "@/components/ward-management/ward-referrals";
@@ -124,6 +125,7 @@ export function handoverFigures(world: ProposalWorld, scope: ProposalScope, now:
   const referrals = world.referrals.filter((referral) => referralInScope(referral, scope));
 
   return {
+    unitCount: units.length,
     open,
     waitingForWard: open.filter((movement) => WAITING_FOR_WARD_STAGES.includes(movement.stage)),
     inbound: open.filter((movement) => INBOUND_STAGES.includes(movement.stage)),
@@ -153,4 +155,28 @@ export function dischargeFigures(world: ProposalWorld, now: Instant) {
       (release) => release.expectedAt < now,
     ).length,
   };
+}
+
+/**
+ * The shift running now and when it hands over, from the one shift pattern every screen uses
+ * (07:00, 15:00 and 23:00). The night shift ends the next morning, so its end says "tomorrow".
+ */
+export function currentShift(now: Instant): {
+  name: string;
+  endsAt: string;
+  minutesLeft: number;
+  endsTomorrow: boolean;
+} {
+  const minute = ((now % 1440) + 1440) % 1440;
+  const shift =
+    SHIFT_PATTERN.find((candidate) =>
+      candidate.startMinute < candidate.endMinute
+        ? minute >= candidate.startMinute && minute < candidate.endMinute
+        : minute >= candidate.startMinute || minute < candidate.endMinute,
+    ) ?? SHIFT_PATTERN[0];
+  const endsTomorrow = shift.endMinute <= shift.startMinute && minute >= shift.startMinute;
+  const minutesLeft = endsTomorrow ? 1440 - minute + shift.endMinute : shift.endMinute - minute;
+  const hh = String(Math.floor(shift.endMinute / 60)).padStart(2, "0");
+  const mm = String(shift.endMinute % 60).padStart(2, "0");
+  return { name: shift.name.replace(" Shift", " shift"), endsAt: `${hh}:${mm}`, minutesLeft, endsTomorrow };
 }

@@ -102,8 +102,8 @@ export function ReferralBoardProposal() {
           title="Referral board"
           asAt={`As at ${formatSheetMoment(now, dayZero)}`}
           actions={
-            <a className={styles.buttonPrimary} href={PROPOSAL_ROUTES.intake.href}>
-              New referral
+            <a className={styles.buttonQuiet} href={PROPOSAL_ROUTES.intake.href}>
+              Make a new referral
             </a>
           }
         />
@@ -141,8 +141,7 @@ export function ReferralBoardProposal() {
             {
               label: "Waiting for a decision",
               value: board.queued.length,
-              note: "Same figure as the sidebar",
-              tone: board.queued.length ? "warn" : "good",
+              note: "Sent, with no ward decision yet",
             },
             {
               label: "Longest wait",
@@ -314,9 +313,6 @@ function ReferralDetail({
     >
       <div className={styles.detailHead}>
         <h3 className={styles.detailTitle}>
-          <span className={styles.avatar} aria-hidden="true">
-            {patientInfo.initials}
-          </span>
           <span>
             {patientInfo.initials}
             <span className={styles.rowLine} style={{ display: "block", fontWeight: 500 }}>
@@ -330,17 +326,17 @@ function ReferralDetail({
       <dl className={styles.facts} style={{ marginTop: "1rem" }}>
         <div className={styles.fact}>
           <dt>From</dt>
-          <dd style={{ fontFamily: "var(--body)", fontSize: "var(--t-2)" }}>{siteName(referral.originSiteCode)}</dd>
+          <dd style={{ fontWeight: 500 }}>{siteName(referral.originSiteCode)}</dd>
         </div>
         <div className={styles.fact}>
           <dt>Home region</dt>
-          <dd style={{ fontFamily: "var(--body)", fontSize: "var(--t-2)" }}>
+          <dd style={{ fontWeight: 500 }}>
             {referral.homeRegion} · {referralSuburbLabel(referral.suburb)}
           </dd>
         </div>
         <div className={styles.fact}>
           <dt>Needs</dt>
-          <dd style={{ fontFamily: "var(--body)", fontSize: "var(--t-2)" }}>
+          <dd style={{ fontWeight: 500 }}>
             {needs.length ? needs.join(", ") : arm ? "None of the listed needs" : "Not a ward referral"}
           </dd>
         </div>
@@ -352,7 +348,7 @@ function ReferralDetail({
           <li key={addressing.destination.kind}>
             <span>{referralDestinationLabel(addressing.destination)}</span>
             <span className={addressing.state === "accepted" ? styles.checkDone : styles.checkTodo}>
-              {referralAddressingStateLabel(addressing)}
+              {referralAddressingStateLabel(addressing).replace(/\.$/, "")}
             </span>
           </li>
         ))}
@@ -381,7 +377,7 @@ function ReferralDetail({
                         {siteName(unit.siteCode)} · {unit.cohort} · {plural(beds, "bed")} ready now
                       </p>
                     </div>
-                    <button type="button" className={styles.button} onClick={openDecision}>
+                    <button type="button" className={styles.buttonQuiet} onClick={openDecision}>
                       Decide
                     </button>
                   </li>
