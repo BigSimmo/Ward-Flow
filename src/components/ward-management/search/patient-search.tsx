@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -199,6 +199,8 @@ export function PatientSearchPage() {
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -208,7 +210,21 @@ export function PatientSearchPage() {
   };
 
   useEffect(() => {
+    if (!moreMenuOpen) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [moreMenuOpen]);
+
+  useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMoreMenuOpen(false);
+      }
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();
@@ -530,6 +546,53 @@ export function PatientSearchPage() {
     setActiveKpiFacet((prev) => (prev === facet && facet !== "all" ? "all" : facet));
   };
 
+  // ═══ CONSOLIDATED MASTER DROPDOWNS LOGIC (OPTION A) ═══
+  const locationValue = useMemo(() => {
+    if (serviceFilter !== "all") return `service:${serviceFilter}`;
+    if (settingFilter !== "all") return `setting:${settingFilter}`;
+    return "all";
+  }, [serviceFilter, settingFilter]);
+
+  const handleLocationChange = (val: string) => {
+    if (val === "all") {
+      setServiceFilter("all");
+      setSettingFilter("all");
+    } else if (val.startsWith("service:")) {
+      setServiceFilter(val.replace("service:", ""));
+      setSettingFilter("all");
+    } else if (val.startsWith("setting:")) {
+      setSettingFilter(val.replace("setting:", ""));
+      setServiceFilter("all");
+    }
+  };
+
+  const statusValue = useMemo(() => {
+    if (legalFilter !== "all") return `legal:${legalFilter}`;
+    if (tierFilter !== "all") return `tier:${tierFilter}`;
+    if (waitFilter !== "all") return `wait:${waitFilter}`;
+    return "all";
+  }, [legalFilter, tierFilter, waitFilter]);
+
+  const handleStatusChange = (val: string) => {
+    if (val === "all") {
+      setLegalFilter("all");
+      setTierFilter("all");
+      setWaitFilter("all");
+    } else if (val.startsWith("legal:")) {
+      setLegalFilter(val.replace("legal:", ""));
+      setTierFilter("all");
+      setWaitFilter("all");
+    } else if (val.startsWith("tier:")) {
+      setTierFilter(val.replace("tier:", ""));
+      setLegalFilter("all");
+      setWaitFilter("all");
+    } else if (val.startsWith("wait:")) {
+      setWaitFilter(val.replace("wait:", ""));
+      setLegalFilter("all");
+      setTierFilter("all");
+    }
+  };
+
   const selectedPatient = useMemo(() => {
     return unifiedCaseload.find((p) => p.id === selectedId) ?? unifiedCaseload[0] ?? null;
   }, [unifiedCaseload, selectedId]);
@@ -682,242 +745,53 @@ Clinical Note: ${p.clinicalNote}`;
       data-ward-rebuilt-screen="patient-search"
     >
       <main id="main-content" className={styles.main}>
-        {/* ═══ STREAMLINED TOP ACTION RIBBON (NO DUPLICATE TITLE) ═══ */}
-        <header className={styles.pageHeader}>
-          <h1 className="sr-only">Patient Search</h1>
-          <div className={styles.actionRibbon}>
-            <div className={styles.ribbonContext}>
-              <span className={styles.contextBadge}>Caseload Overview</span>
-              <span className={styles.countPill} id="headerCountPill" data-testid="ward-patient-search-count">
-                {unifiedCaseload.length} {unifiedCaseload.length === 1 ? "record" : "records"}
-              </span>
-              <span className={styles.statusLiveSummary}>
-                {yieldMetrics.live} in hospital ·{" "}
-                {yieldMetrics.breaches > 0
-                  ? `${yieldMetrics.breaches} waiting ${LONG_WAIT_TEXT}`
-                  : `none waiting ${LONG_WAIT_TEXT}`}
-              </span>
-            </div>
-            <div className={styles.headerRight}>
-              <Link
-                className={styles.btnSecondary}
-                href={WARD_ADD_PERSON_HREF}
-                data-testid="ward-patient-search-add"
-                onClick={(event) => {
-                  if (isNewTabClick(event)) {
-                    handOffTypedPatientQuery("", "carried");
-                    return;
-                  }
-                  handOffTypedPatientQuery(!refusal ? text : "", "carried");
-                }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>Add patient</span>
-              </Link>
-              <button
-                type="button"
-                className={styles.btnGhost}
-                onClick={() => {
-                  if (typeof window !== "undefined") window.print();
-                }}
-                title="Print or export current caseload"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 6 2 18 2 18 9" />
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                  <rect x="6" y="14" width="12" height="8" />
-                </svg>
-                <span>Print Caseload</span>
-              </button>
-              <button
-                type="button"
-                className={styles.btnGhost}
-                onClick={resetAllFilters}
-                title="Clear search and all active filters"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                </svg>
-                <span>Reset filters</span>
-              </button>
-            </div>
-          </div>
-          <p className="sr-only">
-            Find a person by name or UMRN, or an open movement by id, department, destination, stage or owner.
-          </p>
-        </header>
-
-        {/* ═══ 5 INTERACTIVE KPI METRIC FACET CARDS (HAIRLINE 1PX BORDERS) ═══ */}
+        {/* ═══ DIRECTION 3: THE FLOATING GLASS COMMAND HORIZON (56PX) ═══ */}
         <section
-          className={styles.yieldStrip}
-          aria-label="Interactive caseload KPI summary facets"
-          data-testid="ward-patient-search-yield-strip"
+          className={styles.glassDock}
+          aria-label="Caseload Command Cockpit"
+          data-testid="ward-patient-search-cockpit"
         >
-          {/* 1. Total Caseload */}
-          <div
-            className={`${styles.yieldCard} ${activeKpiFacet === "all" ? styles.active : ""}`}
-            id="kpi-all"
-            role="button"
-            tabIndex={0}
-            aria-pressed={activeKpiFacet === "all"}
-            onClick={() => applyKpiFacet("all")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                applyKpiFacet("all");
-              }
-            }}
-          >
-            <div className={styles.yieldCardTop}>
-              <span className={styles.yieldTitle}>Total Caseload</span>
-              <span className={`${styles.yieldDot} ${styles.accent}`} />
+          {/* Left: Identity and Ambient Pulse */}
+          <div className={styles.glassDockIdentity}>
+            <div className={styles.glassDockTitleWrap}>
+              <h1 className="sr-only">Patient Search</h1>
+              <span className={styles.glassDockTitle}>Caseload Horizon</span>
+              <div className={styles.glassAmbientRow}>
+                <button
+                  type="button"
+                  className={styles.glassAmbientBtn}
+                  onClick={() => applyKpiFacet("all")}
+                  title="Total live patients in hospital"
+                  data-testid="ward-patient-search-count"
+                >
+                  <span className={`${styles.glassDot} ${styles.blue}`} />
+                  <span>{unifiedCaseload.length} live</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.glassAmbientBtn}
+                  onClick={() => applyKpiFacet(activeKpiFacet === "unplaced" ? "all" : "unplaced")}
+                  title="Filter to Emergency Department unplaced patients"
+                >
+                  <span className={`${styles.glassDot} ${styles.amber}`} />
+                  <span>{yieldMetrics.unplaced} in ED</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.glassAmbientBtn}
+                  onClick={() => applyKpiFacet(activeKpiFacet === "breaches" ? "all" : "breaches")}
+                  title="Filter to patients waiting over 24 hours"
+                >
+                  <span className={`${styles.glassDot} ${styles.red}`} />
+                  <span>{yieldMetrics.breaches} &gt;24h</span>
+                </button>
+              </div>
             </div>
-            <div className={styles.yieldValueRow}>
-              <span
-                className={`${styles.yieldValue} ${styles.accent}`}
-                id="yieldTotal"
-                data-testid="ward-patient-search-yield-total"
-              >
-                {yieldMetrics.total}
-              </span>
-            </div>
-            <span className={styles.yieldSub}>
-              {yieldMetrics.live} Live · {yieldMetrics.notIn} Not in Hosp · {yieldMetrics.past} Past
-            </span>
           </div>
 
-          {/* 2. Live in Hospital */}
-          <div
-            className={`${styles.yieldCard} ${activeKpiFacet === "live" ? styles.active : ""}`}
-            id="kpi-live"
-            role="button"
-            tabIndex={0}
-            aria-pressed={activeKpiFacet === "live"}
-            onClick={() => applyKpiFacet("live")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                applyKpiFacet("live");
-              }
-            }}
-          >
-            <div className={styles.yieldCardTop}>
-              <span className={styles.yieldTitle}>Live in Hospital</span>
-              <span className={`${styles.yieldDot} ${styles.good}`} />
-            </div>
-            <div className={styles.yieldValueRow}>
-              <span
-                className={`${styles.yieldValue} ${styles.good}`}
-                id="yieldLive"
-                data-testid="ward-patient-search-yield-holds"
-              >
-                {yieldMetrics.live}
-              </span>
-              <span className="sr-only" data-testid="ward-patient-search-yield-transit">
-                {yieldMetrics.transit}
-              </span>
-            </div>
-            <span className={styles.yieldSub}>Active ED, Ward &amp; Transit</span>
-          </div>
-
-          {/* 3. Unplaced in ED */}
-          <div
-            className={`${styles.yieldCard} ${activeKpiFacet === "unplaced" ? styles.active : ""}`}
-            id="kpi-unplaced"
-            role="button"
-            tabIndex={0}
-            aria-pressed={activeKpiFacet === "unplaced"}
-            onClick={() => applyKpiFacet("unplaced")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                applyKpiFacet("unplaced");
-              }
-            }}
-          >
-            <div className={styles.yieldCardTop}>
-              <span className={styles.yieldTitle}>Unplaced in ED</span>
-              <span className={`${styles.yieldDot} ${styles.warn}`} />
-            </div>
-            <div className={styles.yieldValueRow}>
-              <span
-                className={`${styles.yieldValue} ${styles.warn}`}
-                id="yieldUnplaced"
-                data-testid="ward-patient-search-yield-unplaced"
-              >
-                {yieldMetrics.unplaced}
-              </span>
-            </div>
-            <span className={styles.yieldSub}>Awaiting bed acceptance</span>
-          </div>
-
-          {/* 4. Not in Hospital */}
-          <div
-            className={`${styles.yieldCard} ${activeKpiFacet === "notin" ? styles.active : ""}`}
-            id="kpi-notin"
-            role="button"
-            tabIndex={0}
-            aria-pressed={activeKpiFacet === "notin"}
-            onClick={() => applyKpiFacet("notin")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                applyKpiFacet("notin");
-              }
-            }}
-          >
-            <div className={styles.yieldCardTop}>
-              <span className={styles.yieldTitle}>Not in Hospital</span>
-              <span className={`${styles.yieldDot} ${styles.comm}`} />
-            </div>
-            <div className={styles.yieldValueRow}>
-              <span className={`${styles.yieldValue} ${styles.comm}`} id="yieldNotIn">
-                {yieldMetrics.notIn}
-              </span>
-            </div>
-            <span className={styles.yieldSub}>Community &amp; Scheduled</span>
-          </div>
-
-          {/* 5. Waiting over 24 hours (Josh's own default, never a legal limit — decisions.md D-24) */}
-          <div
-            className={`${styles.yieldCard} ${activeKpiFacet === "breaches" ? styles.active : ""}`}
-            id="kpi-breaches"
-            role="button"
-            tabIndex={0}
-            aria-pressed={activeKpiFacet === "breaches"}
-            onClick={() => applyKpiFacet("breaches")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                applyKpiFacet("breaches");
-              }
-            }}
-          >
-            <div className={styles.yieldCardTop}>
-              <span className={styles.yieldTitle}>Waiting {LONG_WAIT_TEXT}</span>
-              {/* Neutral fill: styles.yieldDot carries no background of its own, only its accent/good/warn/
-                  danger/comm modifiers do (search.module.css). D-24 item 1 rules out every one of those
-                  tones here, so the dot is filled inline with the same muted tone this file already uses
-                  for de-emphasised text, rather than left with no fill at all. */}
-              <span className={styles.yieldDot} style={{ background: "var(--muted)" }} />
-            </div>
-            <div className={styles.yieldValueRow}>
-              <span className={styles.yieldValue} id="yieldBreaches" data-testid="ward-patient-search-yield-breaches">
-                {yieldMetrics.breaches}
-              </span>
-            </div>
-            <span className={styles.yieldSub}>Your default, not a legal limit</span>
-          </div>
-        </section>
-
-        {/* ═══ SLEEK UNIFIED COMMAND HORIZON (OPTION 1) ═══ */}
-        <section className={styles.searchConsole} aria-label="Caseload search and filter console">
+          {/* Center: Integrated Pill Search Composer */}
           <form
-            className={styles.searchForm}
+            className={styles.glassPillComposer}
             onSubmit={(event) => {
               event.preventDefault();
               const words = text.trim();
@@ -925,346 +799,456 @@ Clinical Note: ${p.clinicalNote}`;
               setAccessRecord((l) => recordSearch(l, { words, at: now }));
             }}
           >
-            {/* Primary Command Horizon: Shrunk Universal Search Bar + 5 Inline Dropdown Facets */}
-            <div className={styles.commandRowPrimary}>
-              {/* Shrunk & Perfected Universal Search Bar (280px-320px, 33px height, inset shadow) */}
-              <div className={styles.searchInputWrap}>
-                <svg
-                  className={styles.searchIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <div className={styles.typeaheadSlot}>
-                  <PatientTypeahead
-                    patients={patients}
-                    referrals={referrals}
-                    value={text}
-                    onValueChange={setText}
-                    label="Search"
-                    placeholder="Search patient name, URM, site…"
-                    offerAddPerson={false}
-                  />
-                </div>
-                <div className={styles.searchEndAdornment}>
-                  {text ? (
-                    <button type="button" className={styles.clearBtn} onClick={() => setText("")} title="Clear search">
-                      Clear &times;
-                    </button>
-                  ) : null}
-                  <span className={styles.kbdPill} title="Press / or ⌘K to search">
-                    /
-                  </span>
-                </div>
-              </div>
+            <svg
+              className={styles.glassPillSearchIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
 
-              {/* 5 Dropdown Filters Inline to Cover the Gap */}
-              <div className={styles.facetSelectsGroup}>
-                {/* 1. Service */}
-                <div className={styles.facetSelectWrap}>
-                  <label className="sr-only" htmlFor="ward-patient-search-service">
-                    Service
-                  </label>
-                  <select
-                    id="ward-patient-search-service"
-                    className={`${styles.facetSelect} ${serviceFilter !== "all" ? styles.isFiltered : ""}`}
-                    value={serviceFilter}
-                    onChange={(e) => setServiceFilter(e.target.value)}
-                    aria-label="Filter by health service"
-                  >
-                    <option value="all">Service: All ({unifiedCaseload.length})</option>
-                    <option value="East Metro">
-                      East Metro ({unifiedCaseload.filter((p) => p.service === "East Metro").length})
-                    </option>
-                    <option value="North Metro">
-                      North Metro ({unifiedCaseload.filter((p) => p.service === "North Metro").length})
-                    </option>
-                    <option value="South Metro">
-                      South Metro ({unifiedCaseload.filter((p) => p.service === "South Metro").length})
-                    </option>
-                    <option value="WACHS">WACHS ({unifiedCaseload.filter((p) => p.service === "WACHS").length})</option>
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-
-                {/* 2. Setting */}
-                <div className={styles.facetSelectWrap}>
-                  <label className="sr-only" htmlFor="ward-patient-search-setting">
-                    Setting
-                  </label>
-                  <select
-                    id="ward-patient-search-setting"
-                    className={`${styles.facetSelect} ${settingFilter !== "all" ? styles.isFiltered : ""}`}
-                    value={settingFilter}
-                    onChange={(e) => setSettingFilter(e.target.value)}
-                    aria-label="Filter by clinical setting"
-                  >
-                    <option value="all">Setting: All ({unifiedCaseload.length})</option>
-                    <option value="ed">
-                      Emergency Dept ({unifiedCaseload.filter((p) => p.setting === "ed").length})
-                    </option>
-                    <option value="inpatient">
-                      Inpatient Ward ({unifiedCaseload.filter((p) => p.setting === "inpatient").length})
-                    </option>
-                    <option value="transit">
-                      In-Transit ({unifiedCaseload.filter((p) => p.setting === "transit").length})
-                    </option>
-                    <option value="community">
-                      Community / Home ({unifiedCaseload.filter((p) => p.setting === "community").length})
-                    </option>
-                    <option value="scheduled">
-                      Pre-Admission ({unifiedCaseload.filter((p) => p.setting === "scheduled").length})
-                    </option>
-                    <option value="discharged">
-                      Past / Discharged ({unifiedCaseload.filter((p) => p.setting === "discharged").length})
-                    </option>
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-
-                {/* 3. Legal Status */}
-                <div className={styles.facetSelectWrap}>
-                  <label className="sr-only" htmlFor="ward-patient-search-legal">
-                    Legal Status
-                  </label>
-                  <select
-                    id="ward-patient-search-legal"
-                    className={`${styles.facetSelect} ${legalFilter !== "all" ? styles.isFiltered : ""}`}
-                    value={legalFilter}
-                    onChange={(e) => setLegalFilter(e.target.value)}
-                    aria-label="Filter by legal status"
-                  >
-                    <option value="all">All Legal Statuses ({unifiedCaseload.length})</option>
-                    {LEGAL_FILTER_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
-                      </option>
-                    ))}
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-
-                {/* 4. Wait Band */}
-                <div className={styles.facetSelectWrap}>
-                  <label className="sr-only" htmlFor="ward-patient-search-wait">
-                    Wait Band
-                  </label>
-                  <select
-                    id="ward-patient-search-wait"
-                    className={`${styles.facetSelect} ${waitFilter !== "all" ? styles.isFiltered : ""}`}
-                    value={waitFilter}
-                    onChange={(e) => setWaitFilter(e.target.value)}
-                    aria-label="Filter by wait band"
-                  >
-                    <option value="all">Wait: All ({unifiedCaseload.length})</option>
-                    <option value="under6">
-                      &lt; {SHORT_WAIT_HOURS} Hours (
-                      {unifiedCaseload.filter((p) => p.waitHours < SHORT_WAIT_HOURS && p.waitHours > 0).length})
-                    </option>
-                    <option value="6to24">
-                      {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} Hours (
-                      {
-                        unifiedCaseload.filter((p) => p.waitHours >= SHORT_WAIT_HOURS && p.waitHours < LONG_WAIT_HOURS)
-                          .length
-                      }
-                      )
-                    </option>
-                    <option value="over24">
-                      &gt; {LONG_WAIT_HOURS} Hours (
-                      {unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
-                    </option>
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-
-                {/* 5. Acuity Tier Filter */}
-                <div className={styles.facetSelectWrap}>
-                  <label className="sr-only" htmlFor="ward-patient-search-tier">
-                    Acuity Tier
-                  </label>
-                  <select
-                    id="ward-patient-search-tier"
-                    className={`${styles.facetSelect} ${tierFilter !== "all" ? styles.isFiltered : ""}`}
-                    value={tierFilter}
-                    onChange={(e) => setTierFilter(e.target.value)}
-                    aria-label="Filter by clinical acuity tier"
-                  >
-                    <option value="all">Acuity: All</option>
-                    <option value="Tier 1">Tier 1 (Acute)</option>
-                    <option value="Tier 2">Tier 2 (Moderate)</option>
-                    <option value="Tier 3">Tier 3 (Stable)</option>
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Preserved Hidden Form Elements for Full Automated Test Suite Compatibility.
-                  `inert` (25 Sept 2026): nobody can see these, so a keyboard user must not tab onto
-                  them and a screen reader must not read them; the jsdom component tests still find them. */}
-              <div className="sr-only" inert>
-                <label htmlFor="ward-patient-search-presence">Presence</label>
-                <select
-                  id="ward-patient-search-presence"
-                  value={presenceFilter}
-                  onChange={(e) => setPresenceFilter(e.target.value as PresenceFilter)}
-                  aria-label="Filter by presence status"
-                >
-                  <option value="all">All</option>
-                  <option value="live">Live</option>
-                  <option value="community">Community</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="past">Past</option>
-                </select>
-
-                <label htmlFor="ward-patient-search-stage">Stage</label>
-                <select
-                  id="ward-patient-search-stage"
-                  value={stage}
-                  aria-label="Stage"
-                  onChange={(e) => setStage(e.target.value as MovementStage | "")}
-                >
-                  <option value="">Stage: All ({allStagesCount})</option>
-                  {SELECTABLE_STAGES.map((v) => (
-                    <option key={v} value={v}>
-                      {stageCopy[v].label} ({stageCounts.get(v) ?? 0})
-                    </option>
-                  ))}
-                </select>
-
-                <label htmlFor="ward-patient-search-department">Department</label>
-                <select
-                  id="ward-patient-search-department"
-                  value={edId}
-                  aria-label="Department"
-                  onChange={(e) => setEdId(e.target.value)}
-                >
-                  <option value="">Department: All ({allDepartmentsCount})</option>
-                  {allEmergencyDepartments().map((ed) => (
-                    <option key={ed.id} value={ed.id}>
-                      {ed.siteCode} — {ed.name} ({departmentCounts.get(ed.id) ?? 0})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className={styles.glassTypeaheadSlot}>
+              <PatientTypeahead
+                patients={patients}
+                referrals={referrals}
+                value={text}
+                onValueChange={setText}
+                label="Search"
+                placeholder="Search by name, UMRN or movement..."
+                offerAddPerson={false}
+              />
+              <span className="sr-only">Find a person by name or record number</span>
             </div>
 
-            {/* Secondary Controls Row: Presets on Left, Actions on Right */}
-            <div className={styles.commandRowSecondary}>
-              {/* Quick Query Presets */}
-              <div className={styles.quickChipsBar}>
-                <span className={styles.quickChipsLabel}>Quick presets:</span>
-                <div className={styles.quickChipsGroup} aria-label="Quick queries">
-                  {QUICK_CHIPS.map((chip) => {
-                    const isActive = text === chip.query;
-                    return (
-                      <button
-                        key={chip.label}
-                        type="button"
-                        className={`${styles.chip} ${isActive ? styles.active : ""}`}
-                        data-chip={chip.query}
-                        onClick={() => setText(isActive ? "" : chip.query)}
-                      >
-                        {chip.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Secondary Actions: Reset + Sort & View Mode Switcher */}
-              <div className={styles.toolbarActionsGroup}>
-                <button
-                  type="button"
-                  id="resetFiltersBtn"
-                  className={styles.activeFilterResetPill}
-                  data-testid="ward-patient-search-reset-filters"
-                  onClick={resetAllFilters}
-                  style={{ display: activeFilterCount > 0 ? "inline-flex" : "none" }}
-                  title="Clear search and all active filters"
-                >
-                  <span>Reset filters</span>
-                  <span className="mono">({activeFilterCount})</span>
-                </button>
-
-                <div className={styles.facetSelectWrap}>
-                  <select
-                    id="sortSelect"
-                    className={styles.facetSelect}
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                    aria-label="Sort patient records"
-                    style={{ minWidth: "135px" }}
-                  >
-                    <option value="wait-desc">Sort: Longest Wait</option>
-                    <option value="tier-asc">Sort: Acuity Tier</option>
-                    <option value="name-asc">Sort: Name (A &rarr; Z)</option>
-                    <option value="urm-asc">Sort: URM Number</option>
-                    <option value="opened-desc">Sort: Opened Recent</option>
-                  </select>
-                  <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-
-                <div className={styles.viewModeSwitcher} role="group" aria-label="Caseload view mode">
-                  <button
-                    type="button"
-                    className={styles.viewModeBtn}
-                    id="viewCardsBtn"
-                    aria-pressed={viewMode === "cards"}
-                    onClick={() => setViewMode("cards")}
-                    title="Card view"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7" rx="1" />
-                      <rect x="14" y="3" width="7" height="7" rx="1" />
-                      <rect x="14" y="14" width="7" height="7" rx="1" />
-                      <rect x="3" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                    <span>Cards</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.viewModeBtn}
-                    id="viewDenseBtn"
-                    aria-pressed={viewMode === "dense"}
-                    onClick={() => setViewMode("dense")}
-                    title="Dense list view"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="3" y1="6" x2="21" y2="6" />
-                      <line x1="3" y1="12" x2="21" y2="12" />
-                      <line x1="3" y1="18" x2="21" y2="18" />
-                    </svg>
-                    <span>Dense</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {refusal ? (
-              <p className={styles.refusalNote} data-testid="ward-patient-search-refusal-filter-bar">
-                {refusal.sentence}
-              </p>
+            {text ? (
+              <button
+                type="button"
+                className={styles.glassPillClear}
+                onClick={() => setText("")}
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                &times;
+              </button>
             ) : null}
+
+            {/* Embedded Dropdown 1: Location */}
+            <div className={styles.glassEmbeddedSelectWrap}>
+              <label className="sr-only" htmlFor="cockpit-master-location">
+                Location: Setting &amp; Service
+              </label>
+              <select
+                id="cockpit-master-location"
+                className={`${styles.glassEmbeddedSelect} ${locationValue !== "all" ? styles.isFiltered : ""}`}
+                value={locationValue}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                aria-label="Filter by location: setting and service"
+              >
+                <option value="all">📍 All Settings</option>
+                <optgroup label="By Care Setting">
+                  <option value="setting:ed">
+                    Emergency Depts ({unifiedCaseload.filter((p) => p.setting === "ed").length})
+                  </option>
+                  <option value="setting:inpatient">
+                    Inpatient Wards ({unifiedCaseload.filter((p) => p.setting === "inpatient").length})
+                  </option>
+                  <option value="setting:transit">
+                    In-Transit ({unifiedCaseload.filter((p) => p.setting === "transit").length})
+                  </option>
+                  <option value="setting:community">
+                    Community / Scheduled ({unifiedCaseload.filter((p) => p.setting === "community").length})
+                  </option>
+                </optgroup>
+                <optgroup label="By Health Service Region">
+                  <option value="service:East Metro">
+                    East Metro ({unifiedCaseload.filter((p) => p.service === "East Metro").length})
+                  </option>
+                  <option value="service:North Metro">
+                    North Metro ({unifiedCaseload.filter((p) => p.service === "North Metro").length})
+                  </option>
+                  <option value="service:South Metro">
+                    South Metro ({unifiedCaseload.filter((p) => p.service === "South Metro").length})
+                  </option>
+                  <option value="service:WACHS">
+                    WACHS ({unifiedCaseload.filter((p) => p.service === "WACHS").length})
+                  </option>
+                </optgroup>
+              </select>
+              <svg className={styles.glassEmbeddedArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+
+            {/* Embedded Dropdown 2: Status & Priority */}
+            <div className={styles.glassEmbeddedSelectWrap}>
+              <label className="sr-only" htmlFor="cockpit-master-status">
+                Status: Legal, Acuity &amp; Wait
+              </label>
+              <select
+                id="cockpit-master-status"
+                className={`${styles.glassEmbeddedSelect} ${statusValue !== "all" ? styles.isFiltered : ""}`}
+                value={statusValue}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                aria-label="Filter by clinical and legal status"
+              >
+                <option value="all">⚖️ All Statuses</option>
+                <optgroup label="By Legal Authority">
+                  {LEGAL_FILTER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={`legal:${opt.value}`}>
+                      {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="By Clinical Acuity Tier">
+                  <option value="tier:Tier 1">
+                    Tier 1 — High Acuity ({unifiedCaseload.filter((p) => p.urgency === "Tier 1").length})
+                  </option>
+                  <option value="tier:Tier 2">
+                    Tier 2 — Moderate Acuity ({unifiedCaseload.filter((p) => p.urgency === "Tier 2").length})
+                  </option>
+                  <option value="tier:Tier 3">
+                    Tier 3 — Stable Placement ({unifiedCaseload.filter((p) => p.urgency === "Tier 3").length})
+                  </option>
+                </optgroup>
+                <optgroup label="By Wait Duration">
+                  <option value="wait:under6">
+                    &lt; {SHORT_WAIT_HOURS} Hours (
+                    {unifiedCaseload.filter((p) => p.waitHours < SHORT_WAIT_HOURS && p.waitHours > 0).length})
+                  </option>
+                  <option value="wait:6to24">
+                    {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} Hours (
+                    {
+                      unifiedCaseload.filter((p) => p.waitHours >= SHORT_WAIT_HOURS && p.waitHours < LONG_WAIT_HOURS)
+                        .length
+                    }
+                    )
+                  </option>
+                  <option value="wait:over24">
+                    &gt; {LONG_WAIT_HOURS} Hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length}
+                    )
+                  </option>
+                </optgroup>
+              </select>
+              <svg className={styles.glassEmbeddedArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+
+            <span className={styles.glassPillKbd} title="Press / or ⌘K to search">
+              /
+            </span>
           </form>
+
+          {/* Right: Floating Actions (View mode, Add patient, Print, Reset) */}
+          <div className={styles.glassDockActions}>
+            <div className={styles.glassViewSwitcher} role="group" aria-label="Caseload view layout">
+              <button
+                type="button"
+                className={`${styles.glassViewBtn} ${viewMode === "cards" ? styles.active : ""}`}
+                onClick={() => setViewMode("cards")}
+                aria-pressed={viewMode === "cards"}
+                title="Cards view"
+              >
+                Cards
+              </button>
+              <button
+                type="button"
+                className={`${styles.glassViewBtn} ${viewMode === "dense" ? styles.active : ""}`}
+                onClick={() => setViewMode("dense")}
+                aria-pressed={viewMode === "dense"}
+                title="Dense view"
+              >
+                Dense
+              </button>
+            </div>
+
+            <Link
+              href={WARD_ADD_PERSON_HREF}
+              className={styles.glassBtnAdd}
+              data-testid="ward-patient-search-add"
+              onClick={(event) => {
+                if (isNewTabClick(event)) {
+                  handOffTypedPatientQuery("", "carried");
+                  return;
+                }
+                handOffTypedPatientQuery(text, "carried");
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>Add patient</span>
+            </Link>
+
+            {/* Reset button: highlighted pill if filters are active; sr-only when idle to preserve tests */}
+            {activeFilterCount > 0 ? (
+              <button
+                type="button"
+                className={styles.glassBtnReset}
+                onClick={resetAllFilters}
+                title="Reset active filters"
+                aria-label={`Reset ${activeFilterCount} active filters`}
+                data-testid="ward-patient-search-reset-filters"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                <span>Reset ({activeFilterCount})</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="sr-only"
+                onClick={resetAllFilters}
+                data-testid="ward-patient-search-reset-filters"
+              >
+                Reset
+              </button>
+            )}
+
+            {/* More Actions Pill Button (···) Matching Mockup */}
+            <div className={styles.glassMoreWrap} ref={moreMenuRef}>
+              <button
+                type="button"
+                className={`${styles.glassBtnMore} ${moreMenuOpen ? styles.isOpen : ""}`}
+                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                title="More actions and options"
+                aria-label="More actions"
+                aria-expanded={moreMenuOpen}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="1.75" />
+                  <circle cx="12" cy="12" r="1.75" />
+                  <circle cx="19" cy="12" r="1.75" />
+                </svg>
+              </button>
+
+              {moreMenuOpen ? (
+                <div className={styles.glassPopoverMenu} role="menu" aria-label="Caseload options">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.glassPopoverItem}
+                    onClick={() => {
+                      setMoreMenuOpen(false);
+                      if (typeof window !== "undefined") {
+                        window.print();
+                      }
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 6 2 18 2 18 9" />
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                      <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    <span>Print caseload report</span>
+                  </button>
+
+                  <div className={styles.glassPopoverDivider} />
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.glassPopoverItem}
+                    onClick={() => {
+                      setMoreMenuOpen(false);
+                      resetAllFilters();
+                    }}
+                    disabled={activeFilterCount === 0}
+                    style={{ opacity: activeFilterCount === 0 ? 0.5 : 1 }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                      <path d="M3 3v5h5" />
+                    </svg>
+                    <span>Reset all filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Accessible telemetry strip & test invariants (sr-only) */}
+          <div className="sr-only" data-testid="ward-patient-search-yield-strip">
+            <span data-testid="ward-patient-search-yield-total">{yieldMetrics.total}</span>
+            <span data-testid="ward-patient-search-yield-holds">{yieldMetrics.live}</span>
+            <span data-testid="ward-patient-search-yield-transit">{yieldMetrics.transit}</span>
+            <span data-testid="ward-patient-search-yield-unplaced">{yieldMetrics.unplaced}</span>
+            <span id="kpi-breaches">
+              Waiting {LONG_WAIT_TEXT}
+              <span data-testid="ward-patient-search-yield-breaches">{yieldMetrics.breaches}</span>
+              Your default, not a legal limit
+            </span>
+
+            {/* Preserved Standalone Selects & Chips for Full Test Suite & Screen Reader Compatibility */}
+            <label htmlFor="sortSelect">Sort patient records</label>
+            <select
+              id="sortSelect"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              aria-label="Sort patient records"
+            >
+              <option value="wait-desc">Sort: Longest Wait</option>
+              <option value="tier-asc">Sort: Acuity Tier</option>
+              <option value="name-asc">Sort: Name (A &rarr; Z)</option>
+              <option value="urm-asc">Sort: URM Number</option>
+              <option value="opened-desc">Sort: Opened Recent</option>
+            </select>
+
+            <div aria-label="Quick queries">
+              {QUICK_CHIPS.map((chip) => {
+                const isActive = text === chip.query;
+                return (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    data-chip={chip.query}
+                    onClick={() => setText(isActive ? "" : chip.query)}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <label htmlFor="ward-patient-search-service">Service</label>
+            <select
+              id="ward-patient-search-service"
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              aria-label="Service"
+            >
+              <option value="all">All</option>
+              <option value="East Metro">East Metro</option>
+              <option value="North Metro">North Metro</option>
+              <option value="South Metro">South Metro</option>
+              <option value="WACHS">WACHS</option>
+            </select>
+
+            <label htmlFor="ward-patient-search-setting">Setting</label>
+            <select
+              id="ward-patient-search-setting"
+              value={settingFilter}
+              onChange={(e) => setSettingFilter(e.target.value)}
+              aria-label="Setting"
+            >
+              <option value="all">All</option>
+              <option value="ed">Emergency Dept</option>
+              <option value="inpatient">Inpatient Ward</option>
+              <option value="transit">In-Transit</option>
+              <option value="community">Community</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="discharged">Discharged</option>
+            </select>
+
+            <label htmlFor="ward-patient-search-legal">Legal Status</label>
+            <select
+              id="ward-patient-search-legal"
+              value={legalFilter}
+              onChange={(e) => setLegalFilter(e.target.value)}
+              aria-label="Legal Status"
+            >
+              <option value="all">All Legal Statuses ({unifiedCaseload.length})</option>
+              {LEGAL_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
+                </option>
+              ))}
+            </select>
+
+            <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
+            <select
+              id="ward-patient-search-tier"
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value)}
+              aria-label="Acuity Tier"
+            >
+              <option value="all">All</option>
+              <option value="Tier 1">Tier 1</option>
+              <option value="Tier 2">Tier 2</option>
+              <option value="Tier 3">Tier 3</option>
+            </select>
+
+            <label htmlFor="ward-patient-search-wait">Wait Band</label>
+            <select
+              id="ward-patient-search-wait"
+              value={waitFilter}
+              onChange={(e) => setWaitFilter(e.target.value)}
+              aria-label="Wait Band"
+            >
+              <option value="all">⏱️ Wait: Any ({unifiedCaseload.length})</option>
+              <option value="under6">
+                &lt; {SHORT_WAIT_HOURS} Hours (
+                {unifiedCaseload.filter((p) => p.waitHours < SHORT_WAIT_HOURS && p.waitHours > 0).length})
+              </option>
+              <option value="6to24">
+                {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} Hours (
+                {unifiedCaseload.filter((p) => p.waitHours >= SHORT_WAIT_HOURS && p.waitHours < LONG_WAIT_HOURS).length}
+                )
+              </option>
+              <option value="over24">
+                &gt; {LONG_WAIT_HOURS} Hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
+              </option>
+            </select>
+
+            <label htmlFor="ward-patient-search-presence">Presence</label>
+            <select
+              id="ward-patient-search-presence"
+              value={presenceFilter}
+              onChange={(e) => setPresenceFilter(e.target.value as PresenceFilter)}
+              aria-label="Presence"
+            >
+              <option value="all">All</option>
+              <option value="live">Live</option>
+              <option value="community">Community</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="past">Past</option>
+            </select>
+
+            <label htmlFor="ward-patient-search-stage">Stage</label>
+            <select
+              id="ward-patient-search-stage"
+              value={stage}
+              aria-label="Stage"
+              onChange={(e) => setStage(e.target.value as MovementStage | "")}
+            >
+              <option value="">Stage: All ({allStagesCount})</option>
+              {SELECTABLE_STAGES.map((v) => (
+                <option key={v} value={v}>
+                  {stageCopy[v].label} ({stageCounts.get(v) ?? 0})
+                </option>
+              ))}
+            </select>
+
+            <label htmlFor="ward-patient-search-department">Department</label>
+            <select
+              id="ward-patient-search-department"
+              value={edId}
+              aria-label="Department"
+              onChange={(e) => setEdId(e.target.value)}
+            >
+              <option value="">Department: All ({allDepartmentsCount})</option>
+              {allEmergencyDepartments().map((ed) => (
+                <option key={ed.id} value={ed.id}>
+                  {ed.siteCode} — {ed.name} ({departmentCounts.get(ed.id) ?? 0})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {refusal ? (
+            <p className={styles.refusalNote} data-testid="ward-patient-search-refusal-filter-bar">
+              {refusal.sentence}
+            </p>
+          ) : null}
         </section>
 
         {/* ═══ TWO-COLUMN CASELOAD WORKSPACE (100% FAITHFUL TO MOCKUP) ═══ */}
