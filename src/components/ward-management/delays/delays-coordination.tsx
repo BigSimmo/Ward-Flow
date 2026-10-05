@@ -789,16 +789,21 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
 }
 export function DelaysCoordination(props: Props) {
   const [graph, setGraph] = useState<Graph>("catchment");
+  const [visited, setVisited] = useState<Graph[]>(["catchment"]);
   const [timelineId, setTimelineId] = useState<string | null>(null);
   const id = useId();
   const current = GRAPHS.find((entry) => entry.id === graph)!;
+  function selectGraph(next: Graph) {
+    setGraph(next);
+    setVisited((previous) => (previous.includes(next) ? previous : [...previous, next]));
+  }
   function tabKeys(event: KeyboardEvent<HTMLDivElement>) {
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
     const index = GRAPHS.findIndex((entry) => entry.id === graph);
     const next =
       event.key === "Home" ? 0 : event.key === "End" ? 2 : (index + (event.key === "ArrowRight" ? 1 : 2)) % 3;
-    setGraph(GRAPHS[next].id);
+    selectGraph(GRAPHS[next].id);
     document.getElementById(`${id}-${GRAPHS[next].id}`)?.focus();
   }
   return (
@@ -820,7 +825,7 @@ export function DelaysCoordination(props: Props) {
                 aria-selected={graph === entry.id}
                 aria-controls={`${id}-graph-panel`}
                 tabIndex={graph === entry.id ? 0 : -1}
-                onClick={() => setGraph(entry.id)}
+                onClick={() => selectGraph(entry.id)}
               >
                 {entry.label}
               </button>
@@ -828,21 +833,21 @@ export function DelaysCoordination(props: Props) {
           </div>
         </header>
         <div role="tabpanel" id={`${id}-graph-panel`} aria-labelledby={`${id}-${graph}`}>
-          <div hidden={graph !== "catchment"}>
-            <CatchmentPressure {...props} />
-          </div>
+          <div hidden={graph !== "catchment"}>{visited.includes("catchment") && <CatchmentPressure {...props} />}</div>
           <div hidden={graph !== "radar"}>
-            <CrisisRadar rows={props.rows} now={props.now} />
+            {visited.includes("radar") && <CrisisRadar rows={props.rows} now={props.now} />}
           </div>
           <div hidden={graph !== "timeline"}>
-            <DelaysWaitTimeline
-              rows={props.rows}
-              now={props.now}
-              embedded
-              selectedId={timelineId}
-              onSelect={(value) => setTimelineId(value === timelineId ? null : value)}
-              onClose={() => setTimelineId(null)}
-            />
+            {visited.includes("timeline") && (
+              <DelaysWaitTimeline
+                rows={props.rows}
+                now={props.now}
+                embedded
+                selectedId={timelineId}
+                onSelect={(value) => setTimelineId(value === timelineId ? null : value)}
+                onClose={() => setTimelineId(null)}
+              />
+            )}
           </div>
         </div>
       </section>
