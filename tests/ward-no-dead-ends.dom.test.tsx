@@ -87,6 +87,10 @@ import { AddPatientForm } from "@/components/ward-management/patients/add-patien
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
+import { HubPolish } from "@/components/ward-management/people-polish/hub-polish";
+import { PatientsPolish } from "@/components/ward-management/people-polish/patients-polish";
+import { PatientPolish } from "@/components/ward-management/people-polish/patient-polish";
+import { AddPatientPolish } from "@/components/ward-management/people-polish/add-patient-polish";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
@@ -139,6 +143,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ],
   ["/mockups/ward-flow/handover", { concrete: "/mockups/ward-flow/handover", render: () => <HandoverPage /> }],
   ["/mockups/ward-flow/hub", { concrete: "/mockups/ward-flow/hub", render: () => <HubScreen /> }],
+  ["/mockups/ward-flow/hub/proposal", { concrete: "/mockups/ward-flow/hub/proposal", render: () => <HubPolish /> }],
   [
     "/mockups/ward-flow/legal-forms",
     { concrete: "/mockups/ward-flow/legal-forms", render: () => <LegalFormsScreen /> },
@@ -161,12 +166,24 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     { concrete: `/mockups/ward-flow/people/${patient.id}`, render: () => <PersonScreen patientId={patient.id} /> },
   ],
   ["/mockups/ward-flow/people/new", { concrete: "/mockups/ward-flow/people/new", render: () => <AddPatientForm /> }],
+  [
+    "/mockups/ward-flow/people/new/proposal",
+    { concrete: "/mockups/ward-flow/people/new/proposal", render: () => <AddPatientPolish /> },
+  ],
+  [
+    "/mockups/ward-flow/people/proposal",
+    { concrete: "/mockups/ward-flow/people/proposal", render: () => <PatientPolish patientId={patient.id} /> },
+  ],
   ["/mockups/ward-flow/referrals", { concrete: "/mockups/ward-flow/referrals", render: () => <ReferralBoard /> }],
   [
     "/mockups/ward-flow/referrals/new",
     { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralIntakeForm /> },
   ],
   ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
+  [
+    "/mockups/ward-flow/search/proposal",
+    { concrete: "/mockups/ward-flow/search/proposal", render: () => <PatientsPolish /> },
+  ],
   ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],
   [
     "/mockups/ward-flow/sovereign",

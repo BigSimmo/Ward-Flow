@@ -96,6 +96,8 @@ const PINNED: Record<string, string | null> = {
   governance: "WardModeWorkspace",
   handover: "HandoverPage",
   hub: "HubScreen",
+  // Preview-only polish of the current screens (5 October 2026), for owner review beside them.
+  "hub/proposal": "HubPolish",
   // Added 2026-09-12 with the third-edition Legal forms build. ⚠️ A reconciliation is in flight
   // that will change what this screen RENDERS (the two kinds stop being ordered against each
   // other) but not which component the route resolves to, so this row survives it.
@@ -109,10 +111,13 @@ const PINNED: Record<string, string | null> = {
   "out-of-area": "OutOfAreaBoard",
   "people/[patientId]": "WardMovementNotFound",
   "people/new": "AddPatientForm",
+  "people/new/proposal": "AddPatientPolish",
+  "people/proposal": "PatientPolish",
   queue: "redirect:/mockups/ward-flow/delays?from=queue",
   referrals: "ReferralBoard",
   "referrals/new": "ReferralIntakeForm",
   search: "PatientSearchPage",
+  "search/proposal": "PatientsPolish",
   // Added 2026-09-12 with the Settings screen. ⚠️ **THIS IS THE SIXTH PINNED TALLY OVER ONE
   // ROUTE, and the comment four rows below already called itself the fourth.** The other five:
   // ward-nav.test.ts's disk count, its RENDERABLE_ROUTES length, ward-landmarks.test.ts's own

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
-import { HubProposal } from "@/components/ward-management/people-proposal/hub-proposal";
+import { HubPolish } from "@/components/ward-management/people-polish/hub-polish";
 
 export const metadata: Metadata = {
-  title: "Search hub redesign preview — Ward Flow",
-  description: "Proposed Search hub screen for review, built on the live synthetic Ward Flow state.",
+  title: "Search hub polish preview — Ward Flow",
+  description: "Polished Search hub for review: the current structure, with finish and wording improved.",
 };
 
-/** Preview route for the 5 October 2026 search-and-patient redesign proposal. */
+/** Preview route for the 5 October 2026 polish of the current Search hub (structure unchanged). */
 export default function HubProposalPage() {
-  return <HubProposal />;
+  return <HubPolish />;
 }

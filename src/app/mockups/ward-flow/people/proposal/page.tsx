@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 
-import { PatientProposal } from "@/components/ward-management/people-proposal/patient-proposal";
+import { PatientPolish } from "@/components/ward-management/people-polish/patient-polish";
 
 export const metadata: Metadata = {
-  title: "Patient redesign preview — Ward Flow",
-  description: "Proposed one-patient screen for review, built on the live synthetic Ward Flow state.",
+  title: "Patient polish preview — Ward Flow",
+  description: "Polished patient screen for review: the current structure, with finish and wording improved.",
 };
 
-/** Preview route for the 5 October 2026 search-and-patient redesign proposal. `?id=` takes a
- *  patient (PT-) or journey (WF-) id, the same ids the current patient route accepts. */
+/** Preview route for the 5 October 2026 polish of the current patient screen (structure unchanged).
+ *  `?id=` takes a patient (PT-) or journey (WF-) id, the same ids the current patient route accepts. */
 export default async function PatientProposalPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
-  const { id } = await searchParams;
-  return <PatientProposal id={id ?? "PT-001"} />;
+  const { id = "PT-001" } = await searchParams;
+  return (
+    <PatientPolish
+      patientId={id.startsWith("PT-") ? id : undefined}
+      movementId={id.startsWith("WF-") ? id : undefined}
+    />
+  );
 }

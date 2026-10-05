@@ -1,0 +1,28 @@
+/* Polish-only overrides for the 5 October 2026 preview of the current screens. Structure stays as
+   the current screens have it; these rules change finish only. */
+
+.capacityGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.capacityBar {
+  height: 0.75rem;
+  background: var(--line-strong);
+}
+
+.barOccupied {
+  background: var(--line-strong);
+}
+
+.barSum {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
+.flagPlain {
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
