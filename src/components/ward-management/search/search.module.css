@@ -2603,6 +2603,85 @@
   margin: 2px 0;
 }
 
+/* Phone/narrow: glass dock must not overflow the viewport, and interactive controls must
+ * meet the 48px production tap floor (tests/ui-ward-search.spec.ts). Compact 27–28px
+ * desktop chrome is fine above this breakpoint. */
+@media (max-width: 40rem) {
+  .glassDock {
+    flex-wrap: wrap;
+    align-items: stretch;
+    min-width: 0;
+    gap: var(--ward-space-8);
+  }
+
+  .glassDockIdentity {
+    flex: 1 1 100%;
+  }
+
+  .glassPillComposer {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    border-radius: var(--ward-radius-pixel, 8px);
+    padding: var(--ward-space-4);
+    gap: var(--ward-space-6);
+    align-items: stretch;
+  }
+
+  .glassTypeaheadSlot {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  /* Undo the compact 28px !important overrides so typeahead keeps its own 48px floor. */
+  .glassTypeaheadSlot div[class*="controlBox"],
+  .glassTypeaheadSlot input {
+    height: auto !important;
+    min-height: var(--ward-tap, 3rem) !important;
+  }
+
+  /* Prefer the typeahead's own 48px Clear over the 18px glass chip (same name match). */
+  .glassTypeaheadSlot button[class*="clear"] {
+    display: inline-flex !important;
+  }
+
+  .glassPillClear {
+    display: none;
+  }
+
+  .glassPillKbd {
+    display: none;
+  }
+
+  .glassEmbeddedSelectWrap {
+    flex: 1 1 calc(50% - var(--ward-space-6));
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .glassEmbeddedSelect {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    min-height: var(--ward-tap, 3rem);
+    font-size: var(--t-2, 0.875rem);
+    padding: var(--ward-space-4) 1.75rem var(--ward-space-4) var(--ward-space-8);
+  }
+
+  .glassEmbeddedArrow {
+    right: 10px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .glassDockActions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+}
+
 .searchConsole {
   background: var(--surface);
   border: 1px solid var(--line);
