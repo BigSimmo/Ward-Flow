@@ -466,10 +466,145 @@
    has to beat; without them a forced-colours user in dark mode silently keeps
    the dark palette instead of system colours, with nothing failing to say so.
    The contract test pins the group - keep it pinned. */
+
+/* Approved Delays graph/runway palette. Only Delays consumes these roles. */
+.ckb-v2.ckb-v2 {
+  --delays-ink: #15324d;
+  --delays-blue: #17466e;
+  --delays-amber: #cb841c;
+  --delays-muted: #61748a;
+  --delays-border: #dce6ef;
+  --delays-surface: #fff;
+  --delays-attention-summary-surface: #fff7e9;
+  --delays-attention-summary-ink: #a96810;
+  --delays-urgent-surface: #fffbf2;
+  --delays-urgent-border: #f0d4a0;
+  --delays-urgent-edge: #edb241;
+  --delays-urgent-ink: #aa690e;
+  --delays-wait-under-eight: #b5d7f9;
+  --delays-wait-eight-to-day: #f7ce83;
+  --delays-wait-over-day: #bdc9d7;
+  --delays-wait-under-eight-key: #619ce4;
+  --delays-wait-over-day-key: #8898ab;
+  --delays-axis: #8f9aa7;
+  --delays-selection-edge: #529de4;
+  --delays-stat-amber: #b77616;
+  --delays-radar-axis: #a4b1bf;
+  --delays-radar-review-line: #9daabd;
+  --delays-radar-review-surface: #e9f3fc;
+  --delays-radar-quiet: #536e91;
+  --delays-radar-due-ink: #b77310;
+  --delays-radar-due-dot: #da8e21;
+  --delays-radar-due-halo: #f9e6c5;
+  --delays-radar-detail-due: #af6d13;
+  --delays-radar-triage-surface: #fff0d5;
+  --delays-radar-triage-ink: #ae741d;
+  --delays-radar-outlier-ink: #b37317;
+  --delays-inspector-surface: #fbfdff;
+  --delays-owner-wash: #f7fafc;
+  --delays-toolbar-surface: #f5f9fc;
+  --delays-radar-lane: rgb(241 247 252 / 75%);
+  --delays-panel-shadow: rgb(34 76 112 / 3%);
+  --delays-timeline-review-line: #8b9aaa;
+  --delays-timeline-review-ink: #ad7419;
+  --delays-timeline-review-surface: #fff1d6;
+  --delays-timeline-grid: #e1eaf4;
+  --delays-timeline-selection: #e6f3fd;
+  --delays-ground: #eff6fa;
+}
+
+.dark .ckb-v2.ckb-v2,
+.ckb-v2.dark.ckb-v2 {
+  --delays-ink: var(--text);
+  --delays-blue: var(--clinical-domain-ward);
+  --delays-amber: var(--warning);
+  --delays-muted: var(--text-muted);
+  --delays-border: var(--border);
+  --delays-surface: var(--surface);
+  --delays-attention-summary-surface: var(--warning-soft);
+  --delays-attention-summary-ink: var(--warning);
+  --delays-urgent-surface: var(--warning-soft);
+  --delays-urgent-border: var(--warning);
+  --delays-urgent-edge: var(--warning);
+  --delays-urgent-ink: var(--warning);
+  --delays-wait-under-eight: var(--clinical-accent-soft);
+  --delays-wait-eight-to-day: var(--warning-soft);
+  --delays-wait-over-day: var(--border-strong);
+  --delays-wait-under-eight-key: var(--clinical-domain-ward);
+  --delays-wait-over-day-key: var(--text-muted);
+  --delays-axis: var(--border-strong);
+  --delays-selection-edge: var(--clinical-domain-ward);
+  --delays-stat-amber: var(--warning);
+  --delays-radar-axis: var(--border-strong);
+  --delays-radar-review-line: var(--text-muted);
+  --delays-radar-review-surface: var(--clinical-accent-soft);
+  --delays-radar-quiet: var(--text-muted);
+  --delays-radar-due-ink: var(--warning);
+  --delays-radar-due-dot: var(--warning);
+  --delays-radar-due-halo: var(--warning-soft);
+  --delays-radar-detail-due: var(--warning);
+  --delays-radar-triage-surface: var(--warning-soft);
+  --delays-radar-triage-ink: var(--warning);
+  --delays-radar-outlier-ink: var(--warning);
+  --delays-inspector-surface: var(--surface);
+  --delays-owner-wash: var(--surface-subtle);
+  --delays-toolbar-surface: var(--surface-subtle);
+  --delays-radar-lane: var(--surface-subtle);
+  --delays-panel-shadow: rgb(0 0 0 / 3%);
+  --delays-timeline-review-line: var(--text-muted);
+  --delays-timeline-review-ink: var(--warning);
+  --delays-timeline-review-surface: var(--warning-soft);
+  --delays-timeline-grid: var(--border);
+  --delays-timeline-selection: var(--clinical-accent-soft);
+  --delays-ground: var(--surface-wash);
+}
+
 @media (forced-colors: active) {
   .ckb-v2.ckb-v2,
   .dark .ckb-v2.ckb-v2,
   .ckb-v2.dark.ckb-v2 {
+    --delays-ink: CanvasText;
+    --delays-blue: LinkText;
+    --delays-amber: CanvasText;
+    --delays-muted: CanvasText;
+    --delays-border: CanvasText;
+    --delays-surface: Canvas;
+    --delays-attention-summary-surface: Canvas;
+    --delays-attention-summary-ink: CanvasText;
+    --delays-urgent-surface: Canvas;
+    --delays-urgent-border: CanvasText;
+    --delays-urgent-edge: CanvasText;
+    --delays-urgent-ink: CanvasText;
+    --delays-wait-under-eight: Canvas;
+    --delays-wait-eight-to-day: Canvas;
+    --delays-wait-over-day: Canvas;
+    --delays-wait-under-eight-key: CanvasText;
+    --delays-wait-over-day-key: CanvasText;
+    --delays-axis: CanvasText;
+    --delays-selection-edge: Canvas;
+    --delays-stat-amber: CanvasText;
+    --delays-radar-axis: CanvasText;
+    --delays-radar-review-line: CanvasText;
+    --delays-radar-review-surface: Canvas;
+    --delays-radar-quiet: CanvasText;
+    --delays-radar-due-ink: CanvasText;
+    --delays-radar-due-dot: CanvasText;
+    --delays-radar-due-halo: Canvas;
+    --delays-radar-detail-due: CanvasText;
+    --delays-radar-triage-surface: Canvas;
+    --delays-radar-triage-ink: CanvasText;
+    --delays-radar-outlier-ink: CanvasText;
+    --delays-inspector-surface: Canvas;
+    --delays-owner-wash: Canvas;
+    --delays-toolbar-surface: Canvas;
+    --delays-radar-lane: Canvas;
+    --delays-panel-shadow: none;
+    --delays-timeline-review-line: CanvasText;
+    --delays-timeline-review-ink: CanvasText;
+    --delays-timeline-review-surface: Canvas;
+    --delays-timeline-grid: CanvasText;
+    --delays-timeline-selection: Canvas;
+    --delays-ground: Canvas;
     --background: Canvas;
     --surface: Canvas;
     --surface-chrome: Canvas;

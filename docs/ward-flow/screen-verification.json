@@ -30,15 +30,24 @@
       "mockup": "delays-third-edition.html",
       "route": "/delays",
       "verified": {
-        "date": "2026-10-02",
-        "who": "Codex coordinator and independent screen/source reviewers",
-        "widths": [1920],
-        "themes": ["light"],
-        "verdict": "deviates",
-        "implementationSha256": "89d79b36931e201ed22484066e00b57978bd92812c9d4b7d22176774b3ff4059",
-        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        "date": "2026-10-05",
+        "who": "Codex (rendered browser and source review)",
+        "widths": [1440, 1600, 1280, 768, 390],
+        "themes": ["light", "dark"],
+        "verdict": "matches",
+        "checkedRevision": "b4e2542b237afd54da961aeeef0d1fd3dae71128",
+        "notes": "WF-DELAYS-PRESSURE-MOCKUP: owner-approved October polished runway and three graph screenshots are the scoped new design baseline; preserve remaining app from main2683a5f. Reviewed integrated clean source at the checked revision using ensure http://localhost:3880, verified project clinical-kb:8090f1fceeed. Light desktop1440: full page, permanent runway, catchment line/fill/key/selected inspector, counted radar lanes/person/interval/outliers, timeline with Wards17/selected strip. All three graph widths1600/1280/768/390 contain document overflow; mobile390 runway/pressure individually inspected. Dark1440 three graphs and390 runway inspected; forced colours1440 three graphs inspected. Width/theme lists are aggregate checked cases, not a cross-product. Latest shared shell/footer and lower worklist/actions/holds preserved. Live geometry comes from actual origin-only counts, minutes, recorded legal due times and last activity; generated concepts use approximate geometry. Named defaults and chart intervals supply labels, and long timeline scales keep the review label beside the title. New palette uses canonical app tokens and Delays-only Ward aliases; canonical table supports an opt-in column divider. Browser verification passed queue drill-down/reset, real movement links, tab keyboards, close/return focus, radar interval members/window reset and timeline owner/search/sort/pagination; no browser errors. Local evidence: /workspace/Ward-Flow-delays-live/.local/delays-pressure-mockup/browser-release.log, browser-final.json, final-*.png, review-dark-*.png and review-contrast-*.png. Original historical drawing acceptance is retained in verificationHistory without renewing its hash. Release checks, hosted CI, merge and deployment are separate evidence in the task checkpoint. Final forced-colour review repeated at64e6bcfa5d8da12aba4e3957dea0a42f65a53ce0 after merging the new role declarations into the single canonical forced-colour block. Light/dark/responsive/interaction evidence at5bbbbef8f736d150f1e6f5a2ddecdb83cef7263f is reused: the intervening application change only relocates identical forced-colour declarations; no other rendered inputs changed. Evidence-record commits do not alter application inputs. Final dark-theme print browser review atb4e2542b237afd54da961aeeef0d1fd3dae71128 checks the three graph views at1440. Print-only additions retain data-carrying headers/patient-name buttons/radar counts through the app chrome hide and render labels/solid-hatched segments on white paper. Screen appearance and interaction evidence above is reused because these last changes apply only under print media. Captures: review-print-*.png; focused print/palette/shared-table contracts39tests pass. No physical printer claim."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-02",
+          "who": "Codex coordinator and independent screen/source reviewers",
+          "widths": [1920],
+          "themes": ["light"],
+          "verdict": "deviates",
+          "implementationSha256": "89d79b36931e201ed22484066e00b57978bd92812c9d4b7d22176774b3ff4059",
+          "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        },
         {
           "date": "2026-09-21",
           "who": "Antigravity Builder Agent, independent adversarial reviewer",

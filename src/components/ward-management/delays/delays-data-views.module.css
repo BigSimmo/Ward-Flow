@@ -1273,3 +1273,357 @@
     outline: 1px solid Highlight;
   }
 }
+
+/* Approved graph closeup. These rules only affect the embedded graph timeline. */
+.polishedTimeline {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.polishedTimeline .timelineHeader {
+  background: var(--surface-2);
+  border: 1px solid var(--dv-line);
+  border-radius: 5px 5px 0 0;
+  padding: 10px 14px;
+}
+.timelineCount {
+  margin: 0;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.timelineCount span {
+  font-weight: 400;
+}
+.polishedTimeline .toolbar {
+  flex: 1;
+}
+.polishedTimeline .search {
+  width: 255px;
+  background: var(--surface);
+}
+.polishedTimeline .selectLabel {
+  border: 0;
+  background: transparent;
+}
+.polishedTimeline .selectLabel select {
+  border: 1px solid var(--dv-line);
+  border-radius: 5px;
+  margin-left: 5px;
+  min-width: 95px;
+  background: var(--surface);
+}
+.polishedTimeline .timelineTable {
+  table-layout: fixed;
+  min-width: 1030px;
+  width: 100%;
+}
+.polishedTimeline .timelinePatientCol {
+  width: 18%;
+}
+.timelineTriageCol {
+  width: 6%;
+}
+.polishedTimeline .timelineReasonCol {
+  width: 16%;
+}
+.polishedTimeline .timelineOwnerCol {
+  width: 17%;
+}
+.polishedTimeline .table {
+  --ward-table-cell-inset: 14px 13px;
+}
+.polishedTimeline .table thead th {
+  --ward-table-cell-inset: 12px 13px;
+  height: 77px;
+  font-size: 12px;
+  background: var(--surface-2);
+}
+.polishedTimeline .table {
+  --ward-table-cell-inline-divider: 1px solid color-mix(in srgb, var(--dv-line) 45%, transparent);
+}
+.polishedTimeline .table tbody tr {
+  height: 69px;
+}
+.polishedTimeline .patientButton {
+  font-size: 13px;
+}
+.polishedTimeline .secondary {
+  margin-top: 5px;
+}
+.elapsedHeading {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.polishedTimeline .axis {
+  height: 28px;
+  margin: 0 55px 0 0;
+  border-bottom: 1px solid var(--line-strong);
+}
+.polishedTimeline .axis > span:not(.reviewLabel) {
+  top: 0;
+}
+.polishedTimeline .reviewLabel {
+  top: -23px;
+  padding: 2px 6px;
+  background: var(--ward-delays-timeline-review-surface);
+  color: var(--ward-delays-timeline-review-ink);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.polishedTimeline .track {
+  margin: 0 55px 0 0;
+  height: 28px;
+  background: transparent;
+}
+.polishedTimeline .beforeUpdate,
+.polishedTimeline .quietWait {
+  top: 6px;
+  height: 20px;
+  border-radius: 0;
+}
+.polishedTimeline .beforeUpdate {
+  background: var(--ward-delays-blue);
+}
+.polishedTimeline .quietWait {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ward-delays-blue) 0 1px,
+    var(--ward-delays-timeline-grid) 1px 3px
+  );
+}
+.polishedTimeline .updateDot {
+  top: 16px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  background: var(--ward-delays-blue);
+  box-shadow: 0 0 0 1px var(--ward-delays-blue);
+}
+.polishedTimeline .barDuration {
+  top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding-left: 10px;
+}
+.polishedTimeline .trackCaption {
+  top: -13px;
+  background: none;
+  font-size: 10px;
+}
+.polishedTimeline .reviewLine {
+  top: -35px;
+  bottom: -35px;
+}
+.polishedTimeline .cause {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.polishedTimeline .timelineDetail {
+  padding: 8px 0 0;
+}
+.polishedTimeline .compactStrip {
+  background: var(--surface);
+  border-radius: 5px;
+  min-height: 78px;
+  padding: 14px 16px;
+  gap: 20px;
+}
+.polishedTimeline .compactStrip > strong {
+  min-width: 170px;
+  font-size: 14px;
+}
+.polishedTimeline .compactStrip > div {
+  border-left: 1px solid var(--line);
+  padding-left: 20px;
+}
+.polishedTimeline .compactStrip > div:nth-of-type(3) {
+  flex: 1;
+}
+.polishedTimeline .compactStrip b {
+  font-size: 16px;
+}
+.polishedTimeline .compactStrip .primaryLink {
+  color: var(--dv-ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.polishedTimeline .compactStrip .closeButton {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  width: 34px;
+  height: 34px;
+}
+.polishedTimeline .footer {
+  border: 0;
+  padding: 15px 0 0;
+  font-size: 11px;
+  gap: 12px;
+}
+.polishedTimeline .timelineLegend {
+  margin-right: auto;
+  gap: 16px;
+  font-size: 10px;
+}
+.polishedTimeline .pagination {
+  gap: 10px;
+}
+.polishedTimeline .tableScroll {
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 5px 5px;
+}
+@media (max-width: 1100px) {
+  .polishedTimeline .timelineHeader {
+    flex-wrap: wrap;
+  }
+  .polishedTimeline .toolbar {
+    justify-content: flex-start;
+  }
+  .polishedTimeline .compactStrip {
+    flex-wrap: wrap;
+  }
+  .polishedTimeline .compactStrip > div {
+    padding-left: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .polishedTimeline .toolbar {
+    width: 100%;
+    flex: auto;
+  }
+  .polishedTimeline .search {
+    width: 100%;
+  }
+  .polishedTimeline .timelineCount {
+    font-size: 14px;
+  }
+  .polishedTimeline .timelineLegend {
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .polishedTimeline .compactStrip > strong {
+    width: 100%;
+  }
+  .polishedTimeline .compactStrip > div {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .polishedTimeline .compactStrip > div:nth-of-type(3) {
+    flex-basis: 100%;
+  }
+}
+.polishedTimeline .trackCell,
+.polishedTimeline .axisCell {
+  padding-right: 13px !important;
+}
+.polishedTimeline .axis,
+.polishedTimeline .track {
+  width: calc(100% - 55px);
+  margin-right: 55px;
+}
+.polishedTimeline .updateDot {
+  top: 7px;
+  box-sizing: border-box;
+}
+.polishedTimeline .timelineTable .ownerBadge {
+  color: var(--on-accent);
+  background: var(--ward-delays-blue);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 4px 9px;
+}
+.polishedTimeline .trackCaption {
+  transform: translateX(-50%);
+}
+.polishedTimeline {
+  --dv-ink: var(--ward-delays-ink);
+  --dv-muted: var(--ward-delays-muted);
+  --dv-line: var(--ward-delays-border);
+  --dv-selected: var(--ward-delays-timeline-selection);
+}
+.polishedTimeline .timelineHeader {
+  justify-content: space-between;
+  background: var(--ward-delays-inspector-surface);
+}
+.polishedTimeline .toolbar {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
+.polishedTimeline .timelineCount {
+  font-weight: 700;
+}
+.polishedTimeline .table thead th {
+  background: var(--ward-delays-inspector-surface);
+}
+.polishedTimeline .table {
+  --ward-table-cell-inset: 10px 13px;
+}
+.polishedTimeline .table tbody tr[data-selected="true"] > th,
+.polishedTimeline .table tbody tr[data-selected="true"] > td {
+  background: var(--ward-delays-timeline-selection);
+}
+.polishedTimeline .reviewLine {
+  border-color: var(--ward-delays-timeline-review-line);
+}
+.polishedTimeline .axis .reviewLabel {
+  border: 0;
+  transform: translateX(-50%);
+}
+.polishedTimeline .dotKey {
+  background: var(--ward-delays-surface);
+  border: 2px solid var(--ward-delays-blue);
+  width: 12px;
+  height: 12px;
+}
+.polishedTimeline .pagination > span {
+  display: inline;
+}
+@media (max-width: 600px) {
+  .polishedTimeline .toolbar {
+    width: 100%;
+    flex: auto;
+    justify-content: flex-start;
+  }
+}
+
+/* Very long queues place 8h beside the column title; the dashed marker
+   remains at its exact scale coordinate without covering the title. */
+.polishedTimeline .elapsedHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.compactReviewLabel {
+  padding: 2px 6px;
+  background: var(--ward-delays-timeline-review-surface);
+  color: var(--ward-delays-timeline-review-ink);
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+@media print {
+  .polishedTimeline,
+  .polishedTimeline * {
+    color: CanvasText !important;
+  }
+  .polishedTimeline .table th,
+  .polishedTimeline .table td {
+    background: Canvas !important;
+  }
+  .polishedTimeline .patientButton {
+    display: block !important;
+  }
+  .polishedTimeline .track .beforeUpdate {
+    background: CanvasText !important;
+    print-color-adjust: exact;
+  }
+  .polishedTimeline .track .quietWait {
+    background: repeating-linear-gradient(135deg, CanvasText 0 1px, Canvas 1px 3px) !important;
+    print-color-adjust: exact;
+  }
+  .polishedTimeline .reviewLabel,
+  .compactReviewLabel {
+    background: Canvas;
+  }
+}

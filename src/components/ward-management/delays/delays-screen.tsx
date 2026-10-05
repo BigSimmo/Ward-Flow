@@ -18,7 +18,6 @@ import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   type Movement,
   type Unit,
-  type HealthService,
 } from "@/components/ward-management/ward-model";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -47,10 +46,11 @@ import {
   lastRecordedActivity,
   legalDeadlineMinutes,
   ownerOf,
-  waitingSplit,
 } from "./delays-derivations";
 import styles from "./delays.module.css";
-import { DelaysTableWorkspace, DelaysWaitTimeline } from "./delays-data-views";
+import { DelaysTableWorkspace } from "./delays-data-views";
+import { DelaysCoordination, delayQueueLabel, type DelayQueueScope } from "./delays-coordination";
+import { Users, Clock, TriangleAlert } from "lucide-react";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
@@ -104,17 +104,6 @@ function escalationOf(movement: Movement): NonNullable<Movement["escalation"]> {
   return escalation;
 }
 
-/**
- * The wait chart's time axis: 0 to 8 hours, then 8 to 24, then 24 to 28 hours and over, each
- * stretch drawn at its own scale. Chart geometry only, not a rule; the one rule line on the chart
- * (the severe-wait default) is placed with this same mapping, so it sits where its dots sit.
- */
-function radarX(waitMinutes: number): number {
-  if (waitMinutes <= 480) return 80 + (waitMinutes / 480) * 260;
-  if (waitMinutes <= 1440) return 340 + ((waitMinutes - 480) / 960) * 480;
-  return 820 + Math.min((waitMinutes - 1440) / 480, 1) * 140;
-}
-
 function subscribeToLocation(listener: () => void) {
   window.addEventListener("popstate", listener);
   return () => window.removeEventListener("popstate", listener);
@@ -141,9 +130,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       ? allMovements
       : allMovements.filter((movement: Movement) => movementBelongsToService(movement, service, units));
 
-  // Interactive View Modes: "runway" | "catchment" | "cards" | "radar" | "both"
-  const [viewMode, setViewMode] = useState<"runway" | "catchment" | "cards" | "radar" | "both" | "timeline">("runway");
-  const [catchmentFilter, setCatchmentFilter] = useState<HealthService | null>(null);
+  const [queueScope, setQueueScope] = useState<DelayQueueScope | null>(null);
 
   // Selection & Marking State
   const [markedOwner, setMarkedOwner] = useState<DelayOwnerId | null>(null);
@@ -154,7 +141,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   // Tabs & Tooltips
   const [registerTab, setRegisterTab] = useState<"escalations" | "attention" | "resolved">("escalations");
   const [systemicFilter, setSystemicFilter] = useState<SystemicHoldCategory>("all");
-  const [radarTooltip, setRadarTooltip] = useState<{ movement: Movement; x: number; y: number } | null>(null);
 
   // Prototype Actions & Notices (Owner Rule D4)
   const [protoActionNotice, setProtoActionNotice] = useState<string | null>(null);
@@ -172,7 +158,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const openNetworkWide = allMovements.filter(isOpen);
   const groups = delayGroups(movements, units, now);
   const networkGroups = delayGroups(allMovements, units, now);
-  const split = waitingSplit(movements, now);
 
   const effectiveMarkedCause =
     markedCause !== null && groups.some((group) => group.cause === markedCause) ? markedCause : null;
@@ -204,17 +189,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         : delayFilterId === "waiting"
           ? null
           : activeDelayFilter.label;
-
-  const ownerCounts = DELAY_OWNERS.map((owner) => {
-    const people = groups.filter((group) => ownerOf(group.cause) === owner.id).flatMap((group) => group.movements);
-    return {
-      ...owner,
-      people: people.length,
-      severe: groups
-        .filter((group) => ownerOf(group.cause) === owner.id && isSevere(group.cause))
-        .reduce((sum, group) => sum + group.movements.length, 0),
-    };
-  });
 
   const selected = selectedId === null ? null : (open.find((movement) => movement.id === selectedId) ?? null);
   const selectedCause =
@@ -346,262 +320,27 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     });
   };
 
-  // Pre-calculate Radar Points with 2D Beeswarm Band Dispersion
-  const radarPoints = (() => {
-    function getJitter(str: string) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
-      return Math.abs(hash);
-    }
-
-    type BandKey = "breached" | "imminent" | "severe" | "routine";
-
-    interface BandSpec {
-      yCenter: number;
-      yMin: number;
-      yMax: number;
-      bandHeight: number;
-    }
-
-    const BANDS: Record<BandKey, BandSpec> = {
-      breached: { yCenter: 52, yMin: 36, yMax: 68, bandHeight: 32 },
-      imminent: { yCenter: 96, yMin: 80, yMax: 112, bandHeight: 32 },
-      severe: { yCenter: 152, yMin: 134, yMax: 170, bandHeight: 36 },
-      routine: { yCenter: 202, yMin: 184, yMax: 220, bandHeight: 36 },
-    };
-
-    // Map all movements to base X and Band
-    const rawItems = open.map((m) => {
-      const waitMinutes = Math.max(now - m.openedAt, 0);
-      const baseX = radarX(waitMinutes);
-
-      const legalMinutes = legalDeadlineMinutes(m, now);
-      let isBreached = false;
-      let isUrgent = false;
-      let band: BandKey = "routine";
-
-      if (legalMinutes !== undefined) {
-        if (legalMinutes < 0) {
-          isBreached = true;
-          band = "breached";
-        } else if (legalMinutes <= 60) {
-          isUrgent = true;
-          band = "imminent";
-        } else if (legalMinutes <= 180) {
-          band = "severe";
-        } else {
-          band = "routine";
-        }
-      } else {
-        // Voluntary patients without a recorded legal deadline are never placed in imminent or breached (R5, D-4 & D-22).
-        if (m.urgency === 1) {
-          band = "severe";
-        } else {
-          band = "routine";
-        }
-      }
-
-      return {
-        movement: m,
-        baseX,
-        waitMinutes,
-        legalMinutes,
-        isBreached,
-        isUrgent,
-        band,
-      };
-    });
-
-    // Group by band
-    const bandGroups: Record<BandKey, typeof rawItems> = {
-      breached: [],
-      imminent: [],
-      severe: [],
-      routine: [],
-    };
-    for (const item of rawItems) {
-      bandGroups[item.band].push(item);
-    }
-
-    const result: {
-      movement: (typeof open)[number];
-      x: number;
-      y: number;
-      waitMinutes: number;
-      legalMinutes: number | undefined;
-      isBreached: boolean;
-      isUrgent: boolean;
-    }[] = [];
-
-    // Process each band independently with dynamic 2D beeswarm dispersion
-    const bandOrder: BandKey[] = ["breached", "imminent", "severe", "routine"];
-    for (const bandKey of bandOrder) {
-      const items = bandGroups[bandKey];
-      // Deterministic sort: ascending baseX, then movement.id
-      items.sort((a, b) => a.baseX - b.baseX || a.movement.id.localeCompare(b.movement.id));
-
-      const spec = BANDS[bandKey];
-      const placed: { x: number; y: number }[] = [];
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const hash = getJitter(item.movement.id);
-
-        // Vertical step offsets alternating from center outward
-        const halfSpan = spec.bandHeight / 2 - 2;
-        const ySteps: number[] = [0];
-        for (let step = 3.5; step <= halfSpan; step += 3.5) {
-          ySteps.push(-step, step);
-        }
-
-        // Horizontal offsets if coordinates cluster
-        const xOffsets = [0, -3.5, 3.5, -7, 7, -10.5, 10.5, -14, 14];
-
-        let bestX = item.baseX;
-        let bestY = spec.yCenter;
-        let bestMinDist = -1;
-        let foundSafe = false;
-
-        // Desired collision-free distance
-        const TARGET_DIST = 11.5;
-
-        for (const dx of xOffsets) {
-          const candX = Math.min(Math.max(item.baseX + dx, 82), 968);
-
-          for (const dy of ySteps) {
-            const candY = spec.yCenter + dy;
-            if (candY < spec.yMin + 2 || candY > spec.yMax - 2) continue;
-
-            let minDist = Infinity;
-            for (const p of placed) {
-              const d = Math.hypot(candX - p.x, candY - p.y);
-              if (d < minDist) {
-                minDist = d;
-              }
-            }
-
-            if (minDist >= TARGET_DIST) {
-              const hashY = ((hash % 7) - 3) * 0.25;
-              bestX = candX;
-              bestY = Math.min(Math.max(candY + hashY, spec.yMin + 2), spec.yMax - 2);
-              foundSafe = true;
-              break;
-            }
-
-            if (minDist > bestMinDist) {
-              bestMinDist = minDist;
-              bestX = candX;
-              bestY = candY;
-            }
-          }
-          if (foundSafe) break;
-        }
-
-        placed.push({ x: bestX, y: bestY });
-        result.push({
-          movement: item.movement,
-          x: Math.round(bestX * 10) / 10,
-          y: Math.round(bestY * 10) / 10,
-          waitMinutes: item.waitMinutes,
-          legalMinutes: item.legalMinutes,
-          isBreached: item.isBreached,
-          isUrgent: item.isUrgent,
-        });
-      }
-    }
-
-    return result;
-  })();
-
-  // The severe-wait mark is the ward's own labelled default (ward-operational-defaults.ts), not a
-  // legal limit and not a national standard. The 24-hour line is gone until Josh rules on it (2A).
   const severeWaitHours = ED_SEVERE_PRESSURE_WAIT_MINUTES / 60;
-  const severeX = radarX(ED_SEVERE_PRESSURE_WAIT_MINUTES);
   const breachedCount = open.filter((m) => {
     const l = legalDeadlineMinutes(m, now);
     return l !== undefined && l < 0;
   }).length;
 
-  const expiringSoonCount = open.filter((m) => {
-    const l = legalDeadlineMinutes(m, now);
-    return l !== undefined && l >= 0 && l <= 60;
-  }).length;
-
-  const breachedMovements = open.filter((m) => {
-    const l = legalDeadlineMinutes(m, now);
-    return l !== undefined && l < 0;
-  });
-
-  const expiringSoonMovements = open.filter((m) => {
-    const l = legalDeadlineMinutes(m, now);
-    return l !== undefined && l >= 0 && l <= 60;
-  });
-
   const filteredHolds =
     systemicFilter === "all" ? SYSTEMIC_HOLDS : SYSTEMIC_HOLDS.filter((h) => h.category === systemicFilter);
 
-  const catchmentStats = [
-    {
-      service: "South Metro" as HealthService,
-      title: "South Metropolitan Health Service (FSH, Rockingham)",
-      eds: ["FSH ED", "Rockingham ED"],
-    },
-    {
-      service: "North Metro" as HealthService,
-      title: "North Metropolitan Health Service (SCGH, Joondalup)",
-      eds: ["SCGH ED", "Joondalup ED"],
-    },
-    {
-      service: "East Metro" as HealthService,
-      title: "East Metropolitan Health Service (RPH, Midland)",
-      eds: ["RPH ED", "Midland ED"],
-    },
-    {
-      service: "WACHS" as HealthService,
-      title: "WA Country Health Service (Bunbury, Albany, Kalgoorlie)",
-      eds: ["Country regional transfers awaiting metro bed"],
-    },
-  ].map((cat) => {
-    const svcMovements = open.filter((m) => {
-      const s = edHealthService(m.originEdId);
-      return s === cat.service || movementBelongsToService(m, cat.service, units);
-    });
-
-    const total = svcMovements.length;
-    const breached = svcMovements.filter((m) => {
-      const l = legalDeadlineMinutes(m, now);
-      return l !== undefined && l < 0;
-    }).length;
-    const imminent = svcMovements.filter((m) => {
-      const l = legalDeadlineMinutes(m, now);
-      return l !== undefined && l >= 0 && l <= 60;
-    }).length;
-
-    const over24 = svcMovements.filter((m) => now - m.openedAt >= 1440 * 60 * 1000).length;
-    const eightTo24 = svcMovements.filter((m) => {
-      const w = now - m.openedAt;
-      return w >= 480 * 60 * 1000 && w < 1440 * 60 * 1000;
-    }).length;
-    const under8 = svcMovements.filter((m) => now - m.openedAt < 480 * 60 * 1000).length;
-
-    const pBreach = total > 0 ? Math.round((breached / total) * 100) : 0;
-    const p8to24 = total > 0 ? Math.round((eightTo24 / total) * 100) : 0;
-    const pUnder8 = total > 0 ? Math.max(100 - pBreach - p8to24, 0) : 100;
-
-    return {
-      ...cat,
-      total,
-      breached,
-      imminent,
-      over24,
-      eightTo24,
-      under8,
-      pBreach,
-      p8to24,
-      pUnder8,
-      svcMovements,
-    };
-  });
+  const queueMatches = (movement: Movement, cause: DelayCause) =>
+    queueScope === null ||
+    ("owner" in queueScope
+      ? ownerOf(cause) === queueScope.owner
+      : (edHealthService(movement.originEdId) ?? "unrecorded") === queueScope.origin);
+  const queueRows = rows.filter(({ movement, cause }) => queueMatches(movement, cause));
+  const queueGroups = groups
+    .map((group) => ({
+      ...group,
+      movements: group.movements.filter((movement) => queueMatches(movement, group.cause)),
+    }))
+    .filter((group) => group.movements.length > 0);
 
   return (
     <div
@@ -616,21 +355,24 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleGroup}>
             <h1 className={styles.pageTitle}>Delays</h1>
-            <span className={styles.pageSubtitle}>See the wait. Find the last change.</span>
+            <span className={styles.pageSubtitle}>See the pressure. Act on the next step.</span>
           </div>
 
           <div className={styles.mastheadMeta}>
             <div className={styles.statPill}>
+              <Users size={26} aria-hidden="true" />
               <span className={styles.statPillValue}>{open.length}</span>
               <span className={styles.statPillLabel}>waiting</span>
             </div>
             <div className={styles.statPill} data-tone="wait">
+              <Clock size={26} aria-hidden="true" />
               <span className={styles.statPillValue}>
                 {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
               </span>
               <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
             </div>
             <div className={styles.statPill} data-tone="escalated">
+              <TriangleAlert size={26} aria-hidden="true" />
               <span className={styles.statPillValue}>
                 {open.filter((movement) => movement.escalation !== undefined).length}
               </span>
@@ -690,929 +432,58 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           </div>
         ) : null}
 
-        {/* ─── PANEL 1: EXECUTIVE COORDINATION OVERVIEW (Who is holding people up) ─── */}
-        <WardPanel title="Who is holding people up" count={open.length === 0 ? undefined : `${open.length} waiting`}>
-          <div className={styles.topExecutiveControlRow}>
-            <div className={styles.execStatusBadge}>
-              <span className={styles.livePulseDot} aria-hidden="true" />
-              <span className={styles.execStatusText}>Real-Time Coordination Matrix</span>
-            </div>
+        {open.length === 0 && (
+          <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
+            {service === null
+              ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
+              : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
+          </p>
+        )}
 
-            <div className={styles.viewSwitcherSeg} role="group" aria-label="Executive Overview Mode">
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "runway" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("runway")}
-                aria-pressed={viewMode === "runway"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                Action Runway
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "catchment" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("catchment")}
-                aria-pressed={viewMode === "catchment"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                Catchment Pressure
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "radar" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("radar")}
-                aria-pressed={viewMode === "radar"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2a10 10 0 0 1 10 10" />
-                  <path d="M12 12l7-7" />
-                </svg>
-                Crisis Radar
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "cards" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("cards")}
-                aria-pressed={viewMode === "cards"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <rect x="3" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="14" width="7" height="7" rx="1" />
-                  <rect x="3" y="14" width="7" height="7" rx="1" />
-                </svg>
-                Summary Cards
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "both" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("both")}
-                aria-pressed={viewMode === "both"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                </svg>
-                Combined
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewSwitchBtn} ${viewMode === "timeline" ? styles.viewSwitchBtnActive : ""}`}
-                onClick={() => setViewMode("timeline")}
-                aria-pressed={viewMode === "timeline"}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <polyline points="12 7 12 12 15 14" />
-                </svg>
-                Wait timeline
-              </button>
-            </div>
+        <DelaysCoordination
+          rows={rows}
+          now={now}
+          markedOwner={markedOwner}
+          onMarkOwner={(owner) => {
+            setMarkedOwner(markedOwner === owner ? null : owner);
+            setMarkedCause(null);
+            setDelayFilterId("waiting");
+          }}
+          onViewQueue={(scope) => {
+            setQueueScope(scope);
+            window.requestAnimationFrame(() => {
+              const queue = document.getElementById("delays-queue-scope");
+              queue?.scrollIntoView({ block: "start", behavior: "smooth" });
+              queue?.focus({ preventScroll: true });
+            });
+          }}
+        />
+        {queueScope && (
+          <div id="delays-queue-scope" className={styles.queueScope} tabIndex={-1} role="status" aria-atomic="true">
+            <span>
+              <strong>{delayQueueLabel(queueScope)}</strong> · {queueRows.length} people in this queue · Synthetic
+              records
+            </span>
+            <button type="button" onClick={() => setQueueScope(null)}>
+              Show all waiting
+            </button>
           </div>
-
-          {/* PR 47's named wait timeline, as a view in the overview switcher. */}
-          {viewMode === "timeline" && (
-            <DelaysWaitTimeline
-              rows={rows}
-              now={now}
-              onSelect={(id) => {
-                selectMovement(id);
-                inspectionSourceRef.current = "timeline";
-              }}
-              selectedId={selectedId}
-            />
-          )}
-
-          {/* DUAL-HORIZON ACTION RUNWAY (Option 1) */}
-          {viewMode === "runway" && (
-            <div className={styles.runwayPanel} aria-label="Action Runway Matrix">
-              {/* Tier 1: Statutory Sentinel Strip */}
-              {breachedMovements.length > 0 || expiringSoonMovements.length > 0 ? (
-                <div className={styles.runwaySentinelStrip}>
-                  <div className={styles.runwaySentinelHeader}>
-                    <div className={styles.runwaySentinelTitle}>
-                      <span className={styles.sentinelDot} />
-                      <span>Statutory &amp; Safety Sentinel · Immediate Detention / Legal Jeopardy</span>
-                    </div>
-                    <span className={styles.runwaySentinelBadge}>
-                      {breachedMovements.length} Past recorded time · {expiringSoonMovements.length} Expiring &lt;60m
-                    </span>
-                  </div>
-
-                  <div className={styles.runwayPatientGrid}>
-                    {breachedMovements.map((m) => {
-                      const dl = legalDeadlineMinutes(m, now);
-                      const identity = resolvePatientIdentity(m);
-                      const ed = edById(m.originEdId)?.name ?? m.originEdId;
-                      const form = m.legalForm ? legalFormName(m.legalForm) : "Detention Form";
-                      const waitStr = splitDuration(Math.max(now - m.openedAt, 0));
-                      const overdueStr = dl !== undefined ? `${splitDuration(Math.abs(dl))} ago` : "expired";
-
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          className={styles.runwayPatientCard}
-                          onClick={() => selectMovement(m.id)}
-                          aria-label={`Select patient ${identity.displayName}, form past its recorded time ${overdueStr}`}
-                        >
-                          <div className={styles.runwayPatientTop}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span className={styles.runwayTagBreached}>Past time</span>
-                              <span className={styles.runwayPatientName}>{identity.displayName}</span>
-                            </div>
-                            <span className={styles.runwayTimeTag}>-{overdueStr}</span>
-                          </div>
-                          <div className={styles.runwayPatientMid}>
-                            <span>{ed}</span>
-                            <span className={styles.runwayPatientForm}>{form}</span>
-                          </div>
-                          <div className={styles.runwayPatientBottom}>
-                            <span className={styles.runwayPatientWait}>Wait: {waitStr} in ED</span>
-                            <span className={styles.runwayReviewLink}>Review Drawer →</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-
-                    {expiringSoonMovements.map((m) => {
-                      const dl = legalDeadlineMinutes(m, now);
-                      const identity = resolvePatientIdentity(m);
-                      const ed = edById(m.originEdId)?.name ?? m.originEdId;
-                      const form = m.legalForm ? legalFormName(m.legalForm) : "Detention Form";
-                      const waitStr = splitDuration(Math.max(now - m.openedAt, 0));
-                      const dueStr = dl !== undefined ? `due in ${splitDuration(dl)}` : "due soon";
-
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          className={`${styles.runwayPatientCard} ${styles.runwayPatientCardImminent}`}
-                          onClick={() => selectMovement(m.id)}
-                          aria-label={`Select patient ${identity.displayName}, Form ${dueStr}`}
-                        >
-                          <div className={styles.runwayPatientTop}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span className={styles.runwayTagImminent}>Due &lt;60m</span>
-                              <span className={styles.runwayPatientName}>{identity.displayName}</span>
-                            </div>
-                            <span className={styles.runwayTimeTagImminent}>+{splitDuration(dl ?? 0)}</span>
-                          </div>
-                          <div className={styles.runwayPatientMid}>
-                            <span>{ed}</span>
-                            <span className={styles.runwayPatientForm}>{form}</span>
-                          </div>
-                          <div className={styles.runwayPatientBottom}>
-                            <span className={styles.runwayPatientWait}>Wait: {waitStr} in ED</span>
-                            <span className={styles.runwayReviewLink}>Review Drawer →</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.runwayCleanSentinel}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span>
-                    All recorded statutory detention forms and legal authorities are current within time limits.
-                  </span>
-                </div>
-              )}
-
-              {/* Tier 2: Blocker Ownership Pipeline Cards */}
-              <div className={styles.runwayBlockersGrid}>
-                {ownerCounts.map((owner) => {
-                  const isActive = markedOwner === owner.id;
-                  const isYours = owner.id === "yours";
-                  const isWards = owner.id === "wards";
-                  const isTransport = owner.id === "transport";
-
-                  const roleLabel = isYours
-                    ? "Pending bed match & allocation"
-                    : isWards
-                      ? "Waiting on ward doctor / bed clean"
-                      : isTransport
-                        ? "Secure transit vehicle / police escort"
-                        : "Other external factors";
-
-                  return (
-                    <button
-                      key={owner.id}
-                      type="button"
-                      className={`${styles.runwayOwnerCard} ${isActive ? styles.runwayOwnerCardActive : ""}`}
-                      onClick={() => {
-                        setMarkedCause(null);
-                        setMarkedOwner(isActive ? null : owner.id);
-                        setDelayFilterId("waiting");
-                      }}
-                      aria-pressed={isActive}
-                      aria-label={`Filter by ${owner.name}: ${owner.people} patients`}
-                    >
-                      <div className={styles.runwayOwnerHeader}>
-                        <span className={styles.runwayOwnerTitle}>{owner.name}</span>
-                        <span className={styles.runwayOwnerCount}>{owner.people}</span>
-                      </div>
-                      {owner.severe > 0 ? (
-                        <span className={styles.runwayOwnerCritical}>
-                          {owner.severe} critical blocker{owner.severe > 1 ? "s" : ""}
-                        </span>
-                      ) : (
-                        <span className={styles.runwayOwnerAllClear}>0 critical · Normal processing</span>
-                      )}
-                      <div className={styles.runwayOwnerFooter}>
-                        <span>{roleLabel}</span>
-                        <span style={{ color: "var(--accent)", fontWeight: 700 }}>
-                          {isActive ? "Filtered ✓" : "Filter list →"}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Tier 3: Macro ED Duration Breakdown Strip */}
-              <div className={styles.runwayMacroStrip}>
-                <span style={{ fontWeight: 600, color: "var(--ink)" }}>Emergency Department Wait Durations:</span>
-                <div className={styles.runwayMacroLegend}>
-                  {[...split].reverse().map((band, idx) => (
-                    <span
-                      key={band.label}
-                      className={styles.runwayMacroItem}
-                      style={{
-                        color:
-                          idx === 0 ? "var(--muted)" : idx === 1 ? "var(--warn-ink, var(--warn))" : "var(--danger)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: idx === 0 ? "var(--muted)" : idx === 1 ? "var(--warn)" : "var(--danger)",
-                        }}
-                      />
-                      {band.label}: <strong style={{ color: "var(--ink)" }}>{band.value}</strong>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ─── OPTION 4: CATCHMENT & HOSPITAL PRESSURE STRIP ────────── */}
-          {viewMode === "catchment" && (
-            <div className={styles.catchmentPanel} aria-label="Catchment Hospital Pressure">
-              <div className={styles.catchmentHeader}>
-                <div className={styles.catchmentTitleCluster}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <h3 className={styles.catchmentTitle}>
-                    Statewide Delays by Health Service &amp; Emergency Department
-                  </h3>
-                  <span className={styles.catchmentTotalBadge}>{open.length} waiting across 4 services</span>
-                </div>
-                <span className={styles.catchmentHint}>Click catchment to filter worklist</span>
-              </div>
-
-              <div className={styles.catchmentGrid}>
-                {catchmentStats.map((cat) => {
-                  const isFiltered = catchmentFilter === cat.service;
-                  return (
-                    <button
-                      key={cat.service}
-                      type="button"
-                      className={`${styles.catchmentCard} ${isFiltered ? styles.catchmentCardActive : ""}`}
-                      onClick={() => setCatchmentFilter(isFiltered ? null : cat.service)}
-                      aria-pressed={isFiltered}
-                      aria-label={`Filter by ${cat.title}: ${cat.total} waiting`}
-                    >
-                      <div className={styles.catchmentCardHeader}>
-                        <strong className={styles.catchmentServiceName}>{cat.title}</strong>
-                        <div className={styles.catchmentBadgeGroup}>
-                          {cat.breached > 0 ? (
-                            <span className={styles.catchmentBreachBadge}>{cat.breached} past recorded time</span>
-                          ) : cat.imminent > 0 ? (
-                            <span className={styles.catchmentImminentBadge}>{cat.imminent} Imminent (&lt;60m)</span>
-                          ) : (
-                            <span className={styles.catchmentValidBadge}>All Authorities Valid</span>
-                          )}
-                          <strong className={styles.catchmentCount}>{cat.total} waiting</strong>
-                        </div>
-                      </div>
-
-                      <div className={styles.catchmentMeterTrack} aria-hidden="true">
-                        {cat.pBreach > 0 && (
-                          <div className={styles.catchmentSegBreach} style={{ width: `${cat.pBreach}%` }} />
-                        )}
-                        {cat.p8to24 > 0 && (
-                          <div className={styles.catchmentSegWarn} style={{ width: `${cat.p8to24}%` }} />
-                        )}
-                        {cat.pUnder8 > 0 && (
-                          <div className={styles.catchmentSegNormal} style={{ width: `${cat.pUnder8}%` }} />
-                        )}
-                      </div>
-
-                      <div className={styles.catchmentFootRow}>
-                        <span className={styles.catchmentEds}>{cat.eds.join(" · ")}</span>
-                        <span className={styles.catchmentBands}>
-                          {(
-                            [
-                              [cat.over24, "Over 24 hours"],
-                              [cat.eightTo24, "8 to 24 hours"],
-                              [cat.under8, "Under 8 hours"],
-                            ] as const
-                          )
-                            .map(([count, band]) => `${count} ${band}`)
-                            .join(" · ")}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* CRISIS RADAR MATRIX (Image 4 Enhanced Presentation) */}
-          {(viewMode === "radar" || viewMode === "both") && (
-            <div className={styles.radarStandaloneBox} aria-label="Urgency & Statutory Expiry Radar">
-              <div className={styles.radarHeader}>
-                <div className={styles.radarTitleCluster}>
-                  <h3 className={styles.radarTitle}>
-                    <span className={styles.livePulseDot} aria-hidden="true" />
-                    Statutory Expiry &amp; Emergency Wait Radar Matrix
-                  </h3>
-                  <span className={styles.worklistCountBadge}>
-                    <span className={styles.livePulseDotSmall} aria-hidden="true" />
-                    <span>{open.length} waiting</span>
-                  </span>
-                </div>
-
-                <div className={styles.radarLegend}>
-                  <div className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.legendDotYours}`} /> Yours (Coordinator)
-                  </div>
-                  <div className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.legendDotWards}`} /> Wards
-                  </div>
-                  <div className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.legendDotTransport}`} /> Transport
-                  </div>
-                  <div className={styles.legendItem}>
-                    <span className={`${styles.legendDot} ${styles.legendDotBreached}`} /> Past recorded time / due soon
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.radarCanvasBox}>
-                {radarTooltip && (
-                  <div className={styles.radarTooltip}>
-                    <div className={styles.ttHeader}>
-                      {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                      <span className={styles.ttId}>{resolvePatientIdentity(radarTooltip.movement).formalName}</span>
-                      <span className={styles.ttEd}>
-                        {edById(radarTooltip.movement.originEdId)?.name ?? radarTooltip.movement.originEdId}
-                      </span>
-                    </div>
-                    <span className={styles.ttWait}>
-                      {splitDuration(now - radarTooltip.movement.openedAt)} ED wait (T{radarTooltip.movement.urgency})
-                    </span>
-                    {legalDeadlineMinutes(radarTooltip.movement, now) !== undefined ? (
-                      <span className={styles.ttAlert}>
-                        {legalFormName(radarTooltip.movement.legalForm!)}{" "}
-                        {legalDeadlineMinutes(radarTooltip.movement, now)! < 0
-                          ? `past recorded time (${splitDuration(Math.abs(legalDeadlineMinutes(radarTooltip.movement, now)!))} ago)`
-                          : `due in ${splitDuration(legalDeadlineMinutes(radarTooltip.movement, now)!)}`}
-                      </span>
-                    ) : (
-                      <span className={styles.ttStatus}>Legal Status: {radarTooltip.movement.legalStatus}</span>
-                    )}
-                  </div>
-                )}
-
-                <svg className={styles.radarSvg} viewBox="0 0 1000 270" preserveAspectRatio="xMidYMid meet">
-                  {/* Background Quadrants with generous internal padding and modern rounded corners */}
-                  {/* Red Zone: Top Right (>8h wait & Breached/Imminent) */}
-                  <rect
-                    x={severeX + 8}
-                    y="18"
-                    width={968 - severeX}
-                    height="102"
-                    fill="var(--danger-soft)"
-                    opacity="0.75"
-                    rx="8"
-                    stroke="var(--danger)"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                  />
-                  <text
-                    x={severeX + 22}
-                    y="36"
-                    fill="var(--danger)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="700"
-                    letterSpacing="0.04em"
-                  >
-                    CRITICAL: PAST / IMMINENT LEGAL TIME
-                  </text>
-
-                  {/* Long Wait Zone: Bottom Right (>8h wait, Stable Authority) */}
-                  <rect
-                    x={severeX + 8}
-                    y="126"
-                    width={968 - severeX}
-                    height="102"
-                    fill="var(--sunk)"
-                    opacity="0.5"
-                    rx="8"
-                    stroke="var(--line)"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x={severeX + 22}
-                    y="144"
-                    fill="var(--muted)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="600"
-                    letterSpacing="0.03em"
-                  >
-                    EXTENDED ED STAY (&gt;{severeWaitHours}h WAIT)
-                  </text>
-
-                  {/* Acute Urgency Zone: Top Left (<8h Wait, Imminent Legal Clock) */}
-                  <rect
-                    x="92"
-                    y="18"
-                    width={severeX - 100}
-                    height="102"
-                    fill="var(--warn-soft)"
-                    opacity="0.65"
-                    rx="8"
-                    stroke="var(--warn)"
-                    strokeWidth="1"
-                    strokeDasharray="2 3"
-                    strokeOpacity="0.4"
-                  />
-                  <text
-                    x="106"
-                    y="36"
-                    fill="var(--warn)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="600"
-                    letterSpacing="0.03em"
-                  >
-                    EXPIRING SOON (&lt;{severeWaitHours}h WAIT)
-                  </text>
-
-                  {/* Standard Flow Zone: Bottom Left (<8h Wait, Stable Authority) */}
-                  <rect
-                    x="92"
-                    y="126"
-                    width={severeX - 100}
-                    height="102"
-                    fill="var(--surface-2)"
-                    opacity="0.7"
-                    rx="8"
-                    stroke="var(--line)"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x="106"
-                    y="144"
-                    fill="var(--muted)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="500"
-                    letterSpacing="0.03em"
-                  >
-                    STANDARD INTAKE
-                  </text>
-
-                  {/* Midline separating Upper Jeopardy from Lower Stable */}
-                  <line
-                    x1="92"
-                    y1="123"
-                    x2="976"
-                    y2="123"
-                    stroke="var(--line)"
-                    strokeWidth="1"
-                    strokeDasharray="2 4"
-                    opacity="0.7"
-                  />
-
-                  {/* 8h Benchmark Line */}
-                  <line
-                    x1={severeX}
-                    y1="16"
-                    x2={severeX}
-                    y2="236"
-                    stroke="var(--danger)"
-                    strokeWidth="1.25"
-                    strokeDasharray="3 3"
-                    opacity="0.7"
-                  />
-
-                  {/* Grid Axes */}
-                  <line x1="86" y1="236" x2="976" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
-                  <line x1="86" y1="16" x2="86" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
-
-                  {/* Y-Axis Labels aligned with the 4 band centers (52, 96, 152, 202) */}
-                  <text
-                    x="78"
-                    y="56"
-                    textAnchor="end"
-                    fill="var(--danger)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="700"
-                  >
-                    Past time
-                  </text>
-                  <text
-                    x="78"
-                    y="100"
-                    textAnchor="end"
-                    fill="var(--warn)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="600"
-                  >
-                    &lt;60m Due
-                  </text>
-                  <text
-                    x="78"
-                    y="156"
-                    textAnchor="end"
-                    fill="var(--ink)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="500"
-                  >
-                    Severe
-                  </text>
-                  <text
-                    x="78"
-                    y="206"
-                    textAnchor="end"
-                    fill="var(--muted)"
-                    fontFamily="var(--body)"
-                    fontSize="12"
-                    fontWeight="500"
-                  >
-                    Routine
-                  </text>
-
-                  {/* X-Axis Labels */}
-                  <text x="86" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    0h
-                  </text>
-                  <text x="210" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    4h
-                  </text>
-                  <text x="340" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    8h
-                  </text>
-                  <text x="460" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    12h
-                  </text>
-                  <text x="580" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    16h
-                  </text>
-                  <text x="700" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    20h
-                  </text>
-                  <text x="820" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    24h
-                  </text>
-                  <text x="950" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
-                    28h+
-                  </text>
-
-                  {/* Dynamic Plotted Dots with 2D Beeswarm Dispersion */}
-                  {radarPoints.map((pt) => {
-                    const isSelected = selectedId === pt.movement.id;
-                    const owner = ownerOf(
-                      groups.find((g) => g.movements.some((m) => m.id === pt.movement.id))?.cause ??
-                        "awaiting_coordinator",
-                    );
-
-                    let fillColor = "var(--ink)";
-                    if (owner === "yours") fillColor = "var(--accent)";
-                    else if (owner === "wards") fillColor = "var(--accent-subtle, var(--accent))";
-                    else if (owner === "transport") fillColor = "var(--brand, var(--ink))";
-                    if (pt.isBreached) fillColor = "var(--danger)";
-
-                    const r = isSelected ? 8.5 : pt.isBreached ? 7 : 5.5;
-                    const strokeColor = isSelected ? "var(--ink)" : "var(--surface)";
-                    const strokeW = isSelected ? 2.5 : 1.25;
-                    // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                    const pointWho = resolvePatientIdentity(pt.movement).displayName;
-
-                    return (
-                      <g
-                        key={pt.movement.id}
-                        className={styles.radarPointGroup}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Select patient ${pointWho}, wait ${Math.round(pt.waitMinutes / 60)}h`}
-                        onClick={() => selectMovement(pt.movement.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            selectMovement(pt.movement.id);
-                          }
-                        }}
-                        onMouseEnter={() => setRadarTooltip({ movement: pt.movement, x: pt.x, y: pt.y })}
-                        onMouseLeave={() => setRadarTooltip(null)}
-                      >
-                        {/* Enlarged invisible tap/hover hit target (hit radius 16px = 32x32px minimum) */}
-                        <circle cx={pt.x} cy={pt.y} r={16} fill="transparent" stroke="transparent" />
-                        {pt.isBreached && (
-                          <circle
-                            cx={pt.x}
-                            cy={pt.y}
-                            r={10}
-                            fill="none"
-                            stroke="var(--danger)"
-                            strokeWidth="1.25"
-                            strokeDasharray="3 3"
-                            pointerEvents="none"
-                          >
-                            <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.85;0.2;0.85" dur="2s" repeatCount="indefinite" />
-                          </circle>
-                        )}
-                        <circle
-                          cx={pt.x}
-                          cy={pt.y}
-                          r={r}
-                          fill={fillColor}
-                          fillOpacity={0.85}
-                          stroke={strokeColor}
-                          strokeWidth={strokeW}
-                        />
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            </div>
-          )}
-
-          {/* THREE STRATEGIC PILLARS (Image 4: Separated from the radar graph) */}
-          {(viewMode === "cards" || viewMode === "both") && (
-            <div className={styles.separatedPillarsSection}>
-              {viewMode === "both" && (
-                <div className={styles.pillarsSectionHeader}>
-                  <h4 className={styles.pillarsSectionTitle}>Strategic Overview Pillars</h4>
-                  <span className={styles.pillarsSectionSubtitle}>
-                    Separated analysis of statutory orders, wait times, and blocker ownership
-                  </span>
-                </div>
-              )}
-              <div className={styles.pillarsGrid}>
-                {/* Pillar 1: Statutory Sentinel */}
-                <div className={styles.pillarCard}>
-                  <div className={styles.pillarHeader}>
-                    <h3 className={styles.pillarTitle}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      Statutory &amp; Safety Sentinel
-                    </h3>
-                    <span className={styles.pillarBadge}>Recorded status</span>
-                  </div>
-
-                  <div className={styles.pillarBody}>
-                    {breachedCount > 0 ? (
-                      <div className={styles.sentinelBreach}>
-                        <div className={styles.sentinelBreachLeft}>
-                          <svg
-                            className={styles.sentinelBreachIcon}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                          </svg>
-                          <div className={styles.sentinelBreachText}>
-                            <span>Past the recorded legal time</span>
-                            Form lapsed while waiting in emergency department
-                          </div>
-                        </div>
-                        <span className={styles.sentinelCount}>{breachedCount}</span>
-                      </div>
-                    ) : null}
-
-                    <div className={styles.sentinelSubRows}>
-                      <div className={`${styles.sentinelTile} ${expiringSoonCount > 0 ? styles.sentinelTileWarn : ""}`}>
-                        <span className={styles.sentinelTileLabel}>Expiring &lt; 60m</span>
-                        <span className={styles.sentinelTileVal}>
-                          {expiringSoonCount} <span>orders</span>
-                        </span>
-                      </div>
-                      <div className={styles.sentinelTile}>
-                        <span className={styles.sentinelTileLabel}>Active Orders</span>
-                        <span className={styles.sentinelTileVal}>
-                          {open.filter((m) => m.legalForm !== undefined).length} <span>forms</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pillar 2: wait durations */}
-                <div className={styles.pillarCard}>
-                  <div className={styles.pillarHeader}>
-                    <h3 className={styles.pillarTitle}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      Wait durations
-                    </h3>
-                    <span className={styles.pillarBadge}>ED Stay</span>
-                  </div>
-
-                  <div className={styles.pillarBody}>
-                    {open.length === 0 ? (
-                      <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
-                        {service === null
-                          ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement, not a figure this screen could not produce."
-                          : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}, not a figure this screen could not produce.`}
-                      </p>
-                    ) : (
-                      <>
-                        <dl className={styles.waitBand} aria-label="People waiting by duration">
-                          <div>
-                            <dt>Waiting</dt>
-                            <dd>
-                              {open.length} <span>{open.length === 1 ? "person" : "people"}</span>
-                            </dd>
-                          </div>
-                          {[...split].reverse().map((band) => (
-                            <div key={band.label}>
-                              <dt>{band.label}</dt>
-                              <dd>
-                                {band.value} <span>of {open.length}</span>
-                              </dd>
-                            </div>
-                          ))}
-                        </dl>
-
-                        <div className={styles.durationMeter} aria-hidden="true">
-                          <div className={styles.durationBar}>
-                            {[...split].reverse().map((band, idx) => {
-                              const pct = open.length === 0 ? 0 : Math.round((band.value / open.length) * 100);
-                              const cls =
-                                idx === 0
-                                  ? styles.durationSegRoutine
-                                  : idx === 1
-                                    ? styles.durationSegAccessBlocked
-                                    : styles.durationSegRoutine;
-                              return (
-                                <div
-                                  key={band.label}
-                                  className={`${styles.durationSeg} ${cls}`}
-                                  style={{ width: `${pct}%` }}
-                                  title={`${band.label}: ${band.value}`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Pillar 3: Blocker Responsibility */}
-                <div className={styles.pillarCard}>
-                  <div className={styles.pillarHeader}>
-                    <h3 className={styles.pillarTitle}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                      </svg>
-                      Blocker Responsibility
-                    </h3>
-                    <span className={styles.pillarBadge}>Action Owners</span>
-                  </div>
-
-                  <div className={styles.pillarBody}>
-                    <div className={styles.ownerRowGrid}>
-                      {ownerCounts.map((owner) => (
-                        <button
-                          key={owner.id}
-                          type="button"
-                          className={`${styles.ownerTile} ${markedOwner === owner.id ? styles.ownerTileActive : ""}`}
-                          aria-pressed={markedOwner === owner.id}
-                          onClick={() => {
-                            setMarkedCause(null);
-                            setMarkedOwner(markedOwner === owner.id ? null : owner.id);
-                            setDelayFilterId("waiting");
-                          }}
-                          data-testid={`delays-owner-${owner.id}`}
-                        >
-                          <div className={styles.ownerTileTop}>
-                            <span className={styles.ownerTileName}>{owner.name}</span>
-                            <span className={styles.ownerTileCount}>{owner.people}</span>
-                          </div>
-                          {owner.severe > 0 ? (
-                            <span className={styles.ownerTileAlert}>
-                              {owner.severe} critical blocker{owner.severe > 1 ? "s" : ""}
-                            </span>
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </WardPanel>
+        )}
 
         <DelaysTableWorkspace
           onLayoutChange={setTableLayout}
-          rows={rows}
-          groups={groups}
+          rows={queueRows}
+          groups={queueGroups}
           now={now}
           selectedId={selectedId}
           onClose={() => setSelectedId(null)}
           onSelect={selectMovement}
           markLabel={markLabel}
-          markedCount={markedCount}
+          markedCount={
+            queueScope === null
+              ? markedCount
+              : queueRows.filter(({ movement, cause }) => marked(movement, cause)).length
+          }
           isMarked={marked}
           delayFilterId={delayFilterId}
           onMarkFilter={(id) => {
