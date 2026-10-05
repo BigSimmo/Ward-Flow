@@ -31,6 +31,15 @@ this guide supersedes older process notes within that boundary. Start at [`READM
 6. Keep other tools' work. The owner's words: do not remove or significantly alter Antigravity's
    progress, design or builds; fix and perfect them.
 
+### Mockups that become the site
+
+Owner direction, 5 October 2026: create interactive mockups with the site's React/TypeScript
+components, Next.js routes and CSS Modules. Reuse the shared synthetic records, provider and
+reducer so approval leads to direct integration, rather than an HTML-to-React rewrite. Keep
+preview controls separate; shared HTML previews bundle the same React components. Honour an
+explicit request for another format. Verify only the affected behaviour and reuse valid evidence
+on unchanged code, following the React mockup rule in `AGENTS.md`.
+
 ## 2. Branches and worktrees
 
 **Updated 28 September 2026 for the dedicated `BigSimmo/Ward-Flow` repository.**
