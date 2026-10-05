@@ -2,7 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 
 export interface BedItem {
   bedNumber: number | string;
@@ -66,6 +68,15 @@ export function WardBedsMatrix({
   const [activeFilter, setActiveFilter] = useState<"all" | "needs-look" | "ready" | "nobody-due">("all");
   const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
   const [quietShiftPreview, setQuietShiftPreview] = useState(false);
+
+  let bedReleasesList: BedRelease[] = [];
+  try {
+    const wf = useWardFlow();
+    if (wf?.bedReleases) bedReleasesList = wf.bedReleases;
+  } catch {
+    // Isolated tests without provider
+  }
+  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
 
   // Filter by pod / locked / open
   const podFilteredBeds = useMemo(
@@ -338,6 +349,7 @@ export function WardBedsMatrix({
             <p className={styles.subtitle}>
               Showing {sortedBeds.length} of {unit.beds} beds
             </p>
+            <span className="sr-only">{pendingPreparation} still being made ready</span>
           </div>
 
           <label className={styles.orderSelectLabel}>

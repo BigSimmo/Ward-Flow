@@ -284,28 +284,28 @@
 
 .pillBadge[data-tone="good"],
 .pillBadgeGood {
-  background: var(--good-soft, #ecfdf5);
-  color: var(--good-ink, var(--good, #059669));
-  border-color: rgba(5, 150, 105, 0.2);
+  background: var(--good-soft);
+  color: var(--good-ink, var(--ward-success));
+  border-color: var(--good-border);
 }
 
 .pillBadge[data-tone="warn"],
 .pillBadgeWarn {
-  background: var(--warn-soft, #fef3c7);
-  color: var(--warn-ink, var(--warn, #d97706));
-  border-color: rgba(217, 119, 6, 0.2);
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--ward-warning));
+  border-color: var(--warn-border);
 }
 
 .pillBadgeAccent {
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
-  border-color: rgba(29, 78, 216, 0.2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
 }
 
 .pillBadgePurple {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border-color: rgba(124, 58, 237, 0.2);
+  background: var(--ward-domain-coordinator-soft);
+  color: var(--ward-domain-coordinator);
+  border-color: var(--ward-domain-coordinator);
 }
 
 .visuallyHidden {

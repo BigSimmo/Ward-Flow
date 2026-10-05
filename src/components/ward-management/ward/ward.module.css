@@ -4052,8 +4052,8 @@
   width: 36px;
   height: 36px;
   border-radius: var(--r2, 6px);
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4127,7 +4127,7 @@
   justify-content: center;
   gap: 7px;
   background: var(--accent);
-  color: var(--on-accent, #ffffff);
+  color: var(--text-inverse);
   border: 1px solid var(--accent);
   border-radius: var(--r2, 6px);
   padding: 0 18px;
@@ -5351,9 +5351,9 @@
   min-height: 2.125rem;
   padding: 5px 12px;
   border-radius: var(--r2, 6px);
-  background: linear-gradient(135deg, #1e3a5f 0%, #2b4c7e 100%);
-  color: #ffffff;
-  border: 1px solid #1e3a5f;
+  background: var(--ink);
+  color: var(--text-inverse);
+  border: 1px solid var(--ink);
   font-size: var(--t-1, 13px);
   font-weight: 600;
   display: inline-flex;
@@ -5361,21 +5361,22 @@
   gap: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.25);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
   white-space: nowrap;
 }
 
 .btnDailySheet:hover {
-  background: linear-gradient(135deg, #172e4c 0%, #24416d 100%);
-  color: #ffffff;
+  background: var(--ink);
+  opacity: 0.92;
+  color: var(--text-inverse);
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(30, 58, 95, 0.3);
+  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.3);
 }
 
 :global([data-theme="dark"]) .btnDailySheet {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-color: #3b82f6;
-  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
 }
 
 .dailySheetModalContent {
@@ -5498,9 +5499,9 @@
 }
 
 .dossierBarrierAlert {
-  background: var(--warn-soft, #fef3c7);
-  border: 1px solid var(--warn-border, #fcd34d);
-  color: var(--warn, #b45309);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
   border-radius: var(--r2, 6px);
   padding: 6px 10px;
   font-size: 12px;
