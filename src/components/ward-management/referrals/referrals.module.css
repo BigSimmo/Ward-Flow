@@ -5712,6 +5712,13 @@ input.historyField:focus-visible {
   margin-top: 4px;
 }
 
+@media (min-width: 48rem) {
+  .clinicalMetaGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
 .metaCell {
   display: flex;
   flex-direction: column;
@@ -5823,10 +5830,29 @@ input.historyField:focus-visible {
 .tabBtnActive,
 .tabBtn[aria-selected="true"] {
   color: var(--accent);
-  background: var(--surface);
-  border-color: var(--line);
+  background: var(--accent-soft);
+  border-color: var(--accent);
   font-weight: 700;
   box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.05);
+}
+
+.tabBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: inherit;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.tabBtnActive .tabBadge,
+.tabBtn[aria-selected="true"] .tabBadge {
+  background: var(--accent);
+  color: var(--ward-fixed-white, #ffffff);
+  border-color: var(--accent);
 }
 
 .tabIcon {

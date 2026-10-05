@@ -29,6 +29,8 @@ import {
   referralDestinationLabels,
   referralState,
   referralSuburbLabel,
+  candidateAccepts,
+  referralCandidates,
 } from "@/components/ward-management/ward-referrals";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
@@ -396,6 +398,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, { patients, referrals, movements });
+  const selectedWardAddressing = selectedReferral?.destinations.find(
+    (addressing) => addressing.destination.kind === "psychiatric_ward",
+  );
+  const readyVacanciesCount =
+    selectedReferral && selectedWardAddressing && selectedWardAddressing.destination.kind === "psychiatric_ward"
+      ? referralCandidates(selectedReferral, selectedWardAddressing.destination, units, now).filter(candidateAccepts)
+          .length
+      : 0;
 
   const pendingCount = queued.length;
   const allCount = referrals.length;
@@ -971,6 +981,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
                       </svg>
                       <span>Bed Placement</span>
+                      {readyVacanciesCount > 0 ? (
+                        <span className={styles.tabBadge}>{readyVacanciesCount} ready</span>
+                      ) : null}
                       <span className="sr-only"> &amp; Network Triage</span>
                     </button>
                     <button
