@@ -99,6 +99,8 @@ const PINNED: Record<string, string | null> = {
   // Added 2026-09-12 with the third-edition Legal forms build. ⚠️ A reconciliation is in flight
   // that will change what this screen RENDERS (the two kinds stop being ordered against each
   // other) but not which component the route resolves to, so this row survives it.
+  // 5 Oct 2026: preview-only ED redesign proposal.
+  "ed/proposal": "EdProposalPreview",
   "legal-forms": "LegalFormsScreen",
   // The `morning` row was removed here on 2026-09-17 (item 41, owner-approved): the route itself
   // was deleted outright, not merely repointed to redirect, so there is no page.tsx left on disk

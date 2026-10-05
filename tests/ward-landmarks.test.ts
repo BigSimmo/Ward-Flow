@@ -1,4 +1,5 @@
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
+import { EdProposalPreview } from "@/components/ward-management/ed/proposal/ed-proposal-preview";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsWardScreen } from "../src/components/ward-management/statistics/statistics-ward-screen";
@@ -181,6 +182,7 @@ type RouteRender = { route: string; render: () => ReactNode };
  * `/mockups/ward-flow/out-of-area` (Phase 8 Task 5, `OutOfAreaBoard`) does the same again.
  */
 const RENDERABLE_ROUTES: RouteRender[] = [
+  { route: `${ROUTE_PREFIX}/ed/proposal`, render: () => createElement(EdProposalPreview, {}) },
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },

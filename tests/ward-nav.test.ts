@@ -1,4 +1,5 @@
 import { SettingsScreen } from "../src/components/ward-management/settings/settings-screen";
+import { EdProposalPreview } from "@/components/ward-management/ed/proposal/ed-proposal-preview";
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
@@ -1267,6 +1268,7 @@ describe("ClinicalRail's aria-label is honest for a sandboxed prototype (D11)", 
 type RouteRender = { route: string; render: () => ReactNode };
 
 const RENDERABLE_ROUTES: RouteRender[] = [
+  { route: `${ROUTE_PREFIX}/ed/proposal`, render: () => createElement(EdProposalPreview, {}) },
   // 2026-09-12: the Settings screen. Listed here rather than among the redirect-only stubs because
   // it genuinely renders — it is unlisted in the RAIL, which is a different register entirely.
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
@@ -1423,7 +1425,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 37 from 5 Oct 2026: the preview-only ED redesign proposal route.
+    expect(RENDERABLE_ROUTES.length).toBe(37);
   });
 });
 

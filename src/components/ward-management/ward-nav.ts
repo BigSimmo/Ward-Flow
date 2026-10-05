@@ -403,6 +403,10 @@ export const WARD_ADD_PERSON_HREF = "/mockups/ward-flow/people/new";
  */
 export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new Map([
   [
+    "/mockups/ward-flow/ed/proposal",
+    "Preview-only route for the 5 October 2026 ED Hub and department redesign proposal; reached from its own comparison page, not the nav.",
+  ],
+  [
     "/mockups/ward-flow/command",
     "A deliberate redirect to /mockups/ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
   ],
