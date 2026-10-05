@@ -383,17 +383,14 @@
   background: var(--surface-2);
 }
 .workTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  /* Not sticky: sticky thead covered record buttons after scroll-into-view
+   * (ui-ward-discharges care dossier). Keep the stark edge + lift instead. */
   background: var(--surface-2);
   color: var(--muted);
   font-size: var(--t-0);
   font-weight: 650;
   text-align: left;
   letter-spacing: 0.04em;
-  /* Keep elevation token-only — no hex/rgba and no .table td padding redeclaration
-   * (ward-table-single-source / ward-raw-colour / css-token-references gates). */
   border-bottom: 2px solid var(--line-strong);
   box-shadow:
     0 4px 6px -1px rgb(var(--ward-shadow-rgb) / 0.07),
