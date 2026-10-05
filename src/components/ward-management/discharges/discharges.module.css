@@ -317,8 +317,8 @@
   padding: 0;
 }
 
-.detailPanel .detailBody,
-.detailBody {
+:global(:not([data-ward-design="third-edition"])) .detailPanel .detailBody,
+:global(:not([data-ward-design="third-edition"])) .detailBody {
   padding: var(--ward-space-12) var(--ward-space-16);
 }
 
@@ -354,8 +354,8 @@
     display: none;
   }
 
-  .detailPanel .detailBody,
-  .detailBody {
+  :global(:not([data-ward-design="third-edition"])) .detailPanel .detailBody,
+  :global(:not([data-ward-design="third-edition"])) .detailBody {
     padding: var(--ward-space-16);
   }
 }
