@@ -1590,4 +1590,3 @@
 :global(:root:not([data-theme="light"])) .screen .statsLink {
   border-color: var(--line-strong);
 }
-

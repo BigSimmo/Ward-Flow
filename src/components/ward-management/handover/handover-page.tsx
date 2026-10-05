@@ -1239,7 +1239,9 @@ export function HandoverPage() {
               </div>
 
               <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-shift-select" className={pageStyles.filterLabel}>Shift:</label>
+                <label htmlFor="ward-shift-select" className={pageStyles.filterLabel}>
+                  Shift:
+                </label>
                 <div className={pageStyles.compactSelectWrap}>
                   <select
                     id="ward-shift-select"
@@ -1274,7 +1276,9 @@ export function HandoverPage() {
               </div>
 
               <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-focus-select" className={pageStyles.filterLabel}>Focus:</label>
+                <label htmlFor="ward-focus-select" className={pageStyles.filterLabel}>
+                  Focus:
+                </label>
                 <div className={pageStyles.compactSelectWrap}>
                   <select
                     id="ward-focus-select"
@@ -1285,7 +1289,9 @@ export function HandoverPage() {
                   >
                     <option value="all">All Records ({scopeIncludedCount})</option>
                     <option value="referrals">Current Referrals ({currentReferralsCount})</option>
-                    <option value="breaches">Form expiries passed ({breachedOnSheetCount + urgentOutsideFilter.length})</option>
+                    <option value="breaches">
+                      Form expiries passed ({breachedOnSheetCount + urgentOutsideFilter.length})
+                    </option>
                     <option value="inbound">Inbound Admissions ({snapshot.inTransit.length})</option>
                     <option value="discharges">Planned Discharges ({snapshot.pulledBeds.length})</option>
                     <option value="specialling">1:1 Specialling &amp; HDU ({speciallingInScopeCount})</option>
@@ -1308,7 +1314,9 @@ export function HandoverPage() {
               </div>
 
               <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-preset-select" className={pageStyles.filterLabel}>Preset:</label>
+                <label htmlFor="ward-preset-select" className={pageStyles.filterLabel}>
+                  Preset:
+                </label>
                 <div className={pageStyles.compactSelectWrap}>
                   <select
                     id="ward-preset-select"

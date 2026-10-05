@@ -189,7 +189,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const teamSearchHaystack = useMemo(() => {
     const suburbByClinicKey = new Map<string, Set<string>>();
     const clinicKey = (name: string) =>
-      name.toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim();
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, " ")
+        .trim();
     for (const row of S2015_CATCHMENT_ROWS) {
       for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
         const key = clinicKey(clinic);
@@ -205,13 +208,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       const suburbs = suburbByClinicKey.get(clinicKey(team.name));
       map.set(
         team.name,
-        [
-          team.name,
-          mapping.code,
-          mapping.name,
-          mapping.displayName,
-          ...(suburbs ? [...suburbs] : []),
-        ]
+        [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
           .join(" ")
           .toLowerCase(),
       );

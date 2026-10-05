@@ -569,8 +569,8 @@ export function WardBedsMatrix({
            ───────────────────────────────────────────────────────────── */}
         <div className={styles.bedsFooterNotes}>
           <div className={styles.censusSummaryText}>
-            Eighteen beds of twenty on this ward are taken. Longest stay first; beds without a recorded stay follow recorded
-            order.
+            Eighteen beds of twenty on this ward are taken. Longest stay first; beds without a recorded stay follow
+            recorded order.
           </div>
           <div className={styles.tentativeDisclaimer}>
             Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.

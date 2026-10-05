@@ -308,9 +308,7 @@ export function SettingsScreen() {
 
   // Operational Defaults Editability state (Image 4)
   const [isEditingDefaults, setIsEditingDefaults] = useState(false);
-  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>(
-    () => loadCustomOperationalDefaults(),
-  );
+  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>(() => loadCustomOperationalDefaults());
 
   const handleDefaultChange = (name: string, value: string) => {
     setCustomDefaults((prev) => ({ ...prev, [name]: value }));
@@ -1182,9 +1180,7 @@ export function SettingsScreen() {
                           <div className={styles.settingRow} data-testid="ward-settings-appearance">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>Theme</span>
-                              <span className={styles.rowDesc}>
-                                Light, Dark, or System mode.
-                              </span>
+                              <span className={styles.rowDesc}>Light, Dark, or System mode.</span>
                               <div className={styles.rowSubtext}>
                                 <span>Current:</span>
                                 <strong data-testid="ward-settings-appearance-now">
@@ -1230,9 +1226,7 @@ export function SettingsScreen() {
                           <div className={styles.settingRow} data-testid="ward-settings-rail">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>Sidebar Rail</span>
-                              <span className={styles.rowDesc}>
-                                Full sidebar or compact icons.
-                              </span>
+                              <span className={styles.rowDesc}>Full sidebar or compact icons.</span>
                               <div className={styles.rowSubtext}>
                                 <span>Current:</span>
                                 <strong data-testid="ward-settings-rail-now">{railOpen ? "Open" : "Closed"}</strong>
@@ -1423,9 +1417,7 @@ export function SettingsScreen() {
                                     Saved: {configuration.edAccessTargetMinutes / 60}h
                                   </span>
                                 </div>
-                                <p className={styles.paramCardRationale}>
-                                  Mental health clearance dwell ceiling.
-                                </p>
+                                <p className={styles.paramCardRationale}>Mental health clearance dwell ceiling.</p>
                               </div>
                             </div>
                             <div className={styles.paramCardBody}>
@@ -2000,10 +1992,7 @@ export function SettingsScreen() {
                             )}
 
                             {/* Visual Timeline Countdown Simulation (0 buttons) */}
-                            <div
-                              className={styles.timelineGraphContainer}
-                              aria-hidden="true"
-                            >
+                            <div className={styles.timelineGraphContainer} aria-hidden="true">
                               <div className={styles.timelineGraphHeader}>
                                 <span className={styles.timelineGraphTitle}>Warning Cascade</span>
                               </div>
@@ -2015,13 +2004,12 @@ export function SettingsScreen() {
                                   Due Soon ({formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
                                 </div>
                                 <div className={styles.timelineSegmentUrgent}>
-                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)})
+                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                  )
                                 </div>
                               </div>
                               <div className={styles.timelineMilestonesRow}>
-                                <span>
-                                  T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                </span>
+                                <span>T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}</span>
                                 <span>
                                   T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
                                 </span>
@@ -2300,8 +2288,12 @@ export function SettingsScreen() {
                             <table className={styles.table}>
                               <thead>
                                 <tr>
-                                  <th scope="col" style={{ width: "55%" }}>Default Setting</th>
-                                  <th scope="col" style={{ width: "45%" }}>Value</th>
+                                  <th scope="col" style={{ width: "55%" }}>
+                                    Default Setting
+                                  </th>
+                                  <th scope="col" style={{ width: "45%" }}>
+                                    Value
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2313,9 +2305,7 @@ export function SettingsScreen() {
                                       <td>
                                         <div className={styles.defaultNameCell}>
                                           <span>{item.name}</span>
-                                          {isModified && (
-                                            <span className={styles.modifiedBadge}>Customized</span>
-                                          )}
+                                          {isModified && <span className={styles.modifiedBadge}>Customized</span>}
                                         </div>
                                       </td>
                                       <td>
@@ -2782,9 +2772,7 @@ export function SettingsScreen() {
                           <h2 id="reset-domain-title" className={styles.secTitle}>
                             Local Storage, Workspace &amp; Baseline Reset
                           </h2>
-                          <p className={styles.secDesc}>
-                            Session storage, handover export, and baseline reset.
-                          </p>
+                          <p className={styles.secDesc}>Session storage, handover export, and baseline reset.</p>
                         </div>
                         <span className={styles.rowTag}>Persistence &amp; Reset</span>
                       </header>

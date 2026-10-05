@@ -179,7 +179,10 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Shift pattern (every screen)", display: "07:00, 15:00 and 23:00" },
   { name: "Leave bed flagged to consider opening after", display: hoursText(LEAVE_BED_OPEN_WARNING_MINUTES) },
   { name: "Bed hold flagged for review after", display: hoursText(BED_HOLD_EXPIRY_MINUTES) },
-  { name: "Patient search wait bands", display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over` },
+  {
+    name: "Patient search wait bands",
+    display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over`,
+  },
   {
     name: "Expected arrival flagged after",
     display: `${hoursText(EXPECT_FLAG_VOLUNTARY_MINUTES)} (voluntary), 7 days (involuntary)`,
