@@ -29,6 +29,7 @@ import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/war
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 
+import { occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-sections.module.css";
 import serviceStyles from "./statistics-service-screen.module.css";
 import pageStyles from "./statistics-service-third-edition.module.css";
@@ -163,7 +164,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const readyRows = serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) }));
   const totalReady = readyRows.reduce((sum, row) => sum + row.capacity.available, 0);
   const totalBedBase = serviceUnits.reduce((sum, unit) => sum + unit.beds, 0);
-  const totalOccupied = readyRows.reduce((sum, row) => sum + row.capacity.occupied, 0);
+  const totalOccupied = occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds).occupied;
   const networkOccupancyPct = totalBedBase > 0 ? Math.round((totalOccupied / totalBedBase) * 100) : 0;
   const zeroReadyWards = readyRows.filter((row) => row.capacity.available === 0).length;
   /*
@@ -322,19 +323,19 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 data-testid="ward-statistics-service-exec-band"
               >
                 <div>
-                  <dt>Total Bed Base</dt>
+                  <dt>Beds</dt>
                   <dd data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</dd>
                   <dd className={pageStyles.kpiCaption}>Recorded acute mental health capacity.</dd>
                 </div>
                 <div>
-                  <dt>Network Occupancy</dt>
+                  <dt>Service occupancy</dt>
                   <dd data-testid="ward-statistics-service-exec-occupancy">{networkOccupancyPct}%</dd>
                   <dd className={pageStyles.kpiCaption}>
                     {totalOccupied} of {totalBedBase} beds occupied.
                   </dd>
                 </div>
                 <div>
-                  <dt>Ready Beds</dt>
+                  <dt>Ready beds</dt>
                   <dd data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</dd>
                   <dd className={pageStyles.kpiCaption}>Empty and clinically allocatable immediately.</dd>
                 </div>

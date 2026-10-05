@@ -1,5 +1,5 @@
 /*
- * Polished statistics (5 October 2026). A finishing layer over the current statistics screens:
+ * Statistics polish (5 October 2026). A finishing layer over the statistics screens:
  * same sections, panels, tabs and order. It only refines spacing, numbers, focus and tap targets.
  * Tokens only, no hex.
  */
@@ -62,7 +62,7 @@
 /* Figure bands keep every figure on one row instead of orphaning the last one. */
 .root :global(dl[aria-label="Current bed figures"]) {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr));
 }
 
 @media (prefers-reduced-motion: reduce) {

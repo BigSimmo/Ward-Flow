@@ -171,7 +171,7 @@ export function HospitalCapacityMatrix({
     >
       <div className={styles.chartHeader}>
         <h2 id="matrixH" className={styles.chartTitle}>
-          Hospital &amp; Inpatient Unit Capacity Matrix
+          Beds by hospital and ward
         </h2>
         <span className={styles.chartCount}>{units.length} wards</span>
       </div>
@@ -199,19 +199,19 @@ export function HospitalCapacityMatrix({
           <tr>
             <th scope="col" aria-sort={getSortAria("name")}>
               <button type="button" className={styles.tableSortBtn} onClick={() => handleSort("name")}>
-                Unit Name
+                Ward
                 <span aria-hidden="true">{getSortIndicator("name")}</span>
               </button>
             </th>
             <th scope="col" aria-sort={getSortAria("service")}>
               <button type="button" className={styles.tableSortBtn} onClick={() => handleSort("service")}>
-                Health Service
+                Health service
                 <span aria-hidden="true">{getSortIndicator("service")}</span>
               </button>
             </th>
             <th scope="col" className={styles.n} aria-sort={getSortAria("beds")}>
               <button type="button" className={`${styles.tableSortBtn} ${styles.n}`} onClick={() => handleSort("beds")}>
-                Total Beds
+                Beds
                 <span aria-hidden="true">{getSortIndicator("beds")}</span>
               </button>
             </th>
@@ -227,7 +227,7 @@ export function HospitalCapacityMatrix({
             </th>
             <th scope="col" className={styles.n} aria-sort={getSortAria("rate")}>
               <button type="button" className={`${styles.tableSortBtn} ${styles.n}`} onClick={() => handleSort("rate")}>
-                Occupancy %<span aria-hidden="true">{getSortIndicator("rate")}</span>
+                Occupancy<span aria-hidden="true">{getSortIndicator("rate")}</span>
               </button>
             </th>
             <th scope="col" className={styles.n} aria-sort={getSortAria("ready")}>
