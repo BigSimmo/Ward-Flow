@@ -1315,7 +1315,7 @@ export function HandoverPage() {
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
             <div className={pageStyles.snapshotHead}>
               <div className={pageStyles.snapshotTitleGroup}>
-                <h1>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h1>
+                <h2>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h2>
                 <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
               </div>
 
