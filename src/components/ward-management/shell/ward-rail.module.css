@@ -3107,3 +3107,36 @@
     z-index: auto;
   }
 }
+
+/* Patient Now keeps tablet attention on the patient; shell context remains in Menu. */
+@media (min-width: 769px) and (max-width: 1000px) {
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.25rem 0.75rem;
+  }
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .brand {
+    order: 0;
+    width: 100%;
+    flex-basis: auto;
+    padding: 0;
+    border: 0;
+  }
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .railSearchBox,
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .shiftCockpit,
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .railScroll,
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail > .serviceLine,
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail > .railCheck {
+    display: none;
+  }
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .alertsContainer {
+    width: 100%;
+    margin: 0;
+    order: 1;
+  }
+  :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail .capacityPulseStrip {
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+  }
+}

@@ -97,19 +97,13 @@ describe("the patient-now screen", () => {
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
       "Review next cohort-matching bed releases across network.",
     );
-    expect(summary.getByRole("link", { name: "Open the movement" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/movements/WF-009",
-    );
+    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
     unmount();
 
     renderScreen({ movementId: "WF-004" });
     summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
-    expect(summary.getByRole("link", { name: "Open the movement" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/movements/WF-004",
-    );
+    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
   });
 
   // Owner ruling & user request: remove obsolete movement record / perspective switchers and purge WF ids
@@ -131,17 +125,21 @@ describe("the patient-now screen", () => {
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
   });
 
-  it("renders a dedicated Community Trajectory card and + Raise Inpatient Referral link for a community outpatient", () => {
+  it("distinguishes a patient record without asserting active community care", () => {
     renderScreen({ patientId: "PT-005" });
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
       "href",
-      "/mockups/ward-flow/referrals/new",
+      "/mockups/ward-flow/referrals/new?patientId=PT-005",
     );
     expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
     expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();
-    expect(within(root).getByText("Community Trajectory")).toBeInTheDocument();
-    expect(within(root).getByText("Sarah Jenkins, RN (CNS)")).toBeInTheDocument();
+    expect(root).toHaveAttribute("data-bedflow", "inactive");
+    expect(within(root).getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(within(root).queryByText("Sarah Jenkins, RN (CNS)")).not.toBeInTheDocument();
+    expect(within(root).getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    fireEvent.click(within(root).getByRole("button", { name: "View patient details" }));
+    expect(within(root).getByRole("tab", { name: "Details" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("has the page shell for the default movement record (WF-009)", () => {
@@ -222,7 +220,7 @@ describe("the patient-now screen", () => {
     const fact = (label: string) => within(pane).getByText(label, { selector: "dt" }).nextElementSibling;
     expect(fact("Catchment community team")).toHaveTextContent(patient.catchmentCommunityTeam!);
     expect(fact("Age band")).toHaveTextContent("Not recorded");
-    expect(fact("Health service")).toHaveTextContent("Not recorded");
+    expect(within(pane).queryByText("Health service", { selector: "dt" })).not.toBeInTheDocument();
     expect(fact("Owner")).toHaveTextContent("Not recorded");
   });
 

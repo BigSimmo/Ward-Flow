@@ -429,6 +429,35 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**5 October 2026 compact redesign:** `patient-flight-header.tsx` accepts local action controls;
+Patient Now supplies clinical/document/details shortcuts with keyboard focus handoffs. Header,
+tracker and tab styles use a joined compact layout. Community provides a care directory and
+follow-up summary; Details includes a native recorded-field meter. Shared reducer and records
+remain the source of truth. Dossier DOM tests cover live and inactive header shortcuts.
+
+**4 October 2026 tab refinement:** `patient-dossier-tabs.tsx` and its CSS module provide searchable
+History, care-linked Community, grouped Details and authority/document-ledger panes.
+`patient-clinical-summary.tsx` provides the Now clinical overview; `patient-tracker-facts.tsx` and
+its CSS module provide persistent reservation, transport and clearance context. Explicit clinical
+clearance recording and workflow focus handoffs stay in Patient Now / transit operations.
+`tests/ward-patient-dossier-tabs.dom.test.tsx` covers the new filters, metadata, clipboard and
+clearance/focus behaviour; `scripts/ward-flow/capture-patient-dossier-tabs.mjs` captures every tab,
+live/inactive records, filters and dialogs at desktop, tablet and mobile sizes with axe checks.
+
+**4 October 2026 visual refinement:** `patient-flight-header.tsx` supplies the compact curved
+identity band; `patient-record-overview.tsx` and its CSS module supply the record-only hub. Live
+status comes from movement closure/stage state. Open movements default to transit operations;
+closed/arrived movements and record-only patients have explicit inactive rail labels.
+
+**4 October 2026 update:** Patient Now also hosts `patient-transit-operations.tsx` and its CSS
+module. The local Clinical overview / Transit operations switch preserves the five dossier tabs.
+Legacy `/movements/[movementId]` renders the same `PatientNowScreen`; cockpit exception handlers
+are reused via `MovementWorkspaceCockpit`'s embedded mode. Operational dispatches, event-name
+mappings, verification commands and screenshot capture are documented in
+[the unified flight deck implementation note](../plans/unified-patient-flight-deck.md).
+`tests/ward-patient-flight-deck.dom.test.tsx` drives referral through arrival and verifies
+reasoned step-back / release capacity behaviour against the shared reducer.
+
 **Routes:** `/people/new` (renders `AddPatientForm` from `add-patient.tsx`) and
 `/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx` by default, or
 `PersonScreen` from `person-screen.tsx` when the URL carries `?view=governed` or `?view=legacy` —
