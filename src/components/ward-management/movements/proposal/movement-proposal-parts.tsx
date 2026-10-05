@@ -9,12 +9,20 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 
 import styles from "./movement-proposal.module.css";
 
-/** Preview routes today; the real movement and transport routes on approval. */
+/**
+ * Preview routes. The polished screens are the current screens with finish only; the "proposed"
+ * screens are structural ideas kept for discussion, not part of the polish.
+ */
 export const PROPOSAL_ROUTES = {
-  board: "/mockups/ward-flow/movements/proposal",
-  movement: (id: string) => `/mockups/ward-flow/movements/proposal?screen=movement&id=${encodeURIComponent(id)}`,
-  transport: "/mockups/ward-flow/movements/proposal?screen=transport",
+  polishedBoard: "/mockups/ward-flow/movements/proposal",
+  polishedTransport: "/mockups/ward-flow/movements/proposal?screen=transport",
+  board: "/mockups/ward-flow/movements/proposal?screen=proposed-board",
+  movement: (id: string) =>
+    `/mockups/ward-flow/movements/proposal?screen=proposed-movement&id=${encodeURIComponent(id)}`,
+  transport: "/mockups/ward-flow/movements/proposal?screen=proposed-transport",
 } as const;
+
+export type ProposalScreen = "board" | "transport" | "proposed-board" | "proposed-movement" | "proposed-transport";
 
 /** Initials only on the proposal screens, so no screenshot of them carries a full name. */
 export function patientInitials(
@@ -46,23 +54,34 @@ export function waited(minutes: number) {
 }
 
 /** Preview-only frame: a banner and screen switcher around the proposed screens. */
-export function ProposalPreviewBar({
-  active,
-  current,
-}: {
-  active: "board" | "movement" | "transport";
-  current: string;
-}) {
-  const tabs = [
-    { id: "board", label: "Movements", href: PROPOSAL_ROUTES.board },
-    { id: "movement", label: "One movement", href: PROPOSAL_ROUTES.movement("WF-001") },
-    { id: "transport", label: "Transport Hub", href: PROPOSAL_ROUTES.transport },
+export function ProposalPreviewBar({ active, current }: { active: ProposalScreen; current: string }) {
+  const polished = [
+    { id: "board", label: "Movements", href: PROPOSAL_ROUTES.polishedBoard },
+    { id: "transport", label: "Transport Hub", href: PROPOSAL_ROUTES.polishedTransport },
   ] as const;
+  const proposed = [
+    { id: "proposed-board", label: "Board", href: PROPOSAL_ROUTES.board },
+    { id: "proposed-movement", label: "One movement", href: PROPOSAL_ROUTES.movement("WF-001") },
+    { id: "proposed-transport", label: "Transport Hub", href: PROPOSAL_ROUTES.transport },
+  ] as const;
+  const isProposed = active.startsWith("proposed-");
   return (
     <div className={styles.previewBar} data-testid="movement-proposal-preview-bar">
-      <strong>Proposed movement and transport redesign (preview)</strong>
-      <nav className={styles.previewTabs} aria-label="Proposed movement screens">
-        {tabs.map((tab) => (
+      <strong>
+        {isProposed
+          ? "Proposed: structural idea, not part of the polish (preview)"
+          : "Polished: the current screen, same structure (preview)"}
+      </strong>
+      <nav className={styles.previewTabs} aria-label="Polished screens">
+        {polished.map((tab) => (
+          <a key={tab.id} href={tab.href} aria-current={tab.id === active ? "page" : undefined}>
+            {tab.label}
+          </a>
+        ))}
+      </nav>
+      <nav className={styles.previewTabs} aria-label="Proposed structural ideas">
+        <span>Proposed:</span>
+        {proposed.map((tab) => (
           <a key={tab.id} href={tab.href} aria-current={tab.id === active ? "page" : undefined}>
             {tab.label}
           </a>

@@ -1,0 +1,179 @@
+/*
+ * Polish-only preview layer, 5 October 2026 (third revision of this proposal). Josh's rule: keep
+ * every screen's structure as it is and only polish what is already there. So the preview renders
+ * the CURRENT MovementsScreen and OfficerScreen unchanged, and this sheet, scoped to the preview
+ * wrapper, shows the finish proposed for them. On approval each rule moves into the screen's own
+ * module, which is why it targets their class names rather than restyling by position. Selectors match
+ * the development class format (file_name__hash); this layer is a preview, not production CSS.
+ * Tokens only; sizes come from the app's type scale.
+ */
+
+.polish {
+  display: contents;
+}
+
+.polish :global([class*="_dayMetric__"]) {
+  background: transparent;
+}
+
+.polish :global([class*="_dayMetric__"]) span {
+  color: var(--muted);
+  font-size: var(--t-0, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_dayMetric__"]) strong {
+  font-size: var(--t-3, 1.25rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.polish :global([class*="_attentionTitle__"]),
+.polish :global([class*="_orderLegend__"]),
+.polish :global([class*="_stageFollowUp__"]),
+.polish :global([class*="_sDiv__"]),
+.polish :global([class*="_corridorEyebrow__"]),
+.polish :global([class*="_corridorTag__"]) {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_attentionHeading__"]) > span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_stageFollowUp__"]) h3 {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_serviceFilterLabel__"]),
+.polish :global([class*="_ganttScrubLabel__"]),
+.polish :global([class*="_ganttColWard__"]),
+.polish :global([class*="_ganttSvcTag__"]),
+.polish :global([class*="_ganttScrubBadge__"]),
+.polish :global([class*="_ganttResetBtn__"]),
+.polish :global([class*="_phLaneCount__"]),
+.polish :global([class*="_diagFoot__"]) {
+  font-family: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_ganttTick__"]),
+.polish :global([class*="_nowTick__"]) {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.polish :global([class*="_ganttBar__"]) {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.polish :global([class*="_panel__"]) {
+  box-shadow: none;
+}
+
+.polish :global([class*="_movementRecord__"]),
+.polish :global([class*="_transportRunCard__"]),
+.polish :global([class*="_jobCard__"]),
+.polish :global([class*="_jobCardActive__"]),
+.polish :global([class*="_providerCard__"]) {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.polish :global([class*="_recordTag__"]),
+.polish :global([class*="_chip__"]),
+.polish :global([class*="_legBadge__"]),
+.polish :global([class*="_escortBadge__"]),
+.polish :global([class*="_providerBadge__"]),
+.polish :global([class*="_filterPill__"]),
+.polish :global([class*="_filterPillActive__"]) {
+  font-family: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_recordTag__"]) {
+  border-color: transparent;
+  background: var(--sunk);
+}
+
+.polish :global([class*="_recordClock__"]),
+.polish :global([class*="_transportRunTime__"]),
+.polish :global([class*="_sVal__"]),
+.polish :global([class*="_glanceCount__"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.polish :global([class*="_flightDeckBadgeText__"]),
+.polish :global([class*="_providerStripTitle__"]),
+.polish :global([class*="_routeCorridorLabel__"]),
+.polish :global([class*="_kpiLabel__"]),
+.polish :global([class*="_metricLabel__"]) {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_panelHeader__"]) h2 {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_jobDetailRow__"]) dt {
+  font-weight: 600;
+  white-space: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.polish :global([class*="_jobDetailRow__"]) dd {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.polish :global([class*="_island__"]) {
+  flex-wrap: wrap;
+  overflow: visible;
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.polish :global([class*="_metricsList__"]) {
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.polish :global([class*="_metricValue__"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.polish :global([class*="_jobsCountBadge__"]),
+.polish :global([class*="_jobMeta__"]),
+.polish :global([class*="_stageLine__"]),
+.polish :global([class*="_routeCorridorLabel__"]),
+.polish :global([class*="_jobDetailRow__"]) dd {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.polish :global([class*="_groupTitle__"]) {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .polish :global(*) {
+    transition: none;
+  }
+}

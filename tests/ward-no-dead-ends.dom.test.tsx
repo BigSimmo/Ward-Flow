@@ -80,6 +80,7 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
+import { MovementProposalPreview } from "@/components/ward-management/movements/proposal/movement-proposal-preview";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
@@ -144,6 +145,10 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     { concrete: "/mockups/ward-flow/legal-forms", render: () => <LegalFormsScreen /> },
   ],
   ["/mockups/ward-flow/movements", { concrete: "/mockups/ward-flow/movements", render: () => <MovementsScreen /> }],
+  [
+    "/mockups/ward-flow/movements/proposal",
+    { concrete: "/mockups/ward-flow/movements/proposal", render: () => <MovementProposalPreview /> },
+  ],
   [
     "/mockups/ward-flow/movements/[movementId]",
     {

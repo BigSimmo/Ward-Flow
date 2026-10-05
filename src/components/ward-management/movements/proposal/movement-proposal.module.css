@@ -1002,7 +1002,13 @@
 .previewTabs {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.25rem;
+}
+
+.previewTabs > span {
+  padding-left: 0.625rem;
+  color: var(--muted);
 }
 
 .previewTabs a {
