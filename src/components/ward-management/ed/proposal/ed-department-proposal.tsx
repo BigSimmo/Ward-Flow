@@ -107,7 +107,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
           .join(" ");
   };
   const attention = attentionItems(rows, world.units, awaitingReview, now, referralInitials);
-  const target = splitDuration(accessTarget);
+  const target = accessTarget % 60 === 0 ? `${accessTarget / 60}-hour` : splitDuration(accessTarget);
   const ready = readyBeds(world.units, world.bedReleases);
   const preparing = bedsBeingPrepared(world.units, world.bedReleases);
   const waitingCohorts = rows.filter((row) => row.step === "no_bed").map((row) => row.movement.cohort);
@@ -138,7 +138,14 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const lead =
     counts.onList === 0
       ? `Nobody from ${shortName(department.name)} is on the psychiatry list.`
-      : `${counts.onList} ${counts.onList === 1 ? "person is" : "people are"} on the psychiatry list: ${counts.noBed} with no bed yet, ${counts.bedFound} with a bed found but still here.`;
+      : `${counts.onList} ${counts.onList === 1 ? "person is" : "people are"} on the psychiatry list: ${[
+          `${counts.noBed} with no bed yet`,
+          `${counts.bedFound} with a bed found but still here`,
+          counts.inTransit ? `${counts.inTransit} left and in transit` : "",
+          counts.steps.closed_here ? `${counts.steps.closed_here} with an outcome recorded` : "",
+        ]
+          .filter(Boolean)
+          .join(", ")}.`;
   const sub =
     attention.length === 0
       ? "Nothing needs action right now."
@@ -194,7 +201,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
           {
             label: "Past access target",
             value: counts.pastTarget,
-            note: `Over ${target} since referral (your default)`,
+            note: `Over the ${target} target since referral (your default, not a legal limit)`,
             tone: counts.pastTarget ? "danger" : undefined,
           },
           {
@@ -239,10 +246,15 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
             <ul className={styles.attention}>
               {attention.map((item, index) => (
                 <li key={index} className={styles.attentionItem}>
-                  <Tag tone={item.tone}>{item.who}</Tag>
                   <div>
-                    <p className={styles.attentionTitle}>{item.title}</p>
-                    <p className={styles.attentionWhy}>{item.why}</p>
+                    <p
+                      className={`${styles.attentionTitle} ${item.tone === "danger" ? styles.toneDanger : item.tone === "warn" ? styles.toneWarn : ""}`}
+                    >
+                      {item.title}
+                    </p>
+                    <p className={styles.attentionWhy}>
+                      {item.who} · {item.why}
+                    </p>
                   </div>
                   {item.movementId ? (
                     <button
@@ -326,7 +338,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                   <th scope="col">Destination</th>
                   <th scope="col">Form</th>
                   <th scope="col">Medically cleared</th>
-                  <th scope="col">Next step</th>
+                  <th scope="col">Next step, from the record</th>
                 </tr>
               </thead>
               <tbody>
@@ -571,13 +583,30 @@ function PatientDrawer({
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const m = row.movement;
+  const sheetRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
+      if (event.key !== "Tab" || !sheetRef.current) return;
+      // Keep focus inside the sheet while it is open.
+      const focusable = sheetRef.current.querySelectorAll<HTMLElement>("button, a[href], [tabindex='0']");
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      opener?.focus();
+    };
   }, [onClose]);
   const journey = [
     { at: m.openedAt, text: "Referral received" },
@@ -595,6 +624,7 @@ function PatientDrawer({
   return (
     <div className={styles.scrim} onClick={onClose}>
       <div
+        ref={sheetRef}
         className={styles.drawer}
         role="dialog"
         aria-modal="true"

@@ -119,7 +119,7 @@ export function nextStep(movement: Movement, now: number): { label: string; tone
           label: `Wait for ${movement.referredUnitIds.length === 1 ? "the ward" : `${movement.referredUnitIds.length} wards`} to answer`,
           tone: "quiet",
         };
-      return { label: movement.examination ? "Ask a ward" : "Psychiatric review", tone: "warn" };
+      return { label: movement.examination ? "Ask a ward" : "Psychiatric review", tone: "quiet" };
     case "accepted_awaiting_bed":
       return { label: "Ward to pull the bed", tone: "quiet" };
     case "pulled":

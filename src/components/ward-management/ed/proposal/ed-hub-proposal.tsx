@@ -20,7 +20,7 @@ export function EdHubProposal() {
   const preparing = bedsBeingPrepared(world.units, world.bedReleases);
   const busiest = rows.reduce((top, row) => (row.counts.onList > top.counts.onList ? row : top), rows[0]);
   const maxOnList = Math.max(1, ...rows.map((row) => row.counts.onList));
-  const target = splitDuration(accessTarget);
+  const target = accessTarget % 60 === 0 ? `${accessTarget / 60}-hour` : splitDuration(accessTarget);
 
   const lead =
     total.onList === 0
@@ -58,7 +58,7 @@ export function EdHubProposal() {
           {
             label: "Past access target",
             value: total.pastTarget,
-            note: `Over ${target} since referral (your default)`,
+            note: `Over the ${target} target since referral (your default, not a legal limit)`,
             tone: total.pastTarget ? "danger" : undefined,
           },
           { label: "Not yet reviewed", value: total.notReviewed, note: "No psychiatric examination recorded" },
