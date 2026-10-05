@@ -27,6 +27,13 @@ import styles from "./community-proposal.module.css";
 
 type Show = "all" | "active";
 
+/** "A", "A and B", "A, B and C", or the first three and how many more. */
+function listNames(names: readonly string[]): string {
+  if (names.length <= 1) return names.join("");
+  if (names.length > 3) return `${names.slice(0, 3).join(", ")} and ${names.length - 3} more`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 /**
  * Proposed community hub. Answers "which community teams have people waiting or in a bed right
  * now?" first, then lets a coordinator find any team by name. Every count is derived from shared
@@ -89,7 +96,7 @@ export function CommunityHubProposal() {
               <a className={styles.buttonPrimary} href="/mockups/ward-flow/referrals/new">
                 Raise a referral
               </a>
-              <a className={styles.button} href="/mockups/ward-flow/referrals">
+              <a className={styles.textLink} href="/mockups/ward-flow/referrals">
                 Referral board
               </a>
             </>
@@ -105,7 +112,7 @@ export function CommunityHubProposal() {
               <strong>
                 {hub.active.length} of {hub.teams.length}
               </strong>{" "}
-              team names have people matched today: {activeNames.join(" and ")}.
+              team names have people matched today: {listNames(activeNames)}.
             </>
           )}
         </Verdict>

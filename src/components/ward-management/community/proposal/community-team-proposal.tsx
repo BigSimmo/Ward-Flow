@@ -21,7 +21,7 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { COMMUNITY_DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
-import { acceptedRelativeToBed, teamFigures } from "./community-proposal-figures";
+import { acceptedRelativeToBed, stayDays, teamFigures } from "./community-proposal-figures";
 import {
   Empty,
   KpiStrip,
@@ -107,6 +107,9 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
   });
   const shownBeds = bedFilter === "soon" ? soon : bedFilter === "past" ? figures.pastExpected : beds;
   const next = beds.find((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt >= now);
+  const acceptedNotInBed = figures.accepted.filter(
+    (referral) => !figures.inBed.some((admission) => admission.referralId === referral.id),
+  );
   const acceptedBefore = figures.inBed.filter(
     (admission) => acceptedRelativeToBed(admission, referrals, team) === "before",
   ).length;
@@ -178,12 +181,12 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
           asAt={`As at ${formatSheetMoment(now, dayZero)}`}
           actions={
             <>
-              <a className={styles.buttonPrimary} href="/mockups/ward-flow/referrals/new">
+              <a className={styles.textLink} href="/mockups/ward-flow/referrals/new">
                 Raise a referral
               </a>
               <button
                 type="button"
-                className={styles.button}
+                className={styles.textLink}
                 onClick={() => {
                   dispatch({ type: "RECORD_CLINICAL_CONTACT", role: "community", now, teamId: team.id });
                   setContactAt(now);
@@ -230,7 +233,6 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                 </>
               ),
               note: figures.pastExpected.length > 0 ? `${figures.pastExpected.length} already passed` : undefined,
-              tone: figures.pastExpected.length > 0 ? "warn" : undefined,
               href: "#in-bed",
             },
             {
@@ -326,7 +328,7 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                                 </button>
                                 <button
                                   type="button"
-                                  className={styles.button}
+                                  className={styles.textLink}
                                   onClick={() => setDeclineFor(undefined)}
                                 >
                                   Cancel
@@ -336,7 +338,7 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                               <div className={styles.inlineForm}>
                                 <button
                                   type="button"
-                                  className={styles.buttonPrimary}
+                                  className={styles.button}
                                   onClick={() =>
                                     dispatch({
                                       type: "ACCEPT_REFERRAL",
@@ -351,7 +353,7 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                                 </button>
                                 <button
                                   type="button"
-                                  className={styles.button}
+                                  className={styles.textLink}
                                   onClick={() => setDeclineFor(referral.id)}
                                 >
                                   Decline…
@@ -411,8 +413,7 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                       {shownBeds.map((admission) => {
                         const patient = patientFor(admission);
                         const expected = expectedLabel(admission, now);
-                        const days =
-                          admission.arrivedAt === null ? null : Math.max(0, daysBetween(admission.arrivedAt, now));
+                        const days = stayDays(admission, now);
                         return (
                           <tr key={admission.id}>
                             <td className={styles.rowName}>
@@ -447,12 +448,14 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
             <Panel
               id="accepted"
               title="Accepted by this team"
-              question="Referrals this team said yes to. No team closure is recorded, so this is not a current caseload."
+              question="Not counting people in a bed above. No team closure is recorded, so this is not a current caseload."
               meta={figures.accepted.length}
               flush
             >
               {figures.accepted.length === 0 ? (
                 <Empty>This team has not accepted any referral.</Empty>
+              ) : acceptedNotInBed.length === 0 ? (
+                <Empty>All {figures.accepted.length} are for people listed under In a bed above.</Empty>
               ) : (
                 <TableScroll label="Accepted by this team">
                   <table className={styles.table}>
@@ -462,17 +465,15 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                         <th scope="col">Person</th>
                         <th scope="col">Age band</th>
                         <th scope="col">Accepted</th>
-                        <th scope="col">Where now</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {figures.accepted.map((referral) => {
+                      {acceptedNotInBed.map((referral) => {
                         const decidedAt = referral.destinations.find(
                           (addressing) =>
                             addressing.destination.kind === "community_team" &&
                             addressing.destination.teamName === team.name,
                         )?.decidedAt;
-                        const bed = figures.inBed.find((admission) => admission.referralId === referral.id);
                         return (
                           <tr key={referral.id}>
                             <td className={styles.mono}>{referral.id}</td>
@@ -489,7 +490,6 @@ export function CommunityTeamProposal({ teamId }: { teamId: string }) {
                                 ? "Time not recorded"
                                 : `${elapsedDaysPhrase(Math.max(0, daysBetween(decidedAt, now)))} ago`}
                             </td>
-                            <td>{bed ? unitName(bed.unitId) : "Not in a bed"}</td>
                           </tr>
                         );
                       })}
