@@ -355,7 +355,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </StatisticsDetailPanel>
 
         <StatisticsDetailPanel
-          title="Post-Discharge Follow-up"
+          title="Follow-up after discharge"
           count="7-day follow-up"
           testId="ward-statistics-community-followup"
         >

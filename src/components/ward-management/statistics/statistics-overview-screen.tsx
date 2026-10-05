@@ -156,6 +156,12 @@ export function StatisticsOverviewScreen() {
       service: "WACHS",
       color: "var(--svc-wachs)",
     },
+    {
+      id: "PRIV",
+      name: "Private",
+      service: "Private",
+      color: "var(--svc-private)",
+    },
   ].map((hs) => {
     const hsUnits = units.filter((u) => siteByCode(u.siteCode)?.service === hs.service);
     const sites = Array.from(new Set(hsUnits.map((u) => siteByCode(u.siteCode)?.name ?? u.siteCode)));
@@ -179,7 +185,7 @@ export function StatisticsOverviewScreen() {
     // line comes off). The 92% "Critical Load" line and "High Load / Balanced" words went earlier.
     const badgeTone = "var(--accent)";
     const badgeBg = "var(--accent-soft)";
-    const badgeText = "No target recorded";
+    const badgeText = `${ready} ready`;
     const strokeColor = hs.color;
 
     const totalArc = 157.08;
@@ -248,13 +254,19 @@ export function StatisticsOverviewScreen() {
       )}
 
       {/* ══════════ STATEWIDE ALLOCATION HEADROOM ══════════ */}
-      <StatewideAllocationHeadroom units={units} bedReleases={bedReleases} capacityReady={capacity.ready} />
+      <StatewideAllocationHeadroom
+        units={units}
+        admissions={admissions}
+        bedReleases={bedReleases}
+        leaveBeds={leaveBeds}
+        capacityReady={capacity.ready}
+      />
 
       {/* ══════════ HEALTH SERVICE CAPACITY & UTILIZATION GAUGES ══════════ */}
       <section className={styles.chartCard} aria-labelledby="gaugesH">
         <div className={styles.chartHeader}>
           <h2 id="gaugesH" className={styles.chartTitle}>
-            Health Service Capacity &amp; Utilization Gauges
+            Occupancy by health service
           </h2>
           <span className={styles.chartCount}>{healthServicesData.length} health services</span>
         </div>
@@ -319,7 +331,7 @@ export function StatisticsOverviewScreen() {
                 <span title={BED_STATE_DETAILS.closed}>
                   <strong>{s.closed}</strong> {BED_STATE_LABELS.closed}
                 </span>
-                <span title="Physically empty and not pulled: Ready plus Closed">
+                <span title="Empty beds: ready plus closed">
                   <strong>{s.ready + s.closed}</strong> Headroom
                 </span>
               </div>
@@ -692,7 +704,7 @@ export function StatisticsOverviewScreen() {
 }
 
 const ADMISSION_STAGE_LABELS: Record<AdmissionStagePosition, string> = {
-  "no-bed-yet": "Waiting for a bed",
+  "no-bed-yet": "Admitted, no bed given yet",
   "bed-given-not-arrived": "Bed given, not yet arrived",
   "in-the-bed": "In the bed",
   ended: "Admission has ended",

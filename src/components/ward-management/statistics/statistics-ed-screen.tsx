@@ -341,12 +341,12 @@ export function StatisticsEdScreen({
         </div>
         <dl className={pageStyles.kpiBand}>
           <div>
-            <dt>Open placements</dt>
+            <dt>Waiting for a bed</dt>
             <dd>{onTheList}</dd>
-            <dd className={pageStyles.kpiCaption}>from this department</dd>
+            <dd className={pageStyles.kpiCaption}>open requests from this department</dd>
           </div>
           <div>
-            <dt>Longest elapsed</dt>
+            <dt>Longest wait</dt>
             <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
             {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
             <dd className={pageStyles.kpiCaption}>
@@ -358,12 +358,12 @@ export function StatisticsEdScreen({
           <div>
             <dt>Marked urgent</dt>
             <dd>{urgent}</dd>
-            <dd className={pageStyles.kpiCaption}>of the {onTheList} open placements</dd>
+            <dd className={pageStyles.kpiCaption}>of the {onTheList} waiting</dd>
           </div>
           <div>
             <dt>Over 24 hours</dt>
             <dd>{over24h}</dd>
-            <dd className={pageStyles.kpiCaption}>elapsed since opening</dd>
+            <dd className={pageStyles.kpiCaption}>your default, not a legal limit</dd>
           </div>
           <div>
             <dt>No ward yet</dt>
@@ -768,11 +768,7 @@ export function StatisticsEdScreen({
 
         <details className={`${family.disclosure} source-print`} data-testid="statistics-ed-limits-group">
           <summary>Definitions &amp; recording limits</summary>
-          <WardPanel
-            title="Urgency category wait times & benchmarks"
-            count="Australasian Triage Scale"
-            testId="ward-statistics-ed-urgency"
-          >
+          <WardPanel title="Waits by urgency" count="Australasian Triage Scale" testId="ward-statistics-ed-urgency">
             <div
               className={styles.panelBody}
               role="group"
@@ -940,7 +936,7 @@ export function StatisticsEdScreen({
             </div>
           </WardPanel>
           <WardPanel
-            title="30-day WEAT performance"
+            title="30-day emergency access target (WEAT)"
             count="Western Australia Emergency Access Target"
             testId="ward-statistics-ed-weat"
           >
@@ -950,7 +946,7 @@ export function StatisticsEdScreen({
                 <dd>Not recorded</dd>
               </div>
               <div>
-                <dt>Target Met Days</dt>
+                <dt>Days the target was met</dt>
                 <dd>Not recorded</dd>
               </div>
               <div>
@@ -959,7 +955,7 @@ export function StatisticsEdScreen({
                 <dd className={pageStyles.kpiCaption}>Mental health triage</dd>
               </div>
               <div>
-                <dt>Median ED Length of Stay</dt>
+                <dt>Middle (median) time in ED</dt>
                 <dd>Not recorded</dd>
                 <dd className={pageStyles.kpiCaption}>Access target as configured: {accessTargetText}</dd>
               </div>

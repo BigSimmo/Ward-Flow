@@ -31,6 +31,7 @@ import { wardStatistics } from "@/components/ward-management/ward-statistics";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
+import { occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-sections.module.css";
 import pageStyles from "./statistics-ward-third-edition.module.css";
 
@@ -66,7 +67,7 @@ export function StatisticsWardScreen({
   units?: Unit[];
   admissions?: Admission[];
 }) {
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, scenario } = useWardFlow();
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds, scenario } = useWardFlow();
   const now = useWardFlowClock();
   usePrintableDisclosures();
   const units = unitsOverride ?? liveUnits;
@@ -196,7 +197,12 @@ export function StatisticsWardScreen({
    * denominators out of the rendered page and requires them to match. A screen showing "3 of 12" in
    * one panel and "of 11" in the next is the shape this family exists to prevent.
    */
-  const dischargeDates = dischargeDateCoverage(admissions, unit.id);
+  // Polished: someone a bed has been pulled for is not on the ward yet, so is not one of its patients.
+  const dischargeDates = dischargeDateCoverage(
+    admissions.filter((admission) => admission.state !== "pulled"),
+    unit.id,
+  );
+  const wardOccupancy = occupiedBeds([unit], admissions, bedReleases, leaveBeds);
 
   /**
    * 🔴 **DEMONSTRATION ONLY, THROUGH TASK 1'S WRAPPER — NEVER RENDERED AS MEASURED.**
@@ -223,7 +229,7 @@ export function StatisticsWardScreen({
       whatItWouldMeasure: "daily occupied beds on this ward over the last 30 days",
       whyItIsNotReal: "only the current ward state is retained; no daily history exists",
     },
-    { baseline: capacity.occupied, volatility: 1, minValue: 0, maxValue: unit.beds },
+    { baseline: wardOccupancy.occupied, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
   const readySeries = generateDemonstrationSeries(
     scenario,
@@ -294,11 +300,15 @@ export function StatisticsWardScreen({
         </div>
         <div>
           <dt>Occupied</dt>
-          <dd>{capacity.occupied}</dd>
+          <dd>{wardOccupancy.occupied}</dd>
         </div>
         <div>
           <dt>Occupancy</dt>
-          <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
+          <dd>{unit.beds > 0 ? Math.round((wardOccupancy.occupied / unit.beds) * 100) : 0}%</dd>
+        </div>
+        <div>
+          <dt>Pulled, not yet arrived</dt>
+          <dd>{wardOccupancy.pulled}</dd>
         </div>
         <div>
           <dt>Ready</dt>
@@ -483,7 +493,7 @@ export function StatisticsWardScreen({
                       <th scope="col" className={pageStyles.n}>
                         Length of stay
                       </th>
-                      <th scope="col">Discharge Target</th>
+                      <th scope="col">Discharge target</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -789,7 +799,6 @@ export function StatisticsWardScreen({
                  * ⚠️ **The month-scoped table the drawing puts beneath this is NOT here and is a hand-back
                  * (D-4):** the prototype persists no history and the network holds five departed admissions.
                  */}
-                <h3 className={styles.subHeading}>Discharge planning</h3>
                 <dl
                   className={`${styles.body} ${pageStyles.metricFacts}`}
                   data-testid="ward-stat-discharge-date-coverage"
@@ -1052,10 +1061,9 @@ export function StatisticsWardScreen({
                  * subject excludes the thing it is guarding cannot pass however correct the page is.
                  */}
                 <section data-testid="ward-stat-referrals">
-                  <h3 className={styles.subHeading}>Referrals into this ward</h3>
-                  <dl className={styles.body}>
+                  <dl className={`${styles.body} ${pageStyles.metricFacts}`}>
                     <div>
-                      <dt>Referrals asking this ward right now</dt>
+                      <dt>Asking this ward right now</dt>
                       <dd data-testid="ward-stat-referrals-asked">{referrals.askedAndWaiting}</dd>
                     </div>
                     <div>
@@ -1068,7 +1076,7 @@ export function StatisticsWardScreen({
                     </div>
                   </dl>
                   <p className={styles.note}>
-                    One ward can decline a movement and later accept the same movement; counts may overlap.
+                    A ward can decline a request and later accept it, so these counts can overlap.
                   </p>
                 </section>
               </div>
