@@ -474,7 +474,7 @@
   border: 1px solid var(--dc-blue);
   background: var(--dc-blue);
   border-radius: 5px;
-  color: white;
+  color: var(--ward-delays-surface);
   font: inherit;
   font-size: 13px;
   font-weight: 650;
