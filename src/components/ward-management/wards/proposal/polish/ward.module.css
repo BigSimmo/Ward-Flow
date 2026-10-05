@@ -1,0 +1,5623 @@
+/*
+ * Task 8: one unit's own view. Deliberately its own small module rather than borrowing classnames
+ * from `coordinator.module.css` (CSS Modules scope per file, and the coordinator screen's own
+ * local tokens live on ITS root class, not this one) — every local token this file needs is
+ * declared on `.screen` below, same convention `coordinator.module.css` and
+ * `ward-management.module.css` already use.
+ */
+.screen {
+  /*
+   * Task 3: adopts the shared token layer. Every local `--wf-*`/`--wd-*` alias this rule used to
+   * declare had an exact-value `--ward-*` twin already (`ward-tokens.module.css`) — down to
+   * `--ward-tap`, which was never a member of the space scale at all; it aliased
+   * `var(--spacing-tap)` under a space-scale name, the same mistake eight other ward stylesheets
+   * made under eight different names before `--ward-tap` was hoisted. Nothing is redeclared here;
+   * every former local name below is now a direct `var(--ward-*)` reference at its call site.
+   *
+   * ⚠️ `--ward-leading-prose` (1.5) has no exact `--ward-*` twin: `--ward-leading-relaxed` (1.45) and
+   * `--ward-leading-prose` (1.55) are equidistant, so "match by value" does not resolve it.
+   *
+   * ✅ **SETTLED BY LINEAGE, NOT BY A TIE-BREAK, AND THIS EXACT VALUE HAS BEEN ADJUDICATED ONCE
+   * ALREADY IN THIS TOKEN LAYER.** `ward-tokens.module.css:5-9` records that `.modeShell` declared
+   * `--ward-leading-prose: 1.5` while `.patientWorkspace` and `.clinicalRail` declared **1.55**, and
+   * the shared layer deliberately adopted 1.55 because those two agreed with each other everywhere
+   * they overlapped. `--ward-leading-prose: 1.5` here is the same drifted value from the same family,
+   * so it resolves to `--ward-leading-prose` (1.55) for the reason the layer already decided — not
+   * because 1.55 wins a rounding rule.
+   *
+   * ⚠️ The first version of this comment justified it as nearest-with-ties-up "matching ordinary
+   * `Math.round` semantics", and invited a reviewer to move the call sites the other way. Both were
+   * wrong to leave here: there is no decimal grid, only two named steps, so that was a coin flip
+   * dressed as arithmetic — and it parked a settled decision as open, at the call site, where the
+   * next reader would re-make it. Corrected on review.
+   *
+   * ⚠️ NOTHING IN THIS REPOSITORY CAN CATCH A WRONG ANSWER HERE. No test renders a line box; the
+   * ward contract tests read CSS as text. The two call sites (`.notFoundBody`, `.heroCost`) are
+   * genuine prose at 32-34rem, where looser leading is the forgiving direction of error — which is
+   * why the safe value and the adjudicated value being the same one is worth stating.
+   */
+  composes: wardTokens from "../../../ward-tokens.module.css";
+  display: block;
+  font-variant-numeric: tabular-nums;
+  min-height: 100dvh;
+  /* ⚠️ NO `background` HERE, DELIBERATELY. This class used to paint `var(--surface)` straight over
+     `--ward-ground` (`WardGround`, `ward-shell.module.css`), which is a real DOM ancestor of this
+     screen's `<main>` — the exact defect `tests/ward-design-language-contract.test.ts`'s
+     `COVERING_THE_GROUND` backlog names this file for. Removed 2026-09-04 rebuilding this screen
+     to the approved `mockup-ward-entry.html` design: panels (`.unitCard`, `.bedSection`,
+     `.listSection` below) already paint their own surface, so the space between them now shows
+     the shell's ground rather than a second, redundant white layer. See that test's own comment
+     for why the pin is a two-way list — this file must be REMOVED from it, not just left passing.
+   */
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-20);
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+}
+
+.notFoundHeading {
+  margin: var(--ward-space-20) 0 var(--ward-space-8);
+  color: var(--ink);
+  font-size: var(--t-3);
+}
+
+.notFoundBody {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: var(--ward-leading-prose);
+}
+
+.notFoundAction {
+  display: inline-flex;
+  align-items: center;
+  margin-top: var(--ward-space-16);
+  padding: var(--ward-space-8) var(--ward-space-16);
+  border: 1px solid var(--ward-border, var(--line));
+  border-radius: var(--radius-md, var(--r2));
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.notFoundAction:hover {
+  background: var(--surface-2, var(--ground));
+}
+
+.governanceBanner {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border-bottom: 0.0625rem solid var(--ward-divider);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 0.0625rem solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  color: var(--ward-warning);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.unitCard {
+  min-width: 0;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-14);
+}
+
+.unitName {
+  margin: 0 0 var(--ward-space-4);
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 700;
+}
+
+.unitMeta {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.boardLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap);
+  margin-top: var(--ward-space-8);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.1875rem;
+}
+
+.sectionHeading {
+  margin: 0 0 var(--ward-space-8);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bedSection,
+.listSection {
+  min-width: 0;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--ward-space-14);
+}
+
+.bedGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-6);
+}
+
+.bedChip {
+  display: inline-flex;
+  align-items: center;
+  border: 0.0625rem solid var(--ward-border-strong);
+  border-radius: var(--radius-xs, var(--radius-sm));
+  padding: var(--ward-space-2) var(--ward-space-8);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.bedChip[data-state="available"] {
+  border-color: var(--ward-success);
+  background: var(--ward-success-soft);
+  color: var(--ward-success);
+}
+
+.bedChip[data-state="held"],
+.bedChip[data-state="closed"] {
+  border-color: var(--ward-warning);
+  background: var(--ward-warning-soft);
+  color: var(--ward-warning);
+}
+
+.bedChip[data-state="blocked"] {
+  border-color: var(--ward-danger);
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+}
+
+.bedChip[data-state="occupied"] {
+  border-color: var(--ward-border-strong);
+  background: var(--surface-subtle);
+  color: var(--muted);
+}
+
+/* Pulled: allocated to a named patient who has not arrived (`ward-bed-states.ts`). */
+.bedChip[data-state="pulled"] {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Confirmed, expected and leave beds — never summed into the four physical states above (they
+   already account for every physical bed). Dashed styling marks them as the separate,
+   forward-looking figures they are, the same convention the flow diagram's own bed chips use. */
+.bedChip[data-state="confirmed"],
+.bedChip[data-state="expected"],
+.bedChip[data-state="leave"] {
+  border-style: dashed;
+  border-color: var(--clinical-accent);
+  color: var(--clinical-accent);
+}
+
+/* Bed-model rework (2026-08-28): how many of today's releases are stuck. Dashed like the three
+   forward-looking chips above, because it counts the same releases they do rather than a fourth
+   set of beds — but in the danger palette `[data-state="blocked"]` uses, because these are the
+   ones somebody has to chase. The two are deliberately not the same chip and do not read the
+   same: that one counts physically blocked BEDS, this one counts blocked RELEASES, which is why
+   its label is "Discharges held up" (see `BED_RELEASE_BLOCKED_FIGURE_LABEL`, whose IDENTIFIER
+   still says BLOCKED because `blocked` is the model's own word for the field; only the display
+   wording changed, owner ruling 2026-09-06). */
+.bedChip[data-state="blocked-release"] {
+  border-style: dashed;
+  border-color: var(--ward-danger);
+  color: var(--ward-danger);
+}
+
+/* Task 5, spec D7/D12: this unit's own confirmed-capacity stamp, and — when one exists — the
+   refresh-requested mark sitting beside it. Wraps rather than forcing a single line: the mark's
+   text is long enough on a narrow phone width that forcing it onto the freshness stamp's own
+   line would clip it. */
+.capacityFreshnessRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+  margin-bottom: var(--ward-space-8);
+}
+
+/* Deliberately its own visible mark, distinct from `.bedChip`/`.notice` — a refresh request
+   changes no bed count (spec D12), so it must never read like one of the states in the grid
+   below it. Dashed border echoes `.bedChip[data-state="confirmed"/"expected"/"leave"]`'s own "this is forward-
+   looking, not a physical count" convention rather than borrowing its solid states. */
+.refreshRequestMark {
+  display: inline-flex;
+  align-items: center;
+  border: 0.0625rem dashed var(--clinical-accent-border);
+  border-radius: var(--radius-sm);
+  background: var(--clinical-accent-soft);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  color: var(--clinical-accent);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.bedNote {
+  margin: var(--ward-space-8) 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.capacityForm {
+  display: grid;
+  gap: var(--ward-space-6);
+  margin-top: var(--ward-space-12);
+  border-top: 0.0625rem solid var(--ward-divider);
+  padding-top: var(--ward-space-12);
+}
+
+.capacityLabel {
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.capacityRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ward-space-8);
+}
+
+.capacityInput {
+  min-height: var(--ward-tap);
+  width: 6rem;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.capacityRow select.capacityInput {
+  width: min(16rem, 100%);
+}
+
+.capacitySubmit {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 9rem;
+  max-width: 15rem;
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--clinical-accent);
+  padding: 0 var(--ward-space-14);
+  color: var(--on-accent);
+  font-size: var(--t-0);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+
+.capacitySubmit:hover:not(:disabled) {
+  background: var(--clinical-accent-hover);
+  transform: translateY(-1px);
+}
+
+.capacityConfirmed {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.cardList {
+  display: grid;
+  gap: var(--ward-space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  min-width: 0;
+  gap: var(--ward-space-6);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: var(--ward-space-10);
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ward-space-8);
+}
+
+.cardHeader strong {
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.cardMeta {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/*
+ * `.parallelBadge` IS DELETED, NOT ORPHANED, and the deletion is part of the FD-23 fix rather than
+ * tidying after it. It styled a "Parallel referral" badge telling a ward that a patient was also
+ * referred elsewhere — forbidden by `ward-referral-visibility.ts` ("the count is as forbidden as
+ * the list"), see the long note at its old render site in `ward-screen.tsx`.
+ *
+ * A dead rule with an inviting name is how a removed disclosure comes back: the next person adds
+ * the badge, finds the styling already waiting, and reads that as evidence it belonged here.
+ */
+
+/*
+ * The two restriction-notice levels, reading identically to `shortlist-panel.tsx` and
+ * `flow-diagram.tsx` — the ward is the party who would be holding the person (spec §3), so it
+ * sees both, in the exact same wording. Never re-authored here.
+ */
+.notice {
+  justify-self: start;
+  border: 0.0625rem solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-6) var(--ward-space-8);
+  color: var(--ward-warning);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-body);
+}
+
+.noticeProminent {
+  justify-self: start;
+  border: 0.0625rem solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  background: var(--ward-danger-soft);
+  padding: var(--ward-space-6) var(--ward-space-8);
+  color: var(--ward-danger);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-body);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.acceptButton,
+.declineButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 8.5rem;
+  max-width: 16rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  padding: 0 var(--ward-space-14);
+  font-size: var(--t-0);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.acceptButton {
+  border: 0.0625rem solid var(--clinical-accent-border);
+  background: var(--clinical-accent);
+  color: var(--clinical-accent-contrast);
+}
+
+.acceptButton[aria-disabled="true"] {
+  cursor: not-allowed;
+  border-color: var(--ward-border);
+  background: var(--surface-subtle);
+  color: var(--muted);
+}
+
+.declineButton {
+  border: 0.0625rem solid var(--ward-border);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.declineButton[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
+.declineForm {
+  display: grid;
+  gap: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-10);
+}
+
+.declineFieldset {
+  display: grid;
+  gap: var(--ward-space-6);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.declineLegend {
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+/* The one-hold-up clause the owner ruled must appear beside each waiting-on picker (R7,
+ * 2026-09-06). Quieter than the legend it sits under — it qualifies the question rather than
+ * asking one — and it uses tokens only, like every other rule in this file. */
+.declineHint {
+  margin: 0 0 var(--ward-space-8);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-copy);
+}
+
+.declineOption {
+  display: flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  gap: var(--ward-space-8);
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+.declineSubmit {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--clinical-accent);
+  padding: 0 var(--ward-space-14);
+  color: var(--clinical-accent-contrast);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.declineSubmit:disabled {
+  cursor: not-allowed;
+  border-color: var(--ward-border);
+  background: var(--surface-subtle);
+  color: var(--muted);
+}
+
+@media (max-width: 20rem) {
+  .capacityInput {
+    width: 100%;
+  }
+}
+
+/*
+ * ⚠️ FORCED COLOURS PUTS THE SYSTEM TOKENS BACK. `--ward-border`/`--ward-divider` alias
+ * `--neutral-500` and deliberately SEVER the chain to `--border`, which measures 1.21:1 against
+ * `--surface` in light mode and 1.42:1 in dark — far under the 3:1 a boundary needs.
+ * `--neutral-500` gives 4.88:1 and 4.98:1; `--ward-border-strong` (`--muted`) gives 7.55:1
+ * and 8.21:1.
+ *
+ * Task 3: repointed to the `--ward-*` names, not deleted — see the task report's before/after
+ * diff. Two of the three are now genuinely belt-and-braces rather than the mechanism:
+ * `ward-tokens.module.css`'s own `.wardTokens.wardTokens` forced-colors block already re-points
+ * `--ward-border` and `--ward-divider` to `CanvasText` at higher specificity (0,2,0 beats this
+ * rule's 0,1,0), and `--ward-border-strong` aliases `--muted`, which `ckb-v2-tokens.css`'s
+ * own forced-colors block already sends to `CanvasText` globally — this screen sits inside
+ * `.ckb-v2` (`layout.tsx`), so that repointing reaches it with no help from here. Kept anyway,
+ * matching `board.module.css`'s identical three-line block: removing working belt-and-braces to
+ * prove a point is not worth the risk of proving it wrong.
+ */
+@media (forced-colors: active) {
+  .screen {
+    --ward-border: var(--border);
+    --ward-divider: var(--border);
+    --ward-border-strong: var(--border-strong);
+  }
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * Rebuilt to `docs/ward-flow/design/prototypes/mockup-ward-entry.html` (2026-09-04). The hero
+ * and the confirm panel below are the whole point of that design: the way in ("Open bed list")
+ * must never wait on the form, and the confirm panel is where the form actually lives.
+ *
+ * ⚠️ `.heroCta` MUST NEVER GAIN A `disabled` OR `aria-disabled` ATTRIBUTE FROM ANY STATE ON THIS
+ * SCREEN. It is a real `<Link>`/`<a>`, which cannot carry `disabled` at all — that is a structural
+ * guarantee, not a convention — and `ward-screen.tsx` never sets `aria-disabled` on it. See
+ * `tests/ward-screen-overview-and-entry.dom.test.tsx` for the two independent proofs (the
+ * attribute check and the wording check) and their separate mutations.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+.entryHero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-20);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-20);
+}
+
+.entryHeroFigures {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 20rem;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+}
+
+.heroFigureMain {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-12);
+}
+
+.heroFigureValue {
+  color: var(--ink);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroFigureLabel {
+  max-width: 16rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.heroCost {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--ink);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-prose);
+}
+
+.heroCost strong {
+  color: var(--ward-warning);
+  font-weight: 600;
+}
+
+.heroAction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.heroCta {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ward-space-3);
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--clinical-accent);
+  padding: var(--ward-space-12) var(--ward-space-20);
+  color: var(--surface);
+  font-weight: 700;
+  font-size: var(--t-2);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.heroCta:hover {
+  background: var(--clinical-accent-hover, var(--clinical-accent));
+}
+
+.heroCtaSub {
+  color: var(--surface);
+  font-size: var(--t-0);
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* ⚠️ WORDED, NEVER ONLY POSITIONED. This sentence is the second, independent proof that the CTA
+   above is unconditional — see the doc comment at the top of this section. It renders exactly
+   once, unconditionally, regardless of `confirmedToday`. */
+.heroAvailability {
+  margin: 0;
+  max-width: 16rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-align: center;
+}
+
+/* The confirm panel — content that renders INSIDE a `<WardPanel>`, so it takes no border or
+   background of its own. */
+.confirmAllButton {
+  display: flex;
+  min-height: var(--ward-tap);
+  width: 100%;
+  align-items: center;
+  border: 0.0625rem solid var(--ward-success);
+  border-radius: var(--radius-sm);
+  background: var(--ward-success-soft);
+  padding: 0 var(--ward-space-12);
+  color: var(--ward-success);
+  font-weight: 600;
+  font-size: var(--t-1);
+  text-align: left;
+}
+
+.confirmAllButton:hover {
+  background: var(--success-bg-hover, var(--ward-success-soft));
+}
+
+.confirmRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.confirmRow {
+  border-top: 0.0625rem solid var(--ward-divider);
+  padding: var(--ward-space-12) 0;
+}
+
+.confirmRow[data-fresh="confirmed"] {
+  border-left: 0.1875rem solid var(--ward-success);
+  padding-left: var(--ward-space-10);
+}
+
+.confirmRow[data-fresh="waiting"] {
+  border-left: 0.1875rem solid var(--ward-warning);
+  padding-left: var(--ward-space-10);
+}
+
+/**
+ * Daily-return rows 4 and 5, which are NOT confirmations — see the long comment beside them in
+ * `ward-screen.tsx`. They deliberately carry `data-kind` rather than `data-fresh`, so neither
+ * rule above can match them: green would claim an answer that was never given, and amber would
+ * claim one is overdue when a ward with nobody going on leave owes nothing.
+ *
+ * The rail is kept rather than dropped so the difference reads as a decision. An absent rail
+ * would be indistinguishable from a row that simply lost its state attribute.
+ */
+.confirmRow[data-kind="record"] {
+  /*
+   * ⚠️ `--ward-border-strong`, NOT `--ward-border` — the first version stated a property the code
+   * did not hold. `ward-tokens.module.css` declares `--ward-border: var(--neutral-500)` at :43 and
+   * `--ward-divider: var(--neutral-500)` at :66 — **the same value, in normal colour mode, not
+   * only under forced-colors.** `.confirmRow`'s own `border-top` uses `--ward-divider`, so the
+   * rail was being drawn in exactly the separator's grey while the comment beside it claimed the
+   * rail "reads as a decision". It read as nothing.
+   *
+   * `--ward-border-strong` is `var(--muted)` and is genuinely distinct from both, so the
+   * claim and the pixels now agree.
+   */
+  border-left: 0.1875rem solid var(--ward-border-strong);
+  padding-left: var(--ward-space-10);
+}
+
+/*
+ * The record stamp on daily-return rows 4 and 5. Deliberately NOT `WardFreshness` — see the long
+ * comment at its call site in `ward-screen.tsx`; that component's four renderings are all about a
+ * CONFIRMATION, and these two rows have none. Mirrors its typography so the two read as the same
+ * kind of small print, because they are: a time and a role, quietly stated.
+ */
+.recordStamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  color: var(--ward-muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-copy);
+}
+
+/*
+ * The row-4/5 links. Same box as `.confirmRowButton` — including its `min-height: var(--ward-tap)`
+ * 48 px floor, which an anchor needs just as much as a button — with the underline removed,
+ * because it is styled as a control and reads as one.
+ *
+ * 🔴 **THIS USED `composes: confirmRowButton` AND IT BROKE THE WHOLE SCREEN.** `composes` requires
+ * the referenced class to be declared EARLIER in the file; `.confirmRowButton` is at :788 and this
+ * rule was at :753. Webpack refuses outright —
+ * `Syntax error: referenced class name "confirmRowButton" in composes not found` — and every
+ * request to a ward's own page returned **HTTP 500**.
+ *
+ * ⚠️ **NOTHING IN THE TEST SUITE COULD SEE THIS.** jsdom tests import the CSS module as an object
+ * of class names and never run the real compiler, so 335 test files stayed green over a stylesheet
+ * that cannot build. `tsc` cannot see it either. **It surfaced the first time a browser-capable
+ * server actually started — which is the entire argument for looking at a rendered page.**
+ *
+ * ⚠️ **And an adversarial review had already found this exact line and ranked it "fragile, not
+ * broken".** It was broken. The reasoning offered — that `text-decoration: none` survives only
+ * because `.confirmRowButton` declares no `text-decoration` — is about the CASCADE, and the real
+ * fault is at COMPILE time, which never comes up if you are reasoning about specificity.
+ *
+ * Written out rather than composed. The duplication is four declarations and it cannot fail to
+ * build; a comment on `.confirmRowButton` points here so the pair stays in step.
+ */
+.confirmRowLink {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  margin-top: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 var(--ward-space-12);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.confirmRowHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.confirmRowLabel {
+  max-width: 26rem;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 500;
+}
+
+.confirmRowValue {
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.confirmRowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-6);
+}
+
+/* ⚠️ `.confirmRowLink` above is a hand-copy of this box (see the comment there for why it is not
+   `composes`). Change one, change both — they are the button and anchor forms of one control. */
+.confirmRowButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  margin-top: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 var(--ward-space-12);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.confirmAnswerRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+}
+
+.confirmAnswerInput {
+  flex: 1 1 14rem;
+  min-height: var(--ward-tap);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+/* Owner Answer 18 (second round, 2026-09-17): the fixed-list replacement for the constraints
+   free-text box. A plain `border: 0` fieldset — the row it sits in already carries the visual
+   frame — laid out as a wrapping list of tap-target options rather than a grid, so it reflows at
+   phone width without a breakpoint. */
+.confirmConstraintsFieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.confirmConstraintOption {
+  display: flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  gap: var(--ward-space-8);
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+.confirmSkipNote {
+  margin: var(--ward-space-8) 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/*
+ * ⚠️ `color: CanvasText` IS THE LOAD-BEARING LINE HERE, NOT `color-scheme: light`.
+ *
+ * This root sets `color: var(--ink)` ON ITSELF. The dark ramp is scoped by the CLASS
+ * `.ckb-v2.dark.ckb-v2` rather than by a media query, so `color-scheme: light` cannot make it
+ * re-resolve; and `globals.css` resets print colour on `html, body`, which cannot reach an
+ * element that declares the property itself. Printing from dark mode therefore put pale text on
+ * white paper — and because this screen no longer paints its own background, the page came out
+ * nearly BLANK rather than as a dark band. Blank is the worse failure: a dark band gets reported.
+ *
+ * An ancestor cannot override a property an element sets on itself, so the reset has to live in
+ * the file that made the declaration. Found by a sibling-stylesheet matrix, not by reading this
+ * file — every file here is internally consistent and the asymmetry only exists across the set.
+ */
+@media print {
+  /*
+   * ⚠️ THE RESET NOW COVERS EVERY DESCENDANT, NOT JUST THIS ROOT. An ancestor cannot override a
+   * property an element sets on itself, which is exactly why this reset had to live here — but the
+   * same sentence is just as true one level down: rules like `.cardHeader strong { color:
+   * var(--ink) }` set colour on themselves too, and `.screen { color: CanvasText }` cannot
+   * reach past them either. `board.module.css` tried to fix this by enumerating every coloured
+   * selector — 56 of them across a 250-line print block — and still missed five content selectors.
+   * An enumerated list is the defect regenerating: any new coloured selector re-opens it, silently,
+   * forever. The wildcard `.screen *` cannot drift, and it flattens nothing anybody wanted — a
+   * sweep of every existing print block across these seven files found zero non-`CanvasText`
+   * colour declarations inside any of them.
+   *
+   * ⚠️ `!important` IS REQUIRED ON `color` HERE, AND THE WILDCARD ALONE IS NOT ENOUGH — measured
+   * through an actual cascade (jsdom's computed-style engine), not read off the CSS. Specificity is
+   * resolved before source order, so sitting at the end of the file buys nothing: `.screen *` is one
+   * class plus the universal selector (specificity 0,1,0; the universal contributes zero), and any
+   * rule combining a class with a type, pseudo-class or attribute selector outranks it — this file
+   * has plenty: every `.bedChip[data-state="…"]` variant (0,2,0), `.acceptButton[aria-disabled=
+   * "true"]` (0,2,0), `.cardHeader strong` and `.heroCost strong` (0,1,1 each). Confirmed on an
+   * equivalent-shaped selector: it computed `rgb(244, 246, 248)` — still near-white — with the
+   * wildcard alone, and `rgb(0, 0, 0)` once `!important` was added. `color-scheme` needs no
+   * `!important`: nothing competes for it. `coordinator.module.css` already carries `color:
+   * CanvasText !important` in its own print blocks — this file now matches that precedent rather
+   * than re-deriving it.
+   *
+   * ⚠️ THE WILDCARD ALONE WOULD HAVE LOOKED FIXED. It corrects every plain element, so a spot-check
+   * on any single-class element prints black and the fix reads as confirmed, while the bed-state
+   * chips — exactly where this failure is clinically dangerous — stay invisible. Fix one instance,
+   * verify on the instance in front of you, never revisit the siblings: the same defect recurring
+   * at a third level, after file and after selector.
+   *
+   * NOT VERIFIED ON PAPER. This is a jsdom cascade resolution, not an observation of a printout —
+   * `!important` winning over specificity is spec behaviour common to every rendering engine,
+   * including the one that will actually print the page, so the result should carry over.
+   */
+  .screen,
+  .screen * {
+    color-scheme: light;
+    color: CanvasText !important;
+    /*
+     * 🔴 THE MISSING HALF, AND WITHOUT IT THE LINE ABOVE MAKES THE PAGE WORSE. Measured in
+     * Chromium 151 under print + dark: a themed card kept `rgb(23, 26, 29)` because nothing
+     * resets backgrounds, while the reset forced its text to `rgb(0, 0, 0)`. **Black on a dark
+     * card — gone.** Before the text reset that same text was near-white on the dark card:
+     * wasteful, and READABLE. The fix and the untouched background are each defensible alone
+     * and strictly worse together, and nothing either of us checked would have caught it,
+     * because we were both looking at text colour on a white page.
+     *
+     * ⚠️ `background-color`, NEVER the `background` shorthand. `board.module.css` hatches its
+     * blocked, held and past-date bed states with `background-image: repeating-linear-gradient`.
+     * The shorthand wipes `background-image` and would silently erase the pattern that
+     * distinguishes a blocked bed from an empty one — a state distinction, not decoration.
+     */
+    background-color: Canvas !important;
+  }
+}
+
+/*
+ * The cleaning count under this ward's bed grid (owner ruling 2026-09-05).
+ *
+ * ⚠️ **DELIBERATELY NOT THE SAME SHAPE AS `capacity.module.css`/`ed.module.css`, AND THAT IS THE
+ * POINT.** On those two screens the fact sits in a table cell beside a per-ward number, where a
+ * `display: block` note genuinely stacks under the figure. Here the figure lives in a 24px pill in
+ * a flex row of eight, where the same treatment put the note ON THE SAME LINE as the number and
+ * rendered "Ready 2" immediately followed by "1 still being made ready". Stamping one shape onto
+ * both containers is what produced that; this is a sentence under the grid instead.
+ */
+.beingMadeReady {
+  margin: var(--ward-space-6) 0 0;
+  max-width: var(--container-reading);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+  color: var(--ward-muted);
+}
+
+.beingMadeReady strong {
+  color: var(--ward-text);
+  font-weight: 600;
+}
+
+/*
+ * The screen's own name, and it is a constant.
+ *
+ * The third edition puts the SCREEN in the h1 ("Ward") and the ward's own name in the first panel's
+ * h3 — `ward-third-edition.html`, `<h2 id="wardH">This ward</h2>` over `<h3 id="wardName">`. The app
+ * had it the other way round, so every ward rendered a different h1 and the screen had no stable
+ * name anywhere on it.
+ *
+ * Modelled on `community.module.css`'s `.pageTitle` rather than invented, so the two ward-flow
+ * screens that carry a constant h1 are built the same way.
+ *
+ * 🔴 **THE EARLIER VERSION OF THIS COMMENT SAID "TOKENS ONLY" WHILE THE RULE BELOW DECLARED A RAW
+ * `line-height: 1.2`. That was simply false** — and copying the literal from `community.module.css`
+ * did not make the two files consistent, it made them identically non-compliant: both counted
+ * against `rawLineHeightLiterals` in `check-design-system-contract.mjs`.
+ *
+ * Owner ruling D-24, 2026-09-11: **this rule now uses the canonical `--ward-leading-tight`, which is
+ * 1.15, not 1.2.** The two headings are therefore about one pixel apart in leading at this size —
+ * invisible on a single line, and they never appear on the same screen. ⚠️ **`community.module.css`
+ * has NOT been migrated and still carries the raw 1.2**; that is logged as an open row rather than
+ * changed from here, because it is another lane's file.
+ *
+ * Nothing here is below 12px (owner ruling D-3).
+ */
+.screenName {
+  margin: 0 0 var(--ward-space-4);
+  color: var(--ink);
+  font-size: var(--t-4);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: var(--ward-leading-tight);
+}
+
+/*
+ * 🔴 **THE SUBURB-TO-TEAM PANEL (A3).** Tokens only, modelled on the rules above rather than
+ * invented: spacing from `--ward-space-*`, colour from the text roles, size from the type scale.
+ *
+ * ⚠️ **THESE NINE RULES WERE WRITTEN BECAUSE THE COMPONENT'S TESTS COULD NOT SEE THEM MISSING.**
+ * `vitest` loads no CSS module, so `styles.suburbNote` resolving to `undefined` renders a class-less
+ * element and every assertion still passes — the panel would have been green in jsdom and unstyled
+ * in a browser. **A green DOM suite says nothing about whether a stylesheet exists.**
+ */
+.suburbForm {
+  display: grid;
+  gap: var(--ward-space-10);
+  margin: var(--ward-space-8) 0;
+}
+
+.suburbRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-8);
+}
+
+.suburbAnswer {
+  display: grid;
+  gap: var(--ward-space-10);
+}
+
+/* The one-line verdict. Heavier than the detail beneath it because it is the thing a coordinator
+   reads first — and in two of the five outcomes it is a refusal, which must not look like an error
+   state. Same weight and colour as any other answer. */
+.suburbVerdict {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.suburbNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.suburbReadings {
+  display: grid;
+  gap: var(--ward-space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suburbReading {
+  display: grid;
+  gap: var(--ward-space-12);
+}
+
+.suburbTeam {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The document, date and page a reading came from. Deliberately quieter than the team name and
+   deliberately always present: a reading without its source is a claim this panel cannot support. */
+.suburbSource {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* Full-estate F02/F13a presentation. The live reducer and all action handlers remain in
+ * ward-screen.tsx; the route selects which of the two commissioned reading orders is visible. */
+.screen {
+  composes: wardShellTokens from "../../../../../app/ward-flow-shell-tokens.module.css";
+  --clinical-accent: var(--accent);
+  --clinical-accent-border: var(--accent);
+  --clinical-accent-contrast: var(--on-accent);
+  --clinical-accent-hover: var(--accent-press);
+  --clinical-accent-soft: var(--accent-soft);
+  --surface-subtle: var(--surface-2);
+  --surface-chrome: var(--surface-2);
+  display: block;
+  min-height: 100%;
+  padding-top: 0;
+  color: var(--ink);
+  background: var(--ground);
+  font-family: var(--body);
+}
+
+.main {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem clamp(0.75rem, 2vw, 1.5rem) 2rem;
+}
+
+.main > * {
+  order: 7;
+}
+
+.screenName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.unitCard,
+.bedSection,
+.listSection {
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.unitCard {
+  order: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem;
+  padding: 1rem;
+}
+
+.unitCard .sectionHeading {
+  grid-column: 1 / -1;
+}
+
+.unitName {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-6);
+  font-weight: 600;
+}
+
+.unitMeta,
+.cardMeta,
+.placeholder {
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.boardLink {
+  min-height: 3rem;
+  margin: 0 0 0 0.5rem;
+  align-self: center;
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+}
+
+.entryHero {
+  order: 2;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.bedSection {
+  order: 3;
+}
+
+.listSection[aria-label="Coming in"] {
+  order: 4;
+}
+
+.listSection[aria-label="Awaiting your answer"] {
+  order: 5;
+}
+
+.main > [data-ward-primitive="panel"][aria-label="Today’s return"] {
+  order: 6;
+}
+
+.listSection {
+  order: 7;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sectionHeading {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.cardList {
+  gap: 0;
+}
+
+.card {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.card:last-child {
+  border-bottom: 0;
+}
+
+.governanceBanner {
+  order: 100;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.governanceBanner p,
+.prototypeBadge {
+  font-size: var(--t-0);
+}
+
+.prototypeBadge {
+  border-color: var(--warn);
+  border-radius: var(--r2);
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.answerNav {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: var(--t-1);
+}
+
+.answerNav a {
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+
+.answerStepper {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+}
+
+.answerStepper strong {
+  font-family: var(--mono);
+}
+
+.answerStepper span {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.answerStepper button {
+  min-width: 5.25rem;
+  min-height: 3rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.answerStepper button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.screen[data-presentation="answer"] .main > * {
+  display: none;
+}
+
+.screen[data-presentation="answer"] .main > .answerNav,
+.screen[data-presentation="answer"] .main > .governanceBanner,
+.screen[data-presentation="answer"] .main > .screenName,
+.screen[data-presentation="answer"] .main > .answerOnlyPanel,
+.screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
+  display: block;
+}
+
+.screen[data-presentation="answer"] .main > .answerNav {
+  display: flex;
+}
+
+.screen[data-presentation="answer"] .answerNav {
+  display: flex;
+  order: 1;
+}
+
+.screen[data-presentation="answer"] .listSection[aria-label="Awaiting your answer"] {
+  order: 2;
+}
+
+.screen[data-presentation="answer"] .governanceBanner {
+  order: 5;
+}
+
+.screen[data-presentation="answer"] .answerOnlyPanel[data-answer-panel="capacity"] {
+  order: 3;
+}
+
+.screen[data-presentation="answer"] .answerOnlyPanel[data-answer-panel="history"] {
+  order: 4;
+}
+
+.screen[data-presentation="answer"] .cardList {
+  display: block;
+}
+
+.screen[data-presentation="answer"] .card {
+  padding: 1rem;
+  font-size: var(--t-1);
+}
+
+.answerEligibilitySummary,
+.answerIdentityAbsence {
+  margin: 0;
+}
+
+.answerTier {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: 0.125rem 0.5rem;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+}
+
+.answerTier[data-flagged-urgent="true"] {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.answerEligibilitySummary {
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+}
+
+.answerEligibilitySummary[data-eligible="false"] {
+  color: var(--danger);
+}
+
+.answerIdentityAbsence {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.answerCapacityBody,
+.answerHistoryBody {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.answerCapacityFacts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.answerCapacityFacts > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  border-inline-end: 1px solid var(--line);
+  padding: 0.75rem;
+}
+
+.answerCapacityFacts > div:last-child {
+  border-inline-end: 0;
+}
+
+.answerCapacityFacts dt,
+.answerCapacityFacts dd {
+  margin: 0;
+}
+
+.answerCapacityFacts dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.answerCapacityFacts dd {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-4);
+  font-weight: 750;
+}
+
+.answerCapacityFreshness {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.answerCapacityFreshness > div {
+  display: grid;
+  gap: 0.375rem;
+  border-inline-start: 0.25rem solid var(--accent);
+  background: var(--surface-2);
+  padding: 0.75rem;
+}
+
+.answerCapacityFreshness strong {
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+.answerHistoryScope {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.answerHistoryList {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.answerHistoryList li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(6rem, 0.7fr) minmax(10rem, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.75rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+}
+
+.answerHistoryList li strong {
+  color: var(--ink);
+  font-family: var(--mono);
+}
+
+.answerHistoryList time {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (min-width: 48.001rem) {
+  .screen[data-presentation="answer"] .actionRow {
+    justify-content: flex-start;
+  }
+
+  .screen[data-presentation="answer"] .acceptButton,
+  .screen[data-presentation="answer"] .declineButton {
+    flex: 0 0 auto;
+    min-width: 9rem;
+  }
+}
+
+.answerFacts {
+  display: grid;
+  grid-template-columns: minmax(10rem, 10.5rem) minmax(0, 1fr);
+  gap: 0.375rem 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.answerFacts > div {
+  display: contents;
+}
+
+.answerFacts dt,
+.answerFacts dd {
+  margin: 0;
+}
+
+.answerFacts dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.answerFacts dd {
+  color: var(--ink);
+}
+
+.answerGates {
+  margin-top: 0.375rem;
+  border-top: 1px solid var(--line);
+}
+
+.answerGatesHeading {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.answerGatesHeading h3,
+.answerGatesHeading span {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.answerGatesHeading span {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.answerGates ul {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.answerGates li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  gap: 0.625rem;
+  align-items: start;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.625rem 0.75rem;
+}
+
+.answerGates li[data-pass="false"] {
+  background: var(--danger-soft);
+}
+
+.answerGateMark,
+.answerGateVerdict {
+  color: var(--good);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.answerGates li[data-pass="false"] .answerGateMark,
+.answerGates li[data-pass="false"] .answerGateVerdict {
+  color: var(--danger);
+}
+
+.answerGateCopy {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.answerGateCopy > strong {
+  color: var(--ink);
+}
+
+.answerGateCopy > span {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.answerGateVerdict {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 48rem) {
+  .main {
+    gap: 0.75rem;
+    padding: 0.75rem 0.5rem 1.5rem;
+  }
+
+  .unitCard {
+    grid-template-columns: 1fr;
+  }
+
+  .boardLink {
+    margin: 0;
+    justify-self: start;
+  }
+
+  .answerNav {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .answerStepper {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .answerCapacityFacts,
+  .answerCapacityFreshness {
+    grid-template-columns: 1fr;
+  }
+
+  .screen[data-presentation="answer"] .answerCapacityBody .capacityRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-presentation="answer"] .answerCapacityBody .capacityInput,
+  .screen[data-presentation="answer"] .answerCapacityBody .capacitySubmit {
+    width: 100%;
+  }
+
+  .answerCapacityFacts > div {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .answerCapacityFacts > div:last-child {
+    border-bottom: 0;
+  }
+
+  .answerHistoryList li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .answerHistoryList time {
+    white-space: normal;
+  }
+
+  .answerStepper strong {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .answerFacts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .answerFacts > div {
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  .answerGates li {
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+  }
+
+  .answerGateVerdict {
+    grid-column: 2;
+  }
+}
+
+@media print {
+  .screen[data-presentation="answer"] .main > .governanceBanner,
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
+    display: block !important;
+  }
+}
+
+/* F02 visual correction: the overview follows the served Ward drawing's reading order while
+ * retaining every engine-backed form and action in the same mounted component tree. */
+.screen[data-presentation="overview"] .main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.screen[data-presentation="overview"] .main > * {
+  grid-column: 1 / -1;
+}
+
+.unitCard {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.unitCardHeader {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.unitCardHeader .sectionHeading {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.unitCardBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
+  gap: 1rem 2rem;
+  padding: 1rem;
+}
+
+.unitIdentity,
+.unitActions {
+  min-width: 0;
+}
+
+.unitName {
+  margin: 0;
+}
+
+.unitFacts,
+.goingOutFacts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0;
+}
+
+.unitFacts > div,
+.goingOutFacts > div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.65rem;
+}
+
+.unitFacts dt,
+.goingOutFacts dt {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.unitFacts dd,
+.goingOutFacts dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.unitActions {
+  align-self: start;
+}
+
+.unitActions > p {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.unitActionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.unitActionLinks .boardLink {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  font-weight: 650;
+}
+
+.unitActionLinks .boardLink:first-child {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.entryHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.entryHeroFigures {
+  flex-basis: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}
+
+.heroFigureValue {
+  font-size: var(--t-6);
+}
+
+.heroCost {
+  max-width: none;
+}
+
+.heroAction {
+  flex-direction: row;
+}
+
+.heroCta {
+  min-height: 3rem;
+  flex-direction: row;
+  padding: 0.45rem 0.8rem;
+  white-space: normal;
+}
+
+.heroAvailability {
+  max-width: 13rem;
+  text-align: left;
+}
+
+.bedSection {
+  padding: 0;
+  overflow: hidden;
+}
+
+.bedSection > :not(.sectionHeading) {
+  margin-right: 1rem;
+  margin-left: 1rem;
+}
+
+.bedSection > .capacityFreshnessRow {
+  margin-top: 0.65rem;
+}
+
+.bedGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.bedGrid .bedChip {
+  min-height: 4.75rem;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0.7rem;
+  background: var(--surface);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 650;
+}
+
+.bedGrid .bedChip > span {
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.bedGrid .bedChip > strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-6);
+  font-weight: 500;
+  line-height: 1.2;
+}
+.listSection > .placeholder {
+  margin: 0;
+  padding: 0.875rem 1rem;
+}
+
+.bedGrid .bedChip:last-child {
+  border-right: 0;
+}
+
+.capacityDistribution {
+  display: flex;
+  height: 0.65rem;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.capacityDistribution > span {
+  min-width: 0;
+}
+
+.capacityDistribution > [data-state="available"] {
+  background: var(--good);
+}
+
+.capacityDistribution > [data-state="held"] {
+  background: var(--warn);
+}
+
+.capacityDistribution > [data-state="blocked"] {
+  background: var(--danger);
+}
+
+.capacityDistribution > [data-state="occupied"] {
+  background: var(--muted);
+}
+
+.bedNote {
+  max-width: none;
+  padding-bottom: 0.8rem;
+}
+
+.updateDisclosure {
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.updateDisclosure > summary {
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  color: var(--accent-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.updateDisclosureBody {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.attentionSection,
+.listSection[aria-label="Awaiting your answer"] {
+  grid-column: auto;
+}
+
+.screen[data-presentation="overview"] .main > .attentionSection {
+  order: 4;
+  grid-column: 1;
+}
+
+.screen[data-presentation="overview"] .main > .listSection[aria-label="Awaiting your answer"] {
+  order: 4;
+  grid-column: 2;
+}
+
+.dailyReturn {
+  order: 5;
+}
+
+.screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"] {
+  order: 6;
+  grid-column: 1;
+}
+
+.screen[data-presentation="overview"] .main > .goingOutSection {
+  order: 6;
+  grid-column: 2;
+}
+
+.attentionList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionList li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.attentionList li:last-child {
+  border-bottom: 0;
+}
+
+.attentionList span {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.goingOutFacts {
+  padding: 0 1rem;
+}
+
+.recordLink {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  margin: 0.75rem 1rem 1rem;
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+
+@media (max-width: 62.5rem) {
+  .screen[data-presentation="overview"] .main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-presentation="overview"] .main > *,
+  .screen[data-presentation="overview"] .main > .attentionSection,
+  .screen[data-presentation="overview"] .main > .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"],
+  .screen[data-presentation="overview"] .main > .goingOutSection {
+    grid-column: 1;
+  }
+
+  .unitCardBody,
+  .entryHero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .unitCardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .unitActionLinks,
+  .heroAction {
+    justify-content: flex-start;
+  }
+
+  .bedGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bedGrid .bedChip {
+    min-height: 3.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .unitFacts > div,
+  .goingOutFacts > div {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 30rem) {
+  .unitCardBody {
+    padding: 1rem;
+  }
+
+  .entryHeroFigures,
+  .heroAction {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .unitActionLinks {
+    flex-direction: column;
+  }
+
+  .unitActionLinks .boardLink {
+    width: 100%;
+  }
+}
+
+@media print {
+  .screen[data-presentation="overview"] .main {
+    display: block;
+  }
+
+  .screen[data-presentation="overview"] .main > * {
+    margin-bottom: 0.75rem;
+  }
+
+  .updateDisclosure > summary {
+    display: none;
+  }
+
+  .updateDisclosure:not([open]) > .updateDisclosureBody,
+  .updateDisclosureBody {
+    display: block;
+  }
+}
+
+/* Q003: paired overview panels share a desktop height and scroll within their own labelled
+ * regions. Ward Answer uses one large decision workspace followed by two equally high evidence
+ * panels; navigation, panel headings and answer-step controls stay outside those scrolling bodies. */
+@media (min-width: 62.5625rem) {
+  .screen[data-presentation="overview"] .bedSection,
+  .screen[data-presentation="overview"] .dailyReturn {
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .screen[data-presentation="overview"] .attentionSection,
+  .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
+  .screen[data-presentation="overview"] .goingOutSection {
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .screen[data-presentation="overview"] .sectionHeading,
+  .screen[data-presentation="overview"] .dailyReturn :global([data-ward-primitive="panel-header"]) {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    box-shadow:
+      0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+      0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  }
+
+  .screen[data-presentation="answer"] .main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .screen[data-presentation="answer"] .main > .answerNav,
+  .screen[data-presentation="answer"] .main > .governanceBanner,
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
+    grid-column: 1 / -1;
+  }
+
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
+    display: flex;
+    height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .sectionHeading,
+  .screen[data-presentation="answer"] .answerStepper {
+    flex: none;
+  }
+
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+    display: flex;
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .screen[data-presentation="answer"] .main > .answerOnlyPanel > .sectionHeading {
+    flex: none;
+  }
+
+  .screen[data-presentation="answer"] .answerCapacityBody,
+  .screen[data-presentation="answer"] .answerHistoryBody {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media print {
+  .screen[data-presentation="overview"] .bedSection,
+  .screen[data-presentation="overview"] .dailyReturn,
+  .screen[data-presentation="overview"] .attentionSection,
+  .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
+  .screen[data-presentation="overview"] .goingOutSection,
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .screen[data-presentation="answer"] .main,
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+    display: block;
+  }
+
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList,
+  .screen[data-presentation="answer"] .answerCapacityBody,
+  .screen[data-presentation="answer"] .answerHistoryBody {
+    overflow: visible;
+  }
+}
+/* Q004: short operational lists occupy their content height; long bodies remain bounded. */
+@media screen and (min-width: 62.5625rem) {
+  .screen[data-presentation="overview"] .attentionSection,
+  .screen[data-presentation="overview"] .listSection[aria-label="Awaiting your answer"],
+  .screen[data-presentation="overview"] .listSection[aria-label="Coming in"],
+  .screen[data-presentation="overview"] .goingOutSection {
+    height: auto;
+    max-height: 26rem;
+  }
+  .screen[data-presentation="overview"] .main > .dailyReturn {
+    grid-column: 1;
+    order: 5;
+    max-height: 20rem;
+  }
+  .screen[data-presentation="overview"] .main > .dailyReturn > :global([data-ward-primitive="panel"]) {
+    overflow: visible;
+  }
+  .screen[data-presentation="overview"]
+    .main
+    > .dailyReturn
+    > :global([data-ward-primitive="panel"])
+    > :global([data-ward-primitive="panel-header"]) {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+  }
+  .screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] {
+    grid-column: 2;
+    order: 5;
+  }
+  .screen[data-presentation="overview"] .main > [data-testid="ward-suburb-team-panel"],
+  .screen[data-presentation="overview"] .main > .listSection[aria-labelledby="ward-withdrawn-heading"],
+  .screen[data-presentation="overview"] .main > .listSection[aria-labelledby="ward-overrides-heading"] {
+    grid-column: auto;
+    max-height: 26rem;
+    overflow-y: auto;
+  }
+  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"][data-empty="true"] {
+    height: auto;
+    min-height: 8rem;
+  }
+  .screen[data-presentation="answer"] .main > .answerOnlyPanel {
+    height: auto;
+    max-height: 28rem;
+  }
+  .screen[data-presentation="answer"] .answerGates ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.confirmRows {
+  gap: 0;
+}
+.confirmRow {
+  padding: 0.8rem 1rem;
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+.confirmRow:last-child {
+  border-bottom: 0;
+}
+.confirmRowLabel,
+.confirmRowValue {
+  color: var(--ink);
+}
+.confirmRowMeta {
+  gap: 0.4rem;
+  font-size: var(--t-0);
+}
+.confirmRowButton,
+.confirmRowLink {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  font-size: var(--t-1);
+}
+.confirmRowButton:focus-visible,
+.confirmRowLink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.screen[data-presentation="overview"] .unitActionLinks {
+  gap: 0.5rem;
+}
+.screen[data-presentation="overview"] .unitActionLinks .boardLink {
+  margin: 0;
+}
+.screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] .confirmRowButton {
+  margin: 0 1rem 1rem;
+}
+@media screen and (max-width: 62.5rem) {
+  .screen[data-presentation="overview"] .main > [data-testid="ward-handover-block"] {
+    order: 5;
+  }
+  .screen[data-presentation="overview"] .main > .dailyReturn {
+    order: 6;
+  }
+  .screen[data-presentation="overview"] .main > .listSection[aria-label="Coming in"],
+  .screen[data-presentation="overview"] .main > .goingOutSection {
+    order: 7;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WARD FLOW WARD VIEW — PERFECTED THIRD EDITION STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.topActionBarWrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 14px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.topIdentityBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.topIdentityLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topIdentityBanner .sectionHeading {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: var(--surface-2);
+  padding: 3px 8px;
+  border-radius: var(--r2, 4px);
+  border: 1px solid var(--line);
+  margin: 0;
+}
+
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actionBtnsLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wardScreenNav {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--sunk);
+  border-radius: var(--r2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  align-items: center;
+}
+
+.wardScreenNav a,
+.wardScreenNav span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.wardScreenNav a {
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.wardScreenNav a:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.wardScreenNav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.wardScreenNav span[aria-current="page"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    var(--lift);
+  cursor: default;
+}
+
+.actionDivider {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin: 0 4px;
+  align-self: center;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .wardScreenNav {
+    width: 100%;
+  }
+
+  .wardScreenNav a,
+  .wardScreenNav span {
+    flex: 1 1 50%;
+    min-height: var(--spacing-tap, 44px);
+  }
+
+  .actionDivider {
+    display: none;
+  }
+
+  .btnEnterWard,
+  .btnActionSec {
+    min-height: var(--spacing-tap, 44px);
+  }
+}
+
+@media (forced-colors: active) {
+  .wardScreenNav {
+    border: 1px solid CanvasText;
+  }
+
+  .wardScreenNav span[aria-current="page"] {
+    border: 2px solid Highlight;
+    outline: 2px solid Highlight;
+  }
+}
+
+.btnEnterWard {
+  background: var(--accent);
+  color: var(--on-accent);
+  min-height: 2.125rem;
+  padding: 5px 12px;
+  font-weight: 600;
+  font-size: var(--t-1, 13px);
+  border-radius: var(--r2, 6px);
+  box-shadow: var(--lift);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.btnEnterWard:hover {
+  background: var(--accent-press);
+  transform: translateY(-1px);
+}
+
+.btnEnterWard:active {
+  transform: translateY(0);
+}
+
+.btnActionSec {
+  min-height: 2.125rem;
+  padding: 5px 10px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.btnActionSec:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.wardSelectContainer {
+  display: inline-flex;
+  align-items: center;
+}
+
+.wardSelect {
+  min-height: 2.25rem;
+  padding: 0 12px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+
+.wardSelect:hover {
+  background: var(--sunk);
+  border-color: var(--accent);
+}
+
+.wardSelect:focus-visible {
+  background: var(--sunk);
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.glanceStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.glanceCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--line-strong);
+  border-radius: var(--r1, 10px);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 5.8rem;
+  gap: 4px;
+  position: relative;
+  box-shadow: var(--lift-sm);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.glanceCard.highlight {
+  border-top-color: var(--accent);
+}
+
+.glanceCard.good {
+  border-top-color: var(--good);
+}
+
+.glanceCard.warn {
+  border-top-color: var(--warn);
+}
+
+.glanceCard.alert {
+  border-top-color: var(--danger);
+}
+
+.glanceCard:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.glanceCard .heroCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  color: var(--good) !important;
+  text-decoration: none !important;
+  margin-top: 2px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-height: unset;
+  width: auto;
+  white-space: normal;
+  line-height: 1.3;
+  box-sizing: border-box;
+  transition: color 0.12s;
+}
+
+.glanceCard .heroCta:hover {
+  color: var(--accent) !important;
+  background: transparent;
+  transform: none;
+  text-decoration: underline !important;
+}
+
+.glanceCard .heroCta span {
+  color: inherit !important;
+}
+
+.glanceTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.glanceLbl {
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.glanceVal {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-4, 16px);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.glanceVal small {
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.glanceSub {
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.statusPillBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  font-family: var(--mono, monospace);
+  letter-spacing: 0.02em;
+}
+
+.statusPillBadge.good {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.statusPillBadge.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.statusPillBadge.danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+}
+
+.tabBarWrap {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  margin: 6px -20px 0;
+  padding: 6px 14px;
+  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
+}
+
+.tabList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tabBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  min-height: 2.25rem;
+  padding: 6px 14px;
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  color: var(--ink-soft);
+  border-radius: var(--r2, 6px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.tabBtn[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift-sm);
+}
+
+.tabBadge {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  line-height: 1.2;
+}
+
+.tabBtn[aria-selected="true"] .tabBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tabPanel > * {
+  order: 0 !important;
+  max-height: none !important;
+}
+
+.tabPanel[data-active="false"] {
+  display: none !important;
+}
+
+/* ─── Interactive Bed Board Matrix ──────────────────────────── */
+.matrixControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+}
+
+.podFilters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.podFilterBtn {
+  min-height: var(--ward-tap, 48px);
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.podFilterBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.podFilterBtn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.podSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.podTitleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+}
+
+.podTitle {
+  font-family: var(--display, sans-serif);
+  font-size: var(--t-2, 13.5px);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bedMatrixGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.bedCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    border-color 0.12s,
+    box-shadow 0.12s;
+  position: relative;
+  text-align: left;
+  box-shadow: var(--lift-sm);
+}
+
+.bedCard:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.bedCard.ready {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--good);
+  background: var(--surface);
+}
+
+.bedCard.occupied {
+  border-left-color: var(--ink-soft);
+}
+
+.bedCard.leave {
+  border-left-color: var(--warn);
+}
+
+.bedCard.incoming {
+  border-left-color: var(--accent);
+}
+
+.bedCard.ready .bedNum {
+  color: var(--good);
+}
+
+.bedCard.hdu {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--danger);
+}
+
+.bedCard.specialling {
+  box-shadow: 0 0 0 1.5px var(--warn);
+}
+
+.bedCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bedNum {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bedStatusTag {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill);
+  letter-spacing: 0.02em;
+}
+
+.bedStatusTag.occupied {
+  background: var(--sunk);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.bedStatusTag.ready {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.bedStatusTag.leave {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.bedStatusTag.incoming {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+.bedPatientRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bedAlias {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bedDays {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.bedTagsRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tagChip {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.tagChip.special {
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-weight: 700;
+  border-color: var(--warn);
+}
+
+.tagChip.legal {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ─── Telemetry Drawer & Scrim ───────────────────────────────── */
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 80;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawerScrim.show {
+  display: block;
+  opacity: 1;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(94vw, 32rem);
+  background: var(--surface);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: var(--lift);
+  z-index: 90;
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer.show {
+  transform: translateX(0);
+}
+
+.drawerHead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  flex-shrink: 0;
+}
+
+.drawerTitle {
+  font-family: var(--display, sans-serif);
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--accent-ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawerCloseBtn {
+  min-height: var(--ward-tap, 48px);
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s;
+}
+
+.drawerCloseBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  gap: 16px;
+  scrollbar-width: thin;
+}
+
+.drawerFoot {
+  padding: 10px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: var(--t-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+/* ─── Confirmation Modal Styles ───────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modalOverlay.show {
+  display: flex;
+}
+
+.modalBox {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  max-width: 780px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHead {
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-family: var(--display, sans-serif);
+  font-size: var(--t-3, 14px);
+  font-weight: 600;
+  color: var(--accent-ink);
+  margin: 0;
+}
+
+.modalBody {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalFoot {
+  padding: 12px 18px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ─── Action Toast (Owner Rule D4) ────────────────────────────── */
+.actionToast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2, 6px);
+  padding: 12px 16px;
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  box-shadow: var(--lift);
+  z-index: 120;
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionToast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ─── Perfected Third Edition Console Layout ─────────────────── */
+.cardPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  overflow: hidden;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+}
+
+.ph,
+.panelHead {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.panelTitle {
+  font-family: var(--display, sans-serif);
+  font-size: var(--t-2, 13.5px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badgePill {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+}
+
+.panelBody {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* ─── Tab 1: Worth Your Attention ────────────────────────────── */
+.attnGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+@media (min-width: 1025px) {
+  .attnGrid > .listSection,
+  .attnGrid > .cardPanel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .attnGrid > .listSection > .sectionHeading,
+  .attnGrid > .cardPanel > .panelHead {
+    flex: 0 0 auto;
+  }
+
+  .attnGrid > .listSection > .cardList,
+  .attnGrid > .cardPanel > .panelBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 1024px) {
+  .attnGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .attnGrid > .listSection,
+  .attnGrid > .cardPanel {
+    height: auto;
+    max-height: 34rem;
+    overflow: hidden;
+  }
+}
+
+.queueCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.queueCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.queueTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.queueRefId {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-2, 13.5px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.queueWait {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.queueWait.breach {
+  color: var(--danger-ink);
+}
+
+.queueWait.warn {
+  color: var(--warn);
+}
+
+.queuePatientInfo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--t-1, 13px);
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+}
+
+.queuePatientInfo b {
+  color: var(--ink);
+  font-size: var(--t-2, 13.5px);
+}
+
+.queueSummary {
+  font-size: var(--t-1, 13px);
+  color: var(--ink-soft);
+  line-height: 1.4;
+  background: var(--surface-2);
+  padding: 8px 10px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+}
+
+.queueActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.btnSmPrimary {
+  min-height: var(--ward-tap, 48px);
+  padding: 0 14px;
+  border-radius: var(--r2, 6px);
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+
+.btnSmPrimary:hover {
+  background: var(--accent-press);
+}
+
+.btnSmSec {
+  min-height: var(--ward-tap, 48px);
+  padding: 0 14px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btnSmSec:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+/* Alert Items — Hairline dividers only, zero thick side stripes */
+.alertItem {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alertItem.critical {
+  background: var(--surface);
+  border-color: var(--danger);
+}
+
+.alertItem.warning {
+  background: var(--surface);
+  border-color: var(--warn);
+}
+
+.alertItem.info {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.alertItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alertItemTitle {
+  font-weight: 600;
+  font-size: var(--t-2, 13.5px);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alertItemCountdown {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--pill, 9999px);
+  letter-spacing: 0.02em;
+}
+
+.alertItemCountdown.danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+}
+
+.alertItemCountdown.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.alertItemText {
+  font-size: var(--t-1, 13px);
+  color: var(--ink-soft);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ─── Tab 2: Coming In (Inbound Intake) ───────────────────────── */
+.inboundGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inboundCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r2, 6px);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--lift-sm);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.inboundCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.inboundTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+.inboundAlias {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-3, 14px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.inboundMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 14px;
+  font-size: var(--t-1, 13px);
+}
+
+.inboundCardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metaLbl {
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.metaVal {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.transitBox {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--t-1, 13px);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.transitEta {
+  font-family: var(--mono, monospace);
+  font-weight: 700;
+  color: var(--good);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Tab 3: On the Way Out (Discharges & Leave) ──────────────── */
+.egressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.egressSectionTitle {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dischargeRow {
+  display: grid;
+  grid-template-columns: 7.5rem 1.2fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--good);
+  border-radius: var(--r2, 6px);
+  transition: background 0.12s;
+  box-shadow: var(--lift-sm);
+}
+
+.dischargeRow:hover {
+  background: var(--sunk);
+}
+
+@media (max-width: 900px) {
+  .dischargeRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.leaveCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: var(--lift-sm);
+}
+
+.curfewBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono, monospace);
+  font-size: var(--t-1, 13px);
+  background: var(--surface-2);
+  padding: 4px 8px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.curfewTime {
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.barrierCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: var(--lift-sm);
+}
+
+/* ─── Tab 5: Today's Return & Shift Log ───────────────────────── */
+.returnCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.returnQuestionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+  transition: background 0.12s;
+  flex-wrap: wrap;
+}
+
+.returnQuestionRow:hover {
+  background: var(--sunk);
+}
+
+.returnQuestionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 20rem;
+}
+
+.returnQTitle {
+  font-weight: 600;
+  font-size: var(--t-2, 13.5px);
+  color: var(--ink);
+}
+
+.returnQDesc {
+  font-size: var(--t-1, 13px);
+  color: var(--ink-soft);
+}
+
+.returnVerifyChip {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  min-height: var(--ward-tap, 48px);
+}
+
+.returnVerifyChip.verified {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.returnVerifyChip.isPending {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.ledgerFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  overflow: hidden;
+}
+
+.ledgerRow {
+  background: var(--surface);
+  padding: 10px 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: var(--t-1, 13px);
+}
+
+.ledgerTime {
+  font-family: var(--mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledgerText {
+  color: var(--ink);
+  flex: 1;
+}
+
+.ledgerText b {
+  color: var(--accent-ink);
+}
+
+.dotSvc {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--svc-south);
+}
+
+.drawer.wide {
+  width: min(94vw, 38rem);
+}
+
+.dischargeContinuityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  margin-top: 1rem;
+}
+
+.bedBoardQuickBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 10px 16px;
+  margin-top: 1rem;
+  box-shadow: var(--lift);
+}
+
+.quickBarStats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.quickBarPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.quickBarPill strong {
+  color: var(--ink);
+  font-family: var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.quickBarRoster {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.quickBarRoster strong {
+  color: var(--accent);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.occupiedDot {
+  background: var(--ink-soft);
+}
+
+.readyDot {
+  background: var(--good);
+}
+
+.cleaningDot {
+  background: var(--accent);
+}
+
+.speciallingDot {
+  background: var(--warn);
+}
+
+.hduDot {
+  background: var(--danger);
+}
+
+.huddleBriefingCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 12px 18px;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: var(--lift);
+}
+
+.huddleBriefingLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.huddleBriefingRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.huddleBadge {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+  border-radius: var(--pill, 9999px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.auditDisclosure {
+  margin-top: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 12px 16px;
+}
+
+.auditDisclosure summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auditDisclosure[open] summary {
+  margin-bottom: 12px;
+}
+
+/* ─── Suburb Catchment Lookup Overhaul ────────────────────── */
+.suburbLookupCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 16px 20px;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.suburbLookupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.suburbHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suburbHeaderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r2, 6px);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suburbHeaderTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suburbHeaderMainTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.suburbHeaderSubText {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.suburbQualifier {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.suburbSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suburbInputWrapper {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+.suburbInputIcon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.suburbSearchInput {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 0 14px 0 36px !important;
+  font-size: 13.5px;
+  color: var(--ink);
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.suburbSearchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--surface);
+}
+
+.btnLookupAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--accent);
+  color: var(--text-inverse);
+  border: 1px solid var(--accent);
+  border-radius: var(--r2, 6px);
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.btnLookupAction:hover {
+  background: var(--accent-press);
+  transform: translateY(-1px);
+}
+
+.quickPillsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.quickPillLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 4px;
+}
+
+.quickPillBtn {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.quickPillBtn:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.suburbResultPanel {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Discharges Sub-Tab Navigation ──────────────────────── */
+.dischargeSubNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 10px 0;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.dischargeSubTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 38px;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dischargeSubTabBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.dischargeSubTabBtn[data-active="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.dischargeSubTabBadge {
+  font-size: 12px;
+  font-family: var(--mono, monospace);
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-3);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dischargeSubTabBtn[data-active="true"] .dischargeSubTabBadge {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ─── Clinical Readiness Checklist ───────────────────────── */
+.checklistCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 16px 20px;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.checklistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.checklistCheck {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--good);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 09:30 Morning Bed Rollup Deadline & Notification Center */
+.morningRollupOverdueBanner {
+  margin: 10px 0 6px;
+  padding: 10px 16px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--r1, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+}
+
+.morningRollupBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.morningRollupBannerIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r2, 6px);
+  background: var(--warn-soft);
+  color: var(--warn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.morningRollupBannerText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.morningRollupPill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--warn);
+  color: var(--text-inverse);
+  padding: 2px 7px;
+  border-radius: var(--pill, 999px);
+  font-family: var(--mono);
+}
+
+.morningRollupDesc {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.morningRollupBannerText strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.morningRollupBannerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btnConfirmMorningRollup {
+  background: var(--warn);
+  color: var(--text-inverse);
+  min-height: 34px;
+  padding: 0 14px;
+  font-weight: 600;
+  font-size: 12.5px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--warn-border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.15);
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btnConfirmMorningRollup:hover {
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+}
+
+.morningRollupConfirmedBanner {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1.25rem;
+  background: var(--ward-success-soft, var(--good-soft));
+  border: 1px solid var(--ward-success, var(--line));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  flex-wrap: wrap;
+}
+
+.morningRollupConfirmedText {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+}
+
+.morningRollupCheckIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--good);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.notificationTriggerWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.notificationCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--ward-danger, var(--accent));
+  color: var(--surface);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.notificationCenterContainer {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(520px, calc(100vw - 32px));
+  z-index: 100;
+  box-shadow: var(--float);
+  border-radius: 12px;
+  animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .notificationCenterContainer {
+    left: 0;
+    width: calc(100vw - 32px);
+    max-width: 480px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationCenterContainer {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TAB 5: DECISIONS & CENSUS — PERFECTED THIRD EDITION STYLES
+   Tokens only · Anti-cheap-look · Hairline borders · Responsive · Zero raw hex
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.censusCommandCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: var(--ward-space-16, 1rem);
+}
+
+.commandHeader {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.commandTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.commandMainTitle {
+  font-size: var(--t-3, 15px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commandSubTitle {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+}
+
+.returnStatusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-3);
+  color: var(--ink-soft);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+}
+
+.returnStatusChipConfirmed {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.affirmationBanner {
+  background: var(--good-soft);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.affirmationLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.affirmationIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--good);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.affirmationText {
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+}
+
+.affirmationText strong {
+  color: var(--good);
+}
+
+.btnMasterAffirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  min-height: var(--ward-tap, 48px);
+  border-radius: var(--r2, 6px);
+  background: var(--good);
+  color: var(--surface);
+  border: 1px solid var(--good);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+
+.btnMasterAffirm:hover {
+  filter: brightness(1.08);
+}
+
+.btnMasterAffirm[data-confirmed="true"] {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+  color: var(--ink-soft);
+}
+
+.censusStepperGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.censusBox {
+  background: var(--surface);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.censusBoxHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.censusBoxLabel {
+  font-size: var(--t-2, 14px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.censusBoxDesc {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.censusValueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stepperUnit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 4px;
+}
+
+.stepperBtn {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--mono);
+  transition: background 0.12s ease;
+}
+
+.stepperBtn:hover {
+  background: var(--surface-3);
+}
+
+.stepperDisplay {
+  min-width: 44px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.censusBoxFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btnInlineConfirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  min-height: var(--ward-tap, 48px);
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.btnInlineConfirm:hover {
+  background: var(--surface-3);
+}
+
+.capacitySection {
+  padding: 16px 18px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.capacityTrackTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.capacityTrackLabel {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.capacityTrack {
+  display: flex;
+  height: 12px;
+  border-radius: var(--pill, 9999px);
+  overflow: hidden;
+  background: var(--sunk);
+  gap: 1px;
+}
+
+.capSeg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.capSeg[data-state="available"] {
+  background: var(--good);
+}
+
+.capSeg[data-state="held"],
+.capSeg[data-state="closed"] {
+  background: var(--accent);
+}
+
+.capSeg[data-state="pulled"] {
+  background: var(--warn);
+}
+
+.capSeg[data-state="blocked"] {
+  background: var(--danger);
+}
+
+.capSeg[data-state="occupied"] {
+  background: var(--ink-soft);
+}
+
+.breakdownStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+.statBox {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.statBoxLabel {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.statBoxVal {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.pendingCleanBanner {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-0, 12px);
+  color: var(--ink);
+}
+
+.pendingCleanBanner strong {
+  color: var(--warn);
+}
+
+.clinicalDisclosure {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 6px;
+}
+
+.clinicalDisclosure summary {
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.clinicalDisclosure summary:hover {
+  color: var(--ink);
+}
+
+.clinicalDisclosure p {
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+  line-height: var(--ward-leading-body, 1.45);
+}
+
+.constraintsCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 16px 18px;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--ward-space-16, 1rem);
+}
+
+.constraintsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.constraintsTitle {
+  font-size: var(--t-2, 14px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.constraintsPillsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.constraintChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  min-height: var(--ward-tap, 48px);
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.constraintChip:hover {
+  background: var(--surface-3);
+  border-color: var(--ink-soft);
+}
+
+.constraintChip[data-active="true"] {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.constraintsFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.pipelineSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--ward-space-16, 1rem);
+}
+
+.pipelineHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pipelineTitle {
+  font-size: var(--t-3, 15px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pipelineGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pipelineColumn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.pipelineColHeader {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pipelineColTitle {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colCountPill {
+  font-size: var(--t-0, 0.75rem);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-3);
+  color: var(--ink-soft);
+}
+
+.pipelineColBody {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+}
+
+.pipelineCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.12s ease;
+}
+
+.pipelineCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.pipelineCard[data-blocked="true"] {
+  border-left: 3px solid var(--danger);
+}
+
+.cardTopRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardBedName {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cardTimeBadge {
+  font-size: var(--t-0, 0.75rem);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cardWaitingRow {
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardWaitingLabel {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cardWaitingVal {
+  font-weight: 500;
+}
+
+.cardBlockerAlert {
+  font-size: var(--t-0, 0.75rem);
+  color: var(--danger-ink);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.cardFreshness {
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+}
+
+.cardActionsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.btnCardAction {
+  flex: 1 1 80px;
+  min-height: var(--ward-tap, 48px);
+  padding: 6px 12px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+
+.btnCardAction:hover {
+  background: var(--surface-3);
+  border-color: var(--ink-soft);
+}
+
+.btnCardActionPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.btnCardActionPrimary:hover {
+  filter: brightness(1.08);
+}
+
+.btnCardActionSuccess {
+  background: var(--good);
+  color: var(--surface);
+  border-color: var(--good);
+}
+
+.btnCardActionSuccess:hover {
+  filter: brightness(1.08);
+}
+
+.pipelineEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  text-align: center;
+  padding: 24px 12px;
+  font-size: var(--t-0, 12px);
+  font-style: italic;
+}
+
+.leaveSectionCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  padding: 16px 18px;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--ward-space-16, 1rem);
+}
+
+.leaveHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.leaveStatutoryAlert {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  font-size: var(--t-0, 12px);
+  color: var(--ink);
+}
+
+.leaveStatutoryAlert strong {
+  color: var(--warn);
+}
+
+.leaveCardsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaveItemCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.leaveItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.leaveItemTitle {
+  font-size: var(--t-1, 13px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.leaveItemMeta {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+}
+
+.ledgerCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  padding: 16px 18px;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--ward-space-16, 1rem);
+}
+
+.ledgerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.ledgerTitle {
+  font-size: var(--t-2, 14px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ledgerFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ledgerRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: var(--t-0, 12px);
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.ledgerRow:last-child {
+  border-bottom: none;
+}
+
+.ledgerTime {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 44px;
+}
+
+.ledgerText {
+  color: var(--ink);
+  flex: 1;
+}
+
+.ledgerText strong {
+  color: var(--accent-ink);
+}
+
+.protoBanner {
+  text-align: center;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  background: var(--surface);
+  border-radius: var(--r2, 6px);
+}
+
+@media (max-width: 1080px) {
+  .breakdownStatsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .pipelineGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .censusStepperGrid {
+    grid-template-columns: 1fr;
+  }
+  .breakdownStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .censusCommandCard,
+  .constraintsCard,
+  .pipelineColumn,
+  .leaveSectionCard,
+  .ledgerCard,
+  .protoBanner {
+    border: 1px solid CanvasText;
+  }
+
+  .btnMasterAffirm,
+  .btnInlineConfirm,
+  .btnCardAction {
+    border: 1px solid Highlight;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   WARD DAILY SHEET BUTTON & MODAL
+   ───────────────────────────────────────────────────────────── */
+.btnDailySheet {
+  min-height: 2.125rem;
+  padding: 5px 12px;
+  border-radius: var(--r2, 6px);
+  background: var(--ink);
+  color: var(--surface);
+  border: 1px solid var(--ink);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
+  white-space: nowrap;
+}
+
+.btnDailySheet:hover {
+  background: var(--ink);
+  opacity: 0.92;
+  color: var(--surface);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.3);
+}
+
+:global([data-theme="dark"]) .btnDailySheet {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+
+.dailySheetModalContent {
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift-lg, var(--lift));
+  width: 100%;
+  max-width: 1280px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dailySheetModalHeader {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.dailySheetModalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.dailySheetModalSub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.dailySheetModalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dailySheetModalBody {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ENHANCED PATIENT DOSSIER DRAWER (IMAGE 2 + IMAGE 3 FUSED)
+   ───────────────────────────────────────────────────────────── */
+.dossierHeroCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heroStayRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.heroStayDays {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroStayUnit {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.heroStayBadge {
+  margin-left: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: var(--pill, 999px);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dossierPatientName {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.dossierChipsWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dossierChip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 999px);
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.dossierBarrierAlert {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+  border-radius: var(--r2, 6px);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.factItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.factDt {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.factDd {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dossierActionCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossierActionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.dossierSelect {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong, var(--line));
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.btnRecordLeft {
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--r2, 6px);
+  border: none;
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btnRecordLeft:hover {
+  opacity: 0.9;
+}
+
+/* Polish, 5 October 2026 */
+.notWiredNote {
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Dark theme: the amber pill keeps dark text so it stays readable. */
+@media (prefers-color-scheme: dark) {
+  .morningRollupPill,
+  .btnConfirmMorningRollup {
+    color: var(--surface);
+  }
+}

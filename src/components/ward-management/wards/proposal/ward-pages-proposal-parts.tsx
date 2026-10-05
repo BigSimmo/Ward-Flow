@@ -10,7 +10,8 @@ export type WardPagesScreen = "hub" | "ward" | "answer" | "board";
 
 /** Preview routes today; on approval these become `/wards`, `/ward/<id>`, `/ward/<id>/answer`, `/board/<id>`. */
 export function wardPagesHref(screen: WardPagesScreen, unitId?: string): string {
-  const query = new URLSearchParams({ screen });
+  // The redesign is kept for reference only, under "proposed-" screens of the preview.
+  const query = new URLSearchParams({ screen: `proposed-${screen}` });
   if (unitId) query.set("id", unitId);
   return `/mockups/ward-flow/wards/proposal?${query.toString()}`;
 }
