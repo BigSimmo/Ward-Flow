@@ -45,10 +45,10 @@ export function ProposalHeader({
     <header className={styles.header}>
       <div>
         <nav aria-label="Breadcrumb">
-          <p className={styles.crumbs}>
+          <ol className={styles.crumbs}>
             {crumbs.map((crumb, index) => (
-              <span key={crumb.label}>
-                {index > 0 ? "› " : ""}
+              <li key={crumb.label} aria-current={index === crumbs.length - 1 ? "page" : undefined}>
+                {index > 0 ? <span aria-hidden="true">› </span> : null}
                 {crumb.href ? (
                   <a className={styles.link} href={crumb.href}>
                     {crumb.label}
@@ -56,9 +56,9 @@ export function ProposalHeader({
                 ) : (
                   crumb.label
                 )}
-              </span>
+              </li>
             ))}
-          </p>
+          </ol>
         </nav>
         <h1 className={styles.title}>
           {title}
@@ -140,7 +140,12 @@ export function Panel({
 }
 
 const TONE_GLYPH: Record<Tone, string> = { danger: "!", warn: "▲", good: "✓", quiet: "•" };
-const TONE_WORD: Record<Tone, string> = { danger: "Urgent", warn: "Needs action", good: "Ready", quiet: "Status" };
+const TONE_WORD: Record<Tone, string | undefined> = {
+  danger: "Urgent",
+  warn: "Needs action",
+  good: undefined,
+  quiet: undefined,
+};
 
 /** A status tag: glyph and words carry the meaning, colour only reinforces it. */
 export function Tag({ tone, children }: { tone: Tone; children: ReactNode }) {
@@ -149,7 +154,7 @@ export function Tag({ tone, children }: { tone: Tone; children: ReactNode }) {
       <span className={styles.glyph} aria-hidden="true">
         {TONE_GLYPH[tone]}
       </span>
-      <span className="sr-only">{TONE_WORD[tone]}: </span>
+      {TONE_WORD[tone] ? <span className="sr-only">{TONE_WORD[tone]}: </span> : null}
       {children}
     </span>
   );

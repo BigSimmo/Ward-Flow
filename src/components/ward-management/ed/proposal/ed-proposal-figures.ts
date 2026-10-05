@@ -49,12 +49,12 @@ export function onEdList(movement: Movement, edId: string): boolean {
 export type EdStep = "no_bed" | "accepted" | "pulled" | "handover_ready" | "in_transit" | "closed_here";
 
 export const ED_STEPS: { id: EdStep; label: string; hint: string }[] = [
-  { id: "no_bed", label: "No bed yet", hint: "Placement requested or destination under review" },
-  { id: "accepted", label: stageCopy.accepted_awaiting_bed.label, hint: "A ward has said yes; bed not pulled" },
-  { id: "pulled", label: stageCopy.pulled.label, hint: "Bed held for this person" },
-  { id: "handover_ready", label: stageCopy.handover_ready.label, hint: "Transport and handover in place" },
-  { id: "in_transit", label: "Left, in transit", hint: "Left the department; ward to mark arrival" },
-  { id: "closed_here", label: "Outcome recorded", hint: "ED outcome or withdrawal; still in the department" },
+  { id: "no_bed", label: "No bed yet", hint: "No ward has accepted" },
+  { id: "accepted", label: stageCopy.accepted_awaiting_bed.label, hint: "Ward said yes; bed not pulled" },
+  { id: "pulled", label: stageCopy.pulled.label, hint: "Bed held; book transport" },
+  { id: "handover_ready", label: stageCopy.handover_ready.label, hint: "Ready to leave" },
+  { id: "in_transit", label: "Left, in transit", hint: "Ward to mark arrival" },
+  { id: "closed_here", label: "Outcome recorded", hint: "ED outcome or withdrawal" },
 ];
 
 export function edStep(movement: Movement): EdStep {
@@ -91,7 +91,7 @@ export type EdPatientRow = {
 };
 
 /** Initials only: proposal screens never show a patient's name. */
-function initialsOf(displayName: string): string {
+export function initialsOf(displayName: string): string {
   const parts = displayName.split(/[\s,]+/).filter(Boolean);
   if (parts.length === 0 || displayName === "Unknown Patient") return "—";
   return parts.map((part) => `${part[0].toUpperCase()}.`).join(" ");
@@ -105,7 +105,7 @@ function unitName(units: readonly Unit[], id: string | undefined): string | unde
 /** The one next step for a person, from the same rules the current Needs attention list uses. */
 export function nextStep(movement: Movement, now: number): { label: string; tone: Tone } {
   if (movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt < now)
-    return { label: "Renew or discharge the form", tone: "danger" };
+    return { label: "Review the form", tone: "danger" };
   if (movement.closure) return { label: "Record when they leave", tone: "quiet" };
   if (movement.stage === "pulled" && !movement.transport && (movement.transportNeed?.needed ?? true) !== false)
     return { label: "Book transport", tone: "warn" };
@@ -264,20 +264,20 @@ export function attentionItems(
     if (m.legalForm?.dueAt !== undefined && m.legalForm.dueAt < now)
       items.push({
         tone: "danger",
-        title: "Recorded form deadline has passed",
+        title: "Form deadline passed: review needed",
         who: row.initials,
-        why: `Form ${m.legalForm.code}: the deadline written on the form has passed.`,
+        why: "The deadline typed from the form has passed.",
         movementId: m.id,
       });
-    if (row.next.label === "Book transport")
+    if (m.stage === "pulled" && !m.transport && (m.transportNeed?.needed ?? true) !== false && !m.closure)
       items.push({
         tone: "warn",
         title: "Bed held, transport not booked",
         who: row.initials,
-        why: `${unitName(units, m.acceptedUnitId) ?? "A ward"} holds the bed. The handover cannot be marked ready until transport is booked.`,
+        why: `${unitName(units, m.acceptedUnitId) ?? "A ward"} holds the bed. Handover waits on transport.`,
         movementId: m.id,
       });
-    if (row.next.label === "Ask another ward")
+    if (m.declines.length > 0 && !m.acceptedUnitId && m.referredUnitIds.length === 0 && !m.closure)
       items.push({
         tone: "warn",
         title: "Every ward asked has declined",
@@ -290,7 +290,7 @@ export function attentionItems(
         tone: "warn",
         title: "Past the access target",
         who: row.initials,
-        why: "Waiting longer than this department's access target since the referral was received (your default, not a legal limit).",
+        why: "Over the access target since referral. Your default, not a legal limit.",
         movementId: m.id,
       });
   }
@@ -372,7 +372,7 @@ export function recentEvents(rows: readonly EdPatientRow[], units: readonly Unit
         events.push({
           at: decline.at,
           kind: "Bed search",
-          text: `${unitName(units, decline.unitId)} declined: ${declineReasonLabels[decline.reason] ?? "reason recorded"}`,
+          text: `${unitName(units, decline.unitId) ?? "A ward"} declined: ${declineReasonLabels[decline.reason] ?? "reason recorded"}`,
           who: row.initials,
         });
     if (within(m.acceptedAt) && m.acceptedUnitId)

@@ -24,8 +24,8 @@ export function EdHubProposal() {
 
   const lead =
     total.onList === 0
-      ? "Nobody is on an emergency department psychiatry list."
-      : `${total.onList} people are on ED psychiatry lists; ${busiest.ed.name.replace(" Emergency Department", "")} has the most (${busiest.counts.onList}).`;
+      ? "Nobody is recorded on an emergency department psychiatry list."
+      : `${total.onList} ${total.onList === 1 ? "person is" : "people are"} on ED psychiatry lists; ${busiest.ed.name.replace(" Emergency Department", "")} has the most (${busiest.counts.onList}).`;
 
   return (
     <main id="main-content" className={styles.page} data-testid="ed-hub-proposal">
@@ -42,12 +42,12 @@ export function EdHubProposal() {
       />
       <Answer
         lead={lead}
-        sub={`${total.noBed} have no bed yet, ${total.pastTarget} ${total.pastTarget === 1 ? "has" : "have"} passed the ${target} access target, and ${ready} beds are ready now across the state.`}
+        sub={`${total.noBed} ${total.noBed === 1 ? "has" : "have"} no bed yet, ${total.pastTarget} ${total.pastTarget === 1 ? "has" : "have"} passed the ${target} access target, and ${ready} beds are ready now across the state.`}
       />
       <KpiStrip
         label="Network figures"
         items={[
-          { label: "On ED lists", value: total.onList, note: "Psychiatry patients still in an ED" },
+          { label: "On ED lists", value: total.onList, note: "Includes anyone who has left and is in transit" },
           {
             label: "No bed yet",
             value: total.noBed,
@@ -56,9 +56,9 @@ export function EdHubProposal() {
           },
           { label: "Bed found, still in ED", value: total.bedFound, note: "Accepted, pulled or handover ready" },
           {
-            label: "Past access target",
+            label: `Past ${target} target`,
             value: total.pastTarget,
-            note: `Over the ${target} target since referral (your default, not a legal limit)`,
+            note: "Your default, not a legal limit",
             tone: total.pastTarget ? "danger" : undefined,
           },
           { label: "Not yet reviewed", value: total.notReviewed, note: "No psychiatric examination recorded" },
@@ -93,7 +93,9 @@ export function EdHubProposal() {
                 <th scope="col" className={styles.num}>
                   On list
                 </th>
-                <th scope="col" aria-hidden="true" />
+                <th scope="col">
+                  <span className="sr-only">Share of the busiest list</span>
+                </th>
                 <th scope="col" className={styles.num}>
                   No bed yet
                 </th>
@@ -166,6 +168,7 @@ export function EdHubProposal() {
 function HubStatus({ row }: { row: EdHubRow }) {
   if (row.counts.pastTarget > 0) return <Tag tone="danger">{row.counts.pastTarget} past target</Tag>;
   if (row.counts.noBed > 0) return <Tag tone="warn">{row.counts.noBed} no bed yet</Tag>;
-  if (row.counts.onList > 0) return <Tag tone="quiet">Beds found</Tag>;
-  return <Tag tone="good">Nobody waiting</Tag>;
+  if (row.counts.bedFound > 0) return <Tag tone="quiet">Beds found</Tag>;
+  if (row.counts.onList > 0) return <Tag tone="quiet">In transit or outcome recorded</Tag>;
+  return <Tag tone="quiet">None recorded</Tag>;
 }

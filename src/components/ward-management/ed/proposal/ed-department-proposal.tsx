@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
@@ -13,6 +14,7 @@ import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-m
 
 import {
   attentionItems,
+  initialsOf,
   bedsBeingPrepared,
   ED_STEPS,
   edCounts,
@@ -65,6 +67,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("longest");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const closeSheet = useCallback(() => setSelectedId(undefined), []);
 
   const rows = useMemo(
     () => (department ? edRows(department.id, world, now, accessTarget) : []),
@@ -96,16 +99,8 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const counts = edCounts(rows);
   const awaitingReview = edArrivedFor(world.referrals, department.id, "psychiatric_review");
   const expects = edExpectsFor(world.referrals, department.id, "psychiatric_review");
-  const referralInitials = (referral: Parameters<typeof resolveSubjectPatient>[0]) => {
-    const name = resolveSubjectPatient(referral, world).displayName;
-    return name === "Unknown Patient"
-      ? "Not linked"
-      : name
-          .split(/[\s,]+/)
-          .filter(Boolean)
-          .map((part) => `${part[0]}.`)
-          .join(" ");
-  };
+  const referralInitials = (referral: Parameters<typeof resolveSubjectPatient>[0]) =>
+    initialsOf(resolveSubjectPatient(referral, world).displayName);
   const attention = attentionItems(rows, world.units, awaitingReview, now, referralInitials);
   const target = accessTarget % 60 === 0 ? `${accessTarget / 60}-hour` : splitDuration(accessTarget);
   const ready = readyBeds(world.units, world.bedReleases);
@@ -114,11 +109,12 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
   const fits = fittingWards(world.units, world.bedReleases, waitingCohorts);
   const events = recentEvents(rows, world.units, now);
 
+  const activeStep = step && counts.steps[step] > 0 ? step : undefined;
   const filterTest = FILTERS.find((entry) => entry.id === filter)!.test;
   const needle = query.trim().toLowerCase();
   const visible = rows
     .filter(filterTest)
-    .filter((row) => (step ? row.step === step : true))
+    .filter((row) => (activeStep ? row.step === activeStep : true))
     .filter(
       (row) =>
         !needle ||
@@ -148,7 +144,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
           .join(", ")}.`;
   const sub =
     attention.length === 0
-      ? "Nothing needs action right now."
+      ? "Nothing recorded needs action right now."
       : `${attention.length} ${attention.length === 1 ? "thing needs" : "things need"} action now${
           counts.pastTarget ? `, including ${counts.pastTarget} past the ${target} access target` : ""
         }.`;
@@ -189,7 +185,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
       <KpiStrip
         label="Department figures"
         items={[
-          { label: "On the list", value: counts.onList, note: "Psychiatry patients still here" },
+          { label: "On the list", value: counts.onList, note: "Includes anyone who has left and is in transit" },
           {
             label: "No bed yet",
             value: counts.noBed,
@@ -199,9 +195,9 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
           { label: "Bed found, still here", value: counts.bedFound, note: "Accepted, pulled or handover ready" },
           { label: "Not yet reviewed", value: counts.notReviewed, note: "No examination recorded" },
           {
-            label: "Past access target",
+            label: `Past ${target} target`,
             value: counts.pastTarget,
-            note: `Over the ${target} target since referral (your default, not a legal limit)`,
+            note: "Your default, not a legal limit",
             tone: counts.pastTarget ? "danger" : undefined,
           },
           {
@@ -225,7 +221,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                 key={entry.id}
                 type="button"
                 className={styles.stepButton}
-                aria-pressed={step === entry.id}
+                aria-pressed={activeStep === entry.id}
                 disabled={counts.steps[entry.id] === 0}
                 onClick={() => setStep((current) => (current === entry.id ? undefined : entry.id))}
               >
@@ -240,7 +236,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
         <Panel title="Needs action now" meta={attention.length ? `${attention.length}` : "None"} flush>
           {attention.length === 0 ? (
             <div className={styles.panelBody}>
-              <p className={styles.none}>Nothing needs action now.</p>
+              <p className={styles.none}>None recorded.</p>
             </div>
           ) : (
             <ul className={styles.attention}>
@@ -293,13 +289,13 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
             </button>
           ))}
           <label className="sr-only" htmlFor="ed-proposal-search">
-            Find by initials, UMRN or ward
+            Find by initials, UMRN or destination
           </label>
           <input
             id="ed-proposal-search"
             className={styles.search}
             type="search"
-            placeholder="Find by initials, UMRN or ward"
+            placeholder="Find by initials, UMRN or destination"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -346,22 +342,21 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                   <tr
                     key={row.movement.id}
                     className={styles.row}
-                    tabIndex={0}
-                    aria-selected={row.movement.id === selectedId}
-                    aria-label={`${row.initials}, ${row.umrn}. Open record`}
+                    data-selected={row.movement.id === selectedId ? "true" : undefined}
                     onClick={() => setSelectedId(row.movement.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedId(row.movement.id);
-                      }
-                    }}
                   >
                     <td>
                       <span className={styles.who}>
-                        <span className={styles.whoName}>{row.initials}</span>
+                        <button
+                          type="button"
+                          className={styles.rowButton}
+                          onClick={() => setSelectedId(row.movement.id)}
+                        >
+                          {row.initials}
+                          <span className="sr-only">: open record</span>
+                        </button>
                         <span className={styles.sub}>
-                          {row.umrn} · {row.movement.cohort} · Tier {row.movement.urgency}
+                          {row.movement.cohort} · Tier {row.movement.urgency}
                         </span>
                       </span>
                     </td>
@@ -427,13 +422,13 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
         <div className={styles.stack}>
           <Panel
             title="Referrals waiting for review"
-            question="In the department, triaged, no psychiatric review answer yet."
-            meta={awaitingReview.length || "None"}
+            question="Counted from referrals, separately from the list; one person can appear in both."
+            meta={awaitingReview.length ? `${awaitingReview.length} waiting` : "None recorded"}
             flush
           >
             {awaitingReview.length === 0 ? (
               <div className={styles.panelBody}>
-                <p className={styles.none}>No referral is waiting for review.</p>
+                <p className={styles.none}>None recorded.</p>
               </div>
             ) : (
               <ul className={styles.list}>
@@ -443,9 +438,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       <span className={styles.whoName}>
                         {referral.id} · {referralInitials(referral)}
                       </span>
-                      <span className={styles.sub}>
-                        {referral.ageBand} · {urgencyTierLabel(referral.urgency)}
-                      </span>
+                      <span className={styles.sub}>{urgencyTierLabel(referral.urgency)}</span>
                     </span>
                     {rows.some((row) => row.movement.referralId === referral.id && row.reviewed) ? (
                       <Tag tone="quiet">Examination already recorded on the movement</Tag>
@@ -463,13 +456,13 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
 
           <Panel
             title="Expected arrivals"
-            question="Referred to this department and not here yet."
-            meta={expects.length || "None"}
+            question="Referred here and not arrived. Mark arrived changes the shared synthetic record."
+            meta={expects.length ? `${expects.length} expected` : "None recorded"}
             flush
           >
             {expects.length === 0 ? (
               <div className={styles.panelBody}>
-                <p className={styles.none}>No arrivals are expected. This means none is recorded.</p>
+                <p className={styles.none}>No expected arrival is recorded.</p>
               </div>
             ) : (
               <ul className={styles.list}>
@@ -496,6 +489,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       }
                     >
                       Mark arrived
+                      <span className="sr-only"> (changes the shared synthetic record)</span>
                     </button>
                   </li>
                 ))}
@@ -535,14 +529,10 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
                       <span className={styles.whoName}>{fit.unit.name}</span>
                       <span className={styles.sub}>
                         {fit.service} · {fit.unit.cohort}
+                        {fit.pendingPreparation > 0 ? ` · ${fit.pendingPreparation} still being made ready` : ""}
                       </span>
                     </span>
-                    <span className={styles.num}>
-                      {fit.ready} ready
-                      {fit.pendingPreparation > 0 ? (
-                        <span className={styles.sub}> · {fit.pendingPreparation} still being made ready</span>
-                      ) : null}
-                    </span>
+                    <span className={styles.num}>{fit.ready} ready</span>
                   </li>
                 ))}
               </ul>
@@ -556,13 +546,7 @@ export function EdDepartmentProposal({ edId }: { edId: string }) {
       </p>
 
       {selected ? (
-        <PatientDrawer
-          row={selected}
-          now={now}
-          edId={department.id}
-          units={world.units}
-          onClose={() => setSelectedId(undefined)}
-        />
+        <PatientDrawer row={selected} now={now} edId={department.id} units={world.units} onClose={closeSheet} />
       ) : null}
     </main>
   );
@@ -586,6 +570,9 @@ function PatientDrawer({
   const sheetRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
+    // The page behind the sheet is unreachable while it is open, by Tab and by screen reader.
+    const behind = document.getElementById("main-content");
+    behind?.setAttribute("inert", "");
     closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -605,23 +592,29 @@ function PatientDrawer({
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
+      behind?.removeAttribute("inert");
       opener?.focus();
     };
   }, [onClose]);
   const journey = [
     { at: m.openedAt, text: "Referral received" },
     ...(m.examination
-      ? [{ at: m.examination.at, text: `Examination: ${EXAMINATION_LABELS[m.examination.outcome]}` }]
+      ? [
+          {
+            at: m.examination.at,
+            text: `Examination: ${EXAMINATION_LABELS[m.examination.outcome] ?? "outcome recorded"}`,
+          },
+        ]
       : []),
     ...m.declines.map((d) => ({
       at: d.at,
-      text: `${units.find((u) => u.id === d.unitId)?.name ?? d.unitId} declined`,
+      text: `${units.find((u) => u.id === d.unitId)?.name ?? "A ward"} declined`,
     })),
     ...m.stageChanges
       .filter((c) => c.to !== "placement_requested")
       .map((c) => ({ at: c.at, text: stageCopy[c.to].label })),
   ].sort((a, b) => b.at - a.at);
-  return (
+  return createPortal(
     <div className={styles.scrim} onClick={onClose}>
       <div
         ref={sheetRef}
@@ -634,6 +627,7 @@ function PatientDrawer({
         <div className={styles.drawerHead}>
           <div>
             <h2 id="ed-proposal-drawer-title" className={styles.panelTitle}>
+              <span className="sr-only">Patient record: </span>
               {row.initials}
             </h2>
             <p className={styles.sub}>
@@ -673,7 +667,9 @@ function PatientDrawer({
             <dt>Medically cleared</dt>
             <dd>{CLEARANCE_LABELS[row.cleared]}</dd>
             <dt>Psychiatric review</dt>
-            <dd>{m.examination ? EXAMINATION_LABELS[m.examination.outcome] : "Not recorded"}</dd>
+            <dd>
+              {m.examination ? (EXAMINATION_LABELS[m.examination.outcome] ?? "Outcome recorded") : "Not recorded"}
+            </dd>
           </dl>
           <div>
             <p className={styles.sectionLabel}>Journey</p>
@@ -705,6 +701,7 @@ function PatientDrawer({
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
