@@ -433,13 +433,15 @@ export function WardBedsMatrix({
            BAYS CONTAINER & CONTIGUOUS 20-BED GRID (IMAGE 1 ENHANCED)
            ───────────────────────────────────────────────────────────── */}
         {bays.map((bay, idx) => (
-          <div key={idx} className={styles.bayContainer}>
-            <div className={styles.bayHeader}>
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="12" height="12" rx="2" />
-              </svg>
-              <span>{bay.title}</span>
-            </div>
+          <div key={idx} className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}>
+            {selectedPod !== "all" ? (
+              <div className={styles.bayHeader}>
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="2" width="12" height="12" rx="2" />
+                </svg>
+                <span>{bay.title}</span>
+              </div>
+            ) : null}
             <div className={styles.bayBedsGrid}>
               {bay.beds.map((bed) => {
                 const stayDaysNum = typeof bed.stayDays === "number" ? bed.stayDays : null;

@@ -10,7 +10,19 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, BarChart2, Bed, ChevronDown, Hospital, RotateCcw, Search, Siren, Star, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart2,
+  Bed,
+  ChevronDown,
+  Hospital,
+  RotateCcw,
+  Search,
+  Siren,
+  Star,
+  Users,
+  X,
+} from "lucide-react";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -40,7 +52,6 @@ import {
   useRecentHubIds,
   usePinnedHubIds,
 } from "@/components/ward-management/hub/hub-browser-memory";
-import { hubReconciliationLine } from "@/components/ward-management/hub/hub-provenance";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import styles from "./hub.module.css";
@@ -561,7 +572,7 @@ export function HubScreen() {
                         }}
                       >
                         <Hospital className={styles.quickChipIcon} size={14} aria-hidden="true" />
-                        <span>Wards</span>
+                        <span>Ward</span>
                       </button>
                       <button
                         type="button"
@@ -573,7 +584,7 @@ export function HubScreen() {
                         }}
                       >
                         <Siren className={styles.quickChipIcon} size={14} aria-hidden="true" />
-                        <span>Emergency Depts</span>
+                        <span>Emergency</span>
                       </button>
                       <button
                         type="button"
@@ -585,7 +596,7 @@ export function HubScreen() {
                         }}
                       >
                         <Users className={styles.quickChipIcon} size={14} aria-hidden="true" />
-                        <span>Community Teams</span>
+                        <span>Community</span>
                       </button>
                     </div>
                   </div>
@@ -670,9 +681,6 @@ export function HubScreen() {
                         {network.closed}
                       </span>
                     </p>
-                    <p className={styles.capacityTotal}>
-                      Of {network.beds} beds across {network.wards} wards, the rest are {network.occupied} occupied.
-                    </p>
                   </div>
 
                   <div className={styles.detailSection}>
@@ -690,6 +698,9 @@ export function HubScreen() {
                           className={styles.serviceCard}
                           onClick={() => {
                             setQuery(row.service);
+                            if (kind !== "all" && kind !== "ward") {
+                              setKind("all");
+                            }
                             inputRef.current?.focus();
                           }}
                           title={`Filter network by ${row.service}`}
@@ -797,27 +808,56 @@ export function HubScreen() {
               </>
             ) : (
               <>
-                <div className={styles.detailHead}>
-                  <p className={styles.detailEyebrow}>
-                    <span className={kindBadgeClass(selected.kind)}>{KIND_WORD_LONG[selected.kind]}</span>
-                    {/* The health service or WA region, beside the kind rather than only in the
-                        subtitle: it is the first thing a coordinator checks when deciding whether a
-                        bed is even reachable for this patient. */}
-                    {selected.service === undefined ? null : (
-                      <span className={styles.resultSub}>{selected.service}</span>
-                    )}
-                  </p>
+                <div className={styles.detailHeadSelected}>
+                  <div className={styles.detailEyebrow}>
+                    <div className={styles.detailEyebrowLeft}>
+                      <span className={kindBadgeClass(selected.kind)}>{KIND_WORD_LONG[selected.kind]}</span>
+                      {/* The health service or WA region, beside the kind rather than only in the
+                          subtitle: it is the first thing a coordinator checks when deciding whether a
+                          bed is even reachable for this patient. */}
+                      {selected.service === undefined ? null : (
+                        <span className={styles.detailService}>{selected.service}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.closeDetailBtn}
+                      onClick={() => {
+                        setSelectedId(undefined);
+                        inputRef.current?.focus();
+                      }}
+                      aria-label="Close preview and return to overview (Escape)"
+                      title="Close preview (Esc)"
+                    >
+                      <X size={15} aria-hidden="true" />
+                    </button>
+                  </div>
                   <h2 className={styles.detailTitle}>{selected.name}</h2>
                   {/* ⚠️ SITE ONLY. The service (or WA region) is already in the eyebrow
                       directly above, so joining it in here printed "Perth Metropolitan" twice on a
                       community panel and the health service twice on a ward. A community team has no
                       site at all, which left its subtitle as a bare repeat of the line above it. */}
-                  {selected.site === undefined ? null : <p className={styles.detailSub}>{selected.site}</p>}
+                  {selected.site === undefined ? null : (
+                    <p className={styles.detailSub}>
+                      <Hospital className={styles.detailSiteIcon} size={13} aria-hidden="true" />
+                      <span>{selected.site}</span>
+                    </p>
+                  )}
 
                   <div className={styles.detailBadges}>
                     {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
                     {selected.security === undefined ? null : (
-                      <span className={styles.infoPill}>{selected.security}</span>
+                      <span
+                        className={
+                          selected.security.toLowerCase() === "open"
+                            ? styles.statusPillOpen
+                            : selected.security.toLowerCase() === "locked"
+                              ? styles.statusPillLocked
+                              : styles.infoPill
+                        }
+                      >
+                        {selected.security}
+                      </span>
                     )}
                     {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open — a
                         unit can be both locked and unauthorised at once — and it is stated in words
@@ -1053,7 +1093,6 @@ export function HubScreen() {
                     As at <b className={styles.asAtTime}>{formatInstant(now)}</b>, Perth.
                   </span>
                 </p>
-                <p className={styles.reconciliationNotice}>{hubReconciliationLine(null)}</p>
               </div>
               <div className={styles.srOnly}>
                 <h4>What is invented</h4>

@@ -4037,20 +4037,58 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.suburbHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suburbHeaderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r2, 6px);
+  background: var(--accent-soft, #eff6ff);
+  color: var(--accent, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suburbHeaderTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suburbHeaderMainTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.suburbHeaderSubText {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
 }
 
 .suburbSearchRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .suburbInputWrapper {
   position: relative;
-  flex: 1 1 280px;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
 }
@@ -4067,10 +4105,12 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
-  padding: 9px 14px 9px 36px !important;
+  padding: 0 14px 0 36px !important;
   font-size: 13.5px;
   color: var(--ink);
+  height: 42px;
   min-height: 42px;
+  box-sizing: border-box;
   transition: all 0.15s ease;
   outline: none;
 }
@@ -4084,16 +4124,22 @@
 .btnLookupAction {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
   background: var(--accent);
-  color: var(--on-accent);
+  color: var(--on-accent, #ffffff);
   border: 1px solid var(--accent);
   border-radius: var(--r2, 6px);
-  padding: 8px 18px;
+  padding: 0 18px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  height: 42px;
   min-height: 42px;
+  box-sizing: border-box;
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.12s ease;
 }
 

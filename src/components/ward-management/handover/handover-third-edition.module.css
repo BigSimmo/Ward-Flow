@@ -1551,8 +1551,8 @@ table.snapSheet {
 .boundedTableScroll {
   width: 100%;
   box-sizing: border-box;
-  max-height: 240px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--r1, 4px);

@@ -1979,7 +1979,7 @@
   overflow: hidden;
   white-space: nowrap;
   line-height: 1;
-  box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 1px 1px rgb(var(--ward-shadow-rgb) / 0.04);
   transition:
     border-color 0.12s,
     background 0.12s,
@@ -2105,12 +2105,12 @@
    DIRECTION 3: THE FLOATING GLASS COMMAND HORIZON (LINEAR / DOCK)
    ═══════════════════════════════════════════════════════════════════════════ */
 .glassDock {
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--surface-chrome);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--line-strong);
   border-radius: 14px;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 20px -2px rgb(var(--ward-shadow-rgb) / 0.08);
   padding: 8px 14px;
   display: flex;
   align-items: center;
@@ -2123,9 +2123,9 @@
 }
 
 :global([data-theme="dark"]) .glassDock {
-  background: rgba(17, 24, 39, 0.88);
-  border-color: rgba(51, 65, 85, 0.85);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6);
+  background: var(--surface-chrome);
+  border-color: var(--ward-border);
+  box-shadow: 0 8px 30px -4px rgb(var(--ward-shadow-rgb) / 0.6);
 }
 
 .glassDockIdentity {
@@ -2190,7 +2190,7 @@
   border-radius: 9999px;
   padding: 2px 4px 2px 11px;
   gap: 6px;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
   transition: all 0.15s ease;
   position: relative;
 }
@@ -2322,7 +2322,7 @@
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
   transition: all 0.12s ease;
   height: 27px;
 }
@@ -2418,7 +2418,7 @@
 .glassViewBtn.active {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 :global([data-theme="dark"]) .glassViewBtn.active {
@@ -2434,13 +2434,13 @@
   height: 31px;
   border-radius: 9999px;
   background: var(--ink);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 11.5px;
   font-weight: 600;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.15);
   transition: all 0.12s ease;
   white-space: nowrap;
 }
@@ -2490,26 +2490,26 @@
   padding: 0 10px;
   height: 31px;
   border-radius: 9999px;
-  background: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
   font-size: 11px;
   font-weight: 700;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--danger-border);
   cursor: pointer;
   transition: all 0.12s ease;
   white-space: nowrap;
 }
 
 :global([data-theme="dark"]) .glassBtnReset {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+  border-color: var(--danger-border);
 }
 
 .glassBtnReset:hover {
-  background: #dc2626;
-  color: #ffffff;
-  border-color: #dc2626;
+  background: var(--danger-solid);
+  color: var(--text-inverse);
+  border-color: var(--danger-solid);
 }
 
 .glassMoreWrap {
@@ -2559,8 +2559,8 @@
   border: 1px solid var(--border-strong);
   border-radius: 10px;
   box-shadow:
-    0 10px 25px -5px rgba(15, 23, 42, 0.15),
-    0 8px 10px -6px rgba(15, 23, 42, 0.1);
+    0 10px 25px -5px rgb(var(--ward-shadow-rgb) / 0.15),
+    0 8px 10px -6px rgb(var(--ward-shadow-rgb) / 0.1);
   padding: 4px;
   min-width: 190px;
   z-index: 50;
@@ -2570,9 +2570,9 @@
 }
 
 :global([data-theme="dark"]) .glassPopoverMenu {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  background: var(--surface-raised);
+  border-color: var(--ward-border);
+  box-shadow: 0 10px 30px -5px rgb(var(--ward-shadow-rgb) / 0.5);
 }
 
 .glassPopoverItem {
@@ -2684,7 +2684,7 @@
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--r1);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
@@ -2701,7 +2701,7 @@
   border-color: var(--accent);
   box-shadow:
     0 0 0 2.5px var(--accent-soft),
-    inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
 }
 
 .searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_input"]) {
@@ -2767,7 +2767,7 @@
   padding: 1px 5px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 1px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 /* 5 Inline Dropdown Filters Group */
@@ -2949,7 +2949,7 @@
 .viewModeBtn[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08);
 }
 
 .activeFilterResetPill {
@@ -3833,13 +3833,13 @@
   composes: actionBtnCompact;
   background: var(--accent);
   border-color: var(--accent);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .actionBtnCompactPrimary:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  color: #ffffff;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--text-inverse);
 }
 
 .toastContainer {

@@ -148,7 +148,7 @@
 .shiftToggleBtn.active {
   background: var(--surface-2);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .shiftDenseGrid {
@@ -166,7 +166,9 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .shiftTileCompact:hover {
@@ -187,7 +189,7 @@
 }
 
 .shiftTileCompact[data-tone="purple"] {
-  border-left: 3px solid #8b5cf6;
+  border-left: 3px solid var(--ward-domain-coordinator);
 }
 
 .shiftTileTop {
@@ -218,27 +220,27 @@
 }
 
 .badgeWarn {
-  background: var(--warn-soft, #fef3c7);
-  color: var(--warn, #b45309);
-  border: 1px solid var(--warn-border, #fcd34d);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn-border);
 }
 
 .badgeDanger {
-  background: var(--danger-soft, #fee2e2);
-  color: var(--danger, #b91c1c);
-  border: 1px solid var(--danger-border, #fca5a5);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 .badgeInfo {
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
   border: 1px solid var(--line);
 }
 
 .badgePurple {
-  background: #f3e8ff;
-  color: #7e22ce;
-  border: 1px solid #d8b4fe;
+  background: var(--ward-domain-coordinator-soft);
+  color: var(--ward-domain-coordinator);
+  border: 1px solid var(--ward-domain-coordinator);
 }
 
 .shiftTimeAgo {
@@ -283,15 +285,15 @@
 }
 
 .btnShiftPrimary {
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
-  border-color: var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
   font-weight: 600;
 }
 
 .btnShiftPrimary:hover {
-  background: var(--accent, #1d4ed8);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--text-inverse);
 }
 
 .shiftEmptyNotice {
@@ -303,7 +305,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--good-soft, #f0fdf4);
+  background: var(--good-soft);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -367,8 +369,8 @@
 }
 
 .filterPillBtn.active .filterPillCount {
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .orderSelectLabel {
@@ -417,6 +419,16 @@
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 4px;
+}
+
+.compactBay {
+  border-bottom: none !important;
+  padding: 0 !important;
+  margin-bottom: 10px !important;
+}
+
+.compactBay:last-of-type {
+  margin-bottom: 0 !important;
 }
 
 .bayHeader {
@@ -514,7 +526,9 @@
 /* Selected Bed: distinct focus border */
 .bedCard.selected {
   border: 2px solid var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft, rgba(37, 99, 235, 0.2)), var(--lift);
+  box-shadow:
+    0 0 0 2px var(--accent-soft),
+    var(--lift);
 }
 
 /* Pulled Bed */
@@ -555,23 +569,23 @@
 
 .bedCard.ready .bedStatePill {
   color: var(--good);
-  background: var(--good-soft, #f0fdf4);
+  background: var(--good-soft);
   padding: 1px 5px;
   border-radius: var(--pill, 999px);
-  border: 1px solid var(--good-border, #86efac);
+  border: 1px solid var(--good-border);
 }
 
 .bedCard.closed .bedStatePill {
   color: var(--warn);
-  background: var(--warn-soft, #fef3c7);
+  background: var(--warn-soft);
   padding: 1px 5px;
   border-radius: var(--pill, 999px);
-  border: 1px solid var(--warn-border, #fcd34d);
+  border: 1px solid var(--warn-border);
 }
 
 .bedCard.pulled .bedStatePill {
   color: var(--accent);
-  background: var(--accent-soft, #eff6ff);
+  background: var(--accent-soft);
   padding: 1px 5px;
   border-radius: var(--pill, 999px);
   border: 1px solid var(--line-strong, var(--line));
@@ -620,9 +634,9 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: var(--danger-soft, #fee2e2);
-  color: var(--danger, #b91c1c);
-  border: 1px solid var(--danger-border, #fca5a5);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
   border-radius: var(--pill, 999px);
   padding: 1px 6px;
   font-size: 10px;
@@ -634,8 +648,8 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
   border: 1px solid var(--line-strong, var(--line));
   border-radius: var(--pill, 999px);
   padding: 1px 6px;
@@ -646,9 +660,9 @@
 .badgeSelected {
   display: inline-flex;
   align-items: center;
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
-  border: 1px solid var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: var(--pill, 999px);
   padding: 1px 6px;
   font-size: 10px;
@@ -672,9 +686,9 @@
 .badgeClosed {
   display: inline-flex;
   align-items: center;
-  background: var(--warn-soft, #fef3c7);
-  color: var(--warn, #b45309);
-  border: 1px solid var(--warn-border, #fcd34d);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn-border);
   border-radius: var(--pill, 999px);
   padding: 1px 6px;
   font-size: 10px;
@@ -685,9 +699,9 @@
 .badgeReady {
   display: inline-flex;
   align-items: center;
-  background: var(--good-soft, #f0fdf4);
-  color: var(--good, #15803d);
-  border: 1px solid var(--good-border, #86efac);
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good-border);
   border-radius: var(--pill, 999px);
   padding: 1px 6px;
   font-size: 10px;

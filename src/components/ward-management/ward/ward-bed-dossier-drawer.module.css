@@ -6,7 +6,7 @@
 .drawerScrim {
   position: fixed;
   inset: 0;
-  background: var(--scrim, rgba(11, 15, 23, 0.6));
+  background: var(--scrim);
   backdrop-filter: blur(2px);
   z-index: 80;
   display: none;
@@ -27,7 +27,7 @@
   width: min(94vw, 36rem);
   background: var(--surface);
   border-left: 1px solid var(--line-strong, var(--line));
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
+  box-shadow: -8px 0 24px rgb(var(--ward-shadow-rgb) / 0.25);
   z-index: 90;
   transform: translateX(100%);
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
@@ -52,7 +52,7 @@
   padding: 12px 18px 10px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.04);
   flex-shrink: 0;
 }
 
@@ -75,8 +75,8 @@
 }
 
 .drawerBedBadgeReady {
-  background: var(--good, #059669);
-  color: #ffffff;
+  background: var(--good);
+  color: var(--text-inverse);
 }
 
 .drawerTitle {
@@ -187,8 +187,8 @@
 }
 
 .chipAccent {
-  background: var(--accent-soft, #eff6ff);
-  color: var(--accent, #1d4ed8);
+  background: var(--accent-soft);
+  color: var(--accent);
   border-color: var(--line);
   font-weight: 600;
 }
@@ -204,21 +204,21 @@
 }
 
 .alertDanger {
-  background: var(--danger-soft, #fee2e2);
-  border: 1px solid var(--danger-border, #fca5a5);
-  color: var(--danger, #b91c1c);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
 }
 
 .alertWarn {
-  background: var(--warn-soft, #fef3c7);
-  border: 1px solid var(--warn-border, #fcd34d);
-  color: var(--warn, #b45309);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
 }
 
 .alertSuccess {
-  background: var(--good-soft, #d1fae5);
-  border: 1px solid var(--good-border, #6ee7b7);
-  color: var(--good, #065f46);
+  background: var(--good-soft);
+  border: 1px solid var(--good-border);
+  color: var(--good);
 }
 
 /* Command Tabs Nav */
@@ -254,13 +254,13 @@
 }
 
 .tabBtn.active {
-  color: var(--accent, #2563eb);
-  border-bottom-color: var(--accent, #2563eb);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 :global([data-theme="dark"]) .tabBtn.active {
-  color: var(--accent, #60a5fa);
-  border-bottom-color: var(--accent, #60a5fa);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* Drawer Body */
@@ -439,7 +439,7 @@
 /* Ready Vacant Bed Console */
 .readyConsoleCard {
   background: var(--surface);
-  border: 1px solid var(--good-border, #6ee7b7);
+  border: 1px solid var(--good-border);
   border-radius: var(--r1, 8px);
   padding: 16px;
   display: flex;
@@ -456,7 +456,7 @@
 .readyStatusTitle {
   font-size: 16px;
   font-weight: 700;
-  color: var(--good, #059669);
+  color: var(--good);
   margin: 0;
 }
 
@@ -530,7 +530,7 @@
 .footerLink {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent, #2563eb);
+  color: var(--accent);
   text-decoration: none;
 }
 

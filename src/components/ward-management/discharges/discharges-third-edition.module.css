@@ -482,34 +482,19 @@
   line-height: 1.3;
 }
 .badge[data-status="blocked"] {
-  border-color: var(--danger-border, #fca5a5);
-  color: var(--danger-ink, #991b1b);
-  background: var(--danger-soft, #fef2f2);
-}
-:global([data-theme="dark"]) .badge[data-status="blocked"] {
-  border-color: #7f1d1d;
-  color: #fca5a5;
-  background: rgba(127, 29, 29, 0.25);
+  border-color: var(--danger-border, var(--danger));
+  color: var(--danger-ink, var(--danger));
+  background: var(--danger-soft);
 }
 .badge[data-status="confirmed"] {
-  border-color: var(--good-border, #86efac);
-  color: var(--good-ink, #166534);
-  background: var(--good-soft, #f0fdf4);
-}
-:global([data-theme="dark"]) .badge[data-status="confirmed"] {
-  border-color: #14532d;
-  color: #86efac;
-  background: rgba(20, 83, 45, 0.25);
+  border-color: var(--good-border, var(--good));
+  color: var(--good-ink, var(--good));
+  background: var(--good-soft);
 }
 .badge[data-status="expected"] {
-  border-color: var(--warn-border, #fde047);
-  color: var(--warn-ink, #854d0e);
-  background: var(--warn-soft, #fefce8);
-}
-:global([data-theme="dark"]) .badge[data-status="expected"] {
-  border-color: #713f12;
-  color: #fde047;
-  background: rgba(113, 63, 18, 0.25);
+  border-color: var(--warn-border, var(--warn));
+  color: var(--warn-ink, var(--warn));
+  background: var(--warn-soft);
 }
 .badge[data-status="departed"] {
   border-color: var(--line-strong);
@@ -519,7 +504,7 @@
 .blocker {
   display: block;
   margin-top: 0.15rem;
-  color: var(--warn-ink, #b45309);
+  color: var(--warn-ink, var(--warn));
   font-size: 0.75rem;
   font-weight: 550;
   line-height: 1.25;
@@ -527,9 +512,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-}
-:global([data-theme="dark"]) .blocker {
-  color: #fbbf24;
 }
 .emptyGroup {
   color: var(--muted);
@@ -2112,17 +2094,14 @@
 }
 
 /* ─── Main Worklist Table Column Proportions & Row Active State ─── */
-.workTable th:nth-child(1),
-.workTable td:nth-child(1) {
+.workTable td:first-child {
   width: 32%;
 }
 
-.workTable th:nth-child(2),
 .workTable td:nth-child(2) {
   width: 34%;
 }
 
-.workTable th:nth-child(3),
 .workTable td:nth-child(3) {
   width: 34%;
 }

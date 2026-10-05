@@ -793,17 +793,13 @@ export function ReferralMatchView({
 
   const isTier1Expanded = collapsedTiers[1] !== true;
   const isTier2Expanded = collapsedTiers[2] !== true;
-  const isTier3Expanded =
-    collapsedTiers[3] !== undefined ? !collapsedTiers[3] : tier1Candidates.length === 0 && tier2Candidates.length === 0;
+  const isTier3Expanded = collapsedTiers[3] !== true;
 
   const toggleTier = (tier: number) => {
-    setCollapsedTiers((prev) => {
-      const currentlyExpanded = tier === 3 ? isTier3Expanded : prev[tier] !== true;
-      return {
-        ...prev,
-        [tier]: currentlyExpanded,
-      };
-    });
+    setCollapsedTiers((prev) => ({
+      ...prev,
+      [tier]: prev[tier] !== true,
+    }));
   };
 
   const toggleGates = (id: string) => {
@@ -1253,362 +1249,411 @@ export function ReferralMatchView({
         </p>
       ) : null}
 
-      {/* TIER 1: READY TO PLACE NOW */}
-      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
-        <button
-          type="button"
-          className={`${styles.secHeader} ${styles.secHeaderGood} ${styles.secHeaderToggle}`}
-          onClick={() => toggleTier(1)}
-          aria-expanded={isTier1Expanded}
-          aria-controls="referral-match-tier-1-body"
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className={styles.accordionChevron} aria-hidden="true">
-              {isTier1Expanded ? "▼" : "▶"}
-            </span>
-            <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} aria-hidden="true" />
-            <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
-          </div>
-          <span className={styles.tierCountBadge}>
-            {tier1Candidates.length} {tier1Candidates.length === 1 ? "Unit Available" : "Units Available"}
-          </span>
-        </button>
+      {/* TIER ACCORDION GROUP — cohesive container with zero white space between closed tabs */}
+      <div className={styles.tierAccordionGroup} data-testid="ward-referral-tier-accordion-group">
+        {/* TIER 1: AVAILABLE BEDS */}
+        <div className={styles.tierCard}>
+          <button
+            type="button"
+            className={`${styles.tierCardHeader} ${isTier1Expanded ? styles.tierCardHeaderExpanded : ""}`}
+            onClick={() => toggleTier(1)}
+            aria-expanded={isTier1Expanded}
+            aria-controls="referral-match-tier-1-body"
+          >
+            <div className={styles.tierCardHeaderLeft}>
+              <span
+                className={`${styles.tierChevronChip} ${isTier1Expanded ? styles.tierChevronChipExpanded : ""}`}
+                aria-hidden="true"
+              >
+                ▶
+              </span>
+              <div className={styles.tierTitleGroup}>
+                <span className={styles.tierTitleText}>Available Beds</span>
+                <span className="sr-only">TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
+                <span className={styles.tierSubtitle}>Immediate confirmed vacancies</span>
+              </div>
+            </div>
+            <div className={styles.tierCardHeaderRight}>
+              <span
+                className={`${styles.tierCountBadge} ${tier1Candidates.length > 0 ? styles.tierCountBadgeActive : styles.tierCountBadgeZero}`}
+              >
+                {tier1Candidates.length} {tier1Candidates.length === 1 ? "unit available" : "units available"}
+              </span>
+            </div>
+          </button>
 
-        {isTier1Expanded ? (
-          <div id="referral-match-tier-1-body" className={styles.tierBody}>
-            {tier1Candidates.length === 0 ? (
-              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-                No units in the network currently meet all clinical criteria with an immediately confirmed allocatable
-                bed.
-              </p>
-            ) : (
-              tier1Candidates.map((c) => {
-                const passedGates = c.verdict.gates.filter((g) => g.pass);
-                const totalGates = c.verdict.gates.length;
-                const gateKey = `alt2-t1-${c.unit.id}`;
-                const isGatesExpanded = expandedUnitGates.has(gateKey);
-                const freeBeds = c.unit.allocatable.value;
-                const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
-                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-                const occPct =
-                  c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
-                const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
+          {isTier1Expanded ? (
+            <div id="referral-match-tier-1-body" className={styles.tierBody}>
+              {tier1Candidates.length === 0 ? (
+                <div className={styles.tierEmptyWell}>
+                  <span className={styles.tierEmptyIconWrap} aria-hidden="true">
+                    ✓
+                  </span>
+                  <p className={styles.tierEmptyText}>
+                    No units in the network currently meet all clinical criteria with an immediately confirmed
+                    allocatable bed.
+                  </p>
+                </div>
+              ) : (
+                tier1Candidates.map((c) => {
+                  const passedGates = c.verdict.gates.filter((g) => g.pass);
+                  const totalGates = c.verdict.gates.length;
+                  const gateKey = `alt2-t1-${c.unit.id}`;
+                  const isGatesExpanded = expandedUnitGates.has(gateKey);
+                  const freeBeds = c.unit.allocatable.value;
+                  const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
+                  const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+                  const occPct =
+                    c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
+                  const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
 
-                return (
-                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
-                    <div className={styles.unitCardTop}>
-                      <div>
-                        <div className={styles.unitName}>
-                          <span>{c.unit.name}</span>
-                          <span className={styles.bandAvailableBadge} style={{ fontSize: "11px", padding: "1px 6px" }}>
-                            {bedLabel}
-                          </span>
+                  return (
+                    <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
+                      <div className={styles.unitCardTop}>
+                        <div>
+                          <div className={styles.unitName}>
+                            <span>{c.unit.name}</span>
+                            <span
+                              className={styles.bandAvailableBadge}
+                              style={{ fontSize: "11px", padding: "1px 6px" }}
+                            >
+                              {bedLabel}
+                            </span>
+                          </div>
+                          <div className={styles.unitSub}>
+                            {hospitalName} · {c.unit.cohort} · Contact: Not recorded
+                          </div>
                         </div>
-                        <div className={styles.unitSub}>
-                          {hospitalName} · {c.unit.cohort} · Contact: Not recorded
-                        </div>
+                        <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
+                          ✓ Accept Bed at {shortName}
+                        </button>
                       </div>
-                      <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
-                        ✓ Accept Bed at {shortName}
-                      </button>
-                    </div>
 
-                    <div className={styles.unitIntelRow}>
-                      <span>
-                        Bed Allocation: <strong>Allocatable bed recorded</strong>
-                      </span>
-                      <span className={styles.demoDot}>·</span>
-                      <span>
-                        Transit: <strong>Not recorded</strong>
-                      </span>
-                      <span className={styles.demoDot}>·</span>
-                      <span>
-                        Census:{" "}
-                        <strong>
-                          {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
-                        </strong>
-                      </span>
-                    </div>
-
-                    <div className={styles.gateSummary}>
-                      <button
-                        type="button"
-                        className={styles.gateToggle}
-                        onClick={() => toggleGates(gateKey)}
-                        aria-expanded={isGatesExpanded}
-                        aria-controls={`gate-grid-${gateKey}`}
-                      >
+                      <div className={styles.unitIntelRow}>
                         <span>
-                          ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                          Bed Allocation: <strong>Allocatable bed recorded</strong>
                         </span>
-                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                          {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                        <span className={styles.demoDot}>·</span>
+                        <span>
+                          Transit: <strong>Not recorded</strong>
                         </span>
-                      </button>
-                      {isGatesExpanded ? (
-                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                          {c.verdict.gates.map((g) => (
-                            <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
-                              ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      {/* TIER 2: CAPACITY CHECKS OUTSTANDING */}
-      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
-        <button
-          type="button"
-          className={`${styles.secHeader} ${styles.secHeaderWarn} ${styles.secHeaderToggle}`}
-          onClick={() => toggleTier(2)}
-          aria-expanded={isTier2Expanded}
-          aria-controls="referral-match-tier-2-body"
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className={styles.accordionChevron} aria-hidden="true">
-              {isTier2Expanded ? "▼" : "▶"}
-            </span>
-            <span className={`${styles.pulseDot} ${styles.pulseDotWarn}`} aria-hidden="true" />
-            <span>TIER 2: CAPACITY CHECKS OUTSTANDING</span>
-          </div>
-          <span className={styles.tierCountBadge}>
-            {tier2Candidates.length} {tier2Candidates.length === 1 ? "Unit" : "Units"}
-          </span>
-        </button>
-
-        {isTier2Expanded ? (
-          <div id="referral-match-tier-2-body" className={styles.tierBody}>
-            {tier2Candidates.length === 0 ? (
-              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-                No candidates have capacity checks outstanding.
-              </p>
-            ) : (
-              tier2Candidates.map((c) => {
-                const gateKey = `alt2-t2-${c.unit.id}`;
-                const isGatesExpanded = expandedUnitGates.has(gateKey);
-                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-
-                return (
-                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
-                    <div className={styles.unitCardTop}>
-                      <div>
-                        <div className={styles.unitName}>
-                          <span>{c.unit.name}</span>
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              padding: "1px 6px",
-                              borderRadius: "10px",
-                              background: "var(--warn-soft)",
-                              color: "var(--warn)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            Capacity unresolved
-                          </span>
-                        </div>
-                        <div className={styles.unitSub}>
-                          {hospitalName} · {c.unit.cohort}
-                        </div>
+                        <span className={styles.demoDot}>·</span>
+                        <span>
+                          Census:{" "}
+                          <strong>
+                            {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
+                          </strong>
+                        </span>
                       </div>
-                      <div className={styles.unitActionStatusWrap}>
+
+                      <div className={styles.gateSummary}>
                         <button
                           type="button"
-                          className={styles.btnSubtle}
-                          aria-disabled="true"
-                          aria-describedby={`turnaround-unavailable-${c.unit.id}`}
-                          title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
-                          onClick={ignoreUnavailableActivation}
+                          className={styles.gateToggle}
+                          onClick={() => toggleGates(gateKey)}
+                          aria-expanded={isGatesExpanded}
+                          aria-controls={`gate-grid-${gateKey}`}
                         >
-                          Flag Turnaround Priority
+                          <span>
+                            ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                          </span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                            {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                          </span>
                         </button>
-                        <span id={`turnaround-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
-                          Scheduling workflow not recorded
-                        </span>
+                        {isGatesExpanded ? (
+                          <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                            {c.verdict.gates.map((g) => (
+                              <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
+                                ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+        </div>
 
-                    <div className={styles.unitIntelRow}>
-                      <span>
-                        Recorded capacity checks:{" "}
-                        <strong>
-                          {c.verdict.gates
-                            .filter((gate) => !gate.pass)
-                            .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
-                            .join(" · ")}
-                        </strong>
-                      </span>
-                    </div>
+        {/* TIER 2: CAPACITY PENDING */}
+        <div className={styles.tierCard}>
+          <button
+            type="button"
+            className={`${styles.tierCardHeader} ${isTier2Expanded ? styles.tierCardHeaderExpanded : ""}`}
+            onClick={() => toggleTier(2)}
+            aria-expanded={isTier2Expanded}
+            aria-controls="referral-match-tier-2-body"
+          >
+            <div className={styles.tierCardHeaderLeft}>
+              <span
+                className={`${styles.tierChevronChip} ${isTier2Expanded ? styles.tierChevronChipExpanded : ""}`}
+                aria-hidden="true"
+              >
+                ▶
+              </span>
+              <div className={styles.tierTitleGroup}>
+                <span className={styles.tierTitleText}>Capacity Pending</span>
+                <span className="sr-only">TIER 2: CAPACITY CHECKS OUTSTANDING</span>
+                <span className={styles.tierSubtitle}>Outstanding capacity checks</span>
+              </div>
+            </div>
+            <div className={styles.tierCardHeaderRight}>
+              <span
+                className={`${styles.tierCountBadge} ${tier2Candidates.length > 0 ? styles.tierCountBadgeActive : styles.tierCountBadgeZero}`}
+              >
+                {tier2Candidates.length} {tier2Candidates.length === 1 ? "unit pending" : "units pending"}
+              </span>
+            </div>
+          </button>
 
-                    <div className={styles.gateSummary}>
-                      <button
-                        type="button"
-                        className={`${styles.gateToggle} ${styles.gateToggleWarn}`}
-                        onClick={() => toggleGates(gateKey)}
-                        aria-expanded={isGatesExpanded}
-                        aria-controls={`gate-grid-${gateKey}`}
-                      >
-                        <span>Capacity checks outstanding · other recorded gates passed</span>
-                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                          {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+          {isTier2Expanded ? (
+            <div id="referral-match-tier-2-body" className={styles.tierBody}>
+              {tier2Candidates.length === 0 ? (
+                <div className={styles.tierEmptyWell}>
+                  <span className={styles.tierEmptyIconWrap} aria-hidden="true">
+                    ○
+                  </span>
+                  <p className={styles.tierEmptyText}>No candidates have capacity checks outstanding.</p>
+                </div>
+              ) : (
+                tier2Candidates.map((c) => {
+                  const gateKey = `alt2-t2-${c.unit.id}`;
+                  const isGatesExpanded = expandedUnitGates.has(gateKey);
+                  const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+
+                  return (
+                    <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
+                      <div className={styles.unitCardTop}>
+                        <div>
+                          <div className={styles.unitName}>
+                            <span>{c.unit.name}</span>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "1px 6px",
+                                borderRadius: "10px",
+                                background: "var(--warn-soft)",
+                                color: "var(--warn)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Capacity unresolved
+                            </span>
+                          </div>
+                          <div className={styles.unitSub}>
+                            {hospitalName} · {c.unit.cohort}
+                          </div>
+                        </div>
+                        <div className={styles.unitActionStatusWrap}>
+                          <button
+                            type="button"
+                            className={styles.btnSubtle}
+                            aria-disabled="true"
+                            aria-describedby={`turnaround-unavailable-${c.unit.id}`}
+                            title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
+                            onClick={ignoreUnavailableActivation}
+                          >
+                            Flag Turnaround Priority
+                          </button>
+                          <span id={`turnaround-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
+                            This turnaround prioritisation is unavailable: scheduling workflow not recorded
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={styles.unitIntelRow}>
+                        <span>
+                          Recorded capacity checks:{" "}
+                          <strong>
+                            {c.verdict.gates
+                              .filter((gate) => !gate.pass)
+                              .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
+                              .join(" · ")}
+                          </strong>
                         </span>
-                      </button>
-                      {isGatesExpanded ? (
-                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                          {c.verdict.gates.map((g) => {
-                            const isPending = !g.pass;
-                            return (
+                      </div>
+
+                      <div className={styles.gateSummary}>
+                        <button
+                          type="button"
+                          className={`${styles.gateToggle} ${styles.gateToggleWarn}`}
+                          onClick={() => toggleGates(gateKey)}
+                          aria-expanded={isGatesExpanded}
+                          aria-controls={`gate-grid-${gateKey}`}
+                        >
+                          <span>Capacity checks outstanding · other recorded gates passed</span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                            {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                          </span>
+                        </button>
+                        {isGatesExpanded ? (
+                          <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                            {c.verdict.gates.map((g) => {
+                              const isPending = !g.pass;
+                              return (
+                                <div
+                                  key={g.gate}
+                                  className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
+                                >
+                                  {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        {/* TIER 3: INELIGIBLE UNITS */}
+        <div className={styles.tierCard}>
+          <button
+            type="button"
+            className={`${styles.tierCardHeader} ${isTier3Expanded ? styles.tierCardHeaderExpanded : ""}`}
+            onClick={() => toggleTier(3)}
+            aria-expanded={isTier3Expanded}
+            aria-controls="referral-match-tier-3-body"
+          >
+            <div className={styles.tierCardHeaderLeft}>
+              <span
+                className={`${styles.tierChevronChip} ${isTier3Expanded ? styles.tierChevronChipExpanded : ""}`}
+                aria-hidden="true"
+              >
+                ▶
+              </span>
+              <div className={styles.tierTitleGroup}>
+                <span className={styles.tierTitleText}>Ineligible Units</span>
+                <span className="sr-only">TIER 3: INELIGIBLE CRITERIA EXCLUSIONS & STATUTORY POLICY LOCKOUTS</span>
+                <span className={styles.tierSubtitle}>Clinical & policy exclusions</span>
+              </div>
+            </div>
+            <div className={styles.tierCardHeaderRight}>
+              <span
+                className={`${styles.tierCountBadge} ${tier3Candidates.length > 0 ? styles.tierCountBadgeActive : styles.tierCountBadgeZero}`}
+              >
+                {tier3Candidates.length} {tier3Candidates.length === 1 ? "unit excluded" : "units excluded"}
+              </span>
+            </div>
+          </button>
+
+          {isTier3Expanded ? (
+            <div id="referral-match-tier-3-body" className={styles.tierBody}>
+              {tier3Candidates.length === 0 ? (
+                <div className={styles.tierEmptyWell}>
+                  <span className={styles.tierEmptyIconWrap} aria-hidden="true">
+                    ✓
+                  </span>
+                  <p className={styles.tierEmptyText}>
+                    No units in this network are excluded by statutory or cohort criteria.
+                  </p>
+                </div>
+              ) : (
+                tier3Candidates.map((c) => {
+                  const gateKey = `alt2-t3-${c.unit.id}`;
+                  const isGatesExpanded = expandedUnitGates.has(gateKey);
+                  const failedGates = c.verdict.gates.filter((g) => !g.pass);
+                  const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+
+                  return (
+                    <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardIneligible}`}>
+                      <div className={styles.unitCardTop}>
+                        <div>
+                          <div className={styles.unitName}>
+                            <span>{c.unit.name}</span>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "1px 6px",
+                                borderRadius: "10px",
+                                background: "var(--danger-soft)",
+                                color: "var(--danger)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Statutory Exclusion
+                            </span>
+                          </div>
+                          <div className={styles.unitSub}>
+                            {hospitalName} · {c.unit.cohort}
+                          </div>
+                        </div>
+                        <div className={styles.unitActionStatusWrap}>
+                          <button
+                            type="button"
+                            className={styles.btnSubtle}
+                            aria-disabled="true"
+                            aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
+                            title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
+                            onClick={ignoreUnavailableActivation}
+                          >
+                            Clinical Override
+                          </button>
+                          <span id={`clinical-override-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
+                            This clinical override is unavailable: reason-gated workflow required
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={styles.unitIntelRow}>
+                        <span>
+                          Statutory Barrier:{" "}
+                          <strong style={{ color: "var(--danger)" }}>
+                            ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
+                          </strong>
+                        </span>
+                      </div>
+
+                      <div className={styles.gateSummary}>
+                        <button
+                          type="button"
+                          className={`${styles.gateToggle} ${styles.gateToggleDanger}`}
+                          onClick={() => toggleGates(gateKey)}
+                          aria-expanded={isGatesExpanded}
+                          aria-controls={`gate-grid-${gateKey}`}
+                        >
+                          <span>
+                            ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion
+                            Breakdown
+                          </span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                            {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
+                          </span>
+                        </button>
+                        {isGatesExpanded ? (
+                          <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                            {c.verdict.gates.map((g) => (
                               <div
                                 key={g.gate}
-                                className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
+                                className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
                               >
-                                {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                                {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
                               </div>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      {/* TIER 3: INELIGIBLE CRITERIA EXCLUSIONS */}
-      <div className={styles.tierSection} style={{ marginBottom: "14px" }}>
-        <button
-          type="button"
-          className={`${styles.secHeader} ${styles.secHeaderDanger} ${styles.secHeaderToggle}`}
-          onClick={() => toggleTier(3)}
-          aria-expanded={isTier3Expanded}
-          aria-controls="referral-match-tier-3-body"
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className={styles.accordionChevron} aria-hidden="true">
-              {isTier3Expanded ? "▼" : "▶"}
-            </span>
-            <span className={`${styles.pulseDot} ${styles.pulseDotDanger}`} aria-hidden="true" />
-            <span>TIER 3: INELIGIBLE CRITERIA EXCLUSIONS & STATUTORY POLICY LOCKOUTS</span>
-          </div>
-          <span className={styles.tierCountBadge}>
-            {tier3Candidates.length} {tier3Candidates.length === 1 ? "Unit Excluded" : "Units Excluded"}
-          </span>
-        </button>
-
-        {isTier3Expanded ? (
-          <div id="referral-match-tier-3-body" className={styles.tierBody}>
-            {tier3Candidates.length === 0 ? (
-              <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-                No units in this network are excluded by statutory or cohort criteria.
-              </p>
-            ) : (
-              tier3Candidates.map((c) => {
-                const gateKey = `alt2-t3-${c.unit.id}`;
-                const isGatesExpanded = expandedUnitGates.has(gateKey);
-                const failedGates = c.verdict.gates.filter((g) => !g.pass);
-                const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
-
-                return (
-                  <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardIneligible}`}>
-                    <div className={styles.unitCardTop}>
-                      <div>
-                        <div className={styles.unitName}>
-                          <span>{c.unit.name}</span>
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              padding: "1px 6px",
-                              borderRadius: "10px",
-                              background: "var(--danger-soft)",
-                              color: "var(--danger)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            Statutory Exclusion
-                          </span>
-                        </div>
-                        <div className={styles.unitSub}>
-                          {hospitalName} · {c.unit.cohort}
-                        </div>
-                      </div>
-                      <div className={styles.unitActionStatusWrap}>
-                        <button
-                          type="button"
-                          className={styles.btnSubtle}
-                          aria-disabled="true"
-                          aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
-                          title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
-                          onClick={ignoreUnavailableActivation}
-                        >
-                          Clinical Override
-                        </button>
-                        <span id={`clinical-override-unavailable-${c.unit.id}`} className={styles.unitNoticeMuted}>
-                          Unavailable: reason-gated workflow required
-                        </span>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
-
-                    <div className={styles.unitIntelRow}>
-                      <span>
-                        Statutory Barrier:{" "}
-                        <strong style={{ color: "var(--danger)" }}>
-                          ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
-                        </strong>
-                      </span>
-                    </div>
-
-                    <div className={styles.gateSummary}>
-                      <button
-                        type="button"
-                        className={`${styles.gateToggle} ${styles.gateToggleDanger}`}
-                        onClick={() => toggleGates(gateKey)}
-                        aria-expanded={isGatesExpanded}
-                        aria-controls={`gate-grid-${gateKey}`}
-                      >
-                        <span>
-                          ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion
-                          Breakdown
-                        </span>
-                        <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                          {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
-                        </span>
-                      </button>
-                      {isGatesExpanded ? (
-                        <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
-                          {c.verdict.gates.map((g) => (
-                            <div
-                              key={g.gate}
-                              className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
-                            >
-                              {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        ) : null}
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div style={{ marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "10px" }}>
-        <div className={styles.secHeader} style={{ margin: "0 18px 8px" }}>
-          <span>Travel Band Network Triage & Geography Breakdown</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>{groupedUnitCount} Units Mapped</span>
+      <section className={styles.geographySection}>
+        <div className={styles.geographyHeader}>
+          <span className={styles.geographyTitle}>Travel Band Network Triage &amp; Geography Breakdown</span>
+          <span className={styles.geographyBadge}>{groupedUnitCount} Units Mapped</span>
         </div>
         <div className={styles.matchList} data-testid="ward-referral-match-list">
           {bandGroups.map((group, index) => (
@@ -1622,7 +1667,7 @@ export function ReferralMatchView({
             />
           ))}
         </div>
-      </div>
+      </section>
 
       {/*
        * Rule 3 of the optional step, and the reason this branch has no `else` that renders

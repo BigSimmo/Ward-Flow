@@ -1503,9 +1503,9 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 0.5px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.18);
   cursor: pointer;
   margin-top: -6px;
   transition: transform 0.12s ease;
@@ -1519,9 +1519,9 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 0.5px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.18);
   cursor: pointer;
 }
 
@@ -2876,7 +2876,9 @@
   font-weight: 600;
   width: 10rem;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .defaultInput:focus {

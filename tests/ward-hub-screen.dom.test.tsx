@@ -398,6 +398,9 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
     renderHub();
     const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
 
+    const initialSubtitle = glance().getByText(/wards,.*EDs,.*community teams/i).textContent ?? "";
+    const initialWards = Number(/(\d+)\s+wards/i.exec(initialSubtitle)?.[1]);
+
     // Before any query the two are trivially equal, so this is measured only after narrowing —
     // and the narrowing is proven to have happened before anything is compared.
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "fremantle" } });
@@ -408,20 +411,15 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
     ).toBeLessThan(10);
 
     const subtitle = glance().getByText(/wards,.*EDs,.*community teams/i).textContent ?? "";
-    const networkLabel = glance().getByText(/beds across \d+ wards/i).textContent ?? "";
     const subtitleWards = Number(/(\d+)\s+wards/i.exec(subtitle)?.[1]);
-    const networkWards = Number(/across\s+(\d+)\s+wards/i.exec(networkLabel)?.[1]);
 
     expect(Number.isNaN(subtitleWards), `could not read a ward count from the glance subtitle: "${subtitle}"`).toBe(
       false,
     );
-    expect(Number.isNaN(networkWards), `could not read a ward count from the network label: "${networkLabel}"`).toBe(
-      false,
-    );
     expect(
       subtitleWards,
-      "the glance pane gives two different answers to how many wards exist, in the same pane, while a search is active",
-    ).toBe(networkWards);
+      "the glance pane gives a query-filtered count instead of network totals while a search is active",
+    ).toBe(initialWards);
   });
 });
 
@@ -717,7 +715,8 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
      * §8.7 defines how a screen supplies its checks, and the screen's own comment still instructs
      * that the literal be replaced with the count then.
      */
-    expect(screen.getByText(/No reconciliation is available for this page yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/^As at/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No reconciliation is available for this page yet/i)).not.toBeInTheDocument();
     // The negative half, and it is the one that would have caught the defect: the screen must not
     // claim agreement while it has nothing to agree about.
     expect(
