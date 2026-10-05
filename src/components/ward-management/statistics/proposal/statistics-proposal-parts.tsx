@@ -3,7 +3,12 @@ import type { ReactNode } from "react";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 import { RELEASE_BANDS } from "@/components/ward-management/ward-bed-availability";
 
-import { RELEASE_BAND_LABELS, type BedFigures, type ReleaseCounts } from "./statistics-proposal-figures";
+import {
+  RELEASE_BAND_LABELS,
+  type BedFigures,
+  type ReleaseCounts,
+  releasesOverdue,
+} from "./statistics-proposal-figures";
 import styles from "./statistics-proposal.module.css";
 
 /** Where a proposal screen links to. Preview routes today; the real statistics routes on approval. */
@@ -328,7 +333,7 @@ export function BedGridLegend() {
 /** Beds expected to come free, by the ward's own release bands. Confirmed solid, expected pale. */
 export function ReleaseTimeline({ releases }: { releases: ReleaseCounts }) {
   const max = Math.max(1, ...RELEASE_BANDS.map((band) => releases[band].confirmed + releases[band].expected));
-  const overdue = releases.overdue.expected;
+  const overdue = releasesOverdue(releases);
   return (
     <>
       <div className={styles.timeline}>
@@ -353,8 +358,9 @@ export function ReleaseTimeline({ releases }: { releases: ReleaseCounts }) {
       </div>
       {overdue ? (
         <p className={styles.overdueNote}>
-          <strong>Not counted above: {overdue}</strong> {overdue === 1 ? "discharge was" : "discharges were"} expected
-          on an earlier day and {overdue === 1 ? "has" : "have"} not been confirmed.{" "}
+          <strong>Not counted above: {overdue}</strong> {overdue === 1 ? "discharge was" : "discharges were"} dated an
+          earlier day and {overdue === 1 ? "has" : "have"} not happened, so {overdue === 1 ? "it is" : "they are"} not
+          counted as free today.{" "}
           <a className={styles.link} href={proposalHref("flow")}>
             Who is past their date ›
           </a>

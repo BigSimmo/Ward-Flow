@@ -27,6 +27,7 @@ import {
   releasesToday,
   todayReferralFigures,
   totalReleases,
+  releasesOverdue,
 } from "./statistics-proposal-figures";
 import { BedsAvailableChart } from "./statistics-proposal-capacity";
 import { useStatisticsProposal } from "./use-statistics-proposal";
@@ -106,11 +107,11 @@ export function StatewideStatisticsProposal() {
             label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected free by midnight`,
             href: proposalHref("network"),
           },
-          ...(releases.overdue.expected
+          ...(releasesOverdue(releases)
             ? [
                 {
                   tone: "warn" as const,
-                  label: `${releases.overdue.expected} discharges overdue, not confirmed`,
+                  label: `${releasesOverdue(releases)} discharges past their date`,
                   href: proposalHref("flow"),
                 },
               ]
@@ -272,7 +273,7 @@ export function StatewideStatisticsProposal() {
                     "Ready",
                     "Occupancy",
                     "Free today",
-                    "Overdue, not confirmed",
+                    "Past their date",
                     "Asked for a bed",
                   ],
                   ...wards.map((ward) => [
@@ -286,7 +287,7 @@ export function StatewideStatisticsProposal() {
                     ward.ready,
                     percent(ward.occupancy),
                     releasesToday(ward.releases),
-                    ward.releases.overdue.expected,
+                    releasesOverdue(ward.releases),
                     ward.askedAndWaiting,
                   ]),
                 ]}
@@ -430,8 +431,8 @@ export function StatewideStatisticsProposal() {
               <dd className={styles.toneGood}>{freeToday}</dd>
             </div>
             <div className={styles.fact}>
-              <dt>Overdue, not confirmed</dt>
-              <dd className={releases.overdue.expected ? styles.toneWarn : ""}>{releases.overdue.expected}</dd>
+              <dt>Past their date</dt>
+              <dd className={releasesOverdue(releases) ? styles.toneWarn : ""}>{releasesOverdue(releases)}</dd>
             </div>
             <div className={styles.fact}>
               <dt>Held up by a blocker</dt>

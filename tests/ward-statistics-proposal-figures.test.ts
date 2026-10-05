@@ -5,6 +5,7 @@ import {
   networkFigures,
   referralPlacement,
   releasesFor,
+  releasesOverdue,
   releasesToday,
   serviceFigures,
   totalReleases,
@@ -52,14 +53,15 @@ describe("statistics proposal figures", () => {
     expect(eds.reduce((sum, ed) => sum + ed.waiting, 0)).toBe(waiting);
   });
 
-  it("keeps discharges expected on an earlier day out of the beds free today", () => {
+  it("keeps discharges dated on an earlier day out of the beds free today, confirmed or not", () => {
     const releases = totalReleases(wards);
+    const known = new Set(state.units.map((unit) => unit.id));
     const overdue = state.bedReleases.filter(
       (release) =>
-        release.state !== "confirmed" && release.state !== "discharged" && dayOf(release.expectedAt) < dayOf(now),
+        known.has(release.unitId) && release.state !== "discharged" && dayOf(release.expectedAt) < dayOf(now),
     ).length;
     expect(overdue).toBeGreaterThan(0);
-    expect(releases.overdue.expected).toBe(overdue);
+    expect(releasesOverdue(releases)).toBe(overdue);
     expect(releasesToday(releases)).toBe(
       releases.now.confirmed +
         releases.now.expected +
@@ -72,7 +74,7 @@ describe("statistics proposal figures", () => {
     );
   });
 
-  it("counts a confirmed discharge as free today even when its expected time has passed", () => {
+  it("lists a confirmed discharge dated an earlier day as past its date, not free today", () => {
     const unitId = state.units[0].id;
     const counts = releasesFor(
       unitId,
@@ -94,8 +96,9 @@ describe("statistics proposal figures", () => {
       ],
       now,
     );
-    expect(counts.overdue.expected).toBe(0);
-    expect(releasesToday(counts)).toBe(1);
+    expect(counts.overdue.confirmed).toBe(1);
+    expect(releasesOverdue(counts)).toBe(1);
+    expect(releasesToday(counts)).toBe(0);
   });
 
   it("places every referral from a service exactly once", () => {

@@ -10,7 +10,7 @@ import {
   Verdict,
   proposalHref,
 } from "./statistics-proposal-parts";
-import { SERVICE_COLOUR, percent, releasesToday, totalReleases } from "./statistics-proposal-figures";
+import { SERVICE_COLOUR, percent, releasesToday, totalReleases, releasesOverdue } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
 
@@ -42,11 +42,11 @@ export function NetworkStatisticsProposal() {
             href: proposalHref("ward", ward.unit.id),
           })),
           { tone: "good", label: `${freeToday} ${freeToday === 1 ? "bed" : "beds"} expected to come free today` },
-          ...(releases.overdue.expected
+          ...(releasesOverdue(releases)
             ? [
                 {
                   tone: "warn" as const,
-                  label: `${releases.overdue.expected} discharges overdue, not confirmed`,
+                  label: `${releasesOverdue(releases)} discharges past their date`,
                   href: proposalHref("flow"),
                 },
               ]

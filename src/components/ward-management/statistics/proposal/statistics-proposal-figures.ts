@@ -40,9 +40,10 @@ export type WardFigures = BedFigures & {
 };
 
 /**
- * `overdue` holds expected (unconfirmed) discharges dated on an earlier day. The ruled
- * `releaseBand` files them under "now" so a ward acts on them, but they are not beds anyone has
- * said will come free, so the proposal counts them apart and never adds them to "free today".
+ * `overdue` holds discharges, confirmed or expected, dated on an earlier day that have not
+ * happened. The ruled `releaseBand` files them under "now" so a ward acts on them, but a date that
+ * has already passed says nothing about tonight, so the proposal lists them apart as past their
+ * date and never adds them to "free today" (Josh, 5 October 2026).
  */
 export type ReleaseCounts = Record<ReleaseBand | "overdue", { confirmed: number; expected: number }>;
 
@@ -77,8 +78,9 @@ export function releasesFor(unitId: string, bedReleases: readonly BedRelease[], 
     if (release.unitId !== unitId || release.state === "discharged") continue;
     const band = releaseBand(release, now);
     if (band === "beyond-today") continue;
-    if (release.state !== "confirmed" && dayOf(release.expectedAt) < dayOf(now)) {
-      counts.overdue.expected += 1;
+    if (dayOf(release.expectedAt) < dayOf(now)) {
+      if (release.state === "confirmed") counts.overdue.confirmed += 1;
+      else counts.overdue.expected += 1;
       continue;
     }
     if (release.state === "confirmed") counts[band].confirmed += 1;
@@ -92,6 +94,11 @@ export function releasesToday(counts: ReleaseCounts): number {
     (sum, band) => sum + counts[band].confirmed + counts[band].expected,
     0,
   );
+}
+
+/** Discharges dated on an earlier day that have not happened, confirmed or not. */
+export function releasesOverdue(counts: ReleaseCounts): number {
+  return counts.overdue.confirmed + counts.overdue.expected;
 }
 
 export function totalReleases(wards: readonly { releases: ReleaseCounts }[]): ReleaseCounts {
