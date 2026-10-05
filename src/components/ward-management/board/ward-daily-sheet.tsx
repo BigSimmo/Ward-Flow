@@ -13,6 +13,8 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
+import { releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./board.module.css";
 
@@ -380,7 +382,9 @@ export function WardDailySheet({
   const currentNow = now ?? 0;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
-  const liveAdmissions = useContext(WardFlowContext)?.admissions;
+  const liveFlow = useContext(WardFlowContext);
+  const liveAdmissions = liveFlow?.admissions;
+  const liveBedReleases = liveFlow?.bedReleases;
   const admissionSource = liveAdmissions ?? wardAdmissions;
 
   const resolvedPeople = useMemo(() => {
@@ -411,7 +415,13 @@ export function WardDailySheet({
 
   const resolvedMovement = useMemo(() => {
     if (movement !== undefined) return movement;
-    if (unit) return sinceYesterday(admissionsForUnit(admissionSource, unit.id), currentNow);
+    // Filtered by hand, as ward-board does: `admissionsForUnit` drops departed admissions, which
+    // would pin `discharged` at zero on the unit-only path.
+    if (unit)
+      return sinceYesterday(
+        admissionSource.filter((admission) => admission.unitId === unit.id),
+        currentNow,
+      );
     return { discharged: 0, pulled: 0, datesMoved: 0 };
   }, [movement, unit, currentNow, admissionSource]);
 
@@ -421,10 +431,33 @@ export function WardDailySheet({
     return [];
   }, [destinations, unit, currentNow, admissionSource]);
 
-  const resolvedIncomingPulled = incomingPulled ?? 0;
-  const resolvedIncomingWaitlisted = incomingWaitlisted ?? 0;
-  const resolvedOutgoingCount = outgoingCount ?? 0;
-  const resolvedOutgoingBasis = outgoingBasisLabel ?? "Expected";
+  // Unit-only path (ward-screen): count incoming and outgoing from the same live collections
+  // ward-board passes in, so the sheet does not print zeros against a ward that has arrivals or
+  // releases. Outgoing uses the board's default basis (confirmed) and its label, so the two sheets
+  // agree. Explicit props still win, and an isolated render with no provider keeps zero.
+  const liveIncoming = useMemo(() => {
+    if (!unit || liveAdmissions === undefined) return null;
+    const arriving = admissionsForUnit(liveAdmissions, unit.id);
+    return {
+      pulled: arriving.filter((admission) => admission.state === "pulled").length,
+      waitlisted: arriving.filter((admission) => admission.state === "waitlisted").length,
+    };
+  }, [unit, liveAdmissions]);
+  const liveOutgoingCount = useMemo(() => {
+    if (!unit || liveBedReleases === undefined) return null;
+    return liveBedReleases.filter(
+      (release) =>
+        release.unitId === unit.id &&
+        release.state === "confirmed" &&
+        releaseBand(release, currentNow) !== "beyond-today",
+    ).length;
+  }, [unit, liveBedReleases, currentNow]);
+
+  const resolvedIncomingPulled = incomingPulled ?? liveIncoming?.pulled ?? 0;
+  const resolvedIncomingWaitlisted = incomingWaitlisted ?? liveIncoming?.waitlisted ?? 0;
+  const resolvedOutgoingCount = outgoingCount ?? liveOutgoingCount ?? 0;
+  const resolvedOutgoingBasis =
+    outgoingBasisLabel ?? (liveOutgoingCount !== null ? CAPACITY_FIGURE_LABELS.confirmedToday : "Expected");
 
   const groups = dailySheetGroups(resolvedPeople);
   const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;

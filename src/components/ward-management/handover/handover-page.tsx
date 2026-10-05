@@ -2067,7 +2067,7 @@ export function HandoverPage() {
                     role="tab"
                     id="tableTab-all"
                     aria-selected={activeTableSection === "all"}
-                    aria-controls="tablePanel-all"
+                    aria-controls="tablePanel-longest tablePanel-pulled tablePanel-open tablePanel-transit tablePanel-placement"
                     tabIndex={activeTableSection === "all" ? 0 : -1}
                     className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "all" ? pageStyles.tableSwitchBtnActive : ""}`}
                     onClick={() => setActiveTableSection("all")}

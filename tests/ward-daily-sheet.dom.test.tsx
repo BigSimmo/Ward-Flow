@@ -18,6 +18,7 @@ const DAY_IS_NOT_A_DATE = ["real day", "actual day", "real date", "actual date"]
 import {
   asAtStamp,
   dailySheetGroups,
+  WardDailySheet,
   type DailySheetPerson,
 } from "@/components/ward-management/board/ward-daily-sheet";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
@@ -594,6 +595,35 @@ describe("every count on the sheet is POSSIBLE for this ward, not merely compute
     expect(shown).toBeGreaterThanOrEqual(0);
     expect(shown).toBeLessThanOrEqual(wardReleases);
   });
+});
+
+describe("the unit-only sheet (ward-screen) reads the live provider, not zeros or the seed", () => {
+  /** Reads the figures the board's own sheet prints for a unit, then the unit-only sheet's, from
+   *  the same provider state, so a unit-only sheet that falls back to zeros or a seed copy diverges. */
+  function figures(container: HTMLElement) {
+    const read = (testId: string) => within(container).getByTestId(testId).textContent ?? "";
+    return {
+      since: read("ward-daily-sheet-since"),
+      incoming: read("ward-daily-sheet-in-count"),
+      outgoing: read("ward-daily-sheet-out-count"),
+    };
+  }
+
+  it.each(allUnits.map((unit) => [unit.id, unit] as const))(
+    "%s — incoming, outgoing and since-yesterday match the board's sheet",
+    (unitId, unit) => {
+      const board = renderWardBoard(unitId);
+      const expected = figures(board.getByTestId("ward-board-sheet-body"));
+      board.unmount();
+
+      const unitOnly = render(
+        <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+          <WardDailySheet unit={unit} now={WARD_ADMISSIONS_ANCHOR} />
+        </WardFlowProvider>,
+      );
+      expect(figures(unitOnly.container)).toEqual(expected);
+    },
+  );
 });
 
 describe("what the sheet may never show", () => {
