@@ -8088,3 +8088,9 @@ prototype results or invented tasks. These fixes preserve the feature colours an
 976px desktop / 568px short-phone drawer heights. The 76 focused contract and component tests passed.
 Preview deployment and its final local gates are in progress; evidence remains in
 `.local/drawers/compact/` under the same task identity.
+
+Preview verification also exposed a production-only Escape race between the enclosing Sheet and
+the embedded referral editor's second focus-stack registration. The Sheet now owns embedded focus;
+the editor consumes Escape while search is open and preserves standalone backdrop handling.
+The new enclosing-Sheet regression failed before the fix. The final gates will verify this
+corrected source before preview publication.

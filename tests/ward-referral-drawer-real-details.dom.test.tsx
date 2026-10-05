@@ -11,6 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { Sheet } from "@/components/ui/sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -37,6 +38,22 @@ function renderDrawer() {
 }
 
 describe("the referral drawer shows only what the record holds", () => {
+  it("closes patient search before requesting that its enclosing Sheet close", () => {
+    const close = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Sheet open title="Referrals" onClose={close} portal={false}>
+          <WardReferralDrawer onClose={close} />
+        </Sheet>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+    const search = screen.getByRole("searchbox", { name: "Search sample patients" });
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(close).not.toHaveBeenCalled();
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(close).toHaveBeenCalledTimes(1);
+  });
   it("lists only wards that exist in the network, under their own names", () => {
     const { container } = renderDrawer();
     const rows = [...container.querySelectorAll('[role="listitem"]')].filter((row) =>

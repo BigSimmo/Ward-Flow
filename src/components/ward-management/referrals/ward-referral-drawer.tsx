@@ -415,7 +415,9 @@ function WardReferralDrawerContent({
     }
   }, [isSearchOpen, onClose]);
 
-  useWardModalFocus(true, drawerRef, handleDrawerClose);
+  // The enclosing Sheet owns focus when embedded. Register another modal only
+  // when this drawer supplies its own backdrop.
+  useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -605,6 +607,14 @@ function WardReferralDrawerContent({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? true : undefined}
         aria-labelledby="referralDrawerTitle"
+        onKeyDownCapture={(event) => {
+          if (event.key === "Escape" && isSearchOpen) {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsSearchOpen(false);
+            setSearchQuery("");
+          }
+        }}
       >
         <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className={styles.dragHandle} aria-hidden="true" />
