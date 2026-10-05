@@ -1223,6 +1223,24 @@
   }
 }
 @media print {
+  /* These headers and buttons carry graph data, so retain them through the
+     app's transitional element-name chrome hide. */
+  .coordination .runwayHeader,
+  .coordination .graphHeader,
+  .coordination .radarInspector > header,
+  .coordination .cluster,
+  .coordination .urgentPoint,
+  .coordination .ownerMark,
+  .coordination .outliers button {
+    display: flex !important;
+  }
+  .coordination .graphTabs {
+    display: none !important;
+  }
+  .coordination .cluster {
+    align-items: center;
+    justify-content: center;
+  }
   .coordination {
     --surface: Canvas;
     --surface-2: Canvas;

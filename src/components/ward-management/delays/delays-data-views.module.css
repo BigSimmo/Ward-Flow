@@ -1611,12 +1611,15 @@
   .polishedTimeline .table td {
     background: Canvas !important;
   }
-  .polishedTimeline .beforeUpdate {
-    background: CanvasText;
+  .polishedTimeline .patientButton {
+    display: block !important;
+  }
+  .polishedTimeline .track .beforeUpdate {
+    background: CanvasText !important;
     print-color-adjust: exact;
   }
-  .polishedTimeline .quietWait {
-    background: repeating-linear-gradient(135deg, CanvasText 0 1px, Canvas 1px 3px);
+  .polishedTimeline .track .quietWait {
+    background: repeating-linear-gradient(135deg, CanvasText 0 1px, Canvas 1px 3px) !important;
     print-color-adjust: exact;
   }
   .polishedTimeline .reviewLabel,

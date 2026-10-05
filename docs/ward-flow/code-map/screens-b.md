@@ -158,6 +158,8 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   Delays-only `ward-tokens.module.css` aliases, and follows dark/forced-colour themes.
   Owner controls compose the shared field primitive. Radar window and interval labels derive
   from the same values used by its population and scale calculations.
+  Scoped print rules retain data-carrying headers, radar counts and patient-name buttons through
+  the app's transitional chrome hide, and keep themed labels readable on white paper.
 - **`src/components/ward-management/delays/delays-data-views.tsx`** — `DelaysWaitTimeline`
   and `DelaysTableWorkspace`: the data-bound paged timeline plus the existing Focus table / Action
   workspace. The embedded timeline matches the approved graph closeup with a separate triage column,
