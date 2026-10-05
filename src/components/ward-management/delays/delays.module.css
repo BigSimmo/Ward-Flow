@@ -7007,7 +7007,7 @@
 
 /* The approved coordination structure keeps the existing lower panels intact. */
 .screen {
-  --ground: #eff6fa;
+  --ground: var(--ward-delays-ground);
 }
 .main {
   padding: 22px 24px 30px;

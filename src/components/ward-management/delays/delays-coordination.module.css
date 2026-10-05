@@ -1,8 +1,8 @@
 .coordination {
   --dc-ink: var(--accent-ink);
   --dc-muted: var(--muted);
-  --dc-blue: #17466e;
-  --dc-amber: #cb841c;
+  --dc-blue: var(--ward-delays-blue);
+  --dc-amber: var(--ward-delays-amber);
   --dc-line: var(--line);
   color: var(--dc-ink);
   display: grid;
@@ -15,7 +15,7 @@
   background: var(--surface);
   border: 1px solid var(--dc-line);
   border-radius: 9px;
-  box-shadow: 0 2px 9px rgb(34 76 112 / 3%);
+  box-shadow: 0 2px 9px var(--ward-delays-panel-shadow);
   min-width: 0;
 }
 .runway {
@@ -49,9 +49,9 @@
 }
 .attentionSummary {
   gap: 7px;
-  background: #fff7e9;
+  background: var(--ward-delays-attention-summary-surface);
   border-radius: 20px;
-  color: #a96810;
+  color: var(--ward-delays-attention-summary-ink);
   padding: 5px 10px;
   font-size: 12px;
 }
@@ -63,12 +63,12 @@
   gap: 14px;
   min-height: 57px;
   padding: 8px 12px;
-  background: #fffbf2;
-  border: 1px solid #f0d4a0;
-  border-left: 4px solid #edb241;
+  background: var(--ward-delays-urgent-surface);
+  border: 1px solid var(--ward-delays-urgent-border);
+  border-left: 4px solid var(--ward-delays-urgent-edge);
   border-radius: 5px;
   margin-bottom: 12px;
-  color: #aa690e;
+  color: var(--ward-delays-urgent-ink);
 }
 .urgentRow[data-past="true"] {
   border-color: var(--danger);
@@ -91,7 +91,7 @@
 }
 .urgentTime {
   padding-left: 16px;
-  border-left: 1px solid #f0d4a0;
+  border-left: 1px solid var(--ward-delays-urgent-border);
   font-size: 13px;
   flex: 1;
 }
@@ -210,13 +210,13 @@
   border-right: 1px solid var(--surface);
 }
 .distributionBar span[data-band="0"] {
-  background: #b5d7f9;
+  background: var(--ward-delays-wait-under-eight);
 }
 .distributionBar span[data-band="1"] {
-  background: #f7ce83;
+  background: var(--ward-delays-wait-eight-to-day);
 }
 .distributionBar span[data-band="2"] {
-  background: #bdc9d7;
+  background: var(--ward-delays-wait-over-day);
 }
 .distributionLegend {
   display: flex;
@@ -234,13 +234,13 @@
   border-radius: 50%;
 }
 .distributionLegend i[data-band="0"] {
-  background: #619ce4;
+  background: var(--ward-delays-wait-under-eight-key);
 }
 .distributionLegend i[data-band="1"] {
   background: var(--dc-amber);
 }
 .distributionLegend i[data-band="2"] {
-  background: #8898ab;
+  background: var(--ward-delays-wait-over-day-key);
 }
 .graphPanel {
   padding: 20px 20px 13px;
@@ -295,15 +295,16 @@
   align-items: center;
   gap: 18px;
 }
-.field {
-  display: flex;
+.ownerField {
+  composes: field from "../ward-shared.module.css";
+  flex-direction: row;
   align-items: center;
   gap: 10px;
   color: var(--dc-muted);
   font-size: 12px;
   white-space: nowrap;
 }
-.field select {
+.ownerField select {
   background: var(--surface);
   border: 1px solid var(--dc-line);
   border-radius: 5px;
@@ -357,7 +358,7 @@
   opacity: 0.6;
 }
 .baseline {
-  stroke: #8f9aa7;
+  stroke: var(--ward-delays-axis);
   stroke-width: 1;
 }
 .axisText {
@@ -420,7 +421,7 @@
   align-items: center;
   gap: 20px;
   border: 1px solid var(--dc-line);
-  border-left: 5px solid #529de4;
+  border-left: 5px solid var(--ward-delays-selection-edge);
   background: var(--surface-2);
   border-radius: 5px;
   padding: 17px 17px 17px 20px;
@@ -447,7 +448,7 @@
   line-height: 1.1;
 }
 .catchmentInspector [data-amber] b {
-  color: #b77616;
+  color: var(--ward-delays-stat-amber);
 }
 .catchmentInspector small {
   color: var(--dc-muted);
@@ -581,8 +582,8 @@
 }
 .radarPlot {
   position: relative;
-  border-left: 1px solid #a4b1bf;
-  border-bottom: 1px solid #a4b1bf;
+  border-left: 1px solid var(--ward-delays-radar-axis);
+  border-bottom: 1px solid var(--ward-delays-radar-axis);
   background: repeating-linear-gradient(
     to right,
     transparent 0,
@@ -606,7 +607,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-left: 1px dashed #9daabd;
+  border-left: 1px dashed var(--ward-delays-radar-review-line);
   z-index: 1;
   pointer-events: none;
 }
@@ -614,7 +615,7 @@
   position: absolute;
   top: -7px;
   transform: translateX(-10%);
-  background: #e9f3fc;
+  background: var(--ward-delays-radar-review-surface);
   color: var(--dc-ink);
   border-radius: 3px;
   padding: 3px 7px;
@@ -637,7 +638,7 @@
   cursor: pointer;
 }
 .radarLane[data-band="routine"] .cluster {
-  background: #536e91;
+  background: var(--ward-delays-radar-quiet);
 }
 .urgentPoint {
   position: absolute;
@@ -648,7 +649,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #b77310;
+  color: var(--ward-delays-radar-due-ink);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -663,8 +664,8 @@
   height: 18px;
   border: 3px solid var(--surface);
   border-radius: 50%;
-  background: #da8e21;
-  box-shadow: 0 0 0 4px #f9e6c5;
+  background: var(--ward-delays-radar-due-dot);
+  box-shadow: 0 0 0 4px var(--ward-delays-radar-due-halo);
 }
 .urgentPoint[data-past="true"] {
   color: var(--danger);
@@ -694,7 +695,7 @@
   height: 8px;
   top: -13px;
   left: 50%;
-  background: #a4b1bf;
+  background: var(--ward-delays-radar-axis);
 }
 .radarAxis .axisTitle {
   position: absolute;
@@ -746,7 +747,7 @@
   overflow-wrap: anywhere;
 }
 .due {
-  color: #af6d13;
+  color: var(--ward-delays-radar-detail-due);
   font-weight: 650;
 }
 .due[data-past="true"] {
@@ -755,8 +756,8 @@
 .triage {
   display: inline-block;
   border-radius: 4px;
-  background: #fff0d5;
-  color: #ae741d;
+  background: var(--ward-delays-radar-triage-surface);
+  color: var(--ward-delays-radar-triage-ink);
   padding: 3px 9px;
 }
 .radarInspector .movementAction {
@@ -832,7 +833,7 @@
   overflow-wrap: anywhere;
 }
 .outliers b {
-  color: #b37317;
+  color: var(--ward-delays-radar-outlier-ink);
   font-size: 14px;
 }
 .outliers p {
@@ -1068,11 +1069,11 @@
   .radarTotal {
     width: 100%;
   }
-  .radarToolbar .field {
+  .radarToolbar .ownerField {
     font-size: 11px;
     gap: 5px;
   }
-  .field select {
+  .ownerField select {
     padding-inline: 7px;
     min-width: 65px;
     height: 34px;
@@ -1166,13 +1167,13 @@
 }
 /* Match the approved chart palette independently of the legacy worklist palette. */
 .coordination {
-  --dc-ink: #15324d;
-  --dc-muted: #61748a;
-  --dc-line: #dce6ef;
+  --dc-ink: var(--ward-delays-ink);
+  --dc-muted: var(--ward-delays-muted);
+  --dc-line: var(--ward-delays-border);
 }
 .runway,
 .graphPanel {
-  background: #fff;
+  background: var(--ward-delays-surface);
 }
 .runwayHeader h2,
 .graphHeader h2,
@@ -1184,20 +1185,20 @@
   font-size: 28px;
 }
 .graphTabs button[aria-selected="true"] {
-  background: #fff;
+  background: var(--ward-delays-surface);
 }
 .catchmentInspector {
-  background: #fbfdff;
+  background: var(--ward-delays-inspector-surface);
 }
 .ownerCard {
-  background: linear-gradient(#fff, #f7fafc);
+  background: linear-gradient(var(--ward-delays-surface), var(--ward-delays-owner-wash));
 }
 .radarToolbar,
 .radarLabels > div {
-  background: #f5f9fc;
+  background: var(--ward-delays-toolbar-surface);
 }
 .radarLane {
-  background: rgb(241 247 252 / 75%);
+  background: var(--ward-delays-radar-lane);
 }
 .radarInspector h3 {
   font-size: 21px;

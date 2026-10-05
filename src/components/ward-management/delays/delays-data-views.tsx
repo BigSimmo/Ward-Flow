@@ -571,7 +571,14 @@ export function DelaysWaitTimeline({
               <th scope="col" className={styles.axisCell}>
                 {mode === "timeline" ? (
                   <>
-                    <span className={styles.elapsedHeading}>Elapsed wait</span>
+                    <span className={styles.elapsedHeading}>
+                      Elapsed wait
+                      {embedded && reviewAt < 20 && (
+                        <span className={styles.compactReviewLabel}>
+                          {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h review
+                        </span>
+                      )}
+                    </span>
                     <div className={styles.axis} aria-label={`Linear time scale, zero to ${scale / 60} hours`}>
                       {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
                         <span key={fraction} style={{ left: `${fraction * 100}%` }}>
@@ -582,7 +589,11 @@ export function DelaysWaitTimeline({
                               : splitDuration(scale * fraction)}
                         </span>
                       ))}
-                      <span className={styles.reviewLabel} style={{ left: `${reviewAt}%` }}>
+                      <span
+                        className={styles.reviewLabel}
+                        hidden={embedded && reviewAt < 20}
+                        style={{ left: `${reviewAt}%` }}
+                      >
                         {embedded
                           ? `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h`
                           : splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)}{" "}

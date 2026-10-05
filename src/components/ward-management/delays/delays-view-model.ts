@@ -4,7 +4,12 @@ import { lastRecordedActivity } from "./delays-derivations";
 import { legalDeadlineMinutes, type DelayCause } from "./delays-derivations";
 import { edHealthService } from "../ward-service-scope";
 import { HEALTH_SERVICES, type HealthService } from "../ward-model";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES, LONG_WAIT_MINUTES } from "../ward-operational-defaults";
+import {
+  DUE_SOON_MINUTES,
+  DUE_SOON_URGENT_MINUTES,
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "../ward-operational-defaults";
 
 export type DelayRecord = { movement: Movement; cause: DelayCause };
 export type CatchmentOrigin = HealthService | "unrecorded";
@@ -37,12 +42,19 @@ export function delayCatchments(records: readonly DelayRecord[], now: Instant) {
 /** Preserve the screen's existing recorded-deadline precedence; no inferred legal time. */
 export function delayRadarBand(movement: Movement, now: Instant): RadarBand {
   const due = legalDeadlineMinutes(movement, now);
-  if (due !== undefined) return due < 0 ? "breached" : due <= 60 ? "imminent" : due <= 180 ? "severe" : "routine";
+  if (due !== undefined)
+    return due < 0
+      ? "breached"
+      : due <= DUE_SOON_URGENT_MINUTES
+        ? "imminent"
+        : due <= DUE_SOON_MINUTES
+          ? "severe"
+          : "routine";
   return movement.urgency === 1 ? "severe" : "routine";
 }
 
 /** Inclusive window end, exclusive interval ends except the final bin. No clamped outliers. */
-export function delayRadarGroups(records: readonly DelayRecord[], now: Instant, windowMinutes = 1440) {
+export function delayRadarGroups(records: readonly DelayRecord[], now: Instant, windowMinutes = LONG_WAIT_MINUTES) {
   const interval = 240;
   const bands: RadarBand[] = ["breached", "imminent", "severe", "routine"];
   const wait = ({ movement }: DelayRecord) => Math.max(0, now - movement.openedAt);
@@ -66,7 +78,7 @@ export function delayRadarGroups(records: readonly DelayRecord[], now: Instant, 
     }).filter((bin) => bin.people.length > 0);
     return { band, all, inView, bins };
   });
-  return { lanes, visible, beyond };
+  return { lanes, visible, beyond, interval };
 }
 
 /** A linear time scale shared by every visible timeline row. All values are minutes. */

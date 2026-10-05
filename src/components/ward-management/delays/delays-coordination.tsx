@@ -21,6 +21,8 @@ import { departmentLabel } from "../ward-absence-labels";
 import { edById } from "../ward-sites";
 import { legalFormName } from "../ward-legal-forms";
 import {
+  DUE_SOON_MINUTES,
+  DUE_SOON_URGENT_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LONG_WAIT_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -96,7 +98,7 @@ function OwnerSelect({
   label: string;
 }) {
   return (
-    <label className={styles.field}>
+    <label className={styles.ownerField}>
       Owner
       <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value as typeof value)}>
         <option value="all">All</option>
@@ -137,7 +139,7 @@ function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Prop
   const past = rows.filter(({ movement }) => (legalDeadlineMinutes(movement, now) ?? Infinity) < 0);
   const imminent = rows.filter(({ movement }) => {
     const due = legalDeadlineMinutes(movement, now);
-    return due !== undefined && due >= 0 && due <= 60;
+    return due !== undefined && due >= 0 && due <= DUE_SOON_URGENT_MINUTES;
   });
   const attention = [...past, ...imminent].sort(
     (a, b) => (legalDeadlineMinutes(a.movement, now) ?? Infinity) - (legalDeadlineMinutes(b.movement, now) ?? Infinity),
@@ -501,7 +503,7 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
 const LANES: Record<RadarBand, string> = {
   breached: "Past recorded time",
   imminent: "Due within 60m",
-  severe: "Due 1–3h or T1 without deadline",
+  severe: `Due ${DUE_SOON_URGENT_MINUTES / 60}–${DUE_SOON_MINUTES / 60}h or T1 without deadline`,
   routine: "Other waiting",
 };
 function RadarInspector({ record, now, onClose }: { record: DelayRecord; now: Instant; onClose: () => void }) {
@@ -574,7 +576,7 @@ function RadarInspector({ record, now, onClose }: { record: DelayRecord; now: In
 function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
   const patientOf = usePatientOf();
   const [owner, setOwner] = useState<DelayOwnerId | "all">("all");
-  const [windowMinutes, setWindowMinutes] = useState(1440);
+  const [windowMinutes, setWindowMinutes] = useState(LONG_WAIT_MINUTES);
   const [selectedId, setSelectedId] = useState<string | null | undefined>();
   const [cluster, setCluster] = useState<{ label: string; ids: string[] } | null>(null);
   const focusReturn = useRef<HTMLElement | null>(null);
@@ -596,7 +598,7 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
     setSelectedId(record.movement.id);
     setCluster(null);
   };
-  const ticks = Array.from({ length: windowMinutes / 240 + 1 }, (_, index) => index * 240);
+  const ticks = Array.from({ length: windowMinutes / graph.interval + 1 }, (_, index) => index * graph.interval);
   return (
     <div
       onKeyDown={(event) => {
@@ -623,7 +625,7 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
           }}
           label="Crisis radar owner"
         />
-        <label className={styles.field}>
+        <label className={styles.ownerField}>
           Time window
           <select
             value={windowMinutes}
@@ -633,8 +635,11 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
               setCluster(null);
             }}
           >
-            <option value={1440}>0 – 24h</option>
-            <option value={2880}>0 – 48h</option>
+            {[LONG_WAIT_MINUTES, LONG_WAIT_MINUTES * 2].map((minutes) => (
+              <option key={minutes} value={minutes}>
+                0 – {minutes / 60}h
+              </option>
+            ))}
           </select>
         </label>
         <button
@@ -668,10 +673,10 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
           </div>
           <div
             className={styles.radarPlot}
-            style={{ "--radar-columns": windowMinutes / 240 } as React.CSSProperties}
+            style={{ "--radar-columns": windowMinutes / graph.interval } as React.CSSProperties}
             aria-label="Recorded attention by elapsed ED wait"
           >
-            <span className={styles.groupNote}>Grouped in 4h windows</span>
+            <span className={styles.groupNote}>Grouped in {graph.interval / 60}h windows</span>
             <div
               className={styles.radarReview}
               style={{ left: `${(ED_SEVERE_PRESSURE_WAIT_MINUTES / windowMinutes) * 100}%` }}

@@ -154,11 +154,17 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   Interval inspection exposes every member; person actions open actual movement routes. Summary Cards,
   Combined and the runway mode toggle are removed. Selection is local to each graph; graph filters
   do not silently change the worklist. Views retain local state across tab switches.
+  The approved light palette lives in `ckb-v2-tokens.css`, reaches the screen through
+  Delays-only `ward-tokens.module.css` aliases, and follows dark/forced-colour themes.
+  Owner controls compose the shared field primitive. Radar window and interval labels derive
+  from the same values used by its population and scale calculations.
 - **`src/components/ward-management/delays/delays-data-views.tsx`** — `DelaysWaitTimeline`
   and `DelaysTableWorkspace`: the data-bound paged timeline plus the existing Focus table / Action
   workspace. The embedded timeline matches the approved graph closeup with a separate triage column,
   owner/search/sort controls, correctly ending solid/hatched bars and a closable selected-record strip.
   Arrival alone is not a later recorded change. Shared worklist filters, selection, pagination and
+  the canonical table cell rules remain in use. The optional cell divider token draws the
+  embedded timeline's column boundaries; long scales keep the review label beside the column title.
   coordination tools remain in place. The Delays-only header variants reuse `WardRail` and `WardBar`;
   `data-delay-layout` controls Focus/Action shell variants without restyling other routes.
 - **`src/components/ward-management/delays/delays-view-model.ts`** — pure origin counts,

@@ -1338,9 +1338,8 @@
   font-size: 12px;
   background: var(--surface-2);
 }
-.polishedTimeline .table th,
-.polishedTimeline .table td {
-  border-right: 1px solid color-mix(in srgb, var(--dv-line) 45%, transparent);
+.polishedTimeline .table {
+  --ward-table-cell-inline-divider: 1px solid color-mix(in srgb, var(--dv-line) 45%, transparent);
 }
 .polishedTimeline .table tbody tr {
   height: 69px;
@@ -1367,8 +1366,8 @@
 .polishedTimeline .reviewLabel {
   top: -23px;
   padding: 2px 6px;
-  background: #fff1d6;
-  color: #ad7419;
+  background: var(--ward-delays-timeline-review-surface);
+  color: var(--ward-delays-timeline-review-ink);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -1384,18 +1383,22 @@
   border-radius: 0;
 }
 .polishedTimeline .beforeUpdate {
-  background: #17466e;
+  background: var(--ward-delays-blue);
 }
 .polishedTimeline .quietWait {
-  background: repeating-linear-gradient(135deg, #17466e 0 1px, #e1eaf4 1px 3px);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ward-delays-blue) 0 1px,
+    var(--ward-delays-timeline-grid) 1px 3px
+  );
 }
 .polishedTimeline .updateDot {
   top: 16px;
   width: 16px;
   height: 16px;
   border: 2px solid white;
-  background: #17466e;
-  box-shadow: 0 0 0 1px #17466e;
+  background: var(--ward-delays-blue);
+  box-shadow: 0 0 0 1px var(--ward-delays-blue);
 }
 .polishedTimeline .barDuration {
   top: 6px;
@@ -1525,7 +1528,7 @@
 }
 .polishedTimeline .timelineTable .ownerBadge {
   color: var(--on-accent);
-  background: #17466e;
+  background: var(--ward-delays-blue);
   border-radius: 4px;
   font-size: 11px;
   padding: 4px 9px;
@@ -1534,14 +1537,14 @@
   transform: translateX(-50%);
 }
 .polishedTimeline {
-  --dv-ink: #15324d;
-  --dv-muted: #61748a;
-  --dv-line: #dce6ef;
-  --dv-selected: #e6f3fd;
+  --dv-ink: var(--ward-delays-ink);
+  --dv-muted: var(--ward-delays-muted);
+  --dv-line: var(--ward-delays-border);
+  --dv-selected: var(--ward-delays-timeline-selection);
 }
 .polishedTimeline .timelineHeader {
   justify-content: space-between;
-  background: #fbfdff;
+  background: var(--ward-delays-inspector-surface);
 }
 .polishedTimeline .toolbar {
   flex: 0 1 auto;
@@ -1551,25 +1554,25 @@
   font-weight: 700;
 }
 .polishedTimeline .table thead th {
-  background: #fbfdff;
+  background: var(--ward-delays-inspector-surface);
 }
 .polishedTimeline .table {
   --ward-table-cell-inset: 10px 13px;
 }
 .polishedTimeline .table tbody tr[data-selected="true"] > th,
 .polishedTimeline .table tbody tr[data-selected="true"] > td {
-  background: #e6f3fd;
+  background: var(--ward-delays-timeline-selection);
 }
 .polishedTimeline .reviewLine {
-  border-color: #8b9aaa;
+  border-color: var(--ward-delays-timeline-review-line);
 }
 .polishedTimeline .axis .reviewLabel {
   border: 0;
   transform: translateX(-50%);
 }
 .polishedTimeline .dotKey {
-  background: #fff;
-  border: 2px solid #17466e;
+  background: var(--ward-delays-surface);
+  border: 2px solid var(--ward-delays-blue);
   width: 12px;
   height: 12px;
 }
@@ -1582,4 +1585,20 @@
     flex: auto;
     justify-content: flex-start;
   }
+}
+
+/* Very long queues place 8h beside the column title; the dashed marker
+   remains at its exact scale coordinate without covering the title. */
+.polishedTimeline .elapsedHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.compactReviewLabel {
+  padding: 2px 6px;
+  background: var(--ward-delays-timeline-review-surface);
+  color: var(--ward-delays-timeline-review-ink);
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
 }

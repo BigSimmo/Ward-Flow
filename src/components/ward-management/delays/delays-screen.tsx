@@ -459,9 +459,10 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           }}
         />
         {queueScope && (
-          <div id="delays-queue-scope" className={styles.queueScope} tabIndex={-1} role="status">
+          <div id="delays-queue-scope" className={styles.queueScope} tabIndex={-1} role="status" aria-atomic="true">
             <span>
-              <strong>{delayQueueLabel(queueScope)}</strong> · {queueRows.length} people in this queue
+              <strong>{delayQueueLabel(queueScope)}</strong> · {queueRows.length} people in this queue · Synthetic
+              records
             </span>
             <button type="button" onClick={() => setQueueScope(null)}>
               Show all waiting
