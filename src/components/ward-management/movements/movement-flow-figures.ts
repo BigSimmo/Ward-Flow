@@ -14,9 +14,9 @@ import {
 } from "./movements-derivations";
 
 /**
- * Figures for the 5 October 2026 movements and transport proposal. Every count here is read
+ * Figures for the 5 October 2026 movements and transport redesign. Every count here is read
  * through the engine's own derivations (`journeyStages`, `transportLegs`, `transportLeg`,
- * `isOfficerJob`), so the movement board, the movement record and the Transport Hub proposal
+ * `isOfficerJob`), so the movement board, the movement record and the Transport Hub
  * cannot disagree with each other or with the current screens.
  */
 
@@ -25,7 +25,7 @@ export type JobState = Exclude<TransportLeg, "Arrived">;
 /** The four states an open transport job can be in, in the order a job moves through them. */
 export const JOB_STATES: readonly JobState[] = ["Requested", "Accepted", "En route", "Collected"];
 
-/** One plain meaning per state, used on every proposal screen. Matches `transportStatusLabel`. */
+/** One plain meaning per state, used on every movement and transport screen. Matches `transportStatusLabel`. */
 export const JOB_STATE_LABEL: Record<JobState, { label: string; meaning: string }> = {
   Requested: { label: "Waiting for a provider", meaning: "Requested; no provider has accepted yet" },
   Accepted: { label: "Accepted, not yet left", meaning: "A provider accepted; the vehicle has not left" },

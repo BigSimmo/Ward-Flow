@@ -10,7 +10,7 @@ import { movementBelongsToService } from "@/components/ward-management/ward-serv
 import { boardFigures, transportFigures } from "./movement-flow-figures";
 
 /**
- * Every proposal screen reads the live shared state through this one hook, filtered by the same
+ * Every movement and transport screen reads the live shared state through this one hook, filtered by the same
  * service scope the shell's switcher sets, so the three screens cannot disagree.
  */
 export function useMovementFlow() {

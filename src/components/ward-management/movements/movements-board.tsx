@@ -322,11 +322,11 @@ export function MovementsBoard() {
         >
           <div className={styles.toolbar}>
             <div className={styles.toolbarGroup}>
-              <label className={styles.srOnly} htmlFor="movement-proposal-search">
+              <label className={styles.srOnly} htmlFor="movements-board-search">
                 Search movements
               </label>
               <input
-                id="movement-proposal-search"
+                id="movements-board-search"
                 className={styles.search}
                 type="search"
                 placeholder="Search initials, WF number, ED or ward"

@@ -45,12 +45,13 @@ type Filter = JobState | "escort" | "noCad" | "all";
 const STEPS: {
   from: JobState;
   label: string;
+  done: string;
   event: "TRANSPORT_ACCEPTED" | "TRANSPORT_EN_ROUTE" | "PATIENT_COLLECTED" | "PATIENT_ARRIVED";
 }[] = [
-  { from: "Requested", label: "Accept job", event: "TRANSPORT_ACCEPTED" },
-  { from: "Accepted", label: "Mark en route", event: "TRANSPORT_EN_ROUTE" },
-  { from: "En route", label: "Mark collected", event: "PATIENT_COLLECTED" },
-  { from: "Collected", label: "Mark delivered", event: "PATIENT_ARRIVED" },
+  { from: "Requested", label: "Accept job", done: "Job accepted", event: "TRANSPORT_ACCEPTED" },
+  { from: "Accepted", label: "Mark en route", done: "Marked en route", event: "TRANSPORT_EN_ROUTE" },
+  { from: "En route", label: "Mark collected", done: "Marked collected", event: "PATIENT_COLLECTED" },
+  { from: "Collected", label: "Mark delivered", done: "Delivery recorded", event: "PATIENT_ARRIVED" },
 ];
 
 const REFUSAL_LABEL: Record<string, string> = {
@@ -158,7 +159,7 @@ export function TransportHub() {
     else dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: selected.id });
     setConfirmFor(null);
     setSelectedId(selected.id);
-    setMessage(`${step.label} recorded for ${who}.`);
+    setMessage(`${step.done} for ${who}.`);
   };
 
   const providers = TRANSPORT_PROVIDERS.map((name) => {
@@ -294,22 +295,22 @@ export function TransportHub() {
         >
           <div className={styles.toolbar}>
             <div className={styles.toolbarGroup}>
-              <label className={styles.srOnly} htmlFor="transport-proposal-search">
+              <label className={styles.srOnly} htmlFor="transport-hub-search">
                 Search transport jobs
               </label>
               <input
-                id="transport-proposal-search"
+                id="transport-hub-search"
                 className={styles.search}
                 type="search"
-                placeholder="Search initials, WF number, ED, ward or CAD"
+                placeholder="Initials, WF number, ward or CAD"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
-              <label className={styles.srOnly} htmlFor="transport-proposal-provider">
+              <label className={styles.srOnly} htmlFor="transport-hub-provider">
                 Provider
               </label>
               <select
-                id="transport-proposal-provider"
+                id="transport-hub-provider"
                 className={styles.select}
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
