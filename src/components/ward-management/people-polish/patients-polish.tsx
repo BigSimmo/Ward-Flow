@@ -817,7 +817,7 @@ Clinical Note: ${p.clinicalNote}`;
                 value={text}
                 onValueChange={setText}
                 label="Search"
-                placeholder="Name, UMRN or movement"
+                placeholder="Name or UMRN"
                 offerAddPerson={false}
               />
               <span className="sr-only">Find a person by name or record number</span>
