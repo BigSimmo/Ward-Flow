@@ -248,7 +248,7 @@ export function EdOverview({ departmentId, departments, figures, onRaiseReferral
                 <span className={styles.cardMetrics}>
                   <span>
                     <b>{department.waiting}</b>
-                    <small>{department.waiting ? "waiting" : "on list"}</small>
+                    <small>on board</small>
                   </span>
                   <span>
                     <small>Longest</small>

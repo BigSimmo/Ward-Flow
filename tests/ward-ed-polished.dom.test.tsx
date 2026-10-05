@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function PlanHarness() {
   const [labels, setLabels] = useState<string[]>([]);
@@ -78,6 +78,22 @@ function ClinicalStateProbe() {
 }
 
 describe("ED compact draft selectors", () => {
+  it("keeps each department browser count consistent with its recorded patient board", () => {
+    for (const department of allEmergencyDepartments()) {
+      const view = render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <EdScreen edId={department.id} />
+        </WardFlowProvider>,
+      );
+      const count = screen.queryAllByTestId(/^ward-ed-patient-WF-/).length;
+      fireEvent.click(screen.getByRole("button", { name: /Other EDs/ }));
+      const currentDepartment = screen.getByRole("link", { current: "page" });
+      const boardCount = within(currentDepartment).getByText("on board").parentElement!;
+      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*on board$`));
+      view.unmount();
+    }
+  });
+
   it("supports review status keyboard navigation, selection and Escape with focus return", () => {
     const onChange = vi.fn();
     render(

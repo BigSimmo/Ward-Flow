@@ -2631,7 +2631,12 @@ export function EdScreen({ edId }: EdScreenProps) {
           departments={departments.map((candidate) => {
             const candidateSite = siteByCode(candidate.siteCode);
             const candidateMovements = movements.filter(
-              (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
+              (movement) =>
+                movement.originEdId === candidate.id &&
+                movement.stage !== "arrived" &&
+                (!movement.closure ||
+                  (movement.edOutcome !== undefined && !movement.leftDepartmentAt) ||
+                  isEdInitiatedWithdrawal(movement)),
             );
             return {
               id: candidate.id,
