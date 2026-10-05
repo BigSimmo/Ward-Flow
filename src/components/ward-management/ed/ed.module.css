@@ -4270,6 +4270,11 @@ tr.qRow:focus-visible {
 }
 
 .declineForm[role="dialog"] {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 0;
+  font-size: 13px;
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--r2);
@@ -5261,5 +5266,835 @@ tr.qRow:focus-visible {
   .card {
     border-color: var(--line-strong) !important;
     box-shadow: none !important;
+  }
+}
+
+/* Approved ED psychiatry composition: compact, curved, content-sized modules. */
+.main {
+  gap: 12px;
+  padding: 14px 20px 24px;
+}
+.departmentWorkspace {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 14px;
+  align-items: start;
+}
+.departmentWorkspace > .panel {
+  height: auto;
+  max-height: none;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.departmentWorkspace > .panel > .ph,
+.listSection > .ph {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.departmentWorkspace .ph h2,
+.listSection > .ph h2 {
+  font: 650 14px var(--body);
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.departmentWorkspace .ph .count {
+  font: 12px var(--body);
+  color: var(--muted);
+  margin: 0;
+}
+.attentionWrap,
+.lstWrap {
+  max-height: none;
+  overflow: visible;
+  flex: 0 0 auto;
+  padding: 0;
+}
+.attentionList {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  margin: 0;
+}
+.attentionRow {
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.attentionRow:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.attentionRow[data-tone="warn"] {
+  background: color-mix(in srgb, var(--warn) 3%, var(--surface));
+  border-color: color-mix(in srgb, var(--warn) 18%, var(--line));
+}
+.attentionRow[data-tone="danger"] {
+  background: color-mix(in srgb, var(--danger) 4%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 23%, var(--line));
+}
+.attentionHeader {
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: start;
+}
+.attentionBadge {
+  grid-column: 1;
+  grid-row: 1/3;
+  width: 29px;
+  height: 29px;
+  border-radius: 9px;
+}
+.attentionTitle {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.attentionMeta {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+.attentionMetaDot {
+  display: none;
+}
+.attentionIdBtn {
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 600;
+  text-align: left;
+}
+.attentionDemographics {
+  font-size: 12px;
+  color: var(--muted);
+}
+.attentionStamp {
+  grid-column: 3;
+  grid-row: 1/3;
+  font: 12px/1.5 var(--mono);
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+}
+.attentionBody {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 9px 0 0;
+}
+.attentionWhy {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.attentionAct {
+  align-self: flex-start;
+}
+.attentionActionBtn {
+  min-height: 28px;
+  padding: 3px 7px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.departmentListTabs {
+  padding: 8px 12px;
+  border: 0;
+  gap: 4px;
+  background: var(--surface);
+}
+.departmentListTabs .tabBtn {
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 9px;
+  margin: 0;
+  font-size: 12px;
+}
+.departmentListTabs .tabBtn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.departmentListTabs .tabNum {
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.departmentListTabs .tabBtn[aria-selected="true"] .tabNum {
+  color: var(--on-accent);
+  background: color-mix(in srgb, var(--on-accent) 16%, var(--accent));
+  box-shadow: none;
+}
+.lstWrap {
+  width: 100%;
+  padding: 0 0 8px;
+}
+.sectionHeading {
+  width: 100%;
+  padding: 10px 16px;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 550 12px/1.4 var(--body);
+  background: var(--surface-2);
+  border-block: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--ink-soft);
+}
+.lstWrap > .unitMeta {
+  padding: 7px 16px;
+  margin: 0;
+  font-size: 12px;
+}
+.lst {
+  padding: 0 14px;
+}
+.lstRow {
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+  background: none;
+}
+.lstMain {
+  gap: 2px;
+}
+.lstWhy {
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.lstTitle,
+.nameBtn {
+  font-size: 13px;
+}
+.lstEnd .stamp {
+  font: 12px var(--mono);
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.lst .meta {
+  font-size: 12px;
+  gap: 6px;
+}
+.inboxSection {
+  padding: 0 14px 12px;
+}
+.inboxMeta {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.inboxSubheading {
+  font: 550 12px var(--body);
+  margin: 8px 0 6px;
+}
+.inboxList {
+  gap: 8px;
+}
+.inboxItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  box-shadow: none;
+}
+.inboxItem:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.inboxItemHeader,
+.inboxFacts {
+  grid-column: 1/-1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+}
+.inboxItemHeader strong {
+  font-size: 12px;
+}
+.inboxItemHeader .inboxPurpose {
+  margin-left: auto;
+}
+.inboxClocks {
+  grid-column: 1/-1;
+  margin: 4px 0;
+  gap: 30px;
+}
+.inboxClockRow {
+  display: grid;
+  gap: 4px;
+}
+.inboxClocks dt {
+  font: 11px var(--body);
+}
+.inboxClocks dd {
+  font: 12px var(--mono);
+}
+.inboxClearance {
+  margin: 2px 0;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+}
+.referralDetailsTrigger {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 3px 0;
+  background: none;
+  color: var(--accent);
+  font: 550 12px var(--body);
+  cursor: pointer;
+}
+.referralDetails {
+  grid-column: 1/-1;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.referralDetails[hidden],
+.referralBarSection[hidden] {
+  display: none;
+}
+.referralDetails .inboxBtn {
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  margin: 4px 4px 0 0;
+}
+.referralDetailsTrigger:focus-visible,
+.thinSelect:focus-visible,
+.patientName:focus-visible,
+.boardTools :is(input, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.listSection {
+  border-radius: 18px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.boardChips {
+  padding: 7px 10px;
+  gap: 5px;
+  border: 0;
+  background: var(--surface-2);
+}
+.boardChip {
+  min-height: 28px;
+  padding: 3px 7px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.boardChip .c {
+  padding: 1px 5px;
+  font-size: 12px;
+}
+.boardTools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.patientSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 300px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.patientSearch input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 12px var(--body);
+}
+.patientSort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.patientSort select {
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font: 12px var(--body);
+}
+.draftNote {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+.boardResult {
+  font-size: 12px;
+  color: var(--muted);
+}
+.boardWrap {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+}
+.boardTable {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1160px;
+  font-size: 13px;
+}
+.boardTable th {
+  padding: 10px;
+  font: 550 12px/1.35 var(--body);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  background: var(--surface-2);
+}
+.boardTable td {
+  padding: 12px 10px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  white-space: normal;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, var(--surface));
+}
+.boardTable :is(th, td):nth-child(2),
+.boardTable :is(th, td):nth-child(3),
+.boardTable :is(th, td):nth-child(4),
+.boardTable :is(th, td):nth-child(5),
+.boardTable :is(th, td):last-child {
+  padding-left: 5px;
+  padding-right: 5px;
+  min-width: 0;
+}
+.boardTable :is(th, td):first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 0;
+  box-shadow: 1px 0 color-mix(in srgb, var(--line) 65%, transparent);
+}
+.boardTable :is(th, td):last-child {
+  width: auto;
+}
+.boardTable tr:nth-child(even) > td {
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+}
+.boardTable tr:hover > td {
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface));
+}
+.boardTable td {
+  background: var(--surface);
+}
+.boardTable .sub {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 3px 0 0;
+  color: var(--muted);
+}
+.patientName {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 650 13px/1.4 var(--body);
+  letter-spacing: -0.015em;
+  text-align: left;
+  cursor: pointer;
+}
+.umrnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin: 6px 0 5px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, var(--surface));
+  border-radius: 5px;
+  padding: 2px 5px;
+  background: var(--surface-2);
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.umrnBadge > span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  color: var(--muted);
+}
+.boardTable .umrnBadge > b {
+  font: 500 11px var(--mono);
+  color: var(--ink-soft);
+}
+.boardTable .compactTime > b {
+  font: 600 12px var(--mono);
+  white-space: nowrap;
+  letter-spacing: -0.035em;
+  color: var(--ink-soft);
+}
+.boardTable .bayNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 27px;
+  min-width: 30px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font: 600 12px var(--mono);
+  color: var(--ink-soft);
+}
+.thinSelect {
+  font: 500 12px/1.2 var(--body);
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 2px 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.compactForm .thinSelect {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-weight: 600;
+}
+.thinSelect[data-cleared="yes"] {
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 25%, var(--line));
+  background-color: color-mix(in srgb, var(--good) 5%, var(--surface));
+}
+.thinSelect[data-cleared="no"] {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 20%, var(--line));
+}
+.compactExpiry {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  padding-top: 4px;
+  line-height: 1.3;
+}
+.accessWarning {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.45;
+  color: var(--warn);
+}
+.presentationCell .reviewDropdownWrap {
+  display: block;
+  width: 100%;
+  margin: 0 0 7px;
+}
+.presentationCell .reviewPill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--surface));
+  border-radius: 7px;
+  background: var(--surface-2);
+  padding: 0 8px;
+  font: 550 12px var(--body);
+  color: var(--ink-soft);
+}
+.presentationCell .reviewPill[data-tone="good"] {
+  background: color-mix(in srgb, var(--good) 5%, var(--surface));
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 18%, var(--line));
+}
+.presentationCell .revDot {
+  display: none;
+}
+.boardTable .dest {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.acceptedLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--good);
+  margin-top: 4px;
+}
+.boardTable .noPatientMatches {
+  padding: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 1200px) {
+  .departmentWorkspace {
+    grid-template-columns: 1fr;
+  }
+  .attentionList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .attentionHeader {
+    grid-template-columns: 29px minmax(0, 1fr);
+  }
+  .attentionStamp {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .boardTools {
+    flex-wrap: wrap;
+  }
+  .draftNote {
+    margin-left: 0;
+  }
+  .boardResult {
+    margin-left: auto;
+  }
+}
+@media (max-width: 700px) {
+  .main {
+    padding: 10px 10px 20px;
+  }
+  .attentionList {
+    grid-template-columns: 1fr;
+  }
+  .attentionHeader {
+    grid-template-columns: 29px minmax(0, 1fr) auto;
+  }
+  .attentionStamp {
+    grid-column: 3;
+    grid-row: 1/3;
+    max-width: 95px;
+    white-space: normal;
+    text-align: right;
+  }
+  .departmentWorkspace .ph {
+    padding: 12px 14px;
+  }
+  .boardTools {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .patientSearch {
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .boardTable {
+    min-width: 1160px;
+  }
+}
+
+.attentionMeta {
+  align-items: flex-start;
+  justify-content: flex-start;
+  justify-self: stretch;
+}
+.attentionIdBtn {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+}
+.attentionFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.attentionNext,
+.attentionRecord {
+  border: 0;
+  background: none;
+  padding: 3px 0;
+  min-height: 28px;
+  font: 550 12px var(--body);
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+.attentionNext > span {
+  font-weight: 400;
+  color: var(--muted);
+}
+.attentionRecord {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.attentionNext:focus-visible,
+.attentionRecord:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.attentionRow[data-tone="good"],
+.attentionRow[data-tone="quiet"] {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.lstWrap .lstRow {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
+.lstWrap .lstRow:last-child {
+  border-bottom: 0;
+}
+.lstWrap .bayNumber {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+}
+.inboxSubheading {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.identityUrgency {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.identityUrgency[data-urgency="1"] {
+  color: var(--danger);
+}
+.identityUrgency[data-urgency="2"] {
+  color: var(--warn);
+}
+.boardTable td .sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.listSection > .ph {
+  padding: 10px 16px;
+}
+.fullscreenToggleBtn {
+  width: 30px;
+  min-height: 28px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.fullscreenToggleBtn > span {
+  display: none;
+}
+.boardChips .boardChip {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+  box-shadow: none;
+}
+.boardChips .boardChip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 550;
+}
+.patientIdentity .transitBadgeHold,
+.patientIdentity .transitBadge,
+.patientIdentity .transitBadgeOverdue {
+  display: block;
+  white-space: normal;
+  font-size: 11px;
+  line-height: 1.45;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 5px;
+  background: none;
+  box-shadow: none;
+}
+.pxDrawer {
+  display: contents;
+}
+.pxDrawer::before {
+  display: none;
+}
+.pxDrawer .patientDialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 760px;
+  max-width: calc(100vw - 32px);
+  height: auto;
+  max-height: calc(100dvh - 48px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 0;
+  color: var(--ink);
+  box-shadow: 0 18px 60px color-mix(in srgb, var(--ink) 20%, transparent);
+}
+.pxDrawer .patientDialog:not([open]) {
+  display: none;
+}
+.patientDialog::backdrop {
+  background: var(--scrim);
+  backdrop-filter: blur(3px);
+}
+.patientDialog .popHead {
+  padding: 16px 20px;
+  background: var(--surface);
+}
+.patientDialog .popHead h2 {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+.patientDialog .count {
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .pxDrawer .patientDialog {
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 16px;
+  }
+  .patientDialog .popHead {
+    padding: 14px;
   }
 }
