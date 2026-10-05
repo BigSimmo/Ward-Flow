@@ -58,3 +58,9 @@
 .snapshot > div[data-attention="true"] span {
   color: var(--ink);
 }
+
+/* The header button kept white text on --ink, which turns light in dark mode. */
+.primaryText.primaryText.primaryText,
+.primaryText.primaryText.primaryText:hover {
+  color: var(--surface);
+}

@@ -432,7 +432,7 @@ export function PatientPolish({ patientId, movementId, initialExampleId = "WF-00
                   <button
                     type="button"
                     onClick={openOperations}
-                    className={`${styles.ctl} ${styles.ctlPrimary}`}
+                    className={`${styles.ctl} ${styles.ctlPrimary} ${polish.primaryText}`}
                     data-testid="ward-person-refer"
                   >
                     Coordinate placement
