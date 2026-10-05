@@ -270,28 +270,75 @@
   gap: 0.75rem;
 }
 
-/* Prototype Notice */
+/* Same bottom banner as WardPrototypeFooter. This screen cannot import that component. */
 .prototypeNotice {
-  width: 100%;
-  max-width: 70rem;
-  text-align: center;
-  padding: 0.75rem 1rem 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.prototypeNotice p {
-  margin: 0;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+  margin-top: auto;
+  box-sizing: border-box;
+  padding: 0.625rem 1.25rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: var(--body, system-ui, sans-serif);
   font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
-.auditMeta {
+.prototypeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
   font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 2px var(--good-soft);
+  flex-shrink: 0;
+}
+
+.prototypeNote {
+  min-width: 0;
+  flex: 1 1 16rem;
+  margin: 0;
   color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.authorityPill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .masthead {

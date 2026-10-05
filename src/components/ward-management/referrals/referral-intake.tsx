@@ -4744,7 +4744,6 @@ export function ReferralIntakeForm() {
         </div>
 
         <WardPrototypeFooter
-          className={pageStyles.footerWrapper}
           testId="ward-referral-intake-governance"
           note={
             <>

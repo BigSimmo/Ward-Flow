@@ -1325,7 +1325,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
         </div>
 
         <WardPrototypeFooter
-          className={styles.boardFooter}
           testId="ward-referral-board-governance"
           note="It places nobody; coordinators record referral decisions one at a time · Not a medical device"
         />
