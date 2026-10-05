@@ -8030,3 +8030,85 @@ panels. Local screenshots and browser evidence are recorded separately in
 `.local/delays-views/fidelity-*` and `/workspace/generated_images/ward-flow-fidelity-*.png`.
 The corrected local preview remains at `http://localhost:3641/mockups/ward-flow/delays`;
 visual acceptance, publication, merge and deployment remain separate.
+
+## WF-DRAWERS-20261004 — Tools, Tasks, Activity and Referrals drawers (4 October 2026)
+
+Completed local implementation: Figures moved from the header into Tools, and the three
+drawers were redesigned. Task branch `codex/drawer-redesign` in
+`/workspace/Ward-Flow-drawers`, based on verified Ward Flow main
+`d37ec244e479f6861c7871595a1be84602f2435f`. Figures now shares the Tools dialog; Tools has
+Overview, Figures, Utilities, Directory and Demo sections. Tasks has text/severity and
+acknowledgement filtering, with bulk acknowledgement limited to visible unacknowledged facts.
+Activity has text search, unread-notice filtering and explicit event status labels. The
+responsive drawer presentation retains the shared focus, history and synthetic-record behaviour.
+
+Verification used dependencies installed from this repository's lockfile (Next 16.3.8).
+104 focused tests passed; the final focus/task subset passed 72 checks after the keyboard-focus
+and bounded task-scrolling corrections. The full production Ward journey run passed 117 tests
+with one existing skip before those two final corrections; the updated shared-header journey
+then passed all 19 tests, including the new short-phone Figures-focus/task-scroll regression.
+Type checking, scoped lint and formatting passed. The final copy and 48px control treatment
+passed six system-Chromium viewport/theme scenarios (1440, 768 and 390px widths, including a
+568px-tall phone), with no runtime errors. Real acknowledgement and movement navigation were
+also exercised. Private screenshots and run logs are under `.local/drawers/` in the task worktree.
+The local preview is `http://localhost:4007/mockups/ward-flow/delays`.
+Publication, merge, deployment and owner visual acceptance remain separate from this local stage.
+
+Owner style refinement: the first presentation was considered too bland and spacious. The same
+task now uses compact floating drawers with curved edges, layered theme-aware surfaces, pill
+navigation, a stronger Figures feature and a modular Tools overview. Desktop Tools fits its
+content; Tasks retains bounded list scrolling and 48px controls. Activity uses tighter timeline
+cards with explicit status pills. New local verification and screenshots are held under
+`.local/drawers/refinement/`. The refinement passed 30 focused DOM tests, all 19 shared-header
+browser journeys, TypeScript, scoped lint and formatting. Six final desktop/tablet/phone and
+light/dark browser checks passed, including the 568px-tall phone. Search, filtering, acknowledgement,
+movement navigation, focus return and 48px task controls were exercised. Theme screenshots wait
+for the appearance transition to settle. This remains local work without publication or deployment.
+
+Further owner refinement completed locally: Tools returns to full height. Headers, summaries,
+swatches and card padding are tighter; Activity category controls scroll horizontally on phones.
+The existing referral inspector now matches the curved drawer design, with Patient, Referral,
+Clinical and Placement panels that retain the draft across switches. Tools opens it directly;
+the New referral menu preserves community, ED and ward source selection. Focus returns to the
+actual launcher. Empty diagnosis state is explicit rather than displaying a populated option.
+Sending keeps its existing unwired prototype action.
+
+58 focused DOM tests and all 20 shared-header/browser tests passed, including a new short-phone
+referral draft, keyboard shortcut and focus-return regression. Six viewport/theme checks passed
+after the final visual adjustments, with no runtime errors and 48px drawer controls. Source-menu
+opening and focus return were exercised for community and ED referrals. Type checking, scoped
+lint, formatting and diff whitespace passed. The complete local catalogue lists 16 drawer views,
+44 app mockup page routes and the Digest route, with 48 verified screenshot links. New evidence
+and the catalogue are under `.local/drawers/compact/`. No publication or deployment was performed.
+
+Owner authorised a separate Railway preview on 5 October 2026. Preview preparation caught and
+corrected three design contracts: the existing navy feature colours now resolve through shared
+palette tokens; desktop drawers size from their fixed backdrop; filtered count announcements name
+prototype results or invented tasks. These fixes preserve the feature colours and the verified
+976px desktop / 568px short-phone drawer heights. The 76 focused contract and component tests passed.
+Preview deployment and its final local gates are in progress; evidence remains in
+`.local/drawers/compact/` under the same task identity.
+
+Preview verification also exposed a production-only Escape race between the enclosing Sheet and
+the embedded referral editor's second focus-stack registration. The Sheet now owns embedded focus;
+the editor consumes Escape while search is open and preserves standalone backdrop handling.
+The new enclosing-Sheet regression failed before the fix. The final gates will verify this
+corrected source before preview publication.
+
+Preview delivered on 5 October 2026 at
+https://ward-flow-drawer-preview-production.up.railway.app/mockups/ward-flow/delays.
+Railway deployment `c1f42ae4-1e1a-4895-8b1c-0b619fce694c` reports SUCCESS for public
+commit `ea64f464920a699ce5b62988f5589cb33b466d29`, identical in tree to local `ea56aa7`.
+The public page freshly returned HTTP 200. The owner requested expedited delivery: reuse the
+preceding full unit pass (10,383 tests) and unchanged browser scope (118 passed, one skipped),
+then validate the final Escape fix with its red-before/green-after regression, 37 focused tests,
+scoped static checks and targeted browser pass. No full pass is claimed after the last source fix.
+The original production service and main branch were preserved. Referral sending remains unwired.
+
+Owner authorised promotion to the main live Ward Flow app on 5 October 2026. The approved
+shared React drawer changes were applied cleanly to verified main
+`ecd54ac0ae2efb1f78b73414d0714c6f9721690e` in the isolated
+`codex/drawers-live-20261005` worktree. Newer Delays workspace and shared-footer changes are
+retained. The production service remains connected to `main` with Wait for CI enabled.
+Integration verification, publication and live runtime confirmation are in progress; private
+evidence is under `.local/drawers/live/` in `/workspace/Ward-Flow-live`.

@@ -100,6 +100,9 @@
   --ward-chrome: var(--surface-chrome);
   --ward-subtle: var(--surface-subtle);
   --ward-shadow: var(--lift);
+  --ward-feature-start: var(--surface-feature-start);
+  --ward-feature-end: var(--surface-feature-end);
+  --ward-feature-ink: var(--surface-feature-ink);
   --ward-shadow-rgb: 0 0 0;
   /* White text on a filled status chip. Seven chips on the delays and statistics screens read
      this with no fallback after their literal #ffffff was tokenised on 25 September, and nothing
@@ -323,6 +326,10 @@
  */
 @media (forced-colors: active) {
   .wardTokens.wardTokens {
+    --ward-feature-start: Canvas;
+    --ward-feature-end: Canvas;
+    --ward-feature-ink: CanvasText;
+
     /* Every panel edge and every row rule in Ward Flow. */
     --ward-border: CanvasText;
     --ward-divider: CanvasText;
