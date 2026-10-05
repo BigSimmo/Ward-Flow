@@ -58,6 +58,474 @@
 }
 
 /* ── Top Bar Header ── */
+
+/* =====================================================================
+   COMMAND HORIZON CARD (3-TIER SYSTEM)
+   ===================================================================== */
+.commandHorizonCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 6px -1px rgba(15, 23, 42, 0.07),
+    0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+/* =====================================================================
+   TIER 1: DARK HERO HEADER (#0b1329)
+   ===================================================================== */
+.heroHeader {
+  background: #0b1329;
+  color: #ffffff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.shiftInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.govTag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0284c7;
+  display: inline-block;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.shiftTitleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shiftTitle {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.shiftTime {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.handoffTeams {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.handoffTeams strong {
+  color: #f1f5f9;
+}
+
+.takenAtMeta {
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btnAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btnAction:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* =====================================================================
+   TIER 2: DARK TELEMETRY DECK (#17243b)
+   ===================================================================== */
+.telemetryDeck {
+  background: #17243b;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.telemetryPlain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.metricItem {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.metricLabel {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.metricVal {
+  font-family: var(--mono, monospace);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.goodVal {
+  color: #4ade80 !important;
+}
+
+.warnVal {
+  color: #fbbf24 !important;
+}
+
+.dangerVal {
+  color: #f87171 !important;
+}
+
+.metricSep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  user-select: none;
+}
+
+.liveSyncRoster {
+  font-size: 11.5px;
+  color: #7dd3fc;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rosterDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  display: inline-block;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+/* =====================================================================
+   TIER 3: WHITE CONTROL DECK (NO SEARCH BAR)
+   ===================================================================== */
+.controlToolbarDeck {
+  position: relative;
+  padding: 10px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ctrlGroupLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  flex-wrap: wrap;
+}
+
+.ctrlGroupRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* Style HandoverScopeControl (Dropdown 1) when placed in .controlToolbarDeck */
+.controlToolbarDeck .scopeSelectForm {
+  margin: 0;
+  display: inline-flex;
+}
+
+.controlToolbarDeck .scopeSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.controlToolbarDeck .wardSelect {
+  height: 34px;
+  min-height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong, #cbd5e1);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  padding: 0 22px 0 28px;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.15s ease;
+  width: 152px;
+  max-width: 152px;
+}
+
+.controlToolbarDeck .wardSelect:hover {
+  border-color: #94a3b8;
+}
+
+.controlToolbarDeck .wardSelect:focus {
+  outline: 2px solid rgba(2, 132, 199, 0.2);
+  border-color: #0284c7;
+}
+
+.controlToolbarDeck .scopeSelectIcon {
+  position: absolute;
+  left: 9px;
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.controlToolbarDeck .scopeChevronIcon {
+  position: absolute;
+  right: 8px;
+  width: 11px;
+  height: 11px;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Dropdown Styles */
+.selectThin {
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong, #cbd5e1);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.selectThin:hover {
+  border-color: #94a3b8;
+}
+
+.selectThin:focus {
+  outline: 2px solid rgba(2, 132, 199, 0.2);
+  border-color: #0284c7;
+}
+
+.selectWards {
+  width: 124px;
+  padding: 0 22px 0 28px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    8px center,
+    right 8px center;
+  background-size:
+    14px 14px,
+    11px 11px;
+}
+
+.selectFilters {
+  width: 168px;
+  padding: 0 22px 0 28px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230284c7' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230284c7' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    8px center,
+    right 8px center;
+  background-size:
+    14px 14px,
+    11px 11px;
+  color: var(--accent-ink, #0369a1);
+  background-color: var(--accent-soft, #e0f2fe);
+  border-color: var(--accent-border, #bae6fd);
+  font-weight: 700;
+}
+
+/* Intuitive Reset Button */
+.btnResetIntuitive {
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 6px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--surface-2, #f1f5f9);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft, #334155);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btnResetIntuitive:hover {
+  background: var(--surface-3, #e2e8f0);
+  color: var(--ink, #0f172a);
+  border-color: var(--line-strong, #cbd5e1);
+}
+
+/* Shift Switcher Pills (Far Right) */
+.shiftPillLight {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface-2, #f1f5f9);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #e2e8f0);
+}
+
+.shiftBtnLight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.shiftBtnLight:hover {
+  color: var(--ink, #0f172a);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.shiftBtnLight.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.35);
+}
+
+.shiftBtnLight.active .shiftSubtime {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.deckShiftDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.shiftSubtime {
+  font-size: 10px;
+  font-family: var(--mono, monospace);
+  color: var(--muted, #64748b);
+}
+
+.countChip {
+  font-size: 11px;
+  font-family: var(--mono, monospace);
+  font-weight: 700;
+  color: var(--muted, #64748b);
+  background: var(--surface-2, #f1f5f9);
+  border: 1px solid var(--line, #e2e8f0);
+  padding: 5px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.countDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0284c7;
+}
+
+.tabNavHidden {
+  display: none;
+}
+
 .topBarWrap {
   display: flex;
   min-height: 2.25rem;
@@ -569,6 +1037,123 @@
   color: var(--muted);
   pointer-events: none;
   z-index: 1;
+}
+
+/* ── Compact Selects for Streamlined Navigation (Image 3) ── */
+.compactSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.compactSelect {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 24px 0 10px;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.compactSelect:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.compactSelect:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Segmented Table Switcher (Images 1 & 2) ── */
+.tableSwitcherBar {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tableSwitchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--pill);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.tableSwitchBtn:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.tableSwitchBtnActive {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  border-color: var(--line);
+  box-shadow: var(--lift-sm);
+}
+
+.tableSwitchBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--pill);
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.tableSwitchBadge.badgeDanger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.tableSectionWrapper {
+  width: 100%;
+}
+
+.tableSectionHidden {
+  display: none !important;
+}
+
+@media print {
+  .tableSectionHidden {
+    display: block !important;
+  }
+  .tableSwitcherBar {
+    display: none !important;
+  }
 }
 
 .delayedEgressBlock {
@@ -1434,8 +2019,8 @@ table.snapSheet {
 .boundedTableScroll {
   width: 100%;
   box-sizing: border-box;
-  max-height: 240px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--r1, 4px);

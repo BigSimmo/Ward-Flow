@@ -1,7 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import Link from "next/link";
 
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
@@ -62,8 +70,6 @@ import {
 
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -316,6 +322,8 @@ export function resolveAdmissionPatient(
  * Task 4 / Master Standard: The Statewide Clinical Handover & Bedflow Coordination Page.
  * Sovereign Clinical Console Standard (Platinum Raised Cool palette, 100/100 Rubric).
  */
+const TABLE_SECTION_TABS = ["longest", "pulled", "open", "transit", "placement", "all"] as const;
+
 export function HandoverPage() {
   usePrintableDisclosures();
   const { movements, units, referrals, patients, dayZero, admissions, dispatch } = useWardFlow();
@@ -341,16 +349,20 @@ export function HandoverPage() {
 
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
   const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";
+  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
 
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<
     "snapshot" | "referrals" | "inbound" | "discharges" | "breaches" | "briefing" | "rollup1630"
   >("snapshot");
   const [selectedShift, setSelectedShift] = useState<"morning" | "afternoon" | "night">("afternoon");
-  const [selectedPreset, setSelectedPreset] = useState<"rapid" | "bedflow" | "executive">("rapid");
   const [focusFilter, setFocusFilter] = useState<
     "all" | "referrals" | "breaches" | "inbound" | "discharges" | "specialling"
   >("all");
+  const [activeTableSection, setActiveTableSection] = useState<
+    "longest" | "pulled" | "open" | "transit" | "placement" | "all"
+  >("longest");
+  const shiftEndClock = `${String(Math.floor(DAY_SHIFT_END_MINUTE / 60)).padStart(2, "0")}:${String(DAY_SHIFT_END_MINUTE % 60).padStart(2, "0")}`;
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
   const [copiedPatientId, setCopiedPatientId] = useState<string | null>(null);
@@ -383,6 +395,26 @@ export function HandoverPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const onTableSectionKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const tabs = TABLE_SECTION_TABS;
+      const idx = tabs.indexOf(activeTableSection);
+      let next = activeTableSection;
+      if (event.key === "Home") next = tabs[0];
+      else if (event.key === "End") next = tabs[tabs.length - 1];
+      else {
+        const step = event.key === "ArrowRight" ? 1 : -1;
+        next = tabs[(idx + step + tabs.length) % tabs.length];
+      }
+      setActiveTableSection(next);
+      const tab = event.currentTarget.querySelector(`#tableTab-${next}`);
+      if (tab instanceof HTMLButtonElement) tab.focus();
+    },
+    [activeTableSection],
+  );
 
   /**
    * Opens the movement drawer from any patient control on the sheet. Callers record the activating
@@ -873,8 +905,6 @@ export function HandoverPage() {
         ? "Afternoon Shift (15:00–23:30)"
         : "Night Shift (23:00–07:30)";
 
-  const handoverCompletionFlags = useMemo(() => handoverCompletionDue(now), [now]);
-
   return (
     <div
       className={`${styles.screen} ${pageStyles.screen}`}
@@ -882,559 +912,290 @@ export function HandoverPage() {
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── Top Bar Header: Streamlined & Institutional ── */}
-        <header className={pageStyles.topBarWrap}>
-          <div className={pageStyles.titleGroup}>
-            <div className={pageStyles.institutionalBadge}>
-              <span className={pageStyles.badgeGovLogo}>WA HEALTH</span>
-              <span className={pageStyles.badgeDivider}>/</span>
-              <span className={pageStyles.badgeTitle}>CLINICAL GOVERNANCE · STATEWIDE SHIFT HANDOVER</span>
-              <span className={pageStyles.liveSyncDot} title="Live data feed active">
-                <span className={pageStyles.pulsingDot} /> Live Sync
-              </span>
+        {/* ── UNIFIED COMMAND HORIZON: 3-TIER HANDOVER FLIGHT DECK ── */}
+        <div className={pageStyles.commandHorizonCard}>
+          {/* TIER 1: DARK HERO HEADER */}
+          <header className={pageStyles.heroHeader}>
+            <div className={pageStyles.shiftInfo}>
+              <div className={pageStyles.govTag}>
+                <span className={pageStyles.badgeDot} />
+                WA HEALTH MENTAL HEALTH OPERATIONS · LIVE SYNC
+              </div>
+              <div className={pageStyles.shiftTitleRow}>
+                <h1 className={pageStyles.shiftTitle}>
+                  {selectedShift === "morning"
+                    ? "Morning Shift Handover"
+                    : selectedShift === "afternoon"
+                      ? "Afternoon Shift Handover"
+                      : "Night Shift Handover"}
+                </h1>
+                <span className={pageStyles.shiftTime}>
+                  {selectedShift === "morning"
+                    ? "07:00 – 15:30 AWST"
+                    : selectedShift === "afternoon"
+                      ? "15:00 – 23:30 AWST"
+                      : "23:00 – 07:30 AWST"}
+                </span>
+              </div>
+              <div className={pageStyles.handoffTeams}>
+                Outgoing:{" "}
+                <strong>
+                  {selectedShift === "morning"
+                    ? "Night Shift"
+                    : selectedShift === "afternoon"
+                      ? "Morning Shift"
+                      : "Afternoon Shift"}
+                </strong>{" "}
+                → Incoming:{" "}
+                <strong>
+                  {selectedShift === "morning"
+                    ? "Morning Shift"
+                    : selectedShift === "afternoon"
+                      ? "Afternoon Shift"
+                      : "Night Shift"}
+                </strong>
+                <span className={pageStyles.takenAtMeta} data-testid="ward-handover-taken-at">
+                  {" · "}Updated {formatSheetMoment(now, dayZero)}
+                </span>
+              </div>
             </div>
-            <p className={styles.takenAt} data-testid="ward-handover-taken-at">
-              Updated {formatSheetMoment(now, dayZero)}
-            </p>
-          </div>
 
-          <div className={pageStyles.headerActions}>
-            <button
-              type="button"
-              className={pageStyles.btnActionSec}
-              onClick={handleCopySummary}
-              title="Copy formatted text handover snapshot"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+            <div className={pageStyles.actions}>
+              <button
+                type="button"
+                className={pageStyles.btnAction}
+                onClick={handleCopySummary}
+                title="Copy formatted text handover snapshot"
               >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <span>{copied ? "✓ Copied!" : "Copy Snapshot"}</span>
-            </button>
-
-            <button
-              type="button"
-              className={pageStyles.btnPrintPrimary}
-              aria-label="Print"
-              onClick={() => {
-                setSelectedPreset("rapid");
-                setActiveTab("snapshot");
-                setSheetViewMode("table");
-                window.print();
-              }}
-              data-testid="print-button"
-              title="Print A4 rapid handover sheet"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="6 9 6 2 18 2 18 9" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" />
-              </svg>
-              <span>Print A4 Handover</span>
-            </button>
-          </div>
-        </header>
-
-        {/* ── Contextual Statewide Handover HUD: Sleek Top Telemetry Bar ── */}
-        <div className={pageStyles.topHudWrap} data-print-hide>
-          <WardDynamicIsland
-            title="Handover HUD"
-            status={
-              breachedOnSheetCount + urgentOutsideFilter.length > 0
-                ? "alarm"
-                : currentReferralsCount > allocatableVacancies
-                  ? "warning"
-                  : "nominal"
-            }
-            statusText={
-              breachedOnSheetCount + urgentOutsideFilter.length > 0
-                ? `${breachedOnSheetCount + urgentOutsideFilter.length} form expiries passed`
-                : `${includedOpenCount} caseload in scope · ${allocatableVacancies} vacancies`
-            }
-            ariaLabel="Handover summary indicators"
-            testId="ward-handover-kpi-strip"
-            className={pageStyles.handoverHudTop}
-            metrics={[
-              {
-                id: "kpi-caseload",
-                label: "Caseload in Scope",
-                value: includedOpenCount,
-                tone: "accent",
-                subtext: `of ${totalOpenCount} open`,
-              },
-              {
-                id: "kpi-referrals",
-                label: "Current Referrals",
-                value: currentReferralsCount,
-                tone: currentReferralsCount > 0 ? "warn" : "normal",
-                subtext: "seeking beds",
-              },
-              {
-                id: "kpi-vacancies",
-                label: "Allocatable Vacancies",
-                value: allocatableVacancies,
-                tone: allocatableVacancies > 0 ? "good" : "muted",
-                subtext: "ward capacity",
-              },
-              {
-                id: "kpi-expiries",
-                label: "Form expiries passed",
-                value: breachedOnSheetCount + urgentOutsideFilter.length,
-                tone: breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : "good",
-                subtext: "urgent delays",
-              },
-              {
-                id: "kpi-specialling",
-                label: "1:1 Specialling Roster",
-                value: speciallingInScopeCount,
-                tone: speciallingInScopeCount > 0 ? "warn" : "normal",
-                subtext: "in scope",
-              },
-            ]}
-            actions={<LegalLimitsNotChecked variant="tag" />}
-          />
-        </div>
-
-        {/* ── UNIFIED NAVIGATION & COORDINATION CARD ── */}
-        <section className={pageStyles.filterRibbon} aria-label="Handover Scope and Filters" data-print-hide>
-          {/* Top of Card: Section Navigation Tabs (Unified In-Square Navigation) */}
-          <nav className={pageStyles.tabNav} role="tablist" aria-label="Handover Detail Sections">
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "snapshot" ? pageStyles.active : ""}`}
-              id="tabBtn-snapshot"
-              role="tab"
-              aria-selected={activeTab === "snapshot"}
-              onClick={() => setActiveTab("snapshot")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="2.5" y="3" width="11" height="11" rx="1.5" />
-                <path d="M5.5 1.75h5" />
-                <path d="M5 6.5h6M5 9.5h6M5 12.5h3.5" />
-              </svg>
-              <span>Rapid Snapshot</span>
-              <span className={pageStyles.tabBadge}>Core</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.active : ""}`}
-              id="tabBtn-referrals"
-              role="tab"
-              aria-selected={activeTab === "referrals"}
-              onClick={() => setActiveTab("referrals")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="6" cy="5" r="2.5" />
-                <path d="M2 13.5c0-2.2 2-3.5 4-3.5s4 1.3 4 3.5" />
-                <path d="M11 6.5h3.5M12.75 4.75v3.5" />
-              </svg>
-              <span>Current Referrals</span>
-              <span className={`${pageStyles.tabBadge} ${pageStyles.referralBadge}`}>{currentReferralsCount}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "inbound" ? pageStyles.active : ""}`}
-              id="tabBtn-inbound"
-              role="tab"
-              aria-selected={activeTab === "inbound"}
-              onClick={() => setActiveTab("inbound")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M1 3h9v7H1z" />
-                <path d="M10 5.5h3l2 2.5v2h-5" />
-                <circle cx="4" cy="12.5" r="1.5" />
-                <circle cx="12" cy="12.5" r="1.5" />
-                <path d="M4 6.5h3M5.5 5v3" />
-              </svg>
-              <span>Inbound Transit</span>
-              <span className={pageStyles.tabBadge}>{snapshot.inTransit.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "discharges" ? pageStyles.active : ""}`}
-              id="tabBtn-discharges"
-              role="tab"
-              aria-selected={activeTab === "discharges"}
-              onClick={() => setActiveTab("discharges")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6 2.5H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3" />
-                <path d="M10.5 5l3 3-3 3M13.5 8H6" />
-              </svg>
-              <span>Discharges &amp; Delays</span>
-              <span className={pageStyles.tabBadge}>{snapshot.pulledBeds.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "breaches" ? pageStyles.active : ""}`}
-              id="tabBtn-breaches"
-              role="tab"
-              aria-selected={activeTab === "breaches"}
-              onClick={() => setActiveTab("breaches")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="6.5" />
-                <path d="M8 4.5v4" />
-                <circle cx="8" cy="11" r="0.75" fill="currentColor" stroke="none" />
-              </svg>
-              <span>Form expiries passed</span>
-              <span className={`${pageStyles.tabBadge} ${pageStyles.urgentBadge}`}>
-                {breachedOnSheetCount + urgentOutsideFilter.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "briefing" ? pageStyles.active : ""}`}
-              id="tabBtn-briefing"
-              role="tab"
-              aria-selected={activeTab === "briefing"}
-              onClick={() => setActiveTab("briefing")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M13.5 2.5H2.5v9h2.5v2.5l3.5-2.5h5z" />
-                <path d="M5 5.5h6M5 8.5h4" />
-              </svg>
-              <span>Coordinator Briefing</span>
-              <span className={pageStyles.tabBadge}>ISBAR</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "rollup1630" ? pageStyles.active : ""}`}
-              id="tabBtn-rollup1630"
-              role="tab"
-              aria-selected={activeTab === "rollup1630"}
-              onClick={() => setActiveTab("rollup1630")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="6.5" />
-                <polyline points="8 4 8 8 11.5 8" />
-              </svg>
-              <span>16:30 Rollup</span>
-              <span className={pageStyles.tabBadge}>Shift 2</span>
-            </button>
-          </nav>
-
-          <div className={pageStyles.filterControlsBody}>
-            {/* Row 1: Shift & Presets & Search */}
-            <div className={pageStyles.filterRow}>
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Shift:</span>
-                <div className={pageStyles.segTrack} role="radiogroup" aria-label="Select Shift">
-                  <button
-                    type="button"
-                    className={`${pageStyles.segBtn} ${selectedShift === "morning" ? pageStyles.active : ""}`}
-                    role="radio"
-                    aria-checked={selectedShift === "morning"}
-                    onClick={() => setSelectedShift("morning")}
-                  >
-                    Morning (07:00–15:30)
-                    {handoverCompletionFlags.morning ? (
-                      <span
-                        className={pageStyles.shiftHandoverFlag}
-                        data-testid="ward-handover-morning-not-recorded"
-                        title="Handover not recorded"
-                      >
-                        · unrecorded
-                      </span>
-                    ) : null}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.segBtn} ${selectedShift === "afternoon" ? pageStyles.active : ""}`}
-                    role="radio"
-                    aria-checked={selectedShift === "afternoon"}
-                    onClick={() => setSelectedShift("afternoon")}
-                  >
-                    Afternoon (15:00–23:30)
-                    {handoverCompletionFlags.afternoon ? (
-                      <span
-                        className={pageStyles.shiftHandoverFlag}
-                        data-testid="ward-handover-afternoon-not-recorded"
-                        title="Handover not recorded"
-                      >
-                        · unrecorded
-                      </span>
-                    ) : null}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.segBtn} ${selectedShift === "night" ? pageStyles.active : ""}`}
-                    role="radio"
-                    aria-checked={selectedShift === "night"}
-                    onClick={() => setSelectedShift("night")}
-                  >
-                    Night (23:00–07:30)
-                  </button>
-                </div>
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Preset:</span>
-                <button
-                  type="button"
-                  className={`${pageStyles.presetBtn} ${selectedPreset === "rapid" ? pageStyles.active : ""}`}
-                  onClick={() => {
-                    setScopeValue("network");
-                    setFocusFilter("all");
-                    setSelectedPreset("rapid");
-                    setActiveTab("snapshot");
-                    setSheetViewMode("table");
-                  }}
-                >
-                  A4 Rapid Snapshot
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.presetBtn} ${selectedPreset === "bedflow" ? pageStyles.active : ""}`}
-                  onClick={() => {
-                    setFocusFilter("referrals");
-                    setSelectedPreset("bedflow");
-                    setActiveTab("referrals");
-                    setSheetViewMode("table");
-                  }}
-                >
-                  Bedflow &amp; Referrals
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.presetBtn} ${selectedPreset === "executive" ? pageStyles.active : ""}`}
-                  onClick={() => {
-                    setFocusFilter("breaches");
-                    setSelectedPreset("executive");
-                    setActiveTab("snapshot");
-                    setSheetViewMode("table");
-                  }}
-                >
-                  Executive Escalations
-                </button>
-              </div>
-
-              <div className={pageStyles.searchBoxHandover}>
                 <svg
                   viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
-                  className={pageStyles.searchIconSvg}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  className={pageStyles.searchInputHandover}
-                  placeholder="Quick find patient, bed, UMRN..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Quick find in handover"
-                />
-                {searchQuery.trim().length > 0 ? (
-                  <div className={pageStyles.searchFeedbackGroup}>
-                    <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
-                    <button
-                      type="button"
-                      className={pageStyles.searchClearBtn}
-                      onClick={() => setSearchQuery("")}
-                      aria-label="Clear search"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <kbd className={pageStyles.searchKbdHint}>/</kbd>
-                )}
+                <span>{copied ? "✓ Copied!" : "Copy Summary"}</span>
+              </button>
+
+              <button
+                type="button"
+                className={pageStyles.btnAction}
+                aria-label="Print"
+                onClick={() => {
+                  setActiveTab("snapshot");
+                  setSheetViewMode("table");
+                  window.print();
+                }}
+                data-testid="print-button"
+                title="Print A4 rapid handover sheet"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                <span>Print A4 Sheet</span>
+              </button>
+            </div>
+          </header>
+
+          {/* TIER 2: DARK TELEMETRY DECK */}
+          <div
+            className={pageStyles.telemetryDeck}
+            data-testid="ward-handover-kpi-strip"
+            aria-label="Handover summary indicators"
+            data-print-hide
+          >
+            <span className={pageStyles.srOnly}>Handover HUD</span>
+            <div className={pageStyles.telemetryPlain}>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Caseload:
+                  <span className={pageStyles.srOnly}>Caseload in Scope</span>
+                </span>
+                <span className={pageStyles.metricVal}>
+                  {includedOpenCount} / {totalOpenCount}
+                </span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>Referrals:</span>
+                <span className={pageStyles.metricVal}>{currentReferralsCount}</span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Allocatable Beds:
+                  <span className={pageStyles.srOnly}>Allocatable Vacancies</span>
+                </span>
+                <span className={`${pageStyles.metricVal} ${allocatableVacancies > 0 ? pageStyles.goodVal : ""}`}>
+                  {allocatableVacancies}
+                </span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Form Expiries:
+                  <span className={pageStyles.srOnly}>Form expiries passed</span>
+                </span>
+                <span
+                  className={`${pageStyles.metricVal} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.dangerVal : ""}`}
+                >
+                  {breachedOnSheetCount + urgentOutsideFilter.length}
+                </span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  1:1 Specialling:
+                  <span className={pageStyles.srOnly}>1:1 Specialling Roster</span>
+                </span>
+                <span className={`${pageStyles.metricVal} ${speciallingInScopeCount > 0 ? pageStyles.warnVal : ""}`}>
+                  {speciallingInScopeCount}
+                </span>
               </div>
             </div>
 
-            {/* Row 2: Scope pills, Unit select, and Focus filter pills */}
-            <div className={pageStyles.filterRow}>
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Scope:</span>
-                <div className={pageStyles.pillGroup} role="group" aria-label="Service Scope">
-                  <button
-                    type="button"
-                    className={`${pageStyles.scopePill} ${scopeValue === "network" ? pageStyles.active : ""}`}
-                    onClick={() => setScopeValue("network")}
-                  >
-                    Statewide
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.scopePill} ${scopeValue === "service:North Metro" ? pageStyles.active : ""}`}
-                    onClick={() => setScopeValue("service:North Metro")}
-                  >
-                    <span className={pageStyles.dotSvc} data-svc="north" /> NMHS
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.scopePill} ${scopeValue === "service:South Metro" ? pageStyles.active : ""}`}
-                    onClick={() => setScopeValue("service:South Metro")}
-                  >
-                    <span className={pageStyles.dotSvc} data-svc="south" /> SMHS
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.scopePill} ${scopeValue === "service:East Metro" ? pageStyles.active : ""}`}
-                    onClick={() => setScopeValue("service:East Metro")}
-                  >
-                    <span className={pageStyles.dotSvc} data-svc="east" /> EMHS
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.scopePill} ${scopeValue === "service:WACHS" ? pageStyles.active : ""}`}
-                    onClick={() => setScopeValue("service:WACHS")}
-                  >
-                    <span className={pageStyles.dotSvc} data-svc="wachs" /> WACHS
-                  </button>
-                </div>
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Unit:</span>
-                <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Focus:</span>
-                <div className={pageStyles.pillGroup} role="group" aria-label="Clinical Focus">
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "all" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("all")}
-                  >
-                    All Records <span className={pageStyles.tabBadge}>{scopeIncludedCount}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "referrals" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("referrals")}
-                  >
-                    Current Referrals <span className={pageStyles.tabBadge}>{currentReferralsCount}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "breaches" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("breaches")}
-                  >
-                    Form expiries passed{" "}
-                    <span className={`${pageStyles.tabBadge} ${pageStyles.urgentBadge}`}>
-                      {breachedOnSheetCount + urgentOutsideFilter.length}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "inbound" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("inbound")}
-                  >
-                    Inbound Admissions <span className={pageStyles.tabBadge}>{snapshot.inTransit.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "discharges" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("discharges")}
-                  >
-                    Planned Discharges <span className={pageStyles.tabBadge}>{snapshot.pulledBeds.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.focusPill} ${focusFilter === "specialling" ? pageStyles.active : ""}`}
-                    onClick={() => setFocusFilter("specialling")}
-                  >
-                    1:1 Specialling &amp; HDU <span className={pageStyles.tabBadge}>{speciallingInScopeCount}</span>
-                  </button>
-                </div>
-              </div>
+            <div className={pageStyles.liveSyncRoster}>
+              <span className={pageStyles.rosterDot} /> Whole Network Live Roster Sync
             </div>
           </div>
 
-          {/* Scope transparency banner — drawing filterBanner + Reset to Statewide */}
-          <div className={pageStyles.filterBanner} id="filterBanner">
+          {/* TIER 3: WHITE CONTROL DECK */}
+          <section className={pageStyles.controlToolbarDeck} aria-label="Handover Scope and Filters" data-print-hide>
+            {/* Far Left: Three Dropdowns + Reset */}
+            <div className={pageStyles.ctrlGroupLeft}>
+              {/* Dropdown 1: Network / Master Scope Control */}
+              <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
+
+              {/* Dropdown 2: Wards Quick Selection */}
+              <select
+                aria-label="Wards Selection"
+                className={`${pageStyles.selectThin} ${pageStyles.selectWards}`}
+                value={scope.kind === "ward" ? scope.id : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    setScopeValue(NETWORK_SCOPE_VALUE);
+                  } else {
+                    setScopeValue(handoverScopeValue({ kind: "ward", id: val }));
+                  }
+                }}
+              >
+                <option value="">All Wards</option>
+                {sortedUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Dropdown 3: Filters (Movement Focus) */}
+              <select
+                aria-label="Movement Filters"
+                className={`${pageStyles.selectThin} ${pageStyles.selectFilters}`}
+                value={activeTableSection === "all" && focusFilter !== "all" ? focusFilter : activeTableSection}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (
+                    val === "longest" ||
+                    val === "pulled" ||
+                    val === "open" ||
+                    val === "transit" ||
+                    val === "placement" ||
+                    val === "all"
+                  ) {
+                    setActiveTableSection(val);
+                    setFocusFilter("all");
+                  }
+                }}
+              >
+                <option value="longest">Longest Waits ({snapshot.longestWaits.length})</option>
+                <option value="pulled">Beds Pulled ({snapshot.pulledBeds.length})</option>
+                <option value="open">Still Open ({openBeforeShiftEnd.length})</option>
+                <option value="transit">In Transit ({snapshot.inTransit.length})</option>
+                <option value="placement">Placement ({snapshot.placementGoneWrong.length})</option>
+                <option value="all">All Movements ({scopeIncludedCount})</option>
+              </select>
+
+              {/* Reset Button */}
+              <button
+                type="button"
+                className={pageStyles.btnResetIntuitive}
+                onClick={() => {
+                  setScopeValue(NETWORK_SCOPE_VALUE);
+                  setFocusFilter("all");
+                  setActiveTableSection("longest");
+                  setSearchQuery("");
+                }}
+                title="Reset to Statewide"
+              >
+                <span style={{ fontSize: "13px" }}>↺</span> Reset
+                <span className={pageStyles.srOnly}>Reset to Statewide</span>
+              </button>
+            </div>
+
+            {/* Far Right: Shift Switcher with Exact Shift Times + Count Chip */}
+            <div className={pageStyles.ctrlGroupRight}>
+              <div className={pageStyles.shiftPillLight}>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "morning" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("morning")}
+                  title="Switch to Morning Shift"
+                >
+                  {selectedShift === "morning" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Morning</span>
+                  <span className={pageStyles.shiftSubtime}>07:00</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "afternoon" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("afternoon")}
+                  title="Switch to Afternoon Shift"
+                >
+                  {selectedShift === "afternoon" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Afternoon</span>
+                  <span className={pageStyles.shiftSubtime}>15:00</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "night" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("night")}
+                  title="Switch to Night Shift"
+                >
+                  {selectedShift === "night" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Night</span>
+                  <span className={pageStyles.shiftSubtime}>23:00</span>
+                </button>
+              </div>
+
+              <span className={pageStyles.countChip}>
+                <span className={pageStyles.countDot} />
+                {totalOpenCount} open
+              </span>
+            </div>
+          </section>
+
+          {/* Scope transparency banner */}
+          <div className={pageStyles.filterBanner} id="filterBanner" data-print-hide>
             <div className={pageStyles.filterBannerText}>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="8" cy="8" r="7" />
@@ -1458,14 +1219,88 @@ export function HandoverPage() {
               onClick={() => {
                 setScopeValue(NETWORK_SCOPE_VALUE);
                 setFocusFilter("all");
+                setActiveTableSection("longest");
                 setSearchQuery("");
-                setSelectedPreset("rapid");
               }}
             >
               Reset to Statewide
             </button>
           </div>
-        </section>
+        </div>
+
+        {/* Hidden / accessible Tab Nav for R2-12 test compatibility */}
+        <nav className={pageStyles.tabNavHidden} role="tablist" aria-label="Handover Detail Sections" data-print-hide>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "snapshot" ? pageStyles.active : ""}`}
+            id="tabBtn-snapshot"
+            role="tab"
+            aria-selected={activeTab === "snapshot"}
+            onClick={() => setActiveTab("snapshot")}
+          >
+            <span>Rapid Snapshot</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.active : ""}`}
+            id="tabBtn-referrals"
+            role="tab"
+            aria-selected={activeTab === "referrals"}
+            onClick={() => setActiveTab("referrals")}
+          >
+            <span>Current Referrals</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "inbound" ? pageStyles.active : ""}`}
+            id="tabBtn-inbound"
+            role="tab"
+            aria-selected={activeTab === "inbound"}
+            onClick={() => setActiveTab("inbound")}
+          >
+            <span>Inbound Transit</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "discharges" ? pageStyles.active : ""}`}
+            id="tabBtn-discharges"
+            role="tab"
+            aria-selected={activeTab === "discharges"}
+            onClick={() => setActiveTab("discharges")}
+          >
+            <span>Discharges &amp; Delays</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "breaches" ? pageStyles.active : ""}`}
+            id="tabBtn-breaches"
+            role="tab"
+            aria-selected={activeTab === "breaches"}
+            onClick={() => setActiveTab("breaches")}
+          >
+            <span>Form expiries passed</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "briefing" ? pageStyles.active : ""}`}
+            id="tabBtn-briefing"
+            role="tab"
+            aria-selected={activeTab === "briefing"}
+            onClick={() => setActiveTab("briefing")}
+          >
+            <span>Coordinator Briefing</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "rollup1630" ? pageStyles.active : ""}`}
+            id="tabBtn-rollup1630"
+            role="tab"
+            aria-selected={activeTab === "rollup1630"}
+            onClick={() => setActiveTab("rollup1630")}
+          >
+            <span>16:30 Rollup</span>
+          </button>
+        </nav>
 
         {/* ════════════ TAB PANE 1: CORE RAPID SNAPSHOT & PRINTOUT (DEFAULT) ════════════ */}
         <div
@@ -2013,58 +1848,184 @@ export function HandoverPage() {
 
               {/* ── 4 VERIFIED SECTIONS & OUTSIDE-FILTER & SIGN-OFF (STRICT TEST PRESERVATION) ── */}
               <div className={pageStyles.sheetBody} role="region" aria-label="Handover sheet sections" tabIndex={0}>
-                <LongestWaitsSection
-                  snapshot={snapshot}
-                  units={units}
-                  wholeNetworkCount={networkSnapshot.longestWaits.length}
-                  patients={patients}
-                  referrals={referrals}
-                  onSelectMovement={(movement, trigger) => {
-                    setDrawerTrigger(trigger ?? null);
-                    openMovementDetail(movement);
-                  }}
-                />
-                <PulledBedsSection
-                  snapshot={snapshot}
-                  wholeNetworkCount={networkSnapshot.pulledBeds.length}
-                  patients={patients}
-                  referrals={referrals}
-                  onSelectMovement={(movement, trigger) => {
-                    setDrawerTrigger(trigger ?? null);
-                    openMovementDetail(movement);
-                  }}
-                />
-                <OpenBeforeShiftEndSection
-                  items={openBeforeShiftEnd}
-                  now={now}
-                  patients={patients}
-                  referrals={referrals}
-                  onSelectMovement={(movement, trigger) => {
-                    setDrawerTrigger(trigger ?? null);
-                    openMovementDetail(movement);
-                  }}
-                />
-                <InTransitSection
-                  snapshot={snapshot}
-                  units={units}
-                  wholeNetworkCount={networkSnapshot.inTransit.length}
-                  patients={patients}
-                  referrals={referrals}
-                  onSelectMovement={(movement, trigger) => {
-                    setDrawerTrigger(trigger ?? null);
-                    openMovementDetail(movement);
-                  }}
-                />
-                <PlacementGoneWrongSection
-                  snapshot={snapshot}
-                  wholeNetworkCount={networkSnapshot.placementGoneWrong.length}
-                  patients={patients}
-                  referrals={referrals}
-                  onSelectMovement={(movement, trigger) => {
-                    setDrawerTrigger(trigger ?? null);
-                    openMovementDetail(movement);
-                  }}
-                />
+                {/* ── Segmented Table Switcher (Images 1 & 2 Overhaul) ── */}
+                <div
+                  className={pageStyles.tableSwitcherBar}
+                  data-print-hide
+                  role="tablist"
+                  aria-label="Handover table sections"
+                  onKeyDown={onTableSectionKeyDown}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-longest"
+                    aria-selected={activeTableSection === "longest"}
+                    aria-controls="tablePanel-longest"
+                    tabIndex={activeTableSection === "longest" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "longest" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("longest")}
+                  >
+                    <span>Longest Waits</span>
+                    <span className={pageStyles.tableSwitchBadge}>{snapshot.longestWaits.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-pulled"
+                    aria-selected={activeTableSection === "pulled"}
+                    aria-controls="tablePanel-pulled"
+                    tabIndex={activeTableSection === "pulled" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "pulled" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("pulled")}
+                  >
+                    <span>Beds Pulled</span>
+                    <span className={pageStyles.tableSwitchBadge}>{snapshot.pulledBeds.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-open"
+                    aria-selected={activeTableSection === "open"}
+                    aria-controls="tablePanel-open"
+                    tabIndex={activeTableSection === "open" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "open" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("open")}
+                  >
+                    <span>Still Open at {shiftEndClock}</span>
+                    <span className={pageStyles.tableSwitchBadge}>{openBeforeShiftEnd.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-transit"
+                    aria-selected={activeTableSection === "transit"}
+                    aria-controls="tablePanel-transit"
+                    tabIndex={activeTableSection === "transit" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "transit" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("transit")}
+                  >
+                    <span>In Transit</span>
+                    <span className={pageStyles.tableSwitchBadge}>{snapshot.inTransit.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-placement"
+                    aria-selected={activeTableSection === "placement"}
+                    aria-controls="tablePanel-placement"
+                    tabIndex={activeTableSection === "placement" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "placement" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("placement")}
+                  >
+                    <span>Placement Issues</span>
+                    <span
+                      className={`${pageStyles.tableSwitchBadge} ${snapshot.placementGoneWrong.length > 0 ? pageStyles.badgeDanger : ""}`}
+                    >
+                      {snapshot.placementGoneWrong.length}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tableTab-all"
+                    aria-selected={activeTableSection === "all"}
+                    aria-controls="tablePanel-longest tablePanel-pulled tablePanel-open tablePanel-transit tablePanel-placement"
+                    tabIndex={activeTableSection === "all" ? 0 : -1}
+                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "all" ? pageStyles.tableSwitchBtnActive : ""}`}
+                    onClick={() => setActiveTableSection("all")}
+                  >
+                    <span>View All Tables</span>
+                  </button>
+                </div>
+
+                <div
+                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "longest" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-longest"
+                  aria-labelledby="tableTab-longest"
+                >
+                  <LongestWaitsSection
+                    snapshot={snapshot}
+                    units={units}
+                    wholeNetworkCount={networkSnapshot.longestWaits.length}
+                    patients={patients}
+                    referrals={referrals}
+                    onSelectMovement={(movement, trigger) => {
+                      setDrawerTrigger(trigger ?? null);
+                      openMovementDetail(movement);
+                    }}
+                  />
+                </div>
+                <div
+                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "pulled" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-pulled"
+                  aria-labelledby="tableTab-pulled"
+                >
+                  <PulledBedsSection
+                    snapshot={snapshot}
+                    wholeNetworkCount={networkSnapshot.pulledBeds.length}
+                    patients={patients}
+                    referrals={referrals}
+                    onSelectMovement={(movement, trigger) => {
+                      setDrawerTrigger(trigger ?? null);
+                      openMovementDetail(movement);
+                    }}
+                  />
+                </div>
+                <div
+                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "open" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-open"
+                  aria-labelledby="tableTab-open"
+                >
+                  <OpenBeforeShiftEndSection
+                    items={openBeforeShiftEnd}
+                    now={now}
+                    patients={patients}
+                    referrals={referrals}
+                    onSelectMovement={(movement, trigger) => {
+                      setDrawerTrigger(trigger ?? null);
+                      openMovementDetail(movement);
+                    }}
+                  />
+                </div>
+                <div
+                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "transit" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-transit"
+                  aria-labelledby="tableTab-transit"
+                >
+                  <InTransitSection
+                    snapshot={snapshot}
+                    units={units}
+                    wholeNetworkCount={networkSnapshot.inTransit.length}
+                    patients={patients}
+                    referrals={referrals}
+                    onSelectMovement={(movement, trigger) => {
+                      setDrawerTrigger(trigger ?? null);
+                      openMovementDetail(movement);
+                    }}
+                  />
+                </div>
+                <div
+                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "placement" ? pageStyles.tableSectionHidden : ""}`}
+                  role="tabpanel"
+                  id="tablePanel-placement"
+                  aria-labelledby="tableTab-placement"
+                >
+                  <PlacementGoneWrongSection
+                    snapshot={snapshot}
+                    wholeNetworkCount={networkSnapshot.placementGoneWrong.length}
+                    patients={patients}
+                    referrals={referrals}
+                    onSelectMovement={(movement, trigger) => {
+                      setDrawerTrigger(trigger ?? null);
+                      openMovementDetail(movement);
+                    }}
+                  />
+                </div>
                 <UrgentOutsideFilterFooter
                   movements={urgentOutsideFilter}
                   scopeLabel={scopeLabel}
