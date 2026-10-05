@@ -6,6 +6,8 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { calendarDateOf, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import { movementTimeline } from "@/components/ward-management/ward-derivations";
+import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
@@ -24,7 +26,8 @@ export function PatientProposal({ id }: { id: string }) {
   const { movements, referrals, patients, units, dispatch, rejections, dayZero, admissions, bedReleases, leaveBeds } =
     useWardFlow();
   const now = useWardFlowClock();
-  const [attemptedAt, setAttemptedAt] = useState<number | null>(null);
+  const [attemptFrom, setAttemptFrom] = useState<number | null>(null);
+  const [numConsulted, setNumConsulted] = useState(false);
   const [overrideReason, setOverrideReason] = useState<OverrideReason | "">("");
 
   const { movement, patient, open } = useMemo(
@@ -71,15 +74,50 @@ export function PatientProposal({ id }: { id: string }) {
       ? Math.max(0, (movement.closure.at - movement.openedAt) / 60)
       : waitedHours(movement, now)
     : 0;
+  // The reducer appends refusals, so only entries after this attempt's starting count belong to it.
   const lastRejection =
-    attemptedAt !== null && movement
-      ? rejections.find((entry) => entry.movementId === movement.id && entry.at >= attemptedAt)
+    attemptFrom !== null && movement
+      ? rejections
+          .slice(attemptFrom)
+          .filter((entry) => entry.movementId === movement.id && entry.attempted === "PULL_PATIENT")
+          .at(-1)
       : undefined;
+  // Only these refusals accept a recorded reason; the engine refuses every other one again.
+  const acuityRefusal = lastRejection ? /nurse unit manager consulted/i.test(lastRejection.reason) : false;
+  const overridable = lastRejection
+    ? acuityRefusal || /specialling capacity|no locked bed is free/i.test(lastRejection.reason)
+    : false;
+  const queuedReferrals = referrals.filter(
+    (referral) =>
+      referralState(referral) === "queued" &&
+      referral.destinations.some(isAwaitingAnswer) &&
+      resolveSubjectPatient(referral, { patients, referrals, movements }).patient?.id === patient?.id,
+  );
+
+  const recordPanel = (
+    <Panel title="Record">
+      <dl className={styles.facts}>
+        <dt>Community team</dt>
+        <dd>{patient?.catchmentCommunityTeam ?? <span className={styles.mutedText}>Not recorded</span>}</dd>
+        <dt>Interpreter</dt>
+        <dd>{patient?.interpreterLanguage ?? <span className={styles.mutedText}>Not recorded</span>}</dd>
+        <dt>Clinical note</dt>
+        <dd>
+          <span className={styles.mutedText}>Clinical details are on the full record.</span>
+        </dd>
+      </dl>
+      <div className={styles.panelFoot}>
+        <a className={styles.textLink} href={`${currentHref}?view=governed`}>
+          Open the full record
+        </a>
+      </div>
+    </Panel>
+  );
 
   const identityLine = patient
     ? [
         `UMRN ${patient.umrn}`,
-        `born ${patient.dateOfBirth}`,
+        patient.dateOfBirth ? `born ${patient.dateOfBirth}` : "date of birth not recorded",
         Number.isFinite(age) && age !== null && age >= 0 ? `${age} y` : "age not recorded",
         patient.sex ?? patient.gender ?? "sex not recorded",
         patient.preferredName ? `known as ${patient.preferredName}` : undefined,
@@ -149,7 +187,7 @@ export function PatientProposal({ id }: { id: string }) {
                             type="button"
                             className={styles.primary}
                             onClick={() => {
-                              setAttemptedAt(now);
+                              setAttemptFrom(rejections.length);
                               dispatch({
                                 type: "PULL_PATIENT",
                                 role: "coordinator",
@@ -167,43 +205,61 @@ export function PatientProposal({ id }: { id: string }) {
                             <p className={`${styles.note} ${styles.noteWarn}`} role="alert">
                               Not done: {lastRejection.reason}
                             </p>
-                            <div className={styles.formFoot}>
-                              <label className={styles.srOnly} htmlFor="patient-proposal-override">
-                                Reason for going ahead anyway
-                              </label>
-                              <select
-                                id="patient-proposal-override"
-                                className={styles.select}
-                                value={overrideReason}
-                                onChange={(event) => setOverrideReason(event.target.value as OverrideReason | "")}
-                              >
-                                <option value="">Choose a reason to go ahead anyway</option>
-                                {OVERRIDE_REASONS.map((reason) => (
-                                  <option key={reason} value={reason}>
-                                    {reason}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                className={styles.textLink}
-                                disabled={!overrideReason}
-                                onClick={() => {
-                                  if (!overrideReason) return;
-                                  setAttemptedAt(now);
-                                  dispatch({
-                                    type: "PULL_PATIENT",
-                                    role: "coordinator",
-                                    now,
-                                    movementId: movement.id,
-                                    unitId: ward.id,
-                                    overrideReason,
-                                  });
-                                }}
-                              >
-                                Pull anyway with this reason
-                              </button>
-                            </div>
+                            {overridable ? (
+                              <div className={styles.formFoot}>
+                                <label className={styles.srOnly} htmlFor="patient-proposal-override">
+                                  Reason for going ahead anyway
+                                </label>
+                                <select
+                                  id="patient-proposal-override"
+                                  className={styles.select}
+                                  value={overrideReason}
+                                  onChange={(event) => setOverrideReason(event.target.value as OverrideReason | "")}
+                                >
+                                  <option value="">Choose a reason to go ahead anyway</option>
+                                  {OVERRIDE_REASONS.map((reason) => (
+                                    <option key={reason} value={reason}>
+                                      {reason}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  className={styles.textLink}
+                                  disabled={!overrideReason}
+                                  onClick={() => {
+                                    if (!overrideReason) return;
+                                    setAttemptFrom(rejections.length);
+                                    dispatch({
+                                      type: "PULL_PATIENT",
+                                      role: "coordinator",
+                                      now,
+                                      movementId: movement.id,
+                                      unitId: ward.id,
+                                      overrideReason,
+                                      ...(acuityRefusal && numConsulted ? { numConsulted: true as const } : {}),
+                                    });
+                                  }}
+                                >
+                                  Pull anyway with this reason
+                                </button>
+                                {acuityRefusal ? (
+                                  <label className={styles.toggle}>
+                                    <input
+                                      type="checkbox"
+                                      checked={numConsulted}
+                                      onChange={(event) => setNumConsulted(event.target.checked)}
+                                    />
+                                    Nurse unit manager consulted
+                                  </label>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <p className={styles.mutedText}>
+                                This refusal cannot be overridden here. Choose another ward on the current patient
+                                screen.
+                              </p>
+                            )}
                           </>
                         ) : null}
                       </>
@@ -289,32 +345,35 @@ export function PatientProposal({ id }: { id: string }) {
                   </dl>
                 </Panel>
 
-                <Panel title="Record">
-                  <dl className={styles.facts}>
-                    <dt>Community team</dt>
-                    <dd>{patient?.catchmentCommunityTeam ?? <span className={styles.mutedText}>Not recorded</span>}</dd>
-                    <dt>Interpreter</dt>
-                    <dd>{patient?.interpreterLanguage ?? <span className={styles.mutedText}>Not recorded</span>}</dd>
-                    <dt>Clinical note</dt>
-                    <dd>
-                      <span className={styles.mutedText}>No clinical note is recorded in Ward Flow.</span>
-                    </dd>
-                  </dl>
-                  <div className={styles.panelFoot}>
-                    <a className={styles.textLink} href={`${currentHref}?view=governed`}>
-                      Open the full record
-                    </a>
-                  </div>
-                </Panel>
+                {recordPanel}
               </div>
             </div>
           </>
         ) : (
           <>
-            <p className={styles.answer}>No bed-flow journey is open for this patient.</p>
-            <p className={styles.note}>
-              Their identity record is held in Ward Flow. A journey starts when an emergency department raises one.
-            </p>
+            {queuedReferrals.length > 0 ? (
+              <>
+                <p className={styles.answer} data-testid="patient-proposal-referral">
+                  Referred, awaiting a decision from{" "}
+                  {plural(queuedReferrals[0].destinations.filter(isAwaitingAnswer).length, "ward")}. No bed-flow journey
+                  is open yet.
+                </p>
+                <p className={styles.mutedText}>
+                  <a className={styles.textLink} href="/mockups/ward-flow/referrals">
+                    Open the referral board
+                  </a>
+                </p>
+                <div className={styles.narrow}>{recordPanel}</div>
+              </>
+            ) : (
+              <>
+                <p className={styles.answer}>No bed-flow journey or referral is open for this patient.</p>
+                <p className={styles.note}>
+                  Their identity record is held in Ward Flow. A journey starts when an emergency department raises one.
+                </p>
+                <div className={styles.narrow}>{recordPanel}</div>
+              </>
+            )}
           </>
         )}
         <WardPrototypeFooter />

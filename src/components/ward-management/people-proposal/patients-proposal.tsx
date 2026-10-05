@@ -29,9 +29,10 @@ const SORTS: { id: SortKey; label: string; compare: (a: PatientRow, b: PatientRo
 ];
 
 function waited(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)} min`;
-  if (hours < 48) return `${hours.toFixed(1)} h`;
-  return `${Math.floor(hours / 24)} d ${Math.round(hours % 24)} h`;
+  const minutes = Math.max(0, Math.round(hours * 60));
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 48 * 60) return `${(minutes / 60).toFixed(1)} h`;
+  return `${Math.floor(minutes / 1440)} d ${Math.floor((minutes % 1440) / 60)} h`;
 }
 
 /** Proposed Patients screen: answer first, figures that are the filters, one flat sortable list. */
@@ -67,7 +68,7 @@ export function PatientsProposal() {
 
         <p className={styles.answer} data-testid="patients-proposal-answer">
           <b>{rows.length}</b> people are waiting in the bed-flow system: <b>{openJourneys}</b> open journeys and{" "}
-          <b>{counts.referral}</b> ED referrals awaiting a decision. <b>{counts["no-ward"]}</b> have no ward yet and{" "}
+          <b>{counts.referral}</b> referrals awaiting a decision. <b>{counts["no-ward"]}</b> have no ward yet and{" "}
           <b>{counts["long-wait"]}</b> have waited over {LONG_WAIT_HOURS} hours.
         </p>
 
@@ -128,8 +129,11 @@ export function PatientsProposal() {
           {shown.length === 0 ? (
             <div className={styles.empty} data-testid="patients-proposal-empty">
               <span>
-                No one matches {text.trim() === "" ? "this filter" : `“${text.trim()}”`}. Check the spelling or the
-                record number.
+                {rows.length === 0
+                  ? "No one is waiting in the bed-flow system."
+                  : text.trim() === ""
+                    ? "No one in this group right now."
+                    : `No one matches “${text.trim()}”. Check the spelling or the record number.`}
               </span>
               <button
                 type="button"
@@ -168,7 +172,7 @@ export function PatientsProposal() {
                             {row.initials} <span className={styles.num}>{row.umrn}</span>
                           </a>
                           <span className={styles.rowSub}>
-                            {row.age === null ? "Age not recorded" : `${row.age} y`} · {row.sex ?? "Sex not recorded"}
+                            {row.age === null ? "Age not recorded" : `${row.age} y`} · {row.sex ?? "sex not recorded"}
                           </span>
                         </span>
                       </span>

@@ -106,6 +106,8 @@ export function HubProposal() {
   const groups = groupedResults(results);
   const pinned = entries.filter((entry) => pinnedIds.includes(entry.id));
   const attention = needsAttention(entries);
+  const stale = attention.filter((row) => row.entry.stale === true).length;
+  const noReady = attention.filter((row) => row.entry.ready === 0).length;
   const byService = readyByService(entries);
   const maxService = Math.max(1, ...byService.map((row) => row.ready));
   const unauthorised = unauthorisedWards(entries);
@@ -117,11 +119,12 @@ export function HubProposal() {
         <ProposalHeader title="Search hub" asAt={`${formatInstant(now)} AWST`} />
 
         <p className={styles.answer} data-testid="hub-proposal-answer">
-          <b>{summary.ready}</b> beds are ready to admit across <b>{summary.wardsWithReady}</b> of{" "}
-          <b>{summary.wards}</b> wards.{" "}
-          {attention.length > 0
-            ? `${plural(attention.length, "ward needs", "wards need")} a check before you rely on its figure.`
-            : "No ward needs a check."}
+          <b>{summary.ready}</b> {summary.ready === 1 ? "bed is" : "beds are"} ready to admit across{" "}
+          <b>{summary.wardsWithReady}</b> of <b>{summary.wards}</b> {summary.wards === 1 ? "ward" : "wards"}.{" "}
+          {stale > 0
+            ? `${plural(stale, "ward has", "wards have")} an out-of-date bed confirmation, so ring before relying on ${stale === 1 ? "its figure" : "their figures"}.`
+            : "Every ward's bed confirmation is current."}
+          {noReady > 0 ? ` ${plural(noReady, "ward has", "wards have")} no ready bed.` : ""}
         </p>
 
         <section className={styles.figures} aria-label="Beds across the network">
@@ -131,7 +134,7 @@ export function HubProposal() {
               label: BED_STATE_LABELS.pulled,
               value: summary.pulled,
               key: styles.keyPulled,
-              note: "Allocated, not yet arrived",
+              note: "Held for someone not yet arrived",
             },
             {
               label: BED_STATE_LABELS.closed,
@@ -143,7 +146,7 @@ export function HubProposal() {
               label: BED_STATE_LABELS.occupied,
               value: summary.occupied,
               key: styles.keyOccupied,
-              note: "Someone in the bed",
+              note: "Patient admitted, including on leave",
             },
           ].map((figure) => (
             <div className={styles.figure} key={figure.label}>
@@ -156,6 +159,25 @@ export function HubProposal() {
             </div>
           ))}
         </section>
+        <div
+          className={styles.bedBar}
+          role="img"
+          aria-label={`Network beds: ${summary.ready} ready, ${summary.pulled} pulled, ${summary.closed} closed, ${summary.occupied} occupied, of ${summary.beds}.`}
+          data-testid="hub-proposal-bed-bar"
+        >
+          {[
+            { key: "ready", value: summary.ready, className: styles.keyReady },
+            { key: "pulled", value: summary.pulled, className: styles.keyPulled },
+            { key: "closed", value: summary.closed, className: styles.keyClosed },
+            { key: "occupied", value: summary.occupied, className: styles.keyOccupied },
+          ].map((segment) => (
+            <span
+              key={segment.key}
+              className={`${styles.bedSegment} ${segment.className}`}
+              style={{ flexGrow: segment.value }}
+            />
+          ))}
+        </div>
         <p className={styles.sumLine} data-testid="hub-proposal-sum">
           {summary.ready} + {summary.pulled} + {summary.closed} + {summary.occupied} = <b>{summary.boxesTotal}</b> beds
           in {summary.wards} wards. Ready and Closed are never added together: a closed bed cannot be filled.
@@ -268,7 +290,7 @@ export function HubProposal() {
           <div className={styles.stack}>
             <Panel
               title="Wards that need a check"
-              question="Ring the ward before relying on its figure."
+              question="No ready bed, or a bed confirmation that is out of date. Ring the ward before relying on its figure."
               meta={attention.length}
             >
               {attention.length === 0 ? (

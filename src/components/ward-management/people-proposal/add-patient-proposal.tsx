@@ -34,7 +34,7 @@ function MatchRow({ patient, why }: { patient: Patient; why: string }) {
           {patient.givenName[0]}.{patient.familyName[0]}. <span className={styles.num}>{patient.umrn}</span>
         </span>
         <span className={styles.rowSub}>
-          Born {patient.dateOfBirth} · {why}
+          {patient.dateOfBirth ? `Born ${patient.dateOfBirth}` : "Date of birth not recorded"} · {why}
         </span>
       </span>
       <span className={styles.mutedText}>Open ›</span>
@@ -76,9 +76,16 @@ export function AddPatientProposal() {
     if (patients.length > before.count) {
       prior.current = null;
       router.push(`/mockups/ward-flow/people/proposal?id=${patients[patients.length - 1].id}`);
-    } else if (rejections.length > before.rejections && rejections[0]?.attempted === "ADD_PATIENT") {
-      prior.current = null;
-      setRejection(rejections[0].reason);
+    } else {
+      // The reducer appends refusals; only those after this submission belong to it.
+      const refusal = rejections
+        .slice(before.rejections)
+        .filter((entry) => entry.attempted === "ADD_PATIENT")
+        .at(-1);
+      if (refusal) {
+        prior.current = null;
+        setRejection(refusal.reason);
+      }
     }
   }, [patients, rejections, router]);
 

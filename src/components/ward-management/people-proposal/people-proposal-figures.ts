@@ -4,8 +4,8 @@
  * Every number here is derived from the same shared state the current screens read, through the
  * existing derivations (`hub-derivations`, `searchPatients`, `waitedHours`, `resolveSubjectPatient`).
  * Nothing is stored or re-counted from a fixture, so a figure on the proposal can only disagree
- * with the sidebar or the current screens if the definitions differ — and the test pins that they
- * do not.
+ * with the sidebar or the current screens if the definitions differ.
+ * `tests/ward-people-proposal-figures.test.ts` checks the bed sum and the list counts.
  */
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -72,10 +72,6 @@ function edService(edId: string): string {
   return (ed && siteByCode(ed.siteCode)?.service) ?? "Not recorded";
 }
 
-function referralEdId(referral: Referral): string | undefined {
-  return siteByCode(referral.originSiteCode)?.emergencyDepartment?.id;
-}
-
 /**
  * One row per person in the bed-flow system: each open journey and each emergency-department
  * referral still awaiting a decision — the same population `searchPatients` returns to the current
@@ -106,9 +102,9 @@ export function patientRows(input: {
         id: m.id,
         href: `/mockups/ward-flow/people/proposal?id=${info.patient?.id ?? m.id}`,
         kind: "movement",
-        initials: info.initials,
-        name: info.displayName,
-        umrn: info.umrn,
+        initials: info.patient ? info.initials : "?",
+        name: info.patient ? info.displayName : "Not linked to a record",
+        umrn: info.patient ? info.umrn : "No record number",
         age: ageOf(info.patient),
         sex: info.patient?.sex ?? info.patient?.gender ?? null,
         from: edShortName(edById(m.originEdId)),
@@ -123,18 +119,18 @@ export function patientRows(input: {
     }
     const r = result.referral;
     const info = resolveSubjectPatient(r, state);
-    const edId = referralEdId(r);
     const accepted = r.destinations.find((destination) => destination.acceptedUnitId);
     return {
       id: r.id,
       href: info.patient ? `/mockups/ward-flow/people/proposal?id=${info.patient.id}` : "/mockups/ward-flow/referrals",
       kind: "referral",
-      initials: info.initials,
-      name: info.displayName,
-      umrn: info.umrn,
+      initials: info.patient ? info.initials : "?",
+      name: info.patient ? info.displayName : "Not linked to a record",
+      umrn: info.patient ? info.umrn : "No record number",
       age: ageOf(info.patient),
       sex: info.patient?.sex ?? info.patient?.gender ?? null,
-      from: edId ? edShortName(edById(edId)) : `${r.originSiteCode} ED`,
+      // A referral records the sending site, not a department, so the site is all this can name.
+      from: siteByCode(r.originSiteCode)?.name ?? r.originSiteCode,
       service: siteByCode(r.originSiteCode)?.service ?? "Not recorded",
       legal: "Not recorded",
       tier: r.urgency,
