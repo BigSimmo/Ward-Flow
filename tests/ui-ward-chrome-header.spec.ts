@@ -610,3 +610,62 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
     });
   }
 });
+
+test("@mockup drawer workspace keeps Figures focus and every task reachable on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 568 });
+  await gotoWardChrome(page);
+  const bar = page.getByTestId("ward-bar");
+  await expect(bar.getByTestId("ward-bar-figures-trigger")).toHaveCount(0);
+  await page.getByTestId("ward-bar-tools-trigger").click();
+  const tools = page.getByRole("dialog", { name: "Tools" });
+  await tools.getByTestId("ward-bar-figures-trigger").click();
+  const figures = tools.getByRole("button", { name: "Figures", exact: true });
+  await expect(figures).toHaveAttribute("aria-pressed", "true");
+  await expect(figures).toBeFocused();
+  await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("ward-bar-tools-trigger")).toBeFocused();
+
+  await page.getByTestId("ward-bar-tasks-trigger").click();
+  const tasks = page.getByRole("dialog", { name: "Tasks", exact: true });
+  expect(await tasks.locator("li").count()).toBeGreaterThan(0);
+  const scroller = tasks.locator('[class*="drawerBody"]');
+  await scroller.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  const lastCard = tasks.locator("li").last();
+  await expect(lastCard).toBeInViewport();
+  await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
+  await lastCard.getByRole("button", { name: "Open movement" }).click();
+  await expect(page).toHaveURL(/\/movements\/WF-/u);
+  await expect(tasks).toHaveCount(0);
+});
+
+test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 568 });
+  await gotoWardChrome(page, "/mockups/ward-flow/delays");
+  const toolsTrigger = page.getByTestId("ward-bar-tools-trigger");
+  await toolsTrigger.click();
+  const tools = page.getByRole("dialog", { name: "Tools", exact: true });
+  const toolsBox = await tools.boundingBox();
+  expect(toolsBox?.height).toBeGreaterThanOrEqual(566);
+  await tools.getByRole("button", { name: /Raise a referral/u }).click();
+  const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  const sections = referral.getByRole("group", { name: "Referral sections" });
+  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
+  await referral.locator("#refDocInput").fill("Synthetic draft clinician");
+  await sections.getByRole("button", { name: "Placement", exact: true }).click();
+  await expect(referral.locator("#refTransportSelect")).toBeVisible();
+  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
+  await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
+  await sections.getByRole("button", { name: "Placement", exact: true }).click();
+  await page.keyboard.press("/");
+  await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(referral.getByRole("searchbox", { name: "Search sample patients" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(referral).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(referral).toHaveCount(0);
+  await expect(toolsTrigger).toBeFocused();
+});

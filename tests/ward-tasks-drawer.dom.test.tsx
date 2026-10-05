@@ -146,13 +146,65 @@ describe("the tasks drawer", () => {
     expect(within(drawer).getByTestId(`ward-task-${critical!.id}`)).toBeTruthy();
     expect(within(drawer).getByTestId(`ward-task-${review!.id}`)).toBeTruthy();
 
-    fireEvent.click(within(drawer).getByRole("button", { name: /Past Due \/ Critical/u }));
+    fireEvent.click(within(drawer).getByRole("button", { name: /^Critical/u }));
     expect(within(drawer).getByTestId(`ward-task-${critical!.id}`)).toBeTruthy();
     expect(within(drawer).queryByTestId(`ward-task-${review!.id}`)).toBeNull();
 
-    fireEvent.click(within(drawer).getByRole("button", { name: /Review Due/u }));
+    fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
     expect(within(drawer).getByTestId(`ward-task-${review!.id}`)).toBeTruthy();
     expect(within(drawer).queryByTestId(`ward-task-${critical!.id}`)).toBeNull();
   });
 });
 
+describe("task workspace search and acknowledgement filters", () => {
+  it("combines text and severity filters, then clears an empty result", () => {
+    const { drawer } = renderDrawer();
+    const critical = items.find((item) => item.tone === "danger")!;
+    fireEvent.change(within(drawer).getByRole("textbox", { name: "Search tasks" }), {
+      target: { value: critical.detail },
+    });
+    expect(within(drawer).getByTestId(`ward-task-${critical.id}`)).toBeVisible();
+    fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
+    expect(within(drawer).queryByTestId(`ward-task-${critical.id}`)).toBeNull();
+    expect(within(drawer).getByText("No matching tasks")).toBeVisible();
+    fireEvent.click(within(drawer).getByRole("button", { name: "Clear filters" }));
+    expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
+  });
+
+  it("acknowledges only visible, unacknowledged facts", () => {
+    const critical = items.filter((item) => item.tone === "danger");
+    const acked = critical[0];
+    const { drawer, dispatch } = renderDrawer({
+      acknowledgements: {
+        [acked.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
+      },
+    });
+    fireEvent.click(within(drawer).getByRole("button", { name: /^Critical/u }));
+    fireEvent.click(within(drawer).getByRole("button", { name: /Acknowledge visible/ }));
+    expect(dispatch).toHaveBeenCalledTimes(critical.length - 1);
+    for (const item of critical.slice(1))
+      expect(dispatch).toHaveBeenCalledWith({
+        type: "ACKNOWLEDGE_INBOX_ITEM",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        inboxItemId: item.id,
+      });
+  });
+
+  it("keeps acknowledged facts visible by default and makes their filter explicit", () => {
+    const item = items[0];
+    const { drawer } = renderDrawer({
+      acknowledgements: {
+        [item.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
+      },
+    });
+    const filter = within(drawer).getByRole("combobox", { name: "Filter acknowledgement state" });
+    fireEvent.change(filter, { target: { value: "unacknowledged" } });
+    expect(within(drawer).queryByTestId(`ward-task-${item.id}`)).toBeNull();
+    fireEvent.change(filter, { target: { value: "acknowledged" } });
+    expect(within(drawer).getByTestId(`ward-task-${item.id}`)).toBeVisible();
+    expect(within(drawer).queryByRole("button", { name: /Acknowledge visible/ })).toBeNull();
+    fireEvent.change(filter, { target: { value: "all" } });
+    expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
+  });
+});
