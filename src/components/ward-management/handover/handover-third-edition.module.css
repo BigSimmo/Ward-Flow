@@ -3486,6 +3486,44 @@ table.snapSheet {
     color: CanvasText !important;
   }
 
+  /* Command Horizon dark tiers declare explicit colours; force CanvasText so dark-theme
+     print cannot leave near-white ink on white paper (ward-management-print-coverage). */
+  .screen *,
+  .screen *::before,
+  .screen *::after,
+  .heroHeader,
+  .govTag,
+  .shiftTitle,
+  .shiftTime,
+  .handoffTeams,
+  .handoffTeams strong,
+  .takenAtMeta,
+  .btnAction,
+  .btnAction:hover,
+  .metricLabel,
+  .metricVal,
+  .goodVal,
+  .warnVal,
+  .dangerVal,
+  .metricSep,
+  .liveSyncRoster,
+  .controlToolbarDeck .scopeSelectIcon,
+  .controlToolbarDeck .scopeChevronIcon,
+  .btnResetIntuitive,
+  .shiftBtnLight.active,
+  .shiftBtnLight.active .shiftSubtime {
+    color: CanvasText !important;
+  }
+
+  .commandHorizonCard,
+  .heroHeader,
+  .telemetryDeck,
+  .controlToolbarDeck {
+    background: none !important;
+    box-shadow: none !important;
+    border-color: CanvasText !important;
+  }
+
   .main {
     background: none !important;
     color: CanvasText !important;
