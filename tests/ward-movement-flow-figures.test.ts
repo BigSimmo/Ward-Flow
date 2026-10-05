@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -69,5 +72,16 @@ describe("movement flow figures with no data, and the plain-English helpers", ()
     );
     expect(plainRefusal(undefined)).toBe("The step was not recorded.");
     expect(plainRefusal("TRANSPORT_EN_ROUTE needs an accepted job")).not.toMatch(/[A-Z]+_[A-Z]+/);
+  });
+});
+
+describe("movement flow stylesheet", () => {
+  // Moving the stylesheet once left its `composes` path pointing one folder too far up; no unit
+  // test renders CSS, so only the dev server noticed. Every composed file must exist.
+  it("composes only from stylesheets that exist", () => {
+    const file = "src/components/ward-management/movements/movement-flow.module.css";
+    const paths = [...readFileSync(file, "utf8").matchAll(/composes:[^;]*from\s+"([^"]+)"/gu)].map((m) => m[1]);
+    expect(paths.length).toBeGreaterThan(0);
+    for (const path of paths) expect(existsSync(resolve(dirname(file), path)), path).toBe(true);
   });
 });
