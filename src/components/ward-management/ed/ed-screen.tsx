@@ -98,11 +98,13 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 
 import styles from "./ed.module.css";
+import { EdOverview } from "./ed-overview";
+import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
-const RECORDED_ED_FORMS = ["1A", "3B", "3D", "4A", "4C"] as const;
+const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
 type EdScreenProps = { edId: string };
 
@@ -1281,30 +1283,8 @@ export function EdScreen({ edId }: EdScreenProps) {
     legalStatus: LegalStatus;
     reason: LegalStatusChangeReason | undefined;
   }>({ legalStatus: "Voluntary", reason: undefined });
-  const [formDropdownOpenFor, setFormDropdownOpenFor] = useState<string | undefined>(undefined);
   const [formOverrides, setFormOverrides] = useState<Record<string, string | null>>({});
 
-  useEffect(() => {
-    if (!formDropdownOpenFor) return;
-    function handleDocumentClick(event: MouseEvent) {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest(`.${styles.formField}`)) {
-        setFormDropdownOpenFor(undefined);
-      }
-    }
-    function handleDocumentKeyDown(event: globalThis.KeyboardEvent) {
-      if (event.key === "Escape") {
-        setFormDropdownOpenFor(undefined);
-        announceToWardShell("Form menu closed.");
-      }
-    }
-    document.addEventListener("click", handleDocumentClick);
-    document.addEventListener("keydown", handleDocumentKeyDown);
-    return () => {
-      document.removeEventListener("click", handleDocumentClick);
-      document.removeEventListener("keydown", handleDocumentKeyDown);
-    };
-  }, [formDropdownOpenFor]);
   // `TR-D1`: the sending team books the transport out, and this department is the sending team for
   // its own patients. One open-for id and one draft, the same shape the three toggles above use —
   // only one panel is open at a time, so one draft cannot be read against the wrong patient. The
@@ -1393,7 +1373,6 @@ export function EdScreen({ edId }: EdScreenProps) {
    */
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<ReferralDeclineReason | undefined>(undefined);
-  const [unfoldedRows, setUnfoldedRows] = useState<Record<string, boolean>>({});
   /*
    * ⚠️ **NO PATH FROM THIS SCREEN CAN CURRENTLY PRODUCE A REFUSAL. THIS BRANCH IS WRITTEN AGAINST A
    * FUTURE DISPATCHER, NOT A LIVE ONE — do not read it as covering something that happens today.**
@@ -1442,6 +1421,19 @@ export function EdScreen({ edId }: EdScreenProps) {
     "all" | "not_reviewed" | "under_form" | "no_destination" | "discharge" | "withdrawn"
   >("all");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const patientDialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = patientDialogRef.current;
+    if (!selectedPatientId || !dialog) return;
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    return () => {
+      dialog.close?.();
+      trigger?.focus();
+    };
+  }, [selectedPatientId]);
+
   const [fullscreenBoard, setFullscreenBoard] = useState(false);
   const [capacityServiceFilter, setCapacityServiceFilter] = useState<string>("all");
   const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<
@@ -1449,10 +1441,19 @@ export function EdScreen({ edId }: EdScreenProps) {
   >("all");
   const [timelineSearchQuery, setTimelineSearchQuery] = useState("");
   const [reviewStatusOverrides, setReviewStatusOverrides] = useState<Record<string, string>>({});
-  const [reviewDropdownOpenFor, setReviewDropdownOpenFor] = useState<string | undefined>(undefined);
   const [clearanceOverrides, setClearanceOverrides] = useState<Record<string, "yes" | "no" | null>>({});
-  const [clearanceDropdownOpenFor, setClearanceDropdownOpenFor] = useState<string | undefined>(undefined);
-  const [edDropdownOpen, setEdDropdownOpen] = useState(false);
+  const [presentationDrafts, setPresentationDrafts] = useState<Record<string, string>>({});
+  const [planDrafts, setPlanDrafts] = useState<Record<string, string[]>>({});
+  const [patientQuery, setPatientQuery] = useState("");
+  const [patientSort, setPatientSort] = useState("current");
+  const [referralDetailsOpenFor, setReferralDetailsOpenFor] = useState<string>();
+  const hasBoardDrafts =
+    Object.keys(formOverrides).length +
+      Object.keys(clearanceOverrides).length +
+      Object.keys(reviewStatusOverrides).length +
+      Object.keys(presentationDrafts).length +
+      Object.keys(planDrafts).length >
+    0;
 
   const CLINICAL_REVIEW_OPTIONS = [
     "Awaiting review",
@@ -1467,13 +1468,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   useEffect(() => {
     function onKeyDown(e: globalThis.KeyboardEvent) {
       if (e.key === "Escape") {
-        if (edDropdownOpen) {
-          setEdDropdownOpen(false);
-        } else if (reviewDropdownOpenFor !== undefined) {
-          setReviewDropdownOpenFor(undefined);
-        } else if (clearanceDropdownOpenFor !== undefined) {
-          setClearanceDropdownOpenFor(undefined);
-        } else if (arrivalPlanOpenFor !== undefined) {
+        if (arrivalPlanOpenFor !== undefined) {
           setArrivalPlanOpenFor(undefined);
         } else if (transportOpenFor !== undefined) {
           closeTransportDialog();
@@ -1486,15 +1481,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    edDropdownOpen,
-    reviewDropdownOpenFor,
-    clearanceDropdownOpenFor,
-    arrivalPlanOpenFor,
-    transportOpenFor,
-    selectedPatientId,
-    fullscreenBoard,
-  ]);
+  }, [arrivalPlanOpenFor, transportOpenFor, selectedPatientId, fullscreenBoard]);
 
   const ALL_DEPARTMENT_TABS: { key: DepartmentTabKey; label: string }[] = [
     { key: "review", label: "Awaiting Review" },
@@ -1754,6 +1741,20 @@ export function EdScreen({ edId }: EdScreenProps) {
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
     return true;
   });
+
+  const visiblePatients = filteredPatients
+    .filter((movement) => {
+      const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
+      return `${person.displayName} ${person.umrn}`.toLowerCase().includes(patientQuery.trim().toLowerCase());
+    })
+    .sort((a, b) => {
+      if (patientSort === "longest") return a.openedAt - b.openedAt;
+      if (patientSort === "name")
+        return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
+          resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
+        );
+      return 0;
+    });
 
   const selectedPatient = selectedPatientId ? patients.find((p) => p.id === selectedPatientId) : null;
   const selectedPatientInfo = selectedPatient
@@ -2615,10 +2616,6 @@ export function EdScreen({ edId }: EdScreenProps) {
 
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
 
-  const currentEdIndex = departments.findIndex((d) => d.id === department.id);
-  const prevEd = departments[(currentEdIndex - 1 + departments.length) % departments.length];
-  const nextEd = departments[(currentEdIndex + 1) % departments.length];
-
   return (
     <div
       className={styles.screen}
@@ -2627,180 +2624,383 @@ export function EdScreen({ edId }: EdScreenProps) {
       data-ward-rebuilt-screen="emergency-department"
     >
       <main id="main-content" className={styles.main}>
+        <EdOverview
+          key={department.id}
+          departmentId={department.id}
+          departments={departments.map((candidate) => {
+            const candidateSite = siteByCode(candidate.siteCode);
+            const candidateMovements = movements.filter(
+              (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
+            );
+            return {
+              id: candidate.id,
+              name: candidate.name,
+              code: candidateSite?.code ?? candidate.siteCode,
+              service: candidateSite?.service ?? "Service not identified",
+              waiting: candidateMovements.length,
+              longest: candidateMovements.length
+                ? splitDuration(Math.max(...candidateMovements.map((movement) => Math.max(now - movement.openedAt, 0))))
+                : "—",
+              breaches: candidateMovements.filter((movement) => now - movement.openedAt > accessTarget).length,
+            };
+          })}
+          figures={[
+            { label: "On the board", value: patients.length },
+            {
+              label: "Waiting for a bed",
+              value: patients.filter(
+                (movement) => movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled",
+              ).length,
+            },
+            { label: "Review referrals", value: inbox.length },
+            { label: "Expected", value: expects.length },
+            { label: "Under a form", value: patients.filter((movement) => !!movement.legalForm).length },
+            {
+              label: "Longest here",
+              value: patients.length
+                ? splitDuration(Math.max(...patients.map((movement) => Math.max(now - movement.openedAt, 0))))
+                : "—",
+            },
+          ]}
+          onRaiseReferral={() => {
+            setRaisingFromReferralId(undefined);
+            setReferralOpen(true);
+            requestAnimationFrame(() =>
+              document.querySelector<HTMLSelectElement>('[data-testid="ward-ed-referral-cohort"]')?.focus(),
+            );
+          }}
+        />
+
         <section
-          className={`${styles.panel} ${styles.full} ${styles.topEdSection}`}
-          aria-label="Emergency department overview"
+          aria-label="Raise a referral"
+          hidden={!referralOpen}
+          className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
+          tabIndex={0}
         >
-          <header className={styles.edIdent} data-testid={`ward-ed-card-${department.id}`}>
-            <div className={styles.edHead}>
-              <div className={styles.edWhere}>
-                <span className={styles.code}>{site?.code ?? department.siteCode}</span>
-                <span
-                  className={styles.svc}
-                  data-svc={site?.service ? site.service.toLowerCase().replace(/\s+/g, "-") : undefined}
-                >
-                  {site?.service ?? "Service not identified"}
-                </span>
-              </div>
-
-              <div className={styles.edTitleNavRow}>
-                <div className={styles.edNavArrows}>
-                  <Link
-                    href={`/mockups/ward-flow/ed/${prevEd.id}`}
-                    className={styles.edArrowBtn}
-                    title={`Previous department: ${prevEd.name}`}
-                    aria-label={`Previous department: ${prevEd.name}`}
-                  >
-                    <span aria-hidden="true">‹</span>
-                  </Link>
-                </div>
-
-                <div className={styles.edSwitcherDropdownWrap}>
-                  <button
-                    type="button"
-                    className={styles.edDropdownTriggerBtn}
-                    onClick={() => setEdDropdownOpen((open) => !open)}
-                    aria-expanded={edDropdownOpen}
-                    title="Toggle statewide emergency departments overview"
-                  >
-                    <h1 className={styles.edName}>{department.name}</h1>
-                    <span className={styles.edDropdownCaret} aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
-                </div>
-
-                <div className={styles.edNavArrows}>
-                  <Link
-                    href={`/mockups/ward-flow/ed/${nextEd.id}`}
-                    className={styles.edArrowBtn}
-                    title={`Next department: ${nextEd.name}`}
-                    aria-label={`Next department: ${nextEd.name}`}
-                  >
-                    <span aria-hidden="true">›</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.edChips} aria-label="Selected department record counts">
-              <span className={styles.chip}>
-                {patients.length === 0 ? <i>none</i> : <b>{patients.length}</b>} on the board
-              </span>
-              <span className={styles.chip}>
-                {patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length === 0 ? (
-                  <i>none</i>
-                ) : (
-                  <b>{patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length}</b>
-                )}{" "}
-                waiting for a bed
-              </span>
-              <span className={styles.chip}>
-                {inbox.length === 0 ? <i>none</i> : <b>{inbox.length}</b>} awaiting review
-              </span>
-              <span className={styles.chip}>
-                {expects.length === 0 ? <i>none</i> : <b>{expects.length}</b>} expected
-              </span>
-              <span className={styles.chip}>
-                {patients.filter((m) => !!m.legalForm).length === 0 ? (
-                  <i>none</i>
-                ) : (
-                  <b>{patients.filter((m) => !!m.legalForm).length}</b>
-                )}{" "}
-                under a form
-              </span>
-              {patients.length > 0 ? (
-                <span className={styles.chip}>
-                  <b>{splitDuration(Math.max(...patients.map((m) => Math.max(now - m.openedAt, 0))))}</b> longest here
-                </span>
-              ) : null}
-            </div>
-
-            {/* Expandable Statewide ED Network Drawer ("Grey Section") */}
-            <div className={styles.edNetworkTrayWrap}>
-              <button
-                type="button"
-                className={styles.edNetworkToggleBar}
-                onClick={() => setEdDropdownOpen((open) => !open)}
-                aria-expanded={edDropdownOpen}
-                aria-controls="edNetworkDrawer"
-              >
-                <div className={styles.edNetworkToggleLeft}>
-                  <span className={styles.edNetworkToggleIcon} aria-hidden="true">
-                    {edDropdownOpen ? "▾" : "▸"}
-                  </span>
-                  <span className={styles.edNetworkToggleTitle}>Statewide Emergency Departments</span>
-                  <span className={styles.edNetworkToggleBadge}>{departments.length} departments</span>
-                </div>
-                <span className={styles.edNetworkToggleHint}>
-                  {edDropdownOpen ? "Collapse network view" : "Quick switch & network overview"}
-                </span>
-              </button>
-
-              {edDropdownOpen ? (
-                <div id="edNetworkDrawer" className={styles.edNetworkDrawer}>
-                  <div className={styles.edNetworkGrid}>
-                    {departments.map((candidate) => {
-                      const candidateSite = siteByCode(candidate.siteCode);
-                      const candidateMovements = movements.filter(
-                        (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
-                      );
-                      const openHere = candidateMovements.length;
-                      const longestWait = candidateMovements.reduce((max, m) => Math.max(max, now - m.openedAt), 0);
-                      const breachingCount = candidateMovements.filter((m) => now - m.openedAt > accessTarget).length;
-                      const isCurrent = candidate.id === department.id;
-
-                      return (
-                        <Link
-                          key={candidate.id}
-                          href={`/mockups/ward-flow/ed/${candidate.id}`}
-                          className={styles.edNetworkCard}
-                          data-ed={candidate.id}
-                          data-current={isCurrent ? "true" : undefined}
-                          data-breach={breachingCount > 0 ? "true" : undefined}
-                          onClick={() => setEdDropdownOpen(false)}
+          <div className={styles.ph}>
+            <h2>Raise a referral</h2>
+            <button
+              type="button"
+              className={styles.inboxBtn}
+              onClick={() => {
+                setReferralOpen(false);
+                setRaisingFromReferralId(undefined);
+                document.querySelector<HTMLButtonElement>('[data-testid="ward-ed-raise-referral-toggle"]')?.focus();
+              }}
+            >
+              Close referral
+            </button>
+          </div>
+          {referralOpen && (
+            <div className={styles.referralPanelBody}>
+              {(() => {
+                const referralBlocked = referralDraftBlockedReason(draft);
+                return (
+                  <form className={styles.referralForm} onSubmit={submitReferral} data-testid="ward-ed-referral-form">
+                    <div className={styles.referralGrid}>
+                      <label className={styles.referralField}>
+                        Cohort
+                        <select
+                          data-testid="ward-ed-referral-cohort"
+                          value={draft.cohort ?? NO_COHORT_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              cohort:
+                                event.target.value === NO_COHORT_VALUE ? undefined : (event.target.value as Cohort),
+                            }))
+                          }
                         >
-                          <div className={styles.edCardHeader}>
-                            <div className={styles.edCardIdent}>
-                              <span className={styles.edCardSiteCode}>{candidateSite?.code ?? candidate.siteCode}</span>
-                              <span className={styles.edCardName}>{candidate.name}</span>
-                            </div>
-                            {isCurrent ? <span className={styles.edCardCurrentBadge}>Active</span> : null}
-                          </div>
-
-                          <div className={styles.edCardMetrics}>
-                            <div className={styles.edCardMetric}>
-                              <span className={styles.edCardMetricVal}>{openHere}</span>
-                              <span className={styles.edCardMetricLbl}>waiting</span>
-                            </div>
-                            <div className={styles.edCardMetric}>
-                              <span className={styles.edCardMetricVal}>
-                                {openHere > 0 ? splitDuration(longestWait) : "—"}
-                              </span>
-                              <span className={styles.edCardMetricLbl}>longest</span>
-                            </div>
-                            {breachingCount > 0 ? (
-                              <div className={styles.edCardMetricBreach}>
-                                <span className={styles.edCardBreachCount}>▲ {breachingCount}</span>
-                                <span className={styles.edCardMetricLbl}>over target</span>
-                              </div>
-                            ) : null}
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+                          {/* Nothing chosen, first and selected — never a cohort standing in for a
+                            decision nobody made. Same idiom as `NO_DECLINE_REASON_VALUE` below. */}
+                          <option value={NO_COHORT_VALUE}>Choose a cohort</option>
+                          {COHORT_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.referralField}>
+                        Security
+                        <select
+                          data-testid="ward-ed-referral-security"
+                          value={draft.security ?? NO_SECURITY_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              security:
+                                event.target.value === NO_SECURITY_VALUE ? undefined : (event.target.value as Security),
+                            }))
+                          }
+                        >
+                          <option value={NO_SECURITY_VALUE}>Choose a security level</option>
+                          {SECURITY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.referralField}>
+                        Sex
+                        <select
+                          data-testid="ward-ed-referral-sex"
+                          value={draft.sex ?? NO_SEX_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              sex:
+                                event.target.value === NO_SEX_VALUE ? undefined : (event.target.value as RecordedSex),
+                            }))
+                          }
+                        >
+                          <option value={NO_SEX_VALUE}>Choose a sex</option>
+                          {SEX_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {/* T11 (after T10, item 8, owner answer 17 September 2026): "Gender (decides
+                    which bed)" — the exact label build plan §2 gives, so a clinician never
+                    confuses this with the "Sex" question above it, which the gate no longer
+                    reads at all. */}
+                      <label className={styles.referralField}>
+                        Gender (decides which bed)
+                        <select
+                          data-testid="ward-ed-referral-gender"
+                          value={draft.gender ?? NO_GENDER_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              gender:
+                                event.target.value === NO_GENDER_VALUE
+                                  ? undefined
+                                  : (event.target.value as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
+                            }))
+                          }
+                        >
+                          <option value={NO_GENDER_VALUE}>Choose a gender</option>
+                          {GENDER_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                          <option value={GENDER_NOT_RECORDED_VALUE}>Not yet recorded</option>
+                        </select>
+                      </label>
+                      {/* T15 (item 12, owner answer 17 September 2026): "An admission from a
+                    referral carries the referral's broad diagnosis category, marked tentative."
+                    OPTIONAL, and never blocks "Raise referral" — a clinician with no diagnosis to
+                    record is not made to invent one. */}
+                      <label className={styles.referralField}>
+                        Broad diagnosis category (tentative)
+                        <select
+                          data-testid="ward-ed-referral-tentative-diagnosis"
+                          value={draft.tentativeDiagnosis}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              tentativeDiagnosis: event.target.value as TentativeDiagnosisBlock | "none",
+                            }))
+                          }
+                        >
+                          <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
+                          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                            <option key={block.code} value={block.code}>
+                              {tentativeDiagnosisPhrase(block.code)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.referralField}>
+                        Legal status
+                        <select
+                          data-testid="ward-ed-referral-legal-status"
+                          value={draft.legalStatus ?? NO_LEGAL_STATUS_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              legalStatus:
+                                event.target.value === NO_LEGAL_STATUS_VALUE
+                                  ? undefined
+                                  : (event.target.value as LegalStatus),
+                            }))
+                          }
+                        >
+                          <option value={NO_LEGAL_STATUS_VALUE}>Choose a legal status</option>
+                          {LEGAL_STATUS_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.referralField}>
+                        Legal form
+                        <select
+                          data-testid="ward-ed-referral-legal-form"
+                          value={draft.legalFormCode ?? NO_LEGAL_FORM_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              legalFormCode: event.target.value === NO_LEGAL_FORM_VALUE ? null : event.target.value,
+                              legalFormDueAtDate: "",
+                              legalFormDueAtTime: "",
+                            }))
+                          }
+                        >
+                          <option value={NO_LEGAL_FORM_VALUE}>No form</option>
+                          {SELECTABLE_LEGAL_FORMS.map((form) => (
+                            <option key={form.code} value={form.code}>
+                              {legalFormName(form)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {draft.legalFormCode !== null ? (
+                        <fieldset className={styles.declineFieldset}>
+                          <legend className={styles.declineLegend}>Expiry written on the form (optional)</legend>
+                          <p className={styles.cardMeta}>
+                            Leave blank if the form has no expiry or you do not have it yet.
+                          </p>
+                          <label className={styles.referralField}>
+                            Date
+                            <input
+                              type="date"
+                              data-testid="ward-ed-referral-legal-form-due-at-date"
+                              value={draft.legalFormDueAtDate}
+                              onChange={(event) =>
+                                setDraft((current) => ({ ...current, legalFormDueAtDate: event.target.value }))
+                              }
+                            />
+                          </label>
+                          <label className={styles.referralField}>
+                            Time
+                            <input
+                              type="time"
+                              data-testid="ward-ed-referral-legal-form-due-at-time"
+                              value={draft.legalFormDueAtTime}
+                              onChange={(event) =>
+                                setDraft((current) => ({ ...current, legalFormDueAtTime: event.target.value }))
+                              }
+                            />
+                          </label>
+                        </fieldset>
+                      ) : null}
+                      <label className={styles.referralField}>
+                        Urgency
+                        <select
+                          data-testid="ward-ed-referral-urgency"
+                          value={draft.urgency ?? NO_URGENCY_VALUE}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              urgency:
+                                event.target.value === NO_URGENCY_VALUE
+                                  ? undefined
+                                  : (Number(event.target.value) as 1 | 2 | 3),
+                            }))
+                          }
+                        >
+                          <option value={NO_URGENCY_VALUE}>Choose an urgency tier</option>
+                          {URGENCY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {urgencyTierLabel(option)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <fieldset className={styles.referralCheckbox}>
+                        <legend>One-to-one nursing</legend>
+                        <label>
+                          <input
+                            type="radio"
+                            name="ward-ed-referral-specialling"
+                            data-testid="ward-ed-referral-specialling-required"
+                            checked={draft.specialling === true}
+                            onChange={() => setDraft((current) => ({ ...current, specialling: true }))}
+                          />
+                          Required
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="ward-ed-referral-specialling"
+                            data-testid="ward-ed-referral-specialling-not-required"
+                            checked={draft.specialling === false}
+                            onChange={() => setDraft((current) => ({ ...current, specialling: false }))}
+                          />
+                          Not required
+                        </label>
+                      </fieldset>
+                      <fieldset className={styles.referralCheckbox}>
+                        <legend>High-acuity nursing</legend>
+                        <label>
+                          <input
+                            type="radio"
+                            name="ward-ed-referral-high-acuity"
+                            data-testid="ward-ed-referral-high-acuity-required"
+                            checked={draft.highAcuity === true}
+                            onChange={() => setDraft((current) => ({ ...current, highAcuity: true }))}
+                          />
+                          Required
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="ward-ed-referral-high-acuity"
+                            data-testid="ward-ed-referral-high-acuity-not-required"
+                            checked={draft.highAcuity === false}
+                            onChange={() => setDraft((current) => ({ ...current, highAcuity: false }))}
+                          />
+                          Not required
+                        </label>
+                      </fieldset>
+                    </div>
+                    <div className={styles.actionRow}>
+                      <button
+                        type="submit"
+                        data-testid="ward-ed-referral-submit"
+                        className={styles.acceptButton}
+                        aria-disabled={referralBlocked ? "true" : undefined}
+                        aria-describedby={referralBlocked ? "ward-ed-referral-blocked" : undefined}
+                        title={referralBlocked ?? undefined}
+                        onClick={referralBlocked ? ignoreUnavailableActivation : undefined}
+                      >
+                        Raise referral
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.declineButton}
+                        onClick={() => {
+                          setReferralOpen(false);
+                          setDraft(DEFAULT_DRAFT);
+                          setRaisingFromReferralId(undefined);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      {referralBlocked ? (
+                        <span id="ward-ed-referral-blocked" className="sr-only">
+                          {referralBlocked}
+                        </span>
+                      ) : null}
+                    </div>
+                  </form>
+                );
+              })()}
             </div>
-          </header>
+          )}
         </section>
 
         <section className={styles.departmentWorkspace} aria-label="Selected department work">
           <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-attention-heading">
             <div className={styles.ph}>
               <h2 id="ward-ed-attention-heading">Needs attention</h2>
-              <p className={styles.note}>Forms, transport, acceptances and reviews, worst first.</p>
+
               <span className={styles.count}>
                 {priorityFlags.length === 0
                   ? "none"
@@ -2810,11 +3010,7 @@ export function EdScreen({ edId }: EdScreenProps) {
 
             <div className={styles.attentionWrap}>
               {priorityFlags.length === 0 ? (
-                <p className={styles.none}>
-                  Nothing in this department needs attention. Every form is inside its deadline, everyone has been
-                  reviewed, every acceptance has a bed pulled and nobody is expected within the hour. Absence here means
-                  nothing is outstanding, not that nothing is happening.
-                </p>
+                <p className={styles.none}>No outstanding flags recorded for this department.</p>
               ) : (
                 <ul className={styles.attentionList}>
                   {priorityFlags.map((flag, idx) => (
@@ -2861,13 +3057,24 @@ export function EdScreen({ edId }: EdScreenProps) {
                       </div>
                       <div className={styles.attentionBody}>
                         <span className={styles.attentionWhy}>{flag.why}</span>
-                        {flag.actionLabel ? (
-                          <span className={styles.attentionAct}>
-                            <button type="button" className={styles.attentionActionBtn} onClick={flag.onAction}>
-                              {flag.actionLabel}
+                        <div className={styles.attentionFooter}>
+                          {flag.actionLabel ? (
+                            <button type="button" className={styles.attentionNext} onClick={flag.onAction}>
+                              <span>Next:</span> {flag.actionLabel}
                             </button>
-                          </span>
-                        ) : null}
+                          ) : (
+                            <span />
+                          )}
+                          {patients.some((patient) => patient.id === flag.recordId) && (
+                            <button
+                              type="button"
+                              className={styles.attentionRecord}
+                              onClick={() => setSelectedPatientId(flag.recordId)}
+                            >
+                              View record <span aria-hidden="true">›</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -2878,7 +3085,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-lists-heading">
             <div className={styles.ph}>
               <h2 id="ward-ed-lists-heading">Department lists</h2>
-              <p className={styles.note}>Select a person to open their record.</p>
+
               <span className={styles.count}>
                 {departmentListTab === "review"
                   ? `${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} awaiting review`
@@ -2996,8 +3203,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                   Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
                 </h3>
                 <p className={styles.inboxMeta}>
-                  Oldest referral first. Each row separates time since department triage from time since mental-health
-                  referral; triage is the earliest department time recorded.
+                  Oldest first · Department time is from recorded triage; referral time is separate.
                 </p>
                 {inbox.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-ed-inbox-empty">
@@ -3066,119 +3272,133 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   : `No — recorded ${formatInstantWithDay(referral.medicalClearance.at, now)}`}
                             </span>
                           </div>
-                          <div className={styles.inboxActionRow}>
-                            <button
-                              type="button"
-                              className={styles.inboxBtn}
-                              data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
-                              onClick={() =>
-                                dispatch({
-                                  type: "RECORD_MEDICAL_CLEARANCE",
-                                  role: "ed",
-                                  now,
-                                  referralId: referral.id,
-                                  cleared: true,
-                                })
-                              }
-                            >
-                              Record medically cleared
-                            </button>
-                            <button
-                              type="button"
-                              className={styles.inboxBtn}
-                              data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
-                              onClick={() =>
-                                dispatch({
-                                  type: "RECORD_MEDICAL_CLEARANCE",
-                                  role: "ed",
-                                  now,
-                                  referralId: referral.id,
-                                  cleared: false,
-                                })
-                              }
-                            >
-                              Record not medically cleared
-                            </button>
-                          </div>
-                          {hasLinkedMovement ? null : (
-                            <button
-                              type="button"
-                              className={`${styles.inboxBtn} ${styles.inboxBtnPrimary}`}
-                              data-testid={`ward-ed-inbox-raise-${referral.id}`}
-                              onClick={() => {
-                                setRaisingFromReferralId(referral.id);
-                                setDraft((current) => ({ ...current, gender: referralWardGender(referral) }));
-                                setReferralOpen(true);
-                              }}
-                            >
-                              Raise into a movement
-                            </button>
-                          )}
-                          {addressing.state !== "queued" ? null : (
-                            <>
+                          <button
+                            type="button"
+                            className={styles.referralDetailsTrigger}
+                            aria-expanded={referralDetailsOpenFor === referral.id}
+                            onClick={() =>
+                              setReferralDetailsOpenFor((current) =>
+                                current === referral.id ? undefined : referral.id,
+                              )
+                            }
+                          >
+                            View referral <span aria-hidden="true">›</span>
+                          </button>
+                          <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
+                            <div className={styles.inboxActionRow}>
                               <button
                                 type="button"
                                 className={styles.inboxBtn}
-                                data-testid={`ward-ed-inbox-decline-${referral.id}`}
-                                aria-expanded={declineOpen}
-                                onClick={() => toggleDecline(referral.id)}
+                                data-testid={`ward-ed-inbox-clearance-yes-${referral.id}`}
+                                onClick={() =>
+                                  dispatch({
+                                    type: "RECORD_MEDICAL_CLEARANCE",
+                                    role: "ed",
+                                    now,
+                                    referralId: referral.id,
+                                    cleared: true,
+                                  })
+                                }
                               >
-                                Decline
+                                Record medically cleared
                               </button>
-                              {declineOpen ? (
-                                <div
-                                  className={styles.declineForm}
-                                  data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}
+                              <button
+                                type="button"
+                                className={styles.inboxBtn}
+                                data-testid={`ward-ed-inbox-clearance-no-${referral.id}`}
+                                onClick={() =>
+                                  dispatch({
+                                    type: "RECORD_MEDICAL_CLEARANCE",
+                                    role: "ed",
+                                    now,
+                                    referralId: referral.id,
+                                    cleared: false,
+                                  })
+                                }
+                              >
+                                Record not medically cleared
+                              </button>
+                            </div>
+                            {hasLinkedMovement ? null : (
+                              <button
+                                type="button"
+                                className={`${styles.inboxBtn} ${styles.inboxBtnPrimary}`}
+                                data-testid={`ward-ed-inbox-raise-${referral.id}`}
+                                onClick={() => {
+                                  setRaisingFromReferralId(referral.id);
+                                  setDraft((current) => ({ ...current, gender: referralWardGender(referral) }));
+                                  setReferralOpen(true);
+                                }}
+                              >
+                                Raise into a movement
+                              </button>
+                            )}
+                            {addressing.state !== "queued" ? null : (
+                              <>
+                                <button
+                                  type="button"
+                                  className={styles.inboxBtn}
+                                  data-testid={`ward-ed-inbox-decline-${referral.id}`}
+                                  aria-expanded={declineOpen}
+                                  onClick={() => toggleDecline(referral.id)}
                                 >
-                                  <label
-                                    className={styles.referralField}
-                                    htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                  Decline
+                                </button>
+                                {declineOpen ? (
+                                  <div
+                                    className={styles.declineForm}
+                                    data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}
                                   >
-                                    Why is {referral.id} being declined?
-                                    <select
-                                      id={`ward-ed-inbox-decline-reason-${referral.id}`}
-                                      data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
-                                      value={declineDraft ?? NO_DECLINE_REASON_VALUE}
-                                      onChange={(event) =>
-                                        setDeclineDraft(
-                                          event.target.value === NO_DECLINE_REASON_VALUE
-                                            ? undefined
-                                            : (event.target.value as ReferralDeclineReason),
-                                        )
+                                    <label
+                                      className={styles.referralField}
+                                      htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                    >
+                                      Why is {referral.id} being declined?
+                                      <select
+                                        id={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                        data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
+                                        value={declineDraft ?? NO_DECLINE_REASON_VALUE}
+                                        onChange={(event) =>
+                                          setDeclineDraft(
+                                            event.target.value === NO_DECLINE_REASON_VALUE
+                                              ? undefined
+                                              : (event.target.value as ReferralDeclineReason),
+                                          )
+                                        }
+                                      >
+                                        <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
+                                        {ED_DECLINE_REASONS.map((reason) => (
+                                          <option key={reason} value={reason}>
+                                            {DECLINE_REASON_LABELS[reason] ?? reason}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                    <button
+                                      type="button"
+                                      data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
+                                      className={styles.declineSubmit}
+                                      aria-disabled={declineBlocked ? "true" : undefined}
+                                      aria-describedby={
+                                        declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined
+                                      }
+                                      title={declineBlocked ?? undefined}
+                                      onClick={
+                                        declineBlocked ? ignoreUnavailableActivation : () => submitDecline(referral.id)
                                       }
                                     >
-                                      <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
-                                      {ED_DECLINE_REASONS.map((reason) => (
-                                        <option key={reason} value={reason}>
-                                          {DECLINE_REASON_LABELS[reason] ?? reason}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </label>
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
-                                    className={styles.declineSubmit}
-                                    aria-disabled={declineBlocked ? "true" : undefined}
-                                    aria-describedby={
-                                      declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined
-                                    }
-                                    title={declineBlocked ?? undefined}
-                                    onClick={
-                                      declineBlocked ? ignoreUnavailableActivation : () => submitDecline(referral.id)
-                                    }
-                                  >
-                                    Record decline
-                                  </button>
-                                  {declineBlocked ? (
-                                    <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
-                                      {declineBlocked}
-                                    </span>
-                                  ) : null}
-                                </div>
-                              ) : null}
-                            </>
-                          )}
+                                      Record decline
+                                    </button>
+                                    {declineBlocked ? (
+                                      <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
+                                        {declineBlocked}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </>
+                            )}
+                          </div>
                           {declineRejection?.referralId === referral.id ? (
                             <p
                               className={styles.rejection}
@@ -3236,7 +3456,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {outstandingItem(m).label}.{" "}
                             {mc?.cleared
                               ? `Medically cleared at ${formatInstantWithDay(mc.at, now)}.`
-                              : "Medical clearance is not recorded yet."}
+                              : mc
+                                ? "Not medically cleared."
+                                : "Clearance pending."}
                           </span>
                         </span>
                         <span className={styles.lstEnd}>
@@ -3773,13 +3995,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           tabIndex={0}
         >
           <div className={styles.ph}>
-            <h2>
-              <b>{site?.name ?? department.name} board</b>{" "}
-              <span className={styles.note}>
-                Everyone this department has on its psychiatry list. Press a row to open the person, or an action to
-                record clinical steps.
-              </span>
-            </h2>
+            <h2>ED psychiatry board</h2>
             <div className={styles.phActions}>
               <button
                 type="button"
@@ -3878,6 +4094,32 @@ export function EdScreen({ edId }: EdScreenProps) {
               </span>
             </button>
           </div>
+          <div className={styles.boardTools}>
+            <label className={styles.patientSearch}>
+              <span aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                aria-label="Find a patient or UMRN"
+                placeholder="Find a patient or UMRN…"
+                value={patientQuery}
+                onChange={(event) => setPatientQuery(event.target.value)}
+              />
+            </label>
+            <label className={styles.patientSort}>
+              Sort{" "}
+              <select value={patientSort} onChange={(event) => setPatientSort(event.target.value)}>
+                <option value="current">Current order</option>
+                <option value="longest">Longest in ED</option>
+                <option value="name">Patient name</option>
+              </select>
+            </label>
+            <span className={styles.draftNote} role="status">
+              {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
+            </span>
+            <span className={styles.boardResult} role="status">
+              {visiblePatients.length} of {patients.length} patients
+            </span>
+          </div>
           {patients.length === 0 ? (
             <p className={styles.placeholder}>
               Nobody is on this department&apos;s psychiatry list. Absence here means none is recorded, not that the
@@ -3891,30 +4133,33 @@ export function EdScreen({ edId }: EdScreenProps) {
               aria-label="Emergency department board, scrolls sideways"
             >
               <table className={styles.boardTable}>
+                <colgroup>
+                  {[15, 6, 4, 6, 8, 25, 17, 11, 8].map((width, index) => (
+                    <col key={index} style={{ width: `${width}%` }} />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr>
-                    <th scope="col" className={styles.idCol}>
-                      UMRN
-                    </th>
-                    <th scope="col">Name</th>
-                    <th className={styles.n} scope="col">
-                      In department
-                    </th>
-                    <th scope="col">Bay</th>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Time in ED</th>
+                    <th scope="col">ED bay</th>
                     <th scope="col">Form</th>
-                    <th scope="col" className={styles.story}>
-                      Presenting
-                    </th>
-                    <th scope="col">Review</th>
-                    <th scope="col" className={styles.story}>
-                      Plan
-                    </th>
-                    <th scope="col">Referrals</th>
+                    <th scope="col">Medically cleared</th>
+                    <th scope="col">Presentation</th>
+                    <th scope="col">Plan</th>
+                    <th scope="col">Destination</th>
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPatients.map((movement) => {
+                  {visiblePatients.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className={styles.noPatientMatches}>
+                        No patients match this search and filter.
+                      </td>
+                    </tr>
+                  )}
+                  {visiblePatients.map((movement) => {
                     const minutesInDepartment = Math.max(now - movement.openedAt, 0);
                     const medicalClearance = movementMedicalClearance(movement, referrals);
                     const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now) : undefined;
@@ -3991,16 +4236,15 @@ export function EdScreen({ edId }: EdScreenProps) {
                     // past the compiler correctly reporting those comparisons as impossible.
                     const isForm1A = movement.legalForm?.code === "1A";
                     const isUnfolded =
-                      unfoldedRows[movement.id] ??
-                      (communityReferralOpenFor === movement.id ||
-                        withdrawOpen ||
-                        transportOpen ||
-                        examOpen ||
-                        edOutcomeOpen ||
-                        urgencyChangeOpen ||
-                        legalStatusChangeOpen ||
-                        legalFormExpiryOpen ||
-                        receiptCorrectionOpen);
+                      communityReferralOpenFor === movement.id ||
+                      withdrawOpen ||
+                      transportOpen ||
+                      examOpen ||
+                      edOutcomeOpen ||
+                      urgencyChangeOpen ||
+                      legalStatusChangeOpen ||
+                      legalFormExpiryOpen ||
+                      receiptCorrectionOpen;
 
                     const primaryAction =
                       movement.edOutcome !== undefined && !movement.leftDepartmentAt
@@ -4027,29 +4271,34 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-unfolded={isUnfolded ? "true" : undefined}
                           className={styles.qRow}
                         >
-                          <td className={styles.idCell}>
-                            <div className={styles.idCellGroup}>
-                              <button
-                                type="button"
-                                className={styles.idBtn}
-                                onClick={() =>
-                                  setSelectedPatientId(selectedPatientId === movement.id ? null : movement.id)
-                                }
-                                title={`View patient details for ${patientInfo.displayName}`}
-                              >
-                                {patientInfo.umrn}
-                              </button>
-                            </div>
-                            {movement.arrivalMode === "police" ? (
-                              <span className={styles.policeFlag} data-testid={`ward-ed-police-${movement.id}`}>
-                                Police in attendance
-                              </span>
-                            ) : null}
-                          </td>
-                          <td>
-                            <b>{patientInfo.displayName}</b>
+                          <td className={styles.patientIdentity}>
+                            <button
+                              type="button"
+                              className={styles.patientName}
+                              title={`View patient details for ${patientInfo.displayName}`}
+                              onClick={() =>
+                                setSelectedPatientId(selectedPatientId === movement.id ? null : movement.id)
+                              }
+                            >
+                              {patientInfo.displayName}
+                            </button>
+                            <span className={styles.umrnBadge}>
+                              <span>UMRN</span>
+                              <b>{patientInfo.umrn}</b>
+                            </span>
                             <span className={styles.sub}>
-                              {movement.cohort} &middot; {movement.security} &middot; {movement.sex}
+                              {movement.cohort} &middot; {movement.security} &middot;{" "}
+                              <span
+                                className={styles.identityUrgency}
+                                data-urgency={movement.urgency}
+                                data-testid={`ward-ed-tier-${movement.id}`}
+                                aria-label={urgencyTierLabel(movement.urgency)}
+                              >
+                                Tier {movement.urgency}
+                                <span className="sr-only">
+                                  {urgencyTierLabel(movement.urgency).replace(/^Tier \d+/, "")}
+                                </span>
+                              </span>
                             </span>
                             {/*
                              * Opus review round 2, 17 September 2026 (P2): the `gender_designation`
@@ -4059,7 +4308,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                              * "dispatch only proves what the model reflects back" discipline every
                              * other control in this file holds to.
                              */}
-                            <span className={styles.sub} data-testid={`ward-ed-gender-${movement.id}`}>
+                            <span className="sr-only" data-testid={`ward-ed-gender-${movement.id}`}>
                               Gender: {movement.gender ?? "Not yet recorded"}
                             </span>
                             {movement.transportNeed?.needed === false ? (
@@ -4132,173 +4381,128 @@ export function EdScreen({ edId }: EdScreenProps) {
                               </span>
                             ) : null}
                           </td>
-                          <td className={styles.n}>
-                            <b>{elapsedLabel(movement, now)}</b>
-                            <span className={styles.sub}>from {formatInstantWithDay(movement.openedAt, now)}</span>
-                            <span className={styles.track} aria-hidden="true">
-                              <i
-                                style={{
-                                  width: `${Math.min(100, Math.round((minutesInDepartment / accessTarget) * 100))}%`,
-                                }}
-                              />
-                            </span>
-                            <span
-                              className={styles.sub}
-                              data-testid={`ward-ed-access-target-${movement.id}`}
-                              data-state={minutesInDepartment > accessTarget ? "over" : "under"}
-                            >
-                              {accessTargetLine(minutesInDepartment, accessTarget)}
-                            </span>
-                            {movement.referredAt !== undefined || linkedReferral?.raisedAt !== undefined ? (
-                              <span className={styles.timeSinceReferredBadge}>
-                                ⏱{" "}
-                                {splitDuration(
-                                  Math.max(now - (movement.referredAt ?? linkedReferral?.raisedAt ?? now), 0),
-                                )}{" "}
-                                since referral
+                          <td
+                            className={styles.compactTime}
+                            title={`In department from ${formatInstantWithDay(movement.openedAt, now)}`}
+                          >
+                            <b>{splitDuration(minutesInDepartment)}</b>
+                            {minutesInDepartment > accessTarget && (
+                              <span
+                                className={styles.accessWarning}
+                                data-testid={`ward-ed-access-target-${movement.id}`}
+                                data-state="over"
+                                title={accessTargetLine(minutesInDepartment, accessTarget)}
+                              >
+                                Over target
                               </span>
-                            ) : null}
+                            )}
                           </td>
                           <td className={styles.bayCell}>
-                            <span className={styles.bayNumber}>{patientBay(movement.id)}</span>
+                            <span className={styles.bayNumber}>{patientBay(movement.id).replace(/^Bay /, "")}</span>
                           </td>
-                          <td>
-                            {(() => {
-                              const isFormDropdownOpen = formDropdownOpenFor === movement.id;
-                              const overriddenForm = formOverrides[movement.id];
-                              const currentFormCode =
-                                overriddenForm !== undefined
-                                  ? overriddenForm
-                                  : (movement.legalForm?.code ??
-                                    (movement.legalStatus && movement.legalStatus !== "Voluntary"
-                                      ? movement.legalStatus
-                                      : null));
-                              const formTone =
-                                movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt < now
-                                  ? "danger"
-                                  : formExpiryWarningText !== undefined
-                                    ? "warn"
-                                    : undefined;
-                              return (
-                                <div className={styles.formField} data-testid={`ward-ed-form-field-${movement.id}`}>
-                                  <button
-                                    type="button"
-                                    className={styles.formPill}
-                                    data-form-open={movement.id}
-                                    data-testid={`ward-ed-form-pill-${movement.id}`}
-                                    aria-haspopup="listbox"
-                                    aria-expanded={isFormDropdownOpen}
-                                    data-tone={formTone}
-                                    data-none={!currentFormCode ? "true" : undefined}
-                                    aria-label={`Legal form ${currentFormCode ? currentFormCode : "none recorded"} for ${patientInfo.displayName}. Change it.`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setFormDropdownOpenFor((current) =>
-                                        current === movement.id ? undefined : movement.id,
-                                      );
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
-                                        if (!isFormDropdownOpen) {
-                                          e.preventDefault();
-                                          setFormDropdownOpenFor(movement.id);
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    {currentFormCode ? currentFormCode : <i>none</i>}
-                                    <span className={styles.caret} aria-hidden="true" />
-                                  </button>
-                                  {isFormDropdownOpen ? (
-                                    <ul
-                                      className={styles.formMenu}
-                                      role="listbox"
-                                      aria-label={`Legal form for ${patientInfo.displayName}`}
-                                      data-testid={`ward-ed-form-menu-${movement.id}`}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Escape") {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setFormDropdownOpenFor(undefined);
-                                          announceToWardShell("Form menu closed.");
-                                        }
-                                      }}
-                                    >
-                                      {RECORDED_ED_FORMS.map((f) => (
-                                        <li key={f} role="option" aria-selected={f === currentFormCode}>
-                                          <button
-                                            type="button"
-                                            data-form-set={f}
-                                            data-form-row={movement.id}
-                                            data-testid={`ward-ed-form-option-${f}-${movement.id}`}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setFormOverrides((prev) => ({ ...prev, [movement.id]: f }));
-                                              setFormDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `This patient set to ${f} on this screen only. Nothing is recorded and nobody is told. Not wired in this prototype.`,
-                                              );
-                                            }}
-                                          >
-                                            {f}
-                                          </button>
-                                        </li>
-                                      ))}
-                                      <li role="option" className={styles.sep} aria-selected={!currentFormCode}>
-                                        <button
-                                          type="button"
-                                          data-form-set=""
-                                          data-form-row={movement.id}
-                                          data-testid={`ward-ed-form-option-none-${movement.id}`}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setFormOverrides((prev) => ({ ...prev, [movement.id]: null }));
-                                            setFormDropdownOpenFor(undefined);
-                                            announceToWardShell(
-                                              `This patient set to none on this screen only. Nothing is recorded and nobody is told. Not wired in this prototype.`,
-                                            );
-                                          }}
-                                        >
-                                          No form
-                                        </button>
-                                      </li>
-                                    </ul>
-                                  ) : null}
-                                </div>
-                              );
-                            })()}
-                            {formExpiryText !== undefined ? (
-                              <div
-                                className={`${styles.sub} ${styles.formExpirySmaller}`}
+                          <td className={styles.compactForm}>
+                            <select
+                              className={styles.thinSelect}
+                              aria-label={`Legal form for ${patientInfo.displayName}`}
+                              data-testid={`ward-ed-form-pill-${movement.id}`}
+                              value={
+                                formOverrides[movement.id] === undefined
+                                  ? (movement.legalForm?.code ?? "")
+                                  : (formOverrides[movement.id] ?? "")
+                              }
+                              onChange={(event) => {
+                                setFormOverrides((current) => ({
+                                  ...current,
+                                  [movement.id]: event.target.value || null,
+                                }));
+                                announceToWardShell(
+                                  "Form draft changed on this screen only. The recorded legal form is unchanged.",
+                                );
+                              }}
+                            >
+                              <option value="">None</option>
+                              {movement.legalForm?.code &&
+                                !RECORDED_ED_FORMS.some((form) => form === movement.legalForm?.code) && (
+                                  <option value={movement.legalForm.code}>{movement.legalForm.code}</option>
+                                )}
+                              {RECORDED_ED_FORMS.map((form) => (
+                                <option key={form}>{form}</option>
+                              ))}
+                            </select>
+                            {formExpiryText !== undefined && (
+                              <span
+                                className={movement.legalForm?.dueAt === undefined ? "sr-only" : styles.compactExpiry}
                                 data-testid={`ward-ed-form-expiry-${movement.id}`}
+                                title={formExpiryText}
                               >
-                                {formExpiryText}
-                              </div>
-                            ) : null}
-                            {formExpiryWarningText !== undefined ? (
-                              <div
-                                className={styles.sub}
+                                {movement.legalForm?.dueAt === undefined ? (
+                                  formExpiryText
+                                ) : (
+                                  <>
+                                    <span aria-hidden="true">
+                                      {formatInstantWithDay(movement.legalForm.dueAt, now)}
+                                    </span>
+                                    <span className="sr-only">{formExpiryText}</span>
+                                  </>
+                                )}
+                              </span>
+                            )}
+                            {formExpiryWarningText !== undefined && (
+                              <span
+                                className={styles.accessWarning}
                                 data-testid={`ward-ed-form-expiry-warning-${movement.id}`}
                                 data-level="warning"
                               >
                                 {formExpiryWarningText}
-                              </div>
-                            ) : null}
-                          </td>
-                          <td className={styles.story}>
-                            <p
-                              className={styles.outstandingItem}
-                              data-testid={`ward-ed-outstanding-${movement.id}`}
-                              data-kind={item.kind}
-                            >
-                              <span className={styles.outstandingLabel}>{item.label}</span>
-                              {" — "}
-                              {item.detail}
-                            </p>
+                              </span>
+                            )}
                           </td>
                           <td>
+                            <select
+                              className={styles.thinSelect}
+                              aria-label={`Medical clearance for ${patientInfo.displayName}`}
+                              data-cleared={
+                                clearanceOverrides[movement.id] === undefined
+                                  ? medicalClearance === undefined
+                                    ? "none"
+                                    : medicalClearance.cleared
+                                      ? "yes"
+                                      : "no"
+                                  : (clearanceOverrides[movement.id] ?? "none")
+                              }
+                              value={
+                                clearanceOverrides[movement.id] === undefined
+                                  ? medicalClearance === undefined
+                                    ? ""
+                                    : medicalClearance.cleared
+                                      ? "yes"
+                                      : "no"
+                                  : (clearanceOverrides[movement.id] ?? "")
+                              }
+                              onChange={(event) => {
+                                setClearanceOverrides((current) => ({
+                                  ...current,
+                                  [movement.id]:
+                                    event.target.value === "yes" ? "yes" : event.target.value === "no" ? "no" : null,
+                                }));
+                                announceToWardShell(
+                                  "Clearance draft changed on this screen only. The recorded medical clearance is unchanged.",
+                                );
+                              }}
+                            >
+                              <option value="">Pending</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                            {medicalClearance && (
+                              <span className="sr-only" data-testid={`ward-ed-medical-clearance-${movement.id}`}>
+                                Medical clearance: {medicalClearance.cleared ? "Yes" : "No"} — recorded{" "}
+                                {formatInstantWithDay(medicalClearance.at, now)}
+                              </span>
+                            )}
+                          </td>
+                          <td className={styles.presentationCell}>
                             {(() => {
-                              const isReviewOpen = reviewDropdownOpenFor === movement.id;
                               const overriddenReview = reviewStatusOverrides[movement.id];
                               const currentReviewStatus =
                                 overriddenReview !== undefined
@@ -4312,56 +4516,19 @@ export function EdScreen({ edId }: EdScreenProps) {
 
                               return (
                                 <div className={styles.reviewDropdownWrap}>
-                                  <button
-                                    type="button"
+                                  <EdReviewStatus
+                                    patientName={patientInfo.displayName}
+                                    value={currentReviewStatus}
+                                    options={CLINICAL_REVIEW_OPTIONS}
                                     className={styles.reviewPill}
-                                    aria-haspopup="listbox"
-                                    aria-expanded={isReviewOpen}
-                                    data-tone={reviewTone}
-                                    aria-label={`Review status ${currentReviewStatus} for ${patientInfo.displayName}. Change status.`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setReviewDropdownOpenFor((curr) =>
-                                        curr === movement.id ? undefined : movement.id,
+                                    tone={reviewTone}
+                                    onChange={(value) => {
+                                      setReviewStatusOverrides((current) => ({ ...current, [movement.id]: value }));
+                                      announceToWardShell(
+                                        `Review draft set to ${value} on this screen only. The recorded examination is unchanged.`,
                                       );
                                     }}
-                                  >
-                                    <span className={styles.revDot} data-tone={reviewTone} aria-hidden="true" />
-                                    <span className={styles.reviewPillText}>{currentReviewStatus}</span>
-                                    <span className={styles.caret} aria-hidden="true" />
-                                  </button>
-
-                                  {isReviewOpen ? (
-                                    <ul
-                                      className={styles.reviewMenu}
-                                      role="listbox"
-                                      aria-label={`Review potential status for ${patientInfo.displayName}`}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Escape") {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setReviewDropdownOpenFor(undefined);
-                                        }
-                                      }}
-                                    >
-                                      {CLINICAL_REVIEW_OPTIONS.map((opt) => (
-                                        <li key={opt} role="option" aria-selected={opt === currentReviewStatus}>
-                                          <button
-                                            type="button"
-                                            className={styles.reviewOptionBtn}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setReviewStatusOverrides((prev) => ({ ...prev, [movement.id]: opt }));
-                                              setReviewDropdownOpenFor(undefined);
-                                              announceToWardShell(`Review status set to ${opt} for this patient.`);
-                                            }}
-                                          >
-                                            {opt}
-                                          </button>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : null}
+                                  />
                                 </div>
                               );
                             })()}
@@ -4383,144 +4550,23 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
                               </div>
                             ) : null}
-                            {(() => {
-                              const isClearanceOpen = clearanceDropdownOpenFor === movement.id;
-                              const overriddenClearance = clearanceOverrides[movement.id];
-                              const effectiveClearance =
-                                overriddenClearance !== undefined
-                                  ? overriddenClearance
-                                  : medicalClearance !== undefined
-                                    ? medicalClearance.cleared
-                                      ? "yes"
-                                      : "no"
-                                    : null;
-
-                              return (
-                                <div className={styles.clearanceWrap}>
-                                  {medicalClearance !== undefined || overriddenClearance !== undefined ? (
-                                    <div
-                                      className={styles.sub}
-                                      data-testid={`ward-ed-medical-clearance-${movement.id}`}
-                                    >
-                                      Medical clearance:{" "}
-                                      {effectiveClearance === "yes"
-                                        ? `Yes — recorded ${formatInstantWithDay(medicalClearance?.at ?? now, now)}`
-                                        : effectiveClearance === "no"
-                                          ? `No — recorded ${formatInstantWithDay(medicalClearance?.at ?? now, now)}`
-                                          : "Pending"}
-                                    </div>
-                                  ) : null}
-
-                                  <div className={styles.clearanceField}>
-                                    <button
-                                      type="button"
-                                      className={styles.clearancePill}
-                                      aria-haspopup="listbox"
-                                      aria-expanded={isClearanceOpen}
-                                      data-cleared={effectiveClearance ?? "none"}
-                                      title="Set medical clearance"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setClearanceDropdownOpenFor((curr) =>
-                                          curr === movement.id ? undefined : movement.id,
-                                        );
-                                      }}
-                                    >
-                                      <span className={styles.clearancePillText}>
-                                        Clearance:{" "}
-                                        {effectiveClearance === "yes"
-                                          ? "Yes (Cleared)"
-                                          : effectiveClearance === "no"
-                                            ? "No (Not cleared)"
-                                            : "Pending"}
-                                      </span>
-                                      <span className={styles.caret} aria-hidden="true" />
-                                    </button>
-
-                                    {isClearanceOpen ? (
-                                      <ul
-                                        className={styles.clearanceMenu}
-                                        role="listbox"
-                                        aria-label={`Medical clearance for ${patientInfo.displayName}`}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Escape") {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setClearanceDropdownOpenFor(undefined);
-                                          }
-                                        }}
-                                      >
-                                        <li role="option" aria-selected={effectiveClearance === "yes"}>
-                                          <button
-                                            type="button"
-                                            className={styles.clearanceOptionBtn}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "yes" }));
-                                              setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(`Medical clearance set to Yes for this patient.`);
-                                            }}
-                                          >
-                                            Yes — Medically cleared
-                                          </button>
-                                        </li>
-                                        <li role="option" aria-selected={effectiveClearance === "no"}>
-                                          <button
-                                            type="button"
-                                            className={styles.clearanceOptionBtn}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "no" }));
-                                              setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(`Medical clearance set to No for this patient.`);
-                                            }}
-                                          >
-                                            No — Not cleared
-                                          </button>
-                                        </li>
-                                        <li
-                                          role="option"
-                                          className={styles.sep}
-                                          aria-selected={effectiveClearance === null}
-                                        >
-                                          <button
-                                            type="button"
-                                            className={styles.clearanceOptionBtn}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: null }));
-                                              setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(`Medical clearance reset for this patient.`);
-                                            }}
-                                          >
-                                            • Pending / Not recorded
-                                          </button>
-                                        </li>
-                                      </ul>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                            <EdPresentation
+                              testId={`ward-ed-outstanding-${movement.id}`}
+                              kind={item.kind}
+                              patientName={patientInfo.displayName}
+                              value={presentationDrafts[movement.id] ?? item.detail}
+                              onChange={(value) =>
+                                setPresentationDrafts((current) => ({ ...current, [movement.id]: value }))
+                              }
+                            />
                           </td>
-                          <td className={styles.story}>
-                            <p className={styles.referralState}>
-                              {isEdInitiatedWithdrawal(movement)
-                                ? // Ward Lead audit (2026-09-17): the same "acceptedUnit can still
-                                  // resolve on a withdrawn movement" fact the `dest` column above
-                                  // is checked for, so this second summary column never shows a
-                                  // ward name beside a withdrawn record either.
-                                  "Withdrawn"
-                                : movement.edOutcome === "for_community_follow_up"
-                                  ? "For community follow-up"
-                                  : movement.edOutcome === "for_discharge"
-                                    ? "For discharge"
-                                    : acceptedUnit
-                                      ? `Accepted at ${acceptedUnit.name}`
-                                      : movement.referredUnitIds.length > 0
-                                        ? `Referred to ${movement.referredUnitIds.length} unit${movement.referredUnitIds.length === 1 ? "" : "s"}`
-                                        : stageCopy[movement.stage].label}
-                            </p>
+                          <td>
+                            <EdPlanPicker
+                              triggerId={`ward-ed-plan-${movement.id}`}
+                              patientName={patientInfo.displayName}
+                              labels={planDrafts[movement.id] ?? []}
+                              onChange={(labels) => setPlanDrafts((current) => ({ ...current, [movement.id]: labels }))}
+                            />
                           </td>
                           <td>
                             <span className={styles.dest}>
@@ -4543,39 +4589,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                                         ? "Awaiting bed placement"
                                         : "In department"}
                             </span>
-                            <span className={styles.sub}>
-                              <span
-                                className={styles.tierLabel}
-                                data-testid={`ward-ed-tier-${movement.id}`}
-                                data-urgency={movement.urgency}
-                              >
-                                <span className={styles.urgencyGlyph} aria-hidden="true">
-                                  {urgencyGlyph(movement.urgency)}
-                                </span>{" "}
-                                {urgencyTierLabel(movement.urgency)}
-                              </span>
-                            </span>
-                            {movement.referredUnitIds.length > 0 ? (
+                            {acceptedUnit && !movement.closure && (
+                              <span className={styles.acceptedLabel}>Accepted</span>
+                            )}
+                            {!acceptedUnit && movement.referredUnitIds.length > 0 ? (
                               <div className={styles.sub} data-testid={`ward-ed-referred-${movement.id}`}>
-                                Referred to{" "}
                                 {movement.referredUnitIds
                                   .map(
                                     (unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Unit not recorded",
                                   )
                                   .join(" · ")}
-                                {" — "}
-                                {acceptedUnit
-                                  ? `accepted at ${acceptedUnit.name}`
-                                  : movement.referredUnitIds.length === 1
-                                    ? "awaiting an answer"
-                                    : `awaiting an answer from ${movement.referredUnitIds.length}`}
-                                {" · "}
-                                {splitDuration(minutesInDepartment)} in {department.name}
-                                {" · "}
-                                {movement.referredAt === undefined ? (
-                                  <span className={styles.cardMeta}>referral time not recorded</span>
-                                ) : (
-                                  <>{splitDuration(Math.max(now - movement.referredAt, 0))} since referral</>
+                                {movement.referredAt === undefined && (
+                                  <span className="sr-only"> · referral time not recorded</span>
                                 )}
                               </div>
                             ) : null}
@@ -4618,126 +4643,114 @@ export function EdScreen({ edId }: EdScreenProps) {
                               </p>
                             ) : (
                               <>
-                                <div className={styles.tableActionGroup} data-unfolded={isUnfolded ? "true" : "false"}>
+                                <EdActionsMenu
+                                  patientName={patientInfo.displayName}
+                                  testId={`ward-ed-actions-menu-${movement.id}`}
+                                  triggerTestId={`ward-ed-unfold-${movement.id}`}
+                                  onViewRecord={() => setSelectedPatientId(movement.id)}
+                                  onEditPresentation={() =>
+                                    document.getElementById(`ward-ed-outstanding-${movement.id}`)?.click()
+                                  }
+                                  onEditPlan={() => document.getElementById(`ward-ed-plan-${movement.id}`)?.click()}
+                                >
                                   <button
                                     type="button"
-                                    className={styles.actionUnfoldToggle}
-                                    onClick={() =>
-                                      setUnfoldedRows((current) => ({
-                                        ...current,
-                                        [movement.id]: !isUnfolded,
-                                      }))
+                                    data-testid={`ward-ed-examine-toggle-${movement.id}`}
+                                    aria-disabled={examBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      examBlocked ? `ward-ed-examine-unavailable-${movement.id}` : undefined
                                     }
-                                    aria-expanded={isUnfolded}
-                                    data-testid={`ward-ed-unfold-${movement.id}`}
-                                    title={isUnfolded ? "Fold actions" : "Unfold all actions"}
+                                    title={examBlocked ?? undefined}
+                                    aria-expanded={examOpen}
+                                    className={`${styles.declineButton}${primaryAction === "exam" ? ` ${styles.primaryActionButton}` : ""}`}
+                                    onClick={
+                                      examBlocked ? ignoreUnavailableActivation : () => toggleExamination(movement.id)
+                                    }
                                   >
-                                    <span>{isUnfolded ? "Actions ▴" : "Actions ▾"}</span>
+                                    Record examination
                                   </button>
-                                  <div
-                                    className={styles.actionDropdownMenu}
-                                    data-testid={`ward-ed-actions-menu-${movement.id}`}
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-ed-outcome-toggle-${movement.id}`}
+                                    aria-disabled={edOutcomeBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      edOutcomeBlocked ? `ward-ed-outcome-unavailable-${movement.id}` : undefined
+                                    }
+                                    title={edOutcomeBlocked ?? undefined}
+                                    aria-expanded={edOutcomeOpen}
+                                    className={`${styles.declineButton}${primaryAction === "outcome" ? ` ${styles.primaryActionButton}` : ""}`}
+                                    onClick={
+                                      edOutcomeBlocked
+                                        ? ignoreUnavailableActivation
+                                        : () =>
+                                            setEdOutcomeOpenFor((current) =>
+                                              current === movement.id ? undefined : movement.id,
+                                            )
+                                    }
                                   >
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-ed-examine-toggle-${movement.id}`}
-                                      aria-disabled={examBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        examBlocked ? `ward-ed-examine-unavailable-${movement.id}` : undefined
-                                      }
-                                      title={examBlocked ?? undefined}
-                                      aria-expanded={examOpen}
-                                      className={`${styles.declineButton}${primaryAction === "exam" ? ` ${styles.primaryActionButton}` : ""}`}
-                                      onClick={
-                                        examBlocked ? ignoreUnavailableActivation : () => toggleExamination(movement.id)
-                                      }
-                                    >
-                                      Record examination
-                                    </button>
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-ed-outcome-toggle-${movement.id}`}
-                                      aria-disabled={edOutcomeBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        edOutcomeBlocked ? `ward-ed-outcome-unavailable-${movement.id}` : undefined
-                                      }
-                                      title={edOutcomeBlocked ?? undefined}
-                                      aria-expanded={edOutcomeOpen}
-                                      className={`${styles.declineButton}${primaryAction === "outcome" ? ` ${styles.primaryActionButton}` : ""}`}
-                                      onClick={
-                                        edOutcomeBlocked
-                                          ? ignoreUnavailableActivation
-                                          : () =>
-                                              setEdOutcomeOpenFor((current) =>
-                                                current === movement.id ? undefined : movement.id,
-                                              )
-                                      }
-                                    >
-                                      Record outcome
-                                    </button>
-                                    {edOutcomeBlocked ? (
-                                      <span id={`ward-ed-outcome-unavailable-${movement.id}`} className="sr-only">
-                                        {edOutcomeBlocked}
-                                      </span>
-                                    ) : null}
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-ed-handover-${movement.id}`}
-                                      aria-disabled={handoverBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        handoverBlocked ? `ward-ed-handover-unavailable-${movement.id}` : undefined
-                                      }
-                                      title={handoverBlocked ?? undefined}
-                                      className={`${styles.acceptButton}${primaryAction === "handover" ? ` ${styles.primaryActionButton}` : ""}`}
-                                      onClick={
-                                        handoverBlocked
-                                          ? ignoreUnavailableActivation
-                                          : () =>
-                                              dispatch({
-                                                type: "HANDOVER_READY",
-                                                role: "ed",
-                                                now,
-                                                movementId: movement.id,
-                                              })
-                                      }
-                                    >
-                                      Mark handover ready
-                                    </button>
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-ed-book-transport-toggle-${movement.id}`}
-                                      aria-disabled={transportBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        transportBlocked
-                                          ? `ward-ed-book-transport-unavailable-${movement.id}`
-                                          : undefined
-                                      }
-                                      title={transportBlocked ?? undefined}
-                                      aria-expanded={transportOpen}
-                                      aria-haspopup="dialog"
-                                      className={`${styles.acceptButton}${primaryAction === "transport" ? ` ${styles.primaryActionButton}` : ""}`}
-                                      onClick={
-                                        transportBlocked
-                                          ? ignoreUnavailableActivation
-                                          : () => toggleBookTransport(movement.id)
-                                      }
-                                    >
-                                      {/* Owner's third ruling, 2026-09-17, verbatim: "you click a button saying it is
+                                    Record outcome
+                                  </button>
+                                  {edOutcomeBlocked ? (
+                                    <span id={`ward-ed-outcome-unavailable-${movement.id}`} className="sr-only">
+                                      {edOutcomeBlocked}
+                                    </span>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-ed-handover-${movement.id}`}
+                                    aria-disabled={handoverBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      handoverBlocked ? `ward-ed-handover-unavailable-${movement.id}` : undefined
+                                    }
+                                    title={handoverBlocked ?? undefined}
+                                    className={`${styles.acceptButton}${primaryAction === "handover" ? ` ${styles.primaryActionButton}` : ""}`}
+                                    onClick={
+                                      handoverBlocked
+                                        ? ignoreUnavailableActivation
+                                        : () =>
+                                            dispatch({
+                                              type: "HANDOVER_READY",
+                                              role: "ed",
+                                              now,
+                                              movementId: movement.id,
+                                            })
+                                    }
+                                  >
+                                    Mark handover ready
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-ed-book-transport-toggle-${movement.id}`}
+                                    aria-disabled={transportBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      transportBlocked ? `ward-ed-book-transport-unavailable-${movement.id}` : undefined
+                                    }
+                                    title={transportBlocked ?? undefined}
+                                    aria-expanded={transportOpen}
+                                    aria-haspopup="dialog"
+                                    className={`${styles.acceptButton}${primaryAction === "transport" ? ` ${styles.primaryActionButton}` : ""}`}
+                                    onClick={
+                                      transportBlocked
+                                        ? ignoreUnavailableActivation
+                                        : () => toggleBookTransport(movement.id)
+                                    }
+                                  >
+                                    {/* Owner's third ruling, 2026-09-17, verbatim: "you click a button saying it is
                                 booked" — this logs a booking already made by phone, so the button states that,
                                 never "Book transport" as though the app were doing the booking. */}
-                                      Transport booked
+                                    Transport booked
+                                  </button>
+                                  {canSetArrivalPlan(movement) ? (
+                                    <button
+                                      type="button"
+                                      data-testid={`ward-ed-arrival-plan-toggle-${movement.id}`}
+                                      className={styles.acceptButton}
+                                      onClick={() => setArrivalPlanOpenFor(movement.id)}
+                                    >
+                                      {movement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
                                     </button>
-                                    {canSetArrivalPlan(movement) ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-arrival-plan-toggle-${movement.id}`}
-                                        className={styles.acceptButton}
-                                        onClick={() => setArrivalPlanOpenFor(movement.id)}
-                                      >
-                                        {movement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
-                                      </button>
-                                    ) : null}
-                                    {/* Owner ruling, 17 September 2026 (second round, item 10): "No
+                                  ) : null}
+                                  {/* Owner ruling, 17 September 2026 (second round, item 10): "No
                                 transport needed" is recorded at pull, booking is skipped, and the
                                 ward records the arrival.
 
@@ -4753,147 +4766,146 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 fact and nothing else. Shown only while the answer is unrecorded and
                                 no transport exists, because re-recording belongs beside the
                                 recorded answer rather than as a second way to say the same thing. */}
-                                    {movement.transport === undefined &&
-                                    transportNeedState(movement) === "not_recorded" ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-no-transport-needed-${movement.id}`}
-                                        className={styles.acceptButton}
-                                        onClick={() =>
-                                          dispatch({
-                                            type: "RECORD_TRANSPORT_NEED",
-                                            role: "ed",
-                                            now,
-                                            movementId: movement.id,
-                                            needed: false,
-                                          })
-                                        }
-                                      >
-                                        No transport needed
-                                      </button>
-                                    ) : null}
-                                    {movement.referralId === undefined &&
-                                    movementReferralLink(movement, referrals).kind === "not_recorded" ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-no-referral-raised-${movement.id}`}
-                                        className={styles.acceptButton}
-                                        onClick={() =>
-                                          dispatch({
-                                            type: "RECORD_NO_REFERRAL",
-                                            role: "ed",
-                                            now,
-                                            movementId: movement.id,
-                                          })
-                                        }
-                                      >
-                                        No referral raised
-                                      </button>
-                                    ) : null}
+                                  {movement.transport === undefined &&
+                                  transportNeedState(movement) === "not_recorded" ? (
                                     <button
                                       type="button"
-                                      data-testid={`ward-change-urgency-toggle-${movement.id}`}
-                                      aria-expanded={urgencyChangeOpen}
-                                      className={styles.declineButton}
-                                      onClick={() => toggleUrgencyChange(movement.id, movement.urgency)}
+                                      data-testid={`ward-ed-no-transport-needed-${movement.id}`}
+                                      className={styles.acceptButton}
+                                      onClick={() =>
+                                        dispatch({
+                                          type: "RECORD_TRANSPORT_NEED",
+                                          role: "ed",
+                                          now,
+                                          movementId: movement.id,
+                                          needed: false,
+                                        })
+                                      }
                                     >
-                                      Change urgency
+                                      No transport needed
                                     </button>
+                                  ) : null}
+                                  {movement.referralId === undefined &&
+                                  movementReferralLink(movement, referrals).kind === "not_recorded" ? (
                                     <button
                                       type="button"
-                                      data-testid={`ward-change-legal-status-toggle-${movement.id}`}
-                                      aria-expanded={legalStatusChangeOpen}
-                                      className={styles.declineButton}
-                                      onClick={() => toggleLegalStatusChange(movement.id, movement.legalStatus)}
+                                      data-testid={`ward-ed-no-referral-raised-${movement.id}`}
+                                      className={styles.acceptButton}
+                                      onClick={() =>
+                                        dispatch({
+                                          type: "RECORD_NO_REFERRAL",
+                                          role: "ed",
+                                          now,
+                                          movementId: movement.id,
+                                        })
+                                      }
                                     >
-                                      Change legal status
+                                      No referral raised
                                     </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-change-urgency-toggle-${movement.id}`}
+                                    aria-expanded={urgencyChangeOpen}
+                                    className={styles.declineButton}
+                                    onClick={() => toggleUrgencyChange(movement.id, movement.urgency)}
+                                  >
+                                    Change urgency
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-change-legal-status-toggle-${movement.id}`}
+                                    aria-expanded={legalStatusChangeOpen}
+                                    className={styles.declineButton}
+                                    onClick={() => toggleLegalStatusChange(movement.id, movement.legalStatus)}
+                                  >
+                                    Change legal status
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-testid={`ward-ed-withdraw-referral-toggle-${movement.id}`}
+                                    aria-disabled={withdrawBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      withdrawBlocked
+                                        ? `ward-ed-withdraw-referral-unavailable-${movement.id}`
+                                        : undefined
+                                    }
+                                    title={withdrawBlocked ?? undefined}
+                                    aria-expanded={withdrawOpen}
+                                    className={styles.declineButton}
+                                    onClick={
+                                      withdrawBlocked
+                                        ? ignoreUnavailableActivation
+                                        : () => toggleWithdrawReferral(movement.id)
+                                    }
+                                  >
+                                    Withdraw referral
+                                  </button>
+                                  {isForm1A && movement.legalFormReceivedAt === undefined ? (
                                     <button
                                       type="button"
-                                      data-testid={`ward-ed-withdraw-referral-toggle-${movement.id}`}
-                                      aria-disabled={withdrawBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        withdrawBlocked
-                                          ? `ward-ed-withdraw-referral-unavailable-${movement.id}`
-                                          : undefined
-                                      }
-                                      title={withdrawBlocked ?? undefined}
-                                      aria-expanded={withdrawOpen}
-                                      className={styles.declineButton}
-                                      onClick={
-                                        withdrawBlocked
-                                          ? ignoreUnavailableActivation
-                                          : () => toggleWithdrawReferral(movement.id)
+                                      data-testid={`ed-mark-form-received-${movement.id}`}
+                                      data-action={`ed-mark-form-received-${movement.id}`}
+                                      className={styles.acceptButton}
+                                      onClick={() =>
+                                        dispatch({
+                                          type: "RECORD_LEGAL_FORM_RECEIVED",
+                                          role: "ed",
+                                          now,
+                                          movementId: movement.id,
+                                        })
                                       }
                                     >
-                                      Withdraw referral
+                                      Mark Form 1A received
                                     </button>
-                                    {isForm1A && movement.legalFormReceivedAt === undefined ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ed-mark-form-received-${movement.id}`}
-                                        data-action={`ed-mark-form-received-${movement.id}`}
-                                        className={styles.acceptButton}
-                                        onClick={() =>
-                                          dispatch({
-                                            type: "RECORD_LEGAL_FORM_RECEIVED",
-                                            role: "ed",
-                                            now,
-                                            movementId: movement.id,
-                                          })
-                                        }
-                                      >
-                                        Mark Form 1A received
-                                      </button>
-                                    ) : null}
-                                    {isForm1A && movement.legalFormReceivedAt !== undefined ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ed-correct-form-receipt-toggle-${movement.id}`}
-                                        aria-expanded={receiptCorrectionOpen}
-                                        className={styles.declineButton}
-                                        onClick={() => toggleReceiptCorrection(movement.id)}
-                                      >
-                                        Correct receipt
-                                      </button>
-                                    ) : null}
-                                    {movement.legalForm ? (
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-legal-form-expiry-toggle-${movement.id}`}
-                                        aria-expanded={legalFormExpiryOpen}
-                                        className={styles.declineButton}
-                                        onClick={() => toggleLegalFormExpiry(movement.id)}
-                                      >
-                                        {legalFormExpiryIsExtension
-                                          ? "Record an extension"
-                                          : "Record expiry from the form"}
-                                      </button>
-                                    ) : null}
+                                  ) : null}
+                                  {isForm1A && movement.legalFormReceivedAt !== undefined ? (
                                     <button
                                       type="button"
-                                      data-testid={`ed-refer-cmht-${movement.id}`}
-                                      data-action={`ed-refer-cmht-${movement.id}`}
-                                      aria-disabled={cmhtBlocked ? "true" : undefined}
-                                      aria-describedby={
-                                        cmhtBlocked ? `ward-ed-cmht-unavailable-${movement.id}` : undefined
-                                      }
-                                      title={cmhtBlocked ?? undefined}
-                                      aria-expanded={communityReferralOpenFor === movement.id}
+                                      data-testid={`ed-correct-form-receipt-toggle-${movement.id}`}
+                                      aria-expanded={receiptCorrectionOpen}
                                       className={styles.declineButton}
-                                      onClick={
-                                        cmhtBlocked
-                                          ? ignoreUnavailableActivation
-                                          : () =>
-                                              setCommunityReferralOpenFor(
-                                                communityReferralOpenFor === movement.id ? undefined : movement.id,
-                                              )
-                                      }
+                                      onClick={() => toggleReceiptCorrection(movement.id)}
                                     >
-                                      Refer to a community team
+                                      Correct receipt
                                     </button>
-                                  </div>
-                                </div>
+                                  ) : null}
+                                  {movement.legalForm ? (
+                                    <button
+                                      type="button"
+                                      data-testid={`ward-ed-legal-form-expiry-toggle-${movement.id}`}
+                                      aria-expanded={legalFormExpiryOpen}
+                                      className={styles.declineButton}
+                                      onClick={() => toggleLegalFormExpiry(movement.id)}
+                                    >
+                                      {legalFormExpiryIsExtension
+                                        ? "Record an extension"
+                                        : "Record expiry from the form"}
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    data-testid={`ed-refer-cmht-${movement.id}`}
+                                    data-action={`ed-refer-cmht-${movement.id}`}
+                                    aria-disabled={cmhtBlocked ? "true" : undefined}
+                                    aria-describedby={
+                                      cmhtBlocked ? `ward-ed-cmht-unavailable-${movement.id}` : undefined
+                                    }
+                                    title={cmhtBlocked ?? undefined}
+                                    aria-expanded={communityReferralOpenFor === movement.id}
+                                    className={styles.declineButton}
+                                    onClick={
+                                      cmhtBlocked
+                                        ? ignoreUnavailableActivation
+                                        : () =>
+                                            setCommunityReferralOpenFor(
+                                              communityReferralOpenFor === movement.id ? undefined : movement.id,
+                                            )
+                                    }
+                                  >
+                                    Refer to a community team
+                                  </button>
+                                </EdActionsMenu>
                                 {examBlocked ? (
                                   <span id={`ward-ed-examine-unavailable-${movement.id}`} className="sr-only">
                                     {examBlocked}
@@ -4944,7 +4956,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                   <p
                                     id={`ward-ed-cmht-unavailable-${movement.id}`}
                                     data-testid={`ward-ed-cmht-unavailable-${movement.id}`}
-                                    className={styles.cardMeta}
+                                    className="sr-only"
                                   >
                                     {cmhtBlocked}
                                   </p>
@@ -4964,7 +4976,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         legalFormExpiryOpen ||
                         receiptCorrectionOpen ? (
                           <tr className={styles.subFormRow}>
-                            <td colSpan={10}>
+                            <td colSpan={9}>
                               {/*
                                * ⚠️ **TWO STEPS, AND NOT FOR SYMMETRY WITH THE PANELS AROUND IT.** Withdrawing
                                * closes the movement, and NOTHING IN THE MODEL REVERSES IT — there is no
@@ -5697,7 +5709,24 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         {selectedPatient ? (
           <aside className={styles.pxDrawer} aria-labelledby="pxTitle">
-            <div className={styles.menuPanel} role="dialog" aria-modal="true" aria-labelledby="pxTitle">
+            <dialog
+              ref={patientDialogRef}
+              className={`${styles.menuPanel} ${styles.patientDialog}`}
+              aria-labelledby="pxTitle"
+              onCancel={() => setSelectedPatientId(null)}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  if (
+                    event.clientX < rect.left ||
+                    event.clientX > rect.right ||
+                    event.clientY < rect.top ||
+                    event.clientY > rect.bottom
+                  )
+                    setSelectedPatientId(null);
+                }
+              }}
+            >
               <div className={styles.popHead}>
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                 <h2 id="pxTitle">{selectedPatientInfo?.displayName ?? "Unknown Patient"}</h2>
@@ -5723,6 +5752,45 @@ export function EdScreen({ edId }: EdScreenProps) {
                 <section className={styles.pxBlock}>
                   <h3>Where they are up to</h3>
                   <dl className={styles.pairs}>
+                    {selectedPatient.legalForm && (
+                      <div className={styles.pair}>
+                        <dt>Recorded legal form</dt>
+                        <dd>
+                          {selectedPatient.legalForm.code} · {formExpiryLine(selectedPatient.legalForm, now)}
+                        </dd>
+                      </div>
+                    )}
+                    <div className={styles.pair}>
+                      <dt>Recorded medical clearance</dt>
+                      <dd>
+                        {movementMedicalClearance(selectedPatient, referrals) === undefined
+                          ? "Not recorded"
+                          : movementMedicalClearance(selectedPatient, referrals)?.cleared
+                            ? "Yes"
+                            : "No"}
+                      </dd>
+                    </div>
+                    {selectedPatient.referredUnitIds.length > 0 && (
+                      <div className={styles.pair}>
+                        <dt>Since referral</dt>
+                        <dd>
+                          {selectedPatient.referredAt === undefined
+                            ? "Referral time not recorded"
+                            : splitDuration(Math.max(now - selectedPatient.referredAt, 0))}
+                        </dd>
+                      </div>
+                    )}
+
+                    {selectedPatient.arrivalMode === "police" && (
+                      <div className={styles.pair}>
+                        <dt>Police presence</dt>
+                        <dd>Police in attendance</dd>
+                      </div>
+                    )}
+                    <div className={styles.pair}>
+                      <dt>Gender</dt>
+                      <dd>{selectedPatient.gender ?? "Not yet recorded"}</dd>
+                    </div>
                     <div className={styles.pair}>
                       <dt>Patient</dt>
                       <dd>
@@ -5839,9 +5907,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                 </section>
               </div>
               <div className={styles.popFoot}>
-                <span>Connected live to Ward Flow engine. Changes made on this screen take effect immediately.</span>
+                <span>This record shows recorded clinical state. Table drafts are not saved.</span>
               </div>
-            </div>
+            </dialog>
           </aside>
         ) : null}
 
@@ -6121,332 +6189,6 @@ export function EdScreen({ edId }: EdScreenProps) {
                   );
                 })}
               </ol>
-            </div>
-          )}
-        </section>
-
-        <section
-          aria-label="Raise a referral"
-          className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
-          tabIndex={0}
-        >
-          <div className={styles.ph}>
-            <h2>
-              <b>Raise a referral</b>{" "}
-              <span className={styles.note}>Refer a person in this department to a mental health bed or service.</span>
-            </h2>
-            {!referralOpen ? (
-              <button
-                type="button"
-                data-testid="ward-ed-raise-referral-toggle"
-                className={styles.acceptButton}
-                onClick={() => setReferralOpen(true)}
-              >
-                Raise referral
-              </button>
-            ) : null}
-          </div>
-          {referralOpen && (
-            <div className={styles.referralPanelBody}>
-              {(() => {
-                const referralBlocked = referralDraftBlockedReason(draft);
-                return (
-                  <form className={styles.referralForm} onSubmit={submitReferral} data-testid="ward-ed-referral-form">
-                    <div className={styles.referralGrid}>
-                      <label className={styles.referralField}>
-                        Cohort
-                        <select
-                          data-testid="ward-ed-referral-cohort"
-                          value={draft.cohort ?? NO_COHORT_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              cohort:
-                                event.target.value === NO_COHORT_VALUE ? undefined : (event.target.value as Cohort),
-                            }))
-                          }
-                        >
-                          {/* Nothing chosen, first and selected — never a cohort standing in for a
-                            decision nobody made. Same idiom as `NO_DECLINE_REASON_VALUE` below. */}
-                          <option value={NO_COHORT_VALUE}>Choose a cohort</option>
-                          {COHORT_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.referralField}>
-                        Security
-                        <select
-                          data-testid="ward-ed-referral-security"
-                          value={draft.security ?? NO_SECURITY_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              security:
-                                event.target.value === NO_SECURITY_VALUE ? undefined : (event.target.value as Security),
-                            }))
-                          }
-                        >
-                          <option value={NO_SECURITY_VALUE}>Choose a security level</option>
-                          {SECURITY_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.referralField}>
-                        Sex
-                        <select
-                          data-testid="ward-ed-referral-sex"
-                          value={draft.sex ?? NO_SEX_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              sex:
-                                event.target.value === NO_SEX_VALUE ? undefined : (event.target.value as RecordedSex),
-                            }))
-                          }
-                        >
-                          <option value={NO_SEX_VALUE}>Choose a sex</option>
-                          {SEX_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      {/* T11 (after T10, item 8, owner answer 17 September 2026): "Gender (decides
-                    which bed)" — the exact label build plan §2 gives, so a clinician never
-                    confuses this with the "Sex" question above it, which the gate no longer
-                    reads at all. */}
-                      <label className={styles.referralField}>
-                        Gender (decides which bed)
-                        <select
-                          data-testid="ward-ed-referral-gender"
-                          value={draft.gender ?? NO_GENDER_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              gender:
-                                event.target.value === NO_GENDER_VALUE
-                                  ? undefined
-                                  : (event.target.value as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
-                            }))
-                          }
-                        >
-                          <option value={NO_GENDER_VALUE}>Choose a gender</option>
-                          {GENDER_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                          <option value={GENDER_NOT_RECORDED_VALUE}>Not yet recorded</option>
-                        </select>
-                      </label>
-                      {/* T15 (item 12, owner answer 17 September 2026): "An admission from a
-                    referral carries the referral's broad diagnosis category, marked tentative."
-                    OPTIONAL, and never blocks "Raise referral" — a clinician with no diagnosis to
-                    record is not made to invent one. */}
-                      <label className={styles.referralField}>
-                        Broad diagnosis category (tentative)
-                        <select
-                          data-testid="ward-ed-referral-tentative-diagnosis"
-                          value={draft.tentativeDiagnosis}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              tentativeDiagnosis: event.target.value as TentativeDiagnosisBlock | "none",
-                            }))
-                          }
-                        >
-                          <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
-                          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                            <option key={block.code} value={block.code}>
-                              {tentativeDiagnosisPhrase(block.code)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.referralField}>
-                        Legal status
-                        <select
-                          data-testid="ward-ed-referral-legal-status"
-                          value={draft.legalStatus ?? NO_LEGAL_STATUS_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              legalStatus:
-                                event.target.value === NO_LEGAL_STATUS_VALUE
-                                  ? undefined
-                                  : (event.target.value as LegalStatus),
-                            }))
-                          }
-                        >
-                          <option value={NO_LEGAL_STATUS_VALUE}>Choose a legal status</option>
-                          {LEGAL_STATUS_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.referralField}>
-                        Legal form
-                        <select
-                          data-testid="ward-ed-referral-legal-form"
-                          value={draft.legalFormCode ?? NO_LEGAL_FORM_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              legalFormCode: event.target.value === NO_LEGAL_FORM_VALUE ? null : event.target.value,
-                              legalFormDueAtDate: "",
-                              legalFormDueAtTime: "",
-                            }))
-                          }
-                        >
-                          <option value={NO_LEGAL_FORM_VALUE}>No form</option>
-                          {SELECTABLE_LEGAL_FORMS.map((form) => (
-                            <option key={form.code} value={form.code}>
-                              {legalFormName(form)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      {draft.legalFormCode !== null ? (
-                        <fieldset className={styles.declineFieldset}>
-                          <legend className={styles.declineLegend}>Expiry written on the form (optional)</legend>
-                          <p className={styles.cardMeta}>
-                            Leave blank if the form has no expiry or you do not have it yet.
-                          </p>
-                          <label className={styles.referralField}>
-                            Date
-                            <input
-                              type="date"
-                              data-testid="ward-ed-referral-legal-form-due-at-date"
-                              value={draft.legalFormDueAtDate}
-                              onChange={(event) =>
-                                setDraft((current) => ({ ...current, legalFormDueAtDate: event.target.value }))
-                              }
-                            />
-                          </label>
-                          <label className={styles.referralField}>
-                            Time
-                            <input
-                              type="time"
-                              data-testid="ward-ed-referral-legal-form-due-at-time"
-                              value={draft.legalFormDueAtTime}
-                              onChange={(event) =>
-                                setDraft((current) => ({ ...current, legalFormDueAtTime: event.target.value }))
-                              }
-                            />
-                          </label>
-                        </fieldset>
-                      ) : null}
-                      <label className={styles.referralField}>
-                        Urgency
-                        <select
-                          data-testid="ward-ed-referral-urgency"
-                          value={draft.urgency ?? NO_URGENCY_VALUE}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              urgency:
-                                event.target.value === NO_URGENCY_VALUE
-                                  ? undefined
-                                  : (Number(event.target.value) as 1 | 2 | 3),
-                            }))
-                          }
-                        >
-                          <option value={NO_URGENCY_VALUE}>Choose an urgency tier</option>
-                          {URGENCY_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {urgencyTierLabel(option)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <fieldset className={styles.referralCheckbox}>
-                        <legend>One-to-one nursing</legend>
-                        <label>
-                          <input
-                            type="radio"
-                            name="ward-ed-referral-specialling"
-                            data-testid="ward-ed-referral-specialling-required"
-                            checked={draft.specialling === true}
-                            onChange={() => setDraft((current) => ({ ...current, specialling: true }))}
-                          />
-                          Required
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            name="ward-ed-referral-specialling"
-                            data-testid="ward-ed-referral-specialling-not-required"
-                            checked={draft.specialling === false}
-                            onChange={() => setDraft((current) => ({ ...current, specialling: false }))}
-                          />
-                          Not required
-                        </label>
-                      </fieldset>
-                      <fieldset className={styles.referralCheckbox}>
-                        <legend>High-acuity nursing</legend>
-                        <label>
-                          <input
-                            type="radio"
-                            name="ward-ed-referral-high-acuity"
-                            data-testid="ward-ed-referral-high-acuity-required"
-                            checked={draft.highAcuity === true}
-                            onChange={() => setDraft((current) => ({ ...current, highAcuity: true }))}
-                          />
-                          Required
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            name="ward-ed-referral-high-acuity"
-                            data-testid="ward-ed-referral-high-acuity-not-required"
-                            checked={draft.highAcuity === false}
-                            onChange={() => setDraft((current) => ({ ...current, highAcuity: false }))}
-                          />
-                          Not required
-                        </label>
-                      </fieldset>
-                    </div>
-                    <div className={styles.actionRow}>
-                      <button
-                        type="submit"
-                        data-testid="ward-ed-referral-submit"
-                        className={styles.acceptButton}
-                        aria-disabled={referralBlocked ? "true" : undefined}
-                        aria-describedby={referralBlocked ? "ward-ed-referral-blocked" : undefined}
-                        title={referralBlocked ?? undefined}
-                        onClick={referralBlocked ? ignoreUnavailableActivation : undefined}
-                      >
-                        Raise referral
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.declineButton}
-                        onClick={() => {
-                          setReferralOpen(false);
-                          setDraft(DEFAULT_DRAFT);
-                          setRaisingFromReferralId(undefined);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      {referralBlocked ? (
-                        <span id="ward-ed-referral-blocked" className="sr-only">
-                          {referralBlocked}
-                        </span>
-                      ) : null}
-                    </div>
-                  </form>
-                );
-              })()}
             </div>
           )}
         </section>

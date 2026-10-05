@@ -1,0 +1,383 @@
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 1px 3px 1px 7px;
+  min-height: 25px;
+  background: color-mix(in srgb, var(--accent-soft) 60%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--line));
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.label > span {
+  overflow-wrap: anywhere;
+}
+.label > button {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 23px;
+  height: 23px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+}
+.label svg {
+  width: 13px;
+  height: 13px;
+}
+.label > button:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.planTrigger,
+.actionsTrigger {
+  font: 500 12px/1.4 var(--body);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  max-width: 100%;
+  width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--muted);
+  min-height: 28px;
+  text-align: left;
+  cursor: pointer;
+}
+.labels:not(:empty) + .planTrigger {
+  margin-top: 6px;
+  width: auto;
+  border-color: transparent;
+  background: none;
+  padding: 3px 0;
+  color: var(--accent);
+}
+.planTrigger svg,
+.actionsTrigger svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+.planTrigger:hover,
+.actionsTrigger:hover,
+.actionsTrigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.actionsTrigger {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 550;
+}
+.popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  z-index: 80;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 12px var(--body);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.popover * {
+  box-sizing: border-box;
+}
+.popover button,
+.popover input {
+  font: inherit;
+}
+.popover :is(button, input):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.popoverHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px 10px;
+  color: var(--ink);
+}
+.reviewCaret {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.popoverHeading > b {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.popoverHeading > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.planInput {
+  display: block;
+  width: calc(100% - 12px);
+  height: 35px;
+  margin: 0 6px 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 13px !important;
+}
+.planOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-height: 34px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.planOption[aria-selected="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.planOption:hover,
+.planOption[data-active="true"] {
+  background: var(--surface-2);
+}
+.hint {
+  margin: 7px 8px 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.menuGroup {
+  padding: 3px 0;
+  border-top: 1px solid var(--line);
+}
+.menuGroup > h3 {
+  margin: 0;
+  padding: 8px 8px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.actionItems button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  border: 0 !important;
+  border-radius: 6px !important;
+  min-height: 32px !important;
+  padding: 6px 8px !important;
+  color: var(--ink-soft) !important;
+  background: none !important;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px !important;
+}
+.actionItems button:hover,
+.actionItems button:focus {
+  background: var(--surface-2) !important;
+}
+.actionItems button[aria-disabled="true"] {
+  color: var(--muted) !important;
+  cursor: default;
+}
+.actionItems button[class*="primaryActionButton"]:not([aria-disabled="true"]) {
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+.reason {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--muted);
+  padding: 8px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 0 0 8px 8px;
+}
+.presentation {
+  display: block;
+  position: relative;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  font: 400 13px/1.55 var(--body);
+  white-space: normal;
+  color: var(--ink-soft);
+  background: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.editIcon {
+  width: 13px;
+  height: 13px;
+  margin-left: 6px;
+  color: var(--muted);
+  vertical-align: middle;
+  opacity: 0;
+}
+.presentation:hover .editIcon,
+.presentation:focus-visible .editIcon {
+  opacity: 1;
+}
+.dialog {
+  max-width: min(760px, calc(100vw - 32px));
+  width: 760px;
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  box-shadow: 0 18px 60px color-mix(in srgb, var(--ink) 20%, transparent);
+  overflow: auto;
+}
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  backdrop-filter: blur(3px);
+}
+.dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.dialog h2 {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+  margin: 0;
+  font-weight: 650;
+}
+.dialog p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 5px 0 0;
+}
+.dialog header button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+.dialog header svg {
+  width: 16px;
+  height: 16px;
+}
+.dialog form {
+  padding: 18px 20px;
+}
+.dialog label {
+  font-size: 13px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+}
+.dialog textarea {
+  display: block;
+  resize: vertical;
+  width: 100%;
+  min-height: 130px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 13px/1.65 var(--body);
+}
+.dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 15px;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.dialog footer > span {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.dialog footer button {
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.dialog footer button[type="submit"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+:is(.planTrigger, .actionsTrigger, .presentation, .label > button):focus-visible,
+.dialog :is(button, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .dialog {
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 16px;
+  }
+  .dialog > header,
+  .dialog form {
+    padding: 14px;
+  }
+  .dialog footer > span {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popover * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

@@ -74,6 +74,18 @@ Back to [the code map index](README.md).
 
 ## `ed/` — 7 files, 10,366 lines
 
+**ED psychiatry implementation update — 5 October 2026:** The routed `EdScreen` now composes
+`ed-overview.tsx` (department header, source-derived figures and horizontal ED browser) and
+`ed-board-controls.tsx` (plan labels, presentation editor and grouped clinical action menu), each
+with its own CSS module. Referral intake opens from the header; existing clinical handlers and
+refusal gates remain in `ed-screen.tsx`. The patient board has nine columns, patient/UMRN search
+and sorting, compact form/clearance drafts and a native modal record. Presentation, plan, review,
+form and clearance table edits are screen-only drafts: they do not persist or alter recorded
+clinical worklists, figures or engine records. The ED bay retains the existing synthetic display
+derivation; it is not a newly recorded bed assignment. `ward-ed-polished.dom.test.tsx` covers plan
+selection and draft isolation. The historical file totals and outline below retain their dated
+baseline.
+
 - **Route:** `/ed/[edId]` (`src/app/mockups/ward-flow/ed/[edId]/page.tsx` imports `EdScreen`).
 - **Mockup:** `emergency-department-third-edition.html` (SCREEN-MAP.md row for `ed/`).
 - **Reducer events dispatched:** `BOOK_TRANSPORT`, `CHANGE_LEGAL_STATUS`, `CHANGE_URGENCY`,
