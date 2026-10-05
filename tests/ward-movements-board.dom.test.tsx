@@ -53,4 +53,17 @@ describe("Transport Hub", () => {
     expect(sheetTitle()).toBe(before);
     expect(screen.getByRole("button", { name: "Mark collected" })).toBeTruthy();
   });
+
+  it("never carries a delivery confirmation over to another job", () => {
+    renderWith(<TransportHub />);
+    fireEvent.click(screen.getByRole("button", { name: /Patient on board/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark delivered" }));
+    expect(screen.getByRole("button", { name: /^Confirm delivered to/ })).toBeTruthy();
+    const rows = screen
+      .getAllByRole("button", { pressed: false })
+      .filter((b) => /^[A-Z]{2}$/.test(b.textContent ?? ""));
+    fireEvent.click(rows[0]);
+    expect(screen.queryByRole("button", { name: /^Confirm delivered to/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Mark delivered" })).toBeTruthy();
+  });
 });

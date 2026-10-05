@@ -82,7 +82,8 @@ export function TransportHub() {
   const [provider, setProvider] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [confirmDelivery, setConfirmDelivery] = useState(false);
+  // Holds the job being confirmed, so a confirmation can never carry over to another job.
+  const [confirmFor, setConfirmFor] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [baseline, setBaseline] = useState<number | null>(null);
 
@@ -129,7 +130,10 @@ export function TransportHub() {
       : undefined;
 
   const officerRefusals = rejections.filter((rejection) => REFUSAL_LABEL[rejection.attempted] !== undefined).reverse();
-  const newRefusal = baseline !== null && rejections.length > baseline ? rejections.at(-1) : undefined;
+  const latest = baseline !== null && rejections.length > baseline ? rejections.at(-1) : undefined;
+  // Only the job the refusal was for shows it; another patient's sheet must not read as refused.
+  const newRefusal = latest && latest.movementId === selected?.id ? latest : undefined;
+  const confirmDelivery = confirmFor !== null && confirmFor === selected?.id && step?.event === "PATIENT_ARRIVED";
   const cancelled = scoped.flatMap((movement) =>
     (movement.unwinds ?? [])
       .filter((unwind) => unwind.kind === "transport_cancelled")
@@ -139,7 +143,8 @@ export function TransportHub() {
   const runStep = () => {
     if (!selected || !step || blocked) return;
     if (step.event === "PATIENT_ARRIVED" && !confirmDelivery) {
-      setConfirmDelivery(true);
+      setSelectedId(selected.id);
+      setConfirmFor(selected.id);
       return;
     }
     setBaseline(rejections.length);
@@ -151,7 +156,7 @@ export function TransportHub() {
     else if (step.event === "PATIENT_COLLECTED")
       dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: selected.id });
     else dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: selected.id });
-    setConfirmDelivery(false);
+    setConfirmFor(null);
     setSelectedId(selected.id);
     setMessage(`${step.label} recorded for ${who}.`);
   };
@@ -172,7 +177,7 @@ export function TransportHub() {
     onSelect: () => {
       setFilter(filter === next ? "all" : next);
       setSelectedId(undefined);
-      setConfirmDelivery(false);
+      setConfirmFor(null);
     },
   });
 
@@ -351,7 +356,7 @@ export function TransportHub() {
                               aria-pressed={selected?.id === movement.id}
                               onClick={() => {
                                 setSelectedId(movement.id);
-                                setConfirmDelivery(false);
+                                setConfirmFor(null);
                               }}
                             >
                               {patientInitials(movement, world)}
@@ -471,7 +476,7 @@ export function TransportHub() {
                       {confirmDelivery ? `Confirm delivered to ${destination?.name ?? "the ward"}` : step.label}
                     </button>{" "}
                     {confirmDelivery ? (
-                      <button className={styles.textButton} type="button" onClick={() => setConfirmDelivery(false)}>
+                      <button className={styles.textButton} type="button" onClick={() => setConfirmFor(null)}>
                         Cancel
                       </button>
                     ) : null}

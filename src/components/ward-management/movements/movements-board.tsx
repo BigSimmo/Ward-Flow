@@ -120,7 +120,8 @@ export function MovementsBoard() {
   }, [focus, stage, order, query, board, readyNoTransport, now, world]);
 
   const shown = showAll ? rows : rows.slice(0, PAGE);
-  const longestTierOne = board.tierOne[0];
+  // The tier 1 list puts an expiring legal authority first; the sentence names the longest wait.
+  const longestTierOne = [...board.tierOne].sort((a, b) => waitedMinutes(b, now) - waitedMinutes(a, now))[0];
 
   const attention: Attention[] = [
     ...board.tierOne.slice(0, 3).map((movement) => ({
