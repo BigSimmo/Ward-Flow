@@ -65,6 +65,14 @@
   line-height: 1.4;
 }
 
+a.answerAlert {
+  text-decoration: none;
+}
+
+a.answerAlert:hover {
+  text-decoration: underline;
+}
+
 .answerAlert {
   color: var(--danger-ink, var(--danger));
   font-weight: 600;
@@ -436,8 +444,16 @@
   color: var(--warn);
 }
 
+/* The queue fills its row: as tall as the column beside it, never taller, and scrolls inside. */
+.queuePanel {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
 .queueScroll {
-  max-height: 40rem;
+  flex: 1 1 0;
+  min-height: 24rem;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -561,6 +577,45 @@
 
 .registers {
   padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.registers[hidden] {
+  display: none;
+}
+
+/* The reused registers keep their markup; here their tinted tiles become flat hairline rows and
+   their tabs reach the 48px tap target. Live screen unaffected. */
+.registers :global([role="tab"]) {
+  min-height: var(--ward-tap, 3rem);
+}
+
+.registers :global([data-testid^="ward-exception-"][data-tone]) {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.registers :global(li:first-child > [data-testid^="ward-exception-"][data-tone]) {
+  border-top: 0;
+}
+
+.registers :global(span[data-tone]) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.registers :global(span[data-tone="danger"]) {
+  color: var(--danger-ink, var(--danger));
+}
+
+.registers :global(span[data-tone="warning"]) {
+  color: var(--warn);
 }
 
 .actions {

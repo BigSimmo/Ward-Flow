@@ -177,6 +177,19 @@ export function commandFigures(input: CommandInput): CommandFigures {
   };
 }
 
+/** The first sentence on the screen: who is waiting, where, and what is free. */
+export function answerSentence(
+  figures: Pick<CommandFigures, "waitingInEd" | "departmentsWithWaiting" | "readyBeds">,
+): string {
+  const beds = figures.readyBeds === 1 ? "1 bed ready now" : `${figures.readyBeds} beds ready now`;
+  if (figures.waitingInEd === 0) return `Nobody is waiting in an emergency department; ${beds}.`;
+  const departments =
+    figures.departmentsWithWaiting === 1
+      ? "1 emergency department"
+      : `${figures.departmentsWithWaiting} emergency departments`;
+  return `${people(figures.waitingInEd)} waiting in ${departments}, ${beds}.`;
+}
+
 /** "1 person" / "3 people" — the one plural rule the answer line needs. */
 export function people(count: number): string {
   return count === 1 ? "1 person" : `${count} people`;

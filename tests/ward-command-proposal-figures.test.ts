@@ -57,3 +57,34 @@ describe("Command proposal figures", () => {
     expect(tones).toEqual([...tones].sort((a, b) => (a === b ? 0 : a === "danger" ? -1 : 1)));
   });
 });
+
+describe("Command proposal answer sentence", () => {
+  it("reads correctly for an empty network and for single values", async () => {
+    const { answerSentence } =
+      await import("@/components/ward-management/coordinator/proposal/command-proposal-figures");
+    expect(answerSentence({ waitingInEd: 0, departmentsWithWaiting: 0, readyBeds: 0 })).toBe(
+      "Nobody is waiting in an emergency department; 0 beds ready now.",
+    );
+    expect(answerSentence({ waitingInEd: 1, departmentsWithWaiting: 1, readyBeds: 1 })).toBe(
+      "1 person waiting in 1 emergency department, 1 bed ready now.",
+    );
+    expect(answerSentence({ waitingInEd: 70, departmentsWithWaiting: 8, readyBeds: 26 })).toBe(
+      "70 people waiting in 8 emergency departments, 26 beds ready now.",
+    );
+  });
+
+  it("gives an empty network empty lists rather than invented rows", () => {
+    const empty = commandFigures({
+      movements: [],
+      units: [],
+      referrals: [],
+      bedReleases: [],
+      leaveBeds: [],
+      now: NOW_ANCHOR,
+    });
+    expect(empty.waitingInEd).toBe(0);
+    expect(empty.readyBeds).toBe(0);
+    expect(empty.attention).toEqual([]);
+    expect(empty.longest).toBeUndefined();
+  });
+});

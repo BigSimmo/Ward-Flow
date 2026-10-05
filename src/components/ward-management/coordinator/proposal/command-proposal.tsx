@@ -30,7 +30,7 @@ import { ExceptionDrawer } from "../exception-drawer";
 import { FlowDiagram } from "../flow-diagram";
 import { ReferralPlacementPanel, ShortlistPanel } from "../shortlist-panel";
 import { SinceLastLookPanel } from "../since-last-look-panel";
-import { commandFigures, people, type EdRow } from "./command-proposal-figures";
+import { answerSentence, commandFigures, type EdRow } from "./command-proposal-figures";
 import styles from "./command-proposal.module.css";
 
 const NOT_WIRED = "Not wired in this prototype.";
@@ -64,6 +64,7 @@ export function CommandProposal() {
   const [unitId, setUnitId] = useState<string | undefined>(undefined);
   const [showDiagram, setShowDiagram] = useState(false);
   const [registersOpen, setRegistersOpen] = useState(false);
+  const [showRegisters, setShowRegisters] = useState(false);
   const [showAllAttention, setShowAllAttention] = useState(false);
 
   const figures = useMemo(
@@ -144,10 +145,11 @@ export function CommandProposal() {
       {/* The one-sentence answer to the screen's question: who is waiting, for what, and how much needs a person now. */}
       <section className={styles.answer} aria-label="Summary">
         <p className={styles.answerLine} data-testid="command-proposal-answer">
-          {people(figures.waitingInEd)} waiting in {figures.departmentsWithWaiting} emergency departments,{" "}
-          {figures.readyBeds} beds ready now.{" "}
+          {answerSentence(figures)}{" "}
           {attentionNow.length > 0 ? (
-            <strong className={styles.answerAlert}>{attentionNow.length} need action now.</strong>
+            <a className={styles.answerAlert} href="#command-attention-title">
+              {attentionNow.length === 1 ? "1 needs action now." : `${attentionNow.length} need action now.`}
+            </a>
           ) : (
             <span>Nothing needs action now.</span>
           )}
@@ -216,6 +218,7 @@ export function CommandProposal() {
                   <button
                     type="button"
                     className={styles.textButton}
+                    aria-label={`Open ${item.title}${movement ? ` for ${patientOf(movement).formalName}` : ""}`}
                     onClick={() => {
                       setTab("patients");
                       selectMovement(item.movementId);
@@ -243,7 +246,7 @@ export function CommandProposal() {
       <SinceLastLookPanel world={lastLookWorld} now={now} />
 
       <div className={styles.grid} data-panel-open={hasPanelSubject}>
-        <section className={styles.panel} aria-labelledby="command-queue-title">
+        <section className={`${styles.panel} ${styles.queuePanel}`} aria-labelledby="command-queue-title">
           <div className={styles.panelHead}>
             <h2 id="command-queue-title" className={styles.panelTitle}>
               Priority queue
@@ -557,12 +560,27 @@ export function CommandProposal() {
           <h2 id="command-registers-title" className={styles.panelTitle}>
             Registers
           </h2>
-          <span className={styles.panelMeta}>
-            {declines.length} declines · {overrides.length} overrides · {figures.attention.length} exceptions ·{" "}
-            {rejections.length} refused actions
-          </span>
+          <button
+            type="button"
+            className={styles.textButton}
+            aria-expanded={showRegisters}
+            onClick={() => setShowRegisters((value) => !value)}
+          >
+            {showRegisters ? "Hide registers" : "Show registers"}
+            <ChevronDown
+              aria-hidden="true"
+              strokeWidth={1.6}
+              className={showRegisters ? styles.chevronOpen : styles.chevron}
+            />
+          </button>
         </div>
-        <div className={styles.registers}>
+        {showRegisters ? null : (
+          <p className={styles.collapsedNote}>
+            {declines.length} declines · {overrides.length} overrides · {figures.attention.length} exceptions ·{" "}
+            {rejections.length} refused actions. Exceptions are also listed under Needs attention now.
+          </p>
+        )}
+        <div className={styles.registers} hidden={!showRegisters}>
           <ExceptionDrawer
             items={figures.attention}
             silenceReminders={silenceReminders}
@@ -576,7 +594,7 @@ export function CommandProposal() {
             onSelectMovement={(id) => {
               setTab("patients");
               selectMovement(id);
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              document.getElementById("command-queue-title")?.scrollIntoView({ block: "start" });
             }}
           />
         </div>
