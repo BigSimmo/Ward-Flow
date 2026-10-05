@@ -1016,7 +1016,7 @@ export function AddPatientPolish() {
               <div className={styles.panelHead}>
                 <div className={styles.panelTitleWithCount}>
                   <h2 className={styles.panelHeading} id="apBoardH">
-                    Already on the board
+                    Recently added
                   </h2>
                   <span className={styles.boardCountBadge}>{openJourneys} open journeys</span>
                 </div>
