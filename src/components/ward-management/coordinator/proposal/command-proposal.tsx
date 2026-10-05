@@ -248,7 +248,7 @@ export function CommandProposal() {
             <h2 id="command-queue-title" className={styles.panelTitle}>
               Priority queue
             </h2>
-            <span className={styles.panelMeta}>Most urgent tier first, then longest wait</span>
+            <span className={styles.panelMeta}>Flagged urgent first, then most urgent tier, then longest wait</span>
           </div>
           <div className={styles.tabs} role="tablist" aria-label="Queue" onKeyDown={onTabsKeyDown}>
             {(["patients", "referrals"] as const).map((key) => (
@@ -290,8 +290,8 @@ export function CommandProposal() {
               <span>Urgency</span>
               <span>Waiting</span>
               <span>From</span>
-              <span title="How hard this movement is going operationally, 0 to 100. Not clinical severity.">
-                Flow score
+              <span title="How badly this movement is going operationally. Not clinical severity, acuity or risk.">
+                Operational score
               </span>
             </div>
             {queue.length === 0 ? (
