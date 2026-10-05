@@ -218,7 +218,9 @@ export function saveCustomOperationalDefaults(customDefaults: Record<string, str
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(OPERATIONAL_DEFAULTS_STORAGE_KEY, JSON.stringify(customDefaults));
-  } catch {}
+  } catch {
+    // Quota or private-mode storage failures leave the in-memory draft as the only copy; nothing to surface.
+  }
 }
 
 /**
@@ -228,5 +230,7 @@ export function clearCustomOperationalDefaults(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(OPERATIONAL_DEFAULTS_STORAGE_KEY);
-  } catch {}
+  } catch {
+    // Clearing is best-effort; a locked or unavailable store still leaves defaults restored in memory.
+  }
 }

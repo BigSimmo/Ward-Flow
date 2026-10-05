@@ -420,12 +420,12 @@ describe("Community gateway — directory header layout and service filtering", 
   it("filters by health service and updates results count", () => {
     renderGateway();
     const resultLine = screen.getByTestId("community-gateway-result-line");
-    expect(resultLine).toHaveTextContent("64 results");
+    expect(resultLine).toHaveTextContent("64 synthetic team results");
 
     const combobox = screen.getByRole("combobox", { name: "Filter team names" });
     fireEvent.change(combobox, { target: { value: "NMHS" } });
 
-    expect(resultLine).toHaveTextContent("6 of 64 results");
+    expect(resultLine).toHaveTextContent("6 of 64 synthetic team results");
     expect(screen.getAllByTestId("community-index-link")).toHaveLength(6);
 
     const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
@@ -433,7 +433,7 @@ describe("Community gateway — directory header layout and service filtering", 
 
     fireEvent.click(resetBtn);
     expect(combobox).toHaveValue("all");
-    expect(resultLine).toHaveTextContent("64 results");
+    expect(resultLine).toHaveTextContent("64 synthetic team results");
   });
 
   it("shows the reset button when search or filter is active, and resets on click", () => {

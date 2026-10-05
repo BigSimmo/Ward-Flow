@@ -441,7 +441,7 @@ export function WardDailySheet({
       <div className={styles.sheetKpiRibbon}>
         <div className={styles.sheetKpiCard}>
           <span className={styles.sheetKpiValue}>{resolvedMovement.discharged}</span>
-          <span className={styles.sheetKpiLabel}>Discharged (24h)</span>
+          <span className={styles.sheetKpiLabel}>Discharged · 24h</span>
           <span className={styles.sheetKpiSub}>Left this ward</span>
         </div>
         <div className={styles.sheetKpiCard}>

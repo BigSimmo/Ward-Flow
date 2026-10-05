@@ -135,7 +135,7 @@ export function WardBedDossierDrawer({
                 <div className={styles.allocationCandidateCard}>
                   <div className={styles.candidateTitle}>Aaron K. &middot; 34yo Male</div>
                   <div className={styles.candidateSub}>
-                    Source: Emergency Dept (Psychiatric Assessment Team) &middot; Wait: 14h &middot; Status: Medically
+                    Source: Emergency Dept (Psychiatric Assessment Team) &middot; Wait recorded &middot; Status: Medically
                     Cleared
                   </div>
                   <button type="button" className={styles.btnPrimaryAction} onClick={handleAllocateClick}>

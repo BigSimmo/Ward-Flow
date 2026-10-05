@@ -482,11 +482,11 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
                     {filteredTeams.length === allTeams.length ? (
                       <>
-                        <strong>{filteredTeams.length}</strong> results
+                        <strong>{filteredTeams.length}</strong> synthetic team results
                       </>
                     ) : (
                       <>
-                        <strong>{filteredTeams.length}</strong> of {allTeams.length} results
+                        <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team results
                       </>
                     )}
                   </p>

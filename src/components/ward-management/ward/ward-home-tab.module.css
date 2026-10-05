@@ -319,3 +319,10 @@
   white-space: nowrap;
   border: 0;
 }
+
+@media print {
+  .pillBadgePurple {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}

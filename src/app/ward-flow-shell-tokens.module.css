@@ -127,6 +127,17 @@
   --warn: #825d10;
   --warn-soft: #f6eeda;
 
+  /* Border/hover aliases used by hub, movements, search, beds — map onto shell palette. */
+  --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+  --accent-hover: var(--accent-press);
+  --good-border: color-mix(in srgb, var(--good) 45%, transparent);
+  --warn-border: color-mix(in srgb, var(--warn) 45%, transparent);
+  --surface-sunk: var(--sunk);
+  --surface-hover: var(--surface-2);
+  --lift-lg: var(--lift, 0 10px 28px rgba(0, 0, 0, 0.12));
+  --ready-ink: var(--good);
+  --ready-soft: var(--good-soft);
+
   --danger: #b03b2e;
   --danger-soft: #f8e6e2;
   --danger-ink: #973121;
@@ -258,6 +269,17 @@
     --warn: #e3bc5e;
     --warn-soft: #2b2415;
 
+    /* Border/hover aliases used by hub, movements, search, beds — map onto shell palette. */
+    --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+    --accent-hover: var(--accent-press);
+    --good-border: color-mix(in srgb, var(--good) 45%, transparent);
+    --warn-border: color-mix(in srgb, var(--warn) 45%, transparent);
+    --surface-sunk: var(--sunk);
+    --surface-hover: var(--surface-2);
+    --lift-lg: var(--lift, 0 10px 28px rgba(0, 0, 0, 0.12));
+    --ready-ink: var(--good);
+    --ready-soft: var(--good-soft);
+
     --danger: #ff8b76;
     --danger-soft: #33201b;
     --danger-ink: #ffa08e;
@@ -342,6 +364,17 @@
   --good-soft: #15291f;
   --warn: #e3bc5e;
   --warn-soft: #2b2415;
+
+  /* Border/hover aliases used by hub, movements, search, beds — map onto shell palette. */
+  --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+  --accent-hover: var(--accent-press);
+  --good-border: color-mix(in srgb, var(--good) 45%, transparent);
+  --warn-border: color-mix(in srgb, var(--warn) 45%, transparent);
+  --surface-sunk: var(--sunk);
+  --surface-hover: var(--surface-2);
+  --lift-lg: var(--lift, 0 10px 28px rgba(0, 0, 0, 0.12));
+  --ready-ink: var(--good);
+  --ready-soft: var(--good-soft);
 
   --danger: #ff8b76;
   --danger-soft: #33201b;
@@ -453,6 +486,17 @@
     --good-soft: #e2f0e8;
     --warn: #825d10;
     --warn-soft: #f6eeda;
+
+    /* Border/hover aliases used by hub, movements, search, beds — map onto shell palette. */
+    --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+    --accent-hover: var(--accent-press);
+    --good-border: color-mix(in srgb, var(--good) 45%, transparent);
+    --warn-border: color-mix(in srgb, var(--warn) 45%, transparent);
+    --surface-sunk: var(--sunk);
+    --surface-hover: var(--surface-2);
+    --lift-lg: var(--lift, 0 10px 28px rgba(0, 0, 0, 0.12));
+    --ready-ink: var(--good);
+    --ready-soft: var(--good-soft);
 
     --danger: #b03b2e;
     --danger-soft: #f8e6e2;

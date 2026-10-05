@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
-import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 
 export interface BedItem {
   bedNumber: number | string;
@@ -69,13 +69,8 @@ export function WardBedsMatrix({
   const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
   const [quietShiftPreview, setQuietShiftPreview] = useState(false);
 
-  let bedReleasesList: BedRelease[] = [];
-  try {
-    const wf = useWardFlow();
-    if (wf?.bedReleases) bedReleasesList = wf.bedReleases;
-  } catch {
-    // Isolated tests without provider
-  }
+  // Optional: matrix chrome still renders in isolated tests without a provider.
+  const bedReleasesList = useContext(WardFlowContext)?.bedReleases ?? [];
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
 
   // Filter by pod / locked / open
@@ -207,9 +202,9 @@ export function WardBedsMatrix({
         key: "shift-4",
         bedNumber: 6,
         title: "Away at an ED",
-        badge: "1h away",
+        badge: "Away at ED",
         badgeTone: "info",
-        tag: "1h ago",
+        tag: "Just left",
         desc: "Patient at ED. Bed still held for them.",
         actions: [{ label: "Mark them back", primary: false }],
         borderTone: "info",
@@ -218,9 +213,9 @@ export function WardBedsMatrix({
         key: "shift-5",
         bedNumber: 7,
         title: "Away at an ED",
-        badge: "6h away",
+        badge: "Still at ED",
         badgeTone: "info",
-        tag: "6h ago",
+        tag: "Left earlier",
         desc: "Patient at ED. Bed still held for them.",
         actions: [{ label: "Mark them back", primary: false }],
         borderTone: "info",
@@ -229,9 +224,9 @@ export function WardBedsMatrix({
         key: "shift-6",
         bedNumber: 3,
         title: "Pulled bed",
-        badge: "13h travelling",
+        badge: "In transit",
         badgeTone: "purple",
-        tag: "13h ago",
+        tag: "Pulled earlier",
         desc: "Pulled for Hazelle Ferrowmoor; taken, not yet arrived.",
         actions: [{ label: "View Transit", primary: false }],
         borderTone: "purple",
@@ -240,9 +235,9 @@ export function WardBedsMatrix({
         key: "shift-7",
         bedNumber: 18,
         title: "Pulled bed",
-        badge: "6h travelling",
+        badge: "In transit",
         badgeTone: "purple",
-        tag: "6h ago",
+        tag: "Pulled earlier",
         desc: "Pulled for Bramwen Ferrowmoor; taken, not yet arrived.",
         actions: [{ label: "View Transit", primary: false }],
         borderTone: "purple",
@@ -574,7 +569,7 @@ export function WardBedsMatrix({
            ───────────────────────────────────────────────────────────── */}
         <div className={styles.bedsFooterNotes}>
           <div className={styles.censusSummaryText}>
-            18 of this ward&apos;s 20 beds are taken. Longest stay first; beds without a recorded stay follow recorded
+            Eighteen beds of twenty on this ward are taken. Longest stay first; beds without a recorded stay follow recorded
             order.
           </div>
           <div className={styles.tentativeDisclaimer}>
