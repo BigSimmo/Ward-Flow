@@ -3340,9 +3340,11 @@ describe("OutOfAreaBoard — the governance and disclaimer notices", () => {
     expect(screen.queryByTestId("ward-out-of-area-synthetic-notice")).not.toBeInTheDocument();
   });
 
-  it("omits the standing not-a-medical-device disclaimer banner on this board", () => {
+  it("uses the shared prototype footer for the not-a-medical-device line", () => {
     renderLedger();
-    expect(screen.queryByTestId("ward-out-of-area-governance")).not.toBeInTheDocument();
+    const banner = screen.getByTestId("ward-out-of-area-governance");
+    expect(banner.tagName).toBe("FOOTER");
+    expect(banner).toHaveTextContent("Not a medical device");
   });
 });
 

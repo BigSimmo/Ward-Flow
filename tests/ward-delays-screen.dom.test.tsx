@@ -201,7 +201,7 @@ describe("the Delays screen", () => {
     renderScreen();
     // The wait bar and owner cards did not disappear — they moved into one panel, renamed from
     // "How long" to "Who is holding people up" in the three-column rebuild.
-    expect(screen.getByRole("region", { name: /Who is holding people up/u })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Action runway/u })).toBeInTheDocument();
     // Renamed again, task D1: "Who is waiting" -> "Waiting", the drawing's own word.
     expect(screen.getByRole("region", { name: /Waiting/u })).toBeInTheDocument();
     // "Worth your attention" is integrated into the middle register panel as an Attention tab.

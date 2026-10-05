@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,14 +17,6 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-
-/**
- * The Delays redesign (PR 48) opens on the "Action Runway" overview; the owner cards, the duration
- * band and the measured-none sentence these tests read live in the "Summary Cards" view, unchanged.
- */
-function showSummaryCards() {
-  fireEvent.click(screen.getByRole("button", { name: "Summary Cards" }));
-}
 
 /**
  * 🔴 **THE DELAYS SCREEN CRASHED ON THE BEST DAY IT COULD HAVE, AND THIS IS THE STATE ITSELF.**
@@ -61,7 +53,6 @@ function renderWith(movements: Movement[]) {
       <DelaysScreen movements={movements} />
     </WardFlowProvider>,
   );
-  showSummaryCards();
   return result;
 }
 
@@ -136,18 +127,9 @@ describe("the delays screen when nobody is waiting", () => {
 
     renderWith(waiting);
     expect(screen.queryByTestId("ward-delays-nobody-waiting")).toBeNull();
-    const facts = screen.getByLabelText("People waiting by duration");
-    const rendered = [...facts.children].map((row) => {
-      const label = row.querySelector("dt")?.textContent?.replace(/\s+/gu, " ").trim();
-      const value = row.querySelector("dd")?.textContent?.replace(/\s+/gu, " ").trim();
-      return [label, value];
-    });
-    const expected = [
-      ["Waiting", `${waiting.length} ${waiting.length === 1 ? "person" : "people"}`],
-      ...[...split].reverse().map((band) => [band.label, `${band.value} of ${waiting.length}`]),
-    ];
-    expect(rendered, "the duration band no longer states the total and all three derived bands exactly").toEqual(
-      expected,
+    const facts = screen.getByRole("img", { name: /Under 8h:/ });
+    expect(facts).toHaveAccessibleName(
+      `Under 8h: ${split[0].value}; 8 – 24h: ${split[1].value}; Over 24h: ${split[2].value}`,
     );
   });
 });
