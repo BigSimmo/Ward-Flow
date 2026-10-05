@@ -553,12 +553,6 @@ export function WardNetworkWorkspace() {
 
   return (
     <div className={thirdEdition.networkRoute}>
-      <div className={thirdEdition.governanceBanner} data-testid="ward-network-governance">
-        <p data-ward-type-floor="banner">
-          Synthetic network figures and bed statuses. <strong>Not a medical device.</strong>
-        </p>
-      </div>
-
       <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
         <button
           type="button"
