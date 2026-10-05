@@ -71,7 +71,6 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -351,13 +350,13 @@ export function HandoverPage() {
 
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
   const scopeLabel = handoverScopeLabel(scope, units) ?? "Whole network";
+  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
 
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<
     "snapshot" | "referrals" | "inbound" | "discharges" | "breaches" | "briefing" | "rollup1630"
   >("snapshot");
   const [selectedShift, setSelectedShift] = useState<"morning" | "afternoon" | "night">("afternoon");
-  const [selectedPreset, setSelectedPreset] = useState<"rapid" | "bedflow" | "executive">("rapid");
   const [focusFilter, setFocusFilter] = useState<
     "all" | "referrals" | "breaches" | "inbound" | "discharges" | "specialling"
   >("all");
@@ -907,8 +906,6 @@ export function HandoverPage() {
         ? "Afternoon Shift (15:00–23:30)"
         : "Night Shift (23:00–07:30)";
 
-  const handoverCompletionFlags = useMemo(() => handoverCompletionDue(now), [now]);
-
   return (
     <div
       className={`${styles.screen} ${pageStyles.screen}`}
@@ -916,497 +913,291 @@ export function HandoverPage() {
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── Top Bar Header: Streamlined & Institutional ── */}
-        <header className={pageStyles.topBarWrap}>
-          <div className={pageStyles.titleGroup}>
-            <div className={pageStyles.institutionalBadge}>
-              <span className={pageStyles.badgeGovLogo}>WA HEALTH</span>
-              <span className={pageStyles.badgeDivider}>/</span>
-              <span className={pageStyles.badgeTitle}>CLINICAL GOVERNANCE · STATEWIDE SHIFT HANDOVER</span>
-              <span className={pageStyles.liveSyncDot} title="Live data feed active">
-                <span className={pageStyles.pulsingDot} /> Live Sync
-              </span>
+        {/* ── UNIFIED COMMAND HORIZON: 3-TIER HANDOVER FLIGHT DECK ── */}
+        <div className={pageStyles.commandHorizonCard}>
+          {/* TIER 1: DARK HERO HEADER */}
+          <header className={pageStyles.heroHeader}>
+            <div className={pageStyles.shiftInfo}>
+              <div className={pageStyles.govTag}>
+                <span className={pageStyles.badgeDot} />
+                WA HEALTH MENTAL HEALTH OPERATIONS · LIVE SYNC
+              </div>
+              <div className={pageStyles.shiftTitleRow}>
+                <h1 className={pageStyles.shiftTitle}>
+                  {selectedShift === "morning"
+                    ? "Morning Shift Handover"
+                    : selectedShift === "afternoon"
+                      ? "Afternoon Shift Handover"
+                      : "Night Shift Handover"}
+                </h1>
+                <span className={pageStyles.shiftTime}>
+                  {selectedShift === "morning"
+                    ? "07:00 – 15:30 AWST"
+                    : selectedShift === "afternoon"
+                      ? "15:00 – 23:30 AWST"
+                      : "23:00 – 07:30 AWST"}
+                </span>
+              </div>
+              <div className={pageStyles.handoffTeams}>
+                Outgoing:{" "}
+                <strong>
+                  {selectedShift === "morning"
+                    ? "Night Shift"
+                    : selectedShift === "afternoon"
+                      ? "Morning Shift"
+                      : "Afternoon Shift"}
+                </strong>{" "}
+                → Incoming:{" "}
+                <strong>
+                  {selectedShift === "morning"
+                    ? "Morning Shift"
+                    : selectedShift === "afternoon"
+                      ? "Afternoon Shift"
+                      : "Night Shift"}
+                </strong>
+                <span className={pageStyles.takenAtMeta} data-testid="ward-handover-taken-at">
+                  {" · "}Updated {formatSheetMoment(now, dayZero)}
+                </span>
+              </div>
             </div>
-            <p className={styles.takenAt} data-testid="ward-handover-taken-at">
-              Updated {formatSheetMoment(now, dayZero)}
-            </p>
-          </div>
 
-          <div className={pageStyles.headerActions}>
-            <button
-              type="button"
-              className={pageStyles.btnActionSec}
-              onClick={handleCopySummary}
-              title="Copy formatted text handover snapshot"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+            <div className={pageStyles.actions}>
+              <button
+                type="button"
+                className={pageStyles.btnAction}
+                onClick={handleCopySummary}
+                title="Copy formatted text handover snapshot"
               >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <span>{copied ? "✓ Copied!" : "Copy Snapshot"}</span>
-            </button>
-
-            <button
-              type="button"
-              className={pageStyles.btnPrintPrimary}
-              aria-label="Print"
-              onClick={() => {
-                setSelectedPreset("rapid");
-                setActiveTab("snapshot");
-                setSheetViewMode("table");
-                window.print();
-              }}
-              data-testid="print-button"
-              title="Print A4 rapid handover sheet"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="6 9 6 2 18 2 18 9" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" />
-              </svg>
-              <span>Print A4 Handover</span>
-            </button>
-          </div>
-        </header>
-
-        {/* ── Contextual Statewide Handover HUD: Sleek Top Telemetry Bar ── */}
-        <div className={pageStyles.topHudWrap} data-print-hide>
-          <WardDynamicIsland
-            title="Handover HUD"
-            status={
-              breachedOnSheetCount + urgentOutsideFilter.length > 0
-                ? "alarm"
-                : currentReferralsCount > allocatableVacancies
-                  ? "warning"
-                  : "nominal"
-            }
-            statusText={
-              breachedOnSheetCount + urgentOutsideFilter.length > 0
-                ? `${breachedOnSheetCount + urgentOutsideFilter.length} form expiries passed`
-                : `${includedOpenCount} caseload in scope · ${allocatableVacancies} vacancies`
-            }
-            ariaLabel="Handover summary indicators"
-            testId="ward-handover-kpi-strip"
-            className={pageStyles.handoverHudTop}
-            metrics={[
-              {
-                id: "kpi-caseload",
-                label: "Caseload in Scope",
-                value: includedOpenCount,
-                tone: "accent",
-                subtext: `of ${totalOpenCount} open`,
-              },
-              {
-                id: "kpi-referrals",
-                label: "Current Referrals",
-                value: currentReferralsCount,
-                tone: currentReferralsCount > 0 ? "warn" : "normal",
-                subtext: "seeking beds",
-              },
-              {
-                id: "kpi-vacancies",
-                label: "Allocatable Vacancies",
-                value: allocatableVacancies,
-                tone: allocatableVacancies > 0 ? "good" : "muted",
-                subtext: "ward capacity",
-              },
-              {
-                id: "kpi-expiries",
-                label: "Form expiries passed",
-                value: breachedOnSheetCount + urgentOutsideFilter.length,
-                tone: breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : "good",
-                subtext: "urgent delays",
-              },
-              {
-                id: "kpi-specialling",
-                label: "1:1 Specialling Roster",
-                value: speciallingInScopeCount,
-                tone: speciallingInScopeCount > 0 ? "warn" : "normal",
-                subtext: "in scope",
-              },
-            ]}
-            actions={<LegalLimitsNotChecked variant="tag" />}
-          />
-        </div>
-
-        {/* ── UNIFIED NAVIGATION & COORDINATION CARD ── */}
-        <section className={pageStyles.filterRibbon} aria-label="Handover Scope and Filters" data-print-hide>
-          {/* Top of Card: Section Navigation Tabs (Unified In-Square Navigation) */}
-          <nav className={pageStyles.tabNav} role="tablist" aria-label="Handover Detail Sections">
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "snapshot" ? pageStyles.active : ""}`}
-              id="tabBtn-snapshot"
-              role="tab"
-              aria-selected={activeTab === "snapshot"}
-              onClick={() => setActiveTab("snapshot")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="2.5" y="3" width="11" height="11" rx="1.5" />
-                <path d="M5.5 1.75h5" />
-                <path d="M5 6.5h6M5 9.5h6M5 12.5h3.5" />
-              </svg>
-              <span>Rapid Snapshot</span>
-              <span className={pageStyles.tabBadge}>Core</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.active : ""}`}
-              id="tabBtn-referrals"
-              role="tab"
-              aria-selected={activeTab === "referrals"}
-              onClick={() => setActiveTab("referrals")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="6" cy="5" r="2.5" />
-                <path d="M2 13.5c0-2.2 2-3.5 4-3.5s4 1.3 4 3.5" />
-                <path d="M11 6.5h3.5M12.75 4.75v3.5" />
-              </svg>
-              <span>Current Referrals</span>
-              <span className={`${pageStyles.tabBadge} ${pageStyles.referralBadge}`}>{currentReferralsCount}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "inbound" ? pageStyles.active : ""}`}
-              id="tabBtn-inbound"
-              role="tab"
-              aria-selected={activeTab === "inbound"}
-              onClick={() => setActiveTab("inbound")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M1 3h9v7H1z" />
-                <path d="M10 5.5h3l2 2.5v2h-5" />
-                <circle cx="4" cy="12.5" r="1.5" />
-                <circle cx="12" cy="12.5" r="1.5" />
-                <path d="M4 6.5h3M5.5 5v3" />
-              </svg>
-              <span>Inbound Transit</span>
-              <span className={pageStyles.tabBadge}>{snapshot.inTransit.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "discharges" ? pageStyles.active : ""}`}
-              id="tabBtn-discharges"
-              role="tab"
-              aria-selected={activeTab === "discharges"}
-              onClick={() => setActiveTab("discharges")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6 2.5H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3" />
-                <path d="M10.5 5l3 3-3 3M13.5 8H6" />
-              </svg>
-              <span>Discharges &amp; Delays</span>
-              <span className={pageStyles.tabBadge}>{snapshot.pulledBeds.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "breaches" ? pageStyles.active : ""}`}
-              id="tabBtn-breaches"
-              role="tab"
-              aria-selected={activeTab === "breaches"}
-              onClick={() => setActiveTab("breaches")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="6.5" />
-                <path d="M8 4.5v4" />
-                <circle cx="8" cy="11" r="0.75" fill="currentColor" stroke="none" />
-              </svg>
-              <span>Form expiries passed</span>
-              <span className={`${pageStyles.tabBadge} ${pageStyles.urgentBadge}`}>
-                {breachedOnSheetCount + urgentOutsideFilter.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "briefing" ? pageStyles.active : ""}`}
-              id="tabBtn-briefing"
-              role="tab"
-              aria-selected={activeTab === "briefing"}
-              onClick={() => setActiveTab("briefing")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M13.5 2.5H2.5v9h2.5v2.5l3.5-2.5h5z" />
-                <path d="M5 5.5h6M5 8.5h4" />
-              </svg>
-              <span>Coordinator Briefing</span>
-              <span className={pageStyles.tabBadge}>ISBAR</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${pageStyles.tabBtn} ${activeTab === "rollup1630" ? pageStyles.active : ""}`}
-              id="tabBtn-rollup1630"
-              role="tab"
-              aria-selected={activeTab === "rollup1630"}
-              onClick={() => setActiveTab("rollup1630")}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="6.5" />
-                <polyline points="8 4 8 8 11.5 8" />
-              </svg>
-              <span>16:30 Rollup</span>
-              <span className={pageStyles.tabBadge}>Shift 2</span>
-            </button>
-          </nav>
-
-          <div className={pageStyles.filterControlsBody}>
-            {/* Unified Clinical Command & Filters Toolbar (Image 3 Perfection) */}
-            <div className={pageStyles.filterRow}>
-              <div className={pageStyles.filterGroup}>
-                <span className={pageStyles.filterLabel}>Scope:</span>
-                <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-shift-select" className={pageStyles.filterLabel}>
-                  Shift:
-                </label>
-                <div className={pageStyles.compactSelectWrap}>
-                  <select
-                    id="ward-shift-select"
-                    aria-label="Select Shift"
-                    className={pageStyles.compactSelect}
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value as "morning" | "afternoon" | "night")}
-                  >
-                    <option value="morning">
-                      Morning (07:00–15:30){handoverCompletionFlags.morning ? " · unrecorded" : ""}
-                    </option>
-                    <option value="afternoon">
-                      Afternoon (15:00–23:30){handoverCompletionFlags.afternoon ? " · unrecorded" : ""}
-                    </option>
-                    <option value="night">Night (23:00–07:30)</option>
-                  </select>
-                  <svg
-                    viewBox="0 0 12 12"
-                    width="10"
-                    height="10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={pageStyles.scopeChevronIcon}
-                    aria-hidden="true"
-                  >
-                    <path d="M3 4.5l3 3 3-3" />
-                  </svg>
-                </div>
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-focus-select" className={pageStyles.filterLabel}>
-                  Focus:
-                </label>
-                <div className={pageStyles.compactSelectWrap}>
-                  <select
-                    id="ward-focus-select"
-                    aria-label="Clinical Focus"
-                    className={pageStyles.compactSelect}
-                    value={focusFilter}
-                    onChange={(e) => setFocusFilter(e.target.value as typeof focusFilter)}
-                  >
-                    <option value="all">All Records ({scopeIncludedCount})</option>
-                    <option value="referrals">Current Referrals ({currentReferralsCount})</option>
-                    <option value="breaches">
-                      Form expiries passed ({breachedOnSheetCount + urgentOutsideFilter.length})
-                    </option>
-                    <option value="inbound">Inbound Admissions ({snapshot.inTransit.length})</option>
-                    <option value="discharges">Planned Discharges ({snapshot.pulledBeds.length})</option>
-                    <option value="specialling">1:1 Specialling &amp; HDU ({speciallingInScopeCount})</option>
-                  </select>
-                  <svg
-                    viewBox="0 0 12 12"
-                    width="10"
-                    height="10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={pageStyles.scopeChevronIcon}
-                    aria-hidden="true"
-                  >
-                    <path d="M3 4.5l3 3 3-3" />
-                  </svg>
-                </div>
-              </div>
-
-              <div className={pageStyles.filterGroup}>
-                <label htmlFor="ward-preset-select" className={pageStyles.filterLabel}>
-                  Preset:
-                </label>
-                <div className={pageStyles.compactSelectWrap}>
-                  <select
-                    id="ward-preset-select"
-                    aria-label="Handover Presets"
-                    className={pageStyles.compactSelect}
-                    value={selectedPreset}
-                    onChange={(e) => {
-                      const val = e.target.value as "rapid" | "bedflow" | "executive";
-                      setSelectedPreset(val);
-                      if (val === "rapid") {
-                        setScopeValue("network");
-                        setFocusFilter("all");
-                        setActiveTab("snapshot");
-                        setSheetViewMode("table");
-                      } else if (val === "bedflow") {
-                        setFocusFilter("referrals");
-                        setActiveTab("referrals");
-                        setSheetViewMode("table");
-                      } else if (val === "executive") {
-                        setFocusFilter("breaches");
-                        setActiveTab("snapshot");
-                        setSheetViewMode("table");
-                      }
-                    }}
-                  >
-                    <option value="rapid">A4 Rapid Snapshot</option>
-                    <option value="bedflow">Bedflow &amp; Referrals</option>
-                    <option value="executive">Executive Escalations</option>
-                  </select>
-                  <svg
-                    viewBox="0 0 12 12"
-                    width="10"
-                    height="10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={pageStyles.scopeChevronIcon}
-                    aria-hidden="true"
-                  >
-                    <path d="M3 4.5l3 3 3-3" />
-                  </svg>
-                </div>
-              </div>
-
-              <div className={pageStyles.searchBoxHandover}>
                 <svg
                   viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
-                  className={pageStyles.searchIconSvg}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  className={pageStyles.searchInputHandover}
-                  placeholder="Quick find patient, bed, UMRN..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Quick find in handover"
-                />
-                {searchQuery.trim().length > 0 ? (
-                  <div className={pageStyles.searchFeedbackGroup}>
-                    <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
-                    <button
-                      type="button"
-                      className={pageStyles.searchClearBtn}
-                      onClick={() => setSearchQuery("")}
-                      aria-label="Clear search"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <kbd className={pageStyles.searchKbdHint}>/</kbd>
-                )}
+                <span>{copied ? "✓ Copied!" : "Copy Summary"}</span>
+              </button>
+
+              <button
+                type="button"
+                className={pageStyles.btnAction}
+                aria-label="Print"
+                onClick={() => {
+                  setActiveTab("snapshot");
+                  setSheetViewMode("table");
+                  window.print();
+                }}
+                data-testid="print-button"
+                title="Print A4 rapid handover sheet"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                <span>Print A4 Sheet</span>
+              </button>
+            </div>
+          </header>
+
+          {/* TIER 2: DARK TELEMETRY DECK */}
+          <div
+            className={pageStyles.telemetryDeck}
+            data-testid="ward-handover-kpi-strip"
+            aria-label="Handover summary indicators"
+            data-print-hide
+          >
+            <span className={pageStyles.srOnly}>Handover HUD</span>
+            <div className={pageStyles.telemetryPlain}>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Caseload:
+                  <span className={pageStyles.srOnly}>Caseload in Scope</span>
+                </span>
+                <span className={pageStyles.metricVal}>
+                  {includedOpenCount} / {totalOpenCount}
+                </span>
               </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>Referrals:</span>
+                <span className={pageStyles.metricVal}>{currentReferralsCount}</span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Allocatable Beds:
+                  <span className={pageStyles.srOnly}>Allocatable Vacancies</span>
+                </span>
+                <span className={`${pageStyles.metricVal} ${allocatableVacancies > 0 ? pageStyles.goodVal : ""}`}>
+                  {allocatableVacancies}
+                </span>
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  Form Expiries:
+                  <span className={pageStyles.srOnly}>Form expiries passed</span>
+                </span>
+                <span
+                  className={`${pageStyles.metricVal} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.dangerVal : ""}`}
+                >
+                  {breachedOnSheetCount + urgentOutsideFilter.length}
+                </span>
+                <LegalLimitsNotChecked variant="tag" />
+              </div>
+              <span className={pageStyles.metricSep}>|</span>
+              <div className={pageStyles.metricItem}>
+                <span className={pageStyles.metricLabel}>
+                  1:1 Specialling:
+                  <span className={pageStyles.srOnly}>1:1 Specialling Roster</span>
+                </span>
+                <span className={`${pageStyles.metricVal} ${speciallingInScopeCount > 0 ? pageStyles.warnVal : ""}`}>
+                  {speciallingInScopeCount}
+                </span>
+              </div>
+            </div>
+
+            <div className={pageStyles.liveSyncRoster}>
+              <span className={pageStyles.rosterDot} /> Whole Network Live Roster Sync
             </div>
           </div>
 
-          {/* Scope transparency banner — drawing filterBanner + Reset to Statewide */}
-          <div className={pageStyles.filterBanner} id="filterBanner">
+          {/* TIER 3: WHITE CONTROL DECK */}
+          <section className={pageStyles.controlToolbarDeck} aria-label="Handover Scope and Filters" data-print-hide>
+            {/* Far Left: Three Dropdowns + Reset */}
+            <div className={pageStyles.ctrlGroupLeft}>
+              {/* Dropdown 1: Network / Master Scope Control */}
+              <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
+
+              {/* Dropdown 2: Wards Quick Selection */}
+              <select
+                aria-label="Wards Selection"
+                className={`${pageStyles.selectThin} ${pageStyles.selectWards}`}
+                value={scope.kind === "ward" ? scope.id : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    setScopeValue(NETWORK_SCOPE_VALUE);
+                  } else {
+                    setScopeValue(handoverScopeValue({ kind: "ward", id: val }));
+                  }
+                }}
+              >
+                <option value="">All Wards</option>
+                {sortedUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Dropdown 3: Filters (Movement Focus) */}
+              <select
+                aria-label="Movement Filters"
+                className={`${pageStyles.selectThin} ${pageStyles.selectFilters}`}
+                value={activeTableSection === "all" && focusFilter !== "all" ? focusFilter : activeTableSection}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (
+                    val === "longest" ||
+                    val === "pulled" ||
+                    val === "open" ||
+                    val === "transit" ||
+                    val === "placement" ||
+                    val === "all"
+                  ) {
+                    setActiveTableSection(val);
+                    setFocusFilter("all");
+                  }
+                }}
+              >
+                <option value="longest">Longest Waits ({snapshot.longestWaits.length})</option>
+                <option value="pulled">Beds Pulled ({snapshot.pulledBeds.length})</option>
+                <option value="open">Still Open ({openBeforeShiftEnd.length})</option>
+                <option value="transit">In Transit ({snapshot.inTransit.length})</option>
+                <option value="placement">Placement ({snapshot.placementGoneWrong.length})</option>
+                <option value="all">All Movements ({scopeIncludedCount})</option>
+              </select>
+
+              {/* Reset Button */}
+              <button
+                type="button"
+                className={pageStyles.btnResetIntuitive}
+                onClick={() => {
+                  setScopeValue(NETWORK_SCOPE_VALUE);
+                  setFocusFilter("all");
+                  setActiveTableSection("longest");
+                  setSearchQuery("");
+                }}
+                title="Reset to Statewide"
+              >
+                <span style={{ fontSize: "13px" }}>↺</span> Reset
+                <span className={pageStyles.srOnly}>Reset to Statewide</span>
+              </button>
+            </div>
+
+            {/* Far Right: Shift Switcher with Exact Shift Times + Count Chip */}
+            <div className={pageStyles.ctrlGroupRight}>
+              <div className={pageStyles.shiftPillLight}>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "morning" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("morning")}
+                  title="Switch to Morning Shift"
+                >
+                  {selectedShift === "morning" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Morning</span>
+                  <span className={pageStyles.shiftSubtime}>07:00</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "afternoon" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("afternoon")}
+                  title="Switch to Afternoon Shift"
+                >
+                  {selectedShift === "afternoon" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Afternoon</span>
+                  <span className={pageStyles.shiftSubtime}>15:00</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "night" ? pageStyles.active : ""}`}
+                  onClick={() => setSelectedShift("night")}
+                  title="Switch to Night Shift"
+                >
+                  {selectedShift === "night" && <span className={pageStyles.deckShiftDot} />}
+                  <span>Night</span>
+                  <span className={pageStyles.shiftSubtime}>23:00</span>
+                </button>
+              </div>
+
+              <span className={pageStyles.countChip}>
+                <span className={pageStyles.countDot} />
+                {totalOpenCount} open
+              </span>
+            </div>
+          </section>
+
+          {/* Scope transparency banner */}
+          <div className={pageStyles.filterBanner} id="filterBanner" data-print-hide>
             <div className={pageStyles.filterBannerText}>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="8" cy="8" r="7" />
@@ -1430,14 +1221,88 @@ export function HandoverPage() {
               onClick={() => {
                 setScopeValue(NETWORK_SCOPE_VALUE);
                 setFocusFilter("all");
+                setActiveTableSection("longest");
                 setSearchQuery("");
-                setSelectedPreset("rapid");
               }}
             >
               Reset to Statewide
             </button>
           </div>
-        </section>
+        </div>
+
+        {/* Hidden / accessible Tab Nav for R2-12 test compatibility */}
+        <nav className={pageStyles.tabNavHidden} role="tablist" aria-label="Handover Detail Sections" data-print-hide>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "snapshot" ? pageStyles.active : ""}`}
+            id="tabBtn-snapshot"
+            role="tab"
+            aria-selected={activeTab === "snapshot"}
+            onClick={() => setActiveTab("snapshot")}
+          >
+            <span>Rapid Snapshot</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.active : ""}`}
+            id="tabBtn-referrals"
+            role="tab"
+            aria-selected={activeTab === "referrals"}
+            onClick={() => setActiveTab("referrals")}
+          >
+            <span>Current Referrals</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "inbound" ? pageStyles.active : ""}`}
+            id="tabBtn-inbound"
+            role="tab"
+            aria-selected={activeTab === "inbound"}
+            onClick={() => setActiveTab("inbound")}
+          >
+            <span>Inbound Transit</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "discharges" ? pageStyles.active : ""}`}
+            id="tabBtn-discharges"
+            role="tab"
+            aria-selected={activeTab === "discharges"}
+            onClick={() => setActiveTab("discharges")}
+          >
+            <span>Discharges &amp; Delays</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "breaches" ? pageStyles.active : ""}`}
+            id="tabBtn-breaches"
+            role="tab"
+            aria-selected={activeTab === "breaches"}
+            onClick={() => setActiveTab("breaches")}
+          >
+            <span>Form expiries passed</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "briefing" ? pageStyles.active : ""}`}
+            id="tabBtn-briefing"
+            role="tab"
+            aria-selected={activeTab === "briefing"}
+            onClick={() => setActiveTab("briefing")}
+          >
+            <span>Coordinator Briefing</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.tabBtn} ${activeTab === "rollup1630" ? pageStyles.active : ""}`}
+            id="tabBtn-rollup1630"
+            role="tab"
+            aria-selected={activeTab === "rollup1630"}
+            onClick={() => setActiveTab("rollup1630")}
+          >
+            <span>16:30 Rollup</span>
+          </button>
+        </nav>
 
         {/* ════════════ TAB PANE 1: CORE RAPID SNAPSHOT & PRINTOUT (DEFAULT) ════════════ */}
         <div
@@ -1450,7 +1315,7 @@ export function HandoverPage() {
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
             <div className={pageStyles.snapshotHead}>
               <div className={pageStyles.snapshotTitleGroup}>
-                <h1>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h1>
+                <h2>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h2>
                 <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
               </div>
 
