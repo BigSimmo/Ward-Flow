@@ -11,8 +11,10 @@ import {
   totalReleases,
   wardFigures,
 } from "@/components/ward-management/statistics/proposal/statistics-proposal-figures";
+import { hoursText, occupiedBeds } from "@/components/ward-management/statistics/proposal/polished/polished-figures";
 import { refusedAndNothingPending } from "@/components/ward-management/statistics/statistics-derivations";
 import { dayOf } from "@/components/ward-management/ward-clock";
+import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
@@ -115,5 +117,21 @@ describe("statistics proposal figures", () => {
     }
     const withService = state.referrals.filter((referral) => siteByCode(referral.originSiteCode)?.service).length;
     expect(all).toBe(withService);
+  });
+});
+
+describe("polished statistics figures", () => {
+  const state = seedWardFlowState();
+
+  it("splits the current screens' occupied count into occupied and pulled, so pulled beds are not occupancy", () => {
+    const polished = occupiedBeds(state.units, state.admissions, state.bedReleases, state.leaveBeds);
+    const current = state.units.reduce((sum, unit) => sum + unitCapacity(unit, state.bedReleases).occupied, 0);
+    expect(polished.occupied + polished.pulled).toBe(current);
+    expect(polished.pulled).toBeGreaterThan(0);
+  });
+
+  it("writes waits of a day or more as days and hours", () => {
+    expect(hoursText(13)).toBe("13h");
+    expect(hoursText(169)).toBe("7d 1h");
   });
 });

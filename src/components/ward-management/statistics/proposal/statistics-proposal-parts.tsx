@@ -15,7 +15,7 @@ import styles from "./statistics-proposal.module.css";
 export type ProposalScreen = "statewide" | "network" | "service" | "ward" | "ed" | "community" | "flow" | "compare";
 
 export function proposalHref(screen: ProposalScreen, id?: string): string {
-  const query = new URLSearchParams({ screen });
+  const query = new URLSearchParams({ screen: `proposed-${screen}` });
   if (id) query.set("id", id);
   return `/mockups/ward-flow/statistics/proposal?${query.toString()}`;
 }

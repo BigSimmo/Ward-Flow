@@ -1,0 +1,72 @@
+/*
+ * Polished statistics (5 October 2026). A finishing layer over the current statistics screens:
+ * same sections, panels, tabs and order. It only refines spacing, numbers, focus and tap targets.
+ * Tokens only, no hex.
+ */
+
+.root {
+  display: contents;
+}
+
+/* Numbers line up in every table and figure band. */
+.root :global(table),
+.root :global(dl) {
+  font-variant-numeric: tabular-nums;
+}
+
+.root :global(tbody tr) {
+  transition: background-color 120ms ease;
+}
+
+.root :global(tbody tr:hover) {
+  background: var(--surface-2);
+}
+
+/* Visible keyboard focus everywhere. */
+.root :global(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 48px tap targets without moving anything: controls grow, small links get an invisible hit area. */
+.root :global(select),
+.root :global(input[type="search"]),
+.root :global(input[type="text"]) {
+  min-height: var(--spacing-tap, 3rem);
+}
+
+.root :global(th button),
+.root :global(td a),
+.root :global(p a),
+.root :global(li a),
+.root :global(dd a) {
+  position: relative;
+}
+
+.root :global(th button)::after,
+.root :global(td a)::after,
+.root :global(p a)::after,
+.root :global(li a)::after,
+.root :global(dd a)::after {
+  position: absolute;
+  inset: -1rem -0.25rem;
+  content: "";
+}
+
+.root :global(nav a) {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+}
+
+/* Figure bands keep every figure on one row instead of orphaning the last one. */
+.root :global(dl[aria-label="Current bed figures"]) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :global(tbody tr) {
+    transition: none;
+  }
+}
