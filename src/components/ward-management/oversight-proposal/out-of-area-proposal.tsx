@@ -39,11 +39,13 @@ export function OutOfAreaProposal() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { entries, notBanded } = outOfAreaLedger(admissions, units, now);
-  const days = (entry: OutOfAreaEntry) => daysInBed(entry.admission, now) ?? 0;
-  const sorted = [...entries].sort((a, b) => days(b) - days(a));
+  const days = (entry: OutOfAreaEntry) => daysInBed(entry.admission, now);
+  const showDays = (entry: OutOfAreaEntry) => days(entry) ?? "Not recorded";
+  // Longest away first; a person with no recorded admission date goes last, never as zero days.
+  const sorted = [...entries].sort((a, b) => (days(b) ?? -1) - (days(a) ?? -1));
   const air = entries.filter((entry) => entry.band === "air_transport_only").length;
   const road = entries.length - air;
-  const longest = sorted[0];
+  const longest = sorted.find((entry) => days(entry) !== undefined);
   const regionOf = (entry: OutOfAreaEntry) => entry.admission.homeRegion ?? "Not recorded";
   const regions = Object.entries(
     entries.reduce<Record<string, number>>((acc, entry) => {
@@ -55,12 +57,12 @@ export function OutOfAreaProposal() {
   const visible = sorted.filter(
     (entry) => (band === "all" || entry.band === band) && (region === "all" || regionOf(entry) === region),
   );
-  const selected = sorted.find((entry) => entry.admission.id === selectedId) ?? visible[0] ?? null;
-  const over30 = entries.filter((entry) => days(entry) >= 30).length;
+  const selected = visible.find((entry) => entry.admission.id === selectedId) ?? visible[0] ?? null;
+  const over30 = entries.filter((entry) => (days(entry) ?? 0) >= 30).length;
 
   const attention: Attention[] = [];
-  if (air > 0) attention.push({ tone: "danger", label: `${air} reachable only by air` });
-  if (over30 > 0) attention.push({ tone: "warn", label: `${over30} away 30 days or more` });
+  if (air > 0) attention.push({ tone: "quiet", label: `${air} reachable only by air` });
+  if (over30 > 0) attention.push({ tone: "quiet", label: `${over30} away 30 days or more` });
   if (notBanded > 0) attention.push({ tone: "quiet", label: `${notBanded} occupied beds with travel time unknown` });
 
   return (
@@ -77,7 +79,10 @@ export function OutOfAreaProposal() {
         <Verdict attention={attention}>
           {entries.length === 0 ? (
             <>
-              <strong>Nobody is in a bed far from home.</strong>
+              <strong>
+                {notBanded > 0 ? "No one is known to be in a bed far from home." : "Nobody is in a bed far from home."}
+              </strong>
+              {notBanded > 0 ? ` Travel time is unknown for ${notBanded} occupied beds.` : null}
             </>
           ) : (
             <>
@@ -85,18 +90,13 @@ export function OutOfAreaProposal() {
                 {notBanded > 0 ? "At least " : ""}
                 {entries.length} {entries.length === 1 ? "person is" : "people are"} in a bed far from home.
               </strong>{" "}
-              {longest ? (
-                <>
-                  The longest away is {patientOf(longest.admission).displayName}, {days(longest)} days from{" "}
-                  {regionOf(longest)}.
-                </>
-              ) : null}
+              {longest ? <>The longest has been away {days(longest)} days.</> : null}
             </>
           )}
         </Verdict>
 
         <p className={styles.caveat} role="note">
-          <span className={`${styles.dot} ${styles.dotWarn}`} aria-hidden="true" />
+          <span className={`${styles.dot} ${styles.dotQuiet}`} aria-hidden="true" />
           Travel times are invented for this demonstration, by a rule that ignores real geography, so some read as
           plainly wrong (a Perth home &ldquo;reachable only by air&rdquo; from a Perth hospital). Use them to test the
           screen, never to judge a real distance.
@@ -115,7 +115,6 @@ export function OutOfAreaProposal() {
             {
               label: "Reachable only by air",
               value: air,
-              tone: air > 0 ? "danger" : undefined,
               note: TRAVEL_BAND_LABELS.air_transport_only,
               pressed: band === "air_transport_only",
               onPress: () => setBand(band === "air_transport_only" ? "all" : "air_transport_only"),
@@ -135,7 +134,7 @@ export function OutOfAreaProposal() {
             {
               label: "Travel time unknown",
               value: notBanded,
-              note: "Occupied beds with no home region or no recorded travel time; some may be far from home",
+              note: "No home region or travel time recorded",
             },
           ]}
         />
@@ -143,7 +142,18 @@ export function OutOfAreaProposal() {
         <div className={styles.grid2}>
           <Panel
             title="People far from home"
-            question={`${visible.length} of ${entries.length} shown, longest away first`}
+            question={
+              band === "all" ? (
+                `${visible.length} of ${entries.length} shown, longest away first`
+              ) : (
+                <>
+                  {visible.length} of {entries.length} shown · filtered to {TRAVEL_BAND_LABELS[band].toLowerCase()} ·{" "}
+                  <button type="button" className={styles.inlineLink} onClick={() => setBand("all")}>
+                    Clear filter
+                  </button>
+                </>
+              )
+            }
             meta={
               <label className={styles.toolbar}>
                 <span>Home region</span>
@@ -194,7 +204,7 @@ export function OutOfAreaProposal() {
                               <span className={styles.rowSub}>UMRN {person.umrn}</span>
                             </span>
                           </td>
-                          <td>{regionOf(entry)}</td>
+                          <td className={styles.nowrap}>{regionOf(entry)}</td>
                           <td>
                             <span className={styles.rowName}>
                               <a className={styles.link} href={unitHref(entry.unit.id)}>
@@ -206,11 +216,9 @@ export function OutOfAreaProposal() {
                             </span>
                           </td>
                           <td>
-                            <Pill tone={entry.band === "air_transport_only" ? "danger" : "warn"}>
-                              {TRAVEL_BAND_LABELS[entry.band]}
-                            </Pill>
+                            <Pill>{TRAVEL_BAND_LABELS[entry.band]}</Pill>
                           </td>
-                          <td className={styles.num}>{days(entry)}</td>
+                          <td className={styles.num}>{showDays(entry)}</td>
                         </tr>
                       );
                     })}
@@ -237,7 +245,7 @@ export function OutOfAreaProposal() {
                     <dt>Travel home</dt>
                     <dd>{TRAVEL_BAND_LABELS[selected.band]}</dd>
                     <dt>Days away</dt>
-                    <dd>{days(selected)}</dd>
+                    <dd>{showDays(selected)}</dd>
                   </dl>
                   <div className={styles.toolbar}>
                     {personHref(patientOf(selected.admission).patient?.id) ? (

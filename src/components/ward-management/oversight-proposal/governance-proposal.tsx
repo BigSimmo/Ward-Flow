@@ -53,7 +53,7 @@ const OUTCOME: Record<AuditEvent["outcome"], { label: string; tone: Tone }> = {
 const CHANGE_KIND: Record<ChangeAuditEntry["kind"], string> = {
   urgency: "Urgency changed",
   legal_status: "Legal status changed",
-  pull_released: "Held bed released",
+  pull_released: "Pulled bed released",
   transport_cancelled: "Transport cancelled",
   stage_corrected: "Stage corrected",
   acceptance_withdrawn: "Acceptance withdrawn",
@@ -63,9 +63,9 @@ type ReviewState = "unreviewed" | AuditReview["decision"];
 type QueueFilter = "waiting" | "follow-up-required" | "all";
 
 const REVIEW: Record<ReviewState, { label: string; tone: Tone }> = {
-  unreviewed: { label: "Waiting for review", tone: "warn" },
+  unreviewed: { label: "Waiting for review", tone: "quiet" },
   reviewed: { label: "Reviewed", tone: "good" },
-  "follow-up-required": { label: "Follow-up required", tone: "danger" },
+  "follow-up-required": { label: "Follow-up required", tone: "warn" },
 };
 
 function plural(count: number, one: string, many = `${one}s`) {
@@ -99,7 +99,7 @@ export function GovernanceProposal() {
   const queue = [
     ...(filter === "waiting" ? waiting : filter === "follow-up-required" ? followUp : reviewable),
   ].reverse();
-  const selected = reviewable.find((event) => event.id === selectedId) ?? queue[0] ?? null;
+  const selected = queue.find((event) => event.id === selectedId) ?? queue[0] ?? null;
   const subjectName = (event: AuditEvent) => {
     const subject = event.subject;
     if (subject.kind === "movement") return patientOf({ movementId: subject.movementId }).displayName;
@@ -125,8 +125,8 @@ export function GovernanceProposal() {
 
   const attention: Attention[] = [];
   if (waiting.length > 0)
-    attention.push({ tone: "warn", label: `${plural(waiting.length, "action")} waiting for review` });
-  if (followUp.length > 0) attention.push({ tone: "danger", label: `${followUp.length} marked for follow-up` });
+    attention.push({ tone: "quiet", label: `${plural(waiting.length, "action")} waiting for review` });
+  if (followUp.length > 0) attention.push({ tone: "warn", label: `${followUp.length} marked for follow-up` });
   if (overrides.length > 0)
     attention.push({ tone: "accent", label: `${plural(overrides.length, "override")} recorded on movements` });
   if (changes.length > 0) attention.push({ tone: "quiet", label: `${plural(changes.length, "change")} to movements` });
@@ -149,7 +149,9 @@ export function GovernanceProposal() {
             <>
               <strong>Nothing is waiting for a review.</strong>{" "}
               {reviewable.length === 0
-                ? "No action has been recorded in this session yet."
+                ? changes.length > 0
+                  ? `No action has been recorded in this session yet. The ${plural(changes.length, "change")} to movements below came with the sample data.`
+                  : "No action has been recorded in this session yet."
                 : `All ${plural(reviewable.length, "recorded action")} have a review.`}
             </>
           ) : (
@@ -157,7 +159,7 @@ export function GovernanceProposal() {
               <strong>
                 {plural(waiting.length, "recorded action")} {waiting.length === 1 ? "needs" : "need"} a review.
               </strong>{" "}
-              The oldest is at the bottom of the queue below.
+              {waiting.length > 1 ? "The oldest is at the bottom of the queue below." : "It is selected below."}
             </>
           )}
         </Verdict>
@@ -168,7 +170,7 @@ export function GovernanceProposal() {
             {
               label: "Waiting for review",
               value: waiting.length,
-              tone: waiting.length > 0 ? "warn" : undefined,
+              tone: undefined,
               note: "Recorded actions with no review yet",
               pressed: filter === "waiting",
               onPress: () => setFilter("waiting"),
@@ -176,7 +178,7 @@ export function GovernanceProposal() {
             {
               label: "Follow-up required",
               value: followUp.length,
-              tone: followUp.length > 0 ? "danger" : undefined,
+              tone: followUp.length > 0 ? "warn" : undefined,
               note: "A reviewer asked for more",
               pressed: filter === "follow-up-required",
               onPress: () => setFilter("follow-up-required"),
@@ -189,7 +191,7 @@ export function GovernanceProposal() {
               onPress: () => setFilter("all"),
             },
             { label: "Overrides", value: overrides.length, note: "On movements, with a recorded reason" },
-            { label: "Changes", value: changes.length, note: "Legal status, urgency, stage and holds" },
+            { label: "Changes", value: changes.length, note: "Legal status, urgency, stage and pulled beds" },
           ]}
         />
 
@@ -321,7 +323,7 @@ export function GovernanceProposal() {
         <div className={styles.grid2Even}>
           <Panel
             title="Changes to movements"
-            question="Legal status, urgency, stage and held-bed changes, newest first"
+            question="Legal status, urgency, stage and pulled-bed changes, newest first"
             meta={plural(changes.length, "change")}
             flush
           >
@@ -341,7 +343,7 @@ export function GovernanceProposal() {
                         </a>
                       </p>
                       <p className={styles.listSub}>
-                        {entry.detail} · by {entry.by}
+                        {entry.detail} · {entry.by}
                       </p>
                     </div>
                     <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
@@ -387,8 +389,18 @@ export function GovernanceProposal() {
 
         <Panel title="How well placement is working" question="Shown only once enough movements have the fact recorded">
           <dl className={styles.facts}>
-            <Measure label="Median time to acceptance" measure={effectiveness.medianMinutesToAcceptance} unit="min" />
-            <Measure label="Average wards contacted" measure={effectiveness.averageUnitsContacted} unit="wards" />
+            <Measure
+              label="Median time to acceptance"
+              measure={effectiveness.medianMinutesToAcceptance}
+              unit="min"
+              population="accepted movements"
+            />
+            <Measure
+              label="Average wards contacted"
+              measure={effectiveness.averageUnitsContacted}
+              unit="wards"
+              population="movements, open and closed"
+            />
           </dl>
         </Panel>
 
@@ -408,7 +420,17 @@ export function GovernanceProposal() {
   );
 }
 
-function Measure({ label, measure, unit }: { label: string; measure: EffectivenessMeasure; unit: string }) {
+function Measure({
+  label,
+  measure,
+  unit,
+  population,
+}: {
+  label: string;
+  measure: EffectivenessMeasure;
+  unit: string;
+  population: string;
+}) {
   const enough = measure.value !== undefined && measure.sampleSize >= MINIMUM_EFFECTIVENESS_SAMPLE;
   return (
     <div className={styles.fact}>
@@ -423,7 +445,7 @@ function Measure({ label, measure, unit }: { label: string; measure: Effectivene
         )}
       </dd>
       <dd className={styles.note}>
-        From {measure.sampleSize} of {measure.population} movements
+        From {measure.sampleSize} of {measure.population} {population}
       </dd>
     </div>
   );

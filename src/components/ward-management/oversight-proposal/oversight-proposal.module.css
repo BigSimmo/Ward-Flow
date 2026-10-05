@@ -1,7 +1,8 @@
 /*
  * Oversight and settings redesign proposal (5 October 2026): Governance, Legal forms, Out of
  * area, Settings and Sign in. Third-edition shell tokens only, matching the statistics proposal
- * (white panels on the cool ground, navy answer card, mono numerals) so the two read as one set.
+ * Second pass: calm and flat. Hairline panels with no shadow, one quiet answer line, colour only
+ * where it carries meaning, one type scale (12, 13, 14, 16, 20 px) and weights no heavier than 600.
  */
 
 .page {
@@ -31,8 +32,8 @@
 .title {
   margin: 0;
   font-family: var(--display);
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: var(--t-5);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
@@ -40,7 +41,7 @@
   margin: 0.25rem 0 0;
   max-width: 70ch;
   color: var(--ink-soft);
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
 
 .asAt {
@@ -76,32 +77,29 @@
 
 .verdict {
   display: grid;
-  gap: 0.75rem;
-  padding: 1.125rem 1.25rem;
-  border-radius: var(--r1);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
-  color: var(--on-accent);
-  box-shadow: var(--lift);
+  gap: 0.5rem;
+  padding: 0.125rem 0 0.125rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--ink);
 }
 
 .verdictText {
   margin: 0;
   max-width: 75ch;
-  font-family: var(--display);
-  font-size: 1.1875rem;
-  font-weight: 500;
-  line-height: 1.45;
-  text-wrap: balance;
+  font-size: var(--t-4);
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
 }
 
 .verdictText strong {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .attention {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.25rem 1.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -111,13 +109,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 2rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
+  color: var(--ink-soft);
   font-size: var(--t-1);
-  font-weight: 600;
 }
 
 .attn a {
@@ -158,30 +151,28 @@
 .kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
-  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .kpi {
   display: grid;
   align-content: start;
-  gap: 0.25rem;
+  gap: 0.125rem;
   min-width: 0;
   min-height: var(--ward-tap);
-  padding: 1rem 1.125rem 1.125rem;
+  padding: 0.75rem 1rem 0.875rem;
   border: 0;
-  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
 }
 
-.kpi:last-child {
-  border-right: 0;
+.kpi:first-child {
+  border-left: 0;
+  padding-left: 0;
 }
 
 button.kpi {
@@ -193,34 +184,33 @@ button.kpi:hover {
 }
 
 button.kpi[aria-pressed="true"] {
-  background: var(--accent-soft);
-  box-shadow: inset 0 -3px 0 var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .kpiLabel {
   margin: 0;
   color: var(--muted);
   font-size: var(--t-0);
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .kpiValue {
   margin: 0;
   font-family: var(--mono);
-  font-size: 2rem;
+  font-size: var(--t-5);
   font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.3;
   font-variant-numeric: tabular-nums;
 }
 
 .kpiNote {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-  line-height: 1.35;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .toneGood {
@@ -282,9 +272,8 @@ button.kpi[aria-pressed="true"] {
 .panel {
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: 0.75rem;
   background: var(--surface);
-  box-shadow: var(--lift);
   overflow: hidden;
 }
 
@@ -300,9 +289,8 @@ button.kpi[aria-pressed="true"] {
 
 .panelTitle {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.0625rem;
-  font-weight: 650;
+  font-size: var(--t-4);
+  font-weight: 600;
 }
 
 .panelQuestion {
@@ -355,14 +343,13 @@ button.kpi[aria-pressed="true"] {
 
 .table {
   composes: table from "../ward-table/ward-table.module.css";
-  font-size: var(--t-2);
+  font-size: var(--t-3);
   font-variant-numeric: tabular-nums;
 }
 
 .table th {
   font-size: var(--t-0);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .table td {
@@ -428,11 +415,11 @@ button.kpi[aria-pressed="true"] {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.125rem 0.5rem;
+  padding: 0.0625rem 0.5rem;
   border-radius: 999px;
   background: var(--sunk);
   color: var(--ink-soft);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -453,8 +440,8 @@ button.kpi[aria-pressed="true"] {
 }
 
 .pillAccent {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  background: var(--sunk);
+  color: var(--ink-soft);
 }
 
 .code {
@@ -463,11 +450,11 @@ button.kpi[aria-pressed="true"] {
   justify-content: center;
   min-width: 2.25rem;
   padding: 0.125rem 0.375rem;
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--sunk);
   font-family: var(--mono);
   font-size: var(--t-1);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 /* Lists */
@@ -521,11 +508,11 @@ button.kpi[aria-pressed="true"] {
   min-height: var(--ward-tap);
   padding: 0 0.75rem;
   border: 0;
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: var(--t-2);
+  font-size: var(--t-3);
   font-weight: 600;
   text-align: left;
   text-decoration: none;
@@ -554,9 +541,8 @@ button.kpi[aria-pressed="true"] {
 .fact {
   display: grid;
   gap: 0.125rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--r2);
-  background: var(--surface-2);
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
 }
 
 .fact dt {
@@ -574,7 +560,7 @@ button.kpi[aria-pressed="true"] {
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.5rem 1rem;
   margin: 0;
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
 
 .detail dt {
@@ -591,16 +577,14 @@ button.kpi[aria-pressed="true"] {
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 0.5rem 1.5rem;
   margin: 0;
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface-2);
+  padding: 0.875rem 0 0;
+  border-top: 1px solid var(--line);
   font-size: var(--t-1);
   line-height: 1.45;
 }
 
 .definitions dt {
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .definitions dd {
@@ -620,22 +604,19 @@ button.kpi[aria-pressed="true"] {
   gap: 0.625rem;
   align-items: flex-start;
   margin: 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--warn-border);
-  border-radius: var(--r2);
-  background: var(--warn-soft);
-  color: var(--ink);
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  color: var(--ink-soft);
   font-size: var(--t-1);
   line-height: 1.45;
 }
 
 .empty {
   margin: 0;
-  padding: 1rem;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r2);
-  color: var(--ink-soft);
-  font-size: var(--t-2);
+  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: var(--t-1);
   line-height: 1.5;
 }
 
@@ -643,7 +624,7 @@ button.kpi[aria-pressed="true"] {
 
 .disclosure {
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: 0.75rem;
   background: var(--surface);
 }
 
@@ -654,7 +635,7 @@ button.kpi[aria-pressed="true"] {
   gap: 1rem;
   min-height: var(--ward-tap);
   padding: 0 1.125rem;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -675,16 +656,16 @@ button.kpi[aria-pressed="true"] {
   display: inline-flex;
   flex-wrap: wrap;
   padding: 0.1875rem;
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--sunk);
   gap: 0.125rem;
 }
 
 .segmented button {
-  min-height: 2.5rem;
+  min-height: var(--ward-tap);
   padding: 0 0.875rem;
   border: 0;
-  border-radius: calc(var(--r2) - 2px);
+  border-radius: 0.375rem;
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
@@ -696,7 +677,7 @@ button.kpi[aria-pressed="true"] {
 .segmented button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .button {
@@ -705,20 +686,20 @@ button.kpi[aria-pressed="true"] {
   justify-content: center;
   gap: 0.375rem;
   min-height: var(--ward-tap);
-  padding: 0 1rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  background: var(--surface);
-  color: var(--ink);
+  padding: 0 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--accent-ink);
   font: inherit;
-  font-size: var(--t-2);
-  font-weight: 650;
+  font-size: var(--t-3);
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
 
 .button:hover {
-  background: var(--surface-hover);
+  text-decoration: underline;
 }
 
 .button:disabled {
@@ -727,6 +708,7 @@ button.kpi[aria-pressed="true"] {
 }
 
 .buttonPrimary {
+  padding: 0 1rem;
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
@@ -734,10 +716,10 @@ button.kpi[aria-pressed="true"] {
 
 .buttonPrimary:hover {
   background: var(--accent-hover);
+  text-decoration: none;
 }
 
 .buttonDanger {
-  border-color: var(--danger);
   color: var(--danger-ink);
 }
 
@@ -746,11 +728,11 @@ button.kpi[aria-pressed="true"] {
   min-height: var(--ward-tap);
   padding: 0 0.75rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
 
 .input {
@@ -778,7 +760,7 @@ button.kpi[aria-pressed="true"] {
 
 .settingName {
   margin: 0;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .settingHelp {
@@ -793,7 +775,7 @@ button.kpi[aria-pressed="true"] {
   grid-template-columns: var(--ward-tap) 6.5rem var(--ward-tap);
   align-items: center;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   overflow: hidden;
 }
 
@@ -814,12 +796,12 @@ button.kpi[aria-pressed="true"] {
 
 .stepperValue {
   font-family: var(--mono);
-  font-weight: 650;
+  font-weight: 600;
   text-align: center;
 }
 
 .changed {
-  box-shadow: inset 3px 0 0 var(--gilt);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .saveBar {
@@ -831,10 +813,10 @@ button.kpi[aria-pressed="true"] {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.75rem 1.125rem;
-  border: 1px solid var(--gilt);
-  border-radius: var(--r1);
-  background: var(--gilt-soft);
+  padding: 0.5rem 0.5rem 0.5rem 1.125rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  background: var(--surface);
   box-shadow: var(--lift-lg);
 }
 
@@ -846,15 +828,16 @@ button.kpi[aria-pressed="true"] {
   align-items: center;
   gap: 0.5rem 1rem;
   margin: 1rem 1.5rem 0;
-  padding: 0.5rem 0.75rem;
-  border: 1px dashed var(--gilt);
-  border-radius: var(--r1);
-  background: var(--gilt-soft);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-2);
   font-size: var(--t-1);
 }
 
 .previewBar strong {
-  color: var(--gilt);
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .previewTabs {
@@ -865,7 +848,7 @@ button.kpi[aria-pressed="true"] {
 
 .previewTabs a {
   padding: 0.25rem 0.625rem;
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   color: var(--ink-soft);
   font-weight: 600;
   text-decoration: none;
@@ -874,7 +857,7 @@ button.kpi[aria-pressed="true"] {
 .previewTabs a[aria-current="page"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .page :focus-visible,
@@ -906,4 +889,24 @@ button.kpi[aria-pressed="true"] {
   height: 100%;
   border-radius: 999px;
   background: var(--accent);
+}
+
+.table .nowrap {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.inlineLink {
+  min-height: var(--ward-tap);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
@@ -67,7 +67,7 @@ const THRESHOLDS: {
   },
   {
     key: "pullHoldMinutes",
-    name: "How long a pulled bed is held",
+    name: "How long a pulled bed is kept",
     help: "A bed given to someone who has not arrived is released after this long.",
     range: PULL_HOLD_RANGE_MINUTES,
     show: (value) => splitDuration(value),
@@ -146,7 +146,12 @@ export function SettingsProposal() {
         <Verdict
           attention={[
             ...(unsaved.length > 0
-              ? [{ tone: "warn" as const, label: `${unsaved.length} unsaved change${unsaved.length === 1 ? "" : "s"}` }]
+              ? [
+                  {
+                    tone: "quiet" as const,
+                    label: `${unsaved.length} unsaved change${unsaved.length === 1 ? "" : "s"}`,
+                  },
+                ]
               : []),
             ...notDefault.map((row) => ({
               tone: "accent" as const,
@@ -173,20 +178,15 @@ export function SettingsProposal() {
           label="Settings summary"
           items={[
             {
-              label: "Theme",
-              value: appearance === "auto" ? "Auto" : appearance === "dark" ? "Dark" : "Light",
-              note: "This browser only",
-            },
-            {
               label: "Changed thresholds",
               value: notDefault.length,
               note: `Of ${THRESHOLDS.length} shared`,
-              tone: notDefault.length ? "warn" : undefined,
+              tone: undefined,
             },
             {
               label: "Unsaved",
               value: unsaved.length,
-              tone: unsaved.length ? "warn" : undefined,
+              tone: undefined,
               note: "Saved changes apply to every screen",
             },
             { label: "Fixed defaults", value: OPERATIONAL_DEFAULTS.length, note: "Read only in this prototype" },
@@ -251,6 +251,7 @@ export function SettingsProposal() {
                   </div>
                   <Pill>Follows device</Pill>
                 </div>
+                <BrowserStorage />
               </Panel>
             </div>
 
@@ -388,9 +389,7 @@ export function SettingsProposal() {
                       {fixed.map((row) => (
                         <tr key={row.name}>
                           <td>{row.name}</td>
-                          <td>
-                            <strong>{row.display}</strong>
-                          </td>
+                          <td>{row.display}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -402,5 +401,65 @@ export function SettingsProposal() {
         </div>
       </main>
     </>
+  );
+}
+
+type StorageReading = { state: "measuring" } | { state: "unknown" } | { state: "read"; used: number; quota: number };
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+/**
+ * The browser's own storage estimate for this site, restored from the current Settings screen's
+ * storage meter. When the browser cannot give one it says so, rather than showing a made-up value.
+ */
+function BrowserStorage() {
+  const [reading, setReading] = useState<StorageReading>({ state: "measuring" });
+  useEffect(() => {
+    let live = true;
+    const estimate =
+      typeof navigator !== "undefined" ? navigator.storage?.estimate?.bind(navigator.storage) : undefined;
+    (estimate ? estimate() : Promise.reject(new Error("No storage estimate")))
+      .then(({ usage, quota }) => {
+        if (!live) return;
+        setReading(usage === undefined || !quota ? { state: "unknown" } : { state: "read", used: usage, quota });
+      })
+      .catch(() => live && setReading({ state: "unknown" }));
+    return () => {
+      live = false;
+    };
+  }, []);
+  const percent = reading.state === "read" ? Math.min(100, (reading.used / reading.quota) * 100) : 0;
+  return (
+    <div className={styles.setting}>
+      <div>
+        <p className={styles.settingName}>Space used in this browser</p>
+        <p className={styles.settingHelp}>
+          {reading.state === "read"
+            ? `${formatBytes(reading.used)} of the ${formatBytes(reading.quota)} this browser allows this site, as the browser reports it.`
+            : reading.state === "measuring"
+              ? "Measuring."
+              : "This browser did not report how much space this site uses."}
+        </p>
+      </div>
+      {reading.state === "read" ? (
+        <span
+          className={styles.meterTrack}
+          role="meter"
+          aria-label="Space used in this browser"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(percent)}
+          aria-valuetext={`${formatBytes(reading.used)} of ${formatBytes(reading.quota)}`}
+        >
+          <span className={styles.meterFill} style={{ width: `${Math.max(1, percent)}%` }} />
+        </span>
+      ) : (
+        <Pill>{reading.state === "measuring" ? "Measuring" : "Not reported"}</Pill>
+      )}
+    </div>
   );
 }

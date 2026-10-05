@@ -1,7 +1,7 @@
 /*
  * Sign-in redesign proposal (5 October 2026). Same third-edition token layer as the current
  * sign-in screen, and the same visual language as the oversight proposals (white panels on the
- * cool ground, navy answer card, mono numerals).
+ * cool ground, mono numerals). Second pass: calm and flat, one type scale, colour only for meaning.
  */
 
 .wrap {
@@ -22,15 +22,15 @@
   gap: 0.5rem 1rem;
   max-width: 76rem;
   margin: 0 auto 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px dashed var(--gilt);
-  border-radius: var(--r1);
-  background: var(--gilt-soft);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-2);
   font-size: var(--t-1);
 }
 
 .previewBar strong {
-  color: var(--gilt);
+  color: var(--muted);
 }
 
 .page {
@@ -52,17 +52,13 @@
   margin: 0;
   color: var(--muted);
   font-size: var(--t-1);
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .title {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.875rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: var(--t-5);
+  font-weight: 600;
 }
 
 .chips {
@@ -89,19 +85,16 @@
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 999px;
-  background: var(--gilt);
+  background: var(--muted);
 }
 
 .verdict {
   margin: 0;
-  padding: 1rem 1.25rem;
-  border-radius: var(--r1);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
-  color: var(--on-accent);
-  font-family: var(--display);
-  font-size: 1.125rem;
-  line-height: 1.45;
-  box-shadow: var(--lift);
+  padding: 0.125rem 0 0.125rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--ink);
+  font-size: var(--t-4);
+  line-height: 1.5;
 }
 
 .layout {
@@ -120,9 +113,8 @@
 .panel {
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: 0.75rem;
   background: var(--surface);
-  box-shadow: var(--lift);
   overflow: hidden;
 }
 
@@ -138,9 +130,8 @@
 
 .panelTitle {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.0625rem;
-  font-weight: 650;
+  font-size: var(--t-4);
+  font-weight: 600;
 }
 
 .panelQuestion {
@@ -157,20 +148,20 @@
 
 .roles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.75rem;
-  padding: 1rem 1.125rem 1.125rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .role {
   display: grid;
-  align-content: start;
-  gap: 0.25rem;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.75rem;
+  row-gap: 0.125rem;
   min-height: var(--ward-tap);
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  background: var(--surface);
+  padding: 0.75rem 1.125rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
   color: var(--ink);
   font: inherit;
   text-align: left;
@@ -182,36 +173,37 @@
 }
 
 .role[aria-checked="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--surface-2);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .roleName {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-weight: 700;
+  grid-column: 2;
+  font-weight: 600;
 }
 
 .roleSub {
+  grid-column: 2;
   color: var(--ink-soft);
   font-size: var(--t-1);
   line-height: 1.4;
 }
 
 .roleOpens {
-  margin-top: 0.25rem;
+  grid-column: 2;
   color: var(--muted);
   font-size: var(--t-0);
-  font-weight: 600;
 }
 
 .tick {
-  color: var(--accent-ink);
-  font-size: var(--t-0);
-  font-weight: 700;
+  grid-row: 1;
+  grid-column: 1;
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1875rem;
+  border: 1.6px solid var(--line-strong);
+  border-radius: 999px;
 }
 
 .field {
@@ -222,16 +214,14 @@
 .fieldLabel {
   color: var(--muted);
   font-size: var(--t-0);
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .segmented {
   display: flex;
   flex-wrap: wrap;
   padding: 0.1875rem;
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--sunk);
   gap: 0.125rem;
 }
@@ -241,7 +231,7 @@
   min-height: 2.5rem;
   padding: 0 0.75rem;
   border: 0;
-  border-radius: calc(var(--r2) - 2px);
+  border-radius: 0.375rem;
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
@@ -253,18 +243,18 @@
 .segmented button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .select {
   min-height: var(--ward-tap);
   padding: 0 0.75rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
 
 .list {
@@ -273,7 +263,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
 
 .list li {
@@ -283,18 +273,18 @@
 }
 
 .can {
-  color: var(--good);
-  font-weight: 700;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .cannot {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .count {
   font-family: var(--mono);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .primary {
@@ -305,11 +295,11 @@
   min-height: var(--ward-tap);
   padding: 0 1rem;
   border: 1px solid var(--accent);
-  border-radius: var(--r2);
+  border-radius: 0.5rem;
   background: var(--accent);
   color: var(--on-accent);
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -324,7 +314,7 @@
   display: flex;
   align-items: center;
   min-height: var(--ward-tap);
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -337,11 +327,9 @@
 
 .footer {
   margin: 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface);
-  color: var(--ink-soft);
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
   font-size: var(--t-1);
 }
 
@@ -362,10 +350,15 @@
 }
 
 .shiftName {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .shiftHours {
-  font-family: var(--mono);
   font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.role[aria-checked="true"] .tick {
+  border: 5px solid var(--accent);
 }

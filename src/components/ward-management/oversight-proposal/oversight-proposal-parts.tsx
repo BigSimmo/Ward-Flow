@@ -164,7 +164,7 @@ export function Panel({
   flush = false,
 }: {
   title: string;
-  question?: string;
+  question?: ReactNode;
   meta?: ReactNode;
   foot?: ReactNode;
   children: ReactNode;

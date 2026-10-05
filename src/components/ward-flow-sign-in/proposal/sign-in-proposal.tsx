@@ -105,7 +105,9 @@ export function SignInProposal() {
               <h2 id="role-heading" className={styles.panelTitle}>
                 Your role
               </h2>
-              <p className={styles.panelQuestion}>Seven roles. Each opens on the screen it uses most.</p>
+              <p className={styles.panelQuestion}>
+                {SIGN_IN_ROLES.length} roles. Each opens on the screen it uses most.
+              </p>
             </div>
             <div className={styles.roles} role="radiogroup" aria-labelledby="role-heading">
               {SIGN_IN_ROLES.map((candidate) => (
@@ -120,10 +122,8 @@ export function SignInProposal() {
                     setPressed(false);
                   }}
                 >
-                  <span className={styles.roleName}>
-                    {candidate.name}
-                    {candidate.id === chosen ? <span className={styles.tick}>Selected</span> : null}
-                  </span>
+                  <span className={styles.tick} aria-hidden="true" />
+                  <span className={styles.roleName}>{candidate.name}</span>
                   <span className={styles.roleSub}>{candidate.sub}</span>
                   <span className={styles.roleOpens}>
                     Opens on {candidate.opens} · can do {actionsForRole(candidate.id).length} of{" "}
@@ -139,6 +139,7 @@ export function SignInProposal() {
               <h2 className={styles.panelTitle}>{role.name}</h2>
               <p className={styles.panelQuestion}>
                 {catchmentRow.label} · {shiftRow.label} shift, {shiftRow.hours}
+                {shiftRow.endHour < shiftRow.startHour ? " the next day" : ""}
               </p>
             </div>
             <div className={styles.panelBody}>

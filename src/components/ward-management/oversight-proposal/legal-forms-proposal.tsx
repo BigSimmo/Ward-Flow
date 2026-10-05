@@ -40,6 +40,13 @@ import styles from "./oversight-proposal.module.css";
 type Status = "passed" | "urgent" | "soon" | "later" | "none";
 type StatusFilter = "all" | "passed" | "warning" | "typed" | "none";
 
+const FILTER_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
+  passed: "expiry passed",
+  warning: "in warning window",
+  typed: "expiry typed",
+  none: "no expiry typed",
+};
+
 /** One reading of a form's state, used by the strip, the filter and the row, so they cannot disagree. */
 function statusOf(movement: Movement, now: Instant): Status {
   if (movement.legalForm?.dueAt === undefined) return "none";
@@ -70,7 +77,7 @@ export function LegalFormsProposal() {
     passed: { label: "Expiry passed", tone: "danger" },
     urgent: { label: `Within ${reminders.urgentHours}h`, tone: "danger" },
     soon: { label: `Within ${reminders.soonHours}h`, tone: "warn" },
-    later: { label: "Later", tone: "good" },
+    later: { label: "Later", tone: "quiet" },
     none: { label: "No expiry typed", tone: "quiet" },
   };
 
@@ -84,7 +91,7 @@ export function LegalFormsProposal() {
       (statusFilter === "none" && status === "none");
     return statusOk && (formFilter === "all" || movement.legalForm?.code === formFilter);
   });
-  const selected = rows.find((movement) => movement.id === selectedId) ?? visible[0] ?? null;
+  const selected = visible.find((movement) => movement.id === selectedId) ?? visible[0] ?? null;
   const next = withExpiry.find((movement) => statusOf(movement, now) !== "passed");
 
   const toggle = (value: StatusFilter) => setStatusFilter(statusFilter === value ? "all" : value);
@@ -178,7 +185,18 @@ export function LegalFormsProposal() {
         <div className={styles.grid2}>
           <Panel
             title="Forms, soonest expiry first"
-            question={`${visible.length} of ${rows.length} shown. A passed expiry comes first; forms with no expiry typed come last.`}
+            question={
+              statusFilter === "all" ? (
+                `${visible.length} of ${rows.length} shown. A passed expiry comes first; forms with no expiry typed come last.`
+              ) : (
+                <>
+                  {visible.length} of {rows.length} shown · filtered to {FILTER_LABEL[statusFilter]} ·{" "}
+                  <button type="button" className={styles.inlineLink} onClick={() => setStatusFilter("all")}>
+                    Clear filter
+                  </button>
+                </>
+              )
+            }
             meta={
               <label className={styles.toolbar}>
                 <span>Form</span>
