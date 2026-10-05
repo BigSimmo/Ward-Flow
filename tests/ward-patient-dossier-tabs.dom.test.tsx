@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -42,6 +42,22 @@ function tab(name: string) {
   return within(document.getElementById(`pnpane-${name.toLowerCase()}`)!);
 }
 describe("polished patient dossier tabs", () => {
+  it("opens clinical checks and documents locally from the patient brief with focus handoff", async () => {
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: /^Documents/ }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Documents/ })).toHaveFocus());
+    expect(screen.getByRole("region", { name: "Documents and legal authority" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /^Clinical checks/ }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Now/ })).toHaveFocus());
+    expect(screen.getByRole("region", { name: "Clinical handover overview" })).toBeVisible();
+  });
+  it("makes the record-only brief shortcut open patient details", async () => {
+    setup("PT-005");
+    fireEvent.click(screen.getByRole("button", { name: /^Patient details/ }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /^Details/ })).toHaveFocus());
+    expect(screen.getByRole("region", { name: "Patient details" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Clinical checks/ })).not.toBeInTheDocument();
+  });
   it("searches history and makes unmatched filters explicit without losing the episode", () => {
     setup();
     const pane = tab("History");

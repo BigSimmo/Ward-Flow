@@ -12,6 +12,7 @@ export function PatientFlightHeader({
   displayToday,
   isLiveBedflow,
   statusDetail,
+  actions,
   children,
 }: {
   displayName: string;
@@ -20,6 +21,7 @@ export function PatientFlightHeader({
   displayToday: Date;
   isLiveBedflow: boolean;
   statusDetail: string;
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -73,6 +75,7 @@ export function PatientFlightHeader({
           </strong>
           <span>{statusDetail}</span>
         </div>
+        {actions}
       </div>
       {children}
     </>

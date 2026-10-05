@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Clipboard, FileText, History, MapPin, Search, ShieldCheck, Users } from "lucide-react";
+import { ArrowUpRight, Clipboard, FileText, History, MapPin, Search, ShieldCheck, Users, Contact } from "lucide-react";
 import type { Movement } from "../ward-model";
 import type { Patient } from "../ward-patients";
 import { edById, unitById } from "../ward-sites";
@@ -63,11 +63,11 @@ export function PatientHistoryTab({ record, movement }: { record: PatientNowReco
     .sort((a, b) => (recent ? b.year - a.year : a.year - b.year));
   const prior = record.presentations.filter((p) => !p.current);
   return (
-    <section className={styles.pane} aria-label="Presentation history">
+    <section className={styles.pane} aria-label="Presentation history" data-layout="history">
       <Heading
         eyebrow="LONGITUDINAL CONTEXT"
         title="Presentations"
-        description="Review episode context, placement outcomes and the recorded events of this journey."
+        description="Episodes, outcomes and recorded journey events."
       />
       <div className={styles.summaryStrip}>
         <div>
@@ -229,70 +229,77 @@ export function PatientCommunityTab({
 }) {
   const summary = `GP: ${patient?.generalPractitioner ?? "Not recorded"}\nCatchment: ${patient?.catchmentCommunityTeam ?? "Not recorded"}\nFollow-up: ${record.community.followUp}`;
   return (
-    <section className={styles.pane} aria-label="Community and care continuity">
+    <section className={styles.pane} aria-label="Community and care continuity" data-layout="community">
       <Heading
         eyebrow="CARE CONTINUITY"
-        title="Community & care links"
-        description="Separate recorded care links from confirmed follow-up, and identify the teams involved in this transfer."
+        title="Care & community"
+        description="Care links, follow-up and transfer contacts."
       />
-      <div className={styles.grid}>
-        <section className={`${styles.surface} ${styles.tinted}`}>
-          <div className={styles.cardTitle}>
+      <div className={styles.careDirectory}>
+        <section className={styles.careLinks} aria-label="Recorded care directory">
+          <h3>Care directory</h3>
+          <div className={styles.serviceRow}>
             <span className={styles.icon}>
-              <Users size={19} aria-hidden="true" />
+              <Users size={18} aria-hidden="true" />
             </span>
-            <h3>Recorded community catchment</h3>
+            <div>
+              <span>Community catchment</span>
+              <strong>{patient?.catchmentCommunityTeam ?? "Not recorded"}</strong>
+              <small>Catchment link · current team involvement unconfirmed</small>
+            </div>
           </div>
-          <strong className={styles.lead}>{patient?.catchmentCommunityTeam ?? "Not recorded"}</strong>
-          <span className={styles.tag}>Catchment link</span>
-          <p className={styles.muted}>
+          <div className={styles.serviceRow}>
+            <span className={styles.icon}>
+              <Contact size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <span>General practitioner</span>
+              <strong>{patient?.generalPractitioner ?? "Not recorded"}</strong>
+            </div>
+          </div>
+          <div className={styles.serviceRow}>
+            <span className={styles.icon}>
+              <MapPin size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <span>Residential area</span>
+              <strong>{patient?.suburb ?? "Not recorded"}</strong>
+            </div>
+          </div>
+          <p className={styles.note}>
             A recorded catchment does not confirm current case management or an active appointment.
           </p>
-          <dl className={styles.facts}>
-            <dt>General practitioner</dt>
-            <dd>{patient?.generalPractitioner ?? "Not recorded"}</dd>
-            <dt>Suburb</dt>
-            <dd>{patient?.suburb ?? "Not recorded"}</dd>
-          </dl>
         </section>
-        <section className={styles.surface}>
+        <section className={styles.continuity}>
           <div className={styles.cardTitle}>
-            <span className={styles.icon}>
-              <Check size={19} aria-hidden="true" />
-            </span>
-            <h3>Follow-up & continuity</h3>
+            <Clipboard size={18} aria-hidden="true" />
+            <h3>Follow-up record</h3>
           </div>
-          <span className={styles.tag}>Recorded information</span>
           <p className={styles.prose}>{record.community.followUp}</p>
-          <p className={styles.note}>
-            Appointments, phone contacts and care-coordinator names are shown only when recorded.
-          </p>
+          <div className={styles.cardTitle}>
+            <h3>Team allocation</h3>
+            <span className={styles.tag}>{record.community.teams.length} linked</span>
+          </div>
+          {record.community.teams.length > 0 ? (
+            <div className={styles.teamRows}>
+              {record.community.teams.map((t, i) => (
+                <article key={i}>
+                  <div>
+                    <strong>{t.name}</strong>
+                    <span className={styles.tag}>{t.state}</span>
+                  </div>
+                  <p>{t.note}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.muted}>
+              {record.community.absent ?? "No community team allocation is established by this movement record."}
+            </p>
+          )}
           <CopyFact value={summary} label="Copy care links" />
         </section>
       </div>
-      <section className={styles.surface}>
-        <div className={styles.cardTitle}>
-          <h3>Team records</h3>
-          <span className={styles.tag}>{record.community.teams.length} linked</span>
-        </div>
-        {record.community.teams.length > 0 ? (
-          <div className={styles.teamRows}>
-            {record.community.teams.map((t, i) => (
-              <article key={i}>
-                <div>
-                  <strong>{t.name}</strong>
-                  <span className={styles.tag}>{t.state}</span>
-                </div>
-                <p>{t.note}</p>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.muted}>
-            {record.community.absent ?? "No community team allocation is established by this movement record."}
-          </p>
-        )}
-      </section>
       {movement && (
         <section className={styles.surface}>
           <div className={styles.cardTitle}>
@@ -385,11 +392,11 @@ export function PatientDetailsTab({
       (movement.gender && patient.gender && movement.gender !== patient.gender)),
   );
   return (
-    <section className={styles.pane} aria-label="Patient details">
+    <section className={styles.pane} aria-label="Patient details" data-layout="details">
       <Heading
         eyebrow="PATIENT RECORD"
-        title="Details & record quality"
-        description="Review identity and care facts separately from placement data. Unrecorded fields stay explicit."
+        title="Patient details"
+        description="Patient identity, ongoing care and placement context."
       />
       <div className={styles.detailsToolbar}>
         <div>
@@ -397,6 +404,13 @@ export function PatientDetailsTab({
             {all.length - missing} / {all.length}
           </strong>
           <span> fields recorded · {missing} unrecorded</span>
+          <meter
+            className={styles.completeness}
+            min={0}
+            max={all.length}
+            value={all.length - missing}
+            aria-label="Recorded patient and placement fields"
+          />
         </div>
         <button type="button" aria-pressed={missingOnly} onClick={() => setMissingOnly(!missingOnly)}>
           Missing information {missingOnly ? "✓" : ""}
@@ -489,11 +503,11 @@ export function PatientDocumentsTab({
   const due = movement?.legalForm?.dueAt;
   const expired = due !== undefined && now >= due;
   return (
-    <section className={styles.pane} aria-label="Documents and legal authority">
+    <section className={styles.pane} aria-label="Documents and legal authority" data-layout="documents">
       <Heading
         eyebrow="TRANSFER EVIDENCE"
         title="Documents & legal authority"
-        description="Review paper authority, explicit expiry times and transport document records together."
+        description="Current authority and the transfer document register."
       />
       <div className={styles.documentSummary}>
         <section className={`${styles.surface} ${styles.tinted}`}>

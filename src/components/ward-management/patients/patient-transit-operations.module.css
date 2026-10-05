@@ -642,3 +642,250 @@
     grid-column: 2;
   }
 }
+/* Unified dossier workspace: quiet joinery, compact lists, clear next action. */
+.deck {
+  background: #fff;
+  padding: 20px;
+  gap: 16px;
+}
+.heading {
+  border-bottom: 1px solid #e2e9ed;
+  padding-bottom: 14px;
+  align-items: center;
+}
+.heading .eyebrow {
+  display: none;
+}
+.heading h2 {
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  font-weight: 650;
+  margin: 0;
+}
+.heading p {
+  font-size: 12px;
+  margin: 5px 0 0;
+  color: #556977;
+}
+.stage {
+  border: 0;
+  border-radius: 7px;
+  background: #edf5f1;
+  color: #2b715e;
+  font-size: 10px;
+  padding: 5px 9px;
+}
+.columns {
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.rightColumn {
+  gap: 14px;
+}
+.card {
+  border: 1px solid #e0e8ed;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: none;
+  overflow: hidden;
+}
+.cardHeader {
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5ebef;
+}
+.cardHeader h3 {
+  font-size: 15px;
+  margin-top: 4px;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+.cardHeader .eyebrow {
+  font-size: 8px;
+  color: #556977;
+  letter-spacing: 0.08em;
+}
+.cardHeader > svg {
+  width: 18px;
+  height: 18px;
+  color: #66928a;
+}
+.filters {
+  margin: 9px 13px 4px;
+  background: #f4f8fa;
+  border: 0;
+  border-radius: 8px;
+  padding: 3px;
+}
+.filters button {
+  min-height: 44px;
+  border-radius: 6px;
+  font-size: 10px;
+}
+.deck label.wardSearch {
+  margin: 12px 13px 0;
+  border-color: #e0e7eb;
+  border-radius: 9px;
+  background: #fbfcfd;
+}
+.card > .hint {
+  padding: 4px 13px 9px;
+  font-size: 10px;
+}
+.candidates {
+  padding: 0 13px;
+  max-height: 445px;
+}
+.candidate {
+  padding: 9px 0;
+}
+.candidate .pick {
+  font-size: 12px;
+  font-weight: 600;
+}
+.candidate p {
+  margin: 4px 0;
+  font-size: 11px;
+}
+.candidateMeta {
+  font-size: 10px;
+  gap: 5px 10px;
+}
+.candidate > details > summary {
+  font-size: 10px;
+  min-height: 44px;
+  padding: 10px 0;
+}
+.verdict {
+  font-size: 9px;
+  border: 0;
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+.verdict[data-pass="true"] {
+  background: #eaf5ee;
+  color: #2b745c;
+}
+.destination {
+  background: #f0f7f4;
+  border: 0;
+  border-left: 3px solid #45957d;
+  border-radius: 0 9px 9px 0;
+  padding: 12px;
+}
+.destination strong {
+  font-size: 15px;
+  color: #274d60;
+}
+.destination span,
+.destination p {
+  font-size: 11px;
+}
+.destination p {
+  margin: 5px 0 0;
+}
+.dispatchBody {
+  padding: 14px;
+}
+.hold {
+  background: #f6f9fb;
+  border-radius: 8px;
+  border: 0;
+  font-size: 11px;
+  padding: 9px 11px;
+}
+.facts {
+  font-size: 11px;
+  row-gap: 7px;
+}
+.facts dt {
+  color: #637986;
+}
+.primary,
+.secondary,
+.danger {
+  min-height: 44px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+.primary {
+  background: #276951;
+  border-color: #276951;
+}
+.cardFooter {
+  background: #fbfcfd;
+  padding: 10px 13px;
+  border-top: 1px solid #e5ebef;
+  position: static;
+  gap: 8px;
+}
+.cardFooter span {
+  font-size: 10px;
+}
+.additional {
+  box-shadow: none;
+  background: #f8fafb;
+}
+.additional > summary {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 11px;
+}
+.additional > summary span {
+  font-size: 10px;
+  margin-left: 8px;
+  display: inline;
+}
+.feedback:empty {
+  display: none;
+}
+.feedback p {
+  font-size: 11px;
+  border-radius: 8px;
+}
+.booking {
+  border-radius: 10px;
+  background: #f6f9fa;
+  border-color: #e1e8ed;
+}
+.deck input:not([type="checkbox"]),
+.deck select {
+  border-radius: 8px;
+  min-height: 44px;
+}
+.correction {
+  padding: 12px 14px;
+}
+.correction > summary {
+  font-size: 11px;
+}
+.deck label {
+  font-size: 11px;
+}
+@media (max-width: 700px) {
+  .deck {
+    padding: 16px;
+  }
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .heading h2 {
+    font-size: 21px;
+  }
+  .heading .stage {
+    font-size: 9px;
+  }
+  .additional > summary span {
+    display: block;
+    margin: 4px 0 0;
+  }
+  .cardFooter {
+    flex-wrap: wrap;
+  }
+  .cardFooter button {
+    flex: 1;
+  }
+  .candidates {
+    max-height: 400px;
+  }
+}

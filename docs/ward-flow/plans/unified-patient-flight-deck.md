@@ -140,3 +140,25 @@ FLIGHT_DECK_CHROMIUM=/usr/bin/chromium node scripts/ward-flow/capture-patient-do
 Viewport images preserve the actual app scrolling. Full images expand scroll containers only
 for capture. Desktop workspace images crop the native tracker and active pane so the tab layouts
 can be compared without repeating the identity header. Browser evidence is synthetic only.
+
+## Compact dossier redesign — 5 October 2026
+
+The owner requested a substantial redesign of the header and tab contents. The identity bar now
+places coordination and handover actions beside the patient, above a concise transfer brief.
+Clinical-check and document shortcuts switch to their local panes and focus the selected tab;
+record-only patients receive a patient-details shortcut. The tracker keeps destination, actual
+bed hold, transport and clearance facts in a stable position ahead of the compact journey.
+
+The five panes use joined sections, consistent typography, restrained borders and compact rows.
+Community has a source-derived care directory and follow-up summary. Details shows recorded
+field completeness with a native meter. History and Documents retain their working searches,
+filters and source details. Clinical and transit sections share the same visual hierarchy.
+Reducer actions, legal and clinical guards, route aliases and source records remain unchanged.
+
+Verification: 215 tests across 12 focused suites, TypeScript and scoped ESLint passed. The new
+capture covers 57 states and 125 images, including 30 live/inactive tab accessibility checks at
+1440, 820 and 390 pixels, with no relevant axe violations, runtime errors or horizontal overflow.
+The standalone interactive HTML uses the actual React components, provider and reducer; ten
+browser checks cover tabs, referral through arrival, clearance, reset, inactive records and
+mobile layout. Artifacts are in `/workspace/artifacts/ward-flow-redesigned`. The private user
+Page is updated in place with that HTML and the current tab images. No GitHub push or deployment.

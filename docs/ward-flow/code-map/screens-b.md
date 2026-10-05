@@ -416,6 +416,12 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**5 October 2026 compact redesign:** `patient-flight-header.tsx` accepts local action controls;
+Patient Now supplies clinical/document/details shortcuts with keyboard focus handoffs. Header,
+tracker and tab styles use a joined compact layout. Community provides a care directory and
+follow-up summary; Details includes a native recorded-field meter. Shared reducer and records
+remain the source of truth. Dossier DOM tests cover live and inactive header shortcuts.
+
 **4 October 2026 tab refinement:** `patient-dossier-tabs.tsx` and its CSS module provide searchable
 History, care-linked Community, grouped Details and authority/document-ledger panes.
 `patient-clinical-summary.tsx` provides the Now clinical overview; `patient-tracker-facts.tsx` and

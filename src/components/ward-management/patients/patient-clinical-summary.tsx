@@ -24,16 +24,16 @@ export function PatientClinicalSummary({
 }) {
   const clearance = movement.medicalClearance;
   return (
-    <section className={styles.pane} aria-label="Clinical handover overview">
+    <section className={styles.pane} aria-label="Clinical handover overview" data-layout="clinical">
       <header className={styles.heading}>
         <span>CLINICAL CONTEXT / CURRENT JOURNEY</span>
         <h2>This presentation</h2>
-        <p>Keep the clinical requirements and recorded sign-offs in view while coordinating placement.</p>
+        <p>Care requirements, clearance and handover.</p>
       </header>
       <section className={`${styles.surface} ${styles.tinted}`}>
         <div className={styles.cardTitle}>
           <ClipboardCheck size={19} aria-hidden="true" />
-          <h3>Current coordination issue</h3>
+          <h3>Coordination focus</h3>
           <span className={styles.tag}>{STAGES.find((s) => s.id === movement.stage)?.label}</span>
         </div>
         <strong className={styles.lead}>{movement.blocker || "No blocker recorded"}</strong>

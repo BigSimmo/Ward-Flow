@@ -163,3 +163,100 @@
     display: none;
   }
 }
+/* Record-only patients share the same joined dossier surface. */
+.hub {
+  padding: 20px;
+  background: #fff;
+  gap: 16px;
+}
+.heading {
+  border-bottom: 1px solid #e2e9ed;
+  padding-bottom: 14px;
+}
+.heading > div > span {
+  display: none;
+}
+.heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+.recordBadge {
+  border-radius: 7px;
+  font-size: 9px;
+  background: #edf3f5;
+  padding: 5px 8px;
+}
+.grid {
+  gap: 0;
+  border: 1px solid #e1e9ed;
+  border-radius: 14px;
+  background: #f9fbfc;
+  overflow: hidden;
+}
+.profile,
+.care {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 16px;
+}
+.care {
+  border-left: 1px solid #e1e9ed;
+}
+.cardHeading h3 {
+  font-size: 13px;
+  font-weight: 650;
+}
+.cardHeading {
+  margin-bottom: 12px;
+}
+.profile dt,
+.profile dd {
+  padding: 7px 0;
+}
+.care > strong {
+  font-size: 15px;
+}
+.care > p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.profile > button,
+.care > button {
+  background: #fff;
+  border-radius: 9px;
+  font-size: 11px;
+  min-height: 44px;
+}
+.links {
+  gap: 12px;
+}
+.links > button {
+  border-radius: 12px;
+  background: #f7fafb;
+  box-shadow: none;
+  padding: 13px;
+}
+.links strong {
+  font-size: 12px;
+}
+.links small {
+  font-size: 10px;
+}
+.note {
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .hub {
+    padding: 16px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .care {
+    border-left: 0;
+    border-top: 1px solid #e1e9ed;
+  }
+}

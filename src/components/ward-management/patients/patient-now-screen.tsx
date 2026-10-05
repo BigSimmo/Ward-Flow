@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, FileUp, FileText, AlertCircle } from "lucide-react";
+import { Clock, FileUp, FileText, AlertCircle, ShieldCheck, Activity, History, Users, Contact } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -420,6 +420,31 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
             patient={livePatient}
             displayToday={displayToday}
             isLiveBedflow={isLiveBedflow}
+            actions={
+              <div className={styles.headerActions}>
+                {liveMovement ? (
+                  <button
+                    type="button"
+                    onClick={openOperations}
+                    className={`${styles.ctl} ${styles.ctlPrimary}`}
+                    data-testid="ward-person-refer"
+                  >
+                    Coordinate placement
+                  </button>
+                ) : (
+                  <Link
+                    href="/mockups/ward-flow/referrals/new"
+                    className={`${styles.ctl} ${styles.ctlPrimary}`}
+                    data-testid="ward-person-refer-outpatient"
+                  >
+                    + Raise Inpatient Referral
+                  </Link>
+                )}
+                <button type="button" className={styles.ctl} onClick={handleCopySummary}>
+                  {copied ? "Copied!" : "Copy handover"}
+                </button>
+              </div>
+            }
             statusDetail={
               isLiveBedflow
                 ? `Stage ${currentStageIndex + 1} / 7 · ${STAGES[currentStageIndex].label}`
@@ -499,24 +524,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           {/* Action Toolbar */}
           <div className={styles.topToolbar}>
             <div className={styles.actionControls}>
-              {liveMovement ? (
-                <button
-                  type="button"
-                  onClick={openOperations}
-                  className={`${styles.ctl} ${styles.ctlPrimary}`}
-                  data-testid="ward-person-refer"
-                >
-                  Coordinate placement
-                </button>
-              ) : (
-                <Link
-                  href="/mockups/ward-flow/referrals/new"
-                  className={`${styles.ctl} ${styles.ctlPrimary}`}
-                  data-testid="ward-person-refer-outpatient"
-                >
-                  + Raise Inpatient Referral
-                </Link>
-              )}
               <div className={styles.compactNext} role="region" aria-label="Next steps">
                 {record.next[0] ? (
                   <>
@@ -527,9 +534,41 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   <span>No next steps recorded.</span>
                 )}
               </div>
-              <button type="button" className={styles.ctl} onClick={handleCopySummary}>
-                {copied ? "Copied!" : "Copy handover"}
-              </button>
+
+              <div className={styles.quickLinks}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = liveMovement ? "now" : "details";
+                    setActiveTab(target);
+                    if (liveMovement) setNowView("clinical");
+                    requestAnimationFrame(() => document.getElementById(`pntab-${target}`)?.focus());
+                  }}
+                >
+                  <ShieldCheck size={15} aria-hidden="true" />
+                  {liveMovement ? "Clinical checks" : "Patient details"}
+                  <span>
+                    {liveMovement
+                      ? liveMovement.medicalClearance
+                        ? liveMovement.medicalClearance.cleared
+                          ? "Clearance recorded"
+                          : "Not cleared"
+                        : "Unassessed"
+                      : "Record"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("documents");
+                    requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
+                  }}
+                >
+                  <FileText size={15} aria-hidden="true" />
+                  Documents
+                  <span>{record.documents.length + uploadedForms.length}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -937,6 +976,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 tabIndex={activeTab === "now" ? 0 : -1}
                 onClick={() => setActiveTab("now")}
               >
+                <Activity size={15} aria-hidden="true" />
                 Now
                 <span className={styles.tabNum} id="pncount-now">
                   {(liveMovement?.withdrawnReferrals.length ?? 0) + 1}
@@ -953,6 +993,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 tabIndex={activeTab === "history" ? 0 : -1}
                 onClick={() => setActiveTab("history")}
               >
+                <History size={15} aria-hidden="true" />
                 History
                 <span className={styles.tabNum} id="pncount-history">
                   {record.presentations.length}
@@ -969,6 +1010,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 tabIndex={activeTab === "community" ? 0 : -1}
                 onClick={() => setActiveTab("community")}
               >
+                <Users size={15} aria-hidden="true" />
                 Community
                 <span className={styles.tabNum} id="pncount-community">
                   {record.community.teams.length}
@@ -985,6 +1027,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 tabIndex={activeTab === "details" ? 0 : -1}
                 onClick={() => setActiveTab("details")}
               >
+                <Contact size={15} aria-hidden="true" />
                 Details
               </button>
 
@@ -998,6 +1041,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 tabIndex={activeTab === "documents" ? 0 : -1}
                 onClick={() => setActiveTab("documents")}
               >
+                <FileText size={15} aria-hidden="true" />
                 Documents
                 <span className={styles.tabNum} id="pncount-documents">
                   {record.documents.length + uploadedForms.length}

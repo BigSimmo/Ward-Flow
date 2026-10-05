@@ -94,3 +94,86 @@
   color: var(--muted);
   margin: 0;
 }
+/* Compact operational ledger inside the tracker, not nested cards. */
+.facts {
+  gap: 8px;
+}
+.destination {
+  gap: 4px;
+  padding: 3px 2px;
+}
+.destination span {
+  font-size: 8px;
+}
+.destination strong {
+  font-size: 12px;
+}
+.tile {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 6px 2px;
+  gap: 8px;
+  align-items: center;
+}
+.tile > div {
+  gap: 2px;
+}
+.tile svg {
+  width: 15px;
+  height: 15px;
+  color: #4b7c78;
+}
+.tile span {
+  font-size: 9px;
+  color: #556977;
+}
+.tile strong {
+  font-size: 11px;
+  font-weight: 600;
+  color: #315365;
+}
+.tile small {
+  font-size: 9px;
+  color: #556977;
+  line-height: 1.5;
+}
+.facts button {
+  border-radius: 8px;
+  background: #f0f7f4;
+  border: 1px solid #d7e6df;
+  color: #276b5a;
+  font-size: 10px;
+  min-height: 44px;
+}
+.facts p {
+  font-size: 9px;
+}
+.tile[data-attention="true"] {
+  background: #fff2e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+.tile[data-attention="true"] strong {
+  color: #8d5424;
+}
+.tile > div {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+}
+.tile {
+  padding: 4px 2px;
+}
+.tile > div > span {
+  font-size: 8px;
+}
+.tile small {
+  font-size: 9px;
+}
+.facts {
+  gap: 6px;
+}
+.facts p {
+  line-height: 1.4;
+}

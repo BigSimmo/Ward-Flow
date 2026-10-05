@@ -3505,3 +3505,560 @@
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
+
+/* Dossier redesign: a calm identity bar, concise transfer brief, stable tracker. */
+.scroll {
+  gap: 14px;
+  padding: 16px;
+}
+.topCard {
+  border-radius: 18px;
+  border: 1px solid #dce5e9;
+  box-shadow: 0 4px 16px #213a4d06;
+  background: #fff;
+}
+.flightIdentity {
+  background: #fff;
+  color: #233e50;
+  padding: 16px 20px;
+  gap: 12px;
+  min-height: 92px;
+}
+.flightIdentity .backBtn {
+  color: #4f6878;
+  border-color: #e1e7eb;
+  background: #f7fafb;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.avatar {
+  background: linear-gradient(145deg, #edf6f2, #dcece6);
+  color: #286b5b;
+  border: 1px solid #d7e7de;
+  border-radius: 15px;
+  width: 47px;
+  height: 47px;
+  font-size: 17px;
+}
+.identityEyebrow {
+  color: #556977;
+  font-size: 8px;
+  letter-spacing: 0.13em;
+}
+.identityEyebrow span {
+  display: none;
+}
+.identityText h1 {
+  font-size: 24px;
+  margin: 3px 0;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  color: #213d50;
+}
+.identityText h1 small,
+.identityText p {
+  color: #637581;
+  font-size: 11px;
+}
+.identityText p {
+  line-height: 1.5;
+}
+.liveState {
+  font-size: 11px;
+  gap: 5px;
+  max-width: 205px;
+  padding-left: 12px;
+  border-left: 1px solid #e2e8ec;
+  text-align: left;
+}
+.liveState strong,
+.liveState[data-live="true"] strong {
+  color: #19715c;
+  justify-content: flex-start;
+  background: #e9f5ee;
+  border-radius: 7px;
+  padding: 4px 8px;
+  width: fit-content;
+  font-size: 10px;
+}
+.liveState[data-live="false"] strong {
+  color: #526b7a;
+  background: #edf2f5;
+}
+.liveState span {
+  color: #637581;
+  font-size: 10px;
+  padding-left: 1px;
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 8px;
+}
+.headerActions .ctl {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.headerActions .ctlPrimary {
+  background: #1b675d;
+  color: white;
+  border-color: #1b675d;
+  box-shadow: 0 2px 6px #1b675d15;
+}
+.flightSnapshot {
+  grid-template-columns: 1.45fr 0.85fr 1fr 1fr;
+  background: linear-gradient(105deg, #223f51, #2d5061);
+  padding: 14px 20px;
+  gap: 18px;
+  border: 0;
+  color: white;
+}
+.flightSnapshot > div {
+  border-color: #ffffff20;
+  gap: 4px;
+  padding-right: 16px;
+}
+.flightSnapshot span {
+  font-size: 8px;
+  color: #b4ccd5;
+  letter-spacing: 0.09em;
+}
+.flightSnapshot strong {
+  color: #f6fafc;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.flightSnapshot small {
+  color: #c2d5dc;
+  font-size: 10px;
+}
+.flightSnapshot > div[data-attention="true"] strong {
+  color: #ffdda9;
+}
+.topToolbar {
+  padding: 8px 16px;
+  background: #fbfcfd;
+  border-bottom: 1px solid #edf1f4;
+}
+.actionControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+.compactNext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.compactNext strong {
+  font-size: 11px;
+  font-weight: 650;
+  color: #2c5365;
+  white-space: nowrap;
+}
+.compactNext span {
+  font-size: 10px;
+  color: #556977;
+  line-height: 1.4;
+}
+.quickLinks {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.quickLinks button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  min-height: 44px;
+  color: #33586a;
+  font: inherit;
+  font-size: 11px;
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.quickLinks button:hover {
+  background: #eef4f6;
+}
+.quickLinks span {
+  font-size: 9px;
+  color: #556977;
+  background: #edf3f5;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+.quickLinks button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.arrivalDisclosure {
+  border: 0;
+  border-top: 1px solid #e5edf0;
+  background: #fff;
+}
+.arrivalDisclosure > summary {
+  font-size: 11px;
+  padding: 10px 16px;
+  min-height: 44px;
+  color: #456b7b;
+  background: #fff;
+}
+.barrierCardContainer {
+  padding: 0;
+  background: #fff;
+}
+.barrierHeader[data-empty="true"] {
+  display: none;
+}
+.barrierCardClear {
+  border: 0;
+  padding: 7px 16px;
+  background: #fff;
+}
+.barrierCardClear .barrierMain {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.barrierCardClear .barrierLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: #556977;
+}
+.barrierCardClear .barrierDetail {
+  font-size: 10px;
+  color: #556977;
+  margin: 0;
+}
+.pnGrid {
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.pnGrid > .panel {
+  border-radius: 16px;
+  border: 1px solid #dce5e9;
+  box-shadow: 0 3px 12px #233e5004;
+  overflow: hidden;
+}
+.tabbar {
+  padding: 5px 14px;
+  gap: 4px;
+  background: #fff;
+  border-bottom: 1px solid #e5ebee;
+  align-items: center;
+}
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  min-height: 44px;
+  font-size: 12px;
+  color: #607682;
+  box-shadow: none;
+  font-weight: 550;
+}
+.tabBtn[aria-selected="true"] {
+  background: #e9f3ef;
+  color: #1b675d;
+  box-shadow: none;
+  font-weight: 650;
+}
+.tabNum {
+  font-size: 9px;
+  border-radius: 5px;
+  padding: 1px 4px;
+  background: #f2f6f8;
+  color: #6b8190;
+}
+.tabBtn[aria-selected="true"] .tabNum {
+  background: #d9ebe3;
+  color: #286b5b;
+}
+.nowViewSwitch {
+  background: #f7fafb;
+  border: 0;
+  border-bottom: 1px solid #e8edef;
+  border-radius: 0;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 18px;
+}
+.nowViewSwitch button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 7px 12px;
+  color: #556977;
+  background: transparent;
+}
+.nowViewSwitch button[aria-pressed="true"] {
+  background: #fff;
+  color: #264b5c;
+  box-shadow: 0 2px 6px #274d5f0c;
+}
+.nowViewSwitch > span {
+  display: none;
+}
+.railStatus,
+.railStatus[data-live="true"] {
+  padding: 13px 14px;
+  background: #fbfdfc;
+  border-bottom: 1px solid #e4ece8;
+}
+.railStatus span {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+.railStatus strong {
+  font-size: 16px;
+  margin-top: 5px;
+  letter-spacing: -0.025em;
+  color: #274d60;
+}
+.railStatus p {
+  font-size: 10px;
+  margin-top: 5px;
+  color: #556977;
+}
+.journeyDisclosure > summary {
+  padding: 10px 14px;
+  font-size: 10px;
+  background: #fff;
+  border-bottom: 1px solid #edf1f4;
+}
+.journeyBody {
+  padding: 11px;
+  gap: 10px;
+}
+.journeyBody > [data-patient-tracker-facts],
+.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
+  order: -1;
+  border-top: 0;
+  border-bottom: 1px solid #e4ebee;
+  padding: 0 0 10px;
+}
+.jrn {
+  gap: 0;
+}
+.jIndicatorCol {
+  padding-top: 10px;
+}
+.stageButton {
+  padding: 9px 7px;
+  border-radius: 9px;
+  min-height: 44px;
+}
+.jname {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.jtime {
+  font-size: 9px;
+}
+.jnode {
+  width: 23px;
+  height: 23px;
+  font-size: 10px;
+}
+.jst[data-s="now"] .stageButton {
+  background: #e9f4ee;
+  border-left: 2px solid #358d74;
+  color: #216652;
+}
+.stageChevron {
+  width: 12px;
+  height: 12px;
+}
+.jline {
+  min-height: 10px;
+}
+.legacyTransportDisclosure {
+  margin: 0 20px 18px;
+  border-radius: 10px;
+}
+.recordNotice {
+  font-size: 10px;
+  padding: 7px 16px;
+}
+@media (max-width: 1050px) {
+  .pnGrid {
+    grid-template-columns: 1fr;
+  }
+  .flightIdentity {
+    flex-wrap: wrap;
+  }
+  .headerActions {
+    margin-left: auto;
+  }
+  .liveState {
+    margin-left: auto;
+  }
+  .flightSnapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .flightSnapshot > div:nth-child(2) {
+    border-right: 0;
+  }
+  .railStatus {
+    padding: 10px 14px;
+  }
+  .railStatus p {
+    margin: 0 0 0 auto;
+  }
+  .compactNext {
+    display: block;
+  }
+  .compactNext span {
+    display: block;
+    margin-top: 2px;
+  }
+}
+@media (max-width: 650px) {
+  .scroll {
+    padding: 10px;
+    gap: 10px;
+  }
+  .flightIdentity {
+    padding: 13px 14px;
+    gap: 9px;
+  }
+  .flightIdentity .backBtn {
+    display: none;
+  }
+  .identityText h1 {
+    font-size: 22px;
+  }
+  .avatar {
+    width: 41px;
+    height: 44px;
+  }
+  .liveState {
+    border: 0;
+    padding: 0;
+    text-align: left;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .liveState span {
+    padding: 0;
+    font-size: 9px;
+  }
+  .headerActions {
+    margin: 0;
+    width: 100%;
+  }
+  .headerActions .ctl {
+    flex: 1;
+  }
+  .flightSnapshot {
+    padding: 13px 14px;
+    gap: 12px;
+  }
+  .flightSnapshot strong {
+    font-size: 11px;
+  }
+  .flightSnapshot > div {
+    padding-right: 8px;
+  }
+  .topToolbar {
+    padding: 5px 12px;
+  }
+  .actionControls {
+    display: block;
+  }
+  .compactNext {
+    padding-top: 5px;
+    display: block;
+  }
+  .compactNext span {
+    display: none;
+  }
+  .quickLinks {
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+  .quickLinks button {
+    padding: 6px 0;
+  }
+  .barrierCardClear .barrierDetail {
+    display: none;
+  }
+  .tabbar {
+    padding: 4px 6px;
+    gap: 0;
+    justify-content: space-between;
+  }
+  .tabBtn {
+    padding: 8px 6px;
+    font-size: 10px;
+    gap: 3px;
+  }
+  .tabBtn svg,
+  .tabNum {
+    display: none;
+  }
+  .nowViewSwitch {
+    padding: 6px 12px;
+  }
+  .journeyBody {
+    padding: 12px;
+  }
+}
+.compactNext {
+  text-align: left;
+}
+.compactNext strong,
+.compactNext span {
+  margin: 0;
+}
+.jwhen {
+  font-size: 9px;
+  line-height: 1.4;
+}
+.jnameRow {
+  gap: 2px;
+}
+.jst:not([data-s="now"]) .stageRightCluster .jwhen {
+  display: none;
+}
+.jIndicatorCol {
+  padding-top: 10px;
+}
+.stageButton {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.jline {
+  min-height: 4px;
+}
+.railStatus {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
