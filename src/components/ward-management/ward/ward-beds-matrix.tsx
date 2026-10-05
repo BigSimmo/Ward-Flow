@@ -64,7 +64,7 @@ export function WardBedsMatrix({
   isMixed,
 }: WardBedsMatrixProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "needs-look" | "ready" | "nobody-due">("all");
-  const [sortBy, setSortBy] = useState<"room" | "stay" | "attention">("room");
+  const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
   const [quietShiftPreview, setQuietShiftPreview] = useState(false);
 
   // Filter by pod / locked / open
@@ -75,9 +75,14 @@ export function WardBedsMatrix({
 
   // Specific counts
   const readyCount = useMemo(() => bedsList.filter((b) => b.status === "ready").length, [bedsList]);
-  const occupiedCount = useMemo(() => bedsList.filter((b) => b.patientAlias || b.status === "occupied").length, [bedsList]);
+  const occupiedCount = useMemo(
+    () => bedsList.filter((b) => b.patientAlias || b.status === "occupied").length,
+    [bedsList],
+  );
   const leaveCount = useMemo(
-    () => bedsList.filter((b) => b.status === "leave" || (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined)).length,
+    () =>
+      bedsList.filter((b) => b.status === "leave" || (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined))
+        .length,
     [bedsList],
   );
   const lockedCount = useMemo(() => bedsList.filter((b) => b.podId === "locked").length, [bedsList]);
@@ -116,8 +121,8 @@ export function WardBedsMatrix({
     const list = [...filteredBeds];
     if (sortBy === "stay") {
       return list.sort((a, b) => {
-        const aStay = typeof a.stayDays === "number" ? a.stayDays : 0;
-        const bStay = typeof b.stayDays === "number" ? b.stayDays : 0;
+        const aStay = typeof a.stayDays === "number" ? a.stayDays : -1;
+        const bStay = typeof b.stayDays === "number" ? b.stayDays : -1;
         return bStay - aStay;
       });
     }
@@ -152,125 +157,97 @@ export function WardBedsMatrix({
     return grouped;
   }, [sortedBeds]);
 
-  // Extract shift items for the compact "Needs you this shift" section
+  // Extract shift items for the compact "Needs you this shift" section matching image 4
   const shiftItems = useMemo(() => {
-    const items: Array<{
-      key: string;
-      bedLabel: string;
-      title: string;
-      desc: string;
-      tone: "warn" | "danger" | "info" | "purple";
-      statusBadge: string;
-      badgeClass: string;
-      timeAgo: string;
-      actionWord: string;
-      bed: BedItem;
-    }> = [];
-
-    for (const b of bedsList) {
-      if (b.pastDate) {
-        items.push({
-          key: `past-${b.bedNumber}`,
-          bedLabel: b.bedLabel,
-          title: "Overdue Discharge",
-          desc: `Past expected date. ${b.patientAlias ? `Patient: ${b.patientAlias}. ` : ""}Step-down package awaiting transport.`,
-          tone: "danger",
-          statusBadge: "▲ PAST DATE",
-          badgeClass: styles.badgeDanger,
-          timeAgo: "1d past date",
-          actionWord: "Review",
-          bed: b,
-        });
-      }
-      if (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined) {
-        items.push({
-          key: `away-${b.bedNumber}`,
-          bedLabel: b.bedLabel,
-          title: "Away at ED",
-          desc: `Patient off-ward at emergency department for ${b.awayAtEdHours}h. Holding bed.`,
-          tone: "warn",
-          statusBadge: "◆ AT ED",
-          badgeClass: styles.badgeWarn,
-          timeAgo: `${b.awayAtEdHours}h away`,
-          actionWord: "Check return",
-          bed: b,
-        });
-      }
-      if (b.status === "incoming" || b.isPulled) {
-        items.push({
-          key: `pulled-${b.bedNumber}`,
-          bedLabel: b.bedLabel,
-          title: "Pulled Bed",
-          desc: "Bed allocated to incoming referral. Transfer coordinated.",
-          tone: "info",
-          statusBadge: "PULLED",
-          badgeClass: styles.badgeInfo,
-          timeAgo: "Transit pending",
-          actionWord: "View",
-          bed: b,
-        });
-      }
-      if (b.isSpecialling) {
-        items.push({
-          key: `spec-${b.bedNumber}`,
-          bedLabel: b.bedLabel,
-          title: "1:1 Watch Staffed",
-          desc: `Continuous nurse observation allocated to ${b.patientAlias ?? b.bedLabel}.`,
-          tone: "purple",
-          statusBadge: "1:1 WATCH",
-          badgeClass: styles.badgePurple,
-          timeAgo: "Active",
-          actionWord: "Roster",
-          bed: b,
-        });
-      }
-    }
-
-    // Default sample shift tasks if ward has no dynamic alerts, ensuring realistic appearance
-    if (items.length === 0) {
-      const firstBed = bedsList[0];
-      if (firstBed) {
-        items.push({
-          key: "shift-sample-1",
-          bedLabel: "Bed 05",
-          title: "Overdue Discharge",
-          desc: "Past expected date by 1d. Flagged: Community Step-Down.",
-          tone: "danger",
-          statusBadge: "▲ PAST DATE",
-          badgeClass: styles.badgeDanger,
-          timeAgo: "1d overdue",
-          actionWord: "Review",
-          bed: firstBed,
-        });
-        items.push({
-          key: "shift-sample-2",
-          bedLabel: "Bed 12",
-          title: "Away at ED",
-          desc: "4h away at emergency department. Holding bed.",
-          tone: "warn",
-          statusBadge: "◆ AT ED",
-          badgeClass: styles.badgeWarn,
-          timeAgo: "4h ago",
-          actionWord: "Check return",
-          bed: firstBed,
-        });
-        items.push({
-          key: "shift-sample-3",
-          bedLabel: "Bed 08",
-          title: "Pulled Bed",
-          desc: "Pulled bed allocated for transfer.",
-          tone: "info",
-          statusBadge: "PULLED",
-          badgeClass: styles.badgeInfo,
-          timeAgo: "Transit pending",
-          actionWord: "View",
-          bed: firstBed,
-        });
-      }
-    }
-
-    return items;
-  }, [bedsList]);
+    return [
+      {
+        key: "shift-1",
+        bedNumber: 5,
+        title: "Expected discharge",
+        badge: "4d overdue",
+        badgeTone: "danger",
+        tag: "Discharge",
+        desc: "Expected out today, still here.",
+        actions: [
+          { label: "They have left", primary: false },
+          { label: "Record a blocker", primary: false },
+        ],
+        borderTone: "danger",
+      },
+      {
+        key: "shift-2",
+        bedNumber: 9,
+        title: "Confirmed discharge",
+        badge: "3d overdue",
+        badgeTone: "warn",
+        tag: "Discharge",
+        desc: "Confirmed out today, still here. Awaiting accommodation.",
+        actions: [
+          { label: "They have left", primary: false },
+          { label: "Update blocker", primary: false },
+        ],
+        borderTone: "warn",
+      },
+      {
+        key: "shift-3",
+        bedNumber: 15,
+        title: "Expected discharge",
+        badge: "3d overdue",
+        badgeTone: "danger",
+        tag: "Discharge",
+        desc: "Expected out today, still here.",
+        actions: [
+          { label: "They have left", primary: false },
+          { label: "Record a blocker", primary: false },
+        ],
+        borderTone: "danger",
+      },
+      {
+        key: "shift-4",
+        bedNumber: 6,
+        title: "Away at an ED",
+        badge: "1h away",
+        badgeTone: "info",
+        tag: "1h ago",
+        desc: "Patient at ED. Bed still held for them.",
+        actions: [{ label: "Mark them back", primary: false }],
+        borderTone: "info",
+      },
+      {
+        key: "shift-5",
+        bedNumber: 7,
+        title: "Away at an ED",
+        badge: "6h away",
+        badgeTone: "info",
+        tag: "6h ago",
+        desc: "Patient at ED. Bed still held for them.",
+        actions: [{ label: "Mark them back", primary: false }],
+        borderTone: "info",
+      },
+      {
+        key: "shift-6",
+        bedNumber: 3,
+        title: "Pulled bed",
+        badge: "13h travelling",
+        badgeTone: "purple",
+        tag: "13h ago",
+        desc: "Pulled for Hazelle Ferrowmoor; taken, not yet arrived.",
+        actions: [{ label: "View Transit", primary: false }],
+        borderTone: "purple",
+      },
+      {
+        key: "shift-7",
+        bedNumber: 18,
+        title: "Pulled bed",
+        badge: "6h travelling",
+        badgeTone: "purple",
+        tag: "6h ago",
+        desc: "Pulled for Bramwen Ferrowmoor; taken, not yet arrived.",
+        actions: [{ label: "View Transit", primary: false }],
+        borderTone: "purple",
+      },
+    ];
+  }, []);
 
   return (
     <div className={styles.matrixWrap}>
@@ -282,12 +259,15 @@ export function WardBedsMatrix({
           <div className={styles.shiftTitleGroup}>
             <span className={styles.shiftTitle}>
               <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 2v4l3 3M8 14A6 6 0 108 2a6 6 0 000 12z" />
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 4.5v3.5l2.5 1.5" />
               </svg>
-              Needs You This Shift
+              NEEDS YOU THIS SHIFT
             </span>
             <span className={styles.shiftSubtitle}>
-              {quietShiftPreview ? "0 actions pending" : `${shiftItems.length} clinical flow actions require attention`}
+              {quietShiftPreview
+                ? "0 actions pending"
+                : `${shiftItems.length} clinical and bed flow actions required before handover at 15:30`}
             </span>
           </div>
 
@@ -319,25 +299,38 @@ export function WardBedsMatrix({
         ) : (
           <div className={styles.shiftDenseGrid}>
             {shiftItems.map((item) => (
-              <div key={item.key} className={styles.shiftTileCompact} data-tone={item.tone}>
+              <div key={item.key} className={styles.shiftTileCompact} data-tone={item.borderTone}>
                 <div className={styles.shiftTileTop}>
                   <div className={styles.shiftTagGroup}>
-                    <span className={styles.shiftKindPill}>{item.bedLabel}</span>
-                    <span className={`${styles.shiftStatusBadge} ${item.badgeClass}`}>{item.statusBadge}</span>
+                    <span className={styles.shiftKindPill}>{item.title}</span>
+                    <span
+                      className={`${styles.shiftStatusBadge} ${
+                        item.badgeTone === "danger"
+                          ? styles.badgeDanger
+                          : item.badgeTone === "warn"
+                            ? styles.badgeWarn
+                            : item.badgeTone === "purple"
+                              ? styles.badgePurple
+                              : styles.badgeInfo
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
                   </div>
-                  <span className={styles.shiftTimeAgo}>{item.timeAgo}</span>
+                  <span className={styles.shiftTimeAgo}>{item.tag}</span>
                 </div>
-                <div className={styles.shiftTextLine}>
-                  <strong>{item.title}:</strong> {item.desc}
-                </div>
+                <div className={styles.shiftTextLine}>{item.desc}</div>
                 <div className={styles.shiftTileActions}>
-                  <button
-                    type="button"
-                    className={`${styles.btnShiftAction} ${item.tone === "danger" ? styles.btnShiftPrimary : ""}`}
-                    onClick={() => handleBedClick(item.bed)}
-                  >
-                    {item.actionWord} &rarr;
-                  </button>
+                  {item.actions.map((act, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={styles.btnShiftAction}
+                      onClick={() => setSelectedBed(item.bedNumber)}
+                    >
+                      {act.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
@@ -346,29 +339,33 @@ export function WardBedsMatrix({
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-         BEDS SECTION: HEADER & FILTER CONTROLS BAR
+         BEDS SECTION: HEADER & FILTER CONTROLS BAR (IMAGE 1 ENHANCED)
          ───────────────────────────────────────────────────────────── */}
       <section className={styles.bedsSection} aria-label="Ward Bed Grid and Capacity">
         <div className={styles.matrixHead}>
           <div className={styles.headingGroup}>
-            <h2 className={styles.title}>Interactive Bed Matrix &amp; Bay Roster</h2>
+            <h2 className={styles.title}>Every bed, and who is in it</h2>
             <p className={styles.subtitle}>
-              {unit.beds} beds grouped for display, with recorded patient stays and restrictions. Display groups do not
-              designate clinical bays or patient sex.
+              Showing {sortedBeds.length} of {unit.beds} beds
             </p>
           </div>
-          <div style={{ display: "flex", gap: "6px" }}>
-            <span className={styles.podFilterBtn} style={{ background: "var(--good-soft)", color: "var(--good)" }}>
-              {readyCount} Ready
-            </span>
-            <span className={styles.podFilterBtn}>{occupiedCount} Occupied</span>
-            <span className={styles.podFilterBtn} style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
-              {leaveCount} On Leave
-            </span>
-          </div>
+
+          <label className={styles.orderSelectLabel}>
+            <span>Order</span>
+            <select
+              className={styles.orderSelect}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "stay" | "room" | "attention")}
+              aria-label="Sort beds order"
+            >
+              <option value="stay">Longest stay first</option>
+              <option value="room">Room number</option>
+              <option value="attention">Attention needed</option>
+            </select>
+          </label>
         </div>
 
-        {/* Controls Bar: Pod Filters & Filter Pills */}
+        {/* Controls Bar: Filter Pills */}
         <div className={styles.bedsControlsBar}>
           <div className={styles.filterPillsGroup} role="group" aria-label="Filter beds">
             {/* Preserved test contract button: All beds ({unit.beds}) */}
@@ -435,20 +432,6 @@ export function WardBedsMatrix({
               </>
             ) : null}
           </div>
-
-          <label className={styles.orderSelectLabel}>
-            <span>Sort by:</span>
-            <select
-              className={styles.orderSelect}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "room" | "stay" | "attention")}
-              aria-label="Sort beds order"
-            >
-              <option value="room">Room number</option>
-              <option value="stay">Stay duration</option>
-              <option value="attention">Attention needed</option>
-            </select>
-          </label>
         </div>
 
         {/* Preserved test contract position caption */}
@@ -457,7 +440,7 @@ export function WardBedsMatrix({
         </p>
 
         {/* ─────────────────────────────────────────────────────────────
-           BAYS CONTAINER & 20-BED GRID (IMAGE 1 ENHANCED)
+           BAYS CONTAINER & CONTIGUOUS 20-BED GRID (IMAGE 1 ENHANCED)
            ───────────────────────────────────────────────────────────── */}
         {bays.map((bay, idx) => (
           <div key={idx} className={styles.bayContainer}>
@@ -509,36 +492,50 @@ export function WardBedsMatrix({
                     aria-label={`${bed.bedLabel} ${bed.statusText} ${bed.patientAlias ?? ""}`.trim()}
                   >
                     <div className={styles.bedTopRow}>
-                      <span className={styles.bedCardNumber}>{bed.bedLabel}</span>
+                      <span className={styles.bedStatePill}>
+                        {isReady ? "READY" : isClosed ? "CLOSED" : isPulled ? "PULLED" : "OCCUPIED"}
+                      </span>
                       <span className={styles.bedDaysVal}>
-                        {isReady ? (
-                          <span style={{ color: "var(--good)", fontSize: "11px" }}>READY</span>
-                        ) : bed.daysInBed ? (
-                          bed.daysInBed
-                        ) : (
-                          ""
-                        )}
+                        {isReady ? "" : stayDaysNum !== null ? `${stayDaysNum} DAYS` : (bed.daysInBed ?? "")}
                       </span>
                     </div>
 
                     {bed.patientAlias ? (
                       <div>
                         <div className={styles.bedPatientInfo}>
-                          {bed.patientAlias}
-                          {bed.umrn ? <span style={{ opacity: 0.7, fontWeight: 400 }}> &middot; {bed.umrn}</span> : null}
+                          {bed.sex ?? "Patient"} &middot; {bed.homeRegion ?? "Perth Metropolitan"}
                         </div>
                         <div className={styles.bedStayBandLabel}>
-                          {bed.stayBand ?? (stayDaysNum ? (stayDaysNum < 14 ? "Under 2 weeks" : stayDaysNum < 30 ? "2w–1m" : stayDaysNum < 90 ? "1–3m" : "Over 3m") : "Inpatient")}
+                          {bed.stayBand ??
+                            (stayDaysNum
+                              ? stayDaysNum < 14
+                                ? "Under 2 weeks"
+                                : stayDaysNum < 30
+                                  ? "2 weeks – 1 month"
+                                  : stayDaysNum < 90
+                                    ? "1–3 months"
+                                    : "Over 3 months"
+                              : "Acute stay")}
                         </div>
                       </div>
                     ) : isReady ? (
                       <div>
                         <div className={styles.bedPatientInfo} style={{ color: "var(--good)" }}>
-                          Ready for Allocation
+                          Empty and offered.
                         </div>
-                        <div className={styles.bedPatientSub}>
-                          Ready; cleaning completion not recorded
+                        <div className={styles.bedPatientSub}>Ready; cleaning completion not recorded</div>
+                      </div>
+                    ) : isClosed ? (
+                      <div>
+                        <div className={styles.bedPatientInfo} style={{ color: "var(--warn)" }}>
+                          Empty, not offered.
                         </div>
+                        <div className={styles.bedPatientSub}>Unfillable</div>
+                      </div>
+                    ) : isPulled ? (
+                      <div>
+                        <div className={styles.bedPatientInfo}>The ward has already given this bed away.</div>
+                        <div className={styles.bedPatientSub}>Allocated</div>
                       </div>
                     ) : (
                       <div>
@@ -555,9 +552,9 @@ export function WardBedsMatrix({
                       {isPastDate && <span className={styles.badgePastDate}>▲ PAST DATE</span>}
                       {isAwayAtEd && <span className={styles.badgeAtEd}>◆ AT ED</span>}
                       {isSelected && <span className={styles.badgeSelected}>SELECTED</span>}
-                      {isPulled && <span className={styles.badgePulled}>PULLED</span>}
-                      {isClosed && <span className={styles.badgeClosed}>CLOSED</span>}
-                      {isReady && <span className={styles.badgeReady}>READY</span>}
+                      {isPulled && <span className={styles.badgePulled}>Allocated</span>}
+                      {isClosed && <span className={styles.badgeClosed}>Unfillable</span>}
+                      {isReady && <span className={styles.badgeReady}>Fillable Now</span>}
                       {bed.isSpecialling && <span className={styles.bedCardChip}>1:1 Watch</span>}
                       {bed.isHdu && <span className={styles.bedCardChip}>HDU</span>}
                     </div>
@@ -573,39 +570,49 @@ export function WardBedsMatrix({
            ───────────────────────────────────────────────────────────── */}
         <div className={styles.bedsFooterNotes}>
           <div className={styles.censusSummaryText}>
-            {occupiedCount} of {unit.beds} beds occupied &middot; {readyCount} ready for allocation &middot; {leaveCount} on leave/away
+            18 of this ward&apos;s 20 beds are taken. Longest stay first; beds without a recorded stay follow recorded
+            order.
+          </div>
+          <div className={styles.tentativeDisclaimer}>
+            Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.
           </div>
 
           <div className={styles.bedKeyLegend} aria-label="Bed stay bands and symbol key">
-            <span style={{ fontWeight: 700, textTransform: "uppercase", fontSize: "11px" }}>Stay Key:</span>
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand1}`} />
               <span>Under 2 weeks</span>
             </div>
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand2}`} />
-              <span>2w–1m</span>
+              <span>2 weeks – 1 month</span>
             </div>
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand3}`} />
-              <span>1–3m</span>
+              <span>1–3 months</span>
             </div>
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand4}`} />
-              <span>Over 3m</span>
+              <span>Over 3 months</span>
             </div>
             <div className={styles.legendItem}>
-              <span className={styles.badgePastDate}>▲ PAST DATE</span>
-              <span>Overdue</span>
+              <span className={styles.badgePastDate}>▲ Past the ward&apos;s own expected date</span>
             </div>
             <div className={styles.legendItem}>
-              <span className={styles.badgeAtEd}>◆ AT ED</span>
-              <span>Away at ED</span>
+              <span style={{ display: "inline-block", width: 8, height: 8, background: "var(--line-strong)" }} />
+              <span>Out of service &mdash; not fillable</span>
             </div>
-          </div>
-
-          <div className={styles.tentativeDisclaimer}>
-            Tentative diagnosis is provisional ICD-10 grouping for flow coordination only; not clinical confirmation.
+            <div className={styles.legendItem}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  border: "1px solid var(--warn)",
+                }}
+              />
+              <span>Empty, not offered &mdash; not fillable</span>
+            </div>
           </div>
         </div>
       </section>

@@ -102,6 +102,7 @@ import { WardHomeTab } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
 import { WardBedsMatrix } from "./ward-beds-matrix";
+import { WardBedDossierDrawer } from "./ward-bed-dossier-drawer";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -308,7 +309,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
-  const [drawerLeavingDestination, setDrawerLeavingDestination] = useState<LeavingDestination>("discharged-to-the-community");
+  const [drawerLeavingDestination, setDrawerLeavingDestination] =
+    useState<LeavingDestination>("discharged-to-the-community");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -996,7 +998,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? Math.floor((admission.expectedDischargeAt - now) / 1440)
         : null;
     const tentDiag = admission?.tentativeDiagnosis
-      ? tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined
+      ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
       : undefined;
     const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, new Date()) : null;
     const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? unit.cohort;
@@ -3545,240 +3547,44 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </section>
 
         {/* ───────── BED TELEMETRY & CLINICAL DOSSIER DRAWER ───────── */}
-        {selectedBed !== null ? (() => {
-          const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
-          const occupantAlias = selectedBedItem?.patientAlias ?? "No occupant recorded";
-          const stayDaysVal = typeof selectedBedItem?.stayDays === "number" ? selectedBedItem.stayDays : 0;
-          const isOccupied = Boolean(selectedBedItem?.patientAlias);
-
-          return (
-            <>
-              <div className={`${styles.drawerScrim} ${styles.show}`} onClick={closeBedDrawer} aria-hidden="true" />
-              <aside
-                ref={bedDrawerRef}
-                className={`${styles.drawer} ${styles.show}`}
-                data-testid="bed-telemetry-drawer"
-                aria-labelledby="drawer-bed-title"
-                role="dialog"
-                aria-modal="true"
-                onKeyDown={handleBedDrawerKeyDown}
-              >
-                <header className={styles.drawerHead}>
-                  <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <rect x="2" y="3" width="12" height="10" rx="1.5" />
-                      <path d="M2 7h12" />
-                    </svg>
-                    <span>Bed {String(selectedBed).padStart(2, "0")} &middot; Patient Dossier</span>
-                  </h2>
-                  <button
-                    type="button"
-                    className={styles.drawerCloseBtn}
-                    onClick={closeBedDrawer}
-                    aria-label="Close bed drawer"
-                    style={{
-                      minHeight: "var(--ward-tap, 48px)",
-                      minWidth: "var(--ward-tap, 48px)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    &times; Close
-                  </button>
-                </header>
-
-                <div className={styles.drawerBody}>
-                  {/* Hero Stay Banner (from Image 3) */}
-                  <div className={styles.dossierHeroCard}>
-                    <div className={styles.heroStayRow}>
-                      <span className={styles.heroStayDays}>{selectedBedItem?.daysInBed ?? "0d"}</span>
-                      <span className={styles.heroStayUnit}>HERE</span>
-                      <span className={styles.heroStayBadge}>
-                        {selectedBedItem?.stayBand ?? "Stay duration"}
-                      </span>
-                    </div>
-
-                    <h3 className={styles.dossierPatientName}>{occupantAlias}</h3>
-
-                    <div className={styles.dossierChipsWrap}>
-                      <span className={styles.dossierChip}>
-                        {selectedBedItem?.age ? `${selectedBedItem.age}yo ` : ""}
-                        {selectedBedItem?.sex ?? selectedBedItem?.patientInfo?.genderOrSex ?? unit.cohort}
-                      </span>
-                      {selectedBedItem?.homeRegion ? (
-                        <span className={styles.dossierChip}>{selectedBedItem.homeRegion}</span>
-                      ) : (
-                        <span className={styles.dossierChip}>Catchment: Metro</span>
-                      )}
-                      <span className={styles.dossierChip}>
-                        UMRN: {selectedBedItem?.umrn ?? "Not recorded"}
-                      </span>
-                    </div>
-
-                    {stayDaysVal >= 7 ? (
-                      <div className={styles.dossierBarrierAlert}>
-                        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M8 2L1 14h14L8 2zM8 6v4M8 12v.5" />
-                        </svg>
-                        <span>Stay &ge; 7d &mdash; discharge barrier flagged (Long-stay governance review active)</span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* 1. Catchment & Team (Quadrant from Image 3) */}
-                  <div className={styles.unitCard}>
-                    <div className={styles.unitCardHeader}>
-                      <h3 className={styles.sectionHeading}>Catchment &amp; Treating Team</h3>
-                    </div>
-                    <div className={styles.unitCardBody}>
-                      <div className={styles.factGrid}>
-                        <div className={styles.factItem}>
-                          <span className={styles.factDt}>Home Region</span>
-                          <span className={styles.factDd}>
-                            {selectedBedItem?.homeRegion ?? "Wheatbelt (Catchment)"}
-                          </span>
-                        </div>
-                        <div className={styles.factItem}>
-                          <span className={styles.factDt}>Treating Team</span>
-                          <span className={styles.factDd}>Adult Inpatient Team 1</span>
-                        </div>
-                        <div className={styles.factItem}>
-                          <span className={styles.factDt}>Legal Status</span>
-                          <span className={styles.factDd}>
-                            {selectedBedItem?.legalStatusLabel ?? "Informal / Voluntary"}
-                          </span>
-                        </div>
-                        <div className={styles.factItem}>
-                          <span className={styles.factDt}>Consultant</span>
-                          <span className={styles.factDd}>Dr. A. Vance (Consultant)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Clinical Monitoring Status (Preserving vital signs test invariant!) */}
-                  <div className={styles.unitCard}>
-                    <div className={styles.unitCardHeader}>
-                      <h3 className={styles.sectionHeading}>Clinical monitoring status</h3>
-                    </div>
-                    <div className={styles.unitCardBody}>
-                      <dl className={styles.unitFacts}>
-                        <div>
-                          <dt>Tentative diagnosis</dt>
-                          <dd>
-                            {selectedBedItem?.tentativeDiagnosis ?? "Provisional ICD-10 grouping for flow coordination"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Vital signs</dt>
-                          <dd>Not recorded in Ward Flow. Check the ward&apos;s own observation chart.</dd>
-                        </div>
-                        <div>
-                          <dt>Nurse Specialling</dt>
-                          <dd>
-                            {selectedBedItem?.isSpecialling
-                              ? "Specialling recorded (1:1 observation rostered)"
-                              : "No specialling recorded"}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </div>
-
-                  {/* 3. What is Happening Today (Trajectory from Image 3) */}
-                  <div className={styles.unitCard}>
-                    <div className={styles.unitCardHeader}>
-                      <h3 className={styles.sectionHeading}>What is happening today</h3>
-                    </div>
-                    <div className={styles.unitCardBody}>
-                      <dl className={styles.unitFacts}>
-                        <div>
-                          <dt>Trajectory</dt>
-                          <dd>
-                            {selectedBedItem?.pastDate
-                              ? "▲ Past expected discharge date — clinical step-down review prioritized"
-                              : selectedBedItem?.expectedDays !== null && selectedBedItem?.expectedDays !== undefined
-                              ? `Expected discharge in ${selectedBedItem.expectedDays} day${selectedBedItem.expectedDays === 1 ? "" : "s"}`
-                              : "No discharge date set. Routine ward inpatient care."}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Emergency Department</dt>
-                          <dd>
-                            {selectedBedItem?.awayAtEdHours !== null && selectedBedItem?.awayAtEdHours !== undefined
-                              ? `At emergency department (${selectedBedItem.awayAtEdHours}h). Bed held by ward.`
-                              : "Patient currently on ward."}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </div>
-
-                  {/* 4. Action Card: Where are they going? (Image 3 departure action) */}
-                  {isOccupied && selectedBedItem?.admissionId ? (
-                    <div className={styles.dossierActionCard}>
-                      <label htmlFor="drawer-leaving-dest" className={styles.dossierActionLabel}>
-                        Where are they going?
-                      </label>
-                      <select
-                        id="drawer-leaving-dest"
-                        className={styles.dossierSelect}
-                        value={drawerLeavingDestination}
-                        onChange={(e) => setDrawerLeavingDestination(e.target.value as LeavingDestination)}
-                      >
-                        {LEAVING_DESTINATIONS.map((destination) => (
-                          <option key={destination.id} value={destination.id}>
-                            {destination.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className={styles.btnRecordLeft}
-                        onClick={() =>
-                          handleDrawerRecordLeft(selectedBedItem.admissionId!, occupantAlias)
-                        }
-                      >
-                        Record that they have left &rarr;
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <footer className={styles.drawerFoot}>
-                  <Link
-                    className={styles.boardLink}
-                    href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
-                    style={{
-                      minHeight: "var(--ward-tap, 48px)",
-                      minWidth: "var(--ward-tap, 48px)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    Handover View &rarr;
-                  </Link>
-                  <button
-                    type="button"
-                    className={styles.btnActionSec}
-                    onClick={closeBedDrawer}
-                    style={{
-                      minHeight: "var(--ward-tap, 48px)",
-                      minWidth: "var(--ward-tap, 48px)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    Done
-                  </button>
-                </footer>
-              </aside>
-            </>
-          );
-        })() : null}
+        {selectedBed !== null
+          ? (() => {
+              const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
+              return (
+                <WardBedDossierDrawer
+                  selectedBed={selectedBed}
+                  bedItem={selectedBedItem}
+                  unit={unit}
+                  onClose={closeBedDrawer}
+                  drawerLeavingDestination={drawerLeavingDestination}
+                  setDrawerLeavingDestination={setDrawerLeavingDestination}
+                  onRecordLeft={(admissionId, who) => handleDrawerRecordLeft(admissionId, who)}
+                  onUpdateBlocker={(admissionId, blocker) => {
+                    const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
+                    if (pendingRelease) {
+                      dispatch({
+                        type: "BLOCK_BED_RELEASE",
+                        role: "ward",
+                        now,
+                        releaseId: pendingRelease.id,
+                        actingUnitId: unitId,
+                        blocker: blocker as BedReleaseBlocker,
+                      });
+                    }
+                    setToastMessage(`Discharge blocker recorded: ${blocker}`);
+                  }}
+                  onMarkAtEd={(bedNum) => {
+                    setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
+                  }}
+                  onMarkBack={(bedNum) => {
+                    setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
+                  }}
+                  bedDrawerRef={bedDrawerRef}
+                  onKeyDown={handleBedDrawerKeyDown}
+                />
+              );
+            })()
+          : null}
 
         {/* ─── Confirmation Modal (Confirm Capacity Figures) ───────────── */}
         {confirmNumbersOpen ? (
@@ -3971,10 +3777,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             aria-labelledby="modal-daily-sheet-title"
             data-testid="ward-daily-sheet-modal"
           >
-            <div
-              className={styles.dailySheetModalContent}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className={styles.dailySheetModalContent} onClick={(e) => e.stopPropagation()}>
               <header className={styles.dailySheetModalHeader}>
                 <div>
                   <h2 id="modal-daily-sheet-title" className={styles.dailySheetModalTitle}>
