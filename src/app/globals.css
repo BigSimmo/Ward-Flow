@@ -342,6 +342,11 @@
   --rail-width: 480px;
   --content-width-catalogue: 76rem;
 
+  /* The Figures feature keeps its navy surface in either theme. */
+  --surface-feature-start: #203b55;
+  --surface-feature-end: #365873;
+  --surface-feature-ink: #f4f8fc;
+
   /* Clinical White: true-neutral graphite-to-ash ramp (de-blued). */
   --neutral-0: #ffffff;
   --neutral-50: #f7f8fa;
@@ -724,6 +729,9 @@
 }
 
 .dark {
+  --surface-feature-start: #203b55;
+  --surface-feature-end: #365873;
+  --surface-feature-ink: #f4f8fc;
   /* Dark neutral ramp (inverted): black-polish canvas to near-white ink. */
   --neutral-0: #060708;
   --neutral-50: #0b0d0f;

@@ -319,6 +319,9 @@ function WardReferralDrawerContent({
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<"patient" | "referral" | "clinical" | "placement">("patient");
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const sectionId = useId();
   const [selectedDestUnitId, setSelectedDestUnitId] = useState<string | null>(null);
   const [expandedGates, setExpandedGates] = useState<Record<string, boolean>>({});
   function toggleGates(unitId: string) {
@@ -412,7 +415,9 @@ function WardReferralDrawerContent({
     }
   }, [isSearchOpen, onClose]);
 
-  useWardModalFocus(true, drawerRef, handleDrawerClose);
+  // The enclosing Sheet owns focus when embedded. Register another modal only
+  // when this drawer supplies its own backdrop.
+  useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -423,7 +428,8 @@ function WardReferralDrawerContent({
           document.activeElement?.tagName !== "SELECT"
         ) {
           e.preventDefault();
-          searchInputRef.current?.focus();
+          setActiveSection("patient");
+          requestAnimationFrame(() => searchInputRef.current?.focus());
           setIsSearchOpen(true);
         }
       }
@@ -598,21 +604,26 @@ function WardReferralDrawerContent({
       <div
         ref={drawerRef}
         className={styles.drawerWide}
-        role="dialog"
-        aria-modal="true"
+        role={withBackdrop ? "dialog" : "complementary"}
+        aria-modal={withBackdrop ? true : undefined}
         aria-labelledby="referralDrawerTitle"
+        onKeyDownCapture={(event) => {
+          if (event.key === "Escape" && isSearchOpen) {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsSearchOpen(false);
+            setSearchQuery("");
+          }
+        }}
       >
         <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className={styles.dragHandle} aria-hidden="true" />
           <div className={styles.drawerHeadTop}>
             <div className={styles.drawerHeadLeft}>
               <h2 className={styles.drawerTitle} id="referralDrawerTitle">
-                <span>Raise Clinical Referral</span>
-                <span
-                  className="badgePill"
-                  data-testid="ward-referral-drawer-category-badge"
-                  style={{ color: "var(--accent)", fontWeight: 700 }}
-                >
+                <Send className={styles.headingIcon} aria-hidden="true" />
+                <span>Referrals</span>
+                <span className={styles.categoryBadge} data-testid="ward-referral-drawer-category-badge">
                   {destType === "community"
                     ? "Community Referral"
                     : destType === "ed"
@@ -620,9 +631,7 @@ function WardReferralDrawerContent({
                       : "Ward Referral"}
                 </span>
               </h2>
-              <div className={styles.drawerSubhead}>
-                Statewide Psychiatric Bed Placement &amp; Inpatient Triage Engine
-              </div>
+              <div className={styles.drawerSubhead}>Patient details, referral draft and live placement options.</div>
             </div>
             <button
               type="button"
@@ -636,834 +645,860 @@ function WardReferralDrawerContent({
           </div>
         </div>
 
-        <div className={styles.drawerBody}>
-          {/* 1. PATIENT SELECTION & CLINICAL IDENTITY DOSSIER */}
-          <section className={styles.refCard}>
-            <div className={styles.refCardHead}>
-              <h3 className={styles.refCardTitle}>
-                <User aria-hidden="true" style={{ width: 14, height: 14 }} />
-                <span>1. Patient Selection &amp; Clinical Identity Dossier</span>
-              </h3>
-              <div className={styles.refCardHeadActions}>
-                <span className="badgePill">Search sample patients</span>
-                <Link
-                  href="/mockups/ward-flow/referrals/new"
-                  className={styles.newReferralLink}
-                  onClick={onClose}
-                  title="Open full page referral intake"
-                >
-                  <Plus aria-hidden="true" style={{ width: 12, height: 12 }} />
-                  <span>New Patient Intake</span>
-                </Link>
-              </div>
-            </div>
-
-            <div className={styles.patientSearchWrap}>
-              <Search className={styles.patientSearchIcon} aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                id={searchId}
-                className={styles.patientSearchInput}
-                placeholder="Search sample patients by name, UMRN or DOB..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => {
-                  if (searchQuery.trim().length > 0) setIsSearchOpen(true);
-                }}
-                autoComplete="off"
-                spellCheck="false"
-              />
-              {searchQuery ? (
-                <button
-                  type="button"
-                  className={styles.patientSearchClear}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setIsSearchOpen(false);
-                  }}
-                  aria-label="Clear search input"
-                >
-                  <X aria-hidden="true" style={{ width: 12, height: 12 }} />
-                </button>
-              ) : null}
-              <kbd className={styles.patientSearchKbd}>/</kbd>
-
-              {/* Sample patient search results */}
-              {isSearchOpen && filteredPatients.length > 0 ? (
-                <div className={styles.patientSearchResults} role="listbox" aria-label="Matching sample patients">
-                  {filteredPatients.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      role="option"
-                      aria-selected={activePatientKey === p.id}
-                      className={styles.patientSearchResultItem}
-                      data-active={activePatientKey === p.id}
-                      onClick={() => handleSelectPatient(p.id)}
-                    >
-                      <div>
-                        <div className={styles.searchResultName}>
-                          {p.name} ({ageSexLabel(p)})
-                        </div>
-                        <div className={styles.searchResultMeta}>
-                          UMRN: {p.umrn} · DOB: {p.dob} · {p.origin.split("·")[0].trim()}
-                        </div>
-                      </div>
-                      <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Prominent Selected Patient Identity Banner Card */}
-            <div className={styles.patientBannerCard}>
-              <div className={styles.patientBannerHead}>
-                <div className={styles.patientBannerProfile}>
-                  <div className={styles.patientBannerAvatar}>{currentPatient.initials}</div>
-                  <div className={styles.patientBannerIdentity}>
-                    <div className={styles.patientBannerName}>
-                      {currentPatient.name} ({ageSexLabel(currentPatient)})
-                    </div>
-                    <div className={styles.patientBannerSub}>
-                      UMRN: {currentPatient.umrn} · DOB: {currentPatient.dob} · Medicare: {currentPatient.medicare}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className={styles.patientSwitchBtn}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setIsSearchOpen(true);
-                    searchInputRef.current?.focus();
-                  }}
-                >
-                  <span>Switch</span>
-                </button>
-              </div>
-
-              {/* Structured Clinical Priority Grid (Rule 5: Legal Order -> Clinical Acuity -> Bed Compatibility) */}
-              <div className={styles.triagePriorityGrid} role="region" aria-label="Clinical Priority Grid">
-                {/* 1. Legal Order */}
-                <div className={`${styles.triagePriorityCard} ${styles.legalOrderPillar}`}>
-                  <div className={styles.triagePillarHead}>
-                    <span className={styles.triagePillarTitle}>
-                      <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
-                      <span>Legal Order</span>
-                    </span>
-                    <span className={styles.triagePillarBadge} data-tone="default">
-                      Statutory
-                    </span>
-                  </div>
-                  <div className={styles.triagePillarBody}>
-                    <div className={styles.triagePillarPrimary}>{currentPatient.legalStatus}</div>
-                    <div className={styles.statutoryRecordedTime}>
-                      <div className={styles.statutoryExpiryLine}>
-                        <span className={styles.triageMetaLabel}>Expiry:</span>
-                        <strong>{currentPatient.recordedExpiry}</strong>
-                      </div>
-                      <LegalLimitsNotChecked variant="tag" />
-                    </div>
-                    <div className={styles.triagePillarFoot}>Order status: {legalStatus} compliance</div>
-                  </div>
-                </div>
-
-                {/* 2. Clinical Acuity */}
-                <div className={`${styles.triagePriorityCard} ${styles.clinicalAcuityPillar}`}>
-                  <div className={styles.triagePillarHead}>
-                    <span className={styles.triagePillarTitle}>
-                      <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
-                      <span>Clinical Acuity</span>
-                    </span>
-                    <span
-                      className={styles.triagePillarBadge}
-                      data-tone={urgency === "1" ? "danger" : urgency === "2" ? "warn" : "default"}
-                    >
-                      {urgency ? `Tier ${urgency}` : "Not recorded"}
-                    </span>
-                  </div>
-                  <div className={styles.triagePillarBody}>
-                    <div className={styles.triagePillarPrimary}>
-                      <span className={styles.triageScoreLabel}>Urgency:</span>
-                      <span className={styles.triagePriorityScore}>
-                        {/* The recorded tier only, as in the urgency list: no typed hour window (D-22). */}
-                        {(() => {
-                          const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
-                          return tier === undefined ? "Not recorded" : urgencyTierLabel(tier);
-                        })()}
-                      </span>
-                    </div>
-                    <div className={styles.triageDiagSub}>
-                      Diag: <em>{provisionalDiag || "Not recorded"}</em>
-                    </div>
-                    <div className={styles.triageAcuityTags}>
-                      {riskFlags.aggression && (
-                        <span className={styles.acuityRiskBadge} data-risk="high">
-                          Aggression Risk
-                        </span>
-                      )}
-                      {riskFlags.suicide && (
-                        <span className={styles.acuityRiskBadge} data-risk="high">
-                          Suicide / Self-Harm Risk
-                        </span>
-                      )}
-                      {riskFlags.absconding && (
-                        <span
-                          className={styles.acuityRiskBadge}
-                          data-risk={currentPatient.legalStatus.startsWith("Form") ? "high" : "medium"}
-                        >
-                          Absconding Risk
-                        </span>
-                      )}
-                      {riskFlags.vulnerable && (
-                        <span className={styles.acuityRiskBadge} data-risk="medium">
-                          Vulnerable
-                        </span>
-                      )}
-                      {riskFlags.medical && (
-                        <span className={styles.acuityRiskBadge} data-risk="medium">
-                          Medical
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Bed Compatibility */}
-                <div className={`${styles.triagePriorityCard} ${styles.bedCompatibilityPillar}`}>
-                  <div className={styles.triagePillarHead}>
-                    <span className={styles.triagePillarTitle}>
-                      <Lock aria-hidden="true" style={{ width: 13, height: 13 }} />
-                      <span>Bed Compatibility</span>
-                    </span>
-                    <span className={styles.triagePillarBadge} data-tone={security === "Secure" ? "warn" : "default"}>
-                      {security} Unit
-                    </span>
-                  </div>
-                  <div className={styles.triagePillarBody}>
-                    <div className={styles.triagePillarPrimary}>
-                      {currentPatient.cohort} · {security} Ward
-                    </div>
-                    <div className={styles.triageCompatSub}>Origin: {currentPatient.origin.split("·")[0].trim()}</div>
-                    <div className={styles.triageBedAvailability}>
-                      <span className={styles.triageBedCount}>{realTimeMatch.pillText}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Pre-Admission Medical Clearance Checkpoint */}
-                <div
-                  className={`${styles.triagePriorityCard} ${styles.medicalClearancePillar}`}
-                  data-testid="ward-referral-medical-clearance-card"
-                >
-                  <div className={styles.triagePillarHead}>
-                    <span className={styles.triagePillarTitle}>
-                      <ShieldCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
-                      <span>Medical Clearance</span>
-                    </span>
-                    <span
-                      className={styles.triagePillarBadge}
-                      data-tone={isMedicalCleared ? "good" : "warn"}
-                      data-testid="ward-referral-clearance-status"
-                    >
-                      {isMedicalCleared ? "Cleared" : "Pending"}
-                    </span>
-                  </div>
-                  <div className={styles.triagePillarBody}>
-                    <div className={styles.triagePillarPrimary}>
-                      {isMedicalCleared ? "Fit for Admission & Travel" : "Awaiting Medical Signoff"}
-                    </div>
-                    <div className={styles.triageCompatSub}>
-                      {isMedicalCleared ? "Signed off for inpatient transfer" : "Pre-admission medical exam required"}
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                      <button
-                        type="button"
-                        className={styles.medicalClearanceToggleBtn}
-                        style={{
-                          backgroundColor: isMedicalCleared ? "#ecfdf5" : "#fffbeb",
-                          borderColor: isMedicalCleared ? "#10b981" : "#f59e0b",
-                          color: isMedicalCleared ? "#065f46" : "#92400e",
-                        }}
-                        data-testid="ward-referral-medical-clearance-toggle"
-                        onClick={handleToggleMedicalClearance}
-                      >
-                        {isMedicalCleared ? "✓ Medical Cleared (Toggle)" : "○ Mark Medically Cleared"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {liveMovement && canSetArrivalPlan(liveMovement) ? (
-            <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
+        <div className={styles.sectionNav} role="group" aria-label="Referral sections">
+          {(
+            [
+              ["patient", "Patient", User],
+              ["referral", "Referral", ShieldCheck],
+              ["clinical", "Clinical", Activity],
+              ["placement", "Placement", MapPin],
+            ] as const
+          ).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={activeSection === id}
+              aria-controls={`${sectionId}-${id}`}
+              onClick={() => {
+                setActiveSection(id);
+                setIsSearchOpen(false);
+                if (bodyRef.current) bodyRef.current.scrollTop = 0;
+              }}
+            >
+              <Icon aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
+        <div ref={bodyRef} className={styles.drawerBody}>
+          <div id={`${sectionId}-patient`} className={styles.sectionPanel} hidden={activeSection !== "patient"}>
+            {/* 1. PATIENT SELECTION & CLINICAL IDENTITY DOSSIER */}
+            <section className={styles.refCard}>
               <div className={styles.refCardHead}>
                 <h3 className={styles.refCardTitle}>
-                  <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>Arrival plan</span>
+                  <User aria-hidden="true" style={{ width: 14, height: 14 }} />
+                  <span>Patient overview</span>
                 </h3>
-                <span className="badgePill">Ward ETA</span>
-              </div>
-              <div className={styles.arrivalPlanCard}>
-                {liveMovement.arrivalDetails ? (
-                  <ul className={styles.arrivalPlanFacts}>
-                    <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
-                    <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
-                    <li>
-                      Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST
-                    </li>
-                  </ul>
-                ) : (
-                  <p className={styles.refCardSubtitle}>
-                    No arrival plan recorded. Setting one records how they are arriving and the estimated ward time, and
-                    clears the pull clock.
-                  </p>
-                )}
-                {isArrivalLate(liveMovement, now) ? (
-                  <p
-                    className={styles.arrivalLate}
-                    role="status"
-                    data-testid="ward-referral-arrival-late"
-                    title={OPERATIONAL_DEFAULT_LABEL}
+                <div className={styles.refCardHeadActions}>
+                  <Link
+                    href="/mockups/ward-flow/referrals/new"
+                    className={styles.newReferralLink}
+                    onClick={onClose}
+                    title="Open full page referral intake"
                   >
-                    Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
-                    marked arrived.
-                  </p>
-                ) : null}
-                <div className={styles.arrivalPlanAction}>
+                    <Plus aria-hidden="true" style={{ width: 12, height: 12 }} />
+                    <span>Full intake</span>
+                  </Link>
+                </div>
+              </div>
+
+              <div className={styles.patientSearchWrap}>
+                <Search className={styles.patientSearchIcon} aria-hidden="true" />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  id={searchId}
+                  className={styles.patientSearchInput}
+                  aria-label="Search sample patients"
+                  placeholder="Search sample patients by name or UMRN…"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => {
+                    if (searchQuery.trim().length > 0) setIsSearchOpen(true);
+                  }}
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                {searchQuery ? (
                   <button
                     type="button"
-                    className={styles.patientChipBtn}
-                    data-testid="ward-referral-arrival-plan-toggle"
-                    onClick={() => setArrivalPlanOpen(true)}
+                    className={styles.patientSearchClear}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearchOpen(false);
+                    }}
+                    aria-label="Clear search input"
                   >
-                    {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                    <X aria-hidden="true" style={{ width: 12, height: 12 }} />
+                  </button>
+                ) : null}
+                <kbd className={styles.patientSearchKbd}>/</kbd>
+
+                {/* Sample patient search results */}
+                {isSearchOpen && filteredPatients.length > 0 ? (
+                  <div className={styles.patientSearchResults} role="listbox" aria-label="Matching sample patients">
+                    {filteredPatients.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        role="option"
+                        aria-selected={activePatientKey === p.id}
+                        className={styles.patientSearchResultItem}
+                        data-active={activePatientKey === p.id}
+                        onClick={() => handleSelectPatient(p.id)}
+                      >
+                        <div>
+                          <div className={styles.searchResultName}>
+                            {p.name} ({ageSexLabel(p)})
+                          </div>
+                          <div className={styles.searchResultMeta}>
+                            UMRN: {p.umrn} · DOB: {p.dob} · {p.origin.split("·")[0].trim()}
+                          </div>
+                        </div>
+                        <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Prominent Selected Patient Identity Banner Card */}
+              <div className={styles.patientBannerCard}>
+                <div className={styles.patientBannerHead}>
+                  <div className={styles.patientBannerProfile}>
+                    <div className={styles.patientBannerAvatar}>{currentPatient.initials}</div>
+                    <div className={styles.patientBannerIdentity}>
+                      <div className={styles.patientBannerName}>
+                        {currentPatient.name} ({ageSexLabel(currentPatient)})
+                      </div>
+                      <div className={styles.patientBannerSub}>
+                        UMRN: {currentPatient.umrn} · DOB: {currentPatient.dob} · Medicare: {currentPatient.medicare}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.patientSwitchBtn}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearchOpen(true);
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    <span>Switch</span>
+                  </button>
+                </div>
+
+                {/* Structured Clinical Priority Grid (Rule 5: Legal Order -> Clinical Acuity -> Bed Compatibility) */}
+                <div className={styles.triagePriorityGrid} role="region" aria-label="Clinical Priority Grid">
+                  {/* 1. Legal Order */}
+                  <div className={`${styles.triagePriorityCard} ${styles.legalOrderPillar}`}>
+                    <div className={styles.triagePillarHead}>
+                      <span className={styles.triagePillarTitle}>
+                        <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
+                        <span>Legal Order</span>
+                      </span>
+                      <span className={styles.triagePillarBadge} data-tone="default">
+                        Statutory
+                      </span>
+                    </div>
+                    <div className={styles.triagePillarBody}>
+                      <div className={styles.triagePillarPrimary}>{currentPatient.legalStatus}</div>
+                      <div className={styles.statutoryRecordedTime}>
+                        <div className={styles.statutoryExpiryLine}>
+                          <span className={styles.triageMetaLabel}>Expiry:</span>
+                          <strong>{currentPatient.recordedExpiry}</strong>
+                        </div>
+                        <LegalLimitsNotChecked variant="tag" />
+                      </div>
+                      <div className={styles.triagePillarFoot}>Order status: {legalStatus} compliance</div>
+                    </div>
+                  </div>
+
+                  {/* 2. Clinical Acuity */}
+                  <div className={`${styles.triagePriorityCard} ${styles.clinicalAcuityPillar}`}>
+                    <div className={styles.triagePillarHead}>
+                      <span className={styles.triagePillarTitle}>
+                        <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
+                        <span>Clinical Acuity</span>
+                      </span>
+                      <span
+                        className={styles.triagePillarBadge}
+                        data-tone={urgency === "1" ? "danger" : urgency === "2" ? "warn" : "default"}
+                      >
+                        {urgency ? `Tier ${urgency}` : "Not recorded"}
+                      </span>
+                    </div>
+                    <div className={styles.triagePillarBody}>
+                      <div className={styles.triagePillarPrimary}>
+                        <span className={styles.triageScoreLabel}>Urgency:</span>
+                        <span className={styles.triagePriorityScore}>
+                          {/* The recorded tier only, as in the urgency list: no typed hour window (D-22). */}
+                          {(() => {
+                            const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
+                            return tier === undefined ? "Not recorded" : urgencyTierLabel(tier);
+                          })()}
+                        </span>
+                      </div>
+                      <div className={styles.triageDiagSub}>
+                        Diag: <em>{provisionalDiag || "Not recorded"}</em>
+                      </div>
+                      <div className={styles.triageAcuityTags}>
+                        {riskFlags.aggression && (
+                          <span className={styles.acuityRiskBadge} data-risk="high">
+                            Aggression Risk
+                          </span>
+                        )}
+                        {riskFlags.suicide && (
+                          <span className={styles.acuityRiskBadge} data-risk="high">
+                            Suicide / Self-Harm Risk
+                          </span>
+                        )}
+                        {riskFlags.absconding && (
+                          <span
+                            className={styles.acuityRiskBadge}
+                            data-risk={currentPatient.legalStatus.startsWith("Form") ? "high" : "medium"}
+                          >
+                            Absconding Risk
+                          </span>
+                        )}
+                        {riskFlags.vulnerable && (
+                          <span className={styles.acuityRiskBadge} data-risk="medium">
+                            Vulnerable
+                          </span>
+                        )}
+                        {riskFlags.medical && (
+                          <span className={styles.acuityRiskBadge} data-risk="medium">
+                            Medical
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Bed Compatibility */}
+                  <div className={`${styles.triagePriorityCard} ${styles.bedCompatibilityPillar}`}>
+                    <div className={styles.triagePillarHead}>
+                      <span className={styles.triagePillarTitle}>
+                        <Lock aria-hidden="true" style={{ width: 13, height: 13 }} />
+                        <span>Bed Compatibility</span>
+                      </span>
+                      <span className={styles.triagePillarBadge} data-tone={security === "Secure" ? "warn" : "default"}>
+                        {security} Unit
+                      </span>
+                    </div>
+                    <div className={styles.triagePillarBody}>
+                      <div className={styles.triagePillarPrimary}>
+                        {currentPatient.cohort} · {security} Ward
+                      </div>
+                      <div className={styles.triageCompatSub}>Origin: {currentPatient.origin.split("·")[0].trim()}</div>
+                      <div className={styles.triageBedAvailability}>
+                        <span className={styles.triageBedCount}>{realTimeMatch.pillText}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Pre-Admission Medical Clearance Checkpoint */}
+                  <div
+                    className={`${styles.triagePriorityCard} ${styles.medicalClearancePillar}`}
+                    data-testid="ward-referral-medical-clearance-card"
+                  >
+                    <div className={styles.triagePillarHead}>
+                      <span className={styles.triagePillarTitle}>
+                        <ShieldCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
+                        <span>Medical Clearance</span>
+                      </span>
+                      <span
+                        className={styles.triagePillarBadge}
+                        data-tone={isMedicalCleared ? "good" : "warn"}
+                        data-testid="ward-referral-clearance-status"
+                      >
+                        {isMedicalCleared ? "Cleared" : "Pending"}
+                      </span>
+                    </div>
+                    <div className={styles.triagePillarBody}>
+                      <div className={styles.triagePillarPrimary}>
+                        {isMedicalCleared ? "Fit for Admission & Travel" : "Awaiting Medical Signoff"}
+                      </div>
+                      <div className={styles.triageCompatSub}>
+                        {isMedicalCleared ? "Signed off for inpatient transfer" : "Pre-admission medical exam required"}
+                      </div>
+                      <div style={{ marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className={styles.medicalClearanceToggleBtn}
+                          data-cleared={isMedicalCleared}
+                          data-testid="ward-referral-medical-clearance-toggle"
+                          onClick={handleToggleMedicalClearance}
+                        >
+                          {isMedicalCleared ? "✓ Medical Cleared (Toggle)" : "○ Mark Medically Cleared"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {liveMovement && canSetArrivalPlan(liveMovement) ? (
+              <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
+                <div className={styles.refCardHead}>
+                  <h3 className={styles.refCardTitle}>
+                    <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
+                    <span>Arrival plan</span>
+                  </h3>
+                  <span className="badgePill">Ward ETA</span>
+                </div>
+                <div className={styles.arrivalPlanCard}>
+                  {liveMovement.arrivalDetails ? (
+                    <ul className={styles.arrivalPlanFacts}>
+                      <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
+                      <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
+                      <li>
+                        Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST
+                      </li>
+                    </ul>
+                  ) : (
+                    <p className={styles.refCardSubtitle}>
+                      No arrival plan recorded. Setting one records how they are arriving and the estimated ward time,
+                      and clears the pull clock.
+                    </p>
+                  )}
+                  {isArrivalLate(liveMovement, now) ? (
+                    <p
+                      className={styles.arrivalLate}
+                      role="status"
+                      data-testid="ward-referral-arrival-late"
+                      title={OPERATIONAL_DEFAULT_LABEL}
+                    >
+                      Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
+                      marked arrived.
+                    </p>
+                  ) : null}
+                  <div className={styles.arrivalPlanAction}>
+                    <button
+                      type="button"
+                      className={styles.patientChipBtn}
+                      data-testid="ward-referral-arrival-plan-toggle"
+                      onClick={() => setArrivalPlanOpen(true)}
+                    >
+                      {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+          </div>
+          <div id={`${sectionId}-referral`} className={styles.sectionPanel} hidden={activeSection !== "referral"}>
+            {/* 2. STATUTORY LEGAL STATUS & PLACEMENT URGENCY */}
+            <section className={styles.refCard}>
+              <div className={styles.refCardHead}>
+                <h3 className={styles.refCardTitle}>
+                  <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
+                  <span>2. Legal status &amp; Placement Urgency</span>
+                </h3>
+                <span className="badgePill">WA Recorded forms Compliance</span>
+              </div>
+              <p className={styles.refCardSubtitle}>
+                Statutory orders establish mandatory examination timelines, escort authority, and locked ward criteria.
+              </p>
+
+              <div className={styles.fieldGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refLegalSelect">
+                    <span>Legal status</span>
+                    <span className={styles.fieldLabelHint}>Mandatory Order</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refLegalSelect"
+                    value={legalStatus}
+                    onChange={(e) => setLegalStatus(e.target.value)}
+                  >
+                    {/* The record's own status stays selectable even when it is not one of the usual
+                      choices, so the select never shows a different status from the one recorded. */}
+                    {legalStatus !== "Voluntary" &&
+                    !LEGAL_STATUS_FORM_CODES.some((code) => legalStatus === `Form ${code}`) ? (
+                      <option value={legalStatus}>
+                        {legalStatus.startsWith("Form ") ? legalStatusOptionLabel(legalStatus.slice(5)) : legalStatus}
+                      </option>
+                    ) : null}
+                    {LEGAL_STATUS_FORM_CODES.map((code) => (
+                      <option key={code} value={`Form ${code}`}>
+                        {legalStatusOptionLabel(code)}
+                      </option>
+                    ))}
+                    <option value="Voluntary">Voluntary</option>
+                  </select>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refUrgencySelect">
+                    <span>Clinical Urgency Horizon</span>
+                    <span className={styles.fieldLabelHint}>Recorded tier</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refUrgencySelect"
+                    value={urgency}
+                    onChange={(e) => setUrgency(e.target.value)}
+                  >
+                    {urgency === "" ? <option value="">Not recorded</option> : null}
+                    {URGENCY_LEVELS.map((level) => (
+                      <option key={level} value={String(level)}>
+                        {urgencyTierLabel(level)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refDestTypeSelect">
+                    <span>Placement Destination Tier</span>
+                    <span className={styles.fieldLabelHint}>Care Pathway</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refDestTypeSelect"
+                    value={destType}
+                    onChange={(e) => setDestType(e.target.value)}
+                  >
+                    <option value="ward">Inpatient Acute Psychiatric Ward Bed</option>
+                    <option value="community">Community Mental Health Team (CMHT Assertive Transfer)</option>
+                    <option value="ed">Specialist ED Mental Health Observation Unit</option>
+                  </select>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refSecuritySelect">
+                    <span>Security Level Requirement</span>
+                    <span className={styles.fieldLabelHint}>Ward Physicality</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refSecuritySelect"
+                    value={security}
+                    onChange={(e) => setSecurity(e.target.value)}
+                  >
+                    <option value="Secure">Secure Unit (Locked High-Dependency Bay)</option>
+                    <option value="Open">Open Acute Ward (Standard Observation Bay)</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div id={`${sectionId}-clinical`} className={styles.sectionPanel} hidden={activeSection !== "clinical"}>
+            {/* 3. CLINICAL PRESENTATION & DIAGNOSTIC DOSSIER */}
+            <section className={styles.refCard}>
+              <div className={styles.refCardHead}>
+                <h3 className={styles.refCardTitle}>
+                  <Activity aria-hidden="true" style={{ width: 14, height: 14 }} />
+                  <span>3. Clinical Presentation &amp; Diagnostic Dossier</span>
+                </h3>
+                <span className="badgePill">Clinical Assessment</span>
+              </div>
+
+              <div className={styles.fieldGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refDiagSelect">
+                    <span>Provisional Psychiatric Diagnosis</span>
+                    <span className={styles.fieldLabelHint}>Primary Impairment</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refDiagSelect"
+                    value={provisionalDiag}
+                    onChange={(e) => setProvisionalDiag(e.target.value)}
+                  >
+                    <option value="">Not recorded</option>
+                    <option value="psychosis">Schizophreniform Disorder / Acute Psychotic Episode</option>
+                    <option value="bipolar">Bipolar I Disorder · Acute Mania with Psychosis</option>
+                    <option value="depression">Major Depressive Episode · Severe with Suicide Risk</option>
+                    <option value="delirium">Delirium / Organic Mental Disorder</option>
+                    <option value="substance">Substance-Induced Psychotic Disorder</option>
+                  </select>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refDocInput">
+                    <span>Referring Clinician &amp; Origin Unit</span>
+                    <span className={styles.fieldLabelHint}>AHPRA Practitioner</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.fieldInput}
+                    id="refDocInput"
+                    value={doctorNote}
+                    onChange={(e) => setDoctorNote(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel} htmlFor="refSummaryText">
+                  <span>Mental State Examination &amp; Presentation Summary</span>
+                  <span className={styles.fieldLabelHint}>Clinical Narrative</span>
+                </label>
+                <textarea
+                  className={styles.clinicalTextarea}
+                  id="refSummaryText"
+                  rows={3}
+                  value={clinicalSummary}
+                  onChange={(e) => setClinicalSummary(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel} id="riskFlagsLabel">
+                  <span>Active Behavioural &amp; Clinical Risk Flags</span>
+                  <span className={styles.fieldLabelHint}>Select all active</span>
+                </div>
+                <div className={styles.riskTagGrid} role="group" aria-labelledby="riskFlagsLabel">
+                  <button
+                    type="button"
+                    className={styles.riskTagChip}
+                    data-checked={riskFlags.aggression}
+                    onClick={() => toggleRisk("aggression")}
+                  >
+                    <AlertTriangle aria-hidden="true" style={{ width: 13, height: 13 }} />
+                    <span>Aggression Risk</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.riskTagChip}
+                    data-checked={riskFlags.absconding}
+                    onClick={() => toggleRisk("absconding")}
+                  >
+                    <ArrowRight aria-hidden="true" style={{ width: 13, height: 13 }} />
+                    <span>Absconding Risk</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.riskTagChip}
+                    data-checked={riskFlags.medical}
+                    onClick={() => toggleRisk("medical")}
+                  >
+                    <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
+                    <span>Acute Medical Comorbidity</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.riskTagChip}
+                    data-checked={riskFlags.vulnerable}
+                    onClick={() => toggleRisk("vulnerable")}
+                  >
+                    <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
+                    <span>Vulnerable Adult Protection</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.riskTagChip}
+                    data-checked={riskFlags.suicide}
+                    onClick={() => toggleRisk("suicide")}
+                  >
+                    <AlertCircle aria-hidden="true" style={{ width: 13, height: 13 }} />
+                    <span>Suicide / Self-Harm Vigilance</span>
                   </button>
                 </div>
               </div>
             </section>
-          ) : null}
-
-          {/* 2. STATUTORY LEGAL STATUS & PLACEMENT URGENCY */}
-          <section className={styles.refCard}>
-            <div className={styles.refCardHead}>
-              <h3 className={styles.refCardTitle}>
-                <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
-                <span>2. Legal status &amp; Placement Urgency</span>
-              </h3>
-              <span className="badgePill">WA Recorded forms Compliance</span>
-            </div>
-            <p className={styles.refCardSubtitle}>
-              Statutory orders establish mandatory examination timelines, escort authority, and locked ward criteria.
-            </p>
-
-            <div className={styles.fieldGrid}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refLegalSelect">
-                  <span>Legal status</span>
-                  <span className={styles.fieldLabelHint}>Mandatory Order</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refLegalSelect"
-                  value={legalStatus}
-                  onChange={(e) => setLegalStatus(e.target.value)}
-                >
-                  {/* The record's own status stays selectable even when it is not one of the usual
-                      choices, so the select never shows a different status from the one recorded. */}
-                  {legalStatus !== "Voluntary" &&
-                  !LEGAL_STATUS_FORM_CODES.some((code) => legalStatus === `Form ${code}`) ? (
-                    <option value={legalStatus}>
-                      {legalStatus.startsWith("Form ") ? legalStatusOptionLabel(legalStatus.slice(5)) : legalStatus}
-                    </option>
-                  ) : null}
-                  {LEGAL_STATUS_FORM_CODES.map((code) => (
-                    <option key={code} value={`Form ${code}`}>
-                      {legalStatusOptionLabel(code)}
-                    </option>
-                  ))}
-                  <option value="Voluntary">Voluntary</option>
-                </select>
+          </div>
+          <div id={`${sectionId}-placement`} className={styles.sectionPanel} hidden={activeSection !== "placement"}>
+            {/* 4. AUTHORIZED TRANSPORT & ESCORT LOGISTICS */}
+            <section className={styles.refCard}>
+              <div className={styles.refCardHead}>
+                <h3 className={styles.refCardTitle}>
+                  <Ambulance aria-hidden="true" style={{ width: 14, height: 14 }} />
+                  <span>4. Authorized Transport &amp; Escort Logistics</span>
+                </h3>
+                <span className="badgePill">Escort Authority</span>
               </div>
 
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refUrgencySelect">
-                  <span>Clinical Urgency Horizon</span>
-                  <span className={styles.fieldLabelHint}>Recorded tier</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refUrgencySelect"
-                  value={urgency}
-                  onChange={(e) => setUrgency(e.target.value)}
-                >
-                  {urgency === "" ? <option value="">Not recorded</option> : null}
-                  {URGENCY_LEVELS.map((level) => (
-                    <option key={level} value={String(level)}>
-                      {urgencyTierLabel(level)}
-                    </option>
-                  ))}
-                </select>
+              <div className={styles.fieldGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refTransportSelect">
+                    <span>Authorized Transport Provider</span>
+                    <span className={styles.fieldLabelHint}>Escort Tier</span>
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    id="refTransportSelect"
+                    value={transport}
+                    onChange={(e) => setTransport(e.target.value)}
+                  >
+                    <option value="mht">Mental Health Transport Service (Contracted MHT)</option>
+                    <option value="police">Police Escort (WAPOL Involuntary Transit)</option>
+                    <option value="rfds">RFDS Aeromedical Flight Escort</option>
+                    <option value="stjohn">St John Ambulance (Priority 2 Clinical Escort)</option>
+                    <option value="carer">Patient / Carer Accompanied Transport</option>
+                  </select>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="refTransitInput">
+                    <span>Dispatch Reference / Staging Bay</span>
+                    <span className={styles.fieldLabelHint}>Transport Coordination</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.fieldInput}
+                    id="refTransitInput"
+                    value={transitNote}
+                    onChange={(e) => setTransitNote(e.target.value)}
+                  />
+                </div>
               </div>
+            </section>
 
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refDestTypeSelect">
-                  <span>Placement Destination Tier</span>
-                  <span className={styles.fieldLabelHint}>Care Pathway</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refDestTypeSelect"
-                  value={destType}
-                  onChange={(e) => setDestType(e.target.value)}
+            {/* 5. REAL-TIME INPATIENT CAPACITY MATCH */}
+            <section className={styles.refCard}>
+              <div className={styles.refCardHead}>
+                <h3 className={styles.refCardTitle}>
+                  <Users aria-hidden="true" style={{ width: 14, height: 14 }} />
+                  <span>5. Real-Time Inpatient Capacity Match</span>
+                </h3>
+                <span
+                  className="badgePill"
+                  style={{
+                    color:
+                      realTimeMatch.pillTone === "south"
+                        ? "var(--svc-south)"
+                        : realTimeMatch.pillTone === "muted"
+                          ? "var(--muted)"
+                          : "var(--good)",
+                    fontWeight: 700,
+                  }}
                 >
-                  <option value="ward">Inpatient Acute Psychiatric Ward Bed</option>
-                  <option value="community">Community Mental Health Team (CMHT Assertive Transfer)</option>
-                  <option value="ed">Specialist ED Mental Health Observation Unit</option>
-                </select>
+                  {realTimeMatch.pillText}
+                </span>
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refSecuritySelect">
-                  <span>Security Level Requirement</span>
-                  <span className={styles.fieldLabelHint}>Ward Physicality</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refSecuritySelect"
-                  value={security}
-                  onChange={(e) => setSecurity(e.target.value)}
-                >
-                  <option value="Secure">Secure Unit (Locked High-Dependency Bay)</option>
-                  <option value="Open">Open Acute Ward (Standard Observation Bay)</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          {/* 3. CLINICAL PRESENTATION & DIAGNOSTIC DOSSIER */}
-          <section className={styles.refCard}>
-            <div className={styles.refCardHead}>
-              <h3 className={styles.refCardTitle}>
-                <Activity aria-hidden="true" style={{ width: 14, height: 14 }} />
-                <span>3. Clinical Presentation &amp; Diagnostic Dossier</span>
-              </h3>
-              <span className="badgePill">Clinical Assessment</span>
-            </div>
-
-            <div className={styles.fieldGrid}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refDiagSelect">
-                  <span>Provisional Psychiatric Diagnosis</span>
-                  <span className={styles.fieldLabelHint}>Primary Impairment</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refDiagSelect"
-                  value={provisionalDiag}
-                  onChange={(e) => setProvisionalDiag(e.target.value)}
-                >
-                  <option value="psychosis">Schizophreniform Disorder / Acute Psychotic Episode</option>
-                  <option value="bipolar">Bipolar I Disorder · Acute Mania with Psychosis</option>
-                  <option value="depression">Major Depressive Episode · Severe with Suicide Risk</option>
-                  <option value="delirium">Delirium / Organic Mental Disorder</option>
-                  <option value="substance">Substance-Induced Psychotic Disorder</option>
-                </select>
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refDocInput">
-                  <span>Referring Clinician &amp; Origin Unit</span>
-                  <span className={styles.fieldLabelHint}>AHPRA Practitioner</span>
-                </label>
-                <input
-                  type="text"
-                  className={styles.fieldInput}
-                  id="refDocInput"
-                  value={doctorNote}
-                  onChange={(e) => setDoctorNote(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel} htmlFor="refSummaryText">
-                <span>Mental State Examination &amp; Presentation Summary</span>
-                <span className={styles.fieldLabelHint}>Clinical Narrative</span>
-              </label>
-              <textarea
-                className={styles.clinicalTextarea}
-                id="refSummaryText"
-                rows={3}
-                value={clinicalSummary}
-                onChange={(e) => setClinicalSummary(e.target.value)}
-              />
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel} id="riskFlagsLabel">
-                <span>Active Behavioural &amp; Clinical Risk Flags</span>
-                <span className={styles.fieldLabelHint}>Select all active</span>
-              </div>
-              <div className={styles.riskTagGrid} role="group" aria-labelledby="riskFlagsLabel">
-                <button
-                  type="button"
-                  className={styles.riskTagChip}
-                  data-checked={riskFlags.aggression}
-                  onClick={() => toggleRisk("aggression")}
-                >
-                  <AlertTriangle aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Aggression Risk</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.riskTagChip}
-                  data-checked={riskFlags.absconding}
-                  onClick={() => toggleRisk("absconding")}
-                >
-                  <ArrowRight aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Absconding Risk</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.riskTagChip}
-                  data-checked={riskFlags.medical}
-                  onClick={() => toggleRisk("medical")}
-                >
-                  <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Acute Medical Comorbidity</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.riskTagChip}
-                  data-checked={riskFlags.vulnerable}
-                  onClick={() => toggleRisk("vulnerable")}
-                >
-                  <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Vulnerable Adult Protection</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.riskTagChip}
-                  data-checked={riskFlags.suicide}
-                  onClick={() => toggleRisk("suicide")}
-                >
-                  <AlertCircle aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Suicide / Self-Harm Vigilance</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* 4. AUTHORIZED TRANSPORT & ESCORT LOGISTICS */}
-          <section className={styles.refCard}>
-            <div className={styles.refCardHead}>
-              <h3 className={styles.refCardTitle}>
-                <Ambulance aria-hidden="true" style={{ width: 14, height: 14 }} />
-                <span>4. Authorized Transport &amp; Escort Logistics</span>
-              </h3>
-              <span className="badgePill">Escort Authority</span>
-            </div>
-
-            <div className={styles.fieldGrid}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refTransportSelect">
-                  <span>Authorized Transport Provider</span>
-                  <span className={styles.fieldLabelHint}>Escort Tier</span>
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  id="refTransportSelect"
-                  value={transport}
-                  onChange={(e) => setTransport(e.target.value)}
-                >
-                  <option value="mht">Mental Health Transport Service (Contracted MHT)</option>
-                  <option value="police">Police Escort (WAPOL Involuntary Transit)</option>
-                  <option value="rfds">RFDS Aeromedical Flight Escort</option>
-                  <option value="stjohn">St John Ambulance (Priority 2 Clinical Escort)</option>
-                  <option value="carer">Patient / Carer Accompanied Transport</option>
-                </select>
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refTransitInput">
-                  <span>Dispatch Reference / Staging Bay</span>
-                  <span className={styles.fieldLabelHint}>Transport Coordination</span>
-                </label>
-                <input
-                  type="text"
-                  className={styles.fieldInput}
-                  id="refTransitInput"
-                  value={transitNote}
-                  onChange={(e) => setTransitNote(e.target.value)}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* 5. REAL-TIME INPATIENT CAPACITY MATCH */}
-          <section className={styles.refCard}>
-            <div className={styles.refCardHead}>
-              <h3 className={styles.refCardTitle}>
-                <Users aria-hidden="true" style={{ width: 14, height: 14 }} />
-                <span>5. Real-Time Inpatient Capacity Match</span>
-              </h3>
-              <span
-                className="badgePill"
-                style={{
-                  color:
-                    realTimeMatch.pillTone === "south"
-                      ? "var(--svc-south)"
-                      : realTimeMatch.pillTone === "muted"
-                        ? "var(--muted)"
-                        : "var(--good)",
-                  fontWeight: 700,
-                }}
-              >
-                {realTimeMatch.pillText}
-              </span>
-            </div>
-            {/*
+              {/*
             Its OWN block, never appended to the pill above. `ward-screen.tsx` found in a browser
             that "Ready 2" immediately followed by "1 still being made ready" reads as 21. Renders
             only when there is one: an absence here is silence, never a "0 being made ready", which
             would be a claim nobody made. Wording copied verbatim from `ward-board.tsx` rather than
             written again - four screens stating one clinical fact should state it identically.
           */}
-            {(realTimeMatch.pendingPreparationCount ?? 0) > 0 ? (
-              <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
-                {realTimeMatch.pendingPreparationCount} of them{" "}
-                {realTimeMatch.pendingPreparationCount === 1 ? "is" : "are"} still being made ready - the bed stays
-                offered and stays counted, but the ward cannot admit into it yet.
-              </p>
-            ) : null}
+              {(realTimeMatch.pendingPreparationCount ?? 0) > 0 ? (
+                <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
+                  {realTimeMatch.pendingPreparationCount} of them{" "}
+                  {realTimeMatch.pendingPreparationCount === 1 ? "is" : "are"} still being made ready - the bed stays
+                  offered and stays counted, but the ward cannot admit into it yet.
+                </p>
+              ) : null}
 
-            {/* Destination Rows with Distinct Card Borders & Status Indicators (Alternative 2 3-Tier Status Matrix) */}
-            <div className={styles.destinationList} role="list" aria-label="Placement Destination Options">
-              {destType === "ward" && realTimeMatch.sortedUnits && realTimeMatch.sortedUnits.length > 0 ? (
-                (() => {
-                  const tier1Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds > 0);
-                  const tier2Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds === 0);
+              {/* Destination Rows with Distinct Card Borders & Status Indicators (Alternative 2 3-Tier Status Matrix) */}
+              <div className={styles.destinationList} role="list" aria-label="Placement Destination Options">
+                {destType === "ward" && realTimeMatch.sortedUnits && realTimeMatch.sortedUnits.length > 0 ? (
+                  (() => {
+                    const tier1Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds > 0);
+                    const tier2Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds === 0);
 
-                  const renderUnitCard = (u: WardCapacityRecord, isTier1: boolean) => {
-                    const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
-                    const isGateExpanded = expandedGates[u.unitId] ?? false;
+                    const renderUnitCard = (u: WardCapacityRecord, isTier1: boolean) => {
+                      const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
+                      const isGateExpanded = expandedGates[u.unitId] ?? false;
+
+                      return (
+                        <div
+                          key={u.unitId}
+                          role="listitem"
+                          className={`${styles.destinationRowCard} ${isTier1 ? styles.destinationRowCardReady : styles.destinationRowCardTurnaround}`}
+                          data-selected={isSelected}
+                          onClick={() => setSelectedDestUnitId(u.unitId)}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedDestUnitId(u.unitId);
+                            }
+                          }}
+                        >
+                          <div className={styles.destRowMain}>
+                            <div className={styles.destRowHeader}>
+                              <span
+                                className={styles.destStatusIndicator}
+                                data-available={u.readyBeds > 0}
+                                aria-hidden="true"
+                              />
+                              <span className={styles.destRowHospital}>{u.hospital}</span>
+                              <span className={styles.destAllocationId}>{u.unitId}</span>
+                            </div>
+                            <div className={styles.destRowUnitName}>{u.name}</div>
+                            <div className={styles.destRowTags}>
+                              <span className={styles.destTag}>{u.healthService}</span>
+                              <span className={styles.destTag}>{u.cohort}</span>
+                              <span className={styles.destTag}>{u.security} Unit</span>
+                            </div>
+                          </div>
+
+                          <div className={styles.destRowCapacity}>
+                            <div className={styles.destBedCountGroup}>
+                              <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
+                                <strong>{u.readyBeds}</strong> Ready
+                              </span>
+                              <span className={styles.destHeldCount}>
+                                <strong>{u.pulledBeds}</strong> Pulled
+                              </span>
+                              <span className={styles.destHeldCount}>
+                                <strong>{u.closedBeds}</strong> Closed
+                              </span>
+                            </div>
+                            {(u.pendingPreparation ?? 0) > 0 ? (
+                              <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
+                            ) : null}
+                            <span className={styles.destSelectIndicator}>
+                              {isSelected ? "Selected Target" : "Select Target"}
+                            </span>
+                          </div>
+
+                          {/* Interactive Criteria Gate Dropdown */}
+                          <div className={styles.gateSummary} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              className={`${styles.gateToggle} ${isTier1 ? "" : styles.gateToggleWarn}`}
+                              onClick={() => toggleGates(u.unitId)}
+                              aria-expanded={isGateExpanded}
+                            >
+                              <span>
+                                {isTier1
+                                  ? "✓ 10/10 Statutory & Clinical Criteria Met"
+                                  : "✓ 10/10 Clinical Criteria Met · Bed Turnaround in Progress"}
+                              </span>
+                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                                {isGateExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                              </span>
+                            </button>
+                            {isGateExpanded ? (
+                              <div className={styles.gateGrid}>
+                                <div className={styles.gatePillPassed}>
+                                  ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
+                                </div>
+                                <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
+                                <div className={styles.gatePillPassed}>
+                                  ✓ Clinical Acuity: {u.security} Unit Appropriate
+                                </div>
+                                <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
+                                <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
+                                  {isMedicalCleared
+                                    ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
+                                    : "⏳ Medical Clearance: Pending MO Signoff"}
+                                </div>
+                                <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
+                                <div className={styles.gatePillPassed}>
+                                  ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
+                                </div>
+                                <div className={styles.gatePillPassed}>
+                                  ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
+                                </div>
+                                <div className={styles.gatePillPassed}>
+                                  ✓ Physical Mobility: Ground Floor Direct Access
+                                </div>
+                                <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
+                                  {isTier1
+                                    ? "✓ Bed Availability: Ready to Admit"
+                                    : "⏳ Bed Status: Awaiting Bed Turnover"}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    };
 
                     return (
-                      <div
-                        key={u.unitId}
-                        role="listitem"
-                        className={`${styles.destinationRowCard} ${isTier1 ? styles.destinationRowCardReady : styles.destinationRowCardTurnaround}`}
-                        data-selected={isSelected}
-                        onClick={() => setSelectedDestUnitId(u.unitId)}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedDestUnitId(u.unitId);
-                          }
-                        }}
-                      >
-                        <div className={styles.destRowMain}>
-                          <div className={styles.destRowHeader}>
-                            <span
-                              className={styles.destStatusIndicator}
-                              data-available={u.readyBeds > 0}
-                              aria-hidden="true"
-                            />
-                            <span className={styles.destRowHospital}>{u.hospital}</span>
-                            <span className={styles.destAllocationId}>{u.unitId}</span>
-                          </div>
-                          <div className={styles.destRowUnitName}>{u.name}</div>
-                          <div className={styles.destRowTags}>
-                            <span className={styles.destTag}>{u.healthService}</span>
-                            <span className={styles.destTag}>{u.cohort}</span>
-                            <span className={styles.destTag}>{u.security} Unit</span>
-                          </div>
-                        </div>
-
-                        <div className={styles.destRowCapacity}>
-                          <div className={styles.destBedCountGroup}>
-                            <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
-                              <strong>{u.readyBeds}</strong> Ready
-                            </span>
-                            <span className={styles.destHeldCount}>
-                              <strong>{u.pulledBeds}</strong> Pulled
-                            </span>
-                            <span className={styles.destHeldCount}>
-                              <strong>{u.closedBeds}</strong> Closed
-                            </span>
-                          </div>
-                          {(u.pendingPreparation ?? 0) > 0 ? (
-                            <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
-                          ) : null}
-                          <span className={styles.destSelectIndicator}>
-                            {isSelected ? "Selected Target" : "Select Target"}
-                          </span>
-                        </div>
-
-                        {/* Interactive Criteria Gate Dropdown */}
-                        <div className={styles.gateSummary} onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            className={`${styles.gateToggle} ${isTier1 ? "" : styles.gateToggleWarn}`}
-                            onClick={() => toggleGates(u.unitId)}
-                            aria-expanded={isGateExpanded}
-                          >
-                            <span>
-                              {isTier1
-                                ? "✓ 10/10 Statutory & Clinical Criteria Met"
-                                : "✓ 10/10 Clinical Criteria Met · Bed Turnaround in Progress"}
-                            </span>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                              {isGateExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
-                            </span>
-                          </button>
-                          {isGateExpanded ? (
-                            <div className={styles.gateGrid}>
-                              <div className={styles.gatePillPassed}>
-                                ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
+                      <>
+                        {tier1Units.length > 0 ? (
+                          <div className={styles.tierSection}>
+                            <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
+                                <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
                               </div>
-                              <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
-                              <div className={styles.gatePillPassed}>
-                                ✓ Clinical Acuity: {u.security} Unit Appropriate
-                              </div>
-                              <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
-                              <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
-                                {isMedicalCleared
-                                  ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
-                                  : "⏳ Medical Clearance: Pending MO Signoff"}
-                              </div>
-                              <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
-                              <div className={styles.gatePillPassed}>
-                                ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
-                              </div>
-                              <div className={styles.gatePillPassed}>
-                                ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
-                              </div>
-                              <div className={styles.gatePillPassed}>
-                                ✓ Physical Mobility: Ground Floor Direct Access
-                              </div>
-                              <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
-                                {isTier1
-                                  ? "✓ Bed Availability: Ready to Admit"
-                                  : "⏳ Bed Status: Awaiting Bed Turnover"}
-                              </div>
+                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                                {tier1Units.length} Available
+                              </span>
                             </div>
-                          ) : null}
-                        </div>
-                      </div>
+                            {tier1Units.map((u) => renderUnitCard(u, true))}
+                          </div>
+                        ) : null}
+
+                        {tier2Units.length > 0 ? (
+                          <div className={styles.tierSection}>
+                            <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span className={styles.pulseDot} />
+                                <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
+                              </div>
+                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                                {tier2Units.length} Units Full
+                              </span>
+                            </div>
+                            {tier2Units.map((u) => renderUnitCard(u, false))}
+                          </div>
+                        ) : null}
+                      </>
                     );
-                  };
-
-                  return (
-                    <>
-                      {tier1Units.length > 0 ? (
-                        <div className={styles.tierSection}>
-                          <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
-                              <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
-                            </div>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                              {tier1Units.length} Available
-                            </span>
-                          </div>
-                          {tier1Units.map((u) => renderUnitCard(u, true))}
-                        </div>
-                      ) : null}
-
-                      {tier2Units.length > 0 ? (
-                        <div className={styles.tierSection}>
-                          <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span className={styles.pulseDot} />
-                              <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
-                            </div>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                              {tier2Units.length} Units Full
-                            </span>
-                          </div>
-                          {tier2Units.map((u) => renderUnitCard(u, false))}
-                        </div>
-                      ) : null}
-                    </>
-                  );
-                })()
-              ) : destType === "community" ? (
-                <div className={styles.destinationRowCard} data-selected={true}>
-                  <div className={styles.destRowMain}>
-                    <div className={styles.destRowHeader}>
-                      <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                      <span className={styles.destRowHospital}>Catchment CMHT</span>
-                      <span className={styles.destAllocationId}>cmht-outreach</span>
+                  })()
+                ) : destType === "community" ? (
+                  <div className={styles.destinationRowCard} data-selected={true}>
+                    <div className={styles.destRowMain}>
+                      <div className={styles.destRowHeader}>
+                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
+                        <span className={styles.destRowHospital}>Catchment CMHT</span>
+                        <span className={styles.destAllocationId}>cmht-outreach</span>
+                      </div>
+                      <div className={styles.destRowUnitName}>Community Mental Health Team</div>
+                      <div className={styles.destRowTags}>
+                        <span className={styles.destTag}>{currentPatient.catchment || "South Metropolitan"}</span>
+                        <span className={styles.destTag}>Assertive Outreach</span>
+                      </div>
                     </div>
-                    <div className={styles.destRowUnitName}>Community Mental Health Team</div>
-                    <div className={styles.destRowTags}>
-                      <span className={styles.destTag}>{currentPatient.catchment || "South Metropolitan"}</span>
-                      <span className={styles.destTag}>Assertive Outreach</span>
+                    <div className={styles.destRowCapacity}>
+                      <span className={styles.destReadyCount} data-has-beds={true}>
+                        <strong>Community</strong> Transfer
+                      </span>
+                      <span className={styles.destSelectIndicator}>Active Route</span>
                     </div>
                   </div>
-                  <div className={styles.destRowCapacity}>
-                    <span className={styles.destReadyCount} data-has-beds={true}>
-                      <strong>Community</strong> Transfer
-                    </span>
-                    <span className={styles.destSelectIndicator}>Active Route</span>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.destinationRowCard} data-selected={true}>
-                  <div className={styles.destRowMain}>
-                    <div className={styles.destRowHeader}>
-                      <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                      <span className={styles.destRowHospital}>{currentPatient.origin.split("·")[0].trim()}</span>
-                      <span className={styles.destAllocationId}>ed-obs-tier</span>
+                ) : (
+                  <div className={styles.destinationRowCard} data-selected={true}>
+                    <div className={styles.destRowMain}>
+                      <div className={styles.destRowHeader}>
+                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
+                        <span className={styles.destRowHospital}>{currentPatient.origin.split("·")[0].trim()}</span>
+                        <span className={styles.destAllocationId}>ed-obs-tier</span>
+                      </div>
+                      <div className={styles.destRowUnitName}>Specialist ED Mental Health Observation Unit</div>
+                      <div className={styles.destRowTags}>
+                        <span className={styles.destTag}>Observation Tier</span>
+                        <span className={styles.destTag}>Rapid Stabilization</span>
+                      </div>
                     </div>
-                    <div className={styles.destRowUnitName}>Specialist ED Mental Health Observation Unit</div>
-                    <div className={styles.destRowTags}>
-                      <span className={styles.destTag}>Observation Tier</span>
-                      <span className={styles.destTag}>Rapid Stabilization</span>
+                    <div className={styles.destRowCapacity}>
+                      <span className={styles.destReadyCount} data-has-beds={true}>
+                        <strong>1 Bed</strong> Ready
+                      </span>
+                      <span className={styles.destSelectIndicator}>Active Route</span>
                     </div>
                   </div>
-                  <div className={styles.destRowCapacity}>
-                    <span className={styles.destReadyCount} data-has-beds={true}>
-                      <strong>1 Bed</strong> Ready
-                    </span>
-                    <span className={styles.destSelectIndicator}>Active Route</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={styles.consequenceCard}>
-              <div className={styles.cqHeader}>
-                <span>Matching Inpatient Capacity in Catchment</span>
-                <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
-                  {realTimeMatch.catchmentTitle}
-                </span>
+                )}
               </div>
-              <ul className={styles.cqList}>
-                {realTimeMatch.consequences.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
 
+              <div className={styles.consequenceCard}>
+                <div className={styles.cqHeader}>
+                  <span>Matching Inpatient Capacity in Catchment</span>
+                  <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                    {realTimeMatch.catchmentTitle}
+                  </span>
+                </div>
+                <ul className={styles.cqList}>
+                  {realTimeMatch.consequences.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          </div>
+        </div>
         {/* 6. SEND REFERRAL STICKY ACTION FOOTER */}
         <div className={styles.sendReferralFoot}>
           <div className={styles.sendTargetSummary}>
             <span className={styles.sendTargetLabel}>
               <MapPin aria-hidden="true" style={{ width: 14, height: 14 }} />
-              <span>Recommended Target Destination</span>
+              <span>Destination preview · demo draft</span>
             </span>
             <span className={styles.sendTargetName}>{effectiveDestination}</span>
           </div>
@@ -1478,7 +1513,7 @@ function WardReferralDrawerContent({
               title="Not wired in this prototype."
             >
               <Send aria-hidden="true" style={{ width: 15, height: 15 }} />
-              <span>Send Referral to Bed Desk</span>
+              <span>Send referral</span>
             </button>
           </div>
         </div>
