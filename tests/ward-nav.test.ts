@@ -1,4 +1,8 @@
 import { SettingsScreen } from "../src/components/ward-management/settings/settings-screen";
+import { GovernanceProposal } from "../src/components/ward-management/oversight-proposal/governance-proposal";
+import { LegalFormsProposal } from "../src/components/ward-management/oversight-proposal/legal-forms-proposal";
+import { OutOfAreaProposal } from "../src/components/ward-management/oversight-proposal/out-of-area-proposal";
+import { SettingsProposal } from "../src/components/ward-management/oversight-proposal/settings-proposal";
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
@@ -1270,6 +1274,11 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   // 2026-09-12: the Settings screen. Listed here rather than among the redirect-only stubs because
   // it genuinely renders — it is unlisted in the RAIL, which is a different register entirely.
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
+  // 5 October 2026 redesign previews; each renders its own proposal beside the current screen.
+  { route: `${ROUTE_PREFIX}/governance/proposal`, render: () => createElement(GovernanceProposal) },
+  { route: `${ROUTE_PREFIX}/legal-forms/proposal`, render: () => createElement(LegalFormsProposal) },
+  { route: `${ROUTE_PREFIX}/out-of-area/proposal`, render: () => createElement(OutOfAreaProposal) },
+  { route: `${ROUTE_PREFIX}/settings/proposal`, render: () => createElement(SettingsProposal) },
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },
@@ -1423,7 +1432,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 36 -> 40 on 5 October 2026: the governance, legal-forms, out-of-area and settings redesign previews.
+    expect(RENDERABLE_ROUTES.length).toBe(40);
   });
 });
 

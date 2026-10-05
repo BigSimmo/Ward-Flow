@@ -420,6 +420,15 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     WARD_ADD_PERSON_HREF,
     "An action taken from the patient search, not a section of the app: the search's empty state carries the 'Add this person' <Link> that is the only way in, and it appears exactly when it is needed — you have searched, nobody came up, and this is the person who does not exist yet. Listing it in the rail would invite adding a person nobody had looked for first, which is how a duplicate record gets made.",
   ],
+  // 5 October 2026 oversight and settings redesign previews: proposals for review beside the
+  // current screens, reached from each other's preview bar, never destinations in the rail.
+  ...["governance", "legal-forms", "out-of-area", "settings"].map(
+    (screen) =>
+      [
+        `/mockups/ward-flow/${screen}/proposal`,
+        "A redesign preview for review beside the current screen, reached from the preview bar; not a section of the app.",
+      ] as const,
+  ),
   [
     "/mockups/ward-flow/statistics/overview",
     "Reached by Link from the statistics hub, not from the rail. Three statistics entries in the sidebar would bury the hub the owner actually wants to land on — the same reasoning WARD_REFERRAL_INTAKE_HREF above already sets, where a destination inside a screen is not a section of the app.",
