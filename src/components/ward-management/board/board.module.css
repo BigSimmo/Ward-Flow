@@ -417,6 +417,46 @@
   line-height: var(--ward-leading-body);
 }
 
+.sheetKpiRibbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.sheetKpiCard {
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: var(--lift-sm);
+}
+
+.sheetKpiValue {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: var(--mono);
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheetKpiLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.sheetKpiSub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* Four groups, side by side where there is room and stacked where there is not. `auto-fit` with a
    minimum rather than a fixed column count, so a narrow phone gets one column without a media
    query and A4 gets two. */

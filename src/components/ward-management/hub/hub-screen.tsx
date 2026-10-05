@@ -10,7 +10,19 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, BarChart2, Search, Star } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart2,
+  Bed,
+  ChevronDown,
+  Hospital,
+  RotateCcw,
+  Search,
+  Siren,
+  Star,
+  Users,
+  X,
+} from "lucide-react";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -40,9 +52,7 @@ import {
   useRecentHubIds,
   usePinnedHubIds,
 } from "@/components/ward-management/hub/hub-browser-memory";
-import { hubReconciliationLine } from "@/components/ward-management/hub/hub-provenance";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -146,6 +156,7 @@ export function HubScreen() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<HubKind | "all">("all");
+  const [readyOnly, setReadyOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -159,9 +170,10 @@ export function HubScreen() {
           inputRef.current?.focus();
         }
       } else if (event.key === "Escape" && document.activeElement !== inputRef.current) {
-        if (selectedId !== undefined || query !== "") {
+        if (selectedId !== undefined || query !== "" || readyOnly) {
           event.preventDefault();
           setQuery("");
+          setReadyOnly(false);
           setSelectedId(undefined);
           inputRef.current?.focus();
         }
@@ -169,14 +181,28 @@ export function HubScreen() {
     }
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [selectedId, query]);
+  }, [selectedId, query, readyOnly]);
 
   const entries = useMemo(
     () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
     [units, bedReleases, admissions, leaveBeds, now],
   );
-  const results = useMemo(() => searchHub(entries, query, kind), [entries, query, kind]);
+  const results = useMemo(() => {
+    const base = searchHub(entries, query, kind);
+    if (!readyOnly) return base;
+    return base.filter((entry) => (entry.ready ?? 0) > 0);
+  }, [entries, query, kind, readyOnly]);
   const counts = useMemo(() => hubCounts(entries, query), [entries, query]);
+  const readyBedsCount = useMemo(() => entries.reduce((sum, entry) => sum + (entry.ready ?? 0), 0), [entries]);
+  const isFiltered = query !== "" || kind !== "all" || readyOnly;
+
+  function resetAllFilters() {
+    setQuery("");
+    setKind("all");
+    setReadyOnly(false);
+    setSelectedId(undefined);
+    inputRef.current?.focus();
+  }
   /**
    * 🔴 **THE UNFILTERED TOTALS, AND THEY ARE A DIFFERENT NUMBER FROM `counts` ON PURPOSE.**
    *
@@ -257,42 +283,13 @@ export function HubScreen() {
     setSelectedId(results[next]?.id);
   }
 
-  /**
-   * Left/Right (and Home/End) move between the kind filters, which is what `role="tablist"`
-   * promises and what four separate tab stops were failing to deliver.
-   *
-   * ⚠️ **IT SELECTS AS IT MOVES, AND THAT IS THE RIGHT CHOICE HERE, NOT AN OVERSIGHT.** The ARIA
-   * pattern permits either; the deciding fact is cost. Moving to a filter shows a different list
-   * instantly and costs nothing to undo — no request, no navigation, nothing lost — so requiring a
-   * second keypress to confirm would make the keyboard slower than the mouse for no protection.
-   * Focus follows the selection so the new tab is where the next arrow key starts from.
-   */
-  function onTabsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const order = TABS.map((tab) => tab.id);
-    const current = order.indexOf(kind);
-    let next = -1;
-    if (event.key === "ArrowRight") next = (current + 1) % order.length;
-    if (event.key === "ArrowLeft") next = (current - 1 + order.length) % order.length;
-    if (event.key === "Home") next = 0;
-    if (event.key === "End") next = order.length - 1;
-    if (next === -1) return;
-    event.preventDefault();
-    const target = order[next];
-    if (target === undefined) return;
-    setKind(target);
-    setSelectedId(undefined);
-    // Focus follows selection, so the next arrow key continues from where the user just landed
-    // rather than from the tab they left behind.
-    const el = event.currentTarget.querySelector<HTMLButtonElement>(`[data-kind-tab="${target}"]`);
-    el?.focus();
-  }
-
-  /** Jump from the attention list to that ward's preview. Clearing the query and the kind filter
+  /** Jump from the attention list to that ward's preview. Clearing the query and the filters
    *  is not tidiness: if either excludes the ward, the click would select something the preview
    *  then refuses to show, and the row would read as broken. */
   function reveal(id: string) {
     setQuery("");
     setKind("all");
+    setReadyOnly(false);
     setSelectedId(id);
   }
 
@@ -319,50 +316,106 @@ export function HubScreen() {
               </span>
             </div>
             <div className={styles.searchBar}>
-              <div className={styles.searchInputWrap}>
-                <Search className={styles.searchGlyph} aria-hidden="true" />
-                {/*
-                  🔴 **THIS DECLARED `role="combobox"` WITH `aria-expanded="true"` HARD-CODED, AND THE
-                  CLAIM WAS FALSE.** A combobox promises a controlled popup of options, arrow keys
-                  that move through them, and an expanded state that means something. This screen
-                  had none of it: `aria-controls` pointed at a plain list with no `option` roles,
-                  `aria-expanded` never changed, and there was no key handler at all. A screen
-                  reader announced a widget the screen did not implement — **worse than no ARIA,
-                  because it tells a blind user to press keys that do nothing.**
+              <div className={styles.searchControlsRow}>
+                <div className={styles.searchInputWrap}>
+                  <div className={styles.categorySelectWrap}>
+                    <select
+                      id="hub-kind-select"
+                      aria-label="Filter by category"
+                      className={styles.categorySelect}
+                      value={kind}
+                      onChange={(event) => {
+                        setKind(event.target.value as HubKind | "all");
+                        setSelectedId(undefined);
+                      }}
+                    >
+                      {TABS.map((tab) => (
+                        <option key={tab.id} value={tab.id}>
+                          {tab.label} ({counts[tab.id]})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className={styles.selectCaret} size={14} aria-hidden="true" />
+                  </div>
+                  <div className={styles.searchDivider} aria-hidden="true" />
+                  <Search className={styles.searchGlyph} aria-hidden="true" />
+                  {/*
+                    🔴 **THIS DECLARED `role="combobox"` WITH `aria-expanded="true"` HARD-CODED, AND THE
+                    CLAIM WAS FALSE.** A combobox promises a controlled popup of options, arrow keys
+                    that move through them, and an expanded state that means something. This screen
+                    had none of it: `aria-controls` pointed at a plain list with no `option` roles,
+                    `aria-expanded` never changed, and there was no key handler at all. A screen
+                    reader announced a widget the screen did not implement — **worse than no ARIA,
+                    because it tells a blind user to press keys that do nothing.**
 
-                  Two honest ways out: implement the pattern, or stop claiming it. BOTH are taken
-                  here, split by what each is for. The role is dropped, because this is a filter box
-                  over a permanently visible list, not a picker — `type="search"` says what it
-                  actually is. And the arrow keys are implemented anyway, because the mockup's own
-                  script has them and they are the fastest way through 41 rows; they are simply not
-                  announced as something they are not.
-                */}
-                <input
-                  ref={inputRef}
-                  id="hub-search-query"
-                  name="query"
-                  className={styles.searchInput}
-                  type="search"
-                  aria-label="Search wards, EDs and community teams"
-                  aria-describedby="hub-search-hint"
-                  placeholder="Search wards, EDs, community teams…"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={onSearchKeyDown}
-                />
-                {query === "" ? null : (
+                    Two honest ways out: implement the pattern, or stop claiming it. BOTH are taken
+                    here, split by what each is for. The role is dropped, because this is a filter box
+                    over a permanently visible list, not a picker — `type="search"` says what it
+                    actually is. And the arrow keys are implemented anyway, because the mockup's own
+                    script has them and they are the fastest way through 41 rows; they are simply not
+                    announced as something they are not.
+                  */}
+                  <input
+                    ref={inputRef}
+                    id="hub-search-query"
+                    name="query"
+                    className={styles.searchInput}
+                    type="search"
+                    aria-label="Search wards, EDs and community teams"
+                    aria-describedby="hub-search-hint"
+                    placeholder="Search wards, EDs, community teams…"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={onSearchKeyDown}
+                  />
+                  {query === "" ? null : (
+                    <button
+                      type="button"
+                      className={styles.clearButton}
+                      aria-label="Clear search"
+                      onClick={() => {
+                        setQuery("");
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.searchSideActions}>
                   <button
                     type="button"
-                    className={styles.clearButton}
-                    aria-label="Clear search"
+                    className={readyOnly ? styles.readyFilterBtnActive : styles.readyFilterBtn}
+                    aria-pressed={readyOnly}
                     onClick={() => {
-                      setQuery("");
-                      inputRef.current?.focus();
+                      setReadyOnly((prev) => !prev);
+                      setSelectedId(undefined);
                     }}
+                    title="Filter wards with ready beds to admit"
                   >
-                    Clear
+                    <Bed size={15} className={styles.readyFilterIcon} aria-hidden="true" />
+                    <span>Ready beds only</span>
+                    <span className={styles.readyFilterCount}>{readyBedsCount}</span>
                   </button>
-                )}
+
+                  {isFiltered ? (
+                    <button
+                      type="button"
+                      className={styles.resetFiltersBtn}
+                      onClick={resetAllFilters}
+                      title="Reset all filters and search"
+                      aria-label="Reset all filters and search"
+                    >
+                      <RotateCcw size={13} aria-hidden="true" />
+                      <span>Reset</span>
+                    </button>
+                  ) : (
+                    <span className={styles.searchShortcutTag} title="Press / anywhere to focus search">
+                      <kbd>/</kbd>
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Announced through `aria-describedby`, and readable by everyone else. A keyboard
@@ -374,43 +427,6 @@ export function HubScreen() {
                     looking at a ward, which is exactly when they need it. */}
                 ↑ ↓ Preview · Enter Open · Escape Clear search and preview
               </p>
-
-              {/*
-                ⚠️ **`role="tablist"` IS A PROMISE ABOUT KEYS, NOT A LABEL.** It tells assistive
-                technology that these four are ONE stop in the tab order and that arrow keys move
-                between them. Without `tabIndex` management and an arrow handler that was false: all
-                four sat in the tab order individually, and arrow keys did nothing. Implemented here
-                rather than dropping the role, because the role is the right one — four mutually
-                exclusive filters over one list is exactly what a tablist is for, and the existing
-                tests pin it.
-              */}
-              <div className={styles.kindTabsWrap}>
-                <div className={styles.kindTabs} role="tablist" aria-label="Filter by kind" onKeyDown={onTabsKeyDown}>
-                  {TABS.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={kind === tab.id}
-                      // The roving half: only the selected tab is reachable by Tab, and arrows move
-                      // between them. Four separate tab stops for one control is what this replaces.
-                      tabIndex={kind === tab.id ? 0 : -1}
-                      data-kind-tab={tab.id}
-                      className={kind === tab.id ? styles.kindTabActive : styles.kindTab}
-                      onClick={() => {
-                        setKind(tab.id);
-                        // ⚠️ Clearing the selection is not tidiness. The preview pane reads from
-                        // `results`, so a selection that the new filter excludes would leave the
-                        // pane showing a ward the list no longer contains — a screen describing
-                        // something a coordinator can no longer see or click back to.
-                        setSelectedId(undefined);
-                      }}
-                    >
-                      {tab.label} <span className={styles.tabCount}>{counts[tab.id]}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/*
@@ -555,7 +571,8 @@ export function HubScreen() {
                           setSelectedId(undefined);
                         }}
                       >
-                        ⚡ Wards
+                        <Hospital className={styles.quickChipIcon} size={14} aria-hidden="true" />
+                        <span>Ward</span>
                       </button>
                       <button
                         type="button"
@@ -566,7 +583,8 @@ export function HubScreen() {
                           setSelectedId(undefined);
                         }}
                       >
-                        🏥 Emergency Depts
+                        <Siren className={styles.quickChipIcon} size={14} aria-hidden="true" />
+                        <span>Emergency</span>
                       </button>
                       <button
                         type="button"
@@ -577,7 +595,8 @@ export function HubScreen() {
                           setSelectedId(undefined);
                         }}
                       >
-                        👥 Community Teams
+                        <Users className={styles.quickChipIcon} size={14} aria-hidden="true" />
+                        <span>Community</span>
                       </button>
                     </div>
                   </div>
@@ -662,58 +681,35 @@ export function HubScreen() {
                         {network.closed}
                       </span>
                     </p>
-                    <p className={styles.capacityTotal}>
-                      Of {network.beds} beds across {network.wards} wards, the rest are {network.occupied} occupied.
-                    </p>
                   </div>
 
                   <div className={styles.detailSection}>
-                    <h3>Ready beds by service</h3>
-                    <WardTable className={styles.overviewTable}>
-                      <thead>
-                        <tr>
-                          <th scope="col">Health service</th>
-                          <th scope="col" className={styles.numCell}>
-                            Ready
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {byService.map((row) => (
-                          <tr
-                            key={row.service}
-                            className={styles.serviceRow}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => {
-                              setQuery(row.service);
-                              inputRef.current?.focus();
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setQuery(row.service);
-                                inputRef.current?.focus();
-                              }
-                            }}
-                            title={`Filter network by ${row.service}`}
-                          >
-                            <th scope="row">
-                              <span className={styles.serviceBadge}>{row.service}</span>
-                            </th>
-                            <td className={styles.numCell}>
-                              <span className={styles.serviceReadyPill}>{row.ready}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <th scope="row">Total</th>
-                          <td className={styles.numCell}>{network.ready}</td>
-                        </tr>
-                      </tfoot>
-                    </WardTable>
+                    <div className={styles.serviceHeaderRow}>
+                      <h3>Ready beds by service</h3>
+                      <span className={styles.serviceTotalBadge}>
+                        Total: <strong>{network.ready}</strong>
+                      </span>
+                    </div>
+                    <div className={styles.servicesGrid} role="group" aria-label="Ready beds by health service">
+                      {byService.map((row) => (
+                        <button
+                          key={row.service}
+                          type="button"
+                          className={styles.serviceCard}
+                          onClick={() => {
+                            setQuery(row.service);
+                            if (kind !== "all" && kind !== "ward") {
+                              setKind("all");
+                            }
+                            inputRef.current?.focus();
+                          }}
+                          title={`Filter network by ${row.service}`}
+                        >
+                          <span className={styles.serviceCardName}>{row.service}</span>
+                          <span className={styles.serviceCardPill}>{row.ready}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className={styles.detailSection}>
@@ -812,27 +808,56 @@ export function HubScreen() {
               </>
             ) : (
               <>
-                <div className={styles.detailHead}>
-                  <p className={styles.detailEyebrow}>
-                    <span className={kindBadgeClass(selected.kind)}>{KIND_WORD_LONG[selected.kind]}</span>
-                    {/* The health service or WA region, beside the kind rather than only in the
-                        subtitle: it is the first thing a coordinator checks when deciding whether a
-                        bed is even reachable for this patient. */}
-                    {selected.service === undefined ? null : (
-                      <span className={styles.resultSub}>{selected.service}</span>
-                    )}
-                  </p>
+                <div className={styles.detailHeadSelected}>
+                  <div className={styles.detailEyebrow}>
+                    <div className={styles.detailEyebrowLeft}>
+                      <span className={kindBadgeClass(selected.kind)}>{KIND_WORD_LONG[selected.kind]}</span>
+                      {/* The health service or WA region, beside the kind rather than only in the
+                          subtitle: it is the first thing a coordinator checks when deciding whether a
+                          bed is even reachable for this patient. */}
+                      {selected.service === undefined ? null : (
+                        <span className={styles.detailService}>{selected.service}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.closeDetailBtn}
+                      onClick={() => {
+                        setSelectedId(undefined);
+                        inputRef.current?.focus();
+                      }}
+                      aria-label="Close preview and return to overview (Escape)"
+                      title="Close preview (Esc)"
+                    >
+                      <X size={15} aria-hidden="true" />
+                    </button>
+                  </div>
                   <h2 className={styles.detailTitle}>{selected.name}</h2>
                   {/* ⚠️ SITE ONLY. The service (or WA region) is already in the eyebrow
                       directly above, so joining it in here printed "Perth Metropolitan" twice on a
                       community panel and the health service twice on a ward. A community team has no
                       site at all, which left its subtitle as a bare repeat of the line above it. */}
-                  {selected.site === undefined ? null : <p className={styles.detailSub}>{selected.site}</p>}
+                  {selected.site === undefined ? null : (
+                    <p className={styles.detailSub}>
+                      <Hospital className={styles.detailSiteIcon} size={13} aria-hidden="true" />
+                      <span>{selected.site}</span>
+                    </p>
+                  )}
 
                   <div className={styles.detailBadges}>
                     {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
                     {selected.security === undefined ? null : (
-                      <span className={styles.infoPill}>{selected.security}</span>
+                      <span
+                        className={
+                          selected.security.toLowerCase() === "open"
+                            ? styles.statusPillOpen
+                            : selected.security.toLowerCase() === "locked"
+                              ? styles.statusPillLocked
+                              : styles.infoPill
+                        }
+                      >
+                        {selected.security}
+                      </span>
                     )}
                     {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open — a
                         unit can be both locked and unauthorised at once — and it is stated in words
@@ -1068,7 +1093,6 @@ export function HubScreen() {
                     As at <b className={styles.asAtTime}>{formatInstant(now)}</b>, Perth.
                   </span>
                 </p>
-                <p className={styles.reconciliationNotice}>{hubReconciliationLine(null)}</p>
               </div>
               <div className={styles.srOnly}>
                 <h4>What is invented</h4>

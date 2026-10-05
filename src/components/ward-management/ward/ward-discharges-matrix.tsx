@@ -45,9 +45,6 @@ export function WardDischargesMatrix({
       <div className={styles.panelHead}>
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Discharges, Departures &amp; Barrier Resolution Matrix</h2>
-          <p className={styles.subtitle}>
-            Confirmed departures, community transition handovers, and active discharge delay barriers.
-          </p>
         </div>
         <button
           type="button"

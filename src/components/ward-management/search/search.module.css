@@ -1851,95 +1851,1009 @@
    THIRD EDITION PATIENT SEARCH (SLEEK CONSOLE & TWO-COLUMN CASELOAD WORKSPACE)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ═══ OPTION A: ALL-IN-ONE COMMAND COCKPIT (COMBINED MONOLITH) ═══ */
+.cockpitMonolith {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--ward-space-12);
+}
+
+.cockpitHeaderTier {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-16);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.cockpitKpiDeck {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 900px) {
+  .cockpitKpiDeck {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .cockpitKpiDeck {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(12rem, 78vw);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+  }
+}
+
+.cockpitKpiTab {
+  padding: 10px 14px;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.14s ease;
+  position: relative;
+  background: transparent;
+  user-select: none;
+}
+
+.cockpitKpiTab:last-child {
+  border-right: none;
+}
+
+.cockpitKpiTab:hover {
+  background: var(--sunk);
+}
+
+.cockpitKpiTab.active {
+  background: var(--surface);
+  box-shadow: inset 0 -2.5px 0 var(--accent);
+}
+
+.cockpitCommandBar {
+  padding: 9px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--surface);
+}
+
+.cockpitPrimaryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cockpitPrimaryRow::-webkit-scrollbar {
+  display: none;
+}
+
+.cockpitPrimaryRow .viewModeSwitcher {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.cockpitSecondaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.masterSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  padding: 4px 22px 4px 9px;
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  height: 33px;
+  max-width: 195px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1;
+  box-shadow: inset 0 1px 1px rgb(var(--ward-shadow-rgb) / 0.04);
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    color 0.12s;
+}
+
+/* ═══ CONDENSED KPI TELEMETRY DOCK (GROUNDED UNDER PRESETS) ═══ */
+.cockpitKpiDockCondensed {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  border-bottom: none;
+}
+
+@media (max-width: 900px) {
+  .cockpitKpiDockCondensed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .cockpitKpiDockCondensed {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(11rem, 75vw);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+  }
+}
+
+.cockpitKpiTabCondensed {
+  padding: 6px 12px;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.12s ease;
+  position: relative;
+  background: transparent;
+  user-select: none;
+  min-height: 34px;
+}
+
+.cockpitKpiTabCondensed:last-child {
+  border-right: none;
+}
+
+.cockpitKpiTabCondensed:hover {
+  background: var(--surface);
+}
+
+.cockpitKpiTabCondensed.active {
+  background: var(--surface);
+  box-shadow: inset 0 -2.5px 0 var(--accent);
+}
+
+.cockpitKpiDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cockpitKpiLabelCondensed {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cockpitKpiValCondensed {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.cockpitKpiSubCondensed {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 125px;
+  opacity: 0.85;
+}
+
+@media (max-width: 1250px) {
+  .cockpitKpiSubCondensed {
+    display: none;
+  }
+}
+
+.masterSelect:hover {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.masterSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--surface);
+}
+
+.masterSelect.isFiltered {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIRECTION 3: THE FLOATING GLASS COMMAND HORIZON (LINEAR / DOCK)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glassDock {
+  background: var(--surface-chrome);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px -2px rgb(var(--ward-shadow-rgb) / 0.08);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--ward-space-12);
+  min-height: 54px;
+  position: relative;
+  z-index: 5;
+}
+
+:global([data-theme="dark"]) .glassDock {
+  background: var(--surface-chrome);
+  border-color: var(--ward-border);
+  box-shadow: 0 8px 30px -4px rgb(var(--ward-shadow-rgb) / 0.6);
+}
+
+.glassDockIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.glassDockTitleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.glassDockTitle {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.glassAmbientRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.glassDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.glassDot.blue {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.glassDot.amber {
+  background: var(--warn);
+}
+
+.glassDot.red {
+  background: var(--danger);
+}
+
+/* Center: Integrated Pill Search Composer */
+.glassPillComposer {
+  flex: 1;
+  max-width: 700px;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 9999px;
+  padding: 2px 4px 2px 11px;
+  gap: 6px;
+  box-shadow: inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+:global([data-theme="dark"]) .glassPillComposer {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.glassPillComposer:focus-within {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2.5px var(--accent-soft);
+}
+
+.glassPillSearchIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.glassPillComposer:focus-within .glassPillSearchIcon {
+  color: var(--accent);
+}
+
+.glassTypeaheadSlot {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.glassTypeaheadSlot > div {
+  width: 100%;
+}
+
+.glassTypeaheadSlot label,
+.glassTypeaheadSlot p {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.glassTypeaheadSlot div[class*="controlBox"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.glassTypeaheadSlot input {
+  font-family: var(--body) !important;
+  font-size: var(--t-2) !important;
+  color: var(--ink);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  outline: none !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  height: 28px !important;
+  min-height: 28px !important;
+}
+
+.glassTypeaheadSlot div[class*="controlBox"] > svg {
+  display: none !important;
+}
+
+.glassTypeaheadSlot button[class*="clear"] {
+  display: none !important;
+}
+
+.glassPillClear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.glassPillClear:hover {
+  background: var(--line-strong);
+  color: var(--ink);
+}
+
+.glassEmbeddedSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.glassEmbeddedSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 9999px;
+  padding: 3px 20px 3px 9px;
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  outline: none;
+  max-width: 155px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
+  transition: all 0.12s ease;
+  height: 27px;
+}
+
+:global([data-theme="dark"]) .glassEmbeddedSelect {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.glassEmbeddedSelect:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.glassEmbeddedSelect:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.glassEmbeddedSelect.isFiltered {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.glassEmbeddedArrow {
+  position: absolute;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.glassPillKbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Right Controls */
+.glassDockActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.glassViewSwitcher {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  padding: 2px 3px;
+  gap: 2px;
+  height: 31px;
+  align-items: center;
+}
+
+:global([data-theme="dark"]) .glassViewSwitcher {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.glassViewBtn {
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  height: 25px;
+}
+
+.glassViewBtn:hover {
+  color: var(--ink);
+}
+
+.glassViewBtn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.06);
+}
+
+:global([data-theme="dark"]) .glassViewBtn.active {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.glassBtnAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  height: 31px;
+  border-radius: 9999px;
+  background: var(--ink);
+  color: var(--text-inverse);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.15);
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+:global([data-theme="dark"]) .glassBtnAdd {
+  background: var(--accent);
+}
+
+.glassBtnAdd:hover {
+  opacity: 0.92;
+  transform: translateY(-0.5px);
+}
+
+.glassBtnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 31px;
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+:global([data-theme="dark"]) .glassBtnGhost {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.glassBtnGhost:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.glassBtnReset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 31px;
+  border-radius: 9999px;
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--danger-border);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+:global([data-theme="dark"]) .glassBtnReset {
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+  border-color: var(--danger-border);
+}
+
+.glassBtnReset:hover {
+  background: var(--danger-solid);
+  color: var(--text-inverse);
+  border-color: var(--danger-solid);
+}
+
+.glassMoreWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.glassBtnMore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .glassBtnMore {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.glassBtnMore:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.glassBtnMore.isOpen {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.glassPopoverMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow:
+    0 10px 25px -5px rgb(var(--ward-shadow-rgb) / 0.15),
+    0 8px 10px -6px rgb(var(--ward-shadow-rgb) / 0.1);
+  padding: 4px;
+  min-width: 190px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+:global([data-theme="dark"]) .glassPopoverMenu {
+  background: var(--surface-raised);
+  border-color: var(--ward-border);
+  box-shadow: 0 10px 30px -5px rgb(var(--ward-shadow-rgb) / 0.5);
+}
+
+.glassPopoverItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.1s ease;
+}
+
+.glassPopoverItem:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.glassPopoverDivider {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 0;
+}
+
+/* A4 / tablet widths (~794px print probe): keep the view switcher out from under the
+ * pill composer. Without this, #viewDenseBtn is intercepted by the location select
+ * (ui-ward-forced-colors print caseload test). */
+@media (max-width: 64rem) {
+  .glassDock {
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .glassDockIdentity {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .glassPillComposer {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
+    order: 3;
+  }
+
+  .glassDockActions {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 2;
+    position: relative;
+    z-index: 2;
+  }
+}
+
+/* Phone/narrow: glass dock must not overflow the viewport, and interactive controls must
+ * meet the 48px production tap floor (tests/ui-ward-search.spec.ts). Compact 27–28px
+ * desktop chrome is fine above this breakpoint. */
+@media (max-width: 40rem) {
+  .glassDock {
+    flex-wrap: wrap;
+    align-items: stretch;
+    min-width: 0;
+    gap: var(--ward-space-8);
+  }
+
+  .glassDockIdentity {
+    flex: 1 1 100%;
+  }
+
+  .glassPillComposer {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    border-radius: var(--ward-radius-pixel, 8px);
+    padding: var(--ward-space-4);
+    gap: var(--ward-space-6);
+    align-items: stretch;
+  }
+
+  .glassTypeaheadSlot {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  /* Undo the compact 28px !important overrides so typeahead keeps its own 48px floor. */
+  .glassTypeaheadSlot div[class*="controlBox"],
+  .glassTypeaheadSlot input {
+    height: auto !important;
+    min-height: var(--ward-tap, 3rem) !important;
+  }
+
+  /* Prefer the typeahead's own 48px Clear over the 18px glass chip (same name match). */
+  .glassTypeaheadSlot button[class*="clear"] {
+    display: inline-flex !important;
+  }
+
+  .glassPillClear {
+    display: none;
+  }
+
+  .glassPillKbd {
+    display: none;
+  }
+
+  .glassEmbeddedSelectWrap {
+    flex: 1 1 calc(50% - var(--ward-space-6));
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .glassEmbeddedSelect {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    min-height: var(--ward-tap, 3rem);
+    font-size: var(--t-2, 0.875rem);
+    padding: var(--ward-space-4) 1.75rem var(--ward-space-4) var(--ward-space-8);
+  }
+
+  .glassEmbeddedArrow {
+    right: 10px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .glassDockActions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+}
+
 .searchConsole {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r2);
   box-shadow: var(--lift);
-  padding: 12px 14px 10px;
+  padding: 10px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   position: relative;
+  margin-bottom: var(--ward-space-12);
 }
 
 .searchForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
-.searchInputRow {
+/* Primary Command Horizon: Shrunk Universal Search Bar + 5 Inline Dropdown Facets */
+.commandRowPrimary {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 8px;
+  flex-wrap: wrap;
   width: 100%;
+}
+
+/* Precision Universal-Style Search Input */
+.searchInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 220px;
+  flex-shrink: 0;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.searchInputWrap:focus-within {
+  width: 260px;
+}
+
+@media (max-width: 900px) {
+  .searchInputWrap,
+  .searchInputWrap:focus-within {
+    width: 100%;
+  }
 }
 
 .searchIcon {
   position: absolute;
-  left: 14px;
-  width: 16px;
-  height: 16px;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
   color: var(--muted);
   pointer-events: none;
   stroke-width: 2;
   z-index: 2;
+  transition: color 0.15s ease;
+}
+
+.searchInputWrap:focus-within .searchIcon {
+  color: var(--accent);
 }
 
 .typeaheadSlot {
   width: 100%;
 }
 
-.typeaheadSlot input {
+/* Scope patient-typeahead inside searchInputWrap to universal 33px height & 9px radius */
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]) {
   width: 100%;
-  height: 40px;
-  padding: 0 54px 0 40px;
+  height: 33px;
+  min-height: 33px;
+  padding: 0 34px 0 30px;
   background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  font-family: var(--body);
-  font-size: var(--t-2);
-  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
   transition:
-    border-color 0.14s,
-    background 0.14s,
-    box-shadow 0.14s;
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.typeaheadSlot input:focus {
-  outline: none;
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]:hover) {
+  background: var(--surface);
+  border-color: var(--ink-soft);
+}
+
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_controlBox"]:focus-within) {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 2.5px var(--accent-soft);
+  box-shadow:
+    0 0 0 2.5px var(--accent-soft),
+    inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
 }
 
-.typeaheadSlot input::placeholder {
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_input"]) {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  width: 100%;
+  min-height: 0;
+  height: 31px;
+  line-height: 31px;
+  outline: none;
+}
+
+.searchInputWrap .typeaheadSlot :global([class*="patient-typeahead_input"])::placeholder {
   color: var(--muted);
-  font-size: var(--t-2);
+  font-size: var(--t-1);
 }
 
 .searchEndAdornment {
   position: absolute;
-  right: 8px;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 3;
 }
 
 .clearBtn {
-  font-size: var(--t-0);
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--muted);
   background: var(--surface);
   border: 1px solid var(--line);
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
   transition:
     color 0.12s,
@@ -1954,54 +2868,25 @@
 
 .kbdPill {
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 10px;
+  font-weight: 600;
   color: var(--muted);
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 1px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
-.addPatientLink {
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  padding: 3px 10px;
-  border-radius: var(--r2);
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none !important;
-  transition:
-    background 0.12s,
-    border-color 0.12s,
-    color 0.12s;
-  white-space: nowrap;
-}
-.addPatientLink:hover {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-/* Condensed Filter Ribbon Toolbar */
-.filterRibbon {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.filtersPrimaryGroup {
+/* 5 Inline Dropdown Filters Group */
+.facetSelectsGroup {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
 .facetSelectWrap {
@@ -2015,18 +2900,20 @@
   -webkit-appearance: none;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: var(--r2);
+  border-radius: var(--r1);
   padding: 4px 22px 4px 8px;
   font-family: var(--body);
   font-size: var(--t-1);
+  font-weight: 500;
   color: var(--ink-soft);
   cursor: pointer;
-  height: 28px;
-  max-width: 175px;
+  height: 33px;
+  max-width: 140px;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   line-height: 1;
+  box-shadow: var(--lift);
   transition:
     border-color 0.12s,
     background 0.12s,
@@ -2034,7 +2921,7 @@
 }
 
 .facetSelect:hover {
-  background: var(--sunk);
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line-strong);
 }
@@ -2043,6 +2930,7 @@
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--surface);
 }
 
 .facetSelect.isFiltered {
@@ -2062,20 +2950,30 @@
   stroke-width: 2;
 }
 
+/* Secondary Controls Row: Presets on Left, Actions on Right */
+.commandRowSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
 /* Quick Query Chips Bar */
 .quickChipsBar {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding-top: 4px;
 }
 
 .quickChipsLabel {
-  font-size: var(--t-0);
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--muted);
   flex-shrink: 0;
 }
@@ -2083,17 +2981,17 @@
 .quickChipsGroup {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .chip {
-  padding: 2px 9px;
+  padding: 3px 9px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink-soft);
-  font-size: var(--t-0);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none !important;
@@ -2103,7 +3001,7 @@
     color 0.12s;
 }
 .chip:hover {
-  background: var(--sunk);
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line-strong);
 }
@@ -2114,7 +3012,7 @@
   font-weight: 600;
 }
 
-/* Secondary Toolbar Actions */
+/* Secondary Toolbar Actions: Reset + Sort + View Switcher */
 .toolbarActionsGroup {
   display: flex;
   align-items: center;
@@ -2126,16 +3024,18 @@
   display: inline-flex;
   background: var(--sunk);
   border: 1px solid var(--line);
-  border-radius: var(--r2);
+  border-radius: var(--r1);
   padding: 2px;
   gap: 2px;
+  height: 33px;
+  align-items: center;
 }
 
 .viewModeBtn {
-  padding: 2px 7px;
-  border-radius: calc(var(--r2) - 2px);
-  font-size: var(--t-0);
-  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: calc(var(--r1) - 2px);
+  font-size: 11px;
+  font-weight: 600;
   color: var(--muted);
   display: inline-flex;
   align-items: center;
@@ -2144,6 +3044,7 @@
   border: none;
   background: transparent;
   text-decoration: none !important;
+  height: 27px;
   transition:
     background 0.12s,
     color 0.12s;
@@ -2152,26 +3053,29 @@
   width: 12px;
   height: 12px;
 }
+.viewModeBtn:hover {
+  color: var(--ink);
+}
 .viewModeBtn[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: var(--lift);
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08);
 }
 
 .activeFilterResetPill {
-  font-size: var(--t-0);
+  font-size: 11px;
   font-weight: 600;
   color: var(--danger-ink);
   background: var(--danger-soft);
   border: 1px solid var(--danger);
-  padding: 2px 7px;
+  padding: 4px 9px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
   text-decoration: none !important;
+  height: 33px;
   transition: background 0.12s;
 }
 .activeFilterResetPill:hover {
@@ -3011,6 +3915,43 @@
   border-color: var(--line-strong);
 }
 
+.actionBtnCompact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r1);
+  font-size: 11.5px;
+  font-weight: 600;
+  height: 28px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  text-decoration: none !important;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.actionBtnCompact:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.actionBtnCompactPrimary {
+  composes: actionBtnCompact;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+
+.actionBtnCompactPrimary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--text-inverse);
+}
+
 .toastContainer {
   position: fixed;
   bottom: 24px;
@@ -3059,6 +4000,12 @@
 :global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .resultsConsole,
 :global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .resultsPanel,
 :global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .inspectorPanel,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitMonolith,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitHeaderTier,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitKpiDeck,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitKpiTab,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitKpiDockCondensed,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .cockpitKpiTabCondensed,
 :global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .searchConsole,
 :global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .governanceBanner {
   border-color: var(--ward-divider);
@@ -3075,7 +4022,8 @@
   border-color: var(--ward-divider);
 }
 
-:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .btnGhost {
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .btnGhost,
+:global([data-theme="dark"]) .screen[data-ward-design="third-edition"] .actionBtnCompact {
   border-color: var(--ward-divider);
 }
 

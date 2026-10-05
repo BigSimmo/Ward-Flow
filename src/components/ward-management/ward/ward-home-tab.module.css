@@ -1,3 +1,7 @@
+.alertLegalNote {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-0);
+}
 /* Ward Home Tab Styles */
 .homeWrap {
   display: flex;
@@ -93,7 +97,7 @@
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r2);
+  border-radius: var(--r1, 10px);
   box-shadow: var(--lift-sm);
   overflow: hidden;
   margin-bottom: 14px;
@@ -256,27 +260,56 @@
   width: fit-content;
 }
 
+.timelineMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.timelineEmpty {
+  padding: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .pillBadge {
-  font-size: 12px; /* 12px floor */
+  font-size: 11px;
   font-family: var(--mono);
   font-weight: 600;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: var(--pill, 999px);
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink-soft);
 }
 
-.pillBadge[data-tone="good"] {
+.pillBadge[data-tone="good"],
+.pillBadgeGood {
   background: var(--good-soft);
-  color: var(--good-ink, var(--good));
-  border-color: var(--good-soft);
+  color: var(--good-ink, var(--ward-success));
+  border-color: var(--good-border);
 }
 
-.pillBadge[data-tone="warn"] {
+.pillBadge[data-tone="warn"],
+.pillBadgeWarn {
   background: var(--warn-soft);
-  color: var(--warn-ink, var(--warn));
-  border-color: var(--warn-soft);
+  color: var(--warn-ink, var(--ward-warning));
+  border-color: var(--warn-border);
+}
+
+.pillBadgeAccent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.pillBadgePurple {
+  background: var(--ward-domain-coordinator-soft);
+  color: var(--ward-domain-coordinator);
+  border-color: var(--ward-domain-coordinator);
 }
 
 .visuallyHidden {
@@ -289,4 +322,11 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media print {
+  .pillBadgePurple {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
 }

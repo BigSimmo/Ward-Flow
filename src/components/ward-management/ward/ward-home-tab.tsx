@@ -2,14 +2,14 @@
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import React, { useState } from "react";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
 import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -113,13 +113,27 @@ export function WardHomeTab({
   onAcceptInPrinciple,
   liveFormAlerts,
 }: WardHomeTabProps) {
-  const { bedReleases } = useWardFlow();
+  const { bedReleases, leaveBeds = [] } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [affirmationChecked, setAffirmationChecked] = useState(false);
 
+  // Derived real ward activity events for overhauled Shift Coordinator Log
+  const pendingBedReleases = bedReleases.filter(
+    (release) => release.unitId === unit.id && release.state !== "discharged",
+  );
+  const dischargedBedReleases = bedReleases.filter(
+    (release) => release.unitId === unit.id && release.state === "discharged",
+  );
+  const unitLeaveBeds = (leaveBeds ?? []).filter((bed) => bed.unitId === unit.id);
+
   return (
     <div className={styles.homeWrap}>
-      <p>{pendingPreparation} being made ready</p>
+      <span className="sr-only">{pendingPreparation} being made ready</span>
+      {liveFormAlerts.length > 0 ? (
+        <div className={styles.alertLegalNote}>
+          <LegalLimitsNotChecked variant="tag" />
+        </div>
+      ) : null}
       {liveFormAlerts.map((alert) => (
         <div className={styles.alertStrip} key={alert.key} data-tone={alert.tone}>
           <div className={styles.alertMain}>
@@ -131,7 +145,6 @@ export function WardHomeTab({
           </div>
         </div>
       ))}
-      <LegalLimitsNotChecked variant="tag" />
 
       {/* 2. Home 2-Column Command Grid */}
       <div className={styles.homeGrid}>
@@ -145,7 +158,7 @@ export function WardHomeTab({
                   <rect x="2" y="2" width="12" height="12" rx="2" />
                   <path d="M2 8h12M8 2v12" />
                 </svg>
-                <span>Ward Census &amp; Physical Turnover Telemetry</span>
+                <span>Ward Census &amp; Turnover</span>
               </div>
               <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--muted)" }}>
                 Current ward record
@@ -264,7 +277,7 @@ export function WardHomeTab({
           </div>
         </div>
 
-        {/* Right Column: Shift Coordinator Ledger */}
+        {/* Right Column: Shift Coordinator Log (Overhauled Ward Activity Feed) */}
         <div>
           <div className={styles.card} style={{ height: "100%" }}>
             <div className={styles.cardHead}>
@@ -273,65 +286,105 @@ export function WardHomeTab({
                   <circle cx="8" cy="8" r="6" />
                   <path d="M8 5v3.5l2 1" />
                 </svg>
-                <span>Shift Coordinator Ledger</span>
+                <span>Shift Coordinator Log</span>
               </div>
-              <span style={{ fontSize: "11px", color: "var(--good)", fontWeight: 600 }}>Live Feed</span>
+              <span className={styles.pillBadge} data-tone="good">
+                Active shift
+              </span>
             </div>
             <div className={styles.cardBody}>
               <div className={styles.timelineStream}>
-                <div className={styles.timelineEntry}>
-                  <span className={styles.timelineTime}>10:44</span>
-                  <div className={styles.timelineBody}>
-                    <span>
-                      <strong>Dabakarn capacity confirmed</strong> at {unit.beds} beds. {capacity.available} clean ready
-                      bed identified.
-                    </span>
-                    <span className={styles.timelineRole}>NUM {unit.name}</span>
+                {unit.allocatable.confirmedAt ? (
+                  <div className={styles.timelineEntry}>
+                    <span className={styles.timelineTime}>{formatInstant(unit.allocatable.confirmedAt)}</span>
+                    <div className={styles.timelineBody}>
+                      <span>
+                        <strong>Capacity Confirmed:</strong> Allocatable capacity confirmed at {unit.allocatable.value}{" "}
+                        beds.
+                      </span>
+                      <div className={styles.timelineMetaRow}>
+                        <span className={styles.timelineRole}>NUM {unit.name}</span>
+                        <span className={`${styles.pillBadge} ${styles.pillBadgeGood}`}>Verified</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
-                <div className={styles.timelineEntry}>
-                  <span className={styles.timelineTime}>10:22</span>
-                  <div className={styles.timelineBody}>
-                    <span>
-                      <strong>Inbound Transfer Accepted:</strong> Keira Pellingworth (UM100045) accepted from RPH ED.
-                    </span>
-                    <span className={styles.timelineRole}>Bed Coordinator</span>
+                {pendingBedReleases.map((release) => (
+                  <div key={`feed-${release.id}`} className={styles.timelineEntry}>
+                    <span className={styles.timelineTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
+                    <div className={styles.timelineBody}>
+                      <span>
+                        <strong>Bed Release Flagged:</strong> Expected departure at {formatInstant(release.expectedAt)}
+                        {release.waitingOn ? ` waiting on ${release.waitingOn}` : ""}.
+                      </span>
+                      <div className={styles.timelineMetaRow}>
+                        <span className={styles.timelineRole}>NUM {unit.name}</span>
+                        <span className={`${styles.pillBadge} ${styles.pillBadgeWarn}`}>
+                          {release.state === "confirmed" ? "Confirmed" : "Expected"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
 
-                <div className={styles.timelineEntry}>
-                  <span className={styles.timelineTime}>09:50</span>
-                  <div className={styles.timelineBody}>
-                    <span>
-                      <strong>Bed 01 Cleaned:</strong> Environmental services finished terminal sanitize. Bed marked
-                      ready.
-                    </span>
-                    <span className={styles.timelineRole}>Services Lead</span>
+                {dischargedBedReleases.map((release) => (
+                  <div key={`feed-clean-${release.id}`} className={styles.timelineEntry}>
+                    <span className={styles.timelineTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
+                    <div className={styles.timelineBody}>
+                      <span>
+                        <strong>Departure Completed:</strong> Bed vacated and released. Clean status:{" "}
+                        {release.preparationNote ?? (release.preparing ? "being made ready" : "clean not recorded")}.
+                      </span>
+                      <div className={styles.timelineMetaRow}>
+                        <span className={styles.timelineRole}>Discharge Lead</span>
+                        <span className={`${styles.pillBadge} ${styles.pillBadgeAccent}`}>Clean Queue</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
 
-                <div className={styles.timelineEntry}>
-                  <span className={styles.timelineTime}>08:15</span>
-                  <div className={styles.timelineBody}>
-                    <span>
-                      <strong>Section 17 Leave Sighted:</strong> Luke Daviecroft (Bed 02) departed on unescorted grounds
-                      leave.
-                    </span>
-                    <span className={styles.timelineRole}>RN Shift Lead</span>
+                {unitLeaveBeds.map((leaveBed) => (
+                  <div key={`feed-leave-${leaveBed.id}`} className={styles.timelineEntry}>
+                    <span className={styles.timelineTime}>{formatInstantWithDay(leaveBed.confirmedAt, now)}</span>
+                    <div className={styles.timelineBody}>
+                      <span>
+                        <strong>Section 17 Leave:</strong> Patient on approved leave (Expected return{" "}
+                        {formatInstant(leaveBed.expectedReturn)}).
+                      </span>
+                      <div className={styles.timelineMetaRow}>
+                        <span className={styles.timelineRole}>{leaveBed.confirmedBy}</span>
+                        <span className={`${styles.pillBadge} ${styles.pillBadgePurple}`}>Leave Active</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
 
-                <div className={styles.timelineEntry}>
-                  <span className={styles.timelineTime}>07:30</span>
-                  <div className={styles.timelineBody}>
-                    <span>
-                      <strong>Morning Handover Complete:</strong> Night to day transition signed off across all{" "}
-                      {unit.beds} beds.
-                    </span>
-                    <span className={styles.timelineRole}>NUM {unit.name}</span>
+                {accepted.length > 0 ? (
+                  <div className={styles.timelineEntry}>
+                    <span className={styles.timelineTime}>Recent</span>
+                    <div className={styles.timelineBody}>
+                      <span>
+                        <strong>Inbound Transfer Accepted:</strong> {resolvePatientIdentity(accepted[0]).displayName}{" "}
+                        accepted from ED.
+                      </span>
+                      <div className={styles.timelineMetaRow}>
+                        <span className={styles.timelineRole}>Bed Coordinator</span>
+                        <span className={`${styles.pillBadge} ${styles.pillBadgeGood}`}>En Route</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : null}
+
+                {!unit.allocatable.confirmedAt &&
+                pendingBedReleases.length === 0 &&
+                dischargedBedReleases.length === 0 &&
+                unitLeaveBeds.length === 0 &&
+                accepted.length === 0 ? (
+                  <div className={styles.timelineEmpty}>
+                    <span>No shift activity entries recorded yet for this session.</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

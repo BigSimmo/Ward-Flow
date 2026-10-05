@@ -241,21 +241,26 @@ export function SuburbTeamPanel() {
       data-testid="ward-suburb-team-panel"
     >
       <div className={styles.suburbLookupHead}>
-        <h2
-          id={HEADING_ID}
-          className={styles.sectionHeading}
-          style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}
-        >
-          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M8 1a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5z" />
-            <circle cx="8" cy="6" r="2" />
-          </svg>
-          <span>The team for this suburb</span>
-        </h2>
+        <div className={styles.suburbHeaderLeft}>
+          <div className={styles.suburbHeaderIcon}>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 1a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5z" />
+              <circle cx="8" cy="6" r="2" />
+            </svg>
+          </div>
+          <div className={styles.suburbHeaderTitles}>
+            <h2 id={HEADING_ID} className={styles.suburbHeaderMainTitle}>
+              The team for this suburb
+            </h2>
+            <p className={styles.suburbHeaderSubText}>
+              Find which Community Mental Health Team covers a patient&rsquo;s residence
+            </p>
+          </div>
+        </div>
         <span className={styles.badgePill}>Community Catchment Directory</span>
       </div>
 
-      <p className={styles.placeholder} style={{ margin: 0 }}>
+      <p className={styles.suburbQualifier} data-testid="ward-suburb-team-qualifier">
         {QUALIFIER}
       </p>
 
@@ -267,7 +272,7 @@ export function SuburbTeamPanel() {
           setSubmitted(query);
         }}
       >
-        <label className={styles.capacityLabel} htmlFor="ward-suburb-team-input">
+        <label className="sr-only" htmlFor="ward-suburb-team-input">
           Patient&rsquo;s suburb
         </label>
         <div className={styles.suburbSearchRow}>
@@ -286,15 +291,15 @@ export function SuburbTeamPanel() {
             </svg>
             <input
               id="ward-suburb-team-input"
-              className={`${styles.capacityInput} ${styles.suburbSearchInput}`}
+              className={styles.suburbSearchInput}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search suburb (e.g. Albany, Belmont, Calista)..."
+              placeholder="Search suburb (e.g. Albany, Belmont, Calista, Joondalup)..."
               autoComplete="off"
             />
           </div>
-          <button type="submit" className={`${styles.confirmRowButton} ${styles.btnLookupAction}`}>
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <button type="submit" className={styles.btnLookupAction}>
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 8l3 3 7-7" />
             </svg>
             <span>Look up the team</span>
