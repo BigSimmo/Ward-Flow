@@ -227,8 +227,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   // All rows ordered worst blocker first, then longest wait
   const rows = groups.flatMap((group) => group.movements.map((movement) => ({ movement, cause: group.cause })));
 
-  const [tableLayout, setTableLayout] = useState<"focus" | "workspace">("focus");
-
   const inspectionSourceRef = useRef<"waiting" | "timeline">("waiting");
   const selectMovement = (movementId: string) => {
     inspectionSourceRef.current = "waiting";
@@ -347,7 +345,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       className={styles.screen}
       data-ward-design="third-edition"
       data-ward-page="delays"
-      data-delay-layout={tableLayout}
       data-testid="ward-delays-page"
     >
       <main id="main-content" className={styles.main}>
@@ -471,7 +468,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         )}
 
         <DelaysTableWorkspace
-          onLayoutChange={setTableLayout}
           rows={queueRows}
           groups={queueGroups}
           now={now}
