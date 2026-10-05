@@ -170,7 +170,7 @@
 .planOption[data-active="true"] {
   background: var(--surface-2);
 }
-.hint {
+.planGuidance {
   margin: 7px 8px 3px;
   color: var(--muted);
   font-size: 11px;

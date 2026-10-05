@@ -660,6 +660,7 @@ test.describe("@mockup Emergency department screen", () => {
     await page.getByTestId("ward-ed-book-transport-confirm-WF-016").click();
 
     await expect(readyHandover).not.toHaveAttribute("aria-disabled", "true");
+    if ((await unfoldEd16.getAttribute("aria-expanded")) !== "true") await unfoldEd16.click();
     await readyHandover.click();
 
     // `HANDOVER_READY` writes a brand-new `transport` object with no timestamps at all
@@ -687,8 +688,29 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByTestId("ward-ed-police-WF-009")).toBeVisible();
-    await expect(page.locator('[data-testid^="ward-ed-police-"]')).toHaveCount(1);
+    // Wait for the first record trigger to hydrate, as in openDesignShowcase below.
+    await page.waitForFunction(() => {
+      const trigger = document.querySelector('button[title^="View patient details"]');
+      return trigger?.isConnected === true && Object.keys(trigger).some((key) => key.startsWith("__reactProps$"));
+    });
+    // Police presence belongs to the recorded detail, as requested for the compact board.
+    // Check every patient record: exactly WF-009 carries this information.
+    const rows = page.locator('[data-testid^="ward-ed-patient-"]');
+    const rowIds = await rows.evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute("data-testid")!),
+    );
+    expect(rowIds).toContain("ward-ed-patient-WF-009");
+    for (const id of rowIds) {
+      await page.getByTestId(id).locator('button[title^="View patient details"]').click();
+      const record = page.getByRole("dialog");
+      await expect(record).toBeVisible();
+      await expect(record.getByText("Police presence", { exact: true })).toHaveCount(
+        id === "ward-ed-patient-WF-009" ? 1 : 0,
+      );
+      if (id === "ward-ed-patient-WF-009")
+        await expect(record.getByText("Police in attendance", { exact: true })).toBeVisible();
+      await record.getByRole("button", { name: "Close patient details" }).click();
+    }
   });
 
   /**
@@ -703,11 +725,17 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
+    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
+      await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    }
     await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
+    if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
+      await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    }
     await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
@@ -832,6 +860,10 @@ test.describe("@mockup Emergency department screen", () => {
 
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    await page
+      .getByTestId("ward-ed-inbox-row-RF-009")
+      .getByRole("button", { name: /View referral/u })
+      .click();
     await page.getByTestId("ward-ed-inbox-decline-RF-009").click();
     await expect(page.getByTestId("ward-ed-inbox-decline-panel-RF-009")).toBeVisible();
 
@@ -1073,6 +1105,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // is inert.
     await expect(handoverButton).not.toHaveAttribute("aria-disabled", "true");
 
+    if ((await unfoldEd315.getAttribute("aria-expanded")) !== "true") await unfoldEd315.click();
     await handoverButton.click();
     await expect(page.getByTestId("ward-ed-outstanding-WF-315")).toHaveAttribute("data-kind", "transport");
 

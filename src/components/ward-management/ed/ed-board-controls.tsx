@@ -330,7 +330,7 @@ export function EdPlanPicker({
             </button>
           ))}
         </div>
-        <p className={styles.hint}>Enter adds a label · Changes on this screen only</p>
+        <p className={styles.planGuidance}>Enter adds a label · Changes on this screen only</p>
       </EdPopover>
     </>
   );

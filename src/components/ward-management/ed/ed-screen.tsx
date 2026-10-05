@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
@@ -2662,6 +2663,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 : "—",
             },
           ]}
+          referralOpen={referralOpen}
           onRaiseReferral={() => {
             setRaisingFromReferralId(undefined);
             setReferralOpen(true);
@@ -2672,6 +2674,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         />
 
         <section
+          id="ward-ed-referral-intake"
           aria-label="Raise a referral"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
@@ -4117,7 +4120,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
             </span>
             <span className={styles.boardResult} role="status">
-              {visiblePatients.length} of {patients.length} patients
+              {visiblePatients.length} of {patients.length} patients<span className="sr-only"> · Synthetic data</span>
             </span>
           </div>
           {patients.length === 0 ? (
@@ -4386,16 +4389,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                             title={`In department from ${formatInstantWithDay(movement.openedAt, now)}`}
                           >
                             <b>{splitDuration(minutesInDepartment)}</b>
-                            {minutesInDepartment > accessTarget && (
-                              <span
-                                className={styles.accessWarning}
-                                data-testid={`ward-ed-access-target-${movement.id}`}
-                                data-state="over"
-                                title={accessTargetLine(minutesInDepartment, accessTarget)}
-                              >
-                                Over target
+                            <span
+                              className={minutesInDepartment > accessTarget ? styles.accessWarning : "sr-only"}
+                              data-testid={`ward-ed-access-target-${movement.id}`}
+                              data-state={minutesInDepartment > accessTarget ? "over" : "under"}
+                              title={`Access target ${splitDuration(accessTarget)}. ${accessTargetLine(minutesInDepartment, accessTarget)}`}
+                            >
+                              {minutesInDepartment > accessTarget && <span aria-hidden="true">Over target</span>}
+                              <span className="sr-only">
+                                Access target {splitDuration(accessTarget)}.{" "}
+                                {accessTargetLine(minutesInDepartment, accessTarget)}
                               </span>
-                            )}
+                            </span>
                           </td>
                           <td className={styles.bayCell}>
                             <span className={styles.bayNumber}>{patientBay(movement.id).replace(/^Bay /, "")}</span>
@@ -4432,17 +4437,18 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {formExpiryText !== undefined && (
                               <span
                                 className={movement.legalForm?.dueAt === undefined ? "sr-only" : styles.compactExpiry}
-                                data-testid={`ward-ed-form-expiry-${movement.id}`}
                                 title={formExpiryText}
                               >
                                 {movement.legalForm?.dueAt === undefined ? (
-                                  formExpiryText
+                                  <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
                                 ) : (
                                   <>
                                     <span aria-hidden="true">
                                       {formatInstantWithDay(movement.legalForm.dueAt, now)}
                                     </span>
-                                    <span className="sr-only">{formExpiryText}</span>
+                                    <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
+                                      {formExpiryText}
+                                    </span>
                                   </>
                                 )}
                               </span>
@@ -5117,211 +5123,217 @@ export function EdScreen({ edId }: EdScreenProps) {
                                * screen said it could not. The reducer would refuse it and the refusal would be
                                * silent. With no form there is no implicit submission to bypass anything.
                                */}
-                              {transportOpen && !transportBlocked ? (
-                                <div className={styles.modalBackdrop} onClick={closeTransportDialog}>
-                                  <div
-                                    ref={transportDialogRef}
-                                    className={styles.declineForm}
-                                    data-testid={`ward-ed-book-transport-${movement.id}`}
-                                    role="dialog"
-                                    aria-modal="true"
-                                    aria-labelledby={`ward-ed-book-transport-title-${movement.id}`}
-                                    onKeyDown={handleTransportDialogKeyDown}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <h4
-                                      id={`ward-ed-book-transport-title-${movement.id}`}
-                                      className={styles.declineLegend}
-                                    >
-                                      Log the transport booking made by phone for {patientInfo.displayName}
-                                    </h4>
-                                    <label
-                                      className={styles.referralField}
-                                      htmlFor={`ward-ed-transport-provider-${movement.id}`}
-                                    >
-                                      Who is collecting {patientInfo.displayName}
-                                      <select
-                                        id={`ward-ed-transport-provider-${movement.id}`}
-                                        data-testid={`ward-ed-transport-provider-${movement.id}`}
-                                        value={transportDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                                        onChange={(event) =>
-                                          setTransportDraft((current) => ({
-                                            ...current,
-                                            provider:
-                                              event.target.value === NO_TRANSPORT_PROVIDER_VALUE
-                                                ? undefined
-                                                : (event.target.value as TransportProvider),
-                                          }))
-                                        }
+                              {transportOpen && !transportBlocked
+                                ? createPortal(
+                                    <div className={styles.modalBackdrop} onClick={closeTransportDialog}>
+                                      <div
+                                        ref={transportDialogRef}
+                                        className={styles.declineForm}
+                                        data-testid={`ward-ed-book-transport-${movement.id}`}
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-labelledby={`ward-ed-book-transport-title-${movement.id}`}
+                                        onKeyDown={handleTransportDialogKeyDown}
+                                        onClick={(e) => e.stopPropagation()}
                                       >
-                                        {/* Nobody chosen, first and selected — never a provider standing in for
+                                        <h4
+                                          id={`ward-ed-book-transport-title-${movement.id}`}
+                                          className={styles.declineLegend}
+                                        >
+                                          Log the transport booking made by phone for {patientInfo.displayName}
+                                        </h4>
+                                        <label
+                                          className={styles.referralField}
+                                          htmlFor={`ward-ed-transport-provider-${movement.id}`}
+                                        >
+                                          Who is collecting {patientInfo.displayName}
+                                          <select
+                                            id={`ward-ed-transport-provider-${movement.id}`}
+                                            data-testid={`ward-ed-transport-provider-${movement.id}`}
+                                            value={transportDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
+                                            onChange={(event) =>
+                                              setTransportDraft((current) => ({
+                                                ...current,
+                                                provider:
+                                                  event.target.value === NO_TRANSPORT_PROVIDER_VALUE
+                                                    ? undefined
+                                                    : (event.target.value as TransportProvider),
+                                              }))
+                                            }
+                                          >
+                                            {/* Nobody chosen, first and selected — never a provider standing in for
                                 a choice not made. */}
-                                        <option value={NO_TRANSPORT_PROVIDER_VALUE}>Not chosen</option>
-                                        {/* Derived from `TRANSPORT_PROVIDERS`, never hand-listed: a hand-written
+                                            <option value={NO_TRANSPORT_PROVIDER_VALUE}>Not chosen</option>
+                                            {/* Derived from `TRANSPORT_PROVIDERS`, never hand-listed: a hand-written
                                 options array is how the ED cohort picker silently omitted Youth
                                 (see `COHORT_OPTIONS` above). */}
-                                        {TRANSPORT_PROVIDERS.map((provider) => (
-                                          <option key={provider} value={provider}>
-                                            {provider}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </label>
-                                    <fieldset
-                                      className={styles.declineFieldset}
-                                      data-testid={`ward-ed-transport-escort-${movement.id}`}
-                                    >
-                                      <legend className={styles.declineLegend}>
-                                        Does {patientInfo.displayName} need an escort?
-                                      </legend>
-                                      <p className={styles.cardMeta}>
-                                        Neither answer is selected, and nothing selects one from this patient&apos;s
-                                        legal status or from the last booking. This is recorded as this team&apos;s
-                                        answer.
-                                      </p>
-                                      {ESCORT_ANSWERS.map((answer) => (
-                                        <label key={answer.label} className={styles.declineOption}>
+                                            {TRANSPORT_PROVIDERS.map((provider) => (
+                                              <option key={provider} value={provider}>
+                                                {provider}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </label>
+                                        <fieldset
+                                          className={styles.declineFieldset}
+                                          data-testid={`ward-ed-transport-escort-${movement.id}`}
+                                        >
+                                          <legend className={styles.declineLegend}>
+                                            Does {patientInfo.displayName} need an escort?
+                                          </legend>
+                                          <p className={styles.cardMeta}>
+                                            Neither answer is selected, and nothing selects one from this patient&apos;s
+                                            legal status or from the last booking. This is recorded as this team&apos;s
+                                            answer.
+                                          </p>
+                                          {ESCORT_ANSWERS.map((answer) => (
+                                            <label key={answer.label} className={styles.declineOption}>
+                                              <input
+                                                type="radio"
+                                                name={`transport-escort-${movement.id}`}
+                                                data-testid={`ward-ed-transport-escort-${answer.value ? "yes" : "no"}-${movement.id}`}
+                                                value={answer.value ? "yes" : "no"}
+                                                // `=== answer.value`, never a truthiness test: an unanswered draft is
+                                                // `undefined`, which must check NEITHER box rather than the "no" one.
+                                                checked={transportDraft.escortRequired === answer.value}
+                                                onChange={() =>
+                                                  setTransportDraft((current) => ({
+                                                    ...current,
+                                                    escortRequired: answer.value,
+                                                  }))
+                                                }
+                                              />
+                                              {answer.label}
+                                            </label>
+                                          ))}
+                                        </fieldset>
+                                        <label
+                                          className={styles.referralField}
+                                          htmlFor={`ward-ed-transport-cad-number-${movement.id}`}
+                                        >
+                                          CAD transport number
                                           <input
-                                            type="radio"
-                                            name={`transport-escort-${movement.id}`}
-                                            data-testid={`ward-ed-transport-escort-${answer.value ? "yes" : "no"}-${movement.id}`}
-                                            value={answer.value ? "yes" : "no"}
-                                            // `=== answer.value`, never a truthiness test: an unanswered draft is
-                                            // `undefined`, which must check NEITHER box rather than the "no" one.
-                                            checked={transportDraft.escortRequired === answer.value}
-                                            onChange={() =>
+                                            type="text"
+                                            id={`ward-ed-transport-cad-number-${movement.id}`}
+                                            data-testid={`ward-ed-transport-cad-number-${movement.id}`}
+                                            value={transportDraft.cadNumber}
+                                            onChange={(event) =>
                                               setTransportDraft((current) => ({
                                                 ...current,
-                                                escortRequired: answer.value,
+                                                cadNumber: event.target.value,
                                               }))
                                             }
                                           />
-                                          {answer.label}
                                         </label>
-                                      ))}
-                                    </fieldset>
-                                    <label
-                                      className={styles.referralField}
-                                      htmlFor={`ward-ed-transport-cad-number-${movement.id}`}
-                                    >
-                                      CAD transport number
-                                      <input
-                                        type="text"
-                                        id={`ward-ed-transport-cad-number-${movement.id}`}
-                                        data-testid={`ward-ed-transport-cad-number-${movement.id}`}
-                                        value={transportDraft.cadNumber}
-                                        onChange={(event) =>
-                                          setTransportDraft((current) => ({
-                                            ...current,
-                                            cadNumber: event.target.value,
-                                          }))
-                                        }
-                                      />
-                                    </label>
-                                    <fieldset
-                                      className={styles.declineFieldset}
-                                      data-testid={`ward-ed-transport-legal-status-${movement.id}`}
-                                    >
-                                      <legend className={styles.declineLegend}>
-                                        Is the transport voluntary or involuntary?
-                                      </legend>
-                                      {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                                        <label key={status} className={styles.declineOption}>
+                                        <fieldset
+                                          className={styles.declineFieldset}
+                                          data-testid={`ward-ed-transport-legal-status-${movement.id}`}
+                                        >
+                                          <legend className={styles.declineLegend}>
+                                            Is the transport voluntary or involuntary?
+                                          </legend>
+                                          {TRANSPORT_LEGAL_STATUSES.map((status) => (
+                                            <label key={status} className={styles.declineOption}>
+                                              <input
+                                                type="radio"
+                                                name={`transport-legal-status-${movement.id}`}
+                                                data-testid={`ward-ed-transport-legal-status-${status}-${movement.id}`}
+                                                value={status}
+                                                checked={transportDraft.transportLegalStatus === status}
+                                                onChange={() =>
+                                                  setTransportDraft((current) => ({
+                                                    ...current,
+                                                    transportLegalStatus: status,
+                                                  }))
+                                                }
+                                              />
+                                              {TRANSPORT_LEGAL_STATUS_LABELS[status]}
+                                            </label>
+                                          ))}
+                                        </fieldset>
+                                        <label
+                                          className={styles.referralField}
+                                          htmlFor={`ward-ed-transport-estimated-time-${movement.id}`}
+                                        >
+                                          Estimated time (24-hour, HH:MM)
                                           <input
-                                            type="radio"
-                                            name={`transport-legal-status-${movement.id}`}
-                                            data-testid={`ward-ed-transport-legal-status-${status}-${movement.id}`}
-                                            value={status}
-                                            checked={transportDraft.transportLegalStatus === status}
-                                            onChange={() =>
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="HH:MM"
+                                            id={`ward-ed-transport-estimated-time-${movement.id}`}
+                                            data-testid={`ward-ed-transport-estimated-time-${movement.id}`}
+                                            value={transportDraft.estimatedTime}
+                                            onChange={(event) =>
                                               setTransportDraft((current) => ({
                                                 ...current,
-                                                transportLegalStatus: status,
+                                                estimatedTime: event.target.value,
                                               }))
                                             }
                                           />
-                                          {TRANSPORT_LEGAL_STATUS_LABELS[status]}
                                         </label>
-                                      ))}
-                                    </fieldset>
-                                    <label
-                                      className={styles.referralField}
-                                      htmlFor={`ward-ed-transport-estimated-time-${movement.id}`}
-                                    >
-                                      Estimated time (24-hour, HH:MM)
-                                      <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        placeholder="HH:MM"
-                                        id={`ward-ed-transport-estimated-time-${movement.id}`}
-                                        data-testid={`ward-ed-transport-estimated-time-${movement.id}`}
-                                        value={transportDraft.estimatedTime}
-                                        onChange={(event) =>
-                                          setTransportDraft((current) => ({
-                                            ...current,
-                                            estimatedTime: event.target.value,
-                                          }))
-                                        }
-                                      />
-                                    </label>
-                                    <fieldset
-                                      className={styles.declineFieldset}
-                                      data-testid={`ward-ed-transport-estimated-day-${movement.id}`}
-                                    >
-                                      <legend className={styles.declineLegend}>Today or tomorrow?</legend>
-                                      {(["today", "tomorrow"] as const).map((day) => (
-                                        <label key={day} className={styles.declineOption}>
-                                          <input
-                                            type="radio"
-                                            name={`transport-estimated-day-${movement.id}`}
-                                            data-testid={`ward-ed-transport-estimated-day-${day}-${movement.id}`}
-                                            value={day}
-                                            checked={transportDraft.estimatedDay === day}
-                                            onChange={() =>
-                                              setTransportDraft((current) => ({ ...current, estimatedDay: day }))
+                                        <fieldset
+                                          className={styles.declineFieldset}
+                                          data-testid={`ward-ed-transport-estimated-day-${movement.id}`}
+                                        >
+                                          <legend className={styles.declineLegend}>Today or tomorrow?</legend>
+                                          {(["today", "tomorrow"] as const).map((day) => (
+                                            <label key={day} className={styles.declineOption}>
+                                              <input
+                                                type="radio"
+                                                name={`transport-estimated-day-${movement.id}`}
+                                                data-testid={`ward-ed-transport-estimated-day-${day}-${movement.id}`}
+                                                value={day}
+                                                checked={transportDraft.estimatedDay === day}
+                                                onChange={() =>
+                                                  setTransportDraft((current) => ({ ...current, estimatedDay: day }))
+                                                }
+                                              />
+                                              {day === "today" ? "Today" : "Tomorrow"}
+                                            </label>
+                                          ))}
+                                        </fieldset>
+                                        <div className={styles.actionRow}>
+                                          <button
+                                            type="button"
+                                            data-testid={`ward-ed-book-transport-confirm-${movement.id}`}
+                                            className={styles.declineSubmit}
+                                            aria-disabled={transportAnswersBlocked ? "true" : undefined}
+                                            aria-describedby={
+                                              transportAnswersBlocked
+                                                ? `ward-ed-book-transport-blocked-${movement.id}`
+                                                : undefined
                                             }
-                                          />
-                                          {day === "today" ? "Today" : "Tomorrow"}
-                                        </label>
-                                      ))}
-                                    </fieldset>
-                                    <div className={styles.actionRow}>
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-book-transport-confirm-${movement.id}`}
-                                        className={styles.declineSubmit}
-                                        aria-disabled={transportAnswersBlocked ? "true" : undefined}
-                                        aria-describedby={
-                                          transportAnswersBlocked
-                                            ? `ward-ed-book-transport-blocked-${movement.id}`
-                                            : undefined
-                                        }
-                                        title={transportAnswersBlocked ?? undefined}
-                                        onClick={
-                                          transportAnswersBlocked
-                                            ? ignoreUnavailableActivation
-                                            : () => submitBookTransport(movement.id)
-                                        }
-                                      >
-                                        Transport booked
-                                      </button>
-                                      <button
-                                        type="button"
-                                        data-testid={`ward-ed-book-transport-cancel-${movement.id}`}
-                                        className={styles.acceptButton}
-                                        onClick={closeTransportDialog}
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                    {transportAnswersBlocked ? (
-                                      <span id={`ward-ed-book-transport-blocked-${movement.id}`} className="sr-only">
-                                        {transportAnswersBlocked}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              ) : null}
+                                            title={transportAnswersBlocked ?? undefined}
+                                            onClick={
+                                              transportAnswersBlocked
+                                                ? ignoreUnavailableActivation
+                                                : () => submitBookTransport(movement.id)
+                                            }
+                                          >
+                                            Transport booked
+                                          </button>
+                                          <button
+                                            type="button"
+                                            data-testid={`ward-ed-book-transport-cancel-${movement.id}`}
+                                            className={styles.acceptButton}
+                                            onClick={closeTransportDialog}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                        {transportAnswersBlocked ? (
+                                          <span
+                                            id={`ward-ed-book-transport-blocked-${movement.id}`}
+                                            className="sr-only"
+                                          >
+                                            {transportAnswersBlocked}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    </div>,
+                                    document.body,
+                                  )
+                                : null}
 
                               {examOpen && !examBlocked ? (
                                 <form

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,40 +34,25 @@ import {
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 
 describe("Builder 2 - ED statutory form dropdown (ED-FORM-DROPDOWN)", () => {
-  it("opens form listbox menu, allows changing statutory forms, and closes on Escape", () => {
+  it("offers the statutory forms in a native select and changes only the screen draft", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdScreen edId="arm-ed" />
       </WardFlowProvider>,
     );
-
-    const pill = screen.getByTestId("ward-ed-form-pill-WF-001");
-    expect(pill).toHaveAttribute("aria-haspopup", "listbox");
-    expect(pill).toHaveAttribute("aria-expanded", "false");
-
-    // Click to open menu
-    fireEvent.click(pill);
-    expect(pill).toHaveAttribute("aria-expanded", "true");
-
-    const menu = screen.getByTestId("ward-ed-form-menu-WF-001");
-    expect(menu).toHaveAttribute("role", "listbox");
-
-    // Check options are rendered
-    const option3D = screen.getByTestId("ward-ed-form-option-3D-WF-001");
-    expect(option3D).toHaveTextContent("3D");
-
-    // Select 3D option
-    fireEvent.click(option3D);
-
-    // Menu should close and pill should display 3D
-    expect(screen.queryByTestId("ward-ed-form-menu-WF-001")).toBeNull();
-    expect(screen.getByTestId("ward-ed-form-pill-WF-001")).toHaveTextContent("3D");
-
-    // Reopen and test Escape key closes it
-    fireEvent.click(screen.getByTestId("ward-ed-form-pill-WF-001"));
-    expect(screen.getByTestId("ward-ed-form-menu-WF-001")).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByTestId("ward-ed-form-menu-WF-001"), { key: "Escape" });
-    expect(screen.queryByTestId("ward-ed-form-menu-WF-001")).toBeNull();
+    const selector = screen.getByTestId("ward-ed-form-pill-WF-001");
+    expect(selector).toHaveRole("combobox");
+    expect(
+      within(selector)
+        .getAllByRole("option")
+        .map((option) => (option as HTMLOptionElement).value),
+    ).toEqual(["", "1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
+    expect(selector).toHaveValue("1A");
+    fireEvent.change(selector, { target: { value: "3D" } });
+    expect(selector).toHaveValue("3D");
+    expect(screen.getByText("Unsaved changes · This screen only")).toBeInTheDocument();
+    fireEvent.change(selector, { target: { value: "" } });
+    expect(selector).toHaveValue("");
   });
 });
 

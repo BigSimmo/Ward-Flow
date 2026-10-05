@@ -20,6 +20,7 @@ type Props = {
   departments: EdOverviewDepartment[];
   figures: { label: string; value: string | number }[];
   onRaiseReferral: () => void;
+  referralOpen?: boolean;
 };
 
 const serviceNames: Record<string, string> = {
@@ -31,7 +32,7 @@ const serviceNames: Record<string, string> = {
 };
 const shortName = (name: string) => name.replace(/ Emergency Department$/, "");
 
-export function EdOverview({ departmentId, departments, figures, onRaiseReferral }: Props) {
+export function EdOverview({ departmentId, departments, figures, onRaiseReferral, referralOpen = false }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showFigures, setShowFigures] = useState(true);
   const [query, setQuery] = useState("");
@@ -103,6 +104,8 @@ export function EdOverview({ departmentId, departments, figures, onRaiseReferral
             type="button"
             className={styles.raise}
             data-testid="ward-ed-raise-referral-toggle"
+            aria-expanded={referralOpen}
+            aria-controls="ward-ed-referral-intake"
             onClick={onRaiseReferral}
           >
             <Plus aria-hidden="true" />
@@ -200,6 +203,7 @@ export function EdOverview({ departmentId, departments, figures, onRaiseReferral
               {query || service !== "all"
                 ? `${filtered.length} of ${departments.length} EDs`
                 : `${departments.length} EDs`}
+              <span className="sr-only"> · Synthetic data</span>
             </span>
             <div className={styles.scrollControls} role="group" aria-label="Scroll departments">
               <button

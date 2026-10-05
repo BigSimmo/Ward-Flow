@@ -335,17 +335,18 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const unfoldEd = edScreen.getByTestId(`ward-ed-unfold-${movementId}`);
     if (await unfoldEd.isVisible()) await unfoldEd.click();
     await edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`).click();
-    await edScreen.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
-    await edScreen.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
+    await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
+    await page.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
     // Owner's third ruling, 2026-09-17: the three facts logged from the phone call, required and
     // never defaulted — the popup's whole reason to exist.
-    await edScreen.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-JOURNEY-0001");
-    await edScreen.getByTestId(`ward-ed-transport-legal-status-voluntary-${movementId}`).click();
-    await edScreen.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
-    await edScreen.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
+    await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-JOURNEY-0001");
+    await page.getByTestId(`ward-ed-transport-legal-status-voluntary-${movementId}`).click();
+    await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
+    await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
 
     const handoverButton = edScreen.getByTestId(`ward-ed-handover-${movementId}`);
     await expect(handoverButton).not.toHaveAttribute("aria-disabled", "true");
+    if ((await unfoldEd.getAttribute("aria-expanded")) !== "true") await unfoldEd.click();
     await handoverButton.click();
     await expectNoReloadSince(page, "booking transport and marking handover ready");
 

@@ -78,7 +78,9 @@ Back to [the code map index](README.md).
 `ed-overview.tsx` (department header, source-derived figures and horizontal ED browser) and
 `ed-board-controls.tsx` (plan labels, presentation editor and grouped clinical action menu), each
 with its own CSS module. Referral intake opens from the header; existing clinical handlers and
-refusal gates remain in `ed-screen.tsx`. The patient board has nine columns, patient/UMRN search
+refusal gates remain in `ed-screen.tsx`. The existing transport dialog mounts above the table
+through a body portal and scrolls within the viewport, preserving its focus trap and field gates.
+The patient board has nine columns, patient/UMRN search
 and sorting, compact form/clearance drafts and a native modal record. Presentation, plan, review,
 form and clearance table edits are screen-only drafts: they do not persist or alter recorded
 clinical worklists, figures or engine records. The ED bay retains the existing synthetic display

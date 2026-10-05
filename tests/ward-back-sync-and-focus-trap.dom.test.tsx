@@ -103,14 +103,23 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
         </WardFlowProvider>,
       );
 
-      // Find an available book transport button
-      const buttons = screen.getAllByRole("button", { name: /Transport booked/i });
-      const trigger = buttons.find((btn) => !btn.hasAttribute("aria-disabled"));
+      // The clinical action is reached through a patient's menu; closing returns to its
+      // persistent trigger because the menu is hidden once the dialog opens.
+      let menuTrigger: HTMLElement | undefined;
+      let trigger: HTMLElement | undefined;
+      for (const candidate of screen.getAllByTestId(/^ward-ed-unfold-/u)) {
+        fireEvent.click(candidate);
+        const id = candidate.getAttribute("data-testid")!.replace("ward-ed-unfold-", "");
+        const action = screen.queryByTestId(`ward-ed-book-transport-toggle-${id}`);
+        if (action && action.getAttribute("aria-disabled") !== "true") {
+          menuTrigger = candidate;
+          trigger = action;
+          break;
+        }
+        fireEvent.click(candidate);
+      }
       expect(trigger).toBeDefined();
-
       trigger!.focus();
-      expect(document.activeElement).toBe(trigger);
-
       fireEvent.click(trigger!);
 
       // Dialog opens
@@ -123,7 +132,7 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
 
       // Dialog closed and focus restored to trigger button
       expect(screen.queryByRole("dialog", { name: /Log the transport booking/i })).toBeNull();
-      expect(document.activeElement).toBe(trigger);
+      expect(document.activeElement).toBe(menuTrigger);
     });
   });
 
