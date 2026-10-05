@@ -79,7 +79,6 @@ import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/w
 import { WardNotificationCenter } from "./ward-notification-center";
 
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
-import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 /**
