@@ -1222,3 +1222,45 @@
     font-size: 23px;
   }
 }
+@media print {
+  .coordination {
+    --surface: Canvas;
+    --surface-2: Canvas;
+    --ink: CanvasText;
+    --ink-soft: CanvasText;
+    --muted: CanvasText;
+    --line: GrayText;
+    --line-strong: GrayText;
+    --dc-blue: CanvasText;
+    --dc-amber: CanvasText;
+    --dc-ink: CanvasText;
+    --dc-muted: CanvasText;
+    --dc-line: GrayText;
+  }
+  .coordination,
+  .coordination * {
+    color: CanvasText !important;
+  }
+  .runway,
+  .graphPanel,
+  .ownerCard,
+  .urgentRow,
+  .attentionSummary,
+  .catchmentInspector,
+  .radarToolbar,
+  .radarLabels > div,
+  .radarLane,
+  .primary,
+  .cluster,
+  .triage,
+  .outliers button {
+    background: Canvas !important;
+    box-shadow: none;
+  }
+  .cluster {
+    border-color: CanvasText;
+  }
+  .longLine {
+    stroke-dasharray: 5 3;
+  }
+}
