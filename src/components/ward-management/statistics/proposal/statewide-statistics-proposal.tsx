@@ -2,6 +2,9 @@
 
 import { useMemo } from "react";
 
+import { blockedDischargesByReason } from "@/components/ward-management/statistics/statistics-derivations";
+import { dayOf } from "@/components/ward-management/ward-clock";
+
 import {
   BedBar,
   BedLegend,
@@ -10,9 +13,9 @@ import {
   OccupancyPill,
   Panel,
   TableScroll,
+  ExportCsvButton,
   ProposalHeader,
   ReadyPill,
-  ReleaseTimeline,
   Verdict,
   proposalHref,
 } from "./statistics-proposal-parts";
@@ -36,6 +39,10 @@ const DAY = 24 * 60;
  */
 export function StatewideStatisticsProposal() {
   const { wards, eds, services, network, waiting, asAt, now, world } = useStatisticsProposal();
+  const heldUp = blockedDischargesByReason(world.admissions).totalCount;
+  const leftToday = world.admissions.filter(
+    (admission) => admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now),
+  ).length;
   const referrals = todayReferralFigures(world.referrals, now);
   const hospitals = new Set(wards.map((ward) => ward.hospital)).size;
   const urgent = eds.reduce((sum, ed) => sum + ed.urgent, 0);
@@ -244,7 +251,45 @@ export function StatewideStatisticsProposal() {
           question="Fewest ready beds first, then highest occupancy."
           meta={`${wards.filter((ward) => ward.ready === 0).length} wards with no ready bed`}
           flush
-          foot={<a href={proposalHref("compare")}>All {wards.length} wards ›</a>}
+          foot={
+            <>
+              <a href={proposalHref("compare")}>All {wards.length} wards ›</a>
+              <ExportCsvButton
+                label="Export all wards CSV"
+                filename="ward-flow-synthetic-wards.csv"
+                rows={[
+                  [
+                    "Ward",
+                    "Hospital",
+                    "Health service",
+                    "Beds",
+                    "Occupied",
+                    "Pulled",
+                    "Closed",
+                    "Ready",
+                    "Occupancy",
+                    "Free today",
+                    "Overdue, not confirmed",
+                    "Asked for a bed",
+                  ],
+                  ...wards.map((ward) => [
+                    ward.unit.name,
+                    ward.hospital,
+                    ward.service,
+                    ward.beds,
+                    ward.occupied,
+                    ward.pulled,
+                    ward.closed,
+                    ward.ready,
+                    percent(ward.occupancy),
+                    releasesToday(ward.releases),
+                    ward.releases.overdue.expected,
+                    ward.askedAndWaiting,
+                  ]),
+                ]}
+              />
+            </>
+          }
         >
           <TableScroll label="Wards under most pressure">
             <table className={styles.table}>
@@ -372,12 +417,28 @@ export function StatewideStatisticsProposal() {
           </dl>
         </Panel>
         <Panel
-          title="Beds coming free"
-          question="Ward discharges by when the bed should be free. Solid is confirmed, pale is expected."
-          meta={`${freeToday} by midnight`}
-          foot={<a href={proposalHref("network")}>See every ward ›</a>}
+          title="Discharges today"
+          question="Beds about to come free, and discharges that are stuck."
+          foot={<a href={proposalHref("network")}>Beds coming free, ward by ward ›</a>}
         >
-          <ReleaseTimeline releases={releases} />
+          <dl className={styles.facts}>
+            <div className={styles.fact}>
+              <dt>Free by midnight</dt>
+              <dd className={styles.toneGood}>{freeToday}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Overdue, not confirmed</dt>
+              <dd className={releases.overdue.expected ? styles.toneWarn : ""}>{releases.overdue.expected}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Held up by a blocker</dt>
+              <dd className={heldUp ? styles.toneWarn : ""}>{heldUp}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Left a ward today</dt>
+              <dd>{leftToday}</dd>
+            </div>
+          </dl>
         </Panel>
       </div>
 

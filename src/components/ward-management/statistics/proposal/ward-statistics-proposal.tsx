@@ -6,7 +6,6 @@ import { wardReferralTally } from "@/components/ward-management/statistics/stati
 import {
   BedGrid,
   BedGridLegend,
-  Definitions,
   KpiStrip,
   Panel,
   ProposalHeader,
@@ -217,7 +216,11 @@ export function WardStatisticsProposal({ unitId }: { unitId?: string }) {
         <p className={styles.note}>A ward can decline a request and later accept it, so these can overlap.</p>
       </Panel>
 
-      <Definitions />
+      <p className={styles.note}>
+        <a className={styles.link} href={`${proposalHref("statewide")}#definitions`}>
+          How these figures are counted ›
+        </a>
+      </p>
     </main>
   );
 }

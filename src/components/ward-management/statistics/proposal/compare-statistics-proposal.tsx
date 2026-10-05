@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 
-import { Panel, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
+import { ExportCsvButton, Panel, ProposalHeader, Verdict, proposalHref } from "./statistics-proposal-parts";
 import { SERVICE_COLOUR, percent, releasesToday, type WardFigures } from "./statistics-proposal-figures";
 import { useStatisticsProposal } from "./use-statistics-proposal";
 import styles from "./statistics-proposal.module.css";
@@ -106,7 +106,18 @@ export function CompareStatisticsProposal() {
         title={current.label}
         question={current.question}
         meta={`${rows.length} wards · highest first`}
-        foot={<span>Dashed line: network average ({label(average, measure)}).</span>}
+        foot={
+          <>
+            <span>Dashed line: network average ({label(average, measure)}).</span>
+            <ExportCsvButton
+              filename={`ward-flow-synthetic-compare-${measure}.csv`}
+              rows={[
+                ["Ward", "Hospital", "Health service", current.label],
+                ...rows.map(({ ward, value }) => [ward.unit.name, ward.hospital, ward.service, label(value, measure)]),
+              ]}
+            />
+          </>
+        }
       >
         <ul className={styles.hbars}>
           {rows.map(({ ward, value }) => (

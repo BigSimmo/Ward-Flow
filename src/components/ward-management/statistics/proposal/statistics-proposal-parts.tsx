@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 import { RELEASE_BANDS } from "@/components/ward-management/ward-bed-availability";
 
 import { RELEASE_BAND_LABELS, type BedFigures, type ReleaseCounts } from "./statistics-proposal-figures";
@@ -123,6 +124,36 @@ export function Panel({
   );
 }
 
+/**
+ * Saves the rows on screen as a CSV file, built in the browser from the same figures. Ward-level
+ * figures only: no person appears in any export this proposal offers.
+ */
+export function ExportCsvButton({
+  filename,
+  rows,
+  label = "Export CSV",
+}: {
+  filename: string;
+  rows: (string | number)[][];
+  label?: string;
+}) {
+  const save = () => {
+    const url = URL.createObjectURL(
+      new Blob([rows.map((row) => row.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <button type="button" className={styles.exportButton} onClick={save}>
+      {label}
+    </button>
+  );
+}
+
 /** A table that scrolls sideways on a narrow screen instead of being cut off by its panel. */
 export function TableScroll({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -190,7 +221,7 @@ export function ReadyPill({ value }: { value: number }) {
 
 export function Definitions() {
   return (
-    <dl className={styles.definitions} aria-label="How these figures are counted">
+    <dl id="definitions" className={styles.definitions} aria-label="How these figures are counted">
       <div>
         <dt>Occupancy</dt>
         <dd>Occupied beds ÷ all beds. People on leave keep their bed and count as occupied.</dd>

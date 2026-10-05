@@ -1282,3 +1282,21 @@
     display: none;
   }
 }
+
+.exportButton {
+  min-height: var(--spacing-tap, 3rem);
+  margin-block: -0.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.exportButton:hover {
+  border-color: var(--accent);
+}

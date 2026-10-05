@@ -2,12 +2,18 @@
 
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE,
+  OUT_OF_AREA_BANDS,
+  SYNTHETIC_TRAVEL_TIMES_NOTICE,
+  TRAVEL_BAND_LABELS,
+} from "@/components/ward-management/ward-distance";
+import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { siteByCode, unitById } from "@/components/ward-management/ward-sites";
 
 import {
   BedBar,
   BedLegend,
-  Definitions,
   KpiStrip,
   OccupancyPill,
   Panel,
@@ -33,7 +39,7 @@ const DAY = 24 * 60;
 
 /** Proposed health-service statistics: the statewide page, filtered to one service. */
 export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string }) {
-  const { services, eds, asAt, world } = useStatisticsProposal();
+  const { services, eds, asAt, world, now } = useStatisticsProposal();
   const name = (HEALTH_SERVICES as readonly string[]).includes(serviceId ?? "")
     ? (serviceId as HealthService)
     : "North Metro";
@@ -51,6 +57,17 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
     else if (siteByCode(accepted.siteCode)?.service === service.service) destination.own += 1;
     else destination.other += 1;
   }
+
+  const farFromHome = outOfAreaLedger(
+    world.admissions,
+    service.wards.map((ward) => ward.unit),
+    now,
+  );
+  const farBands = OUT_OF_AREA_BANDS.map((band) => ({
+    band,
+    count: farFromHome.entries.filter((entry) => entry.band === band).length,
+  }));
+  const farMax = Math.max(1, ...farBands.map((row) => row.count));
 
   const releases = totalReleases(service.wards);
   const freeToday = releasesToday(releases);
@@ -274,6 +291,32 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
 
       {service.beds ? (
         <Panel
+          title="Far from home"
+          question={`People in a ${service.service} bed a long way from where they live.`}
+          meta={`${farFromHome.entries.length} people`}
+        >
+          <ul className={styles.hbars}>
+            {farBands.map((row) => (
+              <li className={styles.hbar} key={row.band}>
+                <span className={styles.hbarLabel}>{TRAVEL_BAND_LABELS[row.band]}</span>
+                <span className={styles.hbarTrack}>
+                  <span className={styles.hbarFill} style={{ width: `${(row.count / farMax) * 100}%` }} />
+                </span>
+                <span className={styles.hbarValue}>
+                  {row.count} {row.count === 1 ? "person" : "people"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.note}>
+            {farFromHome.notBanded} {farFromHome.notBanded === 1 ? "person has" : "people have"} no travel time
+            recorded. {INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE} {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+          </p>
+        </Panel>
+      ) : null}
+
+      {service.beds ? (
+        <Panel
           title="Beds coming free"
           question={`Discharges recorded on ${service.service} wards. Solid is confirmed, pale is expected.`}
           meta={`${freeToday} today`}
@@ -282,7 +325,11 @@ export function ServiceStatisticsProposal({ serviceId }: { serviceId?: string })
         </Panel>
       ) : null}
 
-      <Definitions />
+      <p className={styles.note}>
+        <a className={styles.link} href={`${proposalHref("statewide")}#definitions`}>
+          How these figures are counted ›
+        </a>
+      </p>
     </main>
   );
 }
