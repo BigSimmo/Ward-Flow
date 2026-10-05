@@ -4,7 +4,7 @@
   display: grid;
   gap: 16px;
   color: var(--ink);
-    min-width: 0;
+  min-width: 0;
 }
 .heading {
   display: flex;

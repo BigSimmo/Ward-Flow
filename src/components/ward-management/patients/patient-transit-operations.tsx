@@ -119,16 +119,13 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
     .reverse()
     .find(
       (e) =>
-        e.attempted === "ACCEPT_IN_PRINCIPLE" ||
-        e.attempted === "PULL_PATIENT" ||
-        e.attempted === "REFER_TO_UNITS",
+        e.attempted === "ACCEPT_IN_PRINCIPLE" || e.attempted === "PULL_PATIENT" || e.attempted === "REFER_TO_UNITS",
     );
   function closeBooking() {
     setBooking(false);
     requestAnimationFrame(() => bookTriggerRef.current?.focus());
   }
 
-  
   const overridePanel =
     lastActionRejection &&
     (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE" ||
@@ -147,10 +144,7 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           </p>
           <label>
             Override reason
-            <select
-              value={overrideReason}
-              onChange={(e) => setOverrideReason(e.target.value as OverrideReason | "")}
-            >
+            <select value={overrideReason} onChange={(e) => setOverrideReason(e.target.value as OverrideReason | "")}>
               <option value="">Choose reason</option>
               {OVERRIDE_REASONS.map((reason) => (
                 <option key={reason} value={reason}>
@@ -551,7 +545,10 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                 type="button"
                 className={styles.secondary}
                 disabled={job.acceptedAt !== undefined}
-                onClick={() => { noteAttempt(); dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id }); }}
+                onClick={() => {
+                  noteAttempt();
+                  dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+                }}
               >
                 Provider accepted job
               </button>
@@ -559,7 +556,10 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                 type="button"
                 className={styles.secondary}
                 disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined}
-                onClick={() => { noteAttempt(); dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id }); }}
+                onClick={() => {
+                  noteAttempt();
+                  dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+                }}
               >
                 Vehicle en route
               </button>
@@ -567,7 +567,10 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                 type="button"
                 className={styles.primary}
                 disabled={job.enRouteAt === undefined}
-                onClick={() => { noteAttempt(); dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id }); }}
+                onClick={() => {
+                  noteAttempt();
+                  dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+                }}
               >
                 Mark moving · patient collected
               </button>
@@ -712,7 +715,10 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
                   type="button"
                   className={styles.secondary}
                   disabled={!confirmWithdraw || movement.referredUnitIds.length === 0}
-                  onClick={() => { noteAttempt(); dispatch({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id }); }}
+                  onClick={() => {
+                    noteAttempt();
+                    dispatch({ type: "WITHDRAW_REFERRAL", role: "coordinator", now, movementId: movement.id });
+                  }}
                 >
                   Withdraw referral
                 </button>

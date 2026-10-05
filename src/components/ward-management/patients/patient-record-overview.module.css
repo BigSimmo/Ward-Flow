@@ -1,7 +1,7 @@
 .hub {
   padding: 18px;
   color: var(--ink);
-    display: grid;
+  display: grid;
   gap: 14px;
 }
 .heading {

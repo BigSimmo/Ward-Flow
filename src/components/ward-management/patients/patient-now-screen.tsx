@@ -1361,7 +1361,12 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 aria-labelledby="pntab-community"
                 hidden={activeTab !== "community"}
               >
-                <PatientCommunityTab record={record} patient={livePatient} movement={liveMovement} receivingWardName={acceptingUnit?.name} />
+                <PatientCommunityTab
+                  record={record}
+                  patient={livePatient}
+                  movement={liveMovement}
+                  receivingWardName={acceptingUnit?.name}
+                />
               </div>
 
               {/* Tab 4: DETAILS */}

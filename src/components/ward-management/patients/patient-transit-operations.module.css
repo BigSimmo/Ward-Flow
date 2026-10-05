@@ -148,7 +148,7 @@
 .filters button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 4px var(--shadow);
+  box-shadow: 0 1px 4px var(--ward-shadow);
 }
 .card > .deckHint {
   padding: 0 18px 14px;

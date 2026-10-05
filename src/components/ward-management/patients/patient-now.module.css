@@ -2800,7 +2800,7 @@
 .topCard {
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 6px 24px var(--shadow);
+  box-shadow: 0 6px 24px var(--ward-shadow);
 }
 .flightIdentity {
   display: flex;
@@ -3029,7 +3029,7 @@
 }
 .panel {
   border-radius: 20px;
-  box-shadow: 0 3px 12px var(--shadow);
+  box-shadow: 0 3px 12px var(--ward-shadow);
   overflow: hidden;
 }
 .railStatus {
@@ -3513,7 +3513,7 @@
 .topCard {
   border-radius: 18px;
   border: 1px solid var(--line);
-  box-shadow: 0 4px 16px var(--shadow);
+  box-shadow: 0 4px 16px var(--ward-shadow);
   background: var(--surface);
 }
 .flightIdentity {
@@ -3606,7 +3606,7 @@
   background: var(--ink);
   color: white;
   border-color: var(--ink);
-  box-shadow: 0 2px 6px var(--shadow);
+  box-shadow: 0 2px 6px var(--ward-shadow);
 }
 .flightSnapshot {
   grid-template-columns: 1.45fr 0.85fr 1fr 1fr;
@@ -3617,7 +3617,7 @@
   color: white;
 }
 .flightSnapshot > div {
-  border-color: var(--shadow);
+  border-color: var(--ward-shadow);
   gap: 4px;
   padding-right: 16px;
 }
@@ -3750,7 +3750,7 @@
 .pnGrid > .panel {
   border-radius: 16px;
   border: 1px solid var(--line);
-  box-shadow: 0 3px 12px var(--shadow);
+  box-shadow: 0 3px 12px var(--ward-shadow);
   overflow: hidden;
 }
 .tabbar {
@@ -3814,7 +3814,7 @@
 .nowViewSwitch button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 2px 6px var(--shadow);
+  box-shadow: 0 2px 6px var(--ward-shadow);
 }
 .nowViewSwitch > span {
   display: none;
