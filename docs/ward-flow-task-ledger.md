@@ -8409,8 +8409,18 @@ Automated verification summary:
   - Full TypeScript typecheck: 0 errors
   - ESLint & Prettier: 100% clean
 
-
 ## WF-REFERRAL-DRAWER-2026-10-07 — four-tab referral flow
 
-Status: In progress. Owner: Codex interactive session. Base: `20105cf` (`origin/main`), branch `codex/referral-drawer`, isolated worktree `/workspace/ward-referral-drawer`.
+Status: Implementation complete; local verification recorded. Owner: Codex interactive session. Base: `20105cf` (`origin/main`), branch `codex/referral-drawer`, isolated worktree `/workspace/ward-referral-drawer`.
 Scope: approved Patient → Referral → Documentation → Locations drawer, contact confirmation, shared-engine submission and recipient routing. Preserve existing shell and clinical placement gates. Synthetic data only; no hosted service calls or deployment. Implementation complete. Verification in progress: focused engine/DOM tests, changed-file ESLint, source typecheck, diff integrity, color-token/privacy/override/re-anchor guards and actual desktop/mobile browser send journey passed. Full offline unit population is being rechecked after integration repairs. Named recipients preserve existing placement gates; ward inbox has normal acceptance only, coordinator review retains exceptional-placement reason controls. No publication or deployment. The isolated single-session cloud worktree has no shared Windows sign-out log; local commit uses the documented explicit single-session sign-out exception, retaining lint/typecheck/content hooks.
+
+Verification close-out for WF-REFERRAL-DRAWER-2026-10-07:
+
+- Implementation commit: `8b92295`, isolated `codex/referral-drawer`; main and hosted services untouched.
+- Full offline Vitest run: `Test Files 2 failed | 897 passed | 9 skipped (908)`; `Tests 2 failed | 10461 passed | 146 skipped (10609)`. The drawer test had loaded before its Clinical Dossier assertion repair; the other failure was the statistics caption's outdated accepted spelling. Both failing assertions were repaired and rerun; do not quote this as a single zero-failure full run.
+- Current committed implementation rerun: drawer flow, recipient-engine submission and legacy sending-team suites: `Test Files 3 passed (3)`, `Tests 16 passed (16)`. This exercises actual files, confirmation without dispatch, one sent record, own-recipient waitlist and Ward board filtering.
+- Final statistics caption/sections/claims rerun: `Test Files 3 passed (3)`, `Tests 131 passed (131)`.
+- Changed-file ESLint, source typecheck and pre-commit staged-content checks passed. Diff integrity against `20105cfe7`: 117 → 127 test cases before the final caption-only assertion edit; no test cases removed. Color-token, patient-link scoping, override-surface, single-source, readiness arithmetic and waitlist re-anchoring guards passed in their repair reruns.
+- Browser evidence: system Chromium at `/usr/bin/chromium` on verified localhost project (port 4240). Completed catchment → Referral/story → actual chart uploads → two ward recipients → contact confirmation → sent receipt, client navigation to exact ward inbox, waitlist action and Ward → Waitlisted board. No browser errors. Confirmation checked at 1440×1050 and 390×844; no horizontal drawer overflow. Screenshots: `/workspace/generated_images/referral-locations-built.png`, `referral-confirmation-built.png`, `referral-confirmation-mobile.png`, `referral-sent-built.png`, `referral-inbox-built.png`, `referral-board-waitlisted-built.png`.
+- Standard pinned Playwright lane was not run: its Chromium executable was unavailable and browser download returned HTTP 403. The browser evidence above is the explicitly scoped system-Chromium journey, not a full browser-lane or publication readiness claim.
+- Session-only shared engine submission; chart bytes and contact data are not refresh-persisted under D-18. No hosted database, Azure interaction, GitHub publication or deployment. Only the task-owned localhost server was stopped after browser verification. No outstanding product-code edits.

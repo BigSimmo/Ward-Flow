@@ -229,7 +229,6 @@ this work does not connect a hosted backend. Proof: `ward-referral-drawer-flow.d
 `ward-referral-drawer-submission.test.ts` cover real uploads, contact confirmation, own-recipient
 scoping, independent decisions, waitlisting and receipt deduplication.
 
-
 - **Routes:** `/referrals` (`referral-board.tsx` → `ReferralBoard`) and `/referrals/new`
   (`referral-intake.tsx` → `ReferralIntakeForm`).
 - **Mockups:** `referrals-third-edition.html` (`/referrals`) and
