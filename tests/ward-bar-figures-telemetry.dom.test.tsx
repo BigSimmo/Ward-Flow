@@ -60,30 +60,36 @@ describe("Figures in the Tools workspace", () => {
     return screen.getByRole("dialog", { name: "Tools" });
   }
 
+  function dueCount(tools: HTMLElement) {
+    const due = within(tools).getByRole("button", { name: /^Due\s*\d/ });
+    return Number(due.textContent?.replace(/\D/g, "") ?? "0");
+  }
+
   it("removes Figures from the header and offers it inside Tools", () => {
     const tools = openTools();
     expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Figures");
-    expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Nothing flagged");
+    expect(within(tools).queryByText("Nothing flagged")).toBeNull();
   });
 
   it("keeps deadline status reactive when the demonstration clock advances", () => {
     const tools = openTools();
-    expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/Nothing flagged/i);
+    expect(dueCount(tools)).toBe(0);
     fireEvent.click(screen.getByTestId("test-advance-clock"));
-    expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/deadline passed|due within/i);
+    expect(dueCount(tools)).toBeGreaterThan(0);
   });
 
   it("shows deadline flags and all figure groups within the same Tools dialog", () => {
     const tools = openTools(70);
+    expect(dueCount(tools)).toBeGreaterThan(0);
     const launch = within(tools).getByTestId("ward-bar-figures-trigger");
-    expect(launch.textContent).toMatch(/deadline passed|due within/i);
     fireEvent.click(launch);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
     expect(within(tools).getByTestId("ward-stats-drawer-content")).toBeVisible();
     for (const heading of ["Beds", "Pressure", "Due", "Movement"]) {
       fireEvent.click(within(tools).getByRole("button", { name: heading, exact: true }));
-      expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
+      expect(within(tools).getByRole("button", { name: heading, exact: true })).toHaveAttribute("aria-pressed", "true");
+      expect(within(tools).getByRole("list", { name: heading })).toBeVisible();
     }
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });

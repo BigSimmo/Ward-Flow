@@ -1,63 +1,43 @@
 .strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
-.metric,
-.glance {
+.metric {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 0.125rem;
-  min-height: var(--spacing-tap, 3rem);
-  padding: 0.625rem 0.75rem;
+  gap: 0.05rem;
+  min-height: 3rem;
+  padding: 0.35rem 0.65rem;
   border: 1px solid var(--line);
-  border-radius: 1.125rem;
+  border-radius: 0.875rem;
   background: var(--surface);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
 }
 
-.metric span,
-.glance span {
+.metric span {
   color: var(--muted);
   font-size: var(--t-0);
 }
 
-.glance > span {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.metric strong,
-.glance strong {
+.metric strong {
   color: var(--ink);
   font-family: var(--mono);
-  font-size: var(--t-3);
+  font-size: var(--t-2);
   letter-spacing: -0.03em;
 }
 
-.glance {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, var(--surface), var(--surface-2));
-}
-
-.glance small {
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
 .metric:focus-visible,
-.glance:focus-visible,
-.quiet:focus-visible {
+.segment button:focus-visible,
+.actions a:focus-visible,
+.actions button:focus-visible,
+.quiet:focus-visible,
+.dueList a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -71,6 +51,113 @@
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
+}
+
+.module {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.moduleTitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  border-radius: 0.875rem;
+  background: var(--sunk);
+}
+
+.segment button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.35rem;
+  border: 0;
+  border-radius: 0.6875rem;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.segment button svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.segment button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.actions {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--surface);
+}
+
+.actions a,
+.actions button {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) 0.75rem;
+  gap: 0.625rem;
+  align-items: center;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.7rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actions a:first-child,
+.actions button:first-child {
+  border-top: 0;
+}
+
+.actions a:hover,
+.actions button:hover {
+  background: var(--sunk);
+}
+
+.actions span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--t-0);
+  font-weight: 650;
+}
+
+.actions small {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 450;
+}
+
+.actions svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--muted);
 }
 
 .quiet {
@@ -87,51 +174,57 @@
 }
 
 .dueList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--surface);
 }
 
 .dueList a {
   display: grid;
-  gap: 0.125rem;
-  min-height: var(--spacing-tap, 3rem);
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--line);
-  border-radius: 1.125rem;
-  background: var(--surface);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.75rem;
+  border-top: 1px solid var(--line);
   color: inherit;
   text-decoration: none;
 }
 
+.dueList li:first-child a {
+  border-top: 0;
+}
+
+.dueList a[data-tone="alert"] strong {
+  color: var(--ward-danger);
+}
+
 .dueList a[data-tone="alert"] {
-  background: var(--ward-danger-soft);
-  box-shadow: inset 3px 0 0 var(--ward-danger);
+  box-shadow: inset 2px 0 0 var(--ward-danger);
 }
 
 .dueList strong {
   color: var(--ink);
-  font-size: var(--t-1);
-}
-
-.dueList small {
-  color: var(--muted);
   font-size: var(--t-0);
 }
 
-.dueList a:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.dueList small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty {
   margin: 0;
-  padding: 0.875rem;
+  padding: 0.75rem;
   border: 1px dashed var(--line);
-  border-radius: 1.125rem;
+  border-radius: 0.875rem;
   color: var(--muted);
   font-size: var(--t-0);
 }
@@ -145,5 +238,14 @@
 @media (max-width: 640px) {
   .strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segment button {
+    font-size: 0.75rem;
+  }
+
+  .dueList a {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
   }
 }

@@ -17,7 +17,6 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { ToolsDirectoryPanel } from "@/components/ward-management/tools/tools-directory-panel";
 import { ToolsDuePanel } from "@/components/ward-management/tools/tools-due-panel";
 import { ToolsFigures } from "@/components/ward-management/tools/tools-figures";
@@ -369,29 +368,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
-
-  const figures = useMemo(
-    () =>
-      standingFigures({
-        movements,
-        units,
-        admissions,
-        bedReleases,
-        leaveBeds,
-        now,
-        chromeRole: role,
-        placeId,
-      }),
-    [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId],
-  );
-  const flaggedFigures = useMemo(() => figures.filter((f) => f.flagged), [figures]);
-  const telemetrySummary = useMemo(
-    () =>
-      flaggedFigures.length > 0
-        ? flaggedFigures.map((f) => `${f.value} ${f.label.toLowerCase()}`).join(", ")
-        : "Nominal",
-    [flaggedFigures],
-  );
 
   // `WardTasksDrawer` draws its own header and its own close button — the Tasks `<Sheet>` below
   // is `headerHidden` with no `title`, so Sheet's own header (and the `closeRef` button it would
@@ -1526,9 +1502,13 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               key={id}
               ref={id === "figures" ? figuresTabRef : undefined}
               type="button"
+              data-testid={id === "figures" ? "ward-bar-figures-trigger" : undefined}
               aria-pressed={toolsPart === id}
               aria-controls={`ward-tools-${id}`}
-              onClick={() => setToolsPart(id)}
+              onClick={() => {
+                setToolsPart(id);
+                if (id === "figures") figuresTabRef.current?.focus();
+              }}
             >
               <Icon aria-hidden="true" />
               <span>{label}</span>
@@ -1539,7 +1519,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <div id="ward-tools-overview" className={styles.toolsPanel}>
             <ToolsOverview
               model={toolsModel}
-              flaggedSummary={flaggedFigures.length > 0 ? telemetrySummary : "Nothing flagged"}
               appearance={appearance}
               onAppearance={applyAppearance}
               onOpenFigures={(group) => {

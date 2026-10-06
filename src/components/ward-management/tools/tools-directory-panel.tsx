@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Check, Copy, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { REFERENCE_TEAM_CAVEAT } from "@/components/ward-management/reference/ward-reference-teams";
@@ -39,10 +39,6 @@ export function ToolsDirectoryPanel({ units, onNavigate }: { units: readonly Uni
 
   return (
     <div className={styles.wrap}>
-      <p className={styles.note}>
-        Prototype directory. Ward extensions are from this prototype. Community numbers marked Published are from the
-        public directory and are not call-tested. Desks marked Prototype use extension 94xx and are not live lines.
-      </p>
       <label className={styles.search}>
         <Search aria-hidden="true" />
         <input
@@ -52,71 +48,68 @@ export function ToolsDirectoryPanel({ units, onNavigate }: { units: readonly Uni
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
-      <div className={styles.chips} role="group" aria-label="Directory categories">
-        {DIRECTORY_CATEGORIES.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            aria-pressed={filter === category.id}
-            onClick={() => setFilter(category.id)}
-          >
-            {category.label} {counts.get(category.id) ?? 0}
-          </button>
-        ))}
+      <div className={styles.filterBar}>
+        <div className={styles.chips} role="group" aria-label="Directory categories">
+          {DIRECTORY_CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              aria-pressed={filter === category.id}
+              onClick={() => setFilter(category.id)}
+            >
+              {category.label} <span>{counts.get(category.id) ?? 0}</span>
+            </button>
+          ))}
+        </div>
+        <p className={styles.status} role="status">
+          {matches.length} of {filter === "all" ? entries.length : (counts.get(filter) ?? 0)}
+          {matches.length === 0 ? " · No matching locations." : ""}
+        </p>
       </div>
-      {filter === "all" || filter === "community" ? <p className={styles.note}>{REFERENCE_TEAM_CAVEAT}</p> : null}
-      <p className={styles.status} role="status">
-        {matches.length} of {filter === "all" ? entries.length : (counts.get(filter) ?? 0)}
-        {matches.length === 0 ? " · No matching locations." : ""}
-      </p>
       <ul className={styles.list} aria-label="Directory results">
         {matches.map((item) => (
           <li key={item.id} className={styles.row}>
-            <div className={styles.head}>
-              <span className={styles.kind}>{DIRECTORY_CATEGORY_LABEL[item.category]}</span>
-              {item.provenance === "prototype" ? (
-                <span className={styles.chip} data-provenance="prototype">
-                  Prototype
-                </span>
-              ) : item.provenance === "published" ? (
-                <span className={styles.chip} data-provenance="published">
-                  Published
-                </span>
-              ) : null}
+            <div className={styles.identity}>
+              {item.href ? (
+                <Link href={item.href} onClick={onNavigate}>
+                  {item.name}
+                </Link>
+              ) : (
+                <strong>{item.name}</strong>
+              )}
+              <p>
+                {DIRECTORY_CATEGORY_LABEL[item.category]} · {item.place}
+                {item.detail ? ` · ${item.detail}` : ""}
+                {item.provenance === "prototype" ? <em data-provenance="prototype">Prototype</em> : null}
+                {item.provenance === "published" ? <em data-provenance="published">Published</em> : null}
+              </p>
             </div>
-            {item.href ? (
-              <Link href={item.href} onClick={onNavigate}>
-                {item.name}
-              </Link>
-            ) : (
-              <strong>{item.name}</strong>
-            )}
-            <p className={styles.place}>
-              {item.place}
-              {item.detail ? ` · ${item.detail}` : ""}
-            </p>
             {item.phone || item.email ? (
               <p className={styles.contact}>
                 <span>{item.phone ?? "Number not held"}</span>
                 {item.email ? <a href={`mailto:${item.email}`}>{item.email}</a> : <span>Email not held</span>}
-                <button
-                  type="button"
-                  className={styles.copy}
-                  disabled={item.phone === null}
-                  aria-label={item.phone ? `Copy ${item.name} number` : `${item.name} number not held`}
-                  onClick={() => {
-                    if (item.phone) void copyPhone(item.id, item.phone);
-                  }}
-                >
-                  {copiedId === item.id ? "Copied" : "Copy"}
-                </button>
               </p>
             ) : (
               <p className={styles.missing}>Number and email not held</p>
             )}
+            <button
+              type="button"
+              className={styles.copy}
+              disabled={item.phone === null}
+              aria-label={item.phone ? `Copy ${item.name} number` : `${item.name} number not held`}
+              onClick={() => {
+                if (item.phone) void copyPhone(item.id, item.phone);
+              }}
+            >
+              {copiedId === item.id ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+            </button>
           </li>
         ))}
       </ul>
+      <p className={styles.note}>
+        Prototype desks use extension 94xx and are not live lines. Published community numbers are not call-tested.
+        {filter === "all" || filter === "community" ? ` ${REFERENCE_TEAM_CAVEAT}` : ""}
+      </p>
     </div>
   );
 }
