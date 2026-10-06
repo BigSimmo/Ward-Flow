@@ -1832,5 +1832,7 @@ span.workspaceMeasure,
 .layout[data-layout="workspace"] span.workspaceMeasure,
 .cause.workspaceMeasure,
 .update.workspaceMeasure {
+  --t-1: 12px;
   font-size: 12px;
+  transition-property: none;
 }

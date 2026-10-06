@@ -1141,6 +1141,7 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                         )}
                         <td
                           className={view === "workspace" ? `${styles.cause} ${styles.workspaceMeasure}` : styles.cause}
+                          style={view === "workspace" ? { fontSize: "12px", transitionProperty: "none" } : undefined}
                           data-ward-type-floor="delays-cause"
                           title={causeName(cause)}
                         >
@@ -1157,6 +1158,7 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                             className={
                               view === "workspace" ? `${styles.update} ${styles.workspaceMeasure}` : styles.update
                             }
+                            style={view === "workspace" ? { fontSize: "12px", transitionProperty: "none" } : undefined}
                             data-ward-type-floor="delays-since"
                             data-recorded={recordedUpdate(movement, now) !== "No update recorded"}
                           >
