@@ -186,7 +186,7 @@ describe("the ward screen's third-edition panel names", () => {
     }
     for (const heading of ["Staffing", "Intake", "Leave", "Departures"]) {
       expect(
-        screen.getByRole("heading", { name: heading, exact: true }),
+        screen.getByRole("heading", { name: new RegExp(`^${heading}$`) }),
         `the decisions queue is missing "${heading}"`,
       ).toBeVisible();
     }
