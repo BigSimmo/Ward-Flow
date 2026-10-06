@@ -75,6 +75,15 @@ empty services. A ResizeObserver measures compact-table overflow and shows a sid
 cue only when details extend beyond the visible width. Regression coverage is in
 `tests/ward-capacity-review.dom.test.tsx`.
 
+The follow-up visual polish uses the same components and state: bed-map toggles and service
+shortcuts now have compact, inset selected surfaces and count badges; desktop buttons are 30px
+high, with 44px targets on touch devices. The toggle groups sit together instead of occupying
+opposite edges of an empty row. Capacity metric groups have a bounded width, and nested card
+surfaces use translucent fills, subtle inner highlights and diffuse shadows. Dark-mode,
+forced-colour and print fallbacks remain token-based.
+Service shortcut feedback uses current section bounds rather than only the latest observer
+batch, so a preceding service's visible trailing edge cannot replace the service just selected.
+
 **Route:** `/capacity`. **Mockup:** `capacity-third-edition.html` (MERGE 02, folding a former
 `morning` route into this one — see the header comment in `capacity-derivations.ts`). **Dispatches:**
 `REQUEST_CAPACITY_REFRESH`. **Reads:** `unitCapacity`, `wardServiceOrder`, `isOpen`,
