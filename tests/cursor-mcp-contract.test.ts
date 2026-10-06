@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -25,8 +25,24 @@ type CursorMcpConfig = {
 if (!existsSync(cursorMcpPath)) {
   describe("public Cursor MCP boundary", () => {
     it("ships no partial project MCP configuration", () => {
-      expect(existsSync(path.join(repoRoot, ".cursor"))).toBe(false);
       expect(existsSync(path.join(repoRoot, ".mcp.json"))).toBe(false);
+      const cursorDir = path.join(repoRoot, ".cursor");
+      if (!existsSync(cursorDir)) return;
+      // Cloud Agent setup is the only Cursor project file this repository ships.
+      // MCP servers, skills, and rules stay absent.
+      expect(readdirSync(cursorDir).sort()).toEqual([
+        "cloud-agent-install.sh",
+        "cloud-agent-start.sh",
+        "environment.json",
+      ]);
+      const environment = JSON.parse(readFileSync(path.join(cursorDir, "environment.json"), "utf8")) as {
+        install?: string;
+        start?: string;
+        mcpServers?: unknown;
+      };
+      expect(environment.install).toBe("bash .cursor/cloud-agent-install.sh");
+      expect(environment.start).toBe("bash .cursor/cloud-agent-start.sh");
+      expect(environment.mcpServers).toBeUndefined();
     });
   });
 }

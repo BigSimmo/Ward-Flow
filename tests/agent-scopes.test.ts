@@ -99,7 +99,14 @@ if (!hasAgentConfig) {
     it("ships Ward instructions without partial Claude or Cursor agent configuration", () => {
       expect(readFileSync(join(repoRoot, "AGENTS.md"), "utf8")).toContain("Ward Flow");
       expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
-      expect(existsSync(join(repoRoot, ".cursor"))).toBe(false);
+      const cursorDir = join(repoRoot, ".cursor");
+      if (existsSync(cursorDir)) {
+        expect(readdirSync(cursorDir).sort()).toEqual([
+          "cloud-agent-install.sh",
+          "cloud-agent-start.sh",
+          "environment.json",
+        ]);
+      }
     });
   });
 }
