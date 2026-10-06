@@ -711,6 +711,8 @@ function WardReferralDrawerContent({
                   }}
                   autoComplete="off"
                   spellCheck="false"
+                  data-gramm="false"
+                  data-enable-grammarly="false"
                 />
                 {searchQuery ? (
                   <button
@@ -1123,6 +1125,10 @@ function WardReferralDrawerContent({
                     id="refDocInput"
                     value={doctorNote}
                     onChange={(e) => setDoctorNote(e.target.value)}
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -1138,6 +1144,10 @@ function WardReferralDrawerContent({
                   rows={3}
                   value={clinicalSummary}
                   onChange={(e) => setClinicalSummary(e.target.value)}
+                  data-gramm="false"
+                  data-enable-grammarly="false"
+                  spellCheck={false}
+                  autoComplete="off"
                 />
               </div>
 
@@ -1238,6 +1248,10 @@ function WardReferralDrawerContent({
                     id="refTransitInput"
                     value={transitNote}
                     onChange={(e) => setTransitNote(e.target.value)}
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
               </div>

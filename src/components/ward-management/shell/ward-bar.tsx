@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Activity,
   BarChart3,
@@ -58,8 +59,14 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
-import { WardCatchmentResolver } from "@/components/ward-management/tools/ward-catchment-resolver";
-import { WardMhaCalculator } from "@/components/ward-management/tools/ward-mha-calculator";
+const WardCatchmentResolver = dynamic(
+  () => import("@/components/ward-management/tools/ward-catchment-resolver").then((m) => m.WardCatchmentResolver),
+  { ssr: false },
+);
+const WardMhaCalculator = dynamic(
+  () => import("@/components/ward-management/tools/ward-mha-calculator").then((m) => m.WardMhaCalculator),
+  { ssr: false },
+);
 
 import { announceToWardShell } from "./ward-live-region";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
