@@ -395,3 +395,54 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
   confirmed. Everything else in D5 is unchanged.
 - **Why:** Josh asked for statutory countdowns as a clearly labelled synthetic demo. The WA legal
   review on the "before any real patient" list is still required before any real use.
+
+## D-30. Central Coordinator Approval for Inter-Ward Bed Transfers (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh (product owner & psychiatrist).
+- **Decision:** Inter-ward patient transfers between hospitals/facilities must receive central bed coordinator approval and visibility; direct uncoordinated ward-to-ward transfers are not permitted in the matching engine. Direct community clinic referrals (e.g. Alma Street, Stirling Clinic) are deferred to Phase 2 (resolving WF-15 / DECISION-03).
+- **Why:** Uncoordinated transfers between hospital wards bypass the statewide acute bed allocation queue, creating blind spots for ED patients awaiting urgent admission. Central coordinator oversight ensures equitable allocation based on statewide clinical acuity.
+
+## D-31. Gender-Diverse Bed Placement Policy & Clinical Override Safety (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh.
+- **Decision:** Automatic algorithmic room placement for gender-diverse or non-binary patients is deferred. The bed-matching engine retains gender eligibility rules in `ward-eligibility.ts` (Female, Male, Non-binary, Different term, Not recorded) and alerts the coordinator when a patient's gender identity requires individual room accommodation (e.g. single room with ensuite vs shared bay). Placement requires explicit clinician review, multi-disciplinary agreement, and documented clinical rationale (resolving WF-30 / DECISION-05).
+- **Why:** Algorithmic assignment of shared multi-bed bays carries clinical, cultural, and psychological safety risks. Human clinical judgment must govern individual bed assignments while honoring patient identity and ward physical layout.
+
+## D-32. FIFO Waiting Time with Clinical Triage Badging vs Algorithmic Urgency Sorting (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh.
+- **Decision:** The emergency referral queue defaults to sorting by waiting time (FIFO) with prominent, standardized ATS Triage Category badges (1–5) and clinical urgency flags displayed on each row. Pure automated algorithmic re-ordering by urgency or predictive wait times is deferred (resolving WF-32 / DECISION-07).
+- **Why:** Pure algorithmic re-sorting creates clinical bias, gaming, and "black box" queue jumping that obscures how long lower-acuity patients have been waiting in emergency departments. Clinicians and bed managers require transparent, chronological visibility with clear acuity visual aids to make defensible allocation decisions.
+
+## D-33. Separation of Local Ward Shift Notes from Statewide Coordinator Telemetry (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh.
+- **Decision:** Local nursing and medical shift notes recorded on the Handover screen remain strictly local to that ward's operational view. Only standardized operational telemetry—patient transfer status, departure/arrival timestamps, clinical alert flags (e.g., falls risk, 1:1 nursing requirement), and statutory MHA form statuses—are published to the central statewide coordinator (resolving WF-41 / DECISION-06).
+- **Why:** Granular nursing observations and shift handovers contain sensitive, point-in-time clinical observations intended for direct bedside care. Publishing raw nursing notes statewide creates privacy exposure and information overload for central coordinators, who need concise operational facts.
+
+## D-34. Acute Medical Deterioration Bed Release and Escalation Protocol (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh.
+- **Decision:** When an emergency department patient accepted for psychiatric admission acutely deteriorates medically prior to transport, the bed allocation must be formally cancelled. The reserved inpatient bed is immediately released back to the statewide pool, tagged with the audit record "Medical Deterioration - ED Resuscitation Required", and the psychiatric referral is paused until medical stabilization and clinical re-clearance (resolving WF-43).
+- **Why:** An acute medical emergency (e.g. overdose complications, sepsis, respiratory distress) takes absolute precedence over psychiatric transfer. Holding an inpatient psychiatric bed while a patient undergoes medical resuscitation blocks another waiting psychiatric patient from accessing care.
+
+## D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh.
+- **Decision:** Regional multi-leg patient journeys (e.g., Kimberley, Pilbara, or Goldfields transport involving Royal Flying Doctor Service flights and secondary road ambulances) are formally deferred to the post-pilot regional expansion phase. The current prototype models metropolitan road transport via St John WA Patient Transfer (resolving WF-45).
+- **Why:** Regional aeromedical transfers involve complex flight logistics, weather delays, and multi-agency coordination that would add excessive complexity to the core metropolitan prototype demonstration.
+
+## D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)
+
+- **Date:** 6 October 2026. **Decided by:** Josh (affirming Item 63 ruling of 17 September 2026).
+- **Decision:** The 10 external human, legal, and ethical governance gates remain formally parked hard gates until the prototype progresses toward production readiness and before ANY real patient data or live EHR connection is permitted (resolving WF-29, WF-31/56, WF-33, WF-44, WF-46, WF-53–WF-57 per Item 63):
+  - WF-29: External Privacy & Multi-Tenant Azure Entra ID isolation.
+  - WF-31 & WF-56: WA Crown Law formal legal sign-off on Mental Health Act statutory forms.
+  - WF-33: Production multi-tenant cloud database connection and disaster recovery.
+  - WF-44: Live phone-verified statewide mental health service directory.
+  - WF-46: Formal appointment of an Australian Clinical Safety Officer (CSO) and live hazard log.
+  - WF-53: Independent Aboriginal Cultural Safety Review commissioned by Josh.
+  - WF-54: TGA Medical Device (SaMD) regulatory classification.
+  - WF-55: Formal External Privacy Impact Assessment (PIA).
+  - WF-57: Post-Incident Review (PIR) forensic audit logging standard.
+- **Why:** These activities require external institutional, legal, and regulatory processes that cannot be simulated or solved in code. They are intentionally decoupled from the demonstration prototype per the Prototype Operating Mode.
