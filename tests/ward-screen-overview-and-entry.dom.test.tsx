@@ -256,4 +256,18 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.click(closeBtn);
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
   });
+
+  it("switches the full-height column from the shift log to awaiting answers", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId={RPH_ADULT_SECURE} />
+      </WardFlowProvider>,
+    );
+
+    const awaiting = screen.getByRole("region", { name: "Awaiting your answer", hidden: true });
+    expect(awaiting).toHaveAttribute("data-active", "false");
+    fireEvent.click(screen.getByRole("tab", { name: /Awaiting your answer/i }));
+    expect(awaiting).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("tab", { name: "Shift log" })).toHaveAttribute("aria-selected", "false");
+  });
 });

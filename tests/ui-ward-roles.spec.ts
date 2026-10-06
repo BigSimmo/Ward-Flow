@@ -215,6 +215,7 @@ test.describe("@mockup Ward screen", () => {
     const assertStructure = async () => {
       await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();
       await homeTab.click();
+      await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
       await expect(wardScreen.getByRole("region", { name: "Awaiting your answer" })).toBeVisible();
       await decisionsTab.click();
       await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
