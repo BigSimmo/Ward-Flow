@@ -886,20 +886,20 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
   }
 
   const tabs: { id: GovernanceRegisterTab; label: string; count?: number }[] = [
-    { id: "overrides", label: "Overrides Register", count: totalMonitored },
-    { id: "decisions", label: "Decision Log", count: decisionList.length },
-    { id: "access", label: "Session Access Record", count: 0 },
+    { id: "overrides", label: "Overrides", count: totalMonitored },
+    { id: "decisions", label: "Outcomes", count: decisionList.length },
+    { id: "access", label: "Session activity", count: 0 },
     {
       id: "restrictive",
-      label: "Restrictive Practices (Forms 10/11)",
+      label: "Forms 10 & 11",
       count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
     },
     {
       id: "search-seizure",
-      label: "Search & Seizure (Form 8)",
+      label: "Form 8",
       count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0,
     },
-    { id: "legacy", label: "Legacy facts" },
+    { id: "legacy", label: "Older notes" },
     ...(effectiveness ? [{ id: "measures" as const, label: "Effectiveness" }] : []),
   ];
 
@@ -1175,9 +1175,9 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
             className={`${thirdEdition.btn} ${thirdEdition.primary}`}
             id="btnEndorseHeader"
             onClick={openEndorseModal}
-            aria-label="Endorse current audit"
+            aria-label="Record review"
           >
-            + Endorse Current Audit
+            Record review
           </button>
         </div>
       </div>
@@ -1220,9 +1220,9 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
         >
           <section className={thirdEdition.tabsPanel} aria-label="Clinical governance registers">
             <div className={thirdEdition.ph}>
-              <h2>Clinical Gate Exceptions &amp; Allocation Overrides</h2>
+              <h2>Overrides &amp; Exceptions</h2>
               <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                WA Health Governance Standard
+                Demo list
               </span>
             </div>
             <div className={thirdEdition.tableWrap}>
@@ -1230,10 +1230,10 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                 <thead>
                   <tr>
                     <th scope="col">Audit ID</th>
-                    <th scope="col">Patient · URM</th>
+                    <th scope="col">Patient · UMRN</th>
                     <th scope="col">Location · Route</th>
-                    <th scope="col">Gate Overridden</th>
-                    <th scope="col">Authorised By</th>
+                    <th scope="col">Override</th>
+                    <th scope="col">Who said yes</th>
                     <th scope="col">Status</th>
                   </tr>
                 </thead>
@@ -1309,7 +1309,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
             <section className={thirdEdition.registerPanel} aria-label="Captured event register">
               <header className={thirdEdition.panelHeader}>
                 <div>
-                  <h2>Captured Session Events</h2>
+                  <h2>This session</h2>
                   <p>
                     {allowed
                       ? `${visible.length} of ${events.length} captured events · newest first`
@@ -1527,14 +1527,14 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Patient · URM</span>
+                        <span className={thirdEdition.inspectorLabel}>Patient · UMRN</span>
                         {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                         <span className={thirdEdition.inspectorVal} id="inspPatient">
                           {selectedOverride.patient}
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Gate Overridden</span>
+                        <span className={thirdEdition.inspectorLabel}>Override</span>
                         <span className={thirdEdition.inspectorVal} id="inspGate">
                           {selectedOverride.category}
                         </span>
@@ -1546,7 +1546,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Authorising Role</span>
+                        <span className={thirdEdition.inspectorLabel}>Role</span>
                         <span className={thirdEdition.inspectorVal} id="inspAuthoriser">
                           {selectedOverride.by}
                         </span>
@@ -1560,7 +1560,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                     </div>
 
                     <div className={thirdEdition.formGroup}>
-                      <span className={thirdEdition.formLabel}>Recorded Clinical Justification</span>
+                      <span className={thirdEdition.formLabel}>Reason</span>
                       <div className={thirdEdition.inspectorText} id="inspJustification">
                         {selectedOverride.reason}
                       </div>
@@ -1584,7 +1584,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                         style={{ flex: 1 }}
                         onClick={openEndorseModal}
                       >
-                        Endorse Override
+                        Record review
                       </button>
                       <button
                         type="button"
@@ -1698,7 +1698,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Closed Governance Decisions &amp; Endorsements</h2>
+            <h2>Outcomes</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               Audited Exceptions
             </span>
@@ -1754,7 +1754,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Session Access &amp; Privacy Audit Record</h2>
+            <h2>Session activity</h2>
             {/* Josh, 25 September 2026 (item 4): the panel says in plain view that nothing here is saved. */}
             <span
               className="mono"
@@ -1806,7 +1806,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Restrictive Practices (Forms 10/11)</h2>
+            <h2>Forms 10 &amp; 11</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               WA Mental Health Act Statutory Register
             </span>
@@ -1818,7 +1818,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                   <th scope="col">Practice</th>
                   <th scope="col">Patient · UMRN</th>
                   <th scope="col">Ward · Location</th>
-                  <th scope="col">Authorised By</th>
+                  <th scope="col">Who said yes</th>
                   <th scope="col">Start Time</th>
                   <th scope="col">Review Due</th>
                   <th scope="col">Status</th>
@@ -1865,7 +1865,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Search &amp; Seizure (Form 8)</h2>
+            <h2>Form 8</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               WA Mental Health Act Statutory Register
             </span>
@@ -1924,7 +1924,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
         >
           <header className={thirdEdition.panelHeader}>
             <div>
-              <h2>Legacy operational facts</h2>
+              <h2>Older notes</h2>
               <p>Separate source records · capture/review unavailable</p>
             </div>
             <span className={thirdEdition.badge}>{legacyCount} override facts</span>
@@ -1972,7 +1972,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
       >
         <div className={thirdEdition.modalDialog}>
           <div className={thirdEdition.modalHead}>
-            <h3 id="endorseModalTitle">Endorse Clinical Governance Override</h3>
+            <h3 id="endorseModalTitle">Record a review</h3>
             <button
               type="button"
               className={`${thirdEdition.btn} ${thirdEdition.sm}`}

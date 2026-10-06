@@ -509,9 +509,9 @@ export function MovementsScreen() {
   );
   const worklistTransportGroups = useMemo(
     () => [
-      { id: "with", title: "A transport leg is booked", rows: worklistWithLeg },
-      { id: "requested", title: "Unaccepted transport records", rows: worklistRequestedLeg },
-      { id: "without", title: "No transport record", rows: worklistWithoutLeg },
+      { id: "with", title: "Transport booked", rows: worklistWithLeg },
+      { id: "requested", title: "Transport not accepted", rows: worklistRequestedLeg },
+      { id: "without", title: "No transport yet", rows: worklistWithoutLeg },
     ],
     [worklistWithLeg, worklistRequestedLeg, worklistWithoutLeg],
   );
@@ -611,7 +611,7 @@ export function MovementsScreen() {
             </div>
             <div className={styles.attentionBand}>
               <div className={styles.attentionHeading}>
-                <h3 className={styles.attentionTitle}>Worth your attention</h3>
+                <h3 className={styles.attentionTitle}>Needs you</h3>
                 {attentionCore.length > 0 ? (
                   <span>
                     {attentionCore.length} of {tierOneOpen.length} tier 1 open
@@ -1106,7 +1106,7 @@ export function MovementsScreen() {
                       ))}
                     </ul>
                     <div className={styles.stageFollowUp}>
-                      <h3>Next to review</h3>
+                      <h3>Next</h3>
                       <button type="button" onClick={() => setShapeTab("transport")}>
                         Transport not accepted{" "}
                         <strong>
@@ -1182,7 +1182,7 @@ export function MovementsScreen() {
                         </span>
                       </li>
                       <li className={styles.glanceItem}>
-                        <span>No transport record</span>
+                        <span>No transport yet</span>
                         <span className={noTransportRecord.length === 0 ? styles.glanceCountZero : styles.glanceCount}>
                           <span className="sr-only">Synthetic movement records: </span>
                           {noTransportRecord.length === 0 ? "none" : noTransportRecord.length}
@@ -1208,7 +1208,7 @@ export function MovementsScreen() {
                     )}
                     {unacceptedTransport.length > 0 ? (
                       <>
-                        <WardGroupHeading title="Unaccepted transport records" people={unacceptedTransport.length} />
+                        <WardGroupHeading title="Transport not accepted" people={unacceptedTransport.length} />
                         <WardRecordList>
                           {unacceptedTransport.map((movement) => (
                             <UnacceptedTransportRow
@@ -1223,7 +1223,7 @@ export function MovementsScreen() {
                     ) : null}
                     {noTransportRecord.length > 0 ? (
                       <>
-                        <WardGroupHeading title="No transport record" people={noTransportRecord.length} />
+                        <WardGroupHeading title="No transport yet" people={noTransportRecord.length} />
                         <WardRecordList>
                           {noTransportRecord.map((movement) => (
                             <NoTransportRecordRow
@@ -1676,7 +1676,7 @@ function NoTransportRecordRow({ movement, units, name }: { movement: Movement; u
       id={name}
       recordKey={movement.id}
       tone="neutral"
-      states={[{ level: "routine", text: "No transport record" }]}
+      states={[{ level: "routine", text: "No transport yet" }]}
       clock={{ value: "No job", sub: "No transport time recorded" }}
       attributes={[`Provider: Not recorded`, `From ${originLabel}`, `To ${destinationLabel}`]}
       actions={

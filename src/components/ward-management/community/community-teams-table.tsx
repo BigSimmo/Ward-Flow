@@ -100,7 +100,7 @@ export function CommunityTeamsTable({
   onOpenTeam: (teamId: string) => void;
 }) {
   return (
-    <WardPanel title="All community teams" count={`${rows.length} teams`}>
+    <WardPanel title="Community teams" count={`${rows.length} teams`}>
       <div className={styles.tableWrap}>
         <table className={styles.teams}>
           <caption>

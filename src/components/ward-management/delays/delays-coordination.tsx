@@ -57,12 +57,17 @@ type Graph = "catchment" | "radar" | "timeline";
 const GRAPHS: { id: Graph; label: string; title: string; subtitle: string }[] = [
   {
     id: "catchment",
-    label: "Catchment Pressure",
-    title: "Catchment pressure",
+    label: "By catchment",
+    title: "By catchment",
     subtitle: "People waiting by origin catchment · current snapshot",
   },
-  { id: "radar", label: "Crisis Radar", title: "Crisis radar", subtitle: "Recorded legal attention and ED wait" },
-  { id: "timeline", label: "Wait Timeline", title: "Wait timeline", subtitle: "Elapsed wait and last recorded change" },
+  {
+    id: "radar",
+    label: "Legal & ED waits",
+    title: "Legal & ED waits",
+    subtitle: "Recorded legal attention and ED wait",
+  },
+  { id: "timeline", label: "Waits", title: "Waits", subtitle: "Elapsed wait and last recorded change" },
 ];
 const CATCHMENTS: Record<CatchmentOrigin, { short: string; full: string; code: string }> = {
   "North Metro": { short: "North Metro", full: "North Metropolitan", code: "NMHS" },
@@ -442,7 +447,7 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
             setOwner(value);
             setSelected(null);
           }}
-          label="Catchment pressure owner"
+          label="By catchment owner"
         />
         <span className={styles.snapshot}>
           <Clock size={19} aria-hidden="true" />

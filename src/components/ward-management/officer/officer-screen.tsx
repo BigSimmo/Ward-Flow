@@ -529,7 +529,7 @@ export function OfficerScreen() {
   const reportOutcome = (success: string, action: string, who: string) => {
     priorRejectionCountRef.current = rejections.length;
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    setPendingOutcome({ success, refused: `${action} for ${who} was refused. See Refused actions below.` });
+    setPendingOutcome({ success, refused: `${action} for ${who} was refused. See Refused below.` });
   };
 
   const openFormModal = (movement: Movement, e: React.MouseEvent<HTMLElement>) => {
@@ -588,7 +588,7 @@ export function OfficerScreen() {
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.srOnly}>Transport Officer Console</h1>
+        <h1 className={styles.srOnly}>Transport</h1>
 
         {/* Executive Flight Deck Header */}
         <div className={styles.flightDeckHeader}>
@@ -625,7 +625,7 @@ export function OfficerScreen() {
         </div>
 
         {/* Unified Operational Telemetry & Provider Strip */}
-        <section className={styles.fleetPanel} aria-label="Transport jobs by provider">
+        <section className={styles.fleetPanel} aria-label="Jobs by provider">
           <div className={styles.telemetrySection} aria-label="Transport overview metrics and provider telemetry">
             <WardDynamicIsland
               testId="ward-officer-hud-island"
@@ -738,15 +738,15 @@ export function OfficerScreen() {
 
         {/* Refused Actions Section */}
         {officerRefusals.length > 0 ? (
-          <section className={styles.refusals} aria-label="Refused actions" data-testid="ward-officer-refusals">
+          <section className={styles.refusals} aria-label="Refused" data-testid="ward-officer-refusals">
             <header className={styles.panelHeader}>
               <div>
-                <h2 className={styles.refusalsTitle}>Refused actions</h2>
+                <h2 className={styles.refusalsTitle}>Refused</h2>
                 <p>Recorded refusals remain visible for this session.</p>
               </div>
               <span className={styles.refusalsCount}>{officerRefusals.length}</span>
             </header>
-            <div className={styles.panelBody} role="region" aria-label="Refused actions list" tabIndex={0}>
+            <div className={styles.panelBody} role="region" aria-label="Refused list" tabIndex={0}>
               <ul className={styles.refusalsList}>
                 {officerRefusals.map((rejection) => (
                   <li key={rejection.id} className={styles.refusalsItem}>
@@ -764,17 +764,17 @@ export function OfficerScreen() {
         {cancelledTransports.length > 0 ? (
           <section
             className={styles.cancelledSection}
-            aria-label="Cancelled transports"
+            aria-label="Cancelled"
             data-testid="ward-officer-cancelled-transports"
           >
             <header className={styles.panelHeader}>
               <div>
-                <h2 className={styles.cancelledTitle}>Cancelled transports / Stand-downs</h2>
+                <h2 className={styles.cancelledTitle}>Cancelled</h2>
                 <p>Cancelled dispatches and ambulance stand-downs for this session.</p>
               </div>
               <span className={styles.cancelledCount}>{cancelledTransports.length}</span>
             </header>
-            <div className={styles.panelBody} role="region" aria-label="Cancelled transports list" tabIndex={0}>
+            <div className={styles.panelBody} role="region" aria-label="Cancelled list" tabIndex={0}>
               <ul className={styles.cancelledList}>
                 {cancelledTransports.map((item, idx) => (
                   <li key={`${item.movementId}-${idx}`} className={styles.cancelledItem}>
@@ -897,7 +897,7 @@ export function OfficerScreen() {
         <section className={styles.jobsPanel} aria-labelledby="ward-officer-jobs-heading">
           <header className={styles.panelHeader}>
             <div>
-              <h2 id="ward-officer-jobs-heading">Transport jobs</h2>
+              <h2 id="ward-officer-jobs-heading">Jobs</h2>
             </div>
             <span className={styles.jobsCountBadge}>{filteredJobs.length} Priority Transfers</span>
           </header>

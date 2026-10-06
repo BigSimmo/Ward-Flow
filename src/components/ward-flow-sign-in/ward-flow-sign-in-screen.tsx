@@ -172,7 +172,7 @@ export function WardFlowSignInScreen() {
             <h1 id="sign-in-title" className={styles.title}>
               Sign in
             </h1>
-            <span className={styles.brandSub}>Statewide Mental Health Bed Coordination</span>
+            <span className={styles.brandSub}>Bed coordination (demo)</span>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export function WardFlowSignInScreen() {
           <span className={styles.statusPill}>
             <span>Synthetic service data · No live connection</span>
           </span>
-          <div className={styles.themeGroup} role="group" aria-label="Appearance Mode">
+          <div className={styles.themeGroup} role="group" aria-label="Look">
             <AppearanceGroup preference={preference} onChange={setPreference} />
           </div>
         </div>
@@ -193,8 +193,8 @@ export function WardFlowSignInScreen() {
         {/* Operational Context Setup: Catchment & Shift */}
         <div className={styles.contextStrip} aria-label="Operational Shift Context">
           <div className={styles.contextCol}>
-            <span className={styles.contextColLabel}>Health Service Catchment</span>
-            <div className={styles.pillGroup} role="group" aria-label="Health Service Catchment">
+            <span className={styles.contextColLabel}>Catchment</span>
+            <div className={styles.pillGroup} role="group" aria-label="Catchment">
               {CATCHMENT_OPTIONS.map((opt) => (
                 <button
                   key={opt.id}
@@ -484,7 +484,7 @@ export function WardFlowSignInScreen() {
           Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
           not clinical decision support.
         </p>
-        <p className={styles.authorityPill}>WA Health Clinical Flow · Synthetic data only</p>
+        <p className={styles.authorityPill}>Synthetic data only</p>
       </aside>
     </main>
   );

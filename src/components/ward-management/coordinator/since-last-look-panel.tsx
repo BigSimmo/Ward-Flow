@@ -18,7 +18,7 @@ import {
 } from "./since-last-look";
 
 /**
- * Smart feature 9: the short "Since you last looked" list at the top of the Command screen. The
+ * Smart feature 9: the short "Since you last looked" notice at the top of the Command screen. The
  * comparison lives in `since-last-look.ts`; this file only remembers when the coordinator left and
  * shows the difference when they come back.
  *
@@ -110,14 +110,52 @@ export function SinceLastLookPanel({ world, now }: { world: LastLookWorld; now: 
   const delayCounts = new Map<string, number>();
   for (const delay of changes.newDelays) delayCounts.set(delay.title, (delayCounts.get(delay.title) ?? 0) + 1);
   const bedsTotal = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
+  const chips: { key: string; label: string }[] = [];
+  if (changes.newReferralIds.length > 0) {
+    chips.push({
+      key: "referrals",
+      label: plural(changes.newReferralIds.length, "new referral", "new referrals"),
+    });
+  }
+  if (changes.newMovementIds.length > 0) {
+    chips.push({
+      key: "journeys",
+      label: `${plural(changes.newMovementIds.length, "new person", "new people")} waiting in ED`,
+    });
+  }
+  if (bedsTotal > 0) {
+    chips.push({
+      key: "beds",
+      label: `${plural(bedsTotal, "bed", "beds")} newly ready: ${changes.bedsFreed
+        .map((entry) => `${entry.unitName} +${entry.count}`)
+        .join(", ")}`,
+    });
+  }
+  if (changes.newDelays.length > 0) {
+    chips.push({
+      key: "delays",
+      label: `${plural(changes.newDelays.length, "new delay", "new delays")}: ${[...delayCounts]
+        .map(([title, count]) => `${title} (${count})`)
+        .join(", ")}`,
+    });
+  }
+  if (changes.newEscalationIds.length > 0) {
+    chips.push({
+      key: "escalations",
+      label: `${plural(changes.newEscalationIds.length, "new escalation", "new escalations")}: no suitable bed`,
+    });
+  }
 
   return (
     <section className={styles.sinceLastLook} aria-label="Since you last looked" data-testid="ward-since-last-look">
       <div className={styles.sinceLastLookHeader}>
-        <h2>Since you last looked at {since}</h2>
+        <div className={styles.sinceLastLookCopy}>
+          <h2>Since you last looked</h2>
+          <p className={styles.sinceLastLookWhen}>at {since}</p>
+        </div>
         <button
           type="button"
-          className={styles.clearSelectionButton}
+          className={styles.sinceLastLookDismiss}
           onClick={() => {
             writeSnapshot(current);
           }}
@@ -125,33 +163,12 @@ export function SinceLastLookPanel({ world, now }: { world: LastLookWorld; now: 
           Mark as seen
         </button>
       </div>
-      <ul className={styles.sinceLastLookList}>
-        {changes.newReferralIds.length > 0 ? (
-          <li data-change="referrals">{plural(changes.newReferralIds.length, "new referral", "new referrals")}</li>
-        ) : null}
-        {changes.newMovementIds.length > 0 ? (
-          <li data-change="journeys">
-            {plural(changes.newMovementIds.length, "new person", "new people")} waiting in an emergency department
+      <ul className={styles.sinceLastLookChips}>
+        {chips.map((chip) => (
+          <li key={chip.key} className={styles.sinceLastLookChip} data-change={chip.key}>
+            {chip.label}
           </li>
-        ) : null}
-        {bedsTotal > 0 ? (
-          <li data-change="beds">
-            {plural(bedsTotal, "bed", "beds")} newly ready:{" "}
-            {changes.bedsFreed.map((entry) => `${entry.unitName} +${entry.count}`).join(", ")}
-          </li>
-        ) : null}
-        {changes.newDelays.length > 0 ? (
-          <li data-change="delays">
-            {plural(changes.newDelays.length, "new delay", "new delays")}:{" "}
-            {[...delayCounts].map(([title, count]) => `${title} (${count})`).join(", ")}
-          </li>
-        ) : null}
-        {changes.newEscalationIds.length > 0 ? (
-          <li data-change="escalations">
-            {plural(changes.newEscalationIds.length, "new escalation", "new escalations")}: no suitable bed found in the
-            network
-          </li>
-        ) : null}
+        ))}
       </ul>
     </section>
   );

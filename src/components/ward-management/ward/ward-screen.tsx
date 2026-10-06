@@ -3718,7 +3718,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Currently Confirmed Allocatable</dt>
+                        <dt>Confirmed free</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -3766,7 +3766,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Allocatable Delta</dt>
+                        <dt>Unoccupied change</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",

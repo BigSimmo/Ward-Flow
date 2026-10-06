@@ -51,14 +51,14 @@ import styles from "./delays-data-views.module.css";
 type DelayRecord = { movement: Movement; cause: DelayCause };
 type Sort = "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank";
 const SHORT_CAUSE: Record<DelayCause, string> = {
-  legal_breached: "Form due time already passed",
+  legal_breached: "Form overdue",
   legal_expiring: "Form due time running out",
   no_eligible_bed: "No suitable bed",
   awaiting_ward_answer: "Awaiting ward answer",
   bed_pull_expired: "Reserved time passed; bed held",
   awaiting_bed_ready: "Bed not ready",
   awaiting_transport: "Awaiting transport",
-  patient_or_family: "Patient or family factors",
+  patient_or_family: "Patient or family",
   awaiting_coordinator: "Awaiting coordinator decision",
 };
 function originName(m: Movement) {

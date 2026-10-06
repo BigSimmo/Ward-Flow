@@ -3995,12 +3995,12 @@ export function CommunityScreen({
                       </li>
                       <li>
                         <Link className={styles.linksItem} href={WARD_REFERRAL_INTAKE_HREF}>
-                          Raise a referral
+                          New referral
                         </Link>
                       </li>
                       <li>
                         <Link className={styles.linksItem} href="/mockups/ward-flow/referrals">
-                          Referral board
+                          Referrals
                         </Link>
                       </li>
                     </ul>

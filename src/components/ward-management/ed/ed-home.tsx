@@ -105,7 +105,7 @@ export function EdHome() {
       <div className={styles.masthead}>
         <div>
           <span className={styles.eyebrow}>Coordinator</span>
-          <h1 className={styles.title}>Emergency departments — every site</h1>
+          <h1 className={styles.title}>Emergency departments</h1>
           <p className={styles.covers}>
             <b>
               {allEds.length} emergency department{allEds.length === 1 ? "" : "s"}

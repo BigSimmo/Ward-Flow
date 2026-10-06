@@ -142,7 +142,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
     {
       id: "a1",
       icon: "✓",
-      title: "Morning Shift Roll-up Signed Off",
+      title: "Morning count signed",
       detail: "Declared 18 staffed / 20 physical beds (1:1 specialling limiter recorded)",
       time: "10:22 AWST",
       author: `NUM ${unit.name}`,
@@ -150,7 +150,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
     {
       id: "a2",
       icon: "✓",
-      title: "Bed 02 Released to Turnover",
+      title: "Bed 02 freed",
       detail: "Discharge handover signed off; bed cleared for sanitization",
       time: "09:15 AWST",
       author: "Shift Coordinator Taylor",

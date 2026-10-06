@@ -598,7 +598,7 @@ export function WardNetworkWorkspace() {
         </div>
         <section className={thirdEdition.flowPanel} aria-labelledby="ward-network-flow-heading">
           <header className={thirdEdition.flowHeader}>
-            <h2 id="ward-network-flow-heading">Statewide flow</h2>
+            <h2 id="ward-network-flow-heading">State Bedflow</h2>
             <p>{units.length} inpatient units drawn</p>
           </header>
           <div className={thirdEdition.flowBody} role="region" aria-label="Network flow diagram" tabIndex={0}>
@@ -951,9 +951,9 @@ function WardNetworkPlacementWorkspace() {
 
       <div className={styles.networkGrid}>
         <div className={styles.queueColumn}>
-          <section className={styles.queuePanel} aria-label="Priority queue">
+          <section className={styles.queuePanel} aria-label="Waiting">
             <header className={styles.panelHeader}>
-              <h2>Priority queue</h2>
+              <h2>Waiting</h2>
               {/*
                 ⚠️ `openMovements`, NEVER the filtered length. This figure is read as "how much
                 demand is there", and a filter that could shrink it would let a coordinator who has
@@ -982,7 +982,7 @@ function WardNetworkPlacementWorkspace() {
                 </button>
               </p>
             ) : null}
-            <div className={styles.queueList} role="region" aria-label="Priority queue list" tabIndex={0}>
+            <div className={styles.queueList} role="region" aria-label="Waiting list" tabIndex={0}>
               {visibleQueue.map((candidate) => (
                 <button
                   type="button"

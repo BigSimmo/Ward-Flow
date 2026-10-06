@@ -56,7 +56,7 @@ import styles from "./ward-chrome-header.module.css";
 function roleAction(role: WardChromeRole): { href: string; label: string } {
   if (role === "ward") return { href: "/mockups/ward-flow/movements", label: "Answer bed offers" };
   if (role === "ed") return { href: WARD_REFERRAL_INTAKE_HREF, label: "New referral" };
-  return { href: "/mockups/ward-flow/referrals", label: "Referral board" };
+  return { href: "/mockups/ward-flow/referrals", label: "Referrals" };
 }
 
 /**
@@ -82,16 +82,8 @@ function roleAction(role: WardChromeRole): { href: string; label: string } {
 export function WardChromeHeader() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const {
-    movements,
-    units,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    dispatch,
-    inboxAcknowledgements,
-    inboxCompletions,
-  } = useWardFlow();
+  const { movements, units, admissions, bedReleases, leaveBeds, dispatch, inboxAcknowledgements, inboxCompletions } =
+    useWardFlow();
   const now = useWardFlowClock();
 
   const [figuresOpen, setFiguresOpen] = useState(false);

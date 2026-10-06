@@ -404,7 +404,7 @@ export function LegalFormsScreen() {
             {
               testId: "ward-legal-kpi-clockless",
               id: "kpi-clockless",
-              label: "Clockless",
+              label: "No time written",
               value: noDeadline.length + voluntary,
               tone: "muted",
               active: authorityFilter === "all" && urgencyFilter === "all",
@@ -412,7 +412,7 @@ export function LegalFormsScreen() {
                 setAuthorityFilter("all");
                 setUrgencyFilter("all");
               },
-              ariaLabel: `Clockless and voluntary: ${noDeadline.length + voluntary}`,
+              ariaLabel: `No time written and voluntary: ${noDeadline.length + voluntary}`,
             },
           ]}
           actions={
@@ -912,7 +912,7 @@ export function LegalFormsScreen() {
                     ) : (
                       <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
                         {urgencyFilter === "urgent"
-                          ? "Clockless records hidden under Urgent filter."
+                          ? "No time written records hidden under Urgent filter."
                           : "Every open movement carrying a form has a deadline recorded on it."}
                       </p>
                     )}
@@ -1099,7 +1099,7 @@ export function LegalFormsScreen() {
 
                 {/* Authorized Practitioner Review Section */}
                 <div className={styles.practitionerSection}>
-                  <h3 className={styles.sectionHeading}>Authorized Practitioner Actions</h3>
+                  <h3 className={styles.sectionHeading}>Practitioner actions</h3>
 
                   <div className={styles.actionGroup}>
                     <div className={styles.actionGroupHead}>
@@ -1643,9 +1643,9 @@ function LegalFormRow({
             className={`${styles.btn} ${styles.btnSm}`}
             onClick={() => onInspect(movement)}
             // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-            aria-label={`Inspect dossier for ${patientInfo.formalName}`}
+            aria-label={`Open dossier for ${patientInfo.formalName}`}
           >
-            <span>Inspect</span>
+            <span>Open</span>
             <ChevronRight size={14} className={styles.actionChevron} aria-hidden="true" />
           </button>
         </div>

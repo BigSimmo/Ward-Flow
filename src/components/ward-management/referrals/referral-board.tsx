@@ -494,7 +494,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleBlock}>
             <div className={styles.pageTitleRow}>
-              <h1 className={styles.pageTitle}>Referral board</h1>
+              <h1 className={styles.pageTitle}>Referrals</h1>
               <span className={styles.liveBadge} title="Real-time triage telemetry">
                 <span className={styles.liveDot} aria-hidden="true" />
                 Live triage

@@ -35,7 +35,7 @@ import styles from "./override-register.module.css";
  * rather than rendering an empty box: "no rows" and "this surface is not wired up" look identical
  * on screen, and only one of them is true.
  */
-export const NO_OVERRIDE_RECORDED_NOTICE = "No override has been recorded.";
+export const NO_OVERRIDE_RECORDED_NOTICE = "No overrides";
 
 type OverrideRegisterProps = {
   /**
@@ -135,7 +135,7 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {entry.override.gate === "high_acuity_staffing" ? "High-Acuity Override" : "Gate Overridden"}
+                  {entry.override.gate === "high_acuity_staffing" ? "High-Acuity Override" : "Override"}
                 </span>
 
                 {entry.override.numConsulted ? (

@@ -170,7 +170,7 @@ export function WardChromeSearch({
     if (smartResults.emergencyDepartments.length > 0) {
       g.push({
         key: "eds",
-        heading: "Emergency Departments",
+        heading: "ED",
         items: smartResults.emergencyDepartments.map((e) => ({
           kind: "ed",
           kindLabel: "ED",
@@ -185,7 +185,7 @@ export function WardChromeSearch({
     if (smartResults.communityTeams.length > 0) {
       g.push({
         key: "teams",
-        heading: "Community Teams",
+        heading: "Community",
         items: smartResults.communityTeams.map((c) => ({
           kind: "community",
           kindLabel: "Community",
@@ -200,7 +200,7 @@ export function WardChromeSearch({
     if (smartResults.legalForms.length > 0) {
       g.push({
         key: "forms",
-        heading: "Legal Forms",
+        heading: "Legal",
         items: smartResults.legalForms.map((f) => ({
           kind: "form",
           kindLabel: "Legal Form",
@@ -215,7 +215,7 @@ export function WardChromeSearch({
     if (smartResults.views.length > 0) {
       g.push({
         key: "views",
-        heading: "Core Views",
+        heading: "Screens",
         items: smartResults.views.map((v) => ({
           kind: "view",
           kindLabel: "View",
@@ -230,7 +230,7 @@ export function WardChromeSearch({
     if (smartResults.tasks.length > 0) {
       g.push({
         key: "tasks",
-        heading: "Action Tasks",
+        heading: "Tasks",
         items: smartResults.tasks.map((t) => ({
           kind: "task",
           kindLabel: "Task",
