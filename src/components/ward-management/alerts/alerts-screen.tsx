@@ -490,9 +490,7 @@ function AlertsWorkspace() {
 
   const defaultTmpl = WA_BROADCAST_TEMPLATES[0];
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(defaultTmpl?.id ?? "custom");
-  const [broadcastTitle, setBroadcastTitle] = useState(
-    defaultTmpl?.title ?? "Critical HDU Capacity: Immediate Discharge & Step-Down Review",
-  );
+  const [broadcastTitle, setBroadcastTitle] = useState(defaultTmpl?.title ?? "Demo: HDU full — check discharges");
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
 
   const [broadcastSeverity, setBroadcastSeverity] = useState<BroadcastSeverity>(defaultTmpl?.severity ?? "critical");
