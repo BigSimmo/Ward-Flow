@@ -438,7 +438,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
-    (pathname === officerHref() ? "Transport Hub" : undefined) ??
+    (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
     (/^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
@@ -462,7 +462,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       if (place.kind === "team") return "Community Team";
     }
     if (/^\/mockups\/ward-flow\/board\//u.test(pathname)) return "Live Bed Board";
-    if (pathname === WARD_HOME_HREF || routeTitle === "Command") {
+    if (pathname === WARD_HOME_HREF || routeTitle === "Home") {
       return "Statewide Bed Coordination";
     }
     if (pathname.includes("/movements") || routeTitle === "Movements") {
@@ -480,7 +480,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     if (pathname.includes("/governance") || routeTitle === "Governance") {
       return "Today’s answers";
     }
-    if (pathname.includes("/transport") || routeTitle === "Transport Hub") {
+    if (pathname.includes("/transport") || routeTitle === "Transport") {
       return "Patient Transfers & Fleet";
     }
     if (pathname.includes("/network") || routeTitle === "Network") {
