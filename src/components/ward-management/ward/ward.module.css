@@ -2387,33 +2387,6 @@
    WARD FLOW WARD VIEW — PERFECTED THIRD EDITION STYLES
    ═══════════════════════════════════════════════════════════════════════ */
 
-.telemetrySlot {
-  display: contents;
-}
-
-.screen[data-decisions="true"] .actionBar,
-.screen[data-decisions="true"] .telemetrySlot {
-  display: none;
-}
-
-.screen[data-decisions="true"] .topActionBarWrap {
-  padding: 0;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.screen[data-decisions="true"] .tabBarWrap {
-  margin: 0 0 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
-  border-radius: 0.875rem;
-  background: var(--glass-fill, var(--surface));
-  box-shadow:
-    var(--lift),
-    inset 0 1px 0 var(--hl);
-}
-
 .topActionBarWrap {
   background: var(--glass-fill, var(--surface));
   border: 1px solid color-mix(in srgb, var(--line) 70%, var(--hl));
