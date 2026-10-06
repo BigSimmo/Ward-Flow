@@ -187,11 +187,13 @@ describe("Track C ED screen fixes", () => {
       </WardFlowProvider>,
     );
 
-    // Click on the first patient row to open the details popup. Owner, 26 Sept 2026: the row's
-    // identity button now shows the patient's UMRN, never the WF journey number.
-    const patientButtons = screen.getAllByRole("button", { name: /^UM\d+/u });
-    expect(patientButtons.length).toBeGreaterThan(0);
-    fireEvent.click(patientButtons[0]);
+    // Patient names open records; the separate UMRN badge keeps identity visible on the row.
+    const row = screen.getAllByTestId(/^ward-ed-patient-WF-/u)[0];
+    const name = row.querySelector<HTMLButtonElement>('button[title^="View patient details"]');
+    expect(name).not.toBeNull();
+    const bay = row.children[2]?.textContent;
+    expect(within(row).getByText("UMRN")).toBeInTheDocument();
+    fireEvent.click(name!);
 
     // Check detail drawer bay value in "Where they are up to" section
     const whereSection = screen.getByText("Where they are up to").closest("section")!;
@@ -199,6 +201,7 @@ describe("Track C ED screen fixes", () => {
     const bayDd = bayDt.nextElementSibling;
     expect(bayDd?.textContent).not.toBe("not recorded");
     expect(bayDd?.textContent).toMatch(/^Bay \d{2}$/u);
+    expect(bayDd?.textContent).toBe(`Bay ${bay}`);
   });
 
   it("Wired priority flag actions can be clicked without throwing or jamming", () => {

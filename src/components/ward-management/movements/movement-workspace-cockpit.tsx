@@ -110,7 +110,13 @@ const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancell
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 
-export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementId }) {
+export function MovementWorkspaceCockpit({
+  movementId,
+  embedded = false,
+}: {
+  movementId: MovementId;
+  embedded?: boolean;
+}) {
   const { dispatch, movements, units, patients, referrals } = useWardFlow();
   const now = useWardFlowClock();
 
@@ -513,6 +519,15 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
       </section>
     </div>
   );
+
+  if (embedded) {
+    return (
+      <div className={styles.embeddedActions}>
+        <MovementWorkflowActions movement={patient} />
+        {renderActions(patient)}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.cockpitRoot} data-testid="ward-patient-workspace">

@@ -950,6 +950,7 @@ Clinical Note: ${p.clinicalNote}`;
             <div className={styles.glassViewSwitcher} role="group" aria-label="Caseload view layout">
               <button
                 type="button"
+                id="viewCardsBtn"
                 className={`${styles.glassViewBtn} ${viewMode === "cards" ? styles.active : ""}`}
                 onClick={() => setViewMode("cards")}
                 aria-pressed={viewMode === "cards"}
@@ -959,6 +960,7 @@ Clinical Note: ${p.clinicalNote}`;
               </button>
               <button
                 type="button"
+                id="viewDenseBtn"
                 className={`${styles.glassViewBtn} ${viewMode === "dense" ? styles.active : ""}`}
                 onClick={() => setViewMode("dense")}
                 aria-pressed={viewMode === "dense"}

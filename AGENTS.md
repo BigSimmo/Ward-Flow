@@ -23,6 +23,21 @@ dependencies. Publication to GitHub or a provider still needs the authority stat
 
 # Requested stage, decisions and startup context
 
+## React mockups — owner direction, 5 October 2026
+
+Build interactive Ward Flow mockups in React and TypeScript using the site's existing Next.js
+routes, reusable components and CSS Modules. Design the actual components that can become the
+approved site implementation; do not create a separate HTML/JavaScript UI that must be rewritten.
+Reuse shared Ward Flow state, reducer actions and synthetic records rather than duplicating
+workflow logic or data. Keep preview-only controls and fixtures small and separate from reusable
+components. If an HTML preview is needed for sharing, bundle the same React components into it.
+
+On approval, integrate the reviewed components directly and preserve their working interactions.
+Run only checks that cover plausible changed behaviour; reuse passing checks on identical inputs
+and avoid repeated full suites, builds or screenshot matrices. Explicit requests for static images,
+plain HTML or another framework take precedence. This rule does not authorise publication or
+deployment beyond the user's requested scope.
+
 Complete the stage Josh requested: an audit is complete when its usable findings/evidence are delivered; Fast Preview when its affected appearance/interactions are evidenced; local engineering when the change and required local gates are verified. Integration, publication, CI observation, merge and deployment require their applicable authority and separate evidence. Local completion does not require a coordinator or provider action that was not requested.
 
 Ask only when material uncertainty changes scope, meaning, safety, ownership or consequential authority; resolve accessible facts and ordinary reversible choices yourself and continue independent authorised work. Preserve direct owner decisions for clinical, privacy, product-sensitive or true ownership conflicts. At startup/resume, read the current entry point, relevant rules, exact task row/canonical checkpoint and scoped code-map section; retain the full ledger/history and primary evidence without reading it all routinely. Follow the existing receipt contract and compact-route qualifications; a timestamp alone is not new verification.

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, X } from "lucide-react";
+import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, Search, X } from "lucide-react";
 import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -27,15 +27,6 @@ type WardTasksDrawerProps = {
   withBackdrop?: boolean;
 };
 
-function getInitials(name?: string, fallback = "PT"): string {
-  if (!name) return fallback;
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
 export function WardTasksDrawer({
   items,
   acknowledgements,
@@ -50,6 +41,8 @@ export function WardTasksDrawer({
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
 
+  const [query, setQuery] = useState("");
+  const [ackFilter, setAckFilter] = useState("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
 
   function acknowledge(inboxItemId: string) {
@@ -65,22 +58,28 @@ export function WardTasksDrawer({
   }
 
   function acknowledgeAllFacts() {
-    facts.forEach((item) => {
+    visibleUnacknowledged.forEach((item) => {
       dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId: item.id });
     });
   }
 
   const facts = items.filter((item) => item.kind === "fact");
   const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
-  const reviewFactsCount = facts.filter((item) => item.tone !== "danger").length;
-
-  const filteredFacts = facts.filter((item) => {
-    if (taskFilter === "critical") return item.tone === "danger";
-    if (taskFilter === "review") return item.tone !== "danger";
-    return true;
-  });
 
   const commitments = items.filter((item) => item.kind === "commitment");
+  const openCommitments = commitments.filter((item) => inboxItemCompletionState(completions[item.id]) !== "complete");
+  const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
+  const filteredItems = items.filter((item) => {
+    if (taskFilter === "critical" && item.tone !== "danger") return false;
+    if (taskFilter === "review" && item.tone === "danger") return false;
+    const acknowledged = Boolean(acknowledgements[item.id]?.length);
+    if (ackFilter === "unacknowledged" && (item.kind !== "fact" || acknowledged)) return false;
+    if (ackFilter === "acknowledged" && (item.kind !== "fact" || !acknowledged)) return false;
+    return `${item.title} ${item.detail} ${item.owner}`.toLowerCase().includes(query.trim().toLowerCase());
+  });
+  const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
+  const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
+  const visibleUnacknowledged = filteredFacts.filter((item) => !acknowledgements[item.id]?.length);
 
   return (
     <>
@@ -94,12 +93,16 @@ export function WardTasksDrawer({
       ) : null}
       <aside ref={drawerRef} className={styles.drawer} role="complementary" aria-label="Tasks">
         <div className={styles.header}>
-          <h2 className={styles.heading}>
-            <span>Outstanding work</span>
-            <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
-              {items.length}
-            </span>
-          </h2>
+          <div>
+            <p className={styles.eyebrow}>Task inbox</p>
+            <h2 className={styles.heading}>
+              <span>Outstanding work</span>
+              <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
+                {items.length}
+              </span>
+            </h2>
+            <p className={styles.headerNote}>Current work from synthetic movement records.</p>
+          </div>
           <button
             type="button"
             className={styles.closeButton}
@@ -112,39 +115,98 @@ export function WardTasksDrawer({
           </button>
         </div>
 
-        <div className={styles.taskFilterTrack} role="group" aria-label="Filter tasks by status">
-          <button
-            type="button"
-            className={`${styles.taskFilterTab} ${taskFilter === "all" ? styles.taskFilterTabActive : ""}`}
-            onClick={() => setTaskFilter("all")}
-          >
-            All <span>{facts.length}</span>
-          </button>
-          <button
-            type="button"
-            className={`${styles.taskFilterTab} ${taskFilter === "critical" ? styles.taskFilterTabActive : ""}`}
-            onClick={() => setTaskFilter("critical")}
-          >
-            Past Due / Critical <span>{criticalFactsCount}</span>
-          </button>
-          <button
-            type="button"
-            className={`${styles.taskFilterTab} ${taskFilter === "review" ? styles.taskFilterTabActive : ""}`}
-            onClick={() => setTaskFilter("review")}
-          >
-            Review Due <span>{reviewFactsCount}</span>
-          </button>
-        </div>
+        <div className={styles.controls}>
+          <div className={styles.summary}>
+            <div>
+              <strong>{criticalFactsCount}</strong>
+              <span>Critical facts</span>
+            </div>
+            <div>
+              <strong>{unacknowledged.length}</strong>
+              <span>To acknowledge</span>
+            </div>
+            <div>
+              <strong>{openCommitments.length}</strong>
+              <span>Open commitments</span>
+            </div>
+          </div>
+          <label className={styles.search}>
+            <Search aria-hidden="true" />
+            <input
+              aria-label="Search tasks"
+              placeholder="Search task, movement or owner…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <div className={styles.taskFilterTrack} role="group" aria-label="Filter tasks by status">
+            <button
+              type="button"
+              className={`${styles.taskFilterTab} ${taskFilter === "all" ? styles.taskFilterTabActive : ""}`}
+              aria-pressed={taskFilter === "all"}
+              onClick={() => setTaskFilter("all")}
+            >
+              All <span>{items.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.taskFilterTab} ${taskFilter === "critical" ? styles.taskFilterTabActive : ""}`}
+              aria-pressed={taskFilter === "critical"}
+              onClick={() => setTaskFilter("critical")}
+            >
+              Critical <span>{items.filter((item) => item.tone === "danger").length}</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.taskFilterTab} ${taskFilter === "review" ? styles.taskFilterTabActive : ""}`}
+              aria-pressed={taskFilter === "review"}
+              onClick={() => setTaskFilter("review")}
+            >
+              Review <span>{items.filter((item) => item.tone !== "danger").length}</span>
+            </button>
+          </div>
 
+          <div className={styles.filterMeta}>
+            <span role="status">
+              {filteredItems.length} of {items.length} invented tasks
+            </span>
+            <select
+              aria-label="Filter acknowledgement state"
+              value={ackFilter}
+              onChange={(event) => setAckFilter(event.target.value)}
+            >
+              <option value="all">All acknowledgement states</option>
+              <option value="unacknowledged">Not yet acknowledged</option>
+              <option value="acknowledged">Acknowledged</option>
+            </select>
+          </div>
+        </div>
         <div className={styles.drawerBody}>
           {items.length === 0 ? (
             <p className={styles.placeholder}>
               {role === "coordinator" ? "No outstanding work right now." : "Tasks is the bed coordinator's list."}
             </p>
+          ) : filteredItems.length === 0 ? (
+            <div className={styles.empty}>
+              <Search aria-hidden="true" />
+              <h3>No matching tasks</h3>
+              <p>Try another name, owner or filter.</p>
+              <button
+                type="button"
+                className={styles.btnMovement}
+                onClick={() => {
+                  setQuery("");
+                  setTaskFilter("all");
+                  setAckFilter("all");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <>
               {/* SECTION 1: STATUTORY FACTS */}
-              {facts.length > 0 ? (
+              {filteredFacts.length > 0 ? (
                 <div className={styles.taskSectionGroup} id="groupFacts">
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
@@ -152,7 +214,7 @@ export function WardTasksDrawer({
                       <span>Recorded forms</span>
                     </h3>
                     <span className={styles.taskStripBadge} style={{ color: "var(--danger)", fontWeight: 700 }}>
-                      {facts.length} Pending
+                      {filteredFacts.length} recorded
                     </span>
                   </div>
 
@@ -160,17 +222,17 @@ export function WardTasksDrawer({
                     {filteredFacts.map((item) => {
                       const ackHistory = acknowledgements[item.id] ?? [];
                       const latestAck = ackHistory.length > 0 ? ackHistory[ackHistory.length - 1] : undefined;
-                      const initials = getInitials(item.title);
+                      const Icon = item.icon;
 
                       return (
-                        <li key={item.id} className={styles.taskStrip}>
+                        <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
                           <div className={styles.taskStripMain}>
                             <div
                               className={`${styles.taskStripAvatar} ${
                                 item.tone === "warning" ? styles.taskStripAvatarWarn : ""
                               }`}
                             >
-                              {initials}
+                              <Icon aria-hidden="true" />
                             </div>
                             <div className={styles.taskStripContent}>
                               <div className={styles.taskStripRow1}>
@@ -187,7 +249,7 @@ export function WardTasksDrawer({
                                     item.tone === "danger" ? styles.taskStripBadgeUrgent : styles.taskStripBadgeWarn
                                   }`}
                                 >
-                                  {item.tone === "danger" ? "ED Past Due / Critical" : "Review Due"}
+                                  {item.tone === "danger" ? "Past Due / Critical" : "Review Due"}
                                 </span>
                               </div>
                               <div className={styles.taskStripRow2}>
@@ -228,7 +290,7 @@ export function WardTasksDrawer({
               ) : null}
 
               {/* SECTION 2: OPERATIONAL COMMITMENTS */}
-              {commitments.length > 0 ? (
+              {filteredCommitments.length > 0 ? (
                 <div className={styles.taskSectionGroup} id="groupTasks">
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
@@ -236,22 +298,24 @@ export function WardTasksDrawer({
                       <span>Operational Commitments</span>
                     </h3>
                     <span className={styles.taskStripBadge} style={{ color: "var(--accent)", fontWeight: 700 }}>
-                      {commitments.length} Open Tasks
+                      {filteredCommitments.length} commitments
                     </span>
                   </div>
 
                   <ul className={styles.taskStripList}>
-                    {commitments.map((item) => {
+                    {filteredCommitments.map((item) => {
                       const completionHistory = completions[item.id];
                       const isComplete = inboxItemCompletionState(completionHistory) === "complete";
                       const latestCompletion =
                         isComplete && completionHistory ? completionHistory[completionHistory.length - 1] : undefined;
-                      const initials = getInitials(item.title);
+                      const Icon = item.icon;
 
                       return (
-                        <li key={item.id} className={styles.taskStrip}>
+                        <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
                           <div className={styles.taskStripMain}>
-                            <div className={styles.taskStripAvatar}>{initials}</div>
+                            <div className={styles.taskStripAvatar}>
+                              <Icon aria-hidden="true" />
+                            </div>
                             <div className={styles.taskStripContent}>
                               <div className={styles.taskStripRow1}>
                                 <button
@@ -262,7 +326,9 @@ export function WardTasksDrawer({
                                 >
                                   <span className={styles.taskStripPatient}>{item.title}</span>
                                 </button>
-                                <span className={styles.taskStripBadge}>Active Task</span>
+                                <span className={styles.taskStripBadge}>
+                                  {isComplete ? "Completed" : "Open commitment"}
+                                </span>
                               </div>
                               <div className={styles.taskStripRow2}>
                                 <span className={styles.taskStripSub}>
@@ -326,13 +392,11 @@ export function WardTasksDrawer({
         </div>
 
         <div className={styles.drawerFoot}>
-          <span id="taskDrawerSummary">
-            {facts.length} Facts Pending · {commitments.length} Commitments Open
-          </span>
-          {facts.length > 0 ? (
+          <span id="taskDrawerSummary">Acknowledgement records that you have seen a fact. It does not resolve it.</span>
+          {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btnAckAll} onClick={acknowledgeAllFacts}>
               <UserCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
-              <span>Acknowledge All Facts</span>
+              <span>Acknowledge visible ({visibleUnacknowledged.length})</span>
             </button>
           ) : null}
         </div>

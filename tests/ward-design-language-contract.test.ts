@@ -548,6 +548,9 @@ describe("the ground is not merely painted — it has to be visible", () => {
    * backlog that can never reach zero.
    */
   const NOT_A_SCREEN = new Set([
+    // Compact header island mounted inside EdScreen, whose page root remains transparent.
+    // This surface ends after the department browser; it does not cover the page ground.
+    "ed/ed-overview.module.css",
     "ward-panel.module.css",
     "ward-chip.module.css",
     "ward-figure.module.css",

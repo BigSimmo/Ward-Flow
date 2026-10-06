@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**82 mockups · 45 routes · 30 screen folders.**
+**68 mockups · 45 routes · 30 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -84,20 +84,6 @@ UNMAPPED rather than disappearing.
 | `delays-perfected-third-edition.html` | — | — |
 | `notification-popup-third-edition.html` | — | — |
 | `ward-before-after-redesign.html` | — | — |
-| `perfected-synthetic-prototype-mockup.html` | — | — |
-| `delays-mockup-catchment.html` | — | — |
-| `delays-mockup-histogram.html` | — | — |
-| `delays-mockup-matrix.html` | — | — |
-| `delays-mockup-runway.html` | — | — |
-| `movement-patient-popup-mockups.html` | — | — |
-| `patient-search-bar-mockup.html` | — | — |
-| `patient-search-console-alternatives.html` | — | — |
-| `patient-search-directions-studio.html` | — | — |
-| `referral-inspector-mockup.html` | — | — |
-| `unified-command-horizon-system.html` | — | — |
-| `ward-flow-complete-showcase.html` | — | — |
-| `ward-home-beds-mockup.html` | — | — |
-| `ward-redesign-mockups.html` | — | — |
 
 ## Superseded — never build from these
 

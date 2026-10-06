@@ -375,8 +375,7 @@
 .workTable {
   composes: table from "../ward-table/ward-table.module.css";
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   font-size: var(--t-1);
   line-height: 1.45;
 }
@@ -384,15 +383,18 @@
   background: var(--surface-2);
 }
 .workTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  /* Not sticky: sticky thead covered record buttons after scroll-into-view
+   * (ui-ward-discharges care dossier). Keep the stark edge + lift instead. */
   background: var(--surface-2);
   color: var(--muted);
   font-size: var(--t-0);
-  font-weight: 600;
+  font-weight: 650;
   text-align: left;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--line-strong);
+  box-shadow:
+    0 4px 6px -1px rgb(var(--ward-shadow-rgb) / 0.07),
+    0 2px 4px -2px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 .workTable th,
 .workTable td {

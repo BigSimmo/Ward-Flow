@@ -2733,3 +2733,1331 @@
   font-size: var(--t-0);
   color: var(--ink-soft);
 }
+
+/* Unified dossier: local clinical / transit workspace switch. */
+.nowViewSwitch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.nowViewSwitch button {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nowViewSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  box-shadow: var(--lift);
+}
+.nowViewSwitch span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.clinicalView[hidden] {
+  display: none;
+}
+.screen button,
+.screen .ctl,
+.screen .tabBtn,
+.screen .backBtn {
+  min-height: 44px;
+  min-width: 44px;
+}
+.screen button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .nowViewSwitch {
+    padding: 10px 14px;
+  }
+  .nowViewSwitch span {
+    width: 100%;
+    margin-left: 0;
+    padding: 4px;
+  }
+}
+
+/* Compact Patient Now flight deck: one identity, one operational snapshot. */
+.screen {
+}
+.scroll {
+  padding: 16px;
+  gap: 14px;
+}
+.topCard {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px var(--ward-shadow);
+}
+.flightIdentity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px 16px;
+  background: linear-gradient(115deg, var(--ink), var(--ink));
+  color: var(--surface);
+}
+.flightIdentity .backBtn {
+  color: var(--surface);
+  border-color: var(--surface);
+  background: var(--surface);
+  border-radius: 50%;
+  width: 44px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.avatar {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--surface);
+  border-radius: 18px;
+  font-size: 20px;
+  font-weight: 650;
+  flex-shrink: 0;
+}
+.identityText {
+  min-width: 0;
+  flex: 1;
+}
+.identityEyebrow {
+  color: var(--good-soft);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+}
+.identityEyebrow span {
+  color: var(--line);
+  font-weight: 500;
+}
+.identityText h1 {
+  margin: 5px 0;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.identityText h1 small {
+  font-size: 13px;
+  color: var(--line);
+  font-weight: 400;
+}
+.identityText p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--line);
+  line-height: 1.6;
+}
+.liveState {
+  display: grid;
+  gap: 7px;
+  text-align: right;
+  max-width: 235px;
+  font-size: 12px;
+}
+.liveState strong {
+  color: var(--line);
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 12px;
+}
+.liveState[data-live="true"] strong {
+  color: var(--line);
+}
+.liveState span {
+  color: var(--line);
+}
+.liveState i,
+.railStatus i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  background: currentColor;
+}
+.flightSnapshot {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 1fr 1.1fr;
+  padding: 16px 22px;
+  gap: 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-2);
+}
+.flightSnapshot > div {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  border-right: 1px solid var(--surface-2);
+  padding-right: 12px;
+}
+.flightSnapshot > div:last-child {
+  border: 0;
+  padding-right: 0;
+}
+.flightSnapshot span {
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+.flightSnapshot strong {
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+.flightSnapshot small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.topToolbar {
+  padding: 10px 20px;
+  background: var(--surface);
+}
+.actionControls {
+  gap: 12px;
+}
+.compactNext {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.compactNext strong {
+  font-size: 12px;
+}
+.compactNext span {
+  font-size: 11px;
+}
+.ctl {
+  border-radius: 12px;
+  font-size: 12px;
+}
+.ctlPrimary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+.arrivalDisclosure {
+  border-top: 1px solid var(--surface-2);
+  background: var(--surface-2);
+}
+.arrivalDisclosure > summary {
+  min-height: 44px;
+  padding: 12px 22px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  color: var(--muted);
+}
+.arrivalDisclosure .pulledBanner {
+  margin: 0 14px 14px;
+  border-radius: 16px;
+}
+.barrierCardContainer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--surface-2);
+  background: var(--surface);
+}
+.barrierHeader {
+  margin-bottom: 6px;
+}
+.verdictHeading {
+  font-size: 13px;
+}
+.barrierGrid {
+  gap: 8px;
+}
+.barrierCard {
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--surface-2);
+}
+.barrierDetail {
+  font-size: 11px;
+  margin: 3px 0;
+}
+.barrierCardAction {
+  margin-top: 0;
+}
+.barrierActionBtn {
+  padding: 0 8px;
+  font-size: 11px;
+}
+.barrierCardClear {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.barrierCardClear .barrierMain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.barrierCardClear .barrierLabel {
+  font-size: 12px;
+}
+.recordNotice {
+  padding: 10px 22px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+.pnGrid {
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+}
+.panel {
+  border-radius: 20px;
+  box-shadow: 0 3px 12px var(--ward-shadow);
+  overflow: hidden;
+}
+.railStatus {
+  padding: 17px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.railStatus[data-live="true"] {
+  background: var(--surface-2);
+}
+.railStatus span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.railStatus[data-live="true"] span {
+  color: var(--ink);
+}
+.railStatus strong {
+  display: block;
+  color: var(--ink);
+  font-size: 17px;
+  margin-top: 7px;
+  letter-spacing: -0.02em;
+}
+.railStatus p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.ph {
+  background: transparent;
+  padding: 13px 16px;
+}
+.panelTitle {
+  font-size: 14px;
+}
+.journeyBody {
+  padding: 12px;
+}
+.jrn {
+  gap: 3px;
+}
+.stageButton {
+  padding: 6px 0;
+}
+.jnameRow {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.jname {
+  font-size: 12px;
+}
+.jwhen {
+  font-size: 10px;
+}
+.jst[data-s="todo"] .jwhen {
+  display: none;
+}
+.jnode {
+  width: 25px;
+  height: 25px;
+  font-size: 11px;
+}
+.stageDetailBox {
+  padding: 10px;
+  border-radius: 12px;
+}
+.jfoot {
+  font-size: 11px;
+}
+.tabbar {
+  padding: 6px 12px;
+  gap: 4px;
+  background: var(--surface);
+}
+.tabBtn {
+  border-radius: 11px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.tabBtn[aria-selected="true"] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.nowViewSwitch {
+  margin: 10px 16px 0;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  width: fit-content;
+}
+.nowViewSwitch button {
+  font-size: 12px;
+  border-radius: 9px;
+}
+@media (max-width: 1050px) {
+  .pnGrid {
+    grid-template-columns: 1fr;
+  }
+  .pnGrid > :first-child {
+    position: static;
+    max-height: none;
+  }
+  .railStatus {
+    padding: 12px 16px;
+  }
+  .railStatus p {
+    display: none;
+  }
+  .railStatus strong {
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .flightSnapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .flightSnapshot > div:nth-child(2) {
+    border-right: 0;
+  }
+}
+@media (max-width: 600px) {
+  .scroll {
+    padding: 10px;
+    gap: 10px;
+  }
+  .topCard,
+  .panel {
+    border-radius: 18px;
+  }
+  .flightIdentity {
+    padding: 16px 14px;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .avatar {
+    display: none;
+  }
+  .identityText h1 {
+    font-size: 23px;
+  }
+  .identityEyebrow {
+    font-size: 9px;
+  }
+  .identityEyebrow span {
+    display: none;
+  }
+  .liveState {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-left: 53px;
+  }
+  .liveState strong {
+    justify-content: flex-start;
+  }
+  .liveState span {
+    font-size: 11px;
+  }
+  .flightSnapshot {
+    padding: 14px;
+  }
+  .topToolbar {
+    padding: 10px 14px;
+  }
+  .actionControls {
+    flex-wrap: wrap;
+  }
+  .compactNext {
+    flex-basis: 100%;
+    order: 3;
+  }
+  .barrierCardContainer {
+    padding: 10px 14px;
+  }
+  .barrierSummaryBadge {
+    font-size: 9px;
+  }
+  .tabbar {
+    padding: 5px;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .tabBtn {
+    padding: 10px 8px;
+    font-size: 11px;
+  }
+  .tabNum {
+    display: none;
+  }
+  .nowViewSwitch {
+    margin-left: 12px;
+  }
+}
+
+.journeyDisclosure > summary {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 1px solid var(--surface-2);
+}
+.flightIdentity {
+  padding-top: 16px;
+  padding-bottom: 14px;
+}
+.flightSnapshot {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.barrierHeader[data-empty="true"] {
+  display: none;
+}
+.barrierCardContainer {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.barrierCardClear {
+  display: block;
+  min-height: 0;
+  text-align: left;
+}
+.barrierCardClear .barrierMain {
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+}
+.barrierCardClear .barrierDetail {
+  margin: 0;
+}
+.nowViewSwitch > span {
+  display: none;
+}
+.barrierCardClear .barrierMain {
+  flex-direction: row;
+}
+.flightSnapshot > div[data-attention="true"] strong {
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .flightIdentity {
+    padding: 14px;
+  }
+  .flightSnapshot {
+    gap: 10px;
+  }
+  .flightSnapshot strong {
+    font-size: 12px;
+  }
+  .flightSnapshot small {
+    font-size: 10px;
+  }
+  .actionControls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    width: 100%;
+    gap: 8px;
+  }
+  .compactNext {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .barrierCardClear .barrierDetail {
+    display: none;
+  }
+  .barrierCardClear .barrierLabel {
+    font-size: 11px;
+    white-space: normal;
+  }
+  .railStatus {
+    padding: 10px 14px;
+  }
+  .railStatus strong {
+    display: none;
+  }
+}
+
+/* Quiet, persistent clinical journey tracker. */
+.pnGrid {
+  grid-template-columns: 222px minmax(0, 1fr);
+}
+.railStatus {
+  padding: 16px;
+  background: linear-gradient(120deg, var(--surface-2), var(--surface-2));
+}
+.railStatus[data-live="true"] {
+  background: linear-gradient(120deg, var(--surface-2), var(--line));
+}
+.railStatus strong {
+  font-size: 18px;
+  letter-spacing: -0.035em;
+}
+.railStatus p {
+  margin-top: 7px;
+  font-size: 11px;
+}
+.journeyBody {
+  padding: 12px;
+}
+.journeyDisclosure .ph {
+  display: none;
+}
+.jrn {
+  gap: 2px;
+}
+.jst {
+  gap: 7px;
+}
+.jnode {
+  width: 25px;
+  height: 25px;
+  border-width: 1px;
+}
+.jIndicatorCol {
+  width: 27px;
+  padding-top: 10px;
+}
+.stageButton {
+  padding: 9px 8px;
+  border-radius: 11px;
+  width: 100%;
+}
+.jst[data-s="now"] .stageButton {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.jst[data-s="recorded"] .jnode {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.jnameRow {
+  gap: 4px;
+}
+.jname {
+  line-height: 1.4;
+  font-size: 11px;
+}
+.stageRightCluster {
+  justify-content: space-between;
+  width: 100%;
+}
+.stageChevron {
+  margin-left: auto;
+}
+.jst[data-s="todo"] .stageRightCluster {
+  position: absolute;
+  right: 7px;
+  width: auto;
+  top: 15px;
+}
+.stageButton {
+  position: relative;
+}
+.stageDetailBox {
+  font-size: 11px;
+  background: var(--surface-2);
+  border-radius: 13px;
+}
+@media (max-width: 1050px) {
+  .pnGrid {
+    grid-template-columns: 1fr;
+  }
+  .railStatus strong {
+    font-size: 15px;
+  }
+  .railStatus p {
+    display: block;
+  }
+  .journeyBody {
+    padding: 14px;
+  }
+  .jrn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .jline {
+    display: none;
+  }
+  .stageButton {
+    text-align: left;
+  }
+  .railStatus {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .railStatus p {
+    margin: 0 0 0 auto;
+  }
+}
+@media (max-width: 600px) {
+  .jrn {
+    grid-template-columns: 1fr;
+  }
+  .railStatus {
+    padding: 12px 14px;
+  }
+  .railStatus strong {
+    display: none;
+  }
+  .railStatus p {
+    font-size: 10px;
+  }
+}
+.legacyTransportDisclosure {
+  margin: 0 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.legacyTransportDisclosure > summary {
+  padding: 12px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.legacyTransportDisclosure .transportSec {
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+.clearanceField {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.clearanceField select {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.clearanceAttestation {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.clearanceModalBox {
+  border-radius: 22px;
+}
+.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
+  order: -1;
+  border-top: 0;
+  padding-top: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Dossier redesign: a calm identity bar, concise transfer brief, stable tracker. */
+.scroll {
+  gap: 14px;
+  padding: 16px;
+}
+.topCard {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px var(--ward-shadow);
+  background: var(--surface);
+}
+.flightIdentity {
+  background: var(--surface);
+  color: var(--ink);
+  padding: 16px 20px;
+  gap: 12px;
+  min-height: 92px;
+}
+.flightIdentity .backBtn {
+  color: var(--muted);
+  border-color: var(--surface-2);
+  background: var(--surface-2);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.avatar {
+  background: linear-gradient(145deg, var(--surface-2), var(--line));
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  width: 47px;
+  height: 47px;
+  font-size: 17px;
+}
+.identityEyebrow {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.13em;
+}
+.identityEyebrow span {
+  display: none;
+}
+.identityText h1 {
+  font-size: 24px;
+  margin: 3px 0;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+}
+.identityText h1 small,
+.identityText p {
+  color: var(--muted);
+  font-size: 11px;
+}
+.identityText p {
+  line-height: 1.5;
+}
+.liveState {
+  font-size: 11px;
+  gap: 5px;
+  max-width: 205px;
+  padding-left: 12px;
+  border-left: 1px solid var(--surface-2);
+  text-align: left;
+}
+.liveState strong,
+.liveState[data-live="true"] strong {
+  color: var(--ink);
+  justify-content: flex-start;
+  background: var(--surface-2);
+  border-radius: 7px;
+  padding: 4px 8px;
+  width: fit-content;
+  font-size: 10px;
+}
+.liveState[data-live="false"] strong {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.liveState span {
+  color: var(--muted);
+  font-size: 10px;
+  padding-left: 1px;
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 8px;
+}
+.headerActions .ctl {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.headerActions .ctlPrimary {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+  box-shadow: 0 2px 6px var(--ward-shadow);
+}
+.flightSnapshot {
+  grid-template-columns: 1.45fr 0.85fr 1fr 1fr;
+  background: linear-gradient(105deg, var(--ink), var(--ink));
+  padding: 14px 20px;
+  gap: 18px;
+  border: 0;
+  color: white;
+}
+.flightSnapshot > div {
+  border-color: var(--ward-shadow);
+  gap: 4px;
+  padding-right: 16px;
+}
+.flightSnapshot span {
+  font-size: 8px;
+  color: var(--line);
+  letter-spacing: 0.09em;
+}
+.flightSnapshot strong {
+  color: var(--surface-2);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.flightSnapshot small {
+  color: var(--line);
+  font-size: 10px;
+}
+.flightSnapshot > div[data-attention="true"] strong {
+  color: var(--surface-2);
+}
+.topToolbar {
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-2);
+}
+.actionControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+.compactNext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.compactNext strong {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.compactNext span {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.quickLinks {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.quickLinks button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  min-height: 44px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.quickLinks button:hover {
+  background: var(--surface-2);
+}
+.quickLinks span {
+  font-size: 9px;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+.quickLinks button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.arrivalDisclosure {
+  border: 0;
+  border-top: 1px solid var(--surface-2);
+  background: var(--surface);
+}
+.arrivalDisclosure > summary {
+  font-size: 11px;
+  padding: 10px 16px;
+  min-height: 44px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.barrierCardContainer {
+  padding: 0;
+  background: var(--surface);
+}
+.barrierHeader[data-empty="true"] {
+  display: none;
+}
+.barrierCardClear {
+  border: 0;
+  padding: 7px 16px;
+  background: var(--surface);
+}
+.barrierCardClear .barrierMain {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.barrierCardClear .barrierLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.barrierCardClear .barrierDetail {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 0;
+}
+.pnGrid {
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.pnGrid > .panel {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 3px 12px var(--ward-shadow);
+  overflow: hidden;
+}
+.tabbar {
+  padding: 5px 14px;
+  gap: 4px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-2);
+  align-items: center;
+}
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  min-height: 44px;
+  font-size: 12px;
+  color: var(--muted);
+  box-shadow: none;
+  font-weight: 550;
+}
+.tabBtn[aria-selected="true"] {
+  background: var(--surface-2);
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 650;
+}
+.tabNum {
+  font-size: 9px;
+  border-radius: 5px;
+  padding: 1px 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.tabBtn[aria-selected="true"] .tabNum {
+  background: var(--line);
+  color: var(--ink);
+}
+.nowViewSwitch {
+  background: var(--surface-2);
+  border: 0;
+  border-bottom: 1px solid var(--surface-2);
+  border-radius: 0;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 18px;
+}
+.nowViewSwitch button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 7px 12px;
+  color: var(--muted);
+  background: transparent;
+}
+.nowViewSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 2px 6px var(--ward-shadow);
+}
+.nowViewSwitch > span {
+  display: none;
+}
+.railStatus,
+.railStatus[data-live="true"] {
+  padding: 13px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-2);
+}
+.railStatus span {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+.railStatus strong {
+  font-size: 16px;
+  margin-top: 5px;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.railStatus p {
+  font-size: 10px;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.journeyDisclosure > summary {
+  padding: 10px 14px;
+  font-size: 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-2);
+}
+.journeyBody {
+  padding: 11px;
+  gap: 10px;
+}
+.journeyBody > [data-patient-tracker-facts],
+.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
+  order: -1;
+  border-top: 0;
+  border-bottom: 1px solid var(--surface-2);
+  padding: 0 0 10px;
+}
+.jrn {
+  gap: 0;
+}
+.jIndicatorCol {
+  padding-top: 10px;
+}
+.stageButton {
+  padding: 9px 7px;
+  border-radius: 9px;
+  min-height: 44px;
+}
+.jname {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.jtime {
+  font-size: 9px;
+}
+.jnode {
+  width: 23px;
+  height: 23px;
+  font-size: 10px;
+}
+.jst[data-s="now"] .stageButton {
+  background: var(--surface-2);
+  border-left: 2px solid var(--muted);
+  color: var(--ink);
+}
+.stageChevron {
+  width: 12px;
+  height: 12px;
+}
+.jline {
+  min-height: 10px;
+}
+.legacyTransportDisclosure {
+  margin: 0 20px 18px;
+  border-radius: 10px;
+}
+.recordNotice {
+  font-size: 10px;
+  padding: 7px 16px;
+}
+@media (max-width: 1050px) {
+  .pnGrid {
+    grid-template-columns: 1fr;
+  }
+  .flightIdentity {
+    flex-wrap: wrap;
+  }
+  .headerActions {
+    margin-left: auto;
+  }
+  .liveState {
+    margin-left: auto;
+  }
+  .flightSnapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .flightSnapshot > div:nth-child(2) {
+    border-right: 0;
+  }
+  .railStatus {
+    padding: 10px 14px;
+  }
+  .railStatus p {
+    margin: 0 0 0 auto;
+  }
+  .compactNext {
+    display: block;
+  }
+  .compactNext span {
+    display: block;
+    margin-top: 2px;
+  }
+}
+@media (max-width: 650px) {
+  .scroll {
+    padding: 10px;
+    gap: 10px;
+  }
+  .flightIdentity {
+    padding: 13px 14px;
+    gap: 9px;
+  }
+  .flightIdentity .backBtn {
+    display: none;
+  }
+  .identityText h1 {
+    font-size: 22px;
+  }
+  .avatar {
+    width: 41px;
+    height: 44px;
+  }
+  .liveState {
+    border: 0;
+    padding: 0;
+    text-align: left;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .liveState span {
+    padding: 0;
+    font-size: 9px;
+  }
+  .headerActions {
+    margin: 0;
+    width: 100%;
+  }
+  .headerActions .ctl {
+    flex: 1;
+  }
+  .flightSnapshot {
+    padding: 13px 14px;
+    gap: 12px;
+  }
+  .flightSnapshot strong {
+    font-size: 11px;
+  }
+  .flightSnapshot > div {
+    padding-right: 8px;
+  }
+  .topToolbar {
+    padding: 5px 12px;
+  }
+  .actionControls {
+    display: block;
+  }
+  .compactNext {
+    padding-top: 5px;
+    display: block;
+  }
+  .compactNext span {
+    display: none;
+  }
+  .quickLinks {
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+  .quickLinks button {
+    padding: 6px 0;
+  }
+  .barrierCardClear .barrierDetail {
+    display: none;
+  }
+  .tabbar {
+    padding: 4px 6px;
+    gap: 0;
+    justify-content: space-between;
+  }
+  .tabBtn {
+    padding: 8px 6px;
+    font-size: 10px;
+    gap: 3px;
+  }
+  .tabBtn svg,
+  .tabNum {
+    display: none;
+  }
+  .nowViewSwitch {
+    padding: 6px 12px;
+  }
+  .journeyBody {
+    padding: 12px;
+  }
+}
+.compactNext {
+  text-align: left;
+}
+.compactNext strong,
+.compactNext span {
+  margin: 0;
+}
+.jwhen {
+  font-size: 9px;
+  line-height: 1.4;
+}
+.jnameRow {
+  gap: 2px;
+}
+.jst:not([data-s="now"]) .stageRightCluster .jwhen {
+  display: none;
+}
+.jIndicatorCol {
+  padding-top: 10px;
+}
+.stageButton {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.jline {
+  min-height: 4px;
+}
+.railStatus {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}

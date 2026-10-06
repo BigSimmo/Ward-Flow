@@ -45,6 +45,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
+import { hoursText, occupiedBeds } from "./statistics-occupancy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
@@ -108,8 +109,9 @@ export function StatisticsScreen({
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const hospitals = Array.from(new Set(units.map((u) => siteByCode(u.siteCode)?.name ?? u.siteCode)));
   const hospitalsCount = hospitals.length;
-  const occupiedBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).occupied, 0);
-  const occupiedPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const occupancy = occupiedBeds(units, sourceAdmissions, sourceBedReleases, leaveBeds);
+  const occupiedCount = occupancy.occupied;
+  const occupiedPct = totalBeds > 0 ? Math.round((occupiedCount / totalBeds) * 100) : 0;
   const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, sourceBedReleases), 0);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
   const availablePct = totalBeds > 0 ? Math.round((availableNow / totalBeds) * 100) : 0;
@@ -141,7 +143,7 @@ export function StatisticsScreen({
         const over8 = figures.waitingMovements.filter((w) => w.waitMinutes >= 8 * 60).length;
         return {
           id: ed.id,
-          name: ed.name,
+          name: ed.name.replace(/ Emergency Department$/, ""),
           site: ed.siteCode,
           waiting: figures.onTheList,
           longest: longestHours,
@@ -207,7 +209,8 @@ export function StatisticsScreen({
   const allPressureWards = useMemo(() => {
     return units.map((u) => {
       const capInfo = unitCapacity(u, sourceBedReleases);
-      const occupancyRate = u.beds > 0 ? capInfo.occupied / u.beds : 0;
+      const occupancyRate =
+        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).occupied / u.beds : 0;
       const referredCount = wardReferralTally(sourceMovements, u.id).askedAndWaiting;
       return {
         id: u.id,
@@ -219,7 +222,7 @@ export function StatisticsScreen({
         referred: referredCount,
       };
     });
-  }, [units, sourceBedReleases, sourceMovements]);
+  }, [units, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
 
   const filteredAndSortedWards = useMemo(() => {
     let list = allPressureWards.slice();
@@ -377,8 +380,10 @@ export function StatisticsScreen({
             <div className={pageStyles.kpi}>
               <dt>Occupied</dt>
               <dd>
-                {occupiedBeds}
-                <small>{occupiedPct}% of all beds</small>
+                {occupiedCount}
+                <small>
+                  {occupiedPct}% of all beds · {occupancy.pulled} more pulled for people not yet arrived
+                </small>
               </dd>
             </div>
             <div className={pageStyles.kpi}>
@@ -386,7 +391,7 @@ export function StatisticsScreen({
               <dd>
                 {availableNow}
                 <small>
-                  {availablePct}% of beds · {pendingPreparation} pending preparation
+                  {availablePct}% of beds · {pendingPreparation} being made ready
                 </small>
               </dd>
             </div>
@@ -394,7 +399,7 @@ export function StatisticsScreen({
               <dt>Waiting for a bed</dt>
               <dd>
                 {waitingCount}
-                <small>open movements</small>
+                <small>open requests from emergency departments</small>
               </dd>
             </div>
             <div className={pageStyles.kpi}>
@@ -933,8 +938,8 @@ export function StatisticsScreen({
                       <td className={pageStyles.n}>
                         {d.waiting === 0 ? <span className={pageStyles.zero}>none</span> : d.waiting}
                       </td>
-                      <td className={pageStyles.n}>{d.longest}h</td>
-                      <td className={pageStyles.n}>{d.median}h</td>
+                      <td className={pageStyles.n}>{hoursText(d.longest)}</td>
+                      <td className={pageStyles.n}>{hoursText(d.median)}</td>
                       <td className={pageStyles.n}>
                         {d.over8 === 0 ? <span className={pageStyles.zero}>none</span> : d.over8}
                       </td>
@@ -948,8 +953,8 @@ export function StatisticsScreen({
                   <tr className="total">
                     <th scope="row">All {emergencyDepts.length} departments</th>
                     <td className={pageStyles.n}>{totalEdWaiting}</td>
-                    <td className={pageStyles.n}>{networkLongestWait}h</td>
-                    <td className={pageStyles.n}>{networkMedianWait}h</td>
+                    <td className={pageStyles.n}>{hoursText(networkLongestWait)}</td>
+                    <td className={pageStyles.n}>{hoursText(networkMedianWait)}</td>
                     <td className={pageStyles.n}>{totalEdOver8}</td>
                     <td className={pageStyles.n}>{totalEdOver24}</td>
                   </tr>

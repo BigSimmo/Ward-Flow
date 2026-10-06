@@ -2603,6 +2603,37 @@
   margin: 2px 0;
 }
 
+/* A4 / tablet widths (~794px print probe): keep the view switcher out from under the
+ * pill composer. Without this, #viewDenseBtn is intercepted by the location select
+ * (ui-ward-forced-colors print caseload test). */
+@media (max-width: 64rem) {
+  .glassDock {
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .glassDockIdentity {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .glassPillComposer {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
+    order: 3;
+  }
+
+  .glassDockActions {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 2;
+    position: relative;
+    z-index: 2;
+  }
+}
+
 /* Phone/narrow: glass dock must not overflow the viewport, and interactive controls must
  * meet the 48px production tap floor (tests/ui-ward-search.spec.ts). Compact 27–28px
  * desktop chrome is fine above this breakpoint. */

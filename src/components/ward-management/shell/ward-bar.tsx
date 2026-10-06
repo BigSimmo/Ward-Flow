@@ -12,6 +12,12 @@ import {
   FileText,
   Plus,
   Settings,
+  Search,
+  Moon,
+  Sun,
+  Monitor,
+  Calculator,
+  FlaskConical,
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -30,7 +36,6 @@ import { HEALTH_SERVICES, type HealthService } from "@/components/ward-managemen
 import {
   WARD_ADD_PERSON_HREF,
   WARD_HOME_HREF,
-  WARD_REFERRAL_INTAKE_HREF,
   WARD_NAV,
   WARD_VIEWS,
   resolveWardPrimaryAction,
@@ -188,7 +193,7 @@ import styles from "./ward-bar.module.css";
  * kind of decision "stop and hand it back" exists for.
  */
 
-type WardBarPopoverId = "service" | "primary" | "activity" | "tasks" | "tools" | "referral" | "figures";
+type WardBarPopoverId = "service" | "primary" | "activity" | "tasks" | "tools" | "referral";
 type ActivityPart = "activity" | "tally";
 type ActivityCategoryFilter = "all" | Exclude<WardActivityCategory, "other">;
 
@@ -204,10 +209,8 @@ function activityChangeCategory(change: { category?: WardActivityCategory }): Wa
   return change.category ?? "other";
 }
 
-const isDrawerPanel = (
-  id: WardBarPopoverId | null,
-): id is "activity" | "tasks" | "tools" | "referral" | "service" | "figures" =>
-  id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service" || id === "figures";
+const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
+  id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service";
 
 const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
   "North Metro": "north",
@@ -368,16 +371,19 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const appearance = useAppearanceStore();
+  const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "demo">("overview");
+  const [activityQuery, setActivityQuery] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<ActivityCategoryFilter>("all");
 
   const serviceTriggerRef = useRef<HTMLButtonElement>(null);
   const primaryTriggerRef = useRef<HTMLButtonElement>(null);
-  const figuresTriggerRef = useRef<HTMLButtonElement>(null);
-  const figuresInitialFocusRef = useRef<HTMLElement | null>(null);
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
+  const referralReturnFocusRef = useRef<HTMLElement>(null);
+  const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
 
@@ -422,7 +428,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     (/^\/mockups\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
-    (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Movement Workspace" : undefined) ??
+    (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport Hub" : undefined) ??
@@ -579,15 +585,24 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   }, [shownActivity?.changes]);
   const filteredActivityChanges = useMemo(() => {
     const changes = shownActivity?.changes ?? [];
-    if (activityCategoryFilter === "all") return changes;
-    return changes.filter((change) => activityChangeCategory(change) === activityCategoryFilter);
-  }, [shownActivity?.changes, activityCategoryFilter]);
+    const query = activityQuery.trim().toLowerCase();
+    return changes.filter(
+      (change) =>
+        (activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter) &&
+        `${change.text} ${change.time}`.toLowerCase().includes(query),
+    );
+  }, [shownActivity?.changes, activityCategoryFilter, activityQuery]);
   const scopedNotices = useMemo(
     () =>
       notices
         .filter((notice) => noticeIsForWardChrome(notice, role, placeId, now))
         .sort((left, right) => right.raisedAt - left.raisedAt),
     [notices, now, placeId, role],
+  );
+  const visibleNotices = scopedNotices.filter(
+    (notice) =>
+      (!unreadOnly || notice.readAt === undefined) &&
+      notice.sentence.toLowerCase().includes(activityQuery.trim().toLowerCase()),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
@@ -990,33 +1005,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       <div className={styles.drawerTriggers}>
         <button
           type="button"
-          ref={figuresTriggerRef}
-          className={styles.drawerTrigger}
-          data-testid="ward-bar-figures-trigger"
-          aria-haspopup="dialog"
-          aria-expanded={openPanel === "figures"}
-          aria-controls="ward-bar-figures-drawer"
-          onClick={() => (openPanel === "figures" ? closePopover("figures", false) : openPopover("figures"))}
-          title={flaggedFigures.length > 0 ? `Clinical telemetry: ${telemetrySummary}` : "Clinical telemetry: Nominal"}
-          aria-label={
-            flaggedFigures.length > 0
-              ? `Figures telemetry: ${telemetrySummary}. Open figures drawer.`
-              : "Figures telemetry: Nominal. Open figures drawer."
-          }
-        >
-          <BarChart3 className={styles.triggerIcon} aria-hidden="true" />
-          <span className={styles.triggerLabel}>Figures</span>
-          {flaggedFigures.length > 0 ? (
-            <span className={styles.alarmBadge} data-tone="danger">
-              {flaggedFigures.length}
-            </span>
-          ) : (
-            <span className={styles.dot} data-tone="good" aria-hidden="true" />
-          )}
-        </button>
-
-        <button
-          type="button"
           ref={activityTriggerRef}
           className={styles.drawerTrigger}
           data-testid="ward-bar-activity-trigger"
@@ -1130,6 +1118,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                     const category: "community" | "ed" | "ward" =
                       entry.source === "community" ? "community" : entry.source === "ed_medical" ? "ed" : "ward";
                     setReferralCategory(category);
+                    referralReturnFocusRef.current = primaryTriggerRef.current;
                     openPopover("referral");
                   }}
                 >
@@ -1184,6 +1173,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         open={openPanel === "activity"}
         onClose={() => closePopover("activity")}
         title="Activity"
+        headerLeading={<Activity className={styles.drawerHeadingIcon} aria-hidden="true" />}
+        titleAccessory={<span className={styles.drawerScope}>Synthetic events</span>}
         placement="right"
         testId="ward-bar-activity-sheet"
         returnFocusRef={activityTriggerRef}
@@ -1235,25 +1226,50 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         </div>
 
         {activityPart === "activity" ? (
-          <div
-            className={styles.filterChipsTrack}
-            role="group"
-            aria-label="Filter events by category"
-            data-testid="ward-bar-activity-category-filters"
-          >
-            {ACTIVITY_CATEGORY_CHIPS.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                className={styles.filterChip}
-                aria-pressed={activityCategoryFilter === chip.id}
-                data-testid={`ward-bar-activity-filter-${chip.id}`}
-                onClick={() => setActivityCategoryFilter(chip.id)}
-              >
-                {chip.label}
-                <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
-              </button>
-            ))}
+          <div className={styles.activityToolbar}>
+            <div className={styles.drawerSummary}>
+              <div>
+                <strong>{shownActivity?.changes.length ?? 0}</strong>
+                <span>Recorded events</span>
+              </div>
+              <div>
+                <strong>{unreadNoticeCount}</strong>
+                <span>Unread notices</span>
+              </div>
+              <div>
+                <strong>{formatInstant(now)}</strong>
+                <span>Demo time</span>
+              </div>
+            </div>
+            <label className={styles.drawerSearch}>
+              <Search aria-hidden="true" />
+              <input
+                aria-label="Search activity"
+                placeholder="Search events and notices…"
+                value={activityQuery}
+                onChange={(event) => setActivityQuery(event.target.value)}
+              />
+            </label>
+            <div
+              className={styles.filterChipsTrack}
+              role="group"
+              aria-label="Filter events by category"
+              data-testid="ward-bar-activity-category-filters"
+            >
+              {ACTIVITY_CATEGORY_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className={styles.filterChip}
+                  aria-pressed={activityCategoryFilter === chip.id}
+                  data-testid={`ward-bar-activity-filter-${chip.id}`}
+                  onClick={() => setActivityCategoryFilter(chip.id)}
+                >
+                  {chip.label}
+                  <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -1262,11 +1278,24 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             <>
               {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
                   `scopedNotices.length`, even though read notices stay in the list below. */}
-              <p className={styles.activityHead}>
-                Notices <span>· {unreadNoticeCount} unread</span>
-              </p>
+              <div className={styles.noticeHeading}>
+                <p className={styles.activityHead}>
+                  Notices <span>· {unreadNoticeCount} unread</span>
+                </p>
+                <button
+                  type="button"
+                  className={styles.filterChip}
+                  aria-pressed={unreadOnly}
+                  onClick={() => setUnreadOnly(!unreadOnly)}
+                >
+                  Unread only
+                </button>
+              </div>
+              {visibleNotices.length === 0 ? (
+                <p className={styles.activityEmpty}>No notices match these filters.</p>
+              ) : null}
               <ol className={styles.activityFeed} aria-label="Notices">
-                {scopedNotices.map((notice) => {
+                {visibleNotices.map((notice) => {
                   const isRead = notice.readAt !== undefined;
                   return (
                     <li key={notice.id} data-tone="info" data-notice-read={isRead}>
@@ -1303,7 +1332,21 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
             <p className={styles.activityEmpty}>No event today.</p>
           ) : filteredActivityChanges.length === 0 ? (
-            <p className={styles.activityEmpty}>No events in this category.</p>
+            <div className={styles.activityEmpty}>
+              <Search aria-hidden="true" />
+              <strong>No matching events</strong>
+              <p>Try another search or event category.</p>
+              <button
+                type="button"
+                className={styles.filterChip}
+                onClick={() => {
+                  setActivityQuery("");
+                  setActivityCategoryFilter("all");
+                }}
+              >
+                Clear event filters
+              </button>
+            </div>
           ) : (
             <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
               {filteredActivityChanges.map((change) => {
@@ -1317,7 +1360,16 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                   >
                     <time className={styles.feedTime}>{change.time}</time>
                     <span className={`${styles.eventDot} ${styles.feedToneDot}`} data-tone={tone} aria-hidden="true" />
-                    <span className={styles.feedText}>{change.text}</span>
+                    <div className={styles.feedContent}>
+                      <span className={styles.eventLabel} data-tone={tone}>
+                        {tone === "danger"
+                          ? "Deadline or refused action"
+                          : tone === "warning"
+                            ? "Needs attention"
+                            : "Recorded update"}
+                      </span>
+                      <span className={styles.feedText}>{change.text}</span>
+                    </div>
                   </li>
                 );
               })}
@@ -1446,6 +1498,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         open={openPanel === "tools"}
         onClose={() => closePopover("tools")}
         title="Tools"
+        headerLeading={<Wrench className={styles.drawerHeadingIcon} aria-hidden="true" />}
+        description="Your workspace for figures, lookups and everyday actions."
         titleAccessory={<span className={styles.drawerScope}>Whole network</span>}
         placement="right"
         testId="ward-bar-tools-sheet"
@@ -1459,178 +1513,232 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         footer={<p className={styles.drawerFoot}>Demo tools, not part of the clinical record.</p>}
         footerClassName={styles.drawerFooter}
       >
-        <section className={styles.toolsSection}>
-          <h3 className={styles.toolsHeading}>Appearance theme</h3>
-          <div className={styles.segTrack} style={{ margin: "4px 0 10px" }}>
+        <div className={styles.toolsNav} role="group" aria-label="Tools sections">
+          {(
+            [
+              ["overview", "Overview", Wrench],
+              ["figures", "Figures", BarChart3],
+              ["utilities", "Utilities", Calculator],
+              ["directory", "Directory", BookOpen],
+              ["demo", "Demo", FlaskConical],
+            ] as const
+          ).map(([id, label, Icon]) => (
             <button
+              key={id}
+              ref={id === "figures" ? figuresTabRef : undefined}
               type="button"
-              className={styles.segBtn}
-              aria-pressed={appearance === "dark"}
-              onClick={() => applyAppearance("dark")}
+              aria-pressed={toolsPart === id}
+              aria-controls={`ward-tools-${id}`}
+              onClick={() => setToolsPart(id)}
             >
-              Dark theme
+              <Icon aria-hidden="true" />
+              <span>{label}</span>
             </button>
-            <button
-              type="button"
-              className={styles.segBtn}
-              aria-pressed={appearance === "light"}
-              onClick={() => applyAppearance("light")}
-            >
-              Light theme
-            </button>
-            <button
-              type="button"
-              className={styles.segBtn}
-              aria-pressed={appearance === "auto"}
-              onClick={() => applyAppearance("auto")}
-            >
-              System
-            </button>
-          </div>
-        </section>
-
-        <section className={styles.toolsSection}>
-          <h3 className={styles.toolsHeading}>Do</h3>
-          <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-            <FileText aria-hidden="true" />
-            <span>
-              Handover sheet<em>Open the current handover and its print controls</em>
-            </span>
-          </Link>
-          <Link
-            href={WARD_REFERRAL_INTAKE_HREF}
-            className={styles.toolItem}
-            onClick={() => closePopover("tools", false)}
+          ))}
+        </div>
+        <div
+          id="ward-tools-overview"
+          className={`${styles.toolsPanel} ${styles.toolsOverview}`}
+          hidden={toolsPart !== "overview"}
+        >
+          <button
+            type="button"
+            className={styles.figuresLaunch}
+            data-testid="ward-bar-figures-trigger"
+            onClick={() => {
+              setToolsPart("figures");
+              figuresTabRef.current?.focus();
+            }}
+            aria-controls="ward-tools-figures"
           >
-            <Plus aria-hidden="true" />
-            <span>
-              Raise a referral<em>Choose the source and enter the referral details</em>
+            <span className={styles.toolIcon}>
+              <BarChart3 aria-hidden="true" />
             </span>
-          </Link>
-          <Link href={settingsHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-            <Settings aria-hidden="true" />
             <span>
-              Settings<em>System configuration and preference options</em>
+              <span className={styles.launchEyebrow}>Network overview</span>
+              <strong>Figures at a glance</strong>
+              <em>Capacity, demand and recorded time limits</em>
+              <small>{flaggedFigures.length > 0 ? telemetrySummary : "Nothing flagged"}</small>
             </span>
-          </Link>
-        </section>
+            <ChevronRight aria-hidden="true" />
+          </button>
+          <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>Appearance</h3>
+            <div className={styles.appearanceTrack} role="group" aria-label="Appearance theme">
+              <button
+                type="button"
+                className={styles.segBtn}
+                aria-pressed={appearance === "dark"}
+                onClick={() => applyAppearance("dark")}
+              >
+                <Moon aria-hidden="true" /> Dark theme
+              </button>
+              <button
+                type="button"
+                className={styles.segBtn}
+                aria-pressed={appearance === "light"}
+                onClick={() => applyAppearance("light")}
+              >
+                <Sun aria-hidden="true" /> Light theme
+              </button>
+              <button
+                type="button"
+                className={styles.segBtn}
+                aria-pressed={appearance === "auto"}
+                onClick={() => applyAppearance("auto")}
+              >
+                <Monitor aria-hidden="true" /> System
+              </button>
+            </div>
+          </section>
 
-        <section className={styles.toolsSection}>
-          <h3 className={styles.toolsHeading}>
-            Catchment resolver <span>WA Health</span>
-          </h3>
-          <WardCatchmentResolver />
-        </section>
+          <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>Quick actions</h3>
+            <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
+              <FileText aria-hidden="true" />
+              <span>
+                Handover sheet<em>Review and print the current handover</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </Link>
+            <button
+              type="button"
+              className={styles.toolItem}
+              onClick={() => {
+                setReferralCategory("ward");
+                referralReturnFocusRef.current = toolsTriggerRef.current;
+                openPopover("referral");
+              }}
+            >
+              <Plus aria-hidden="true" />
+              <span>
+                Raise a referral<em>Review details and choose a destination</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+            <Link href={settingsHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
+              <Settings aria-hidden="true" />
+              <span>
+                Settings<em>Configuration and preferences</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </Link>
+          </section>
 
-        <section className={styles.toolsSection}>
-          <h3 className={styles.toolsHeading}>
-            Form date review <span>Recorded times only</span>
-          </h3>
-          <WardMhaCalculator />
-        </section>
+          <section className={`${styles.toolsSection} ${styles.referenceSection}`} aria-label="Reference page">
+            <a href={digestHref()} className={styles.toolItem}>
+              <BookOpen aria-hidden="true" />
+              <span>
+                Ward Flow Digest<em>Explore the product design reference</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </a>
+          </section>
+        </div>
+        <div id="ward-tools-figures" className={styles.toolsPanel} hidden={toolsPart !== "figures"}>
+          <p className={styles.toolsContext}>
+            {role === "coordinator" ? "Whole network" : (place?.name ?? "Unit view")} · synthetic figures ·{" "}
+            {formatInstant(now)}
+          </p>
+          <WardStatsDrawerContent figures={figures} chromeRole={role} placeName={place?.name} now={now} />
+        </div>
+        <div id="ward-tools-utilities" className={styles.toolsPanel} hidden={toolsPart !== "utilities"}>
+          <p className={styles.toolsContext}>Look up a catchment or review recorded form dates.</p>
+          <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>
+              Catchment resolver <span>WA Health</span>
+            </h3>
+            <WardCatchmentResolver />
+          </section>
 
-        <section className={styles.toolsSection}>
-          {/* Owner ruling for this plan (§1.3): the app's own demonstration controls — clock,
+          <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>
+              Form date review <span>Recorded times only</span>
+            </h3>
+            <WardMhaCalculator />
+          </section>
+        </div>
+        <div id="ward-tools-demo" className={styles.toolsPanel} hidden={toolsPart !== "demo"}>
+          <p className={styles.toolsContext}>Explore the prototype with synthetic scenarios and roles.</p>
+          <section className={styles.toolsSection}>
+            {/* Owner ruling for this plan (§1.3): the app's own demonstration controls — clock,
               scenario, reset — and the role switcher move here so nothing a demonstration needs
               is lost when the per-screen rail that used to carry them is removed. */}
-          <h3 className={styles.toolsHeading}>Demonstration</h3>
-          <div className={styles.toolsRow}>
-            <WardDemoControls />
-            <WardRoleSwitcher />
-          </div>
-        </section>
-
-        <section className={styles.toolsSection}>
-          <div className={styles.consequenceCard}>
-            <div className={styles.cqHeader}>
-              <span>State desk hotlines</span>
-              <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
-                Internal WA Health
+            <h3 className={styles.toolsHeading}>Demonstration</h3>
+            <div className={styles.demoControl}>
+              <span>
+                <strong>Scenario & clock</strong>
+                <em>Advance time, load a scenario or reset demo data.</em>
               </span>
+              <WardDemoControls />
             </div>
-            <ul className={styles.cqList}>
-              <li>
-                State Bed Desk: <b>ext 8492</b> / (08) 6457 8492
-              </li>
-              <li>
-                Mental Health Transport: <b>ext 7210</b>
-              </li>
-              <li>
-                Chief Psychiatrist Liaison: <b>ext 1102</b>
-              </li>
-            </ul>
-          </div>
-        </section>
+            <div className={styles.demoControl}>
+              <span>
+                <strong>View as</strong>
+                <em>Explore the prototype from another role.</em>
+              </span>
+              <WardRoleSwitcher />
+            </div>
+          </section>
+        </div>
+        <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
+          <section className={styles.toolsSection}>
+            <div className={styles.consequenceCard}>
+              <div className={styles.cqHeader}>
+                <span>State desk hotlines</span>
+                <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                  Internal WA Health
+                </span>
+              </div>
+              <ul className={styles.cqList}>
+                <li>
+                  State Bed Desk: <b>ext 8492</b> / (08) 6457 8492
+                </li>
+                <li>
+                  Mental Health Transport: <b>ext 7210</b>
+                </li>
+                <li>
+                  Chief Psychiatrist Liaison: <b>ext 1102</b>
+                </li>
+              </ul>
+            </div>
+          </section>
 
-        <ToolsDirectory
-          title="Ward contacts"
-          onNavigate={() => closePopover("tools", false)}
-          entries={units.map((unit) => ({
-            id: unit.id,
-            name: unit.name,
-            href: unitHref(unit.id),
-          }))}
-        />
-        <ToolsDirectory
-          title="Emergency department contacts"
-          onNavigate={() => closePopover("tools", false)}
-          entries={allEmergencyDepartments().map((department) => ({
-            id: department.id,
-            name: department.name,
-            href: edHref(department.id),
-          }))}
-        />
-        <section className={styles.toolsSection} aria-label="Reference page">
-          {/* This fixed HTML GET route is a document, so use native navigation rather than an RSC transition. */}
-          <a href={digestHref()} className={styles.toolItem}>
-            <BookOpen aria-hidden="true" />
-            <span>
-              Ward Flow Digest<em>Design reference — the complete product drawing</em>
-            </span>
-          </a>
-        </section>
+          <ToolsDirectory
+            title="Ward contacts"
+            onNavigate={() => closePopover("tools", false)}
+            entries={units.map((unit) => ({
+              id: unit.id,
+              name: unit.name,
+              href: unitHref(unit.id),
+            }))}
+          />
+          <ToolsDirectory
+            title="Emergency department contacts"
+            onNavigate={() => closePopover("tools", false)}
+            entries={allEmergencyDepartments().map((department) => ({
+              id: department.id,
+              name: department.name,
+              href: edHref(department.id),
+            }))}
+          />
+        </div>
       </Sheet>
 
       <Sheet
         id="ward-bar-referral-drawer"
         open={openPanel === "referral"}
         onClose={() => closePopover("referral")}
-        ariaLabel="Referral Side Drawer"
+        ariaLabel="Referrals"
         headerHidden
         placement="right"
         testId="ward-bar-referral-sheet"
+        returnFocusRef={referralReturnFocusRef}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetReferral}`}
         bodyClassName={styles.referralCarrierBody}
       >
         <WardReferralDrawer initialCategory={referralCategory} onClose={() => closePopover("referral")} />
-      </Sheet>
-
-      <Sheet
-        id="ward-bar-figures-drawer"
-        open={openPanel === "figures"}
-        onClose={() => closePopover("figures")}
-        title="Figures & Telemetry"
-        titleAccessory={
-          <span className={styles.drawerScope}>
-            {role === "coordinator" ? "Whole network" : (place?.name ?? "Unit view")}
-          </span>
-        }
-        placement="right"
-        testId="ward-bar-figures-sheet"
-        initialFocusRef={figuresInitialFocusRef}
-        returnFocusRef={figuresTriggerRef}
-        desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetFigures}`}
-        bodyClassName={styles.figuresCarrierBody}
-      >
-        <WardStatsDrawerContent
-          figures={figures}
-          chromeRole={role}
-          placeName={place?.name}
-          now={now}
-          onClose={() => closePopover("figures")}
-        />
       </Sheet>
     </header>
   );
@@ -1645,14 +1753,28 @@ function ToolsDirectory({
   entries: { id: string; name: string; href: string }[];
   onNavigate: () => void;
 }) {
+  const [query, setQuery] = useState("");
+  const matches = entries.filter((entry) => entry.name.toLowerCase().includes(query.trim().toLowerCase()));
   return (
     <section className={`${styles.toolsSection} ${styles.directorySection}`}>
       <h3 className={styles.toolsHeading}>
         {title} <span>{entries.length}</span>
       </h3>
       <p className={styles.directoryNote}>Telephone and email details are not held in this prototype.</p>
+      <label className={styles.drawerSearch}>
+        <Search aria-hidden="true" />
+        <input
+          aria-label={`Search ${title.toLowerCase()}`}
+          placeholder="Find a unit or department…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </label>
+      <p className={styles.directoryNote} role="status">
+        {matches.length} of {entries.length} prototype results{matches.length === 0 ? " · No matching locations." : ""}
+      </p>
       <ul className={styles.directoryList} aria-label={title}>
-        {entries.map((entry) => (
+        {matches.map((entry) => (
           <li key={entry.id}>
             <Link href={entry.href} onClick={onNavigate}>
               <span>{entry.name}</span>

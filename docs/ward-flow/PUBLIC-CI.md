@@ -15,7 +15,8 @@ PR skips a job only when its changes cannot affect it (see [Scope by change](#sc
 | `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, the PR's related tests, backend tests, reference data, legal wording, and one type check of source and route types. | 1 to 2 min   |
 | `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint, cost-balanced shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.                                                       | 2 to 3 min   |
 | `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                                        | about 3 min  |
-| `Ward Flow required`               | 1       | Passes only when the static, unit and browser jobs all succeed. This is the check the default-branch ruleset requires.                                                                                   | seconds      |
+| `Ward Flow coverage`               | 1       | Merges the five unit shards' coverage blob reports and applies the `vitest.config.mts` thresholds to the whole suite. Starts when the shards finish.                                                     | about 1 min  |
+| `Ward Flow required`               | 1       | Passes only when every job succeeds (see [Main pushes](#main-pushes) for the one reuse case). This is the check the default-branch ruleset requires.                                                     | seconds      |
 
 Details that keep the split sound:
 
@@ -25,7 +26,15 @@ Details that keep the split sound:
   to every fifth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
   floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
   compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once. Refresh the cost record when the shards drift apart.
+  file and every entry exactly once. Refresh the cost record when the shards drift apart, from a recent
+  run's `ward-coverage-blob-*` artifacts: each shard's Vitest blob report records every file's cost on
+  the real runner, with coverage on.
+- **Coverage.** Each unit shard also records V8 coverage for its own files into a Vitest blob report
+  (`WARD_COVERAGE_BLOB_DIR`), with the thresholds switched off for that one slice. The coverage job
+  downloads all five blobs, fails if any shard's blob is missing, and runs
+  `vitest --merge-reports --coverage`, which applies the unchanged thresholds to the merged whole-suite
+  result. Until 6 October 2026 a separate job ran the whole unit suite a second time for coverage, which
+  took about seventeen minutes on its own.
 - **Related tests.** The static job also runs only the tests that import the files the PR changed
   (`scripts/ward-flow/related-tests.mjs --root .`), as a fast signal. In `--root` mode it judges reds
   against the expected-reds manifest the same way the unit shards do, so it fails only where a shard
@@ -39,9 +48,27 @@ Details that keep the split sound:
   (`WARD_GATE_BUILD=1`); the deployed build still runs it.
 - **Build cache.** Browser jobs restore Next's working cache from the last run on the same PR. Next
   validates every entry against the source, so a warm cache changes speed, not what is built.
+- **Browser cache.** Browser jobs restore the Playwright Chromium download (`~/.cache/ms-playwright`),
+  keyed by the installed Playwright version, and still install the system libraries every run. Only
+  runs on `main` save it, so pull requests reuse main's copy without adding their own.
 - **Contracts.** `scripts/ward-ci-public/check-contracts.mjs` fails if the required job stops needing
   any of the three, if a shard or group matrix does not match its count, or if the browser builds skip
   their type check without the static job's route-type check.
+
+## Main pushes
+
+Railway deploys a `main` commit only after this workflow succeeds on it. Every push to `main` first runs
+`Ward Flow main reuse check` (`scripts/ward-ci-public/main-reuse.mjs`). It proves, through the GitHub API
+and git, that the pushed tree is identical to the head of the one merged pull request that produced it,
+that the head already contained the previous `main`, and that a successful run on that head really ran
+every unit shard, browser group, the coverage thresholds and the production build. When all of that
+holds, those jobs are skipped on `main`, the required job requires them to be skipped (not failed or
+cancelled), and the run still concludes success, so the deploy proceeds. The static checks, including
+the whole-tree lint that pull requests do not run, and the secret scan still run on every `main` commit.
+Anything short of the proof, including any API or git error, runs the full suite as before.
+
+A scheduled full run of `main` at 02:00 AWST (18:00 UTC) keeps a regular fresh-runner run of the whole
+suite on `main`.
 
 ## Changed-file checks
 
@@ -54,6 +81,10 @@ about ten seconds:
   without an approved entry in `diff-integrity.json`.
 
 Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
+
+The static job also runs whole-tree ESLint (errors only) on every run, pull requests included, so an
+ESLint config, rule or plugin change that breaks a file the PR did not touch fails on the PR instead
+of first on `main`.
 
 ## Scope by change
 

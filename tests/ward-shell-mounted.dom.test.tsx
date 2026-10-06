@@ -184,6 +184,7 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     const user = userEvent.setup();
     renderWardRoute();
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
+    await user.click(screen.getByRole("button", { name: "Demo" }));
     expect(screen.getAllByRole("button", { name: /change view/i })).toHaveLength(1);
   });
 });

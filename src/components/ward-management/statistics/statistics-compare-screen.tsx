@@ -138,8 +138,8 @@ export function StatisticsCompareScreen({
       <div className={`${styles.kpiGrid} ${family.summary}`} id="compareKpiGrid">
         <div className={styles.kpiCard} data-tone="accent">
           <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Inpatient Network</span>
-            <span className={styles.monoBadge}>All Services</span>
+            <span className={styles.kpiLabel}>Inpatient network</span>
+            <span className={styles.monoBadge}>All services</span>
           </div>
           <div className={styles.kpiValRow}>
             <span className={styles.kpiVal}>{units.length}</span>
@@ -149,13 +149,13 @@ export function StatisticsCompareScreen({
             <strong>{readyBeds}</strong> beds available ({readyPct}%)
           </span>
           {pendingPreparationBeds > 0 ? (
-            <span className={styles.kpiSub}>{pendingPreparationBeds} being made ready (not deducted)</span>
+            <span className={styles.kpiSub}>{pendingPreparationBeds} of them being made ready</span>
           ) : null}
         </div>
 
         <div className={styles.kpiCard} data-tone="warn">
           <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Average Length of Stay</span>
+            <span className={styles.kpiLabel}>Average length of stay</span>
             <span className={styles.monoBadge}>Recorded wards</span>
           </div>
           <div className={styles.kpiValRow}>
@@ -169,21 +169,21 @@ export function StatisticsCompareScreen({
 
         <div className={styles.kpiCard} data-tone="danger">
           <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Open movements</span>
+            <span className={styles.kpiLabel}>Waiting for a bed</span>
             <span className={styles.monoBadge}>Recorded states</span>
           </div>
           <div className={styles.kpiValRow}>
             <span className={styles.kpiVal}>{edWaitingCount}</span>
-            <span className={styles.kpiSub}>not closed or arrived</span>
+            <span className={styles.kpiSub}>open requests from emergency departments</span>
           </div>
           <span className={styles.kpiSub}>
-            <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> awaiting ward
+            <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> no ward yet
           </span>
         </div>
       </div>
 
       <p className={family.note}>
-        Available beds and open movements are separate counts. Bed eligibility is not matched to these movements.
+        Ready beds and people waiting are separate counts. This page does not match which bed suits which person.
       </p>
       <label className={family.viewControl}>
         Compare
@@ -199,6 +199,7 @@ export function StatisticsCompareScreen({
       {compareView === "ward" ? (
         <StatisticsInsightChart
           key="wards"
+          defaultSort="value"
           title="Ward comparison"
           testId="statistics-compare-ward-chart"
           metrics={[
@@ -236,6 +237,7 @@ export function StatisticsCompareScreen({
       ) : (
         <StatisticsInsightChart
           key="eds"
+          defaultSort="value"
           title="ED comparison"
           testId="statistics-compare-ed-chart"
           metrics={[

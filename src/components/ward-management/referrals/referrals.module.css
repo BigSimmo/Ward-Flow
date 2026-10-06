@@ -5712,7 +5712,7 @@ input.historyField:focus-visible {
   margin-top: 4px;
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 52rem) {
   .clinicalMetaGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
