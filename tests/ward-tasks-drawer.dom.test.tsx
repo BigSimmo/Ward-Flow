@@ -2,8 +2,9 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { buildTaskCardContexts, taskFocusHref } from "@/components/ward-management/ward-task-card-context";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -34,6 +35,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const seed = seedWardFlowState();
 const items = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units);
+const contexts = buildTaskCardContexts(seed.movements, seed.units, {
+  patients: seed.patients,
+  referrals: seed.referrals,
+  movements: seed.movements,
+});
 
 function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> = {}) {
   const dispatch = vi.fn();
@@ -49,6 +55,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
       dispatch={dispatch}
       onClose={onClose}
       onSelectMovement={onSelectMovement}
+      contexts={contexts}
       {...overrides}
     />,
   );
@@ -156,18 +163,119 @@ describe("the tasks drawer", () => {
   });
 });
 
-describe("task workspace search and acknowledgement filters", () => {
-  it("combines text and severity filters, then clears an empty result", () => {
+describe("task workspace acknowledgement filters", () => {
+  it("has no search field", () => {
+    const { drawer } = renderDrawer();
+    expect(within(drawer).queryByRole("textbox", { name: "Search tasks" })).toBeNull();
+    expect(within(drawer).getByRole("status")).toHaveTextContent(`${items.length} of ${items.length} tasks`);
+  });
+
+  it("shows the patient and UMRN, and leaves the movement id and flow coordinator off the card", () => {
+    const { drawer } = renderDrawer();
+    const item = items[0];
+    const person = contexts[item.movementId];
+    const row = within(drawer).getByTestId(`ward-task-row-${item.id}`);
+    expect(person.displayName.length).toBeGreaterThan(0);
+    expect(row).toHaveTextContent(person.displayName);
+    expect(within(row).getByTestId(`ward-task-umrn-${item.id}`)).toHaveTextContent(person.umrn);
+    expect(row).toHaveTextContent(item.title);
+    expect(row).not.toHaveTextContent(item.movementId);
+    expect(row).not.toHaveTextContent(item.owner);
+  });
+
+  it("sends Open, Refer, Contact, and Escalate to the matching destination", () => {
+    const referable = items.find((item) => contexts[item.movementId]?.canRefer);
+    const declined = items.find((item) => item.id.startsWith("declines-"));
+    expect(referable, "seed must include a referable inbox row").toBeDefined();
+    expect(declined, "seed must include a declined-destination inbox row").toBeDefined();
+    const openContexts = {
+      ...contexts,
+      [declined!.movementId]: { ...contexts[declined!.movementId], alreadyEscalated: false },
+    };
+
+    const { drawer, onSelectMovement } = renderDrawer({ contexts: openContexts });
+    const referRow = within(drawer).getByTestId(`ward-task-row-${referable!.id}`);
+    fireEvent.click(within(referRow).getByRole("button", { name: "Refer" }));
+    expect(onSelectMovement).toHaveBeenCalledWith(referable!.movementId, "refer");
+
+    const declinedRow = within(drawer).getByTestId(`ward-task-row-${declined!.id}`);
+    fireEvent.click(within(declinedRow).getByRole("button", { name: "Escalate" }));
+    expect(onSelectMovement).toHaveBeenCalledWith(declined!.movementId, "escalate");
+
+    const firstRow = within(drawer).getByTestId(`ward-task-row-${items[0].id}`);
+    fireEvent.click(within(firstRow).getByRole("button", { name: "Contact" }));
+    expect(onSelectMovement).toHaveBeenCalledWith(items[0].movementId, "contact");
+    fireEvent.click(within(firstRow).getByRole("button", { name: "Open" }));
+    expect(onSelectMovement).toHaveBeenCalledWith(items[0].movementId, "record");
+    expect(taskFocusHref(items[0].movementId, "record")).toBe(`/mockups/ward-flow/movements/${items[0].movementId}`);
+    expect(taskFocusHref(items[0].movementId, "refer")).toBe(
+      `/mockups/ward-flow/movements/${items[0].movementId}?focus=refer`,
+    );
+    expect(taskFocusHref(items[0].movementId, "contact")).toBe(
+      `/mockups/ward-flow/movements/${items[0].movementId}?focus=contact`,
+    );
+    expect(taskFocusHref(items[0].movementId, "escalate")).toBe(
+      `/mockups/ward-flow/delays?movement=${items[0].movementId}`,
+    );
+  });
+
+  it("hides Refer when the movement cannot be referred, and shows Escalated once escalation is recorded", () => {
+    const blocked = items.find((item) => contexts[item.movementId] && !contexts[item.movementId].canRefer);
+    const declined = items.find((item) => item.id.startsWith("declines-"));
+    expect(blocked, "seed must include an inbox row whose stage cannot be referred").toBeDefined();
+    expect(declined, "seed must include a declined-destination inbox row").toBeDefined();
+    const escalatedContexts = {
+      ...contexts,
+      [declined!.movementId]: { ...contexts[declined!.movementId], alreadyEscalated: true },
+    };
+    const { drawer } = renderDrawer({ contexts: escalatedContexts });
+    const blockedRow = within(drawer).getByTestId(`ward-task-row-${blocked!.id}`);
+    expect(within(blockedRow).queryByRole("button", { name: "Refer" })).toBeNull();
+    expect(within(blockedRow).getByRole("button", { name: "Contact" })).toBeTruthy();
+    const declinedRow = within(drawer).getByTestId(`ward-task-row-${declined!.id}`);
+    expect(within(declinedRow).queryByRole("button", { name: "Escalate" })).toBeNull();
+    expect(within(declinedRow).getByText("Escalated")).toBeTruthy();
+  });
+
+  it("filters to completed commitments, then clears back to every fact", () => {
+    const source = items[0];
+    const commitment: InboxItem = {
+      ...source,
+      id: `commitment-${source.movementId}`,
+      kind: "commitment",
+      title: "Confirm the ward call",
+      detail: `${source.movementId} · follow up the ward`,
+    };
+    const { drawer } = renderDrawer({
+      items: [source, commitment],
+      completions: {
+        [commitment.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator", kind: "completed" }],
+      },
+    });
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter acknowledgement state" }), {
+      target: { value: "completed" },
+    });
+    expect(within(drawer).getByTestId(`ward-task-${commitment.id}`)).toBeVisible();
+    expect(within(drawer).queryByTestId(`ward-task-${source.id}`)).toBeNull();
+    expect(within(drawer).getByRole("button", { name: "Reopen" })).toBeTruthy();
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter acknowledgement state" }), {
+      target: { value: "all" },
+    });
+    expect(within(drawer).getByTestId(`ward-task-${source.id}`)).toBeVisible();
+    expect(within(drawer).getByRole("button", { name: "Acknowledge" })).toBeTruthy();
+  });
+
+  it("uses the severity filter, then clears an empty result", () => {
     const { drawer } = renderDrawer();
     const critical = items.find((item) => item.tone === "danger")!;
-    fireEvent.change(within(drawer).getByRole("textbox", { name: "Search tasks" }), {
-      target: { value: critical.detail },
-    });
-    expect(within(drawer).getByTestId(`ward-task-${critical.id}`)).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
     expect(within(drawer).queryByTestId(`ward-task-${critical.id}`)).toBeNull();
-    expect(within(drawer).getByText("No matching tasks")).toBeVisible();
-    fireEvent.click(within(drawer).getByRole("button", { name: "Clear filters" }));
+    const reviewLeft = items.some((item) => item.tone !== "danger");
+    if (!reviewLeft) {
+      expect(within(drawer).getByText("No tasks in this view")).toBeVisible();
+      fireEvent.click(within(drawer).getByRole("button", { name: "Clear filters" }));
+    }
+    fireEvent.click(within(drawer).getByRole("button", { name: /^All/u }));
     expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
   });
 

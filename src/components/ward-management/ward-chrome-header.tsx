@@ -5,6 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  buildTaskCardContexts,
+  taskFocusHref,
+  type TaskFocus,
+} from "@/components/ward-management/ward-task-card-context";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardChromeSearch } from "@/components/ward-management/ward-chrome-search";
 import { WardStatsPanel, WardStatsToggle, standingFigures } from "@/components/ward-management/ward-standing-strip";
@@ -85,6 +90,8 @@ export function WardChromeHeader() {
   const {
     movements,
     units,
+    patients,
+    referrals,
     admissions,
     bedReleases,
     leaveBeds,
@@ -110,8 +117,12 @@ export function WardChromeHeader() {
   });
 
   const tasks = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
+  const taskContexts = useMemo(
+    () => buildTaskCardContexts(movements, units, { patients, referrals, movements }),
+    [movements, units, patients, referrals],
+  );
   const openMovement = useCallback(
-    (movementId: string) => router.push(`/mockups/ward-flow/movements/${movementId}`),
+    (movementId: string, focus?: TaskFocus) => router.push(taskFocusHref(movementId, focus)),
     [router],
   );
 
@@ -186,6 +197,7 @@ export function WardChromeHeader() {
           dispatch={dispatch}
           onClose={() => setTasksOpen(false)}
           onSelectMovement={openMovement}
+          contexts={taskContexts}
         />
       ) : null}
     </>

@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  buildTaskCardContexts,
+  taskFocusHref,
+  type TaskFocus,
+} from "@/components/ward-management/ward-task-card-context";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
@@ -36,7 +41,7 @@ import styles from "./ward-tasks-panel.module.css";
  */
 export function WardTasksPanel() {
   const router = useRouter();
-  const { movements, units, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
+  const { movements, units, patients, referrals, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);
@@ -50,10 +55,14 @@ export function WardTasksPanel() {
   }, [open]);
 
   const items = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
+  const taskContexts = useMemo(
+    () => buildTaskCardContexts(movements, units, { patients, referrals, movements }),
+    [movements, units, patients, referrals],
+  );
 
   const openMovement = useCallback(
-    (movementId: string) => {
-      router.push(`/mockups/ward-flow/movements/${movementId}`);
+    (movementId: string, focus?: TaskFocus) => {
+      router.push(taskFocusHref(movementId, focus));
     },
     [router],
   );
@@ -89,6 +98,7 @@ export function WardTasksPanel() {
           dispatch={dispatch}
           onClose={() => setOpen(false)}
           onSelectMovement={openMovement}
+          contexts={taskContexts}
           withBackdrop
         />
       ) : null}

@@ -111,9 +111,14 @@ function subscribeToLocation(listener: () => void) {
 function readAliasFromLocation() {
   return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
 }
+function readMovementFromLocation() {
+  const id = new URLSearchParams(window.location.search).get("movement");
+  return id && id.startsWith("WF-") ? id : null;
+}
 
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
+  const requestedMovement = useSyncExternalStore(subscribeToLocation, readMovementFromLocation, () => null);
   const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
 
@@ -137,6 +142,20 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const [markedCause, setMarkedCause] = useState<DelayCause | null>(null);
   const [delayFilterId, setDelayFilterId] = useState("waiting");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!requestedMovement) return;
+    if (selectedId !== requestedMovement) {
+      setSelectedId(requestedMovement);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-testid="delays-detail-${requestedMovement}"]`)
+        ?.scrollIntoView({ block: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [requestedMovement, selectedId]);
 
   // Tabs & Tooltips
   const [registerTab, setRegisterTab] = useState<"escalations" | "attention" | "resolved">("escalations");

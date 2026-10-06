@@ -12,7 +12,7 @@ import {
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { LucideIcon } from "lucide-react";
-import { CircleAlert, Truck } from "lucide-react";
+import { Ban, BedDouble, FileClock, ShieldAlert, Truck } from "lucide-react";
 
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
@@ -1184,7 +1184,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       id: `${INBOX_CATEGORIES.destination_unlawful.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.destination_unlawful.kind,
       tone: "danger",
-      icon: CircleAlert,
+      icon: ShieldAlert,
       title: "Accepted destination no longer suitable",
       detail: `${movement.id} · ${unit.name} is not set up for involuntary admissions (demo) for ${movement.legalStatus}`,
       owner: movement.owner,
@@ -1210,7 +1210,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.legal_timing_breached.kind,
       tone: "danger",
-      icon: CircleAlert,
+      icon: FileClock,
       title: "Legal due time passed",
       detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
       owner: movement.owner,
@@ -1228,7 +1228,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       id: `${INBOX_CATEGORIES.bed_pull_expired.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.bed_pull_expired.kind,
       tone: "danger",
-      icon: CircleAlert,
+      icon: BedDouble,
       title: "Bed pull expired",
       detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
       owner: movement.owner,
@@ -1257,7 +1257,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       id: `${INBOX_CATEGORIES.destinations_declined.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.destinations_declined.kind,
       tone: "danger",
-      icon: CircleAlert,
+      icon: Ban,
       title: "Multiple destinations declined",
       detail: `${movement.id} · ${movement.declines.length} destinations have declined`,
       owner: movement.owner,

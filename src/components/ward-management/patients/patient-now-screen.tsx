@@ -165,6 +165,26 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
   const [activeTab, setActiveTab] = useState<TabKey>("now");
   const [nowView, setNowView] = useState<"auto" | "clinical" | "operations">("auto");
+
+  useEffect(() => {
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    if (focus === "refer") {
+      setActiveTab("now");
+      setNowView("operations");
+    } else if (focus === "contact") {
+      setActiveTab("community");
+    }
+  }, []);
+
+  useEffect(() => {
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    if (focus === "refer" && nowView === "operations") {
+      document.getElementById("candidate-title")?.scrollIntoView({ block: "start" });
+    }
+    if (focus === "contact" && activeTab === "community") {
+      document.getElementById("pnpane-community")?.scrollIntoView({ block: "start" });
+    }
+  }, [activeTab, nowView]);
   const operationsRef = useRef<HTMLDivElement | null>(null);
   function openOperations() {
     setActiveTab("now");

@@ -30,6 +30,11 @@ import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  buildTaskCardContexts,
+  taskFocusHref,
+  type TaskFocus,
+} from "@/components/ward-management/ward-task-card-context";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
@@ -70,16 +75,7 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import {
-  digestHref,
-  edHref,
-  handoverHref,
-  movementHref,
-  officerHref,
-  onCallHref,
-  settingsHref,
-  unitHref,
-} from "./ward-facade";
+import { digestHref, edHref, handoverHref, officerHref, onCallHref, settingsHref, unitHref } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -523,6 +519,10 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
     [movements, now, units, role],
   );
+  const taskContexts = useMemo(
+    () => buildTaskCardContexts(movements, units, { patients, referrals, movements }),
+    [movements, units, patients, referrals],
+  );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
    * panel"). One open-movement membership count per `HEALTH_SERVICES` member, through
@@ -747,7 +747,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   );
 
   const openMovement = useCallback(
-    (movementId: string) => {
+    (movementId: string, focus?: TaskFocus) => {
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -756,7 +756,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
-      router.push(movementHref(movementId));
+      router.push(taskFocusHref(movementId, focus));
     },
     [router],
   );
@@ -1496,6 +1496,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
+            contexts={taskContexts}
           />
         </div>
       </Sheet>

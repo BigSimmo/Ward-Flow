@@ -1,7 +1,19 @@
 "use client";
 
-import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, Search, X } from "lucide-react";
-import { useRef, useState, type Dispatch } from "react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  CheckSquare,
+  ListChecks,
+  Phone,
+  RotateCcw,
+  Share2,
+  ShieldAlert,
+  Siren,
+  UserCheck,
+  X,
+} from "lucide-react";
+import { useRef, useState, type Dispatch, type ReactNode } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -12,6 +24,11 @@ import {
   type InboxCompletionEntry,
 } from "@/components/ward-management/ward-flow-reducer";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import {
+  visibleTaskDetail,
+  type TaskCardContext,
+  type TaskFocus,
+} from "@/components/ward-management/ward-task-card-context";
 
 import styles from "./ward-tasks-drawer.module.css";
 
@@ -23,9 +40,13 @@ type WardTasksDrawerProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
-  onSelectMovement: (movementId: string) => void;
+  onSelectMovement: (movementId: string, focus?: TaskFocus) => void;
+  /** Patient and movement facts keyed by movement id. Absent in a bare render, which then shows the task title only. */
+  contexts?: Record<string, TaskCardContext>;
   withBackdrop?: boolean;
 };
+
+type AckFilter = "all" | "unacknowledged" | "acknowledged" | "completed";
 
 export function WardTasksDrawer({
   items,
@@ -36,13 +57,13 @@ export function WardTasksDrawer({
   dispatch,
   onClose,
   onSelectMovement,
+  contexts,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
 
-  const [query, setQuery] = useState("");
-  const [ackFilter, setAckFilter] = useState("all");
+  const [ackFilter, setAckFilter] = useState<AckFilter>("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
 
   function acknowledge(inboxItemId: string) {
@@ -73,9 +94,11 @@ export function WardTasksDrawer({
     if (taskFilter === "critical" && item.tone !== "danger") return false;
     if (taskFilter === "review" && item.tone === "danger") return false;
     const acknowledged = Boolean(acknowledgements[item.id]?.length);
+    const completed = item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
     if (ackFilter === "unacknowledged" && (item.kind !== "fact" || acknowledged)) return false;
     if (ackFilter === "acknowledged" && (item.kind !== "fact" || !acknowledged)) return false;
-    return `${item.title} ${item.detail} ${item.owner}`.toLowerCase().includes(query.trim().toLowerCase());
+    if (ackFilter === "completed" && !completed) return false;
+    return true;
   });
   const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
   const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
@@ -101,7 +124,6 @@ export function WardTasksDrawer({
                 {items.length}
               </span>
             </h2>
-            <p className={styles.headerNote}>Current work from synthetic movement records.</p>
           </div>
           <button
             type="button"
@@ -130,15 +152,6 @@ export function WardTasksDrawer({
               <span>Open commitments</span>
             </div>
           </div>
-          <label className={styles.search}>
-            <Search aria-hidden="true" />
-            <input
-              aria-label="Search tasks"
-              placeholder="Search task, movement or owner…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
           <div className={styles.taskFilterTrack} role="group" aria-label="Filter tasks by status">
             <button
               type="button"
@@ -168,16 +181,17 @@ export function WardTasksDrawer({
 
           <div className={styles.filterMeta}>
             <span role="status">
-              {filteredItems.length} of {items.length} invented tasks
+              {filteredItems.length} of {items.length} tasks
             </span>
             <select
               aria-label="Filter acknowledgement state"
               value={ackFilter}
-              onChange={(event) => setAckFilter(event.target.value)}
+              onChange={(event) => setAckFilter(event.target.value as AckFilter)}
             >
-              <option value="all">All acknowledgement states</option>
-              <option value="unacknowledged">Not yet acknowledged</option>
+              <option value="all">All tasks</option>
+              <option value="unacknowledged">Not acknowledged</option>
               <option value="acknowledged">Acknowledged</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
         </div>
@@ -188,14 +202,17 @@ export function WardTasksDrawer({
             </p>
           ) : filteredItems.length === 0 ? (
             <div className={styles.empty}>
-              <Search aria-hidden="true" />
-              <h3>No matching tasks</h3>
-              <p>Try another name, owner or filter.</p>
+              <ListChecks aria-hidden="true" />
+              <h3>No tasks in this view</h3>
+              <p>
+                {ackFilter === "completed"
+                  ? "No completed tasks. A recorded fact stays here until the situation changes."
+                  : "Nothing matches this filter."}
+              </p>
               <button
                 type="button"
                 className={styles.btnMovement}
                 onClick={() => {
-                  setQuery("");
                   setTaskFilter("all");
                   setAckFilter("all");
                 }}
@@ -205,101 +222,57 @@ export function WardTasksDrawer({
             </div>
           ) : (
             <>
-              {/* SECTION 1: STATUTORY FACTS */}
               {filteredFacts.length > 0 ? (
                 <div className={styles.taskSectionGroup} id="groupFacts">
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
-                      <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
+                      <ShieldAlert aria-hidden="true" />
                       <span>Recorded forms</span>
                     </h3>
-                    <span className={styles.taskStripBadge} style={{ color: "var(--danger)", fontWeight: 700 }}>
-                      {filteredFacts.length} recorded
-                    </span>
+                    <span className={styles.sectionCount}>{filteredFacts.length} recorded</span>
                   </div>
 
                   <ul className={styles.taskStripList}>
                     {filteredFacts.map((item) => {
                       const ackHistory = acknowledgements[item.id] ?? [];
                       const latestAck = ackHistory.length > 0 ? ackHistory[ackHistory.length - 1] : undefined;
-                      const Icon = item.icon;
 
                       return (
-                        <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
-                          <div className={styles.taskStripMain}>
-                            <div
-                              className={`${styles.taskStripAvatar} ${
-                                item.tone === "warning" ? styles.taskStripAvatarWarn : ""
-                              }`}
-                            >
-                              <Icon aria-hidden="true" />
-                            </div>
-                            <div className={styles.taskStripContent}>
-                              <div className={styles.taskStripRow1}>
-                                <button
-                                  type="button"
-                                  data-testid={`ward-task-${item.id}`}
-                                  className={styles.rowSelect}
-                                  onClick={() => onSelectMovement(item.movementId)}
-                                >
-                                  <span className={styles.taskStripPatient}>{item.title}</span>
-                                </button>
-                                <span
-                                  className={`${styles.taskStripBadge} ${
-                                    item.tone === "danger" ? styles.taskStripBadgeUrgent : styles.taskStripBadgeWarn
-                                  }`}
-                                >
-                                  {item.tone === "danger" ? "Past Due / Critical" : "Review Due"}
-                                </span>
-                              </div>
-                              <div className={styles.taskStripRow2}>
-                                <span className={styles.taskStripSub}>
-                                  {item.detail} · {item.owner}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className={styles.taskStripActions}>
-                            <button type="button" className={styles.btnAckFact} onClick={() => acknowledge(item.id)}>
-                              <UserCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
-                              <span>Acknowledge</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className={styles.btnMovement}
-                              onClick={() => onSelectMovement(item.movementId)}
-                            >
-                              <span>Open movement</span>
-                            </button>
-
-                            {latestAck ? (
+                        <TaskRow
+                          key={item.id}
+                          item={item}
+                          context={contexts?.[item.movementId]}
+                          badge={item.tone === "danger" ? "Past due" : "Review"}
+                          onSelectMovement={onSelectMovement}
+                          status={
+                            latestAck ? (
                               <span className={styles.ackStatus} data-testid={`ward-task-ack-${item.id}`}>
-                                <UserCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
+                                <UserCheck aria-hidden="true" />
                                 Acknowledged by {latestAck.by} · {formatInstantWithDay(latestAck.at, now)}
                                 {ackHistory.length > 1 ? ` (${ackHistory.length})` : ""}
                               </span>
-                            ) : null}
-                          </div>
-                        </li>
+                            ) : null
+                          }
+                        >
+                          <button type="button" className={styles.btnAckFact} onClick={() => acknowledge(item.id)}>
+                            <UserCheck aria-hidden="true" />
+                            <span>Acknowledge</span>
+                          </button>
+                        </TaskRow>
                       );
                     })}
                   </ul>
                 </div>
               ) : null}
 
-              {/* SECTION 2: OPERATIONAL COMMITMENTS */}
               {filteredCommitments.length > 0 ? (
                 <div className={styles.taskSectionGroup} id="groupTasks">
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
-                      <ListChecks aria-hidden="true" style={{ width: 14, height: 14 }} />
-                      <span>Operational Commitments</span>
+                      <ListChecks aria-hidden="true" />
+                      <span>Operational commitments</span>
                     </h3>
-                    <span className={styles.taskStripBadge} style={{ color: "var(--accent)", fontWeight: 700 }}>
-                      {filteredCommitments.length} commitments
-                    </span>
+                    <span className={styles.sectionCount}>{filteredCommitments.length} commitments</span>
                   </div>
 
                   <ul className={styles.taskStripList}>
@@ -308,80 +281,50 @@ export function WardTasksDrawer({
                       const isComplete = inboxItemCompletionState(completionHistory) === "complete";
                       const latestCompletion =
                         isComplete && completionHistory ? completionHistory[completionHistory.length - 1] : undefined;
-                      const Icon = item.icon;
 
                       return (
-                        <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
-                          <div className={styles.taskStripMain}>
-                            <div className={styles.taskStripAvatar}>
-                              <Icon aria-hidden="true" />
-                            </div>
-                            <div className={styles.taskStripContent}>
-                              <div className={styles.taskStripRow1}>
-                                <button
-                                  type="button"
-                                  data-testid={`ward-task-${item.id}`}
-                                  className={styles.rowSelect}
-                                  onClick={() => onSelectMovement(item.movementId)}
-                                >
-                                  <span className={styles.taskStripPatient}>{item.title}</span>
-                                </button>
-                                <span className={styles.taskStripBadge}>
-                                  {isComplete ? "Completed" : "Open commitment"}
-                                </span>
-                              </div>
-                              <div className={styles.taskStripRow2}>
-                                <span className={styles.taskStripSub}>
-                                  {item.detail} · {item.owner}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className={styles.taskStripActions}>
-                            {/* One control, not two: the reducer refuses COMPLETE on a row that is
+                        <TaskRow
+                          key={item.id}
+                          item={item}
+                          context={contexts?.[item.movementId]}
+                          badge={isComplete ? "Completed" : "Open"}
+                          onSelectMovement={onSelectMovement}
+                          status={
+                            latestCompletion ? (
+                              <span className={styles.doneStatus} data-testid={`ward-task-done-${item.id}`}>
+                                <CheckSquare aria-hidden="true" />
+                                Done by {latestCompletion.by} · {formatInstantWithDay(latestCompletion.at, now)}
+                              </span>
+                            ) : null
+                          }
+                        >
+                          {/* One control, not two: the reducer refuses COMPLETE on a row that is
                               already complete and REOPEN on one that is not, so rendering both
                               would always leave one of them dead. Which one shows is decided by
                               the same `isComplete` the "Done by …" status below reads, so the
                               button and the status can never disagree. */}
-                            {isComplete ? (
-                              <button
-                                type="button"
-                                data-testid={`ward-task-reopen-${item.id}`}
-                                className={styles.btnCompleteTask}
-                                onClick={() => reopen(item.id)}
-                              >
-                                <RotateCcw aria-hidden="true" style={{ width: 13, height: 13 }} />
-                                <span>Reopen</span>
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                data-testid={`ward-task-complete-${item.id}`}
-                                className={styles.btnCompleteTask}
-                                onClick={() => complete(item.id)}
-                              >
-                                <CheckCircle2 aria-hidden="true" style={{ width: 13, height: 13 }} />
-                                <span>Mark done</span>
-                              </button>
-                            )}
-
+                          {isComplete ? (
                             <button
                               type="button"
-                              className={styles.btnMovement}
-                              onClick={() => onSelectMovement(item.movementId)}
+                              data-testid={`ward-task-reopen-${item.id}`}
+                              className={styles.btnCompleteTask}
+                              onClick={() => reopen(item.id)}
                             >
-                              <span>Open movement</span>
+                              <RotateCcw aria-hidden="true" />
+                              <span>Reopen</span>
                             </button>
-
-                            {latestCompletion ? (
-                              <span className={styles.doneStatus} data-testid={`ward-task-done-${item.id}`}>
-                                <CheckSquare aria-hidden="true" style={{ width: 13, height: 13 }} />
-                                Done by {latestCompletion.by} · {formatInstantWithDay(latestCompletion.at, now)}
-                              </span>
-                            ) : null}
-                          </div>
-                        </li>
+                          ) : (
+                            <button
+                              type="button"
+                              data-testid={`ward-task-complete-${item.id}`}
+                              className={styles.btnCompleteTask}
+                              onClick={() => complete(item.id)}
+                            >
+                              <CheckCircle2 aria-hidden="true" />
+                              <span>Mark done</span>
+                            </button>
+                          )}
+                        </TaskRow>
                       );
                     })}
                   </ul>
@@ -395,12 +338,124 @@ export function WardTasksDrawer({
           <span id="taskDrawerSummary">Acknowledgement records that you have seen a fact. It does not resolve it.</span>
           {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btnAckAll} onClick={acknowledgeAllFacts}>
-              <UserCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
+              <UserCheck aria-hidden="true" />
               <span>Acknowledge visible ({visibleUnacknowledged.length})</span>
             </button>
           ) : null}
         </div>
       </aside>
     </>
+  );
+}
+
+function taskFacts(item: InboxItem, context: TaskCardContext | undefined): string[] {
+  const detail = visibleTaskDetail(item.detail);
+  if (!context) return detail ? [detail] : [];
+  const destination = context.destination && !detail.includes(context.destination) ? context.destination : undefined;
+  const facts = [context.location, destination, context.stageLabel, context.legalStatus, detail];
+  return [...new Set(facts.filter((fact): fact is string => Boolean(fact)))];
+}
+
+function TaskRow({
+  item,
+  context,
+  badge,
+  onSelectMovement,
+  status,
+  children,
+}: {
+  item: InboxItem;
+  context: TaskCardContext | undefined;
+  badge: string;
+  onSelectMovement: (movementId: string, focus?: TaskFocus) => void;
+  status: ReactNode;
+  children: ReactNode;
+}) {
+  const Icon = item.icon;
+  const facts = taskFacts(item, context);
+  const declined = item.id.startsWith("declines-");
+
+  return (
+    <li className={styles.taskStrip} data-tone={item.tone} data-testid={`ward-task-row-${item.id}`}>
+      <div className={styles.taskStripMain}>
+        <div className={`${styles.taskStripAvatar} ${item.tone === "warning" ? styles.taskStripAvatarWarn : ""}`}>
+          <Icon aria-hidden="true" />
+        </div>
+        <div className={styles.taskStripContent}>
+          <div className={styles.taskStripRow1}>
+            <button
+              type="button"
+              data-testid={`ward-task-${item.id}`}
+              className={styles.rowSelect}
+              onClick={() => onSelectMovement(item.movementId, "record")}
+            >
+              <span className={styles.taskStripPatient}>{context?.displayName ?? item.title}</span>
+            </button>
+            {context ? (
+              <span className={styles.umrn} data-testid={`ward-task-umrn-${item.id}`}>
+                {context.umrn}
+              </span>
+            ) : null}
+            <span
+              className={`${styles.taskStripBadge} ${
+                item.tone === "danger"
+                  ? styles.taskStripBadgeUrgent
+                  : item.tone === "warning"
+                    ? styles.taskStripBadgeWarn
+                    : ""
+              }`}
+            >
+              {badge}
+            </span>
+          </div>
+          {context ? <p className={styles.taskKind}>{item.title}</p> : null}
+          {facts.length > 0 ? (
+            <ul className={styles.metaList}>
+              {facts.map((fact) => (
+                <li key={fact}>{fact}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+
+      <div className={styles.taskStripActions}>
+        {children}
+        <button
+          type="button"
+          className={styles.btnMovement}
+          onClick={() => onSelectMovement(item.movementId, "record")}
+        >
+          <ArrowUpRight aria-hidden="true" />
+          <span>Open</span>
+        </button>
+        {context?.canRefer ? (
+          <button type="button" className={styles.btnRefer} onClick={() => onSelectMovement(item.movementId, "refer")}>
+            <Share2 aria-hidden="true" />
+            <span>Refer</span>
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={styles.btnContact}
+          onClick={() => onSelectMovement(item.movementId, "contact")}
+        >
+          <Phone aria-hidden="true" />
+          <span>Contact</span>
+        </button>
+        {declined && context && !context.alreadyEscalated ? (
+          <button
+            type="button"
+            className={styles.btnEscalate}
+            onClick={() => onSelectMovement(item.movementId, "escalate")}
+          >
+            <Siren aria-hidden="true" />
+            <span>Escalate</span>
+          </button>
+        ) : null}
+        {declined && context?.alreadyEscalated ? <span className={styles.escalatedNote}>Escalated</span> : null}
+        {status}
+      </div>
+    </li>
   );
 }
