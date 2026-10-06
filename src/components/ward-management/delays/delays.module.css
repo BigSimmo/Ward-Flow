@@ -7215,6 +7215,8 @@
   box-shadow: inset 0 1px 1px color-mix(in srgb, var(--ink) 5%, transparent);
 }
 .systemicFilterBar {
+  width: 100%;
+  max-width: 100%;
   margin: 0 0 8px;
 }
 .tabBtn,

@@ -1663,8 +1663,8 @@
   margin-top: 8px;
 }
 .blockerPanel summary {
-  min-height: 36px;
-  padding: 6px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
 }
 
 .workspace,
@@ -1743,20 +1743,78 @@
     inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
     0 1px 2px color-mix(in srgb, var(--dv-ink) 10%, transparent);
 }
+.markBar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dv-ink) 5%, var(--surface));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--dv-ink) 5%, transparent);
+}
+.markBar button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dv-muted, var(--muted));
+  box-shadow: none;
+  min-height: 28px;
+  padding: 4px 10px;
+  gap: 6px;
+}
+.markBar button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--dv-ink);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    0 1px 2px color-mix(in srgb, var(--dv-ink) 10%, transparent);
+}
+.markBar b {
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--dv-ink) 7%, transparent);
+  color: var(--muted);
+  box-shadow: none;
+}
+.markBar button[aria-pressed="true"] b {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+}
+.teamRail button {
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 40px;
+}
+.teamRail button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.pagination button {
+  border-radius: 8px;
+  border-color: color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
 @media (forced-colors: active) {
   .workspace,
   .panel,
   .teamRail,
   .dossier,
   .tabs,
-  .modeSwitch {
+  .modeSwitch,
+  .markBar {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
     backdrop-filter: none;
   }
   .tabs button[aria-selected="true"],
-  .modeSwitch button[aria-pressed="true"] {
+  .modeSwitch button[aria-pressed="true"],
+  .markBar button[aria-pressed="true"] {
     border: 1px solid CanvasText;
     background: Canvas;
     color: CanvasText;
