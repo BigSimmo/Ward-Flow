@@ -650,7 +650,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           </WardPanel>
           {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-          <WardPanel title="Delays" accessibleName="Delays with no named person">
+          <WardPanel title="System delays" accessibleName="Delays with no named person">
             <div className={styles.systemicPanel}>
               <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
@@ -679,36 +679,40 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   <span>Record Hold</span>
                 </button>
               </div>
-              <div className={styles.systemicGrid}>
-                {SYSTEMIC_HOLDS.map((hold) => (
-                  <div
-                    key={hold.id}
-                    className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
-                    role="article"
-                    aria-label={`${hold.facility}: ${hold.categoryLabel}`}
-                  >
-                    <div className={styles.systemicCardHeader}>
-                      <div className={styles.systemicCardTitleCluster}>
-                        <span className={styles.systemicFacility}>{hold.facility}</span>
-                        <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
+              {SYSTEMIC_HOLDS.length === 0 ? (
+                <p className={styles.systemicEmptyLine}>No statewide delays</p>
+              ) : (
+                <div className={styles.systemicGrid}>
+                  {SYSTEMIC_HOLDS.map((hold) => (
+                    <div
+                      key={hold.id}
+                      className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
+                      role="article"
+                      aria-label={`${hold.facility}: ${hold.categoryLabel}`}
+                    >
+                      <div className={styles.systemicCardHeader}>
+                        <div className={styles.systemicCardTitleCluster}>
+                          <span className={styles.systemicFacility}>{hold.facility}</span>
+                          <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
+                        </div>
+                        <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
                       </div>
-                      <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
-                    </div>
 
-                    <p className={styles.systemicReason}>{hold.reason}</p>
+                      <p className={styles.systemicReason}>{hold.reason}</p>
 
-                    <div className={styles.systemicImpactStrip}>
-                      <span className={styles.systemicImpactLabel}>Impact:</span>
-                      <span className={styles.systemicImpactValue}>{hold.impact}</span>
-                    </div>
+                      <div className={styles.systemicImpactStrip}>
+                        <span className={styles.systemicImpactLabel}>Impact:</span>
+                        <span className={styles.systemicImpactValue}>{hold.impact}</span>
+                      </div>
 
-                    <div className={styles.systemicCardFooter}>
-                      <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
-                      <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
+                      <div className={styles.systemicCardFooter}>
+                        <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
+                        <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </WardPanel>
         </div>
