@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -245,7 +245,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const drawer = screen.getByTestId("bed-telemetry-drawer");
     expect(drawer).toBeInTheDocument();
     expect(drawer).toHaveTextContent(/Bed 01/i);
-    expect(drawer).toHaveTextContent(/Patient Dossier/i);
+    expect(drawer).not.toHaveTextContent(/Patient Dossier/i);
+    const drawerTitle = within(drawer).getByRole("heading", { level: 2 });
+    expect(drawerTitle.textContent?.trim().length).toBeGreaterThan(0);
+    expect(drawerTitle).not.toHaveTextContent(/Bed 01/i);
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
     // it now says vital signs are not recorded, and no reading appears anywhere in it.
