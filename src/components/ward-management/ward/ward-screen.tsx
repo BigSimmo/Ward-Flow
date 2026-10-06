@@ -1089,6 +1089,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * different action than the one on screen.
    */
   function handleAcceptInPrinciple(movementId: string, unitId: string) {
+    const targetUnit = units.find((u) => u.id === unitId);
+    if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
     dispatch({
       type: "ACCEPT_IN_PRINCIPLE",
@@ -1101,6 +1103,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   function handlePullPatient(movementId: string, unitId: string) {
+    const targetUnit = units.find((u) => u.id === unitId);
+    if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
     dispatch({
       type: "PULL_PATIENT",

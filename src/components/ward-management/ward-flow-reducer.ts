@@ -1770,7 +1770,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeDateMoves: 0,
             blockReason: null,
             awayAtEmergencyDepartmentSince: null,
-            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
+            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp, transfer: careJourney.transfer },
           },
         ],
         movements: [
@@ -1937,13 +1937,15 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 
 function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   // 1. Role check first, before the event's payload is inspected at all.
-  const permittedRoles = EVENT_ROLE[event.type];
+  const permittedRoles = EVENT_ROLE[event.type] ?? [];
   if (!permittedRoles.includes(event.role)) {
     decision.reasonCode = "role";
     return reject(
       state,
       event,
-      `${event.type} requires role ${permittedRoles.join(" or ")}, but was raised by role ${event.role}`,
+      permittedRoles.length > 0
+        ? `${event.type} requires role ${permittedRoles.join(" or ")}, but was raised by role ${event.role}`
+        : `Unknown or unpermitted event type: ${event.type}`,
     );
   }
 
