@@ -47,7 +47,10 @@ function requireWorkflow(source) {
     // Browser builds may skip their own type check only because the static job checks route types.
     /next\/dist\/bin\/next typegen\n\s*node node_modules\/typescript\/bin\/tsc -p tsconfig\.json --noEmit/u,
     /WARD_GATE_BUILD: "1"/u,
-    /actions\/cache@[0-9a-f]{40}/u,
+    // Next build cache: restored on every event, saved only on main, so per-SHA PR entries can
+    // never fill the 10 GB Actions cache again.
+    /actions\/cache\/restore@[0-9a-f]{40}/u,
+    /if: \$\{\{ !cancelled\(\) && github\.ref == 'refs\/heads\/main' && steps\.next-cache\.outcome == 'success'[^\n]*\n\s+uses: actions\/cache\/save@[0-9a-f]{40}/u,
     /WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/\d+/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
@@ -66,6 +69,7 @@ function requireWorkflow(source) {
     /secrets\./u,
     /contents: write/u,
     /WARD_PUBLIC_STANDALONE:/u,
+    /actions\/cache@/u,
   ]) {
     assert.doesNotMatch(source, pattern);
   }
