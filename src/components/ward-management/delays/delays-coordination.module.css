@@ -1690,53 +1690,50 @@
   }
 }
 
-/* Pressure and the chart sit as two glass sheets, not one stretched band. */
-@media (min-width: 981px) {
-  .coordination {
-    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
-    gap: 12px;
-    align-items: start;
-  }
-  .ownerGrid {
-    grid-template-columns: 1fr 1fr;
-  }
+/* Stacked sections, with a light frost and moderate corners. */
+.coordination {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
 }
 .runway,
 .graphPanel {
-  border: 0;
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--surface) 74%, transparent);
-  backdrop-filter: blur(18px) saturate(1.35);
+  border: 1px solid color-mix(in srgb, var(--dc-ink) 8%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
-    0 16px 40px color-mix(in srgb, var(--dc-ink) 8%, transparent);
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 8px 22px color-mix(in srgb, var(--dc-ink) 6%, transparent);
 }
 .ownerCard,
 .waitDistribution,
 .radarToolbar,
 .catchmentInspector,
-.radarInspector {
-  border: 0;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--dc-ink) 6%, transparent);
-}
 .radarInspector,
-.catchmentInspector,
-.waitDistribution,
-.radarToolbar {
-  border-radius: 22px;
+.hoverCard,
+.chipPopup {
+  border: 1px solid color-mix(in srgb, var(--dc-ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--dc-ink) 5%, transparent);
 }
-.graphTabs button,
+.graphTabs,
+.ownerCard,
+.urgentChip > button,
+.serviceMarks button,
+.distributionBar,
+.outlierChip,
 .ownerField select,
 .secondary,
-.serviceMarks button,
-.queueLink {
-  border-radius: 999px;
+.graphTabs button {
+  border-radius: 8px;
 }
-@media (max-width: 980px) {
-  .coordination {
-    grid-template-columns: 1fr;
-  }
+.graphTabs {
+  padding: 2px;
+  background: color-mix(in srgb, var(--dc-ink) 4%, var(--surface));
+}
+.graphTabs button[aria-selected="true"] {
+  border-radius: 6px;
 }
 @media (prefers-reduced-transparency: reduce) {
   .runway,
