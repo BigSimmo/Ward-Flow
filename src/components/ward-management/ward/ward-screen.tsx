@@ -36,28 +36,12 @@ import {
   stageCopy,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
-import { WardChip } from "@/components/ward-management/ward-chip";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
-/**
- * ⚠️ **OWNER RULING, CLINICIAN CHECK R7 (2026-09-06), AND THE SCREEN IS OBLIGED TO SAY IT.**
- * He confirmed a ward is routinely waiting on more than one thing, and chose to keep recording
- * exactly ONE — *"defined as the one that will take longest. Say so on screen, or a reader will
- * think the others are unknown."*
- *
- * **The distinction is between unrecorded and unknown.** A single value with no explanation reads
- * as the ward's complete answer; it is the ward's LONGEST answer. Saying nothing here would make
- * this screen state something more definite than the data supports.
- *
- * One constant for two pickers: the same sentence written twice drifts, and this one is his.
- */
-const WAITING_ON_LONGEST = "One only — the one that will take longest. A ward is often waiting on several.";
-
 import {
   BED_RELEASE_WAITING_ON,
   type BedReleaseWaitingOn,
@@ -1749,10 +1733,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 ref={confirmTriggerRef}
                 type="button"
                 className={styles.btnActionSec}
-                onClick={() => {
-                  setActiveTab("return");
-                  document.getElementById("gate-staffing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                onClick={() => setConfirmNumbersOpen(true)}
               >
                 <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M3 8l3 3 7-7" />
@@ -1979,8 +1960,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             id="bed-capacity"
             className={`${styles.bedSection} ${styles.censusCommandCard}`}
             tabIndex={0}
+            data-ward-primitive="panel"
           >
-            <div className={styles.commandHeader}>
+            <div className={styles.commandHeader} data-ward-primitive="panel-header">
               <div className={styles.commandTitleGroup}>
                 <h2 className={styles.commandMainTitle}>
                   <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2024,6 +2006,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
                   data-state="available"
                   title={BED_STATE_DETAILS.ready}
                 >
@@ -2034,6 +2017,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </span>
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
                   data-state="pulled"
                   title={BED_STATE_DETAILS.pulled}
                 >
@@ -2042,6 +2026,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </span>
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
                   data-state="closed"
                   title={BED_STATE_DETAILS.closed}
                 >
@@ -2052,19 +2037,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </span>
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
                   data-state="occupied"
                   title={BED_STATE_DETAILS.occupied}
                 >
                   <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
                   <strong className={styles.statBoxVal}>{states.occupied}</strong>
                 </span>
-                <span className={`${styles.bedChip} ${styles.statBox}`} data-state="confirmed">
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="confirmed"
+                >
                   <span className={styles.statBoxLabel}>Confirmed</span>{" "}
                   <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
                     {breakdown.confirmedToday}
                   </strong>
                 </span>
-                <span className={`${styles.bedChip} ${styles.statBox}`} data-state="expected">
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="expected"
+                >
                   <span className={styles.statBoxLabel}>Expected</span>{" "}
                   <strong className={styles.statBoxVal} style={{ color: "var(--warn)" }}>
                     {breakdown.expectedToday}
@@ -2072,13 +2066,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </span>
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
                   data-state="blocked-release"
                   data-testid="ward-unit-blocked-releases"
                 >
                   <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
                   <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
                 </span>
-                <span className={`${styles.bedChip} ${styles.statBox}`} data-state="leave">
+                <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">
                   <span className={styles.statBoxLabel}>On leave</span>{" "}
                   <strong className={styles.statBoxVal} style={{ color: "var(--gilt)" }}>
                     {breakdown.onLeave}

@@ -73,12 +73,12 @@ function renderWard(release: NonNullable<typeof VOLUNTARY_RELEASE>) {
   );
 }
 
-function openAndChoose(releaseId: string, destination: string) {
-  fireEvent.click(screen.getByTestId(`ward-bed-release-release-${releaseId}`));
-  fireEvent.change(screen.getByTestId(`ward-bed-release-discharge-destination-${releaseId}`), {
-    target: { value: destination },
-  });
-  fireEvent.click(screen.getByTestId(`ward-bed-release-discharge-submit-${releaseId}`));
+function openAndChoose(admissionId: string, destination: string) {
+  const card = document.querySelector(`[data-admission-id="${admissionId}"]`);
+  expect(card, "the occupied stay is on a bed card").not.toBeNull();
+  fireEvent.click(card as HTMLElement);
+  fireEvent.change(screen.getByLabelText(/Where are they going/i), { target: { value: destination } });
+  fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
 }
 
 describe("the ward screen's leave list shows no internal id and nothing about the person", () => {
@@ -91,8 +91,9 @@ describe("the ward screen's leave list shows no internal id and nothing about th
         <WardScreen unitId={leaveBed.unitId} />
       </WardFlowProvider>,
     );
-    const row = screen.getByTestId(`ward-leave-bed-${leaveBed.id}`);
-    expect(row).toHaveTextContent("Bed not recorded");
+    const row = screen.getByTestId(`ward-leave-card-${leaveBed.id}`);
+    expect(row).toHaveTextContent("Bed on leave");
+    expect(row).toHaveTextContent("Shows nothing about the person on leave");
     expect(row).not.toHaveTextContent(leaveBed.id);
     expect(row).not.toHaveTextContent(screen.getByTestId("named-name").textContent ?? "");
   });
@@ -111,25 +112,21 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     const othersBefore = screen.getByTestId("others").textContent;
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
 
-    // The card is named by its person, never by an internal id, and says no bed is recorded.
-    const card = screen.getByTestId(`ward-bed-release-${release.id}`);
-    expect(card).toHaveTextContent(`${name} (bed not recorded)`);
-    expect(card).not.toHaveTextContent(release.id);
+    const card = document.querySelector(`[data-admission-id="${release.admissionId}"]`);
+    expect(card, "the release's own stay is on a bed card").not.toBeNull();
+    expect(card).toHaveAccessibleName(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    expect(card?.textContent ?? "").not.toContain(release.id);
 
-    fireEvent.click(screen.getByTestId(`ward-bed-release-release-${release.id}`));
-    // The question names the release's own person before anything can be recorded.
-    expect(screen.getByTestId(`ward-bed-release-discharge-form-${release.id}`)).toHaveTextContent(
-      `Where is ${name} going?`,
-    );
-    fireEvent.click(screen.getByTestId(`ward-bed-release-release-${release.id}`)); // close again
+    fireEvent.click(card as HTMLElement);
+    expect(screen.getByLabelText(/Where are they going/i)).toBeInTheDocument();
 
-    openAndChoose(release.id, "transferred-to-another-psychiatric-ward");
+    openAndChoose(release.admissionId, "transferred-to-another-psychiatric-ward");
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|transferred-to-another-psychiatric-ward");
     expect(screen.getByTestId("others").textContent, "no other occupant of the ward moved").toBe(othersBefore);
     expect(screen.getByText(`Recorded: ${name} has left the ward.`)).toBeInTheDocument();
-    expect(screen.queryByTestId(`ward-bed-release-${release.id}`)).not.toBeInTheDocument();
+    expect(document.querySelector(`[data-admission-id="${release.admissionId}"]`)).toBeNull();
   });
 
   it("refuses an involuntary patient to the community, says why by name, and changes nothing", () => {
@@ -139,7 +136,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     const patientId = wardAdmissions.find((admission) => admission.id === release.admissionId)?.patientId ?? "";
     const othersBefore = screen.getByTestId("others").textContent;
 
-    openAndChoose(release.id, "discharged-to-the-community");
+    openAndChoose(release.admissionId, "discharged-to-the-community");
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("1");
     const reason = screen.getByTestId("last-rejection").textContent ?? "";
@@ -150,6 +147,9 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByText(`Not recorded: ${shown}. Nothing was changed.`)).toBeInTheDocument();
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
     expect(screen.getByTestId("others").textContent).toBe(othersBefore);
-    expect(screen.getByTestId(`ward-bed-release-${release.id}`), "the release is still pending").toBeInTheDocument();
+    expect(
+      document.querySelector(`[data-admission-id="${release.admissionId}"]`),
+      "the stay is still on the ward",
+    ).not.toBeNull();
   });
 });

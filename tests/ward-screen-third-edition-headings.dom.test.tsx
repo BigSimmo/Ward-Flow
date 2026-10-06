@@ -184,10 +184,12 @@ describe("the ward screen's third-edition panel names", () => {
       const found = screen.getByRole("heading", { name: heading });
       expect(found, `the drawing names this panel "${heading}" and the screen does not`).toBeVisible();
     }
-    expect(
-      screen.getByRole("heading", { name: "Today’s return" }),
-      "the return panel is not the drawing's",
-    ).toBeVisible();
+    for (const heading of ["Staffing", "Intake", "Leave", "Departures"]) {
+      expect(
+        screen.getByRole("heading", { name: heading, exact: true }),
+        `the decisions queue is missing "${heading}"`,
+      ).toBeVisible();
+    }
   });
 
   it("gives each renamed panel the matching LANDMARK label, not only the heading", () => {

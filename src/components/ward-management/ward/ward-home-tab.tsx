@@ -191,7 +191,9 @@ export function WardHomeTab({
                     {unitLeaveBedsCount}
                   </span>
                   <span className={styles.censusBoxFoot}>
-                    {unitLeaveBeds.length === 0 ? "None out" : `Back ${formatInstant(unitLeaveBeds[0].expectedReturn)}`}
+                    {unitLeaveBeds.length === 0
+                      ? "None out"
+                      : `Back ${formatInstantWithDay(unitLeaveBeds[0].expectedReturn, now)}`}
                   </span>
                 </div>
               </div>

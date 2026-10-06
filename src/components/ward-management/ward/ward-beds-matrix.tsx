@@ -499,6 +499,7 @@ export function WardBedsMatrix({
                     key={bed.bedNumber}
                     className={cardClasses}
                     data-testid={`ward-bed-card-${bed.bedNumber}`}
+                    data-admission-id={bed.admissionId}
                     data-state={bed.status}
                     onClick={() => handleBedClick(bed)}
                     aria-label={formatBedAriaLabel(bed)}
