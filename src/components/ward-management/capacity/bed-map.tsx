@@ -930,16 +930,20 @@ export function BedMap({
   const renderedGroups = service ? groups.filter((group) => group.service === service) : groups;
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return;
+    const sections = Array.from(mapRef.current?.querySelectorAll<HTMLElement>("[data-service]") ?? []);
     const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (visible) setActiveService((visible.target as HTMLElement).dataset.service);
+      () => {
+        // An observer batch contains only changed intersections. A preceding service's trailing
+        // edge can still be visible after jumping, so choose from current section positions.
+        const visible = sections
+          .map((section) => ({ section, bounds: section.getBoundingClientRect() }))
+          .filter(({ bounds }) => bounds.bottom > 80 && bounds.top < window.innerHeight * 0.65)
+          .sort((a, b) => Math.abs(a.bounds.top - 80) - Math.abs(b.bounds.top - 80))[0];
+        if (visible) setActiveService(visible.section.dataset.service);
       },
-      { rootMargin: "-80px 0px -65% 0px", threshold: 0 },
+      { rootMargin: "-80px 0px -35% 0px", threshold: 0 },
     );
-    mapRef.current?.querySelectorAll("[data-service]").forEach((node) => observer.observe(node));
+    sections.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
   }, [service, layout, bedDetail]);
   return (
