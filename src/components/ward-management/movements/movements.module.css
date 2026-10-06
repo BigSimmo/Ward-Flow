@@ -399,7 +399,7 @@
 }
 
 .boardTabCount {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -465,7 +465,7 @@
 }
 
 .orderBtnBadge {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -566,7 +566,7 @@
 }
 
 .transportFilterCount {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -700,7 +700,7 @@
 }
 
 .transportRunId {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--ward-heading);
@@ -886,62 +886,17 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 .drawerSheetContent {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   max-width: min(96vw, 56rem) !important;
   max-height: min(96dvh, 54rem) !important;
-  --accent: var(--primary, #2563eb);
-  --accent-soft: var(--primary-soft, #eff6ff);
-  --accent-border: var(--clinical-accent-border, #bfdbfe);
-  --accent-ink: var(--primary-strong, #1d4ed8);
-  --surface: var(--surface-raised, #ffffff);
-  --surface-2: var(--surface-subtle, #f8fafc);
-  --surface-sunk: var(--surface-inset, #e2e8f0);
-  --border: var(--border, #e3e8ef);
-  --border-strong: var(--border-strong, #cbd5e1);
-  --line: var(--border, #e3e8ef);
-  --ink: var(--text-heading, #0f172a);
-  --ink-soft: var(--text, #334155);
-  --muted: var(--text-muted, #64748b);
-  --good: var(--green-500, #16a34a);
-  --good-soft: #f0fdf4;
-  --good-border: #bbf7d0;
-  --good-ink: #15803d;
-  --warn: var(--amber-500, #d97706);
-  --warn-soft: #fffbeb;
-  --warn-border: #fde68a;
-  --warn-ink: #b45309;
-  --danger: var(--red-500, #dc2626);
-  --danger-soft: #fef2f2;
-  --danger-border: #fecaca;
-  --danger-ink: #b91c1c;
-}
-
-:global([data-theme="dark"]) .drawerSheetContent,
-:global(.dark) .drawerSheetContent {
-  --accent: #3b82f6;
-  --accent-soft: rgba(59, 130, 246, 0.16);
-  --accent-border: rgba(96, 165, 250, 0.35);
-  --accent-ink: #93c5fd;
-  --surface: #0f172a;
-  --surface-2: #1e293b;
-  --surface-sunk: #020617;
-  --border: #334155;
-  --border-strong: #475569;
-  --line: #334155;
-  --ink: #f8fafc;
-  --ink-soft: #e2e8f0;
-  --muted: #94a3b8;
-  --good: #22c55e;
-  --good-soft: rgba(34, 197, 94, 0.16);
-  --good-border: rgba(74, 222, 128, 0.35);
-  --good-ink: #4ade80;
-  --warn: #f59e0b;
-  --warn-soft: rgba(245, 158, 11, 0.16);
-  --warn-border: rgba(251, 191, 36, 0.35);
-  --warn-ink: #fde68a;
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.16);
-  --danger-border: rgba(248, 113, 113, 0.35);
-  --danger-ink: #fca5a5;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: var(--body);
+  --good-ink: var(--good);
+  --warn-ink: var(--warn);
+  --danger-border: color-mix(in srgb, var(--danger) 45%, transparent);
+  --border-strong: var(--line-strong);
 }
 
 .drawerSheetBody {
@@ -954,16 +909,16 @@
 .drawerAvatarMonogram {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--r1);
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
-  color: #ffffff;
+  color: var(--on-accent);
   font-weight: 800;
   font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  box-shadow: var(--lift);
 }
 
 .drawerSubline {
@@ -977,13 +932,13 @@
 }
 
 .drawerUmrnBadge {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--surface-2);
-  border: 1px solid var(--line, #cbd5e1);
+  border: 1px solid var(--line);
   color: var(--ink-soft);
 }
 
@@ -1014,10 +969,10 @@
 .corridorCard {
   background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
   border: 1px solid var(--accent-border);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--r1);
   padding: 0.625rem 0.75rem;
   margin: 0 0 0.5rem;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04));
+  box-shadow: var(--lift);
 }
 
 .corridorTitleRow {
@@ -1087,8 +1042,8 @@
   gap: 0.625rem;
   align-items: stretch;
   background: var(--surface);
-  border: 1px solid var(--line, #e2e8f0);
-  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
   padding: 0.5rem 0.75rem;
 }
 
@@ -1101,26 +1056,26 @@
 
 .corridorHub {
   background: var(--surface-2);
-  border: 1px solid var(--line, #cbd5e1);
-  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
   padding: 0.45rem 0.625rem;
   min-width: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--lift);
 }
 
 .corridorHubAccepted {
   background: var(--accent-soft);
-  border: 1px solid var(--accent-border, #93c5fd);
-  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r2);
   padding: 0.45rem 0.625rem;
   min-width: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--lift);
 }
 
 .hubRole {
@@ -1214,7 +1169,7 @@
 .transitTrack {
   width: 100%;
   height: 6px;
-  background: var(--surface-sunk, #e2e8f0);
+  background: var(--surface-sunk);
   border-radius: 9999px;
   position: relative;
   overflow: hidden;
@@ -1229,7 +1184,7 @@
 }
 
 .transitVehicle {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.6875rem;
   font-weight: 700;
   color: var(--ink);
@@ -1245,7 +1200,7 @@
 .whereaboutsBanner {
   background: var(--surface);
   border: 1px solid var(--accent-border);
-  border-radius: var(--radius-sm, 8px);
+  border-radius: var(--r1);
   padding: 0.45rem 0.75rem;
   display: flex;
   align-items: center;
@@ -1304,8 +1259,8 @@
 
 .telemetryBox {
   background: var(--surface);
-  border: 1px solid var(--line, #e2e8f0);
-  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
   padding: 0.5rem 0.75rem;
 }
 
@@ -1337,6 +1292,10 @@
   color: var(--muted);
 }
 
+.telemetryMono {
+  font-family: var(--mono);
+}
+
 .textDanger {
   color: var(--danger-ink);
   font-weight: 700;
@@ -1354,7 +1313,7 @@
 
 /* Flow Check Banner */
 .flowCheckBanner {
-  border-radius: var(--radius-sm, 8px);
+  border-radius: var(--r1);
   padding: 0.45rem 0.75rem;
   display: flex;
   align-items: center;
@@ -1404,10 +1363,10 @@
 
 .actionBtnPrimary {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
   border: none;
   padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--r2);
   font-size: 0.75rem;
   font-weight: 700;
   min-height: 2.125rem;
@@ -1431,7 +1390,7 @@
   color: var(--ink);
   border: 1px solid var(--border-strong, var(--line));
   padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--r2);
   font-size: 0.75rem;
   font-weight: 600;
   min-height: 2.125rem;
@@ -1452,7 +1411,7 @@
   color: var(--danger-ink);
   border: 1px solid var(--danger-border);
   padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--r2);
   font-size: 0.75rem;
   font-weight: 700;
   min-height: 2.125rem;
@@ -1465,7 +1424,7 @@
 
 .actionUrgentBtn:hover:not([aria-disabled="true"]) {
   background: var(--danger);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .actionUrgentBtn[aria-disabled="true"] {
@@ -1478,7 +1437,7 @@
   color: var(--danger-ink);
   border: 1px solid var(--danger-border);
   padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--r2);
   font-size: 0.75rem;
   font-weight: 700;
   min-height: 2.125rem;
@@ -1491,14 +1450,14 @@
 
 .actionUrgentRemove:hover {
   background: var(--danger);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 /* Statutory Accordion */
 .auditAccordion {
   margin-top: 0.5rem;
-  border: 1px solid var(--line, #e2e8f0);
-  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -1529,226 +1488,12 @@
 
 .auditSummaryBadge {
   font-size: 0.6875rem;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 9999px;
   background: var(--line);
   color: var(--muted);
-}
-
-/* ═════════════════════════════════════════════════════════════════════════
-   DARK MODE HIGH-CONTRAST SPECIFIC OVERRIDES
-   ═════════════════════════════════════════════════════════════════════════ */
-
-:global([data-theme="dark"]) .corridorCard,
-:global(.dark) .corridorCard {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
-  border-color: rgba(96, 165, 250, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-:global([data-theme="dark"]) .corridorHub,
-:global(.dark) .corridorHub {
-  background: #1e293b;
-  border-color: #334155;
-}
-
-:global([data-theme="dark"]) .corridorHubAccepted,
-:global(.dark) .corridorHubAccepted {
-  background: rgba(30, 58, 138, 0.35);
-  border-color: rgba(96, 165, 250, 0.45);
-}
-
-:global([data-theme="dark"]) .hubRole,
-:global(.dark) .hubRole {
-  color: #94a3b8;
-}
-
-:global([data-theme="dark"]) .corridorHubAccepted .hubRole,
-:global(.dark) .corridorHubAccepted .hubRole {
-  color: #93c5fd;
-}
-
-:global([data-theme="dark"]) .hubName,
-:global(.dark) .hubName {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .hubMeta,
-:global(.dark) .hubMeta {
-  color: #cbd5e1;
-}
-
-:global([data-theme="dark"]) .hubFoot,
-:global(.dark) .hubFoot {
-  border-top-color: #334155;
-  color: #94a3b8;
-}
-
-:global([data-theme="dark"]) .hubFoot strong,
-:global(.dark) .hubFoot strong {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .corridorHubAccepted .hubFoot,
-:global(.dark) .corridorHubAccepted .hubFoot {
-  border-top-color: rgba(96, 165, 250, 0.3);
-  color: #93c5fd;
-}
-
-:global([data-theme="dark"]) .corridorWardLink,
-:global(.dark) .corridorWardLink {
-  color: #60a5fa;
-}
-
-:global([data-theme="dark"]) .transitBadge,
-:global(.dark) .transitBadge {
-  background: rgba(30, 58, 138, 0.5);
-  color: #93c5fd;
-  border-color: rgba(96, 165, 250, 0.4);
-}
-
-:global([data-theme="dark"]) .transitTrack,
-:global(.dark) .transitTrack {
-  background: #1e293b;
-}
-
-:global([data-theme="dark"]) .transitVehicle,
-:global(.dark) .transitVehicle {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .transitEta,
-:global(.dark) .transitEta {
-  color: #cbd5e1;
-}
-
-:global([data-theme="dark"]) .whereaboutsBanner,
-:global(.dark) .whereaboutsBanner {
-  background: #151f32;
-  border-color: rgba(96, 165, 250, 0.3);
-}
-
-:global([data-theme="dark"]) .whereaboutsIconBox,
-:global(.dark) .whereaboutsIconBox {
-  background: rgba(30, 58, 138, 0.5);
-  color: #60a5fa;
-  border-color: rgba(96, 165, 250, 0.4);
-}
-
-:global([data-theme="dark"]) .whereaboutsHeading,
-:global(.dark) .whereaboutsHeading {
-  color: #93c5fd;
-}
-
-:global([data-theme="dark"]) .whereaboutsText,
-:global(.dark) .whereaboutsText {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .telemetryBox,
-:global(.dark) .telemetryBox {
-  background: #151f32;
-  border-color: #334155;
-}
-
-:global([data-theme="dark"]) .telemetryTitle,
-:global(.dark) .telemetryTitle {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .telemetryItem,
-:global(.dark) .telemetryItem {
-  border-bottom-color: #243247;
-}
-
-:global([data-theme="dark"]) .telemetryLabel,
-:global(.dark) .telemetryLabel {
-  color: #94a3b8;
-}
-
-:global([data-theme="dark"]) .telemetryItem strong,
-:global(.dark) .telemetryItem strong {
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .actionBtnSecondary,
-:global(.dark) .actionBtnSecondary {
-  background: #1e293b;
-  border-color: #475569;
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .actionBtnSecondary:hover,
-:global(.dark) .actionBtnSecondary:hover {
-  background: #334155;
-  border-color: #64748b;
-  color: #ffffff;
-}
-
-:global([data-theme="dark"]) .flowCheckGood,
-:global(.dark) .flowCheckGood {
-  background: rgba(22, 101, 52, 0.25);
-  border-color: rgba(74, 222, 128, 0.4);
-  color: #86efac;
-}
-
-:global([data-theme="dark"]) .flowCheckGood strong,
-:global(.dark) .flowCheckGood strong {
-  color: #bbf7d0;
-}
-
-:global([data-theme="dark"]) .flowCheckBlocked,
-:global(.dark) .flowCheckBlocked {
-  background: rgba(185, 28, 28, 0.25);
-  border-color: rgba(248, 113, 113, 0.4);
-  color: #fca5a5;
-}
-
-:global([data-theme="dark"]) .flowCheckBlocked strong,
-:global(.dark) .flowCheckBlocked strong {
-  color: #fecaca;
-}
-
-:global([data-theme="dark"]) .auditAccordion,
-:global(.dark) .auditAccordion {
-  background: #151f32;
-  border-color: #334155;
-}
-
-:global([data-theme="dark"]) .auditSummary,
-:global(.dark) .auditSummary {
-  color: #cbd5e1;
-}
-
-:global([data-theme="dark"]) .auditSummary:hover,
-:global(.dark) .auditSummary:hover {
-  background: #1e293b;
-  color: #f8fafc;
-}
-
-:global([data-theme="dark"]) .auditSummaryBadge,
-:global(.dark) .auditSummaryBadge {
-  background: #334155;
-  color: #94a3b8;
-}
-
-.drawerSheetContent .drawerReasonSelect {
-  min-height: 2.125rem;
-  font-size: 0.75rem;
-  padding: 0.35rem 0.625rem;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm, 6px);
-}
-
-:global([data-theme="dark"]) .drawerSheetContent .drawerReasonSelect,
-:global(.dark) .drawerSheetContent .drawerReasonSelect {
-  background: #1e293b;
-  color: #f8fafc;
-  border-color: #475569;
 }
 
 .auditSummaryChevron {
@@ -2445,7 +2190,7 @@
 }
 .stageSummaryLink strong {
   text-align: right;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -2660,7 +2405,7 @@
 }
 
 .shapeTab strong {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;

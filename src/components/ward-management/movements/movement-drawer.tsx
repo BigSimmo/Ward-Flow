@@ -32,7 +32,12 @@ import {
   changeReasonLabels,
   type UrgentMarkReason,
 } from "@/components/ward-management/ward-change-reasons";
-import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  ED_ACCESS_TARGET_MINUTES,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 
 import styles from "./movements.module.css";
 
@@ -266,7 +271,8 @@ export function MovementDrawer({
 
   const waitMinutes = Math.max(now - movement.openedAt, 0);
   const totalWaitFormatted = splitDuration(waitMinutes);
-  const isTargetBreached = waitMinutes > 240;
+  const accessTargetMinutes = ED_ACCESS_TARGET_MINUTES;
+  const pastAccessTarget = waitMinutes > accessTargetMinutes;
 
   const progressPct = getProgressPercent(movement.stage);
 
@@ -358,9 +364,7 @@ export function MovementDrawer({
             <div className={styles.transitVehicle}>
               {movement.transport?.cadNumber ? `CAD #${movement.transport.cadNumber}` : "Dispatch Pending"}
             </div>
-            <div className={styles.transitEta}>
-              {movement.stage === "moving" ? "ETA: Approx 20–35m" : stageCopy[movement.stage].label}
-            </div>
+            <div className={styles.transitEta}>{stageCopy[movement.stage].label}</div>
           </div>
 
           {/* Target Hub */}
@@ -422,9 +426,7 @@ export function MovementDrawer({
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>CAD booking #:</span>
-            <strong style={{ fontFamily: "var(--font-mono, monospace)" }}>
-              {movement.transport?.cadNumber ?? "—"}
-            </strong>
+            <strong className={styles.telemetryMono}>{movement.transport?.cadNumber ?? "—"}</strong>
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>Clinical escort:</span>
@@ -447,18 +449,18 @@ export function MovementDrawer({
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>Time waiting:</span>
-            <strong style={{ fontFamily: "var(--font-mono, monospace)" }}>{totalWaitFormatted}</strong>
+            <strong className={styles.telemetryMono}>{totalWaitFormatted}</strong>
           </div>
           <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>WA Health target:</span>
-            <span>&lt; 4 hours</span>
+            <span className={styles.telemetryLabel}>ED access target:</span>
+            <span className={styles.telemetryMono}>{splitDuration(accessTargetMinutes)}</span>
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>Target status:</span>
-            <strong className={isTargetBreached ? styles.textDanger : styles.textGood}>
-              {isTargetBreached
-                ? `Over target by ${splitDuration(waitMinutes - 240)}`
-                : `On track (${splitDuration(240 - waitMinutes)} left)`}
+            <strong className={pastAccessTarget ? styles.textDanger : styles.textGood}>
+              {pastAccessTarget
+                ? `Past access target by ${splitDuration(waitMinutes - accessTargetMinutes)}`
+                : `Within access target (${splitDuration(accessTargetMinutes - waitMinutes)} left)`}
             </strong>
           </div>
         </div>
