@@ -75,6 +75,14 @@
   font-variant-numeric: tabular-nums;
   color: var(--ward-muted);
 }
+
+.panelHeaderEnd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
 .panelBlurb {
   margin: 0;
   padding: var(--ward-space-12) var(--ward-space-16) 0;
@@ -139,6 +147,10 @@
   font-size: var(--t-0);
   font-weight: 400;
   white-space: normal;
+}
+
+[data-ward-design="third-edition"] .panelHeaderEnd .panelCount {
+  margin-left: 0;
 }
 
 [data-ward-design="third-edition"] .panelBlurb {

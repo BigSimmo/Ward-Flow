@@ -24,6 +24,7 @@ export function WardPanel({
   headingLevel = 2,
   testId,
   dataTabSection,
+  headerAction,
   children,
 }: {
   title: string;
@@ -35,9 +36,16 @@ export function WardPanel({
   headingLevel?: 2 | 3;
   testId?: string;
   dataTabSection?: string;
+  /** Optional control rendered in the header corner, after the count. */
+  headerAction?: ReactNode;
   children: ReactNode;
 }) {
   const Heading = headingLevel === 3 ? "h3" : "h2";
+  const countNode = count ? (
+    <span className={styles.panelCount} data-ward-panel-count>
+      {count}
+    </span>
+  ) : null;
   return (
     <section
       className={styles.panel}
@@ -52,11 +60,14 @@ export function WardPanel({
       >
         <Heading className={styles.panelTitle}>{title}</Heading>
         {blurb && blurbInHeader ? <p className={styles.headerBlurb}>{blurb}</p> : null}
-        {count ? (
-          <span className={styles.panelCount} data-ward-panel-count>
-            {count}
-          </span>
-        ) : null}
+        {headerAction ? (
+          <div className={styles.panelHeaderEnd}>
+            {countNode}
+            {headerAction}
+          </div>
+        ) : (
+          countNode
+        )}
       </header>
       {blurb && !blurbInHeader ? <p className={styles.panelBlurb}>{blurb}</p> : null}
       {children}
