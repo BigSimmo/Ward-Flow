@@ -711,7 +711,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
     // The role switcher renders its own labelled control — asserting the heading it sits under
     // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Scenario and clock")).toBeInTheDocument();
+    expect(withinDialog.getByText("Demonstration")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {
