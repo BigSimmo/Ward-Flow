@@ -8408,3 +8408,27 @@ Automated verification summary:
   - `tests/ward-capacity-network-fold.dom.test.tsx` (7/7 passed)
   - Full TypeScript typecheck: 0 errors
   - ESLint & Prettier: 100% clean
+
+### TASK-DRAWER-POLISH-2026-10-07 — compact patient task inbox
+
+Completed local implementation on `codex/tasks-polish`, based on verified Ward Flow main
+`20105cfe75cf0a0f8be80d270cb4d25afb593aff`. Scope: retain the accepted drawer and palette while
+removing task search, tightening spacing and curves, bordering action buttons, and refining the
+state select and urgency badges. Explicit patient resolution supplies name and UMRN, origin,
+current stage and recorded escalation; redundant owner text is omitted. Task category icons and
+separate Critical/Past due labels avoid describing every critical issue as an overdue deadline.
+
+Refer opens the same patient's live ward shortlist; Contact opens their coordination contacts.
+Escalate records a contact through `RECORD_ESCALATION` and does not transmit a message.
+Acknowledged and completed states are selectable. All currently derived categories are standing
+facts: acknowledgement never resolves them and the completed view explains its empty state.
+Existing commitment completion/reopening controls and reducer restrictions remain intact.
+
+Validation: 40 tests passed across task drawer, shell role visibility, patient flight deck and
+inbox reducer suites; full TypeScript check and scoped ESLint passed. Chromium interaction and
+visual checks covered light/dark desktop, narrow/short phones, actual touch emulation with 48px
+controls, search removal, filters, acknowledgement retained during client navigation, escalation
+recording, referral/contact destinations, scrolling, overflow and keyboard focus return. Evidence
+is local to this worktree at `.local/tasks-polish/result.json` and its accompanying screenshots.
+The synthetic provider's existing session behaviour is retained; no save/reload or backend
+persistence claim is made. Local engineering only; no publication or deployment performed.

@@ -1,9 +1,32 @@
 "use client";
 
-import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, Search, X } from "lucide-react";
+import {
+  CheckCircle2,
+  CheckSquare,
+  ListChecks,
+  RotateCcw,
+  ShieldAlert,
+  UserCheck,
+  Search,
+  X,
+  ArrowUpRight,
+  Phone,
+  Send,
+  ChevronDown,
+  CircleAlert,
+  Clock,
+  BedDouble,
+  FileClock,
+  Hospital,
+} from "lucide-react";
 import { useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { resolveSubjectPatient } from "./ward-patient-resolver";
+import { edById } from "./ward-sites";
+import { stageCopy } from "./ward-derivations";
+import type { Movement, Referral, Unit } from "./ward-model";
+import type { Patient } from "./ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
@@ -23,7 +46,13 @@ type WardTasksDrawerProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
-  onSelectMovement: (movementId: string) => void;
+  onSelectMovement: (movementId: string, action?: "refer" | "contact") => void;
+  records?: {
+    movements: readonly Movement[];
+    patients: readonly Patient[];
+    referrals: readonly Referral[];
+    units: readonly Unit[];
+  };
   withBackdrop?: boolean;
 };
 
@@ -36,12 +65,14 @@ export function WardTasksDrawer({
   dispatch,
   onClose,
   onSelectMovement,
+  records,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
 
-  const [query, setQuery] = useState("");
+  const [escalating, setEscalating] = useState<string | null>(null);
+  const [contact, setContact] = useState("");
   const [ackFilter, setAckFilter] = useState("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
 
@@ -66,8 +97,7 @@ export function WardTasksDrawer({
   const facts = items.filter((item) => item.kind === "fact");
   const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
 
-  const commitments = items.filter((item) => item.kind === "commitment");
-  const openCommitments = commitments.filter((item) => inboxItemCompletionState(completions[item.id]) !== "complete");
+  const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
   const filteredItems = items.filter((item) => {
     if (taskFilter === "critical" && item.tone !== "danger") return false;
@@ -75,11 +105,103 @@ export function WardTasksDrawer({
     const acknowledged = Boolean(acknowledgements[item.id]?.length);
     if (ackFilter === "unacknowledged" && (item.kind !== "fact" || acknowledged)) return false;
     if (ackFilter === "acknowledged" && (item.kind !== "fact" || !acknowledged)) return false;
-    return `${item.title} ${item.detail} ${item.owner}`.toLowerCase().includes(query.trim().toLowerCase());
+    const completed = item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
+    if (ackFilter === "completed" && !completed) return false;
+    if (ackFilter === "open" && completed) return false;
+    return true;
   });
   const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
   const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
   const visibleUnacknowledged = filteredFacts.filter((item) => !acknowledgements[item.id]?.length);
+
+  function renderMovementActions(item: InboxItem, movement?: Movement) {
+    return (
+      <>
+        {movement && !movement.closure && movement.stage !== "arrived" ? (
+          <>
+            {!movement.acceptedUnitId ? (
+              <button
+                type="button"
+                className={styles.btnMovement}
+                onClick={() => onSelectMovement(item.movementId, "refer")}
+              >
+                <Send aria-hidden="true" />
+                Refer
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={styles.btnMovement}
+              onClick={() => onSelectMovement(item.movementId, "contact")}
+            >
+              <Phone aria-hidden="true" />
+              Contact
+            </button>
+            {role === "coordinator" ? (
+              <button
+                type="button"
+                className={styles.btnMovement}
+                aria-expanded={escalating === item.id}
+                onClick={() => {
+                  setEscalating(escalating === item.id ? null : item.id);
+                  setContact(movement.escalation?.contact ?? "");
+                }}
+              >
+                <CircleAlert aria-hidden="true" />
+                Escalate
+              </button>
+            ) : null}
+          </>
+        ) : null}
+        {escalating === item.id && movement ? (
+          <form
+            className={styles.escalationForm}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!contact.trim()) return;
+              dispatch({
+                type: "RECORD_ESCALATION",
+                role,
+                now,
+                movementId: movement.id,
+                triedUnitIds: [...new Set(movement.declines.map((decline) => decline.unitId))],
+                contact: contact.trim(),
+              });
+              event.currentTarget.closest("li")?.querySelector<HTMLButtonElement>("button[aria-expanded]")?.focus();
+              setEscalating(null);
+              setContact("");
+            }}
+          >
+            <label>
+              Who did you escalate to?
+              <input
+                autoFocus
+                required
+                maxLength={160}
+                value={contact}
+                onChange={(event) => setContact(event.target.value)}
+                placeholder="Contact name or service"
+              />
+            </label>
+            <p>Record an escalation you have made. This does not send a message.</p>
+            <button type="submit" className={styles.btnAckFact} disabled={!contact.trim()}>
+              Record escalation
+            </button>
+            <button
+              type="button"
+              className={styles.btnMovement}
+              onClick={(event) => {
+                event.currentTarget.closest("li")?.querySelector<HTMLButtonElement>("button[aria-expanded]")?.focus();
+                setEscalating(null);
+              }}
+            >
+              Cancel
+            </button>
+          </form>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -126,19 +248,10 @@ export function WardTasksDrawer({
               <span>To acknowledge</span>
             </div>
             <div>
-              <strong>{openCommitments.length}</strong>
-              <span>Open commitments</span>
+              <strong>{acknowledgedFactsCount}</strong>
+              <span>Acknowledged</span>
             </div>
           </div>
-          <label className={styles.search}>
-            <Search aria-hidden="true" />
-            <input
-              aria-label="Search tasks"
-              placeholder="Search task, movement or owner…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
           <div className={styles.taskFilterTrack} role="group" aria-label="Filter tasks by status">
             <button
               type="button"
@@ -168,17 +281,22 @@ export function WardTasksDrawer({
 
           <div className={styles.filterMeta}>
             <span role="status">
-              {filteredItems.length} of {items.length} invented tasks
+              {filteredItems.length} of {items.length} tasks
             </span>
-            <select
-              aria-label="Filter acknowledgement state"
-              value={ackFilter}
-              onChange={(event) => setAckFilter(event.target.value)}
-            >
-              <option value="all">All acknowledgement states</option>
-              <option value="unacknowledged">Not yet acknowledged</option>
-              <option value="acknowledged">Acknowledged</option>
-            </select>
+            <div className={styles.selectWrap}>
+              <select
+                aria-label="Filter task state"
+                value={ackFilter}
+                onChange={(event) => setAckFilter(event.target.value)}
+              >
+                <option value="all">All task states</option>
+                <option value="open">Open tasks</option>
+                <option value="unacknowledged">Not yet acknowledged</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="completed">Completed</option>
+              </select>
+              <ChevronDown aria-hidden="true" />
+            </div>
           </div>
         </div>
         <div className={styles.drawerBody}>
@@ -189,13 +307,16 @@ export function WardTasksDrawer({
           ) : filteredItems.length === 0 ? (
             <div className={styles.empty}>
               <Search aria-hidden="true" />
-              <h3>No matching tasks</h3>
-              <p>Try another name, owner or filter.</p>
+              <h3>{ackFilter === "completed" ? "No completed tasks" : "No matching tasks"}</h3>
+              <p>
+                {ackFilter === "completed"
+                  ? "Completed commitments appear here. Standing facts remain open until the underlying issue is resolved."
+                  : "Choose another status or clear the filters."}
+              </p>
               <button
                 type="button"
                 className={styles.btnMovement}
                 onClick={() => {
-                  setQuery("");
                   setTaskFilter("all");
                   setAckFilter("all");
                 }}
@@ -211,7 +332,7 @@ export function WardTasksDrawer({
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
                       <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
-                      <span>Recorded forms</span>
+                      <span>Tasks requiring attention</span>
                     </h3>
                     <span className={styles.taskStripBadge} style={{ color: "var(--danger)", fontWeight: 700 }}>
                       {filteredFacts.length} recorded
@@ -222,7 +343,18 @@ export function WardTasksDrawer({
                     {filteredFacts.map((item) => {
                       const ackHistory = acknowledgements[item.id] ?? [];
                       const latestAck = ackHistory.length > 0 ? ackHistory[ackHistory.length - 1] : undefined;
-                      const Icon = item.icon;
+                      const movement = records?.movements.find((row) => row.id === item.movementId);
+                      const patient = records ? resolveSubjectPatient(movement, records) : undefined;
+                      const overdue = /due time passed|expired/i.test(item.title);
+                      const Icon = /transport/i.test(item.title)
+                        ? item.icon
+                        : /legal/i.test(item.title)
+                          ? FileClock
+                          : /bed pull/i.test(item.title)
+                            ? BedDouble
+                            : /destination/i.test(item.title)
+                              ? Hospital
+                              : item.icon;
 
                       return (
                         <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
@@ -242,21 +374,36 @@ export function WardTasksDrawer({
                                   className={styles.rowSelect}
                                   onClick={() => onSelectMovement(item.movementId)}
                                 >
-                                  <span className={styles.taskStripPatient}>{item.title}</span>
+                                  <span className={styles.taskStripPatient}>
+                                    {patient?.displayName ?? "Patient not linked"}
+                                  </span>
                                 </button>
                                 <span
                                   className={`${styles.taskStripBadge} ${
                                     item.tone === "danger" ? styles.taskStripBadgeUrgent : styles.taskStripBadgeWarn
                                   }`}
                                 >
-                                  {item.tone === "danger" ? "Past Due / Critical" : "Review Due"}
+                                  <CircleAlert aria-hidden="true" />
+                                  {item.tone === "danger" ? (overdue ? "Past due" : "Critical") : "Review"}
                                 </span>
                               </div>
+                              <p className={styles.patientMeta}>
+                                {patient?.patient ? `UMRN ${patient.umrn}` : "UMRN not recorded"}
+                                {movement ? ` · ${edById(movement.originEdId)?.name ?? "Origin not recorded"}` : ""}
+                              </p>
+                              <p className={styles.taskTitle}>{item.title}</p>
                               <div className={styles.taskStripRow2}>
                                 <span className={styles.taskStripSub}>
-                                  {item.detail} · {item.owner}
+                                  {item.detail.replace(`${item.movementId} · `, "")}
                                 </span>
                               </div>
+                              {movement ? (
+                                <p className={styles.patientMeta}>
+                                  <Clock aria-hidden="true" />
+                                  {stageCopy[movement.stage].label}
+                                  {movement.escalation ? ` · Escalated to ${movement.escalation.contact}` : ""}
+                                </p>
+                              ) : null}
                             </div>
                           </div>
 
@@ -271,13 +418,15 @@ export function WardTasksDrawer({
                               className={styles.btnMovement}
                               onClick={() => onSelectMovement(item.movementId)}
                             >
-                              <span>Open movement</span>
+                              <ArrowUpRight aria-hidden="true" />
+                              <span>Open patient</span>
                             </button>
+                            {renderMovementActions(item, movement)}
 
                             {latestAck ? (
                               <span className={styles.ackStatus} data-testid={`ward-task-ack-${item.id}`}>
                                 <UserCheck aria-hidden="true" style={{ width: 13, height: 13 }} />
-                                Acknowledged by {latestAck.by} · {formatInstantWithDay(latestAck.at, now)}
+                                Acknowledged · {formatInstantWithDay(latestAck.at, now)}
                                 {ackHistory.length > 1 ? ` (${ackHistory.length})` : ""}
                               </span>
                             ) : null}
@@ -295,7 +444,7 @@ export function WardTasksDrawer({
                   <div className={styles.taskSectionHeader}>
                     <h3 className={styles.taskSectionTitle}>
                       <ListChecks aria-hidden="true" style={{ width: 14, height: 14 }} />
-                      <span>Operational Commitments</span>
+                      <span>Operational commitments</span>
                     </h3>
                     <span className={styles.taskStripBadge} style={{ color: "var(--accent)", fontWeight: 700 }}>
                       {filteredCommitments.length} commitments
@@ -308,7 +457,18 @@ export function WardTasksDrawer({
                       const isComplete = inboxItemCompletionState(completionHistory) === "complete";
                       const latestCompletion =
                         isComplete && completionHistory ? completionHistory[completionHistory.length - 1] : undefined;
-                      const Icon = item.icon;
+                      const movement = records?.movements.find((row) => row.id === item.movementId);
+                      const patient = records ? resolveSubjectPatient(movement, records) : undefined;
+
+                      const Icon = /transport/i.test(item.title)
+                        ? item.icon
+                        : /legal/i.test(item.title)
+                          ? FileClock
+                          : /bed pull/i.test(item.title)
+                            ? BedDouble
+                            : /destination/i.test(item.title)
+                              ? Hospital
+                              : item.icon;
 
                       return (
                         <li key={item.id} className={styles.taskStrip} data-tone={item.tone}>
@@ -324,17 +484,31 @@ export function WardTasksDrawer({
                                   className={styles.rowSelect}
                                   onClick={() => onSelectMovement(item.movementId)}
                                 >
-                                  <span className={styles.taskStripPatient}>{item.title}</span>
+                                  <span className={styles.taskStripPatient}>
+                                    {patient?.displayName ?? "Patient not linked"}
+                                  </span>
                                 </button>
                                 <span className={styles.taskStripBadge}>
                                   {isComplete ? "Completed" : "Open commitment"}
                                 </span>
                               </div>
+                              <p className={styles.patientMeta}>
+                                {patient?.patient ? `UMRN ${patient.umrn}` : "UMRN not recorded"}
+                                {movement ? ` · ${edById(movement.originEdId)?.name ?? "Origin not recorded"}` : ""}
+                              </p>
+                              <p className={styles.taskTitle}>{item.title}</p>
                               <div className={styles.taskStripRow2}>
                                 <span className={styles.taskStripSub}>
-                                  {item.detail} · {item.owner}
+                                  {item.detail.replace(`${item.movementId} · `, "")}
                                 </span>
                               </div>
+                              {movement ? (
+                                <p className={styles.patientMeta}>
+                                  <Clock aria-hidden="true" />
+                                  {stageCopy[movement.stage].label}
+                                  {movement.escalation ? ` · Escalated to ${movement.escalation.contact}` : ""}
+                                </p>
+                              ) : null}
                             </div>
                           </div>
 
@@ -371,8 +545,10 @@ export function WardTasksDrawer({
                               className={styles.btnMovement}
                               onClick={() => onSelectMovement(item.movementId)}
                             >
-                              <span>Open movement</span>
+                              <ArrowUpRight aria-hidden="true" />
+                              <span>Open patient</span>
                             </button>
+                            {renderMovementActions(item, movement)}
 
                             {latestCompletion ? (
                               <span className={styles.doneStatus} data-testid={`ward-task-done-${item.id}`}>
