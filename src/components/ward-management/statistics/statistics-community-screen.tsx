@@ -253,18 +253,15 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
 
       {/* Preservation of required accessible details and testids */}
       <div className={pageStyles.pageGrid}>
-        <details className={`${pageStyles.measureDetails} source-print`}>
-          <summary>Reporting window &amp; scope</summary>
-          <WardPanel title={team.name} testId="ward-statistics-community-identity">
-            <div className={styles.panelBody} role="group" aria-label="Community team identity content" tabIndex={0}>
-              <p className={styles.note} data-testid="ward-statistics-community-scope-note">
-                <strong>Caseload</strong> is this team&apos;s fixed reporting window.{" "}
-                <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing here
-                opens a case, accepts a referral or books a contact.
-              </p>
-            </div>
-          </WardPanel>
-        </details>
+        <WardPanel title={team.name} testId="ward-statistics-community-identity">
+          <div className={styles.panelBody} role="group" aria-label="Community team identity content" tabIndex={0}>
+            <p className={styles.note} data-testid="ward-statistics-community-scope-note">
+              <strong>Caseload</strong> is this team&apos;s fixed reporting window.{" "}
+              <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing here
+              opens a case, accepts a referral or books a contact.
+            </p>
+          </div>
+        </WardPanel>
 
         <StatisticsDetailPanel title="Caseload" testId="ward-statistics-community-figures">
           <div className={styles.panelBody} role="group" aria-label="Community caseload content" tabIndex={0}>
@@ -280,77 +277,71 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 </div>
               ))}
             </div>
-            <details className={`${pageStyles.figureDetails} source-print`}>
-              <summary>How these figures are counted</summary>
-              <div className={pageStyles.figureDetailsBody}>
-                <WardTable testId="ward-statistics-community-figures-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Figure</th>
-                      <th scope="col">Count</th>
-                      <th scope="col">What it counts</th>
+            <div className={pageStyles.figureDetailsBody}>
+              <WardTable testId="ward-statistics-community-figures-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Figure</th>
+                    <th scope="col">Count</th>
+                    <th scope="col">What it counts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {figureRows.map((row) => (
+                    <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
+                      <th scope="row">{row.label}</th>
+                      <td
+                        data-testid={`ward-statistics-community-value-${row.key}`}
+                        data-unmeasured={isUnmeasured(row.figure) || undefined}
+                      >
+                        {figureText(row.figure)}
+                      </td>
+                      <td>{row.counts}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {figureRows.map((row) => (
-                      <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
-                        <th scope="row">{row.label}</th>
-                        <td
-                          data-testid={`ward-statistics-community-value-${row.key}`}
-                          data-unmeasured={isUnmeasured(row.figure) || undefined}
-                        >
-                          {figureText(row.figure)}
-                        </td>
-                        <td>{row.counts}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </WardTable>
+                  ))}
+                </tbody>
+              </WardTable>
 
-                {/*
+              {/*
             The scoped sentences. Each names the population its figure actually measured — see the
             file header on why widening the figure is the wrong repair.
           */}
-                {lists.currentlyAdmitted.length === 0 && resolution.state === "measured-empty" ? (
-                  <p className={styles.emptyNote} data-testid="ward-statistics-community-empty-measured">
-                    Every admission was checked against this team and none named it. Nobody referred to {team.name} is
-                    in a bed right now.
-                  </p>
-                ) : null}
-
-                {resolution.state === "not-computable" ? (
-                  <p className={styles.unmeasured} data-testid="ward-statistics-community-not-computable">
-                    This team&apos;s figures are not a measurement. {resolution.unresolvable}{" "}
-                    {resolution.unresolvable === 1 ? "admission carries a referral" : "admissions carry referrals"} that
-                    point at no referral held here, so the join that puts a person on a team cannot run for{" "}
-                    {resolution.unresolvable === 1 ? "that record" : "those records"}. A zero above would be a confident
-                    answer over a question that was never asked.
-                  </p>
-                ) : null}
-
-                {lists.currentlyAdmitted.length > 0 && lists.expectedBack.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-statistics-community-no-dates">
-                    No ward has written down a discharge date for anybody referred to {team.name}{" "}
-                    <strong>who is in a bed</strong>. This says nothing about people who have already left.
-                  </p>
-                ) : null}
-              </div>
-            </details>
-
-            <details className={`${pageStyles.measureDetails} source-print`}>
-              <summary>Case age distribution</summary>
-              <section
-                className={pageStyles.nestedMeasure}
-                data-testid="ward-statistics-community-case-age"
-                aria-labelledby="ward-statistics-community-case-age-heading"
-              >
-                <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
-                <p className={styles.unmeasured}>
-                  Not recorded. This prototype keeps no history of how long a case has stayed open, so there is no
-                  distribution to chart.
+              {lists.currentlyAdmitted.length === 0 && resolution.state === "measured-empty" ? (
+                <p className={styles.emptyNote} data-testid="ward-statistics-community-empty-measured">
+                  Every admission was checked against this team and none named it. Nobody referred to {team.name} is in
+                  a bed right now.
                 </p>
-              </section>
-            </details>
+              ) : null}
+
+              {resolution.state === "not-computable" ? (
+                <p className={styles.unmeasured} data-testid="ward-statistics-community-not-computable">
+                  This team&apos;s figures are not a measurement. {resolution.unresolvable}{" "}
+                  {resolution.unresolvable === 1 ? "admission carries a referral" : "admissions carry referrals"} that
+                  point at no referral held here, so the join that puts a person on a team cannot run for{" "}
+                  {resolution.unresolvable === 1 ? "that record" : "those records"}. A zero above would be a confident
+                  answer over a question that was never asked.
+                </p>
+              ) : null}
+
+              {lists.currentlyAdmitted.length > 0 && lists.expectedBack.length === 0 ? (
+                <p className={styles.emptyNote} data-testid="ward-statistics-community-no-dates">
+                  No ward has written down a discharge date for anybody referred to {team.name}{" "}
+                  <strong>who is in a bed</strong>. This says nothing about people who have already left.
+                </p>
+              ) : null}
+            </div>
+
+            <section
+              className={pageStyles.nestedMeasure}
+              data-testid="ward-statistics-community-case-age"
+              aria-labelledby="ward-statistics-community-case-age-heading"
+            >
+              <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
+              <p className={styles.unmeasured}>
+                Not recorded. This prototype keeps no history of how long a case has stayed open, so there is no
+                distribution to chart.
+              </p>
+            </section>
           </div>
         </StatisticsDetailPanel>
 
@@ -395,46 +386,43 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </div>
         </StatisticsDetailPanel>
 
-        <details className={`${pageStyles.unsupportedGroup} source-print`}>
-          <summary>Measures this record does not support</summary>
-          <div className={pageStyles.unsupportedGrid}>
-            <WardPanel title="Referrals into the team" testId="ward-statistics-community-referrals">
-              <div
-                id="community-stat-referrals"
-                className={styles.panelBody}
-                role="group"
-                aria-label="Community referrals content"
-                tabIndex={-1}
-              >
-                <p className={styles.unmeasured}>No reporting-window referral count is recorded for this team.</p>
-              </div>
-            </WardPanel>
+        <div className={pageStyles.unsupportedGrid}>
+          <WardPanel title="Referrals into the team" testId="ward-statistics-community-referrals">
+            <div
+              id="community-stat-referrals"
+              className={styles.panelBody}
+              role="group"
+              aria-label="Community referrals content"
+              tabIndex={-1}
+            >
+              <p className={styles.unmeasured}>No reporting-window referral count is recorded for this team.</p>
+            </div>
+          </WardPanel>
 
-            <WardPanel title="Where referrals came from" testId="ward-statistics-community-referral-sources">
-              <div className={styles.panelBody} role="group" aria-label="Referral sources content" tabIndex={0}>
-                <p className={styles.unmeasured}>Referral sources are not recorded in this prototype.</p>
-              </div>
-            </WardPanel>
+          <WardPanel title="Where referrals came from" testId="ward-statistics-community-referral-sources">
+            <div className={styles.panelBody} role="group" aria-label="Referral sources content" tabIndex={0}>
+              <p className={styles.unmeasured}>Referral sources are not recorded in this prototype.</p>
+            </div>
+          </WardPanel>
 
-            <WardPanel title="Time to first contact" testId="ward-statistics-community-first-contact">
-              <div
-                id="community-stat-first-contact"
-                className={styles.panelBody}
-                role="group"
-                aria-label="Time to first contact content"
-                tabIndex={-1}
-              >
-                <p className={styles.unmeasured}>Time to first contact is not recorded in this prototype.</p>
-              </div>
-            </WardPanel>
+          <WardPanel title="Time to first contact" testId="ward-statistics-community-first-contact">
+            <div
+              id="community-stat-first-contact"
+              className={styles.panelBody}
+              role="group"
+              aria-label="Time to first contact content"
+              tabIndex={-1}
+            >
+              <p className={styles.unmeasured}>Time to first contact is not recorded in this prototype.</p>
+            </div>
+          </WardPanel>
 
-            <WardPanel title="Contacts" testId="ward-statistics-community-contacts">
-              <div className={styles.panelBody} role="group" aria-label="Community contacts content" tabIndex={0}>
-                <p className={styles.unmeasured}>Community contacts are not recorded in this prototype.</p>
-              </div>
-            </WardPanel>
-          </div>
-        </details>
+          <WardPanel title="Contacts" testId="ward-statistics-community-contacts">
+            <div className={styles.panelBody} role="group" aria-label="Community contacts content" tabIndex={0}>
+              <p className={styles.unmeasured}>Community contacts are not recorded in this prototype.</p>
+            </div>
+          </WardPanel>
+        </div>
 
         <WardPanel title="People currently in a hospital bed" testId="ward-statistics-community-in-hospital">
           <div
@@ -595,20 +583,17 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             ("sit beside invented figures") rather than by asserting something untrue, which is what
             the predicate actually needed all along.
           */}
-            <details className={`${pageStyles.measureDetails} source-print`}>
-              <summary>Data provenance & vocabulary disclosure</summary>
-              <div className={pageStyles.measureDetailsBody}>
-                <p className={styles.body}>
-                  Every figure on this page is invented and describes no real person or day, including{" "}
-                  {figureRows.map((row) => row.label).join(", ")} and the cross-team comparison.
-                </p>
-                <p className={styles.note}>
-                  <strong>Team names are real referral vocabulary</strong> from a 2015 statewide catchment table, not a
-                  current roster of WA community services. Every figure beside those names is invented, and this panel
-                  makes no claim about wards, sites or services shown elsewhere.
-                </p>
-              </div>
-            </details>
+            <div className={pageStyles.measureDetailsBody}>
+              <p className={styles.body}>
+                Every figure on this page is invented and describes no real person or day, including{" "}
+                {figureRows.map((row) => row.label).join(", ")} and the cross-team comparison.
+              </p>
+              <p className={styles.note}>
+                <strong>Team names are real referral vocabulary</strong> from a 2015 statewide catchment table, not a
+                current roster of WA community services. Every figure beside those names is invented, and this panel
+                makes no claim about wards, sites or services shown elsewhere.
+              </p>
+            </div>
           </div>
         </StatisticsDetailPanel>
 
