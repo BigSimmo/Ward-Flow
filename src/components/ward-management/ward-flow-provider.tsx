@@ -894,13 +894,20 @@ function WardFlowWorld({
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
         const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
         if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
-          dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
+          dispatch({
+            type: "RECORD_LEAVING",
+            role: "ward",
+            now: nowRef.current,
+            admissionId,
+            actingUnitId,
+            leavingDestination,
+          });
           return;
         }
         dispatch({
           type: "RECORD_PATIENT_DISCHARGE",
           role: "ward",
-          now,
+          now: nowRef.current,
           admissionId,
           actingUnitId,
           leavingDestination,
@@ -924,7 +931,7 @@ function WardFlowWorld({
         dispatch({
           ...declaredActor,
           type: "OPEN_DISCHARGE_RECORD",
-          now,
+          now: nowRef.current,
           admissionId,
           expectedGeneration: handle.generation,
           requestId: handle.requestId,
@@ -950,7 +957,9 @@ function WardFlowWorld({
         }),
       patients: state.patients,
       admissions: state.admissions,
-      get now() { return nowRef.current; },
+      get now() {
+        return nowRef.current;
+      },
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,

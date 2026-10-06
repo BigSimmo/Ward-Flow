@@ -207,7 +207,9 @@ describe("Agent 2 Stress Test Suite", () => {
     // BUG CHECK: Did PATIENT_ARRIVED succeed in placing a Male patient on a Female-only ward?
     const arrivedMovement = state.movements.find((m) => m.id === movementId);
     expect(arrivedMovement?.stage).toBe("pulled");
-    expect(state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED" && r.reason.includes("gender mismatch"))).toBe(true);
+    expect(
+      state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED" && r.reason.includes("gender mismatch")),
+    ).toBe(true);
   });
 
   it("Scenario 5: Gender Segregation Breach when transport already collected (stage: moving)", () => {
@@ -337,7 +339,8 @@ describe("Agent 2 Stress Test Suite", () => {
     // BUG CHECK: Did PATIENT_ARRIVED succeed in placing Male patient on Female-only ward?
     const arrivedMovement = state.movements.find((m) => m.id === movementId);
     expect(arrivedMovement?.stage).toBe("moving");
-    expect(state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED" && r.reason.includes("gender mismatch"))).toBe(true);
+    expect(
+      state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED" && r.reason.includes("gender mismatch")),
+    ).toBe(true);
   });
 });
-
