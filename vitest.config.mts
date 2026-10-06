@@ -47,7 +47,7 @@ const config = {
         // regression. Re-measure with `npm run test:coverage` and raise these when
         // the gap grows past ~5pp again; never lower them to make a red gate green.
         "src/{lib/**/*.ts,app/**/route.ts,components/**/*.{ts,tsx}}": {
-          statements: 62,
+          statements: 99, // TEMPORARY: impossible floor to prove the merged coverage gate goes red; reverted next commit
           branches: 53,
           functions: 55,
           lines: 64,
