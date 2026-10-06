@@ -386,7 +386,7 @@ function ReferralStreamBoard({
         return (
           <section
             key={stream}
-            className={styles.section}
+            className={styles.streamColumn}
             aria-label={`${REFERRAL_STREAM_LABELS[stream]} stream`}
             data-testid={`ward-referral-stream-${stream}`}
           >

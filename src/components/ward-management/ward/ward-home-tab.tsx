@@ -399,24 +399,21 @@ export function WardHomeTab({
 
       <section
         aria-label="Referrals sent to this ward"
-        className={styles.card}
-        style={{ marginTop: "1rem" }}
+        className={`${styles.card} ${styles.inboxCard}`}
         data-testid="ward-referral-inbox"
         tabIndex={0}
       >
         <div className={styles.cardHead}>
           <div className={styles.cardTitle}>
-            <h2 style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}>Referrals sent to this ward</h2>
+            <h2 className={styles.inboxTitle}>Referrals sent to this ward</h2>
           </div>
           <span className={styles.pillBadge}>{wardInbox.length} named</span>
         </div>
         <div className={styles.cardBody}>
           {wardInbox.length === 0 ? (
-            <p className={styles.placeholder} style={{ padding: "12px", color: "var(--muted)", fontSize: "12.5px" }}>
-              No referral has named {unit.name}.
-            </p>
+            <p className={styles.placeholder}>No referral has named {unit.name}.</p>
           ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            <ul className={styles.inboxList}>
               {wardInbox.map((referral) => {
                 const addressing = referral.destinations.find(
                   (candidate) =>
@@ -426,21 +423,11 @@ export function WardHomeTab({
                 const status = addressing ? addressingStreamStatus(addressing, referral, movements) : "awaiting";
                 const person = resolveSubjectPatient(referral, { patients, referrals, movements });
                 return (
-                  <li
-                    key={referral.id}
-                    data-testid={`ward-referral-inbox-${referral.id}`}
-                    style={{
-                      padding: "12px",
-                      border: "1px solid var(--line)",
-                      borderRadius: "var(--r1)",
-                      marginBottom: "10px",
-                      background: "var(--surface-2)",
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, fontSize: "13px" }}>
+                  <li key={referral.id} className={styles.inboxItem} data-testid={`ward-referral-inbox-${referral.id}`}>
+                    <span className={styles.inboxName}>
                       {person.displayName} · {referral.id}
                     </span>
-                    <span style={{ display: "block", fontSize: "12px", color: "var(--ink-soft)" }}>
+                    <span className={styles.inboxMeta}>
                       {referral.ageBand} · {REFERRAL_STREAM_STATUS_LABELS[status]}
                       {referral.sendingTeamName ? ` · ${referral.sendingTeamName}` : ""}
                     </span>

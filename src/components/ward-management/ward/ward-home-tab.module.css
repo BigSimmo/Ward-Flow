@@ -312,6 +312,52 @@
   border-color: var(--ward-domain-coordinator);
 }
 
+.inboxCard {
+  margin-top: 1rem;
+  border: 0;
+  border-radius: 1.4rem;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 88%, transparent),
+    0 12px 28px color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.inboxTitle {
+  margin: 0;
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.inboxList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+}
+
+.inboxItem {
+  display: grid;
+  gap: 0.15rem;
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.65rem 0.75rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-2, var(--surface)) 88%, transparent);
+}
+
+.inboxName {
+  font-weight: 650;
+  font-size: var(--t-0);
+}
+
+.inboxMeta {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;

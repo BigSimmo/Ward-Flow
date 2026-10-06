@@ -70,7 +70,7 @@ export function CatchmentSection({
         Confirm the community team that covers this person. It is used to mark which places are in catchment.
       </p>
       {confirmed && !editing ? (
-        <div className={styles.catchmentConfirmed}>
+        <div className={`${styles.catchmentConfirmed} ${styles.tile}`}>
           <p>
             <strong>{confirmedClinic}</strong>
           </p>
@@ -79,7 +79,7 @@ export function CatchmentSection({
           </button>
         </div>
       ) : suggestion && !editing ? (
-        <div className={styles.catchmentConfirmed}>
+        <div className={`${styles.catchmentConfirmed} ${styles.tile}`}>
           <p>
             From the recorded suburb: <strong>{suggestion}</strong>
           </p>
@@ -288,37 +288,39 @@ export function ClinicalPresentationSection({
           <span>Clinical presentation</span>
         </h3>
       </div>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refDiagSelect">
-          Provisional psychiatric diagnosis
-        </label>
-        <select
-          className={styles.fieldSelect}
-          id="refDiagSelect"
-          value={diagnosis}
-          onChange={(event) => onDiagnosis(event.target.value)}
-        >
-          <option value="">Not recorded</option>
-          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-            <option key={block.code} value={block.code}>
-              {block.label} ({block.code})
-            </option>
-          ))}
-        </select>
+      <div className={styles.bento}>
+        <div className={styles.tile}>
+          <label className={styles.plainLabel} htmlFor="refDiagSelect">
+            Provisional psychiatric diagnosis
+          </label>
+          <select
+            className={styles.fieldSelect}
+            id="refDiagSelect"
+            value={diagnosis}
+            onChange={(event) => onDiagnosis(event.target.value)}
+          >
+            <option value="">Not recorded</option>
+            {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+              <option key={block.code} value={block.code}>
+                {block.label} ({block.code})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.tile}>
+          <label className={styles.plainLabel} htmlFor="refSummaryText">
+            Patient story
+          </label>
+          <textarea
+            className={styles.clinicalTextarea}
+            id="refSummaryText"
+            rows={3}
+            value={story}
+            onChange={(event) => onStory(event.target.value)}
+          />
+        </div>
       </div>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refSummaryText">
-          Patient story
-        </label>
-        <textarea
-          className={styles.clinicalTextarea}
-          id="refSummaryText"
-          rows={4}
-          value={story}
-          onChange={(event) => onStory(event.target.value)}
-        />
-      </div>
-      <div className={styles.fieldGroup}>
+      <div className={styles.tile}>
         <div className={styles.plainLabel} id="riskFlagsLabel">
           Active risk flags
         </div>
@@ -423,97 +425,103 @@ export function DocumentationSection({
           <span>Documentation</span>
         </h3>
       </div>
-      <div className={styles.fieldGroup}>
-        <p className={styles.plainLabel} id="refClearanceLabel">
-          Medical clearance
-        </p>
-        <YesNo name="Medical clearance" value={clearance} onChange={onClearance} />
-        {clearance === "no" ? (
-          <div className={styles.fieldGrid}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.plainLabel} htmlFor="refClearanceWhen">
-                When they will be medically cleared
-              </label>
-              <input
-                id="refClearanceWhen"
-                className={styles.fieldInput}
-                value={clearanceWhen}
-                onChange={(event) => onClearanceWhen(event.target.value)}
-              />
+      <div className={styles.bento}>
+        <div className={clearance === "no" ? `${styles.tile} ${styles.span2}` : styles.tile}>
+          <p className={styles.plainLabel} id="refClearanceLabel">
+            Medical clearance
+          </p>
+          <YesNo name="Medical clearance" value={clearance} onChange={onClearance} />
+          {clearance === "no" ? (
+            <div className={styles.fieldGrid}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.plainLabel} htmlFor="refClearanceWhen">
+                  When they will be medically cleared
+                </label>
+                <input
+                  id="refClearanceWhen"
+                  className={styles.fieldInput}
+                  value={clearanceWhen}
+                  onChange={(event) => onClearanceWhen(event.target.value)}
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.plainLabel} htmlFor="refClearanceName">
+                  Name
+                </label>
+                <input
+                  id="refClearanceName"
+                  className={styles.fieldInput}
+                  value={clearanceName}
+                  onChange={(event) => onClearanceName(event.target.value)}
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.plainLabel} htmlFor="refClearanceNumber">
+                  Number
+                </label>
+                <input
+                  id="refClearanceNumber"
+                  className={styles.fieldInput}
+                  value={clearanceNumber}
+                  onChange={(event) => onClearanceNumber(event.target.value)}
+                />
+              </div>
             </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.plainLabel} htmlFor="refClearanceName">
-                Name
-              </label>
-              <input
-                id="refClearanceName"
-                className={styles.fieldInput}
-                value={clearanceName}
-                onChange={(event) => onClearanceName(event.target.value)}
-              />
-            </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.plainLabel} htmlFor="refClearanceNumber">
-                Number
-              </label>
-              <input
-                id="refClearanceNumber"
-                className={styles.fieldInput}
-                value={clearanceNumber}
-                onChange={(event) => onClearanceNumber(event.target.value)}
-              />
-            </div>
-          </div>
-        ) : null}
-      </div>
-      <div className={styles.fieldGroup}>
-        <p className={styles.plainLabel}>Triage and ramp completed</p>
-        <YesNo name="Triage and ramp completed" value={triageRamp} onChange={onTriageRamp} />
-      </div>
-      <UploadRow
-        label="Medication chart"
-        done={medicationAttached}
-        inputId="refMedicationChart"
-        onFile={onMedicationFile}
-      />
-      <UploadRow
-        label="Observation chart"
-        done={observationAttached}
-        inputId="refObservationChart"
-        onFile={onObservationFile}
-      />
-      <div className={styles.fieldGroup}>
-        <p className={styles.plainLabel}>Anything else?</p>
-        <YesNo name="Anything else" value={anythingElse} onChange={onAnythingElse} />
-        {anythingElse === "yes" ? (
-          <textarea
-            className={styles.clinicalTextarea}
-            aria-label="Anything else note"
-            rows={3}
-            value={anythingElseNote}
-            onChange={(event) => onAnythingElseNote(event.target.value)}
+          ) : null}
+        </div>
+        <div className={styles.tile}>
+          <p className={styles.plainLabel}>Triage and ramp completed</p>
+          <YesNo name="Triage and ramp completed" value={triageRamp} onChange={onTriageRamp} />
+        </div>
+        <div className={styles.tile}>
+          <UploadRow
+            label="Medication chart"
+            done={medicationAttached}
+            inputId="refMedicationChart"
+            onFile={onMedicationFile}
           />
-        ) : null}
-      </div>
-      <div className={styles.fieldGroup}>
-        <p className={styles.plainLabel}>Referrer details</p>
-        <p className={styles.plainCopy}>{serviceLabel || "Choose the referring service on the Referral step."}</p>
-        <label className={styles.plainLabel} htmlFor="refReferrerRole">
-          Role
-        </label>
-        <select
-          id="refReferrerRole"
-          className={styles.fieldSelect}
-          value={role}
-          onChange={(event) => onRole(event.target.value as WardFlowRole)}
-        >
-          <option value="">Choose a role</option>
-          {REFERRER_ROLES.map((item) => (
-            <option key={item} value={item}>
-              {WARD_FLOW_ROLE_LABELS[item]}
-            </option>
-          ))}
-        </select>
+        </div>
+        <div className={styles.tile}>
+          <UploadRow
+            label="Observation chart"
+            done={observationAttached}
+            inputId="refObservationChart"
+            onFile={onObservationFile}
+          />
+        </div>
+        <div className={anythingElse === "yes" ? `${styles.tile} ${styles.span2}` : styles.tile}>
+          <p className={styles.plainLabel}>Anything else?</p>
+          <YesNo name="Anything else" value={anythingElse} onChange={onAnythingElse} />
+          {anythingElse === "yes" ? (
+            <textarea
+              className={styles.clinicalTextarea}
+              aria-label="Anything else note"
+              rows={3}
+              value={anythingElseNote}
+              onChange={(event) => onAnythingElseNote(event.target.value)}
+            />
+          ) : null}
+        </div>
+        <div className={styles.tile}>
+          <p className={styles.plainLabel}>Referrer details</p>
+          <p className={styles.plainCopy}>{serviceLabel || "Choose the referring service on the Referral step."}</p>
+          <label className={styles.plainLabel} htmlFor="refReferrerRole">
+            Role
+          </label>
+          <select
+            id="refReferrerRole"
+            className={styles.fieldSelect}
+            value={role}
+            onChange={(event) => onRole(event.target.value as WardFlowRole)}
+          >
+            <option value="">Choose a role</option>
+            {REFERRER_ROLES.map((item) => (
+              <option key={item} value={item}>
+                {WARD_FLOW_ROLE_LABELS[item]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </section>
   );
@@ -593,10 +601,7 @@ export function LocationsSection({
           <span>Locations to refer</span>
         </h3>
       </div>
-      <p className={styles.plainCopy}>
-        Tick up to three places. In catchment is a green outline. Outside catchment is a red outline. Green places are
-        listed first.
-      </p>
+      <p className={styles.plainCopy}>In-catchment places come first. Tick up to three.</p>
       {atCap ? <p className={styles.plainCopy}>Three places are already selected.</p> : null}
       <div className={styles.placeList} role="list" aria-label="Placement Destination Options">
         {ranked.map((unit) => {
@@ -624,12 +629,12 @@ export function LocationsSection({
                     {unit.hospital} · {unit.name}
                   </span>
                   <span className={styles.placeId}>{unit.unitId}</span>
-                  <span className={styles.placeMeta}>
-                    {inCatchment ? "In catchment" : "Outside catchment"}
-                    {" · "}
-                    {unit.readyBeds} {unit.readyBeds === 1 ? "bed" : "beds"} ready
-                    {" · "}
-                    Waitlist {waitlist}
+                  <span className={styles.placeStats}>
+                    <span className={styles.catchmentPill}>{inCatchment ? "In catchment" : "Outside catchment"}</span>
+                    <span className={styles.statPill}>
+                      {unit.readyBeds} {unit.readyBeds === 1 ? "bed" : "beds"} ready
+                    </span>
+                    <span className={styles.statPill}>Waitlist {waitlist}</span>
                   </span>
                   <span className={styles.destSelectIndicator}>{selected ? "Selected" : "Select"}</span>
                 </span>
@@ -723,57 +728,59 @@ export function SendContactDialog({
   return (
     <div className={styles.sendDialog} role="dialog" aria-label="Your contact details">
       <p className={styles.plainLabel}>Your contact details</p>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refCallbackPhone">
-          Phone number
-        </label>
-        <input
-          id="refCallbackPhone"
-          className={styles.fieldInput}
-          value={phone}
-          onChange={(event) => onPhone(event.target.value)}
-        />
-      </div>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refCallbackEmail">
-          Email
-        </label>
-        <input
-          id="refCallbackEmail"
-          className={styles.fieldInput}
-          type="email"
-          value={email}
-          onChange={(event) => onEmail(event.target.value)}
-        />
-      </div>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refCallbackRole">
-          Role
-        </label>
-        <select
-          id="refCallbackRole"
-          className={styles.fieldSelect}
-          value={role}
-          onChange={(event) => onRole(event.target.value as WardFlowRole)}
-        >
-          <option value="">Choose a role</option>
-          {REFERRER_ROLES.map((item) => (
-            <option key={item} value={item}>
-              {WARD_FLOW_ROLE_LABELS[item]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className={styles.fieldGroup}>
-        <label className={styles.plainLabel} htmlFor="refCallbackLocation">
-          Location
-        </label>
-        <input
-          id="refCallbackLocation"
-          className={styles.fieldInput}
-          value={location}
-          onChange={(event) => onLocation(event.target.value)}
-        />
+      <div className={styles.bento}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.plainLabel} htmlFor="refCallbackPhone">
+            Phone number
+          </label>
+          <input
+            id="refCallbackPhone"
+            className={styles.fieldInput}
+            value={phone}
+            onChange={(event) => onPhone(event.target.value)}
+          />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.plainLabel} htmlFor="refCallbackEmail">
+            Email
+          </label>
+          <input
+            id="refCallbackEmail"
+            className={styles.fieldInput}
+            type="email"
+            value={email}
+            onChange={(event) => onEmail(event.target.value)}
+          />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.plainLabel} htmlFor="refCallbackRole">
+            Role
+          </label>
+          <select
+            id="refCallbackRole"
+            className={styles.fieldSelect}
+            value={role}
+            onChange={(event) => onRole(event.target.value as WardFlowRole)}
+          >
+            <option value="">Choose a role</option>
+            {REFERRER_ROLES.map((item) => (
+              <option key={item} value={item}>
+                {WARD_FLOW_ROLE_LABELS[item]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.plainLabel} htmlFor="refCallbackLocation">
+            Location
+          </label>
+          <input
+            id="refCallbackLocation"
+            className={styles.fieldInput}
+            value={location}
+            onChange={(event) => onLocation(event.target.value)}
+          />
+        </div>
       </div>
       <div className={styles.choiceRow}>
         <button type="button" className={styles.choiceButton} onClick={onCancel}>
