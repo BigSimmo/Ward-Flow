@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BedMap, bedMapWards, groupBedMapWardsByService } from "@/components/ward-management/capacity/bed-map";
@@ -218,5 +218,54 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     fireEvent.click(nextBtns[0]);
     // Clicking next button must NOT select the ward
     expect(onSelectWard).not.toHaveBeenCalled();
+  });
+});
+
+describe("bed-map service shortcut feedback", () => {
+  it("keeps the jumped-to service selected when the previous service's trailing edge is visible", () => {
+    let notify: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          notify = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      render(<BedMap units={units} bedReleases={bedReleases} initialLayout="grid" initialBedDetail={false} />);
+      const nav = screen.getByRole("navigation", { name: "Bed map service shortcuts" });
+      const south = within(nav).getByRole("button", { name: /South Metro/u });
+      fireEvent.click(south);
+      for (const section of document.querySelectorAll<HTMLElement>("[data-service]")) {
+        const service = section.dataset.service;
+        const top = service === "South Metro" ? 152 : service === "East Metro" ? -800 : 2000;
+        const bottom = service === "South Metro" ? 1152 : service === "East Metro" ? 150 : 2500;
+        vi.spyOn(section, "getBoundingClientRect").mockReturnValue({ top, bottom } as DOMRect);
+      }
+      const previous = screen.getByTestId("ward-bed-map-service-East Metro");
+      act(() =>
+        notify(
+          [
+            {
+              target: previous,
+              isIntersecting: true,
+              boundingClientRect: previous.getBoundingClientRect(),
+              intersectionRatio: 0.01,
+              intersectionRect: previous.getBoundingClientRect(),
+              rootBounds: null,
+              time: 0,
+            },
+          ],
+          {} as IntersectionObserver,
+        ),
+      );
+      expect(south).toHaveAttribute("aria-current", "location");
+      expect(within(nav).getByRole("button", { name: /East Metro/u })).not.toHaveAttribute("aria-current");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
