@@ -1643,6 +1643,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     title: resolvePatientIdentity(movement).displayName,
     onAccept: () => handleAcceptInPrinciple(movement.id, unit.id),
   }));
+  const decisionsDue =
+    intakeDecisions.length +
+    departureDecisions.filter((row) => row.badge === "Ready").length +
+    (!isRollupConfirmedToday && morningRollupDeadlinePassed ? 1 : 0);
+  const decisionsDueLabel =
+    decisionsDue > 0 ? `${decisionsDue} decisions due this shift` : "No decisions due this shift";
 
   function toggleRelease(movementId: string) {
     setReleaseOpenFor((current) => (current === movementId ? undefined : movementId));
@@ -1953,11 +1959,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <span
                     className={styles.tabBadge}
                     id="badgeReturn"
-                    style={{ color: "var(--danger)", fontWeight: 700 }}
-                    title="2 decisions due this shift"
-                    aria-label="2 decisions due this shift"
+                    style={decisionsDue > 0 ? { color: "var(--danger)", fontWeight: 700 } : undefined}
+                    title={decisionsDueLabel}
+                    aria-label={decisionsDueLabel}
                   >
-                    2 Due
+                    {decisionsDue > 0 ? `${decisionsDue} Due` : "Done"}
                   </span>
                 </button>
               </li>

@@ -87,4 +87,23 @@ describe("ward capacity confirmation form on #tab-return", () => {
 
     expect(screen.getByText(/Currently confirmed 0 at/)).toBeInTheDocument();
   });
+
+  it("shows the same due count on the Decisions tab as the queue", () => {
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+
+    const heading = screen.getByRole("heading", { name: /^Decisions/ });
+    const dueMatch = heading.textContent?.match(/(\d+) due/);
+    const badge = container.querySelector("#badgeReturn");
+    expect(badge).not.toBeNull();
+    if (dueMatch) {
+      expect(badge).toHaveTextContent(`${dueMatch[1]} Due`);
+    } else {
+      expect(heading).toHaveTextContent("Done");
+      expect(badge).toHaveTextContent("Done");
+    }
+  });
 });
