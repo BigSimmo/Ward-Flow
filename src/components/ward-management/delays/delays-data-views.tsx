@@ -887,6 +887,7 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
         aria-labelledby={`${id}-tab-${view}`}
         className={styles.layout}
         data-layout={view}
+        data-dossier={view === "workspace" && selected ? "open" : "closed"}
       >
         {view === "workspace" && (
           <aside className={styles.teamRail} aria-label="Responsible team queues">
@@ -1232,15 +1233,9 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
             <PageControls page={currentPage} pages={pages} onChange={setPage} label="waiting" />
           </footer>
         </section>
-        {view === "workspace" &&
-          (selected ? (
-            <PatientDossier record={selected} now={now} onClose={props.onClose} detail={detail} />
-          ) : (
-            <aside className={`${styles.panel} ${styles.noSelection}`}>
-              <h3>Patient details</h3>
-              <p>Select a person to see their recorded delay and next step.</p>
-            </aside>
-          ))}
+        {view === "workspace" && selected && (
+          <PatientDossier record={selected} now={now} onClose={props.onClose} detail={detail} />
+        )}
       </div>
       {view === "focus" && selected && !shown.some(({ movement }) => movement.id === selectedId) && (
         <CompactStrip record={selected} now={now} onClose={props.onClose} />

@@ -7089,3 +7089,63 @@
     flex-wrap: wrap;
   }
 }
+
+.countStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.countStrip .statPill {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 26px;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.countStrip .statPillValue {
+  font-size: 13px;
+  line-height: 1;
+}
+.countStrip .statPillLabel {
+  font-size: 12px;
+}
+.countStrip .statPill > svg {
+  width: 14px;
+  height: 14px;
+  grid-row: auto;
+}
+.countStrip .breachedSentinelPill {
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.systemicPanel {
+  margin-top: 0;
+  padding: 8px 12px;
+  box-shadow: none;
+}
+.systemicHeader {
+  align-items: center;
+  margin-bottom: 6px;
+}
+.systemicEmptyLine {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.systemicChip {
+  border-radius: 999px;
+  min-height: 28px;
+  padding: 2px 10px;
+}
+.tabBody {
+  max-height: 160px;
+}

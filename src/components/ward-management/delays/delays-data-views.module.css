@@ -92,7 +92,10 @@
   grid-template-columns: minmax(0, 1fr);
 }
 .layout[data-layout="workspace"] {
-  grid-template-columns: 200px minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+}
+.layout[data-layout="workspace"][data-dossier="open"] {
+  grid-template-columns: minmax(160px, 200px) minmax(0, 1fr) minmax(280px, 340px);
 }
 .toolbar {
   display: flex;
@@ -1063,7 +1066,10 @@
 }
 @media (max-width: 1450px) {
   .layout[data-layout="workspace"] {
-    grid-template-columns: 175px minmax(0, 1fr) 305px;
+    grid-template-columns: 175px minmax(0, 1fr);
+  }
+  .layout[data-layout="workspace"][data-dossier="open"] {
+    grid-template-columns: 160px minmax(0, 1fr) 280px;
   }
   .worklistHeader {
     flex-wrap: wrap;
@@ -1182,8 +1188,8 @@
 
 /* Final reference alignment: a single-line action toolbar and six compact rows. */
 @media (min-width: 1451px) {
-  .layout[data-layout="workspace"] {
-    grid-template-columns: 225px minmax(0, 1fr) 390px;
+  .layout[data-layout="workspace"][data-dossier="open"] {
+    grid-template-columns: 200px minmax(0, 1fr) 360px;
   }
   .layout[data-layout="workspace"] .worklistHeader {
     flex-wrap: nowrap;
@@ -1626,4 +1632,37 @@
   .compactReviewLabel {
     background: Canvas;
   }
+}
+
+.layout[data-layout="focus"] .patientButton {
+  font-size: 12.5px;
+}
+.layout[data-layout="focus"] tbody tr[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.selectLabel select,
+.modeSwitch,
+.rowsPerPage select {
+  border-radius: 999px;
+}
+.modeSwitch {
+  padding: 3px;
+  background: var(--surface-2);
+}
+.modeSwitch button {
+  border-radius: 999px;
+}
+.dossier {
+  border-radius: 16px;
+}
+.dossier h3 {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.blockerPanel {
+  margin-top: 8px;
+}
+.blockerPanel summary {
+  min-height: 36px;
+  padding: 6px 12px;
 }

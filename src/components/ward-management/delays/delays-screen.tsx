@@ -54,7 +54,7 @@ import { Users, Clock, TriangleAlert } from "lucide-react";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
-export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
+export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
 
 export interface SystemicDelayHold {
   id: string;
@@ -348,48 +348,33 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       data-testid="ward-delays-page"
     >
       <main id="main-content" className={styles.main}>
-        {/* MASTHEAD HEADER */}
-        <header className={styles.pageHeader}>
-          <div className={styles.pageTitleGroup}>
-            <h1 className={styles.pageTitle}>Delays</h1>
-            <span className={styles.pageSubtitle}>See the pressure. Act on the next step.</span>
+        <div className={styles.countStrip} aria-label="Waiting counts">
+          <div className={styles.statPill}>
+            <Users size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>{open.length}</span>
+            <span className={styles.statPillLabel}>waiting</span>
           </div>
-
-          <div className={styles.mastheadMeta}>
-            <div className={styles.statPill}>
-              <Users size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>{open.length}</span>
-              <span className={styles.statPillLabel}>waiting</span>
-            </div>
-            <div className={styles.statPill} data-tone="wait">
-              <Clock size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>
-                {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
-              </span>
-              <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
-            </div>
-            <div className={styles.statPill} data-tone="escalated">
-              <TriangleAlert size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>
-                {open.filter((movement) => movement.escalation !== undefined).length}
-              </span>
-              <span className={styles.statPillLabel}>escalated</span>
-            </div>
-            {breachedCount > 0 && (
-              <div className={styles.breachedSentinelPill}>
-                <span className={styles.sentinelDot} />
-                <span>{breachedCount} past recorded legal time</span>
-              </div>
-            )}
-            <div className={styles.liveClockPill}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>{formatInstantWithDay(now, now)}</span>
-            </div>
+          <div className={styles.statPill} data-tone="wait">
+            <Clock size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>
+              {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
+            </span>
+            <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
           </div>
-        </header>
+          <div className={styles.statPill} data-tone="escalated">
+            <TriangleAlert size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>
+              {open.filter((movement) => movement.escalation !== undefined).length}
+            </span>
+            <span className={styles.statPillLabel}>escalated</span>
+          </div>
+          {breachedCount > 0 && (
+            <div className={styles.breachedSentinelPill}>
+              <span className={styles.sentinelDot} />
+              <span>{breachedCount} past recorded legal time</span>
+            </div>
+          )}
+        </div>
 
         {showAliasBanner && aliasFrom ? (
           <aside
@@ -678,7 +663,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               </span>
               <div className={styles.systemicTitleBlock}>
                 <span className={styles.systemicSubtitle}>
-                  Statewide facility holds, ward closures &amp; transport logistics
+                  Statewide events with no named person — emergency, ward shutdown, traffic
                 </span>
               </div>
               <div className={styles.systemicActions}>
@@ -708,20 +693,21 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             <div className={styles.systemicFilterBar} role="group" aria-label="Filter systemic delays by category">
               {(
                 [
-                  { id: "all", label: "All holds", count: SYSTEMIC_HOLDS.length },
+                  { id: "all", label: "All", count: SYSTEMIC_HOLDS.length },
+                  { id: "emergency", label: "Emergency", count: 0 },
                   {
                     id: "ward",
-                    label: "Ward closures",
+                    label: "Ward shutdown",
                     count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
                   },
                   {
                     id: "transport",
-                    label: "Transport & fleet",
+                    label: "Traffic",
                     count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
                   },
                   {
                     id: "staffing",
-                    label: "Staffing surge",
+                    label: "Staffing",
                     count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
                   },
                 ] as const
@@ -740,20 +726,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
 
             {filteredHolds.length === 0 ? (
-              <div className={styles.systemicEmptyState}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--muted)"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className={styles.systemicReason}>No active systemic holds recorded across the statewide network.</p>
-              </div>
+              <p className={styles.systemicEmptyLine}>No statewide hold is recorded.</p>
             ) : null}
             <div className={styles.systemicGrid}>
               {filteredHolds.map((hold) => (

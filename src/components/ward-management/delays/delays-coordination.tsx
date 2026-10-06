@@ -19,6 +19,7 @@ import { formatInstantWithDay, splitDuration, type Instant } from "../ward-clock
 import { usePatientOf } from "../ward-patient-name";
 import { departmentLabel } from "../ward-absence-labels";
 import { edById } from "../ward-sites";
+import { edHealthService } from "../ward-service-scope";
 import { legalFormName } from "../ward-legal-forms";
 import {
   DUE_SOON_MINUTES,
@@ -37,7 +38,9 @@ import {
 } from "./delays-derivations";
 import {
   delayCatchments,
+  delayRadarBand,
   delayRadarGroups,
+  OVER_TWELVE_HOURS_MINUTES,
   type CatchmentOrigin,
   type DelayRecord,
   type RadarBand,
@@ -53,16 +56,22 @@ type Props = {
   now: Instant;
   onViewQueue: (scope: DelayQueueScope) => void;
 };
-type Graph = "catchment" | "radar" | "timeline";
+type Graph = "catchment" | "radar" | "timeline" | "runway";
 const GRAPHS: { id: Graph; label: string; title: string; subtitle: string }[] = [
   {
     id: "catchment",
-    label: "Catchment Pressure",
+    label: "Catchment pressure",
     title: "Catchment pressure",
-    subtitle: "People waiting by origin catchment · current snapshot",
+    subtitle: "Recorded waits, who was already waiting, and who crosses 8h and 12h if nothing changes",
   },
-  { id: "radar", label: "Crisis Radar", title: "Crisis radar", subtitle: "Recorded legal attention and ED wait" },
+  { id: "radar", label: "Crisis radar", title: "Crisis radar", subtitle: "Each person by recorded ED wait" },
   { id: "timeline", label: "Wait Timeline", title: "Wait timeline", subtitle: "Elapsed wait and last recorded change" },
+  {
+    id: "runway",
+    label: "Action runway",
+    title: "Action runway",
+    subtitle: "Recorded times that need a next step",
+  },
 ];
 const CATCHMENTS: Record<CatchmentOrigin, { short: string; full: string; code: string }> = {
   "North Metro": { short: "North Metro", full: "North Metropolitan", code: "NMHS" },
@@ -111,13 +120,34 @@ function OwnerSelect({
     </label>
   );
 }
-function Key({ amber = false, children }: { amber?: boolean; children: React.ReactNode }) {
+function Key({
+  amber = false,
+  tone,
+  children,
+}: {
+  amber?: boolean;
+  tone?: "waiting" | "amber" | "danger" | "muted" | "expected";
+  children: React.ReactNode;
+}) {
   return (
     <span className={styles.key}>
-      <i data-amber={amber} />
+      <i data-amber={amber || undefined} data-tone={tone ?? (amber ? "amber" : "waiting")} />
       {children}
     </span>
   );
+}
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/u)
+    .filter((part) => part.length > 0)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+function spreadPercent(id: string) {
+  let hash = 0;
+  for (const char of id) hash = (hash * 33 + char.charCodeAt(0)) >>> 0;
+  return 22 + (hash % 56);
 }
 function Close({ onClick, label }: { onClick: () => void; label: string }) {
   return (
@@ -134,8 +164,7 @@ function MovementAction({ record, children = "Review movement" }: { record: Dela
     </Link>
   );
 }
-function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Props) {
-  const patientOf = usePatientOf();
+function attentionRows(rows: DelayRecord[], now: Instant) {
   const past = rows.filter(({ movement }) => (legalDeadlineMinutes(movement, now) ?? Infinity) < 0);
   const imminent = rows.filter(({ movement }) => {
     const due = legalDeadlineMinutes(movement, now);
@@ -144,48 +173,47 @@ function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Prop
   const attention = [...past, ...imminent].sort(
     (a, b) => (legalDeadlineMinutes(a.movement, now) ?? Infinity) - (legalDeadlineMinutes(b.movement, now) ?? Infinity),
   );
-  const descriptions: Record<DelayOwnerId, string> = {
-    yours: "Bed match or decision",
-    wards: "Ward response or readiness",
-    ed: "Referring department",
-    transport: "Vehicle or escort",
-    other: "Review external hold",
-  };
-  const icons = { yours: Users, wards: BedDouble, ed: Hospital, transport: Truck, other: UserRound };
-  const bands = [
+  return { past, imminent, attention };
+}
+function waitBands(rows: DelayRecord[], now: Instant) {
+  const wait = (movement: DelayRecord["movement"]) => now - movement.openedAt;
+  return [
     {
       label: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h`,
-      count: rows.filter(({ movement }) => now - movement.openedAt < ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+      count: rows.filter(({ movement }) => wait(movement) < ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
     },
     {
-      label: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} – ${LONG_WAIT_MINUTES / 60}h`,
+      label: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}–${OVER_TWELVE_HOURS_MINUTES / 60}h`,
       count: rows.filter(
         ({ movement }) =>
-          now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES && now - movement.openedAt < LONG_WAIT_MINUTES,
+          wait(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && wait(movement) < OVER_TWELVE_HOURS_MINUTES,
+      ).length,
+    },
+    {
+      label: `Over ${OVER_TWELVE_HOURS_MINUTES / 60}h`,
+      count: rows.filter(
+        ({ movement }) => wait(movement) >= OVER_TWELVE_HOURS_MINUTES && wait(movement) < LONG_WAIT_MINUTES,
       ).length,
     },
     {
       label: `Over ${LONG_WAIT_MINUTES / 60}h`,
-      count: rows.filter(({ movement }) => now - movement.openedAt >= LONG_WAIT_MINUTES).length,
+      count: rows.filter(({ movement }) => wait(movement) >= LONG_WAIT_MINUTES).length,
     },
   ];
+}
+function UrgentQueue({ rows, now }: Pick<Props, "rows" | "now">) {
+  const patientOf = usePatientOf();
+  const { attention } = attentionRows(rows, now);
+  if (attention.length === 0) {
+    return <p className={styles.noAttention}>No recorded due times requiring attention within 60m.</p>;
+  }
   return (
-    <section className={styles.runway} aria-label="Action runway" data-ward-primitive="panel">
-      <header className={styles.runwayHeader}>
-        <h2>
-          <Clock size={20} aria-hidden="true" />
-          Action runway
-        </h2>
-        <span className={styles.attentionSummary} data-past={past.length > 0}>
-          <Clock size={14} aria-hidden="true" />
-          {past.length} past recorded time · {imminent.length} due within 60m
-        </span>
-      </header>
+    <div className={styles.urgentList}>
       {attention.map((record) => {
         const due = legalDeadlineMinutes(record.movement, now)!;
         return (
           <div className={styles.urgentRow} data-past={due < 0} key={record.movement.id}>
-            <Clock size={25} aria-hidden="true" />
+            <Clock size={18} aria-hidden="true" />
             <div className={styles.urgentPerson}>
               <strong>{patientOf(record.movement).displayName}</strong>
               <span>
@@ -201,9 +229,36 @@ function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Prop
           </div>
         );
       })}
-      {attention.length === 0 && (
-        <p className={styles.noAttention}>No recorded due times requiring attention within 60m.</p>
-      )}
+    </div>
+  );
+}
+function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Props) {
+  const patientOf = usePatientOf();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const { past, imminent, attention } = attentionRows(rows, now);
+  const icons = { yours: Users, wards: BedDouble, ed: Hospital, transport: Truck, other: UserRound };
+  const bands = waitBands(rows, now);
+  return (
+    <section
+      className={styles.runway}
+      aria-label="Action runway"
+      data-ward-primitive="panel"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && openId !== null) {
+          event.preventDefault();
+          setOpenId(null);
+        }
+      }}
+    >
+      <header className={styles.runwayHeader}>
+        <h2>
+          <Clock size={16} aria-hidden="true" />
+          Pressure
+        </h2>
+        <span className={styles.attentionSummary} data-past={past.length > 0}>
+          {past.length} past recorded time · {imminent.length} due within 60m
+        </span>
+      </header>
       <div className={styles.ownerGrid}>
         {DELAY_OWNERS.map((owner) => {
           const records = rows.filter(({ cause }) => ownerOf(cause) === owner.id);
@@ -227,18 +282,17 @@ function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Prop
                 {severe > 0 && (
                   <span className={styles.critical}>
                     <i />
-                    {severe} critical blocker{severe === 1 ? "" : "s"}
+                    {severe}
                   </span>
                 )}
-                <p>{records.length === 0 ? "No waiting records" : descriptions[owner.id]}</p>
                 {records.length > 0 && (
                   <button
                     type="button"
+                    className={styles.queueLink}
                     onClick={() => onViewQueue({ owner: owner.id })}
                     aria-label={`View ${teamName(owner.id)} queue`}
                   >
-                    View queue
-                    <ArrowRight size={14} aria-hidden="true" />
+                    Queue
                   </button>
                 )}
               </div>
@@ -247,74 +301,126 @@ function ActionRunway({ rows, now, onViewQueue, markedOwner, onMarkOwner }: Prop
         })}
       </div>
       <div className={styles.waitDistribution}>
-        <strong>Emergency Department wait durations:</strong>
-        <div>
-          <div
-            className={styles.distributionBar}
-            role="img"
-            aria-label={bands.map((band) => `${band.label}: ${band.count}`).join("; ")}
-          >
-            {bands.map((band, index) => (
-              <span
-                key={band.label}
-                data-band={index}
-                style={{ width: `${rows.length ? (band.count / rows.length) * 100 : 0}%` }}
-              />
-            ))}
-          </div>
-          <div className={styles.distributionLegend}>
-            {bands.map((band, index) => (
-              <span key={band.label}>
-                <i data-band={index} />
-                {band.label}: <b>{band.count}</b> ({rows.length ? Math.round((band.count / rows.length) * 100) : 0}%)
-              </span>
-            ))}
-          </div>
+        <div
+          className={styles.distributionBar}
+          role="img"
+          aria-label={bands.map((band) => `${band.label}: ${band.count}`).join("; ")}
+        >
+          {bands.map((band, index) => (
+            <span
+              key={band.label}
+              data-band={index}
+              style={{ width: `${rows.length ? (band.count / rows.length) * 100 : 0}%` }}
+            />
+          ))}
+        </div>
+        <div className={styles.distributionLegend}>
+          {bands.map((band, index) => (
+            <span key={band.label}>
+              <i data-band={index} />
+              {band.label}: <b>{band.count}</b>
+            </span>
+          ))}
+        </div>
+        <div className={styles.urgentChips} role="list" aria-label="Urgent recorded times">
+          {attention.map((record) => {
+            const due = legalDeadlineMinutes(record.movement, now)!;
+            const name = patientOf(record.movement).displayName;
+            const open = openId === record.movement.id;
+            const time = due < 0 ? `+${splitDuration(-due)}` : dueDuration(due);
+            return (
+              <div className={styles.urgentChip} role="listitem" key={record.movement.id}>
+                <button
+                  type="button"
+                  data-past={due < 0}
+                  aria-expanded={open}
+                  aria-label={`${initialsOf(name)}, ${time}. Show recorded time`}
+                  onClick={() => setOpenId(open ? null : record.movement.id)}
+                >
+                  <b>{initialsOf(name)}</b>
+                  <span>{time}</span>
+                </button>
+                {open && (
+                  <div className={styles.chipPopup} role="dialog" aria-label={`${name} recorded time`}>
+                    <strong>{name}</strong>
+                    <span>
+                      {originName(record)} ·{" "}
+                      {record.movement.legalForm ? legalFormName(record.movement.legalForm) : "No form recorded"}
+                    </span>
+                    <span>
+                      {due < 0 ? `Past recorded time by ${splitDuration(-due)}` : `Due in ${dueDuration(due)}`}
+                      {" · "}ED wait {splitDuration(Math.max(0, now - record.movement.openedAt))}
+                    </span>
+                    <MovementAction record={record}>Review</MovementAction>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {attention.length === 0 && <p className={styles.noAttention}>No recorded due times within 60m.</p>}
         </div>
       </div>
     </section>
   );
 }
 
+const SERVICE_MARKS: CatchmentOrigin[] = ["North Metro", "East Metro", "South Metro", "WACHS"];
 function CatchmentPressure({ rows, now, onViewQueue }: Props) {
   const [owner, setOwner] = useState<DelayOwnerId | "all">("all");
+  const [service, setService] = useState<CatchmentOrigin | "all">("all");
   const [selected, setSelected] = useState<CatchmentOrigin | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
   const returnFocus = useRef<SVGGElement | null>(null);
   const close = () => {
     setSelected(null);
     returnFocus.current?.focus();
   };
-  const id = useId().replace(/:/g, "");
-  const filtered = rows.filter(({ cause }) => owner === "all" || ownerOf(cause) === owner);
+  const owned = rows.filter(({ cause }) => owner === "all" || ownerOf(cause) === owner);
+  const serviceStats = delayCatchments(owned, now);
+  const filtered =
+    service === "all"
+      ? owned
+      : owned.filter(({ movement }) => (edHealthService(movement.originEdId) ?? "unrecorded") === service);
   const stats = delayCatchments(filtered, now);
-  const max = Math.max(4, ...stats.map((entry) => entry.total));
+  const max = Math.max(4, ...stats.map((entry) => Math.max(entry.total, entry.expectedOver8, entry.stillWaiting4hAgo)));
   const step = max <= 40 ? Math.max(1, Math.ceil(max / 4 / 5) * 5) : Math.ceil(max / 4 / 10) * 10;
   const ceiling = step * 4;
   const choice = stats.find((entry) => entry.origin === selected);
-  function renderGraph(mobile: boolean) {
-    const width = mobile ? Math.max(400, stats.length * 85) : 1100;
-    const height = mobile ? 290 : 310;
-    const left = mobile ? 38 : 75,
-      right = mobile ? 24 : 70,
-      top = 40,
-      bottom = height - 60;
+  const hovered = hover === null ? undefined : stats[hover];
+  function renderGraph() {
+    const width = 1100;
+    const height = 310;
+    const left = 64;
+    const right = 36;
+    const top = 28;
+    const bottom = height - 52;
     const x = (index: number) => left + (index / Math.max(1, stats.length - 1)) * (width - left - right);
     const y = (value: number) => bottom - (value / ceiling) * (bottom - top);
-    const totalPath = stats.map((entry, index) => `${index ? "L" : "M"}${x(index)},${y(entry.total)}`).join(" ");
-    const longPath = stats.map((entry, index) => `${index ? "L" : "M"}${x(index)},${y(entry.over8)}`).join(" ");
+    const line = (pick: (entry: (typeof stats)[number]) => number) =>
+      stats.map((entry, index) => `${index ? "L" : "M"}${x(index)},${y(pick(entry))}`).join(" ");
+    const totalPath = line((entry) => entry.total);
     return (
       <svg
-        className={mobile ? styles.mobilePressure : styles.desktopPressure}
+        className={styles.desktopPressure}
         viewBox={`0 0 ${width} ${height}`}
-        aria-label={`People waiting by origin catchment. ${stats.map((entry) => `${CATCHMENTS[entry.origin].short}: ${entry.total} waiting, ${entry.over8} over ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`).join("; ")}`}
+        aria-label={`People waiting by origin catchment. ${stats.map((entry) => `${CATCHMENTS[entry.origin].short}: ${entry.total} waiting, ${entry.over8} over 8 hours, ${entry.over12} over 12 hours`).join("; ")}`}
         role="group"
+        onMouseMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          const viewX = ((event.clientX - rect.left) / rect.width) * width;
+          let nearest = 0;
+          let best = Infinity;
+          stats.forEach((_, index) => {
+            const distance = Math.abs(x(index) - viewX);
+            if (distance < best) {
+              best = distance;
+              nearest = index;
+            }
+          });
+          setHover(nearest);
+        }}
+        onMouseLeave={() => setHover(null)}
       >
-        <defs>
-          <linearGradient id={`${id}-${mobile}-fill`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b6daf6" stopOpacity=".72" />
-            <stop offset="100%" stopColor="#deedf8" stopOpacity=".22" />
-          </linearGradient>
-        </defs>
         {[0, 1, 2, 3, 4].map((tick) => (
           <g key={tick}>
             <line
@@ -329,35 +435,24 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
             </text>
           </g>
         ))}
-        {!mobile && (
-          <text
-            transform={`translate(17 ${top + (bottom - top) / 2}) rotate(-90)`}
-            textAnchor="middle"
-            className={styles.axisText}
-          >
-            People waiting
-          </text>
-        )}
+        <text
+          transform={`translate(16 ${top + (bottom - top) / 2}) rotate(-90)`}
+          textAnchor="middle"
+          className={styles.axisText}
+        >
+          People waiting
+        </text>
         {stats.map((entry, index) => (
           <line key={entry.origin} x1={x(index)} x2={x(index)} y1={top} y2={bottom} className={styles.gridLine} />
         ))}
-        {choice && (
-          <rect
-            x={x(stats.indexOf(choice)) - (mobile ? 16 : 42)}
-            y={top}
-            width={mobile ? 32 : 84}
-            height={bottom - top}
-            fill="#dcecfa"
-            opacity=".5"
-          />
-        )}
-        <path
-          d={`${totalPath} L${x(stats.length - 1)},${bottom} L${x(0)},${bottom} Z`}
-          fill={`url(#${id}-${mobile}-fill)`}
-        />
+        {hovered && <line x1={x(hover!)} x2={x(hover!)} y1={top} y2={bottom} className={styles.hoverGuide} />}
+        <path d={`${totalPath} L${x(stats.length - 1)},${bottom} L${x(0)},${bottom} Z`} className={styles.totalFill} />
         <line x1={left - 8} x2={width - right + 15} y1={bottom} y2={bottom} className={styles.baseline} />
+        <path d={line((entry) => entry.stillWaiting4hAgo)} className={styles.earlierLine} />
+        <path d={line((entry) => entry.expectedOver8)} className={styles.expectedLine} />
         <path d={totalPath} className={styles.totalLine} />
-        <path d={longPath} className={styles.longLine} />
+        <path d={line((entry) => entry.over8)} className={styles.longLine} />
+        <path d={line((entry) => entry.over12)} className={styles.over12Line} />
         {stats.map((entry, index) => (
           <g
             key={entry.origin}
@@ -377,35 +472,15 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
               }
             }}
           >
-            <rect
-              x={x(index) - (mobile ? 34 : 58)}
-              y={top - 16}
-              width={mobile ? 68 : 116}
-              height={height - top + 8}
-              fill="transparent"
-            />
-            <circle cx={x(index)} cy={y(entry.total)} r={6} className={styles.totalPoint} />
-            <circle cx={x(index)} cy={y(entry.over8)} r={6} className={styles.longPoint} />
-            <text
-              x={x(index)}
-              y={y(entry.total) - (entry.total === entry.over8 ? 27 : 15)}
-              textAnchor="middle"
-              className={styles.totalLabel}
-            >
+            <rect x={x(index) - 48} y={top - 8} width={96} height={height - top} fill="transparent" />
+            <circle cx={x(index)} cy={y(entry.total)} r={4.5} className={styles.totalPoint} />
+            <circle cx={x(index)} cy={y(entry.over8)} r={4} className={styles.longPoint} />
+            <circle cx={x(index)} cy={y(entry.over12)} r={4} className={styles.over12Point} />
+            <text x={x(index)} y={y(entry.total) - 10} textAnchor="middle" className={styles.totalLabel}>
               {entry.total}
             </text>
-            <text x={x(index)} y={y(entry.over8) - 13} textAnchor="middle" className={styles.longLabel}>
-              {entry.over8}
-            </text>
-            <text x={x(index)} y={bottom + 28} textAnchor="middle" className={styles.axisText}>
-              {CATCHMENTS[entry.origin].short}
-              {mobile ? (
-                <tspan x={x(index)} dy="17">
-                  {CATCHMENTS[entry.origin].code}
-                </tspan>
-              ) : (
-                ` (${CATCHMENTS[entry.origin].code})`
-              )}
+            <text x={x(index)} y={bottom + 22} textAnchor="middle" className={styles.axisText}>
+              {CATCHMENTS[entry.origin].code || CATCHMENTS[entry.origin].short}
             </text>
           </g>
         ))}
@@ -441,21 +516,60 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
           onChange={(value) => {
             setOwner(value);
             setSelected(null);
+            setHover(null);
           }}
           label="Catchment pressure owner"
         />
-        <span className={styles.snapshot}>
-          <Clock size={19} aria-hidden="true" />
-          Snapshot {formatInstantWithDay(now, now)} AWST
-        </span>
-        <div className={styles.keys}>
-          <Key>Waiting (total)</Key>
-          <Key amber>Over {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h</Key>
+        <div className={styles.serviceMarks} role="group" aria-label="Health service">
+          <button type="button" aria-pressed={service === "all"} onClick={() => setService("all")}>
+            All
+          </button>
+          {SERVICE_MARKS.map((origin) => {
+            const mark = serviceStats.find((entry) => entry.origin === origin);
+            const total = mark?.total ?? 0;
+            const peak = Math.max(1, ...serviceStats.map((entry) => entry.total));
+            return (
+              <button
+                key={origin}
+                type="button"
+                aria-pressed={service === origin}
+                onClick={() => {
+                  setService(origin);
+                  setSelected(origin);
+                }}
+              >
+                <span>{CATCHMENTS[origin].code}</span>
+                <i aria-hidden="true">
+                  <b style={{ width: `${(total / peak) * 100}%` }} />
+                  <b data-amber style={{ width: `${((mark?.over8 ?? 0) / peak) * 100}%` }} />
+                </i>
+                <strong>{total}</strong>
+              </button>
+            );
+          })}
         </div>
+        <span className={styles.snapshot}>
+          <Clock size={14} aria-hidden="true" />
+          {formatInstantWithDay(now, now)}
+        </span>
       </div>
       <div className={styles.pressurePlot}>
-        {renderGraph(false)}
-        {renderGraph(true)}
+        {renderGraph()}
+        {hovered && (
+          <div className={styles.hoverCard} style={{ left: `${((hover! + 0.5) / Math.max(1, stats.length)) * 100}%` }}>
+            <strong>
+              {CATCHMENTS[hovered.origin].short}
+              {CATCHMENTS[hovered.origin].code ? ` · ${CATCHMENTS[hovered.origin].code}` : ""}
+            </strong>
+            <span>Waiting {hovered.total}</span>
+            <span>Over 8h {hovered.over8}</span>
+            <span>Over 12h {hovered.over12}</span>
+            <span>Still waiting from 4h ago {hovered.stillWaiting4hAgo}</span>
+            <span>Still waiting from 8h ago {hovered.stillWaiting8hAgo}</span>
+            <span>If nothing changes, over 8h in 4h {hovered.expectedOver8}</span>
+            <span>If nothing changes, over 12h in 4h {hovered.expectedOver12}</span>
+          </div>
+        )}
       </div>
       {choice && (
         <div
@@ -478,9 +592,13 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
             <b>{choice.over8}</b>
             <small>over {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h</small>
           </div>
-          <div data-amber>
-            <b>{choice.over24}</b>
-            <small>over {LONG_WAIT_MINUTES / 60}h</small>
+          <div data-danger>
+            <b>{choice.over12}</b>
+            <small>over {OVER_TWELVE_HOURS_MINUTES / 60}h</small>
+          </div>
+          <div>
+            <b>{choice.expectedOver8}</b>
+            <small>over 8h if nothing changes</small>
           </div>
           <button type="button" className={styles.primary} onClick={() => onViewQueue({ origin: choice.origin })}>
             View {choice.total} people
@@ -490,11 +608,17 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
         </div>
       )}
       <footer className={styles.chartFooter}>
+        <div className={styles.keys}>
+          <Key>Waiting</Key>
+          <Key amber>Over 8h</Key>
+          <Key tone="danger">Over 12h</Key>
+          <Key tone="muted">Still waiting from 4h ago</Key>
+          <Key tone="expected">Over 8h if nothing changes</Key>
+        </div>
         <span>
-          <Info size={17} aria-hidden="true" />
-          Counted once by origin ED.
+          <Info size={14} aria-hidden="true" />
+          Counted once by origin ED · Synthetic records
         </span>
-        <span>Snapshot {formatInstantWithDay(now, now)} AWST · Synthetic records</span>
       </footer>
     </div>
   );
@@ -573,21 +697,29 @@ function RadarInspector({ record, now, onClose }: { record: DelayRecord; now: In
     </aside>
   );
 }
+function plotGroups(people: DelayRecord[], now: Instant) {
+  const sorted = [...people].sort((a, b) => b.movement.openedAt - a.movement.openedAt);
+  const groups: DelayRecord[][] = [];
+  for (const record of sorted) {
+    const wait = Math.max(0, now - record.movement.openedAt);
+    const current = groups.at(-1);
+    const last = current?.[current.length - 1];
+    const lastWait = last === undefined ? Infinity : Math.max(0, now - last.movement.openedAt);
+    if (current && Math.abs(lastWait - wait) <= 20) current.push(record);
+    else groups.push([record]);
+  }
+  return groups;
+}
 function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
   const patientOf = usePatientOf();
   const [owner, setOwner] = useState<DelayOwnerId | "all">("all");
   const [windowMinutes, setWindowMinutes] = useState(LONG_WAIT_MINUTES);
-  const [selectedId, setSelectedId] = useState<string | null | undefined>();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cluster, setCluster] = useState<{ label: string; ids: string[] } | null>(null);
   const focusReturn = useRef<HTMLElement | null>(null);
   const filtered = rows.filter(({ cause }) => owner === "all" || ownerOf(cause) === owner);
   const graph = delayRadarGroups(filtered, now, windowMinutes);
-  const suggested =
-    graph.lanes.find((lane) => lane.band === "breached")?.all[0] ??
-    graph.lanes.find((lane) => lane.band === "imminent")?.all[0];
-  const selected = filtered.find(
-    ({ movement }) => movement.id === (selectedId === undefined ? suggested?.movement.id : selectedId),
-  );
+  const selected = filtered.find(({ movement }) => movement.id === selectedId);
   const close = () => {
     setSelectedId(null);
     setCluster(null);
@@ -620,7 +752,7 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
           value={owner}
           onChange={(value) => {
             setOwner(value);
-            setSelectedId(undefined);
+            setSelectedId(null);
             setCluster(null);
           }}
           label="Crisis radar owner"
@@ -648,7 +780,7 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
           onClick={() => {
             setOwner("all");
             setWindowMinutes(1440);
-            setSelectedId(undefined);
+            setSelectedId(null);
             setCluster(null);
           }}
         >
@@ -685,40 +817,49 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
             </div>
             {graph.lanes.map((lane) => (
               <div className={styles.radarLane} key={lane.band} data-band={lane.band}>
-                {lane.band === "breached" || lane.band === "imminent"
-                  ? lane.inView.map((record) => (
+                {plotGroups(lane.inView, now).map((group) => {
+                  const wait = (record: DelayRecord) => Math.max(0, now - record.movement.openedAt);
+                  const mean = group.reduce((sum, record) => sum + wait(record), 0) / group.length;
+                  const left = `${(mean / windowMinutes) * 100}%`;
+                  if (group.length >= 3) {
+                    return (
                       <button
                         type="button"
-                        key={record.movement.id}
-                        className={styles.urgentPoint}
-                        data-past={lane.band === "breached"}
-                        style={{ left: `${(Math.max(0, now - record.movement.openedAt) / windowMinutes) * 100}%` }}
-                        aria-label={`Inspect ${patientOf(record.movement).displayName}`}
-                        onClick={(event) => pick(record, event.currentTarget)}
-                      >
-                        <i />
-                        <span>{patientOf(record.movement).displayName}</span>
-                      </button>
-                    ))
-                  : lane.bins.map((bin) => (
-                      <button
-                        type="button"
-                        key={bin.start}
-                        className={styles.cluster}
-                        style={{ left: `${((bin.start + bin.end) / 2 / windowMinutes) * 100}%` }}
-                        aria-label={`${bin.people.length} people, ${LANES[lane.band]}, ${bin.start / 60} to ${bin.end / 60} hours; inspect interval`}
+                        key={group[0].movement.id}
+                        className={styles.countDot}
+                        data-band={lane.band}
+                        style={{ left, top: "50%" }}
+                        aria-label={`${group.length} people, ${LANES[lane.band]}, around ${Math.round(mean / 60)} hours. Show the list`}
                         onClick={(event) => {
                           focusReturn.current = event.currentTarget;
                           setSelectedId(null);
                           setCluster({
-                            label: `${LANES[lane.band]} · ${bin.start / 60}–${bin.end / 60}h`,
-                            ids: bin.people.map(({ movement }) => movement.id),
+                            label: `${LANES[lane.band]} · ${Math.floor(mean / 60)}h`,
+                            ids: group.map(({ movement }) => movement.id),
                           });
                         }}
                       >
-                        {bin.people.length}
+                        {group.length}
                       </button>
-                    ))}
+                    );
+                  }
+                  return group.map((record) => (
+                    <button
+                      type="button"
+                      key={record.movement.id}
+                      className={styles.personDot}
+                      data-band={lane.band}
+                      style={{
+                        left: `${(wait(record) / windowMinutes) * 100}%`,
+                        top: `${spreadPercent(record.movement.id)}%`,
+                      }}
+                      aria-label={`Inspect person waiting ${splitDuration(wait(record))} in ${LANES[lane.band]}`}
+                      onClick={(event) => pick(record, event.currentTarget)}
+                    >
+                      <span className={styles.dotName}>{patientOf(record.movement).displayName}</span>
+                    </button>
+                  ));
+                })}
               </div>
             ))}
             <div className={styles.radarAxis}>
@@ -744,7 +885,7 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
                 .filter(({ movement }) => cluster.ids.includes(movement.id))
                 .map((record) => (
                   <button key={record.movement.id} type="button" onClick={(event) => pick(record, event.currentTarget)}>
-                    <strong>{patientOf(record.movement).formalName}</strong>
+                    <strong className={styles.revealName}>{patientOf(record.movement).displayName}</strong>
                     <span>
                       {originName(record)} · {splitDuration(Math.max(0, now - record.movement.openedAt))}
                     </span>
@@ -761,13 +902,16 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
         </h3>
         <div>
           {graph.beyond.map((record) => (
-            <button key={record.movement.id} type="button" onClick={(event) => pick(record, event.currentTarget)}>
-              <UserRound size={21} aria-hidden="true" />
-              <span>
-                <strong>{patientOf(record.movement).formalName}</strong>
-                <b>{splitDuration(Math.max(0, now - record.movement.openedAt))}</b>
-              </span>
-              <ChevronRight size={19} aria-hidden="true" />
+            <button
+              key={record.movement.id}
+              type="button"
+              className={styles.outlierChip}
+              data-band={delayRadarBand(record.movement, now)}
+              onClick={(event) => pick(record, event.currentTarget)}
+            >
+              <UserRound size={14} aria-hidden="true" />
+              <b>{splitDuration(Math.max(0, now - record.movement.openedAt))}</b>
+              <strong className={styles.revealName}>{patientOf(record.movement).displayName}</strong>
             </button>
           ))}
           {graph.beyond.length === 0 && <p>No waiting records beyond this window.</p>}
@@ -778,10 +922,11 @@ function CrisisRadar({ rows, now }: Pick<Props, "rows" | "now">) {
           {graph.visible.length} people in the 0 – {windowMinutes / 60}h window · {graph.beyond.length} beyond{" "}
           {windowMinutes / 60}h
         </span>
-        <span>Numbered circles: people in interval · Select to inspect</span>
+        <span>Dot: one person · Larger dot: people close together · Hover for the name</span>
         <div className={styles.keys}>
           <Key>Waiting</Key>
-          <Key amber>Recorded due within 60m</Key>
+          <Key amber>Due within 60m</Key>
+          <Key tone="danger">Past recorded time</Key>
         </div>
       </footer>
     </div>
@@ -802,7 +947,11 @@ export function DelaysCoordination(props: Props) {
     event.preventDefault();
     const index = GRAPHS.findIndex((entry) => entry.id === graph);
     const next =
-      event.key === "Home" ? 0 : event.key === "End" ? 2 : (index + (event.key === "ArrowRight" ? 1 : 2)) % 3;
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? GRAPHS.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : GRAPHS.length - 1)) % GRAPHS.length;
     selectGraph(GRAPHS[next].id);
     document.getElementById(`${id}-${GRAPHS[next].id}`)?.focus();
   }
@@ -849,6 +998,7 @@ export function DelaysCoordination(props: Props) {
               />
             )}
           </div>
+          <div hidden={graph !== "runway"}>{visited.includes("runway") && <UrgentQueue {...props} />}</div>
         </div>
       </section>
     </div>

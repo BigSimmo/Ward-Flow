@@ -15,6 +15,10 @@ export type DelayRecord = { movement: Movement; cause: DelayCause };
 export type CatchmentOrigin = HealthService | "unrecorded";
 export type RadarBand = "breached" | "imminent" | "severe" | "routine";
 
+/** Display band for the pressure chart. Not a new clinical rule. */
+export const OVER_TWELVE_HOURS_MINUTES = 12 * 60;
+const FOUR_HOURS_MINUTES = 4 * 60;
+
 /** Origin is exclusive. Destination/referral membership never adds a second person. */
 export function delayCatchments(records: readonly DelayRecord[], now: Instant) {
   const primary: HealthService[] = ["North Metro", "East Metro", "South Metro", "WACHS"];
@@ -28,12 +32,24 @@ export function delayCatchments(records: readonly DelayRecord[], now: Instant) {
       const people = records.filter(
         ({ movement }) => (edHealthService(movement.originEdId) ?? "unrecorded") === origin,
       );
+      const waitOf = (movement: Movement) => Math.max(0, now - movement.openedAt);
       return {
         origin,
         people,
         total: people.length,
-        over8: people.filter(({ movement }) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
-        over24: people.filter(({ movement }) => now - movement.openedAt >= LONG_WAIT_MINUTES).length,
+        over8: people.filter(({ movement }) => waitOf(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+        over12: people.filter(({ movement }) => waitOf(movement) >= OVER_TWELVE_HOURS_MINUTES).length,
+        over24: people.filter(({ movement }) => waitOf(movement) >= LONG_WAIT_MINUTES).length,
+        /** Open people whose recorded arrival was already at least 4h or 8h ago. */
+        stillWaiting4hAgo: people.filter(({ movement }) => waitOf(movement) >= FOUR_HOURS_MINUTES).length,
+        stillWaiting8hAgo: people.filter(({ movement }) => waitOf(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+        /** If nobody leaves, how many cross 8h and 12h within the next 4 hours. */
+        expectedOver8: people.filter(
+          ({ movement }) => waitOf(movement) + FOUR_HOURS_MINUTES >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+        ).length,
+        expectedOver12: people.filter(
+          ({ movement }) => waitOf(movement) + FOUR_HOURS_MINUTES >= OVER_TWELVE_HOURS_MINUTES,
+        ).length,
       };
     })
     .filter((entry) => primary.includes(entry.origin as HealthService) || entry.total > 0);
