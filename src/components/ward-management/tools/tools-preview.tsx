@@ -332,7 +332,7 @@ export function ToolsPreview() {
         <small>Interactive mockup · synthetic application data</small>
       </div>
       {open && (
-        <section className={styles.drawer} aria-label="Tools design preview">
+        <section className={styles.drawer} data-section={section} aria-label="Tools design preview">
           <header className={styles.header}>
             <div className={styles.headerIcon}>
               <Wrench aria-hidden="true" />
