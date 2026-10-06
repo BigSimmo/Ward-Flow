@@ -11,34 +11,97 @@ export interface ResolvedPatientInfo {
   genderOrSex?: string;
 }
 
-/**
- * Centrally resolve a patient and their display information from any clinical subject
- * (Movement, Referral, Admission, or raw patientId/subject object) against system state.
- */
-export function resolveSubjectPatient(
-  subject:
-    | Movement
-    | Referral
-    | Admission
-    | { patientId?: PatientId | string | null; referralId?: string | null; id?: string }
-    | null
-    | undefined,
-  state: {
+const DUPLICATE = Symbol("DUPLICATE");
+
+interface ResolvedIndex {
+  patientMap: Map<string, Patient | typeof DUPLICATE>;
+  referralMap: Map<string, Referral | typeof DUPLICATE>;
+  movementMap: Map<string, Movement | typeof DUPLICATE>;
+  formattedMap: Map<Patient, ResolvedPatientInfo>;
+}
+
+const stateIndexCache = new WeakMap<object, ResolvedIndex>();
+
+export function buildPatientResolverIndex(state: {
+  patients?: readonly Patient[];
+  referrals?: readonly Referral[];
+  movements?: readonly Movement[];
+}): ResolvedIndex {
+  const patientMap = new Map<string, Patient | typeof DUPLICATE>();
+  const referralMap = new Map<string, Referral | typeof DUPLICATE>();
+  const movementMap = new Map<string, Movement | typeof DUPLICATE>();
+  const formattedMap = new Map<Patient, ResolvedPatientInfo>();
+
+  if (state.patients) {
+    for (const p of state.patients) {
+      if (patientMap.has(p.id)) {
+        patientMap.set(p.id, DUPLICATE);
+      } else {
+        patientMap.set(p.id, p);
+      }
+    }
+  }
+
+  if (state.referrals) {
+    for (const r of state.referrals) {
+      if (referralMap.has(r.id)) {
+        referralMap.set(r.id, DUPLICATE);
+      } else {
+        referralMap.set(r.id, r);
+      }
+    }
+  }
+
+  if (state.movements) {
+    for (const m of state.movements) {
+      if (movementMap.has(m.id)) {
+        movementMap.set(m.id, DUPLICATE);
+      } else {
+        movementMap.set(m.id, m);
+      }
+    }
+  }
+
+  return { patientMap, referralMap, movementMap, formattedMap };
+}
+
+function getOrBuildIndex(
+  state: object & {
     patients?: readonly Patient[];
     referrals?: readonly Referral[];
     movements?: readonly Movement[];
   },
-): ResolvedPatientInfo {
-  const patients = state.patients ?? [];
-  const referrals = state.referrals ?? [];
-  const movements = state.movements ?? [];
-  const unknown: ResolvedPatientInfo = {
-    displayName: "Unknown Patient",
-    formalName: "Unknown Patient",
-    umrn: "UMRN not recorded",
-    initials: "UP",
-  };
-  if (!subject) return unknown;
+): ResolvedIndex {
+  let index = stateIndexCache.get(state);
+  if (!index) {
+    index = buildPatientResolverIndex(state);
+    stateIndexCache.set(state, index);
+  }
+  return index;
+}
+
+const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
+  displayName: "Unknown Patient",
+  formalName: "Unknown Patient",
+  umrn: "UMRN not recorded",
+  initials: "UP",
+});
+
+export type PatientResolutionSubject =
+  | Movement
+  | Referral
+  | Admission
+  | {
+      patientId?: PatientId | string | null;
+      referralId?: string | null;
+      movementId?: string | null;
+      id?: string;
+    }
+  | null
+  | undefined;
+
+function resolveSubjectWithIndex(subject: PatientResolutionSubject, index: ResolvedIndex): ResolvedPatientInfo {
+  if (!subject) return UNKNOWN_PATIENT;
 
   // Only explicit, unambiguous episode links can attribute a patient's identity.
   const ids = new Set<string>();
@@ -46,31 +109,74 @@ export function resolveSubjectPatient(
   const collect = (link: { patientId?: string | null; referralId?: string | null }) => {
     if (link.patientId) ids.add(link.patientId);
     if (link.referralId) {
-      const matches = referrals.filter((referral) => referral.id === link.referralId);
-      if (matches.length !== 1 || !matches[0].patientId) invalidLink = true;
-      else ids.add(matches[0].patientId);
+      const match = index.referralMap.get(link.referralId);
+      if (!match || match === DUPLICATE || !match.patientId) invalidLink = true;
+      else ids.add(match.patientId);
     }
   };
+
   collect(subject as { patientId?: string | null; referralId?: string | null });
   const movementId = (subject as { movementId?: string }).movementId;
   if (movementId) {
-    const matches = movements.filter((movement) => movement.id === movementId);
-    if (matches.length !== 1) invalidLink = true;
-    else collect(matches[0]);
+    const match = index.movementMap.get(movementId);
+    if (!match || match === DUPLICATE) invalidLink = true;
+    else collect(match);
   }
+
   if (!ids.size && !movementId && !(subject as { referralId?: string }).referralId && subject.id?.startsWith("PT-")) {
     ids.add(subject.id);
   }
-  if (invalidLink || ids.size !== 1) return unknown;
-  const matches = patients.filter((patient) => ids.has(patient.id));
-  return matches.length === 1 ? formatResolvedPatient(matches[0]) : unknown;
+
+  if (invalidLink || ids.size !== 1) return UNKNOWN_PATIENT;
+  const [singleId] = ids;
+  const match = index.patientMap.get(singleId);
+  return match && match !== DUPLICATE ? formatResolvedPatient(match, index.formattedMap) : UNKNOWN_PATIENT;
 }
 
-function formatResolvedPatient(patient: Patient): ResolvedPatientInfo {
+/**
+ * Centrally resolve a patient and their display information from any clinical subject
+ * (Movement, Referral, Admission, or raw patientId/subject object) against system state.
+ * Employs WeakMap index caching for O(1) identity lookups.
+ */
+export function resolveSubjectPatient(
+  subject: PatientResolutionSubject,
+  state: {
+    patients?: readonly Patient[];
+    referrals?: readonly Referral[];
+    movements?: readonly Movement[];
+  },
+): ResolvedPatientInfo {
+  if (typeof state !== "object" || state === null) {
+    return UNKNOWN_PATIENT;
+  }
+  const index = getOrBuildIndex(state);
+  return resolveSubjectWithIndex(subject, index);
+}
+
+/**
+ * Factory for creating a reusable, memoized patient resolver for a fixed state snapshot.
+ */
+export function createPatientResolver(state: {
+  patients?: readonly Patient[];
+  referrals?: readonly Referral[];
+  movements?: readonly Movement[];
+}): (subject: PatientResolutionSubject) => ResolvedPatientInfo {
+  const index = typeof state === "object" && state !== null ? getOrBuildIndex(state) : buildPatientResolverIndex({});
+  return (subject) => resolveSubjectWithIndex(subject, index);
+}
+
+function formatResolvedPatient(
+  patient: Patient,
+  formattedMap?: Map<Patient, ResolvedPatientInfo>,
+): ResolvedPatientInfo {
+  if (formattedMap) {
+    const cached = formattedMap.get(patient);
+    if (cached) return cached;
+  }
   const given = patient.givenName;
   const family = patient.familyName;
   const initials = `${given[0] ?? ""}${family[0] ?? ""}`.toUpperCase();
-  return {
+  const formatted: ResolvedPatientInfo = {
     patient,
     displayName: patientDisplayName(patient),
     formalName: `${family}, ${given}`,
@@ -78,4 +184,8 @@ function formatResolvedPatient(patient: Patient): ResolvedPatientInfo {
     initials,
     genderOrSex: patient.gender ?? patient.sex,
   };
+  if (formattedMap) {
+    formattedMap.set(patient, formatted);
+  }
+  return formatted;
 }

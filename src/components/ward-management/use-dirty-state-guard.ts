@@ -2,6 +2,14 @@
 
 import { useEffect, useCallback, useRef } from "react";
 
+// Australian Medicare (10 digits starting with 2-6), hospital MRN/UMRN records, or phones
+const UNSAFE_IDENTIFIER_PATTERN =
+  /\b([2-6]\d{3}[ -]?\d{5}[ -]?\d)\b|\b(?:UMRN|MRN|UR[N#]?)\s*[:#]?\s*(\d{6,9})\b|\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/i;
+
+function isSyntheticSafe(value: string): boolean {
+  return !UNSAFE_IDENTIFIER_PATTERN.test(value);
+}
+
 export interface DirtyStateGuardOptions {
   key?: string;
   isDirty: boolean;
@@ -49,6 +57,7 @@ export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStat
     if (!key || typeof window === "undefined" || isRestoringRef.current) return;
     try {
       if (isDirty && value !== undefined && value.length > 0) {
+        if (!isSyntheticSafe(value)) return;
         window.sessionStorage.setItem(`wf-draft:${key}`, value);
       } else if (!isDirty || (value !== undefined && value.length === 0)) {
         window.sessionStorage.removeItem(`wf-draft:${key}`);

@@ -47,6 +47,7 @@
 }
 
 .podFilterBtn {
+  position: relative;
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
@@ -56,6 +57,18 @@
   color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.podFilterBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .podFilterBtn:hover {
@@ -131,6 +144,7 @@
 }
 
 .shiftToggleBtn {
+  position: relative;
   padding: 3px 10px;
   font-size: 11.5px;
   font-weight: 600;
@@ -143,6 +157,18 @@
   align-items: center;
   gap: 5px;
   transition: all 0.15s ease;
+}
+
+.shiftToggleBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .shiftToggleBtn.active {
@@ -268,6 +294,7 @@
 }
 
 .btnShiftAction {
+  position: relative;
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 500;
@@ -277,6 +304,18 @@
   color: var(--ink);
   cursor: pointer;
   transition: all 0.12s ease;
+}
+
+.btnShiftAction::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .btnShiftAction:hover {
@@ -329,6 +368,7 @@
 }
 
 .filterPillBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -341,6 +381,18 @@
   color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.filterPillBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .filterPillBtn:hover {

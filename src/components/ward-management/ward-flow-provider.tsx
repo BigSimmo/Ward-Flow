@@ -657,7 +657,21 @@ function WardFlowWorld({
   );
   const state = container.world;
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
-  const dispatch: Dispatch<WardFlowEvent> = dispatchContainer;
+  const dispatch = useCallback<Dispatch<WardFlowEvent>>(
+    (event: WardFlowEvent) => {
+      dispatchContainer(event);
+      if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
+        try {
+          const channel = new BroadcastChannel("ward-flow-sync");
+          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
+          channel.close();
+        } catch {
+          // BroadcastChannel unavailable in this environment
+        }
+      }
+    },
+    [dispatchContainer],
+  );
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
   // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
   activateScenarioNetwork(state.scenario);
@@ -729,6 +743,23 @@ function WardFlowWorld({
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [initialNow, mountedAtAbsolute]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+    try {
+      const channel = new BroadcastChannel("ward-flow-sync");
+      channel.onmessage = (messageEvent) => {
+        if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
+          setTick((tick) => tick + 1);
+        }
+      };
+      return () => {
+        channel.close();
+      };
+    } catch {
+      return undefined;
+    }
+  }, []);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
 
   /**

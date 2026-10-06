@@ -1591,101 +1591,6 @@ summary::-webkit-details-marker {
   font-weight: 800;
 }
 
-/* Therapy Compass compare tray: the row above the search pill that says what is
-   in the comparison. Same in-flow trick as the two rows above, so scroll-hide
-   carries it with the composer.
-
-   It must stay ONE row tall at every state — the dock's content clearance is a
-   static token, so a dock that grows covers page content by exactly its growth.
-   The expanded state is a bottom sheet for that reason, not a taller bar.
-
-   Interaction states are NOT redeclared here: the summary row carries
-   `interactiveRowBase` and the actions are the shared `Button`, so hover, focus
-   and disabled behaviour come from the design system, per COMPONENTS.md 9.1. */
-.therapy-compare-tray {
-  position: relative;
-  z-index: var(--z-raised);
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: var(--therapy-compare-tray-gap);
-  margin-bottom: var(--therapy-compare-tray-gap);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  padding: var(--therapy-compare-tray-padding);
-  box-shadow: var(--e3);
-}
-
-.therapy-compare-tray__summary {
-  min-width: 0;
-  flex: 1 1 auto;
-  gap: var(--therapy-compare-tray-gap);
-  border-radius: var(--radius-md);
-  padding-inline: var(--therapy-compare-tray-summary-inset);
-}
-
-.therapy-compare-tray__pips {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--therapy-compare-tray-pip-gap);
-}
-
-.therapy-compare-tray__pip {
-  display: grid;
-  height: var(--therapy-compare-tray-pip-size);
-  width: var(--therapy-compare-tray-pip-size);
-  place-items: center;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-pill, 9999px);
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  font-weight: 900;
-  transition: transform var(--duration-moderate) var(--ease-out-soft);
-}
-
-.therapy-compare-tray__pip[data-filled="true"] {
-  border-color: transparent;
-  background: var(--clinical-accent);
-  color: var(--clinical-accent-contrast);
-}
-
-/* The arriving slot pulses once. Derived from the set, so it fires whichever
-   control added the therapy. */
-.therapy-compare-tray__pip[data-landed="true"] {
-  transform: scale(1.25);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .therapy-compare-tray__pip {
-    transition: none;
-  }
-
-  .therapy-compare-tray__pip[data-landed="true"] {
-    transform: none;
-  }
-}
-
-.therapy-compare-tray__names {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-heading);
-  font-size: 0.8125rem;
-  font-weight: 800;
-}
-
-.therapy-compare-tray__count {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  font-weight: 700;
-}
-
 /* Bottom-docked composer: hint row + upward dropdown grow above the pill. */
 .answer-footer-search-edge {
   overflow: visible;
@@ -5317,11 +5222,6 @@ html.theme-transitioning *:after {
 }
 
 @media (max-width: 640px) {
-  .therapy-pathway-list {
-    border-right: 0 !important;
-    border-bottom: 1px solid var(--border);
-  }
-
   [data-therapy-paper] {
     padding: 28px 22px !important;
   }

@@ -972,7 +972,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const admission: (typeof unitOccupantAdmissions)[number] | undefined =
       status === "leave" ? leaveAdmission : status === "occupied" ? otherOccupants[otherOccupantCursor++] : undefined;
     const linkedMovement =
-      incomingMovement ?? (admission?.referralId ? movements.find((m) => m.id === admission.referralId) : undefined);
+      incomingMovement ??
+      (admission
+        ? movements.find(
+            (m) =>
+              (admission.movementId !== null && m.id === admission.movementId) ||
+              (admission.referralId !== null && m.referralId === admission.referralId),
+          )
+        : undefined);
     const recordedSubject = linkedMovement ?? admission;
     const patientInfo =
       status === "ready" || recordedSubject === undefined ? undefined : resolvePatientIdentity(recordedSubject);
@@ -1082,6 +1089,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * different action than the one on screen.
    */
   function handleAcceptInPrinciple(movementId: string, unitId: string) {
+    const targetUnit = units.find((u) => u.id === unitId);
+    if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
     dispatch({
       type: "ACCEPT_IN_PRINCIPLE",
@@ -1094,6 +1103,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   function handlePullPatient(movementId: string, unitId: string) {
+    const targetUnit = units.find((u) => u.id === unitId);
+    if (!targetUnit) return;
     priorRejectionCountRef.current = rejections.length;
     dispatch({
       type: "PULL_PATIENT",
@@ -3598,9 +3609,27 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     setToastMessage(`Discharge blocker recorded: ${blocker}`);
                   }}
                   onMarkAtEd={(bedNum) => {
+                    if (selectedBedItem?.admissionId) {
+                      dispatch({
+                        type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+                        role: "ward",
+                        now,
+                        admissionId: selectedBedItem.admissionId,
+                        actingUnitId: unitId,
+                      });
+                    }
                     setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
                   }}
                   onMarkBack={(bedNum) => {
+                    if (selectedBedItem?.admissionId) {
+                      dispatch({
+                        type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+                        role: "ward",
+                        now,
+                        admissionId: selectedBedItem.admissionId,
+                        actingUnitId: unitId,
+                      });
+                    }
                     setToastMessage(`Bed ${bedNum} patient marked returned to ward.`);
                   }}
                   bedDrawerRef={bedDrawerRef}

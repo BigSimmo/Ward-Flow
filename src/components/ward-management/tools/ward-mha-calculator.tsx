@@ -74,7 +74,11 @@ export function isWeekend(date: Date): boolean {
  * Evaluates whether On-Call Consultant Psychiatrist cover must be arranged.
  * Triggered if the entered date/time falls on a weekend or after-hours.
  */
-export function checkSafeguardAlert(date: Date | null): SafeguardAlertResult {
+export function checkSafeguardAlert(
+  date: Date | null,
+  formType?: MhaFormType,
+  referenceDate?: Date | null,
+): SafeguardAlertResult {
   if (!date || Number.isNaN(date.getTime())) {
     return {
       isAfterHours: false,
@@ -86,10 +90,20 @@ export function checkSafeguardAlert(date: Date | null): SafeguardAlertResult {
 
   const afterHours = isAfterHours(date);
   const weekend = isWeekend(date);
-  const alertRequired = afterHours || weekend;
+
+  let capExceededNotice: string | null = null;
+  if (formType && referenceDate && !Number.isNaN(referenceDate.getTime())) {
+    const maxHours = formType === "3A" ? 24 : 72;
+    const diffHours = Math.abs(date.getTime() - referenceDate.getTime()) / (3600 * 1000);
+    if (diffHours > maxHours) {
+      capExceededNotice = `Time written on form is more than ${maxHours} hours from reference time. Check the physical form.`;
+    }
+  }
+
+  const alertRequired = afterHours || weekend || capExceededNotice !== null;
   let message: string | null = null;
 
-  if (alertRequired) {
+  if (afterHours || weekend) {
     if (afterHours && weekend) {
       message =
         "Time written on form falls on a weekend and after-hours (17:00–08:00). On-Call Consultant Psychiatrist cover must be arranged.";
@@ -99,6 +113,10 @@ export function checkSafeguardAlert(date: Date | null): SafeguardAlertResult {
       message =
         "Time written on form falls after-hours (17:00–08:00). On-Call Consultant Psychiatrist cover must be arranged.";
     }
+  }
+
+  if (capExceededNotice) {
+    message = message ? `${message} ${capExceededNotice}` : capExceededNotice;
   }
 
   return {
@@ -162,8 +180,8 @@ export function formatEnteredExpiryNotice(date: Date | null): string {
   return `Expiry written on form: ${formatStatutoryDateTime(date)}`;
 }
 
-export function getForm1ARecord(enteredDate: Date | null): FormDisplayRecord {
-  const safeguard = checkSafeguardAlert(enteredDate);
+export function getForm1ARecord(enteredDate: Date | null, referenceDate?: Date | null): FormDisplayRecord {
+  const safeguard = checkSafeguardAlert(enteredDate, "1A", referenceDate);
   return {
     form: "1A",
     officialTitle: officialFormLabel("1A"),
@@ -176,8 +194,8 @@ export function getForm1ARecord(enteredDate: Date | null): FormDisplayRecord {
   };
 }
 
-export function getForm3ARecord(enteredDate: Date | null): FormDisplayRecord {
-  const safeguard = checkSafeguardAlert(enteredDate);
+export function getForm3ARecord(enteredDate: Date | null, referenceDate?: Date | null): FormDisplayRecord {
+  const safeguard = checkSafeguardAlert(enteredDate, "3A", referenceDate);
   return {
     form: "3A",
     officialTitle: officialFormLabel("3A"),
@@ -190,8 +208,8 @@ export function getForm3ARecord(enteredDate: Date | null): FormDisplayRecord {
   };
 }
 
-export function getForm4BRecord(enteredDate: Date | null): FormDisplayRecord {
-  const safeguard = checkSafeguardAlert(enteredDate);
+export function getForm4BRecord(enteredDate: Date | null, referenceDate?: Date | null): FormDisplayRecord {
+  const safeguard = checkSafeguardAlert(enteredDate, "4B", referenceDate);
   return {
     form: "4B",
     officialTitle: officialFormLabel("4B"),
@@ -256,9 +274,9 @@ export function WardMhaCalculator({
 
   const enteredDate = useMemo(() => parseDateTimeInput(inputDate, inputTime), [inputDate, inputTime]);
 
-  const form1AData = useMemo(() => getForm1ARecord(enteredDate), [enteredDate]);
-  const form3AData = useMemo(() => getForm3ARecord(enteredDate), [enteredDate]);
-  const form4BData = useMemo(() => getForm4BRecord(enteredDate), [enteredDate]);
+  const form1AData = useMemo(() => getForm1ARecord(enteredDate, now), [enteredDate, now]);
+  const form3AData = useMemo(() => getForm3ARecord(enteredDate, now), [enteredDate, now]);
+  const form4BData = useMemo(() => getForm4BRecord(enteredDate, now), [enteredDate, now]);
 
   const handleSetToNow = useCallback(() => {
     setInputDate(toDateInputValue(now));
@@ -276,7 +294,7 @@ export function WardMhaCalculator({
   );
 
   const handlePreset = useCallback(
-    (preset: "today-0900" | "yesterday-1800" | "offset-48h" | "offset-70h" | "offset-20d") => {
+    (preset: "today-0900" | "yesterday-1800" | "offset-48h" | "offset-70h" | "offset-18h" | "offset-22h") => {
       const target = new Date(now.getTime());
       if (preset === "today-0900") {
         target.setTime(parseDateTimeInput(toDateInputValue(now), "09:00")?.getTime() ?? now.getTime());
@@ -289,8 +307,10 @@ export function WardMhaCalculator({
         target.setTime(target.getTime() - 48 * 60 * 60 * 1000);
       } else if (preset === "offset-70h") {
         target.setTime(target.getTime() - 70 * 60 * 60 * 1000);
-      } else if (preset === "offset-20d") {
-        target.setTime(target.getTime() - 20 * 24 * 60 * 60 * 1000);
+      } else if (preset === "offset-18h") {
+        target.setTime(target.getTime() - 18 * 60 * 60 * 1000);
+      } else if (preset === "offset-22h") {
+        target.setTime(target.getTime() - 22 * 60 * 60 * 1000);
       }
       setInputDate(toDateInputValue(target));
       setInputTime(toTimeInputValue(target));
@@ -314,13 +334,33 @@ export function WardMhaCalculator({
       </header>
 
       {/* Mode Selector Tabs with Official Titles Only */}
-      <div role="tablist" aria-label="Statutory form selection" className={styles.modeTabs}>
+      <div
+        role="tablist"
+        aria-label="Statutory form selection"
+        className={styles.modeTabs}
+        onKeyDown={(e) => {
+          const forms: MhaFormType[] = ["1A", "3A", "4B"];
+          const currentIndex = forms.indexOf(selectedForm);
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            const next = forms[(currentIndex + 1) % forms.length];
+            setSelectedForm(next);
+            document.getElementById(`tab-${next}`)?.focus();
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const prev = forms[(currentIndex - 1 + forms.length) % forms.length];
+            setSelectedForm(prev);
+            document.getElementById(`tab-${prev}`)?.focus();
+          }
+        }}
+      >
         <button
           type="button"
           role="tab"
           id="tab-1A"
           aria-controls="panel-1A"
           aria-selected={selectedForm === "1A"}
+          tabIndex={selectedForm === "1A" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "1A" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("1A")}
         >
@@ -334,6 +374,7 @@ export function WardMhaCalculator({
           id="tab-3A"
           aria-controls="panel-3A"
           aria-selected={selectedForm === "3A"}
+          tabIndex={selectedForm === "3A" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "3A" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("3A")}
         >
@@ -347,6 +388,7 @@ export function WardMhaCalculator({
           id="tab-4B"
           aria-controls="panel-4B"
           aria-selected={selectedForm === "4B"}
+          tabIndex={selectedForm === "4B" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "4B" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("4B")}
         >
@@ -424,9 +466,14 @@ export function WardMhaCalculator({
             </>
           )}
           {selectedForm === "3A" && (
-            <button type="button" className={styles.presetChip} onClick={() => handlePreset("offset-20d")}>
-              20d reference
-            </button>
+            <>
+              <button type="button" className={styles.presetChip} onClick={() => handlePreset("offset-18h")}>
+                18h reference
+              </button>
+              <button type="button" className={styles.presetChip} onClick={() => handlePreset("offset-22h")}>
+                22h reference
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -434,7 +481,7 @@ export function WardMhaCalculator({
       {/* Display Panels */}
       <div className={styles.resultsContainer}>
         {selectedForm === "1A" && (
-          <div role="tabpanel" id="panel-1A" aria-labelledby="tab-1A">
+          <div role="tabpanel" id="panel-1A" aria-labelledby="tab-1A" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-1a">
               <div className={styles.statusBannerHeader}>
@@ -510,7 +557,7 @@ export function WardMhaCalculator({
         )}
 
         {selectedForm === "3A" && (
-          <div role="tabpanel" id="panel-3A" aria-labelledby="tab-3A">
+          <div role="tabpanel" id="panel-3A" aria-labelledby="tab-3A" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-3a">
               <div className={styles.statusBannerHeader}>
@@ -586,7 +633,7 @@ export function WardMhaCalculator({
         )}
 
         {selectedForm === "4B" && (
-          <div role="tabpanel" id="panel-4B" aria-labelledby="tab-4B">
+          <div role="tabpanel" id="panel-4B" aria-labelledby="tab-4B" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-4b">
               <div className={styles.statusBannerHeader}>

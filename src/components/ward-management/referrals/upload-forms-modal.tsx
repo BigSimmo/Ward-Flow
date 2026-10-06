@@ -34,6 +34,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   const [fileName, setFileName] = useState<string>("");
   const [fileAttached, setFileAttached] = useState<boolean>(false);
   const [simulatedSize, setSimulatedSize] = useState<number>(0);
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -195,13 +196,17 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             </label>
             <div
               style={{
-                border: "2px dashed var(--ward-border, #cbd5e1)",
+                border: isInputFocused
+                  ? "2px solid var(--ward-accent, #0284c7)"
+                  : "2px dashed var(--ward-border, #cbd5e1)",
                 borderRadius: "0.75rem",
                 padding: "1.5rem",
                 textAlign: "center",
-                backgroundColor: "var(--ward-bg-tint, #f8fafc)",
+                backgroundColor: isInputFocused ? "var(--ward-accent-soft, #f0f9ff)" : "var(--ward-bg-tint, #f8fafc)",
                 cursor: "pointer",
                 position: "relative",
+                outline: isInputFocused ? "2px solid var(--ward-accent, #0284c7)" : "none",
+                outlineOffset: "2px",
               }}
             >
               <input
@@ -209,6 +214,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 onChange={handleFileSelect}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 style={{
                   position: "absolute",
                   inset: 0,

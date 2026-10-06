@@ -72,6 +72,7 @@ export function WardTable({
   testId,
   hasScrollThreshold = false,
   overflowing = false,
+  ariaLabel = "Scrollable table",
   children,
 }: {
   id?: string;
@@ -80,6 +81,7 @@ export function WardTable({
   testId?: string;
   hasScrollThreshold?: boolean;
   overflowing?: boolean;
+  ariaLabel?: string;
   children: ReactNode;
 }) {
   return (
@@ -90,6 +92,9 @@ export function WardTable({
         data-ward-primitive="table"
         data-ward-scroll-hint={hasScrollThreshold ? "true" : undefined}
         data-overflowing={overflowing ? "true" : undefined}
+        tabIndex={0}
+        role="region"
+        aria-label={ariaLabel}
       >
         <table id={id} className={className ? `${styles.table} ${className}` : styles.table}>
           {children}

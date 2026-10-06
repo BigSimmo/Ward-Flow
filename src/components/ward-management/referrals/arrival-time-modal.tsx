@@ -184,11 +184,11 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           </div>
 
           <div className={styles.etaField}>
-            <label className={styles.label}>
+            <div id="eta-presets-label" className={styles.label}>
               Estimated Time of Arrival (ETA): <strong>{formatInstantWithDay(etaMinutes, now)} AWST</strong>
-            </label>
+            </div>
 
-            <div className={styles.presets}>
+            <div className={styles.presets} role="group" aria-labelledby="eta-presets-label">
               {etaPresets.map((preset) => (
                 <button
                   key={preset.label}
@@ -196,6 +196,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
                   onClick={() => setEtaMinutes(now + preset.offset)}
                   className={styles.preset}
                   data-active={etaMinutes === now + preset.offset ? "true" : undefined}
+                  aria-pressed={etaMinutes === now + preset.offset}
                 >
                   {preset.label}
                 </button>
