@@ -67,6 +67,14 @@ repo-wide guards.
 
 ## `capacity/`
 
+**Capacity review update — 7 October 2026:** Summary shortcuts use native buttons and move
+keyboard focus to the ward table after applying highlights. Summary service counts exclude
+empty groups; the locked-ready summary no longer claims an unsupported 1:1 figure or HDU
+designation. Ward-table counts and highlight counts follow the selected service, including
+empty services. A ResizeObserver measures compact-table overflow and shows a sideways-scroll
+cue only when details extend beyond the visible width. Regression coverage is in
+`tests/ward-capacity-review.dom.test.tsx`.
+
 **Route:** `/capacity`. **Mockup:** `capacity-third-edition.html` (MERGE 02, folding a former
 `morning` route into this one — see the header comment in `capacity-derivations.ts`). **Dispatches:**
 `REQUEST_CAPACITY_REFRESH`. **Reads:** `unitCapacity`, `wardServiceOrder`, `isOpen`,

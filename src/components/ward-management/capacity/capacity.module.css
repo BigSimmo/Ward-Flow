@@ -74,6 +74,12 @@
 }
 
 .interactiveItem {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
   cursor: pointer;
   padding: 0.1875rem 0.375rem;
   border-radius: var(--r1);
@@ -1912,6 +1918,18 @@
 
 .networkTableScroll[data-ward-scroll-hint="true"] {
   border: none;
+}
+
+.networkTableScroll[data-overflowing="true"] {
+  border-inline-end: 2px solid var(--line-strong);
+}
+
+.tableScrollNotice {
+  margin: 0;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  background: var(--surface-2);
 }
 
 .networkTable {
