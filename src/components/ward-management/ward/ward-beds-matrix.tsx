@@ -98,12 +98,37 @@ function expectedLeaveLine(bed: BedItem): string | null {
   return `Expected out in ${bed.expectedDays} days`;
 }
 
-function personMetaLine(bed: BedItem): string | null {
+function cardMetaLine(bed: BedItem): string | null {
   const parts: string[] = [];
-  if (typeof bed.age === "number") parts.push(`${bed.age}yo`);
+  if (typeof bed.age === "number") parts.push(String(bed.age));
   if (bed.sex) parts.push(bed.sex);
-  if (bed.homeRegion) parts.push(bed.homeRegion);
   return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/** Short card-face labels. The full recorded phrase stays in the accessible name and the drawer. */
+const BLOCKER_CHIP: Record<string, string> = {
+  "Awaiting clean": "Clean",
+  "Awaiting pharmacy": "Pharmacy",
+  "Awaiting placement confirmation": "Placement",
+  "Awaiting service coordination": "Coordination",
+  "Awaiting accommodation": "Accommodation",
+  "Awaiting transport": "Transport",
+  "Awaiting receiving-service acceptance": "Acceptance",
+  "Awaiting family or carer arrangement": "Family",
+  "Funding or plan decision pending": "Funding",
+};
+
+function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): string | null {
+  if (isPastDate) return "Past date";
+  if (isAwayAtEd) return "At ED";
+  if (typeof bed.expectedDays === "number" && bed.expectedDays >= 0 && bed.expectedDays <= 2) {
+    if (bed.expectedDays === 0) return "Out today";
+    return `Out in ${bed.expectedDays}d`;
+  }
+  if (bed.blockReason) return BLOCKER_CHIP[bed.blockReason] ?? bed.blockReason;
+  if (bed.isSpecialling) return "1:1";
+  if (bed.isHdu) return "HDU";
+  return null;
 }
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
@@ -527,6 +552,7 @@ export function WardBedsMatrix({
                 const isClosed = bed.status === "closed" || bed.isClosed === true;
                 const isPulled = bed.status === "incoming" || bed.isPulled === true;
                 const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
+                const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
 
                 // Color tint band class based on stay duration
                 let bandClass = "";
@@ -560,78 +586,53 @@ export function WardBedsMatrix({
                     aria-label={formatBedAriaLabel(bed)}
                   >
                     <div className={styles.bedTopRow}>
-                      <span className={styles.bedStatePill}>
-                        {isReady ? "READY" : isClosed ? "CLOSED" : isPulled ? "PULLED" : "OCCUPIED"}
-                      </span>
-                      <span className={styles.bedDaysVal}>
-                        {isReady ? "" : stayDaysNum !== null ? `${stayDaysNum} DAYS` : (bed.daysInBed ?? "")}
-                      </span>
+                      {bed.patientAlias && !isPulled ? (
+                        <span className={styles.bedPatientName}>{bed.patientAlias}</span>
+                      ) : (
+                        <span className={styles.bedStatePill}>
+                          {isReady ? "Ready" : isClosed ? "Closed" : isPulled ? "Pulled" : bed.statusText}
+                        </span>
+                      )}
+                      {stayDaysNum !== null && !isReady ? (
+                        <span className={styles.bedDaysVal}>{stayDaysNum}d</span>
+                      ) : null}
                     </div>
 
                     {bed.patientAlias ? (
                       <div className={styles.bedCardBody}>
-                        <div className={styles.bedPatientName}>{bed.patientAlias}</div>
-                        {personMetaLine(bed) ? <div className={styles.bedPatientSub}>{personMetaLine(bed)}</div> : null}
-                        {bed.tentativeDiagnosis ? (
-                          <div className={styles.bedNoteDesc}>Tentative: {bed.tentativeDiagnosis}</div>
-                        ) : null}
-                        <div className={styles.bedStayBandLabel}>
-                          {bed.stayBand ??
-                            (stayDaysNum
-                              ? stayDaysNum < 14
-                                ? "Under 2 weeks"
-                                : stayDaysNum < 30
-                                  ? "2 weeks – 1 month"
-                                  : stayDaysNum < 90
-                                    ? "1–3 months"
-                                    : "Over 3 months"
-                              : "Acute stay")}
-                        </div>
-                        {expectedLeaveLine(bed) ? (
-                          <div className={styles.bedExpected}>{expectedLeaveLine(bed)}</div>
-                        ) : null}
+                        {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
+                        {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
                       </div>
                     ) : isReady ? (
-                      <div>
-                        <div className={styles.bedPatientInfo} style={{ color: "var(--good)" }}>
-                          Empty and offered.
-                        </div>
+                      <div className={styles.bedCardBody}>
+                        <div className={styles.bedPatientName}>Offered</div>
                         <div className={styles.bedPatientSub}>Ready; cleaning completion not recorded</div>
                       </div>
                     ) : isClosed ? (
-                      <div>
-                        <div className={styles.bedPatientInfo} style={{ color: "var(--warn)" }}>
-                          Empty, not offered.
-                        </div>
-                        <div className={styles.bedPatientSub}>Unfillable</div>
+                      <div className={styles.bedCardBody}>
+                        <div className={styles.bedPatientName}>Not offered</div>
                       </div>
                     ) : isPulled ? (
-                      <div>
-                        <div className={styles.bedPatientInfo}>The ward has already given this bed away.</div>
-                        <div className={styles.bedPatientSub}>Allocated</div>
+                      <div className={styles.bedCardBody}>
+                        <div className={styles.bedPatientName}>Given away</div>
                       </div>
                     ) : (
-                      <div>
-                        <div className={styles.bedPatientInfo} style={{ color: "var(--muted)" }}>
-                          {bed.statusText}
-                        </div>
-                        <div className={styles.bedPatientSub}>
-                          {isAwayAtEd ? `At ED (${bed.awayAtEdHours}h) · Bed held` : "Unoccupied"}
-                        </div>
+                      <div className={styles.bedCardBody}>
+                        <div className={styles.bedPatientSub}>{isAwayAtEd ? "Bed held" : "Empty"}</div>
                       </div>
                     )}
 
-                    <div className={styles.bedBottomTags}>
-                      {isPastDate && <span className={styles.badgePastDate}>▲ PAST DATE</span>}
-                      {isAwayAtEd && <span className={styles.badgeAtEd}>◆ AT ED</span>}
-                      {isSelected && <span className={styles.badgeSelected}>SELECTED</span>}
-                      {isPulled && <span className={styles.badgePulled}>Allocated</span>}
-                      {isClosed && <span className={styles.badgeClosed}>Unfillable</span>}
-                      {isReady && <span className={styles.badgeReady}>Fillable Now</span>}
-                      {bed.blockReason ? <span className={styles.bedCardChip}>{bed.blockReason}</span> : null}
-                      {bed.isSpecialling && <span className={styles.bedCardChip}>1:1 Watch</span>}
-                      {bed.isHdu && <span className={styles.bedCardChip}>HDU</span>}
-                    </div>
+                    {signal ? (
+                      <div className={styles.bedBottomTags}>
+                        <span
+                          className={
+                            isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip
+                          }
+                        >
+                          {signal}
+                        </span>
+                      </div>
+                    ) : null}
                   </button>
                 );
               })}
@@ -661,23 +662,15 @@ export function WardBedsMatrix({
               <span>Over 3 months</span>
             </div>
             <div className={styles.legendItem}>
-              <span className={styles.badgePastDate}>▲ Past the ward&apos;s own expected date</span>
+              <span className={styles.badgePastDate}>Past date</span>
             </div>
             <div className={styles.legendItem}>
-              <span style={{ display: "inline-block", width: 8, height: 8, background: "var(--line-strong)" }} />
-              <span>Out of service &mdash; not fillable</span>
+              <span className={styles.legendSwatch} data-kind="closed" />
+              <span>Out of service</span>
             </div>
             <div className={styles.legendItem}>
-              <span
-                style={{
-                  display: "inline-block",
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  border: "1px solid var(--warn)",
-                }}
-              />
-              <span>Empty, not offered &mdash; not fillable</span>
+              <span className={styles.legendSwatch} data-kind="unoffered" />
+              <span>Not offered</span>
             </div>
           </div>
         </div>

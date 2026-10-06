@@ -39,9 +39,9 @@ function recordedBlocker(value: string | undefined): BedReleaseBlocker {
   return BED_RELEASE_BLOCKERS[0];
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
   return (
-    <div className={styles.factRow}>
+    <div className={wide ? `${styles.factRow} ${styles.factRowWide}` : styles.factRow}>
       <dt className={styles.factDt}>{label}</dt>
       <dd className={styles.factDd}>{value}</dd>
     </div>
@@ -141,8 +141,8 @@ export function WardBedDossierDrawer({
                 <h3 className={styles.cardTitle}>Person waiting</h3>
               </div>
               <dl className={styles.factList}>
-                <Fact label="Who" value={`${WAITING_MATCH.name} · ${WAITING_MATCH.detail}`} />
-                <Fact label="Source" value={WAITING_MATCH.source} />
+                <Fact wide label="Who" value={`${WAITING_MATCH.name} · ${WAITING_MATCH.detail}`} />
+                <Fact wide label="Source" value={WAITING_MATCH.source} />
                 <Fact label="Status" value={WAITING_MATCH.status} />
                 <Fact label="Wait" value={WAITING_MATCH.wait} />
               </dl>
@@ -162,7 +162,11 @@ export function WardBedDossierDrawer({
                 <h3 className={styles.cardTitle}>Clinical monitoring status</h3>
               </div>
               <dl className={styles.factList}>
-                <Fact label="Vital signs" value="Not recorded in Ward Flow. Check the ward's own observation chart." />
+                <Fact
+                  wide
+                  label="Vital signs"
+                  value="Not recorded in Ward Flow. Check the ward's own observation chart."
+                />
               </dl>
             </div>
           </div>
@@ -185,9 +189,9 @@ export function WardBedDossierDrawer({
                 {bedItem?.umrn ? <Fact label="Record number" value={bedItem.umrn} /> : null}
                 {bedItem?.homeRegion ? <Fact label="Region" value={bedItem.homeRegion} /> : null}
                 {bedItem?.suburb ? <Fact label="Suburb" value={bedItem.suburb} /> : null}
-                {bedItem?.generalPractitioner ? <Fact label="GP" value={bedItem.generalPractitioner} /> : null}
+                {bedItem?.generalPractitioner ? <Fact wide label="GP" value={bedItem.generalPractitioner} /> : null}
                 {bedItem?.catchmentCommunityTeam ? (
-                  <Fact label="Community team" value={bedItem.catchmentCommunityTeam} />
+                  <Fact wide label="Community team" value={bedItem.catchmentCommunityTeam} />
                 ) : null}
               </dl>
             </div>
@@ -197,7 +201,7 @@ export function WardBedDossierDrawer({
                 <h3 className={styles.cardTitle}>Why they are here</h3>
               </div>
               <dl className={styles.factList}>
-                <Fact label="Tentative diagnosis" value={bedItem?.tentativeDiagnosis ?? "None recorded"} />
+                <Fact wide label="Tentative diagnosis" value={bedItem?.tentativeDiagnosis ?? "None recorded"} />
                 <Fact label="Days here" value={stayHere} />
                 {bedItem?.stayBand ? <Fact label="Stay" value={bedItem.stayBand} /> : null}
               </dl>
@@ -208,11 +212,13 @@ export function WardBedDossierDrawer({
                 <h3 className={styles.cardTitle}>Plan to leave</h3>
               </div>
               <dl className={styles.factList}>
-                <Fact label="Expected leave" value={expectedPlan} />
-                <Fact label="Discharge confirmed" value={confirmation} />
+                <Fact wide label="Expected leave" value={expectedPlan} />
+                <Fact wide label="Discharge confirmed" value={confirmation} />
                 {dateMoves ? <Fact label="Date changes" value={dateMoves} /> : null}
-                <Fact label="Blocker" value={bedItem?.blockReason ?? "None recorded"} />
-                {bedItem?.dischargeBarrier ? <Fact label="Discharge barrier" value={bedItem.dischargeBarrier} /> : null}
+                <Fact wide label="Blocker" value={bedItem?.blockReason ?? "None recorded"} />
+                {bedItem?.dischargeBarrier ? (
+                  <Fact wide label="Discharge barrier" value={bedItem.dischargeBarrier} />
+                ) : null}
               </dl>
             </div>
 
@@ -222,6 +228,7 @@ export function WardBedDossierDrawer({
               </div>
               <dl className={styles.factList}>
                 <Fact
+                  wide
                   label="1:1 nursing"
                   value={
                     bedItem?.isSpecialling
@@ -231,6 +238,7 @@ export function WardBedDossierDrawer({
                 />
                 <Fact label="High-acuity nursing" value={bedItem?.highAcuity ? "Requested" : "Not requested"} />
                 <Fact
+                  wide
                   label="Where they are"
                   value={
                     isAwayAtEd
@@ -239,7 +247,11 @@ export function WardBedDossierDrawer({
                   }
                 />
                 {bedItem?.legalStatusLabel ? <Fact label="Legal status" value={bedItem.legalStatusLabel} /> : null}
-                <Fact label="Vital signs" value="Not recorded in Ward Flow. Check the ward's own observation chart." />
+                <Fact
+                  wide
+                  label="Vital signs"
+                  value="Not recorded in Ward Flow. Check the ward's own observation chart."
+                />
               </dl>
             </div>
 
