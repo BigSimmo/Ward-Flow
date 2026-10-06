@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  GENDER_NO_LONGER_SUITS_REFUSAL,
+  GENDER_PLACEMENT_REASONS,
+} from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import { bedMapWards } from "../src/components/ward-management/capacity/bed-map";
 import { wardFlowReducer, seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
@@ -204,10 +208,13 @@ describe("Agent 2 Stress Test Suite", () => {
       movementId,
     });
 
-    // BUG CHECK: Did PATIENT_ARRIVED succeed in placing a Male patient on a Female-only ward?
+    // No transport yet, so arrival is the next forward step and must use the same
+    // gender-designation refusal as handover and collection. The patient is not in transit.
     const arrivedMovement = state.movements.find((m) => m.id === movementId);
-    expect(arrivedMovement?.stage).toBe("arrived"); // BREACH! Patient arrived despite gender mismatch!
-    expect(state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED")).toBe(false);
+    expect(arrivedMovement?.stage).toBe("pulled");
+    expect(
+      state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED" && r.reason === GENDER_NO_LONGER_SUITS_REFUSAL),
+    ).toBe(true);
   });
 
   it("Scenario 5: Gender Segregation Breach when transport already collected (stage: moving)", () => {
@@ -316,7 +323,9 @@ describe("Agent 2 Stress Test Suite", () => {
     });
     expect(state.movements.find((m) => m.id === movementId)?.stage).toBe("moving");
 
-    // While in transit, coordinator discovers patient is Male and records correction
+    // While in transit, coordinator discovers patient is Male and records correction.
+    // That raises a coordinator notice. Arrival itself is not refused: the patient is
+    // already moving, and blocking arrival would strand them.
     state = wardFlowReducer(state, {
       type: "RECORD_MOVEMENT_GENDER",
       role: "coordinator",
@@ -324,8 +333,8 @@ describe("Agent 2 Stress Test Suite", () => {
       movementId,
       gender: "Male",
     });
+    expect(state.notices.some((notice) => notice.kind === "movement_gender_recorded_after_placement")).toBe(true);
 
-    // Ambulance arrives at hospital, ward confirms arrival
     state = wardFlowReducer(state, {
       type: "PATIENT_ARRIVED",
       role: "ward",
@@ -334,10 +343,62 @@ describe("Agent 2 Stress Test Suite", () => {
       movementId,
     });
 
-    // BUG CHECK: Did PATIENT_ARRIVED succeed in placing Male patient on Female-only ward?
     const arrivedMovement = state.movements.find((m) => m.id === movementId);
-    expect(arrivedMovement?.stage).toBe("arrived"); // BREACH! Patient arrived on female-only ward!
+    expect(arrivedMovement?.stage).toBe("arrived");
+    expect(state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED")).toBe(false);
+  });
+
+  it("a non-binary patient with a recorded ward check can still arrive on a single-gender ward", () => {
+    let state = seedWardFlowState();
+    const femaleOnlyUnit = state.units.find((u) => u.sexDesignation === "Female only")!;
+    const movementId = "WF-NB-ARRIVE" as const;
+    const placed: Movement = {
+      id: movementId,
+      stage: "pulled",
+      cohort: femaleOnlyUnit.cohort,
+      security: "Open",
+      sex: "Male",
+      gender: "Non-binary",
+      specialling: false,
+      highAcuity: false,
+      urgency: 2,
+      legalStatus: "Voluntary",
+      flaggedUrgent: false,
+      declines: [],
+      stageChanges: [],
+      withdrawnReferrals: [],
+      referredUnitIds: [femaleOnlyUnit.id],
+      acceptedUnitId: femaleOnlyUnit.id,
+      overrides: [],
+      unwinds: [],
+      transportNeed: { needed: false, at: 100 },
+      genderPlacements: [
+        {
+          at: 90,
+          by: "coordinator",
+          unitIds: [femaleOnlyUnit.id],
+          reason: GENDER_PLACEMENT_REASONS[0],
+          wardChecked: true,
+        },
+      ],
+      originEdId: "fsh-ed",
+      openedAt: 100,
+      statusChanges: [],
+      urgencyChanges: [],
+      owner: "ED mental health team",
+      blocker: "No blocker",
+    };
+    state = { ...state, movements: [placed, ...state.movements] };
+
+    state = wardFlowReducer(state, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      actingUnitId: femaleOnlyUnit.id,
+      now: 140,
+      movementId,
+    });
+
+    expect(state.movements.find((m) => m.id === movementId)?.stage).toBe("arrived");
     expect(state.rejections.some((r) => r.attempted === "PATIENT_ARRIVED")).toBe(false);
   });
 });
-

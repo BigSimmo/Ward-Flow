@@ -1194,6 +1194,16 @@
   justify-content: center;
 }
 
+.cockpitClearBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .cockpitClearBtn:hover {
   color: var(--ink);
   background: var(--sunk);
@@ -2094,16 +2104,19 @@
   font-size: var(--t-0, 12px);
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .clusterTab,
   .filterPill,
   .btn,
-  .btnSm {
+  .btnSm,
+  .dropdownBtn {
     min-height: 2.75rem;
   }
+  .cockpitSearchInput,
   .searchInput {
     height: 2.75rem;
     min-height: 2.75rem;
+    font-size: 16px !important;
   }
 }
 

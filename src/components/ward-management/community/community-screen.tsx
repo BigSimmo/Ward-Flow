@@ -5273,6 +5273,10 @@ export function CommunityScreen({
                         rows={4}
                         maxLength={REFERRAL_HISTORY_LIMITS.history}
                         data-testid="ward-community-intake-history"
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
+                        autoComplete="off"
                       />
                     </label>
                     <div className={styles.modalFoot}>

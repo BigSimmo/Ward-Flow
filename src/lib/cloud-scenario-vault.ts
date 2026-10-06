@@ -10,7 +10,18 @@
  * 3. Graceful offline handling without throwing unhandled exceptions.
  */
 
+import { z } from "zod";
 import { checkSyntheticPayload } from "./synthetic-data-guard";
+
+const SaveResponseSchema = z.object({
+  revision: z.number(),
+});
+
+const LoadResponseSchema = z.object({
+  revision: z.number(),
+  payload: z.unknown(),
+  updated_at: z.string(),
+});
 
 export type SaveScenarioResult =
   | { status: "saved"; revision: number }
@@ -69,8 +80,15 @@ export async function saveCloudScenario(
     });
 
     if (response.status === 200) {
-      const data = (await response.json()) as { revision: number };
-      return { status: "saved", revision: data.revision };
+      const raw = await response.json();
+      const parsed = SaveResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        return {
+          status: "unavailable",
+          message: "Cloud response did not match expected scenario schema.",
+        };
+      }
+      return { status: "saved", revision: parsed.data.revision };
     }
 
     if (response.status === 409) {
@@ -123,16 +141,19 @@ export async function loadCloudScenario(
     });
 
     if (response.status === 200) {
-      const data = (await response.json()) as {
-        revision: number;
-        payload: unknown;
-        updated_at: string;
-      };
+      const raw = await response.json();
+      const parsed = LoadResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        return {
+          status: "unavailable",
+          message: "Cloud response did not match expected scenario schema.",
+        };
+      }
       return {
         status: "loaded",
-        revision: data.revision,
-        payload: data.payload,
-        updatedAt: data.updated_at,
+        revision: parsed.data.revision,
+        payload: parsed.data.payload,
+        updatedAt: parsed.data.updated_at,
       };
     }
 

@@ -1522,6 +1522,10 @@ function AlertsWorkspace() {
                     id="alerts-action-note"
                     className={styles.formTextarea}
                     placeholder="Record the action taken and who was contacted."
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -1754,6 +1758,10 @@ function AlertsWorkspace() {
                     placeholder="Enter urgent clinical or flow directive..."
                     value={broadcastMessage}
                     onChange={(e) => setBroadcastMessage(e.target.value)}
+                    data-gramm="false"
+                    data-enable-grammarly="false"
+                    spellCheck={false}
+                    autoComplete="off"
                   />
                 </div>
 

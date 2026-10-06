@@ -2541,6 +2541,12 @@
   padding: 0;
 }
 
+@media (max-width: 48rem) {
+  .railSearchInput {
+    font-size: var(--t-4) !important;
+  }
+}
+
 .railSearchInput::placeholder {
   color: var(--muted);
 }

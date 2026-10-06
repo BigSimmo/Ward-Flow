@@ -253,7 +253,9 @@ export function MovementsScreen() {
   const openDetail = useCallback((id: string) => {
     setDetailId(id);
     if (typeof window !== "undefined") {
-      window.history.pushState({ wardMovementDetail: id }, "");
+      const priorState =
+        typeof window.history.state === "object" && window.history.state !== null ? window.history.state : {};
+      window.history.pushState({ ...priorState, wardMovementDetail: id }, "");
     }
   }, []);
 
