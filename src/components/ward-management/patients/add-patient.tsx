@@ -557,12 +557,13 @@ export function AddPatientForm() {
                             Not yet recorded
                           </button>
                         </div>
-                        {/* Synced select for standard select readers & test suites */}
+                        {/* Hidden synced select for programmatic compatibility without duplicate interactive control */}
                         <select
                           id="ward-add-patient-gender"
                           data-testid="ward-add-patient-gender"
-                          className={styles.select}
-                          aria-label="Gender"
+                          className="sr-only"
+                          tabIndex={-1}
+                          aria-hidden="true"
                           value={genderChoice}
                           onChange={(event) => setGenderChoice(event.target.value as GenderChoice)}
                         >

@@ -57,6 +57,11 @@
   position: relative;
 }
 
+.tableScroll:focus-visible {
+  outline: var(--ward-space-2) solid var(--ward-border-strong);
+  outline-offset: -2px;
+}
+
 /*
  * THE SCROLL AFFORDANCE. `hasScrollThreshold` (ward-table.tsx) sets `data-ward-scroll-hint="true"`
  * on this element for every caller that has declared a `--ward-table-min-width` threshold, i.e.

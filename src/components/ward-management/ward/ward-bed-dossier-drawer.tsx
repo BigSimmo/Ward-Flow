@@ -6,6 +6,7 @@ import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedItem } from "./ward-beds-matrix";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -40,6 +41,8 @@ export function WardBedDossierDrawer({
   const [candidateAllocated, setCandidateAllocated] = useState(false);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState("Awaiting NDIS accommodation");
+
+  useWardModalFocus(true, bedDrawerRef, onClose);
 
   const bedLabel = `Bed ${String(selectedBed).padStart(2, "0")}`;
   const isReady = bedItem?.status === "ready" || (!bedItem?.patientAlias && selectedBed === 20);
@@ -230,9 +233,38 @@ export function WardBedDossierDrawer({
             </div>
 
             {/* Command Tabs Navigation */}
-            <nav className={styles.tabsNav} aria-label="Patient dossier sections">
+            <div
+              role="tablist"
+              className={styles.tabsNav}
+              aria-label="Patient dossier sections"
+              onKeyDown={(e) => {
+                const tabs: Array<"actions" | "trajectory" | "risk" | "team"> = [
+                  "actions",
+                  "trajectory",
+                  "risk",
+                  "team",
+                ];
+                const currentIndex = tabs.indexOf(activeTab);
+                if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const next = tabs[(currentIndex + 1) % tabs.length];
+                  setActiveTab(next);
+                  document.getElementById(`dossier-tab-${next}`)?.focus();
+                } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  const prev = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+                  setActiveTab(prev);
+                  document.getElementById(`dossier-tab-${prev}`)?.focus();
+                }
+              }}
+            >
               <button
                 type="button"
+                role="tab"
+                id="dossier-tab-actions"
+                aria-controls="dossier-panel-actions"
+                aria-selected={activeTab === "actions"}
+                tabIndex={activeTab === "actions" ? 0 : -1}
                 className={`${styles.tabBtn} ${activeTab === "actions" ? styles.active : ""}`}
                 onClick={() => setActiveTab("actions")}
               >
@@ -240,6 +272,11 @@ export function WardBedDossierDrawer({
               </button>
               <button
                 type="button"
+                role="tab"
+                id="dossier-tab-trajectory"
+                aria-controls="dossier-panel-trajectory"
+                aria-selected={activeTab === "trajectory"}
+                tabIndex={activeTab === "trajectory" ? 0 : -1}
                 className={`${styles.tabBtn} ${activeTab === "trajectory" ? styles.active : ""}`}
                 onClick={() => setActiveTab("trajectory")}
               >
@@ -247,6 +284,11 @@ export function WardBedDossierDrawer({
               </button>
               <button
                 type="button"
+                role="tab"
+                id="dossier-tab-risk"
+                aria-controls="dossier-panel-risk"
+                aria-selected={activeTab === "risk"}
+                tabIndex={activeTab === "risk" ? 0 : -1}
                 className={`${styles.tabBtn} ${activeTab === "risk" ? styles.active : ""}`}
                 onClick={() => setActiveTab("risk")}
               >
@@ -254,14 +296,25 @@ export function WardBedDossierDrawer({
               </button>
               <button
                 type="button"
+                role="tab"
+                id="dossier-tab-team"
+                aria-controls="dossier-panel-team"
+                aria-selected={activeTab === "team"}
+                tabIndex={activeTab === "team" ? 0 : -1}
                 className={`${styles.tabBtn} ${activeTab === "team" ? styles.active : ""}`}
                 onClick={() => setActiveTab("team")}
               >
                 Team &amp; Catchment
               </button>
-            </nav>
+            </div>
 
-            <div className={styles.drawerBody}>
+            <div
+              role="tabpanel"
+              id={`dossier-panel-${activeTab}`}
+              aria-labelledby={`dossier-tab-${activeTab}`}
+              tabIndex={0}
+              className={styles.drawerBody}
+            >
               {/* ── TAB 1: RAPID ACTIONS & FLOW ── */}
               {activeTab === "actions" ? (
                 <>

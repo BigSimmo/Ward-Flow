@@ -334,13 +334,33 @@ export function WardMhaCalculator({
       </header>
 
       {/* Mode Selector Tabs with Official Titles Only */}
-      <div role="tablist" aria-label="Statutory form selection" className={styles.modeTabs}>
+      <div
+        role="tablist"
+        aria-label="Statutory form selection"
+        className={styles.modeTabs}
+        onKeyDown={(e) => {
+          const forms: MhaFormType[] = ["1A", "3A", "4B"];
+          const currentIndex = forms.indexOf(selectedForm);
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            const next = forms[(currentIndex + 1) % forms.length];
+            setSelectedForm(next);
+            document.getElementById(`tab-${next}`)?.focus();
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const prev = forms[(currentIndex - 1 + forms.length) % forms.length];
+            setSelectedForm(prev);
+            document.getElementById(`tab-${prev}`)?.focus();
+          }
+        }}
+      >
         <button
           type="button"
           role="tab"
           id="tab-1A"
           aria-controls="panel-1A"
           aria-selected={selectedForm === "1A"}
+          tabIndex={selectedForm === "1A" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "1A" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("1A")}
         >
@@ -354,6 +374,7 @@ export function WardMhaCalculator({
           id="tab-3A"
           aria-controls="panel-3A"
           aria-selected={selectedForm === "3A"}
+          tabIndex={selectedForm === "3A" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "3A" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("3A")}
         >
@@ -367,6 +388,7 @@ export function WardMhaCalculator({
           id="tab-4B"
           aria-controls="panel-4B"
           aria-selected={selectedForm === "4B"}
+          tabIndex={selectedForm === "4B" ? 0 : -1}
           className={`${styles.tabButton} ${selectedForm === "4B" ? styles.tabButtonActive : ""}`}
           onClick={() => setSelectedForm("4B")}
         >
@@ -459,7 +481,7 @@ export function WardMhaCalculator({
       {/* Display Panels */}
       <div className={styles.resultsContainer}>
         {selectedForm === "1A" && (
-          <div role="tabpanel" id="panel-1A" aria-labelledby="tab-1A">
+          <div role="tabpanel" id="panel-1A" aria-labelledby="tab-1A" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-1a">
               <div className={styles.statusBannerHeader}>
@@ -535,7 +557,7 @@ export function WardMhaCalculator({
         )}
 
         {selectedForm === "3A" && (
-          <div role="tabpanel" id="panel-3A" aria-labelledby="tab-3A">
+          <div role="tabpanel" id="panel-3A" aria-labelledby="tab-3A" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-3a">
               <div className={styles.statusBannerHeader}>
@@ -611,7 +633,7 @@ export function WardMhaCalculator({
         )}
 
         {selectedForm === "4B" && (
-          <div role="tabpanel" id="panel-4B" aria-labelledby="tab-4B">
+          <div role="tabpanel" id="panel-4B" aria-labelledby="tab-4B" tabIndex={0}>
             {/* Status Banner */}
             <div className={`${styles.statusBanner} ${styles.statusActive}`} data-testid="status-banner-4b">
               <div className={styles.statusBannerHeader}>
