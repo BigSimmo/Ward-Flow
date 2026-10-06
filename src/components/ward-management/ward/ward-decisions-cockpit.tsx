@@ -256,125 +256,127 @@ function Queue({
         </div>
       </div>
 
-      {showStaffing ? (
-        <section className={`${styles.panel} ${styles.toneStaffing}`} id="gate-staffing" aria-label="Staffing">
-          <header className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>Staffing</h3>
-            <span className={styles.panelWindow}>07:00–09:30</span>
-            <Chip tone={rollupOverdue ? "danger" : "good"}>{staffingBadge}</Chip>
-          </header>
-          <div className={styles.panelBody}>
-            {rollupOverdue ? (
-              <div className={styles.row} data-testid="ward-morning-rollup-overdue-banner">
-                <span className={styles.rowTitle}>{rollupTimeLabel} Morning Bed Rollup Overdue</span>
-                <button
-                  type="button"
-                  className={styles.action}
-                  data-testid="ward-confirm-morning-rollup-btn"
-                  onClick={onConfirmRollup}
-                >
-                  Confirm rollup
-                </button>
-              </div>
-            ) : null}
-            {rollupConfirmed ? (
-              <div className={styles.row} data-testid="ward-morning-rollup-confirmed-banner">
-                <span className={styles.rowTitle}>
-                  {rollupTimeLabel} Morning Bed Rollup Confirmed · {plannedDischarges} discharges scheduled today
-                </span>
-                <Chip tone="good">Done</Chip>
-              </div>
-            ) : null}
-            {children}
-            {!wired && !onConfirmRollup ? <p className={styles.empty}>Not wired in this prototype.</p> : null}
-          </div>
-        </section>
-      ) : null}
-
-      {showIntake ? (
-        <section className={`${styles.panel} ${styles.toneIntake}`} id="gate-intake" aria-label="Intake">
-          <header className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>Intake</h3>
-            <span className={styles.panelWindow}>09:30–13:00</span>
-            <Chip tone={intakes.length > 0 ? "danger" : "good"}>{intakeBadge}</Chip>
-          </header>
-          <div className={styles.panelBody}>
-            {intakes.length === 0 ? (
-              <p className={styles.empty}>None waiting</p>
-            ) : (
-              intakes.map((row) => (
-                <div className={styles.row} key={row.id}>
-                  <span className={styles.rowTitle}>{row.title}</span>
-                  <Chip tone="danger">Due</Chip>
-                  {row.onAccept ? (
-                    <button type="button" className={styles.action} onClick={row.onAccept}>
-                      Accept
-                    </button>
-                  ) : (
-                    <span className={styles.empty}>Not wired in this prototype.</span>
-                  )}
+      <div className={styles.board}>
+        {showStaffing ? (
+          <section className={`${styles.panel} ${styles.toneStaffing}`} id="gate-staffing" aria-label="Staffing">
+            <header className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>Staffing</h3>
+              <span className={styles.panelWindow}>07:00–09:30</span>
+              <Chip tone={rollupOverdue ? "danger" : "good"}>{staffingBadge}</Chip>
+            </header>
+            <div className={styles.panelBody}>
+              {rollupOverdue ? (
+                <div className={styles.row} data-testid="ward-morning-rollup-overdue-banner">
+                  <span className={styles.rowTitle}>{rollupTimeLabel} Morning Bed Rollup Overdue</span>
+                  <button
+                    type="button"
+                    className={styles.action}
+                    data-testid="ward-confirm-morning-rollup-btn"
+                    onClick={onConfirmRollup}
+                  >
+                    Confirm rollup
+                  </button>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
-      ) : null}
-
-      {showDepartures ? (
-        <section className={`${styles.panel} ${styles.toneDepartures}`} id="gate-departures" aria-label="Departures">
-          <header className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>Departures</h3>
-            <span className={styles.panelWindow}>11:00–14:00</span>
-            <Chip tone={blockedCount > 0 ? "warn" : readyCount > 0 ? "good" : "neutral"}>{departureBadge}</Chip>
-          </header>
-          <div className={styles.panelBody}>
-            {visibleDepartures.length === 0 ? (
-              <p className={styles.empty}>None waiting</p>
-            ) : (
-              visibleDepartures.map((row) => (
-                <div className={styles.row} key={row.id}>
-                  <span className={styles.rowTitle}>{row.title}</span>
-                  <Chip tone={row.badge === "Blocked" ? "warn" : row.badge === "Ready" ? "good" : "neutral"}>
-                    {row.badge}
-                  </Chip>
-                  {row.onConfirm ? (
-                    <button type="button" className={styles.action} onClick={row.onConfirm}>
-                      Sign off
-                    </button>
-                  ) : null}
-                  {row.onClear ? (
-                    <button type="button" className={styles.actionQuiet} onClick={row.onClear}>
-                      Clear
-                    </button>
-                  ) : null}
+              ) : null}
+              {rollupConfirmed ? (
+                <div className={styles.row} data-testid="ward-morning-rollup-confirmed-banner">
+                  <span className={styles.rowTitle}>
+                    {rollupTimeLabel} Morning Bed Rollup Confirmed · {plannedDischarges} discharges scheduled today
+                  </span>
+                  <Chip tone="good">Done</Chip>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
-      ) : null}
+              ) : null}
+              {children}
+              {!wired && !onConfirmRollup ? <p className={styles.empty}>Not wired in this prototype.</p> : null}
+            </div>
+          </section>
+        ) : null}
 
-      {showLeave ? (
-        <section className={`${styles.panel} ${styles.toneLeave}`} id="gate-leave" aria-label="Leave">
-          <header className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>Leave</h3>
-            <span className={styles.panelWindow}>14:00–18:00</span>
-            <Chip tone={leaves.length > 0 ? "accent" : "good"}>{leaveBadge}</Chip>
-          </header>
-          <div className={styles.panelBody}>
-            {leaves.length === 0 ? (
-              <p className={styles.empty}>None out</p>
-            ) : (
-              leaves.map((row) => (
-                <div className={styles.row} key={row.id}>
-                  <span className={styles.rowTitle}>{row.title}</span>
-                  <Chip tone="accent">Out</Chip>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      ) : null}
+        {showIntake ? (
+          <section className={`${styles.panel} ${styles.toneIntake}`} id="gate-intake" aria-label="Intake">
+            <header className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>Intake</h3>
+              <span className={styles.panelWindow}>09:30–13:00</span>
+              <Chip tone={intakes.length > 0 ? "danger" : "good"}>{intakeBadge}</Chip>
+            </header>
+            <div className={styles.panelBody}>
+              {intakes.length === 0 ? (
+                <p className={styles.empty}>None waiting</p>
+              ) : (
+                intakes.map((row) => (
+                  <div className={styles.row} key={row.id}>
+                    <span className={styles.rowTitle}>{row.title}</span>
+                    <Chip tone="danger">Due</Chip>
+                    {row.onAccept ? (
+                      <button type="button" className={styles.action} onClick={row.onAccept}>
+                        Accept
+                      </button>
+                    ) : (
+                      <span className={styles.empty}>Not wired in this prototype.</span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {showDepartures ? (
+          <section className={`${styles.panel} ${styles.toneDepartures}`} id="gate-departures" aria-label="Departures">
+            <header className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>Departures</h3>
+              <span className={styles.panelWindow}>11:00–14:00</span>
+              <Chip tone={blockedCount > 0 ? "warn" : readyCount > 0 ? "good" : "neutral"}>{departureBadge}</Chip>
+            </header>
+            <div className={styles.panelBody}>
+              {visibleDepartures.length === 0 ? (
+                <p className={styles.empty}>None waiting</p>
+              ) : (
+                visibleDepartures.map((row) => (
+                  <div className={styles.row} key={row.id}>
+                    <span className={styles.rowTitle}>{row.title}</span>
+                    <Chip tone={row.badge === "Blocked" ? "warn" : row.badge === "Ready" ? "good" : "neutral"}>
+                      {row.badge}
+                    </Chip>
+                    {row.onConfirm ? (
+                      <button type="button" className={styles.action} onClick={row.onConfirm}>
+                        Sign off
+                      </button>
+                    ) : null}
+                    {row.onClear ? (
+                      <button type="button" className={styles.actionQuiet} onClick={row.onClear}>
+                        Clear
+                      </button>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {showLeave ? (
+          <section className={`${styles.panel} ${styles.toneLeave}`} id="gate-leave" aria-label="Leave">
+            <header className={styles.panelHead}>
+              <h3 className={styles.panelTitle}>Leave</h3>
+              <span className={styles.panelWindow}>14:00–18:00</span>
+              <Chip tone={leaves.length > 0 ? "accent" : "good"}>{leaveBadge}</Chip>
+            </header>
+            <div className={styles.panelBody}>
+              {leaves.length === 0 ? (
+                <p className={styles.empty}>None out</p>
+              ) : (
+                leaves.map((row) => (
+                  <div className={styles.row} key={row.id}>
+                    <span className={styles.rowTitle}>{row.title}</span>
+                    <Chip tone="accent">Out</Chip>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }
