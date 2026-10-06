@@ -1105,7 +1105,7 @@ function GapRow({ row }: { row: BedKindGap }) {
  * `waiting`, `bedsThatFit` and the magnitude of `gap` are read straight off `row`, so a fixture
  * change changes this sentence by construction rather than leaving it stale and confidently wrong.
  */
-function rowSentence(row: BedKindGap): string {
+export function rowSentence(row: BedKindGap): string {
   const magnitude = Math.abs(row.gap);
   const bedWord = row.bedsThatFit === 1 ? "bed" : "beds";
   const who = row.who.charAt(0).toLowerCase() + row.who.slice(1);
@@ -1113,18 +1113,18 @@ function rowSentence(row: BedKindGap): string {
     return `${row.waiting} waiting (${who}), only ${row.bedsThatFit} ${bedWord} that fit — ${magnitude} short.`;
   }
   if (row.gap === 0) {
-    return `${row.waiting} waiting (${who}), exactly ${row.bedsThatFit} ${bedWord} that fit — nobody goes without today.`;
+    return `${row.waiting} waiting (${who}), exactly ${row.bedsThatFit} ${bedWord} that fit — net available capacity today.`;
   }
   return `${row.bedsThatFit} ${bedWord} that fit, more than the ${row.waiting} waiting (${who}) — ${magnitude} spare.`;
 }
 
-function totalsSentence(totals: { waiting: number; bedsThatFit: number; gap: number }): string {
+export function totalsSentence(totals: { waiting: number; bedsThatFit: number; gap: number }): string {
   const magnitude = Math.abs(totals.gap);
   if (totals.gap < 0) {
     return `Across all four bed kinds, ${totals.waiting} people are waiting and only ${totals.bedsThatFit} beds fit any of their needs — ${magnitude} short overall.`;
   }
   if (totals.gap === 0) {
-    return `Across all four bed kinds, ${totals.waiting} people are waiting and exactly ${totals.bedsThatFit} beds fit — nobody goes without today.`;
+    return `Across all four bed kinds, ${totals.waiting} people are waiting and exactly ${totals.bedsThatFit} beds fit — net available capacity today.`;
   }
   return `Across all four bed kinds, ${totals.bedsThatFit} beds fit, more than the ${totals.waiting} people waiting — ${magnitude} spare overall.`;
 }
