@@ -116,7 +116,9 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     // TEST 7: presence-for-every-id already guards drops, but not an EXTRA or DUPLICATED row (a
     // mutation that renders every real id plus a phantom one would still pass the loop above) — the
     // exact count closes that gap.
-    expect(board.querySelectorAll('[data-ward-primitive="record-row"][data-record-key]').length).toBe(ALL_MOVEMENTS.length);
+    expect(board.querySelectorAll('[data-ward-primitive="record-row"][data-record-key]').length).toBe(
+      ALL_MOVEMENTS.length,
+    );
     expect(screen.queryByTestId("ward-service-scope-bar")).not.toBeInTheDocument();
     // D-f: the sentence moved out of the worklist and to the top of the page (see below) — it must
     // never render at all while All services is chosen, wherever it would have lived.
@@ -134,6 +136,7 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     const dayMetrics = screen.getAllByTestId("movements-day-metric").map((el) => el.textContent);
     const trafficPanel = screen.getByRole("region", { name: /Today.s traffic/u }).textContent;
     const transportPanel = screen.getByRole("region", { name: "Transport right now" }).textContent;
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     const shapePanel = screen.getByRole("region", { name: "Shape of the day" }).textContent;
     withoutService.unmount();
 
@@ -142,6 +145,7 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     expect(screen.getAllByTestId("movements-day-metric").map((el) => el.textContent)).toEqual(dayMetrics);
     expect(screen.getByRole("region", { name: /Today.s traffic/u }).textContent).toBe(trafficPanel);
     expect(screen.getByRole("region", { name: "Transport right now" }).textContent).toBe(transportPanel);
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     expect(screen.getByRole("region", { name: "Shape of the day" }).textContent).toBe(shapePanel);
   });
 
@@ -395,8 +399,9 @@ describe("the stage-summary jump prefers an in-scope member over the stage's raw
       </WardFlowProvider>,
     );
 
-    // Shape-of-the-day's "Stage" sub-tab is the default (`shapeTab === "stage"` on mount), so its
-    // stage-summary list is already in the document with no click needed to reach it.
+    // Shape of the day shares the side panel and starts hidden behind Transport right now.
+    // Its Stage sub-tab is still the default once that view is open.
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     const stageLink = screen.getByRole("button", { name: /^Destination review:/u });
     fireEvent.click(stageLink);
 
