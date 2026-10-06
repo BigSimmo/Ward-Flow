@@ -399,7 +399,7 @@
 }
 
 .boardTabCount {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -465,7 +465,7 @@
 }
 
 .orderBtnBadge {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -566,7 +566,7 @@
 }
 
 .transportFilterCount {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -700,7 +700,7 @@
 }
 
 .transportRunId {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--ward-heading);
@@ -881,262 +881,645 @@
   cursor: pointer;
 }
 
-/* Perfected Spatial Movement Corridor popup styles */
-.corridorCard {
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFECTED SPATIAL MOVEMENT POPUP (Interpretation 1: Spatial Horizon Corridor)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.drawerSheetContent {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  max-width: min(96vw, 56rem) !important;
+  max-height: min(96dvh, 54rem) !important;
+  color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--ward-divider);
-  border-radius: var(--radius-lg, 12px);
-  padding: var(--ward-space-12);
-  margin: var(--ward-space-10) 0;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.05);
-  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+  font-family: var(--body);
+  --good-ink: var(--good);
+  --warn-ink: var(--warn);
+  --danger-border: color-mix(in srgb, var(--danger) 45%, transparent);
+  --border-strong: var(--line-strong);
 }
 
+.drawerSheetBody {
+  padding: 0.625rem 1rem 0.875rem !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Avatar Monogram and Sublines */
+.drawerAvatarMonogram {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--r1);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
+  color: var(--on-accent);
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--lift);
+}
+
+.drawerSubline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.drawerUmrnBadge {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.drawerLegalTag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-ink);
+}
+
+.drawerHeaderStatusWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-right: 0.5rem;
+}
+
+.drawerUrgencyText {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+/* 🚀 Hero: Current Movement Card */
+.corridorCard {
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r1);
+  padding: 0.625rem 0.75rem;
+  margin: 0 0 0.5rem;
+  box-shadow: var(--lift);
+}
+
+.corridorTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+
+.corridorSectionTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.corridorStatusTag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tagBlue {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent-border);
+}
+
+.tagAmber {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  border: 1px solid var(--warn-border);
+}
+
+.tagRed {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger-border);
+}
+
+.tagGreen {
+  background: var(--good-soft);
+  color: var(--good-ink);
+  border: 1px solid var(--good-border);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 2-Hub Physical Highway Grid */
 .corridorGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ward-space-8);
+  grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
+  gap: 0.625rem;
+  align-items: stretch;
   background: var(--surface);
-  border: 1px solid var(--ward-divider);
-  border-radius: var(--radius-md, 10px);
-  padding: var(--ward-space-10);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.5rem 0.75rem;
 }
 
 @media (max-width: 640px) {
   .corridorGrid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 }
 
 .corridorHub {
   background: var(--surface-2);
-  border: 1px solid var(--ward-divider);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--ward-space-8);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.45rem 0.625rem;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--lift);
 }
 
 .corridorHubAccepted {
   background: var(--accent-soft);
   border: 1px solid var(--accent-border);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--ward-space-8);
+  border-radius: var(--r2);
+  padding: 0.45rem 0.625rem;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--lift);
 }
 
+.hubRole {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin-bottom: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.corridorHubAccepted .hubRole {
+  color: var(--accent-ink);
+}
+
+.hubName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.hubMeta {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  margin-top: 1px;
+  line-height: 1.25;
+}
+
+.hubFoot {
+  margin-top: auto;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.corridorHubAccepted .hubFoot {
+  border-top-color: var(--accent-border);
+  color: var(--accent-ink);
+}
+
+.corridorWardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.corridorWardLink:hover {
+  text-decoration: underline;
+}
+
+/* Highway Vector (Center Column) */
 .corridorHighway {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 140px;
-  padding: 0 var(--ward-space-4);
   text-align: center;
+  padding: 0 4px;
+  min-width: 130px;
 }
 
-.corridorTrack {
+.transitBadge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent-border);
+  padding: 2px 7px;
+  border-radius: 9999px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.transitTrack {
   width: 100%;
-  height: 8px;
-  background: var(--sunk);
+  height: 6px;
+  background: var(--surface-sunk);
   border-radius: 9999px;
   position: relative;
   overflow: hidden;
-  margin: var(--ward-space-4) 0;
+  margin: 3px 0;
 }
 
-.corridorProgress {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  background: var(--accent);
+.transitFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-ink) 100%);
   border-radius: 9999px;
-  transition: width 0.3s ease;
+  transition: width 0.4s ease;
 }
 
-.beaconCard {
-  margin-top: var(--ward-space-10);
+.transitVehicle {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 3px;
+}
+
+.transitEta {
+  font-size: 0.625rem;
+  color: var(--muted);
+}
+
+/* Live Whereabouts Beacon Card */
+.whereaboutsBanner {
   background: var(--surface);
-  border: 1.5px solid var(--accent-border);
-  border-radius: var(--radius-md, 10px);
-  padding: var(--ward-space-10);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r1);
+  padding: 0.45rem 0.75rem;
   display: flex;
-  align-items: flex-start;
-  gap: var(--ward-space-8);
-  box-shadow: 0 0 0 1px var(--accent-soft);
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.45rem;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
-.beaconDot {
-  width: 28px;
-  height: 28px;
+.whereaboutsIconBox {
+  width: 1.875rem;
+  height: 1.875rem;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--text-inverse);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 0.8125rem;
+  border: 1px solid var(--accent-border);
 }
 
-.waypointStepper {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--ward-space-4);
-  margin: var(--ward-space-8) 0;
-  text-align: center;
+.whereaboutsContent {
+  flex: 1;
+  min-width: 0;
 }
 
-@media (max-width: 640px) {
-  .waypointStepper {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.waypointItem {
-  background: var(--surface-2);
-  border: 1px solid var(--ward-divider);
-  border-radius: var(--radius-sm, 6px);
-  padding: var(--ward-space-5) var(--ward-space-2);
+.whereaboutsHeading {
   font-size: 0.6875rem;
-}
-
-.waypointActive {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent-ink);
   font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent-ink);
+  margin-bottom: 1px;
 }
 
-.waypointDone {
-  background: var(--ward-success-soft);
-  border-color: var(--success-border);
-  color: var(--ward-success);
+.whereaboutsText {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.35;
+  margin: 0;
 }
 
-.blockerAlert {
-  background: var(--ward-warning-soft);
-  border: 1px solid var(--warning-border);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--ward-space-8);
-  margin: var(--ward-space-8) 0;
-}
-
-.blockerAlertGood {
-  background: var(--ward-success-soft);
-  border: 1px solid var(--success-border);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--ward-space-8);
-  margin: var(--ward-space-8) 0;
-}
-
-.telemetryGrid {
+/* Telemetry Deck */
+.telemetryDeck {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--ward-space-8);
-  margin-top: var(--ward-space-8);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 @media (max-width: 640px) {
-  .telemetryGrid {
+  .telemetryDeck {
     grid-template-columns: 1fr;
   }
 }
 
-.telemetryCard {
+.telemetryBox {
   background: var(--surface);
-  border: 1px solid var(--ward-divider);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--ward-space-8);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.5rem 0.75rem;
+}
+
+.telemetryTitle {
   font-size: 0.75rem;
-}
-
-.telemetryRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--ward-space-3);
-}
-
-.pulseBeacon {
-  animation: pulseBeaconAnim 2s infinite;
-}
-
-@keyframes pulseBeaconAnim {
-  0% {
-    box-shadow: 0 0 0 0 rgb(var(--ward-shadow-rgb) / 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgb(var(--ward-shadow-rgb) / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgb(var(--ward-shadow-rgb) / 0);
-  }
-}
-
-.corridorFlowTrack {
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-press) 50%, var(--accent) 100%);
-  background-size: 200% 100%;
-  animation: corridorFlowAnim 3s linear infinite;
-}
-
-@keyframes corridorFlowAnim {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pulseBeacon,
-  .corridorFlowTrack {
-    animation: none !important;
-  }
-}
-
-:global([data-reduced-motion="true"]) .pulseBeacon,
-:global([data-reduced-motion="true"]) .corridorFlowTrack {
-  animation: none !important;
-}
-
-.patientMonogram {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md, 8px);
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-weight: 800;
-  font-size: 1.125rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.2);
-}
-
-.corridorHeroHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-  margin-bottom: var(--ward-space-8);
-}
-
-.corridorTag {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
   display: inline-flex;
   align-items: center;
-  gap: var(--ward-space-2);
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.6875rem;
+  gap: 0.375rem;
+}
+
+.telemetryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.telemetryItem:last-child {
+  border-bottom: none;
+}
+
+.telemetryLabel {
+  color: var(--muted);
+}
+
+.telemetryMono {
+  font-family: var(--mono);
+}
+
+.textDanger {
+  color: var(--danger-ink);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+}
+
+.textGood {
+  color: var(--good-ink);
+  font-weight: 700;
+}
+
+.textAccent {
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* Flow Check Banner */
+.flowCheckBanner {
+  border-radius: var(--r1);
+  padding: 0.45rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin-top: 0.5rem;
+}
+
+.flowCheckGood {
+  background: var(--good-soft);
+  border: 1px solid var(--good-border);
+  color: var(--good-ink);
+}
+
+.flowCheckBlocked {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn-ink);
+}
+
+/* Action Bar */
+.drawerActionBar {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.actionGroupLeft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionGroupRight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionBtnPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 2.125rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.actionBtnPrimary:hover {
+  background: var(--accent-ink);
+  transform: translateY(-1px);
+}
+
+.actionBtnSecondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-strong, var(--line));
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-height: 2.125rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.actionBtnSecondary:hover {
+  background: var(--surface-2);
+}
+
+.actionUrgentBtn {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger-border);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 2.125rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.actionUrgentBtn:hover:not([aria-disabled="true"]) {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+.actionUrgentBtn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionUrgentRemove {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger-border);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 2.125rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.actionUrgentRemove:hover {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+/* Statutory Accordion */
+.auditAccordion {
+  margin-top: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.auditSummary {
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.auditSummary:hover {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.auditSummaryLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auditSummaryBadge {
+  font-size: 0.6875rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: var(--line);
+  color: var(--muted);
+}
+
+.auditSummaryChevron {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.auditAccordion[open] .auditSummaryChevron {
+  transform: rotate(180deg);
+}
+
+.auditBody {
+  padding: 1rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.syntheticFootnote {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  text-align: center;
 }
 
 /*
@@ -1807,7 +2190,7 @@
 }
 .stageSummaryLink strong {
   text-align: right;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -2022,7 +2405,7 @@
 }
 
 .shapeTab strong {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;

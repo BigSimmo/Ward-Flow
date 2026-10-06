@@ -1274,6 +1274,7 @@ export function MovementsScreen() {
           units={units}
           referrals={referrals}
           patients={patients}
+          edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
         />
