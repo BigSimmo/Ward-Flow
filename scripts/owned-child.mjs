@@ -1,10 +1,21 @@
 import { execFileSync, fork, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { removePathSync } from "./retryable-fs.mjs";
+import { windowsJobAttestation } from "./recover-heavy-run.mjs";
 
 const TOKEN = "CLINICAL_KB_HEAVY_LOCK_TOKEN";
 const LEASE = "CLINICAL_KB_HEAVY_LOCK_PATH";
@@ -66,7 +77,13 @@ export function registeredWorkIsActive(leasePath, token) {
 
 function writeRecord(file, record) {
   const temporary = `${file}.${process.pid}.tmp`;
-  writeFileSync(temporary, JSON.stringify(record));
+  const descriptor = openSync(temporary, "w");
+  try {
+    writeFileSync(descriptor, JSON.stringify(record));
+    fsyncSync(descriptor);
+  } finally {
+    closeSync(descriptor);
+  }
   renameSync(temporary, file);
 }
 
@@ -207,10 +224,17 @@ async function supervise(message) {
   let result;
   let completed = false;
   let receipt;
+  let launchReceipt;
+  let acknowledgeFile;
   try {
     if (process.platform === "win32") {
-      receipt = path.join(recordFile ? path.dirname(recordFile) : os.tmpdir(), `ward-owned-job-${randomUUID()}.json`);
+      receipt = path.join(os.tmpdir(), `ward-owned-job-${randomUUID()}.json`);
       cancelFile = `${receipt}.cancel`;
+      launchReceipt = `${receipt}.launch`;
+      acknowledgeFile = `${receipt}.ack`;
+      const adapterBytes = readFileSync(fileURLToPath(new URL("./owned-child-windows.ps1", import.meta.url)));
+      // Execute the hashed bytes directly: a later replacement of the source
+      // pathname cannot change the code that this adapter actually executes.
       child = spawn(
         "powershell.exe",
         [
@@ -218,8 +242,8 @@ async function supervise(message) {
           "-NonInteractive",
           "-ExecutionPolicy",
           "Bypass",
-          "-File",
-          fileURLToPath(new URL("./owned-child-windows.ps1", import.meta.url)),
+          "-EncodedCommand",
+          Buffer.from(adapterBytes.toString("utf8"), "utf16le").toString("base64"),
         ],
         { cwd, env, stdio: ["pipe", "inherit", "inherit"], windowsHide: true },
       );
@@ -234,8 +258,66 @@ async function supervise(message) {
           receipt,
           cancelFile,
           cancelToken,
+          launchReceipt,
+          acknowledgeFile,
+          launchToken: cancelToken,
+          adapterHash: windowsJobAttestation(adapterBytes, null, null).adapterSha256,
+          guardianPid: process.pid,
         }) + "\n",
       );
+      record.childPid = child.pid ?? null;
+      if (recordFile) writeRecord(recordFile, record);
+      // Register close/error observers before awaiting the native handshake.
+      // A failed compile/spawn must never lose its completion event.
+      let adapterEnded = false;
+      const closed = new Promise((resolve) => {
+        child.once("error", (error) => {
+          adapterEnded = true;
+          resolve({ status: null, error: { message: error.message } });
+        });
+        child.once("close", (status, signal) => {
+          adapterEnded = true;
+          resolve({ status, signal });
+        });
+      });
+      const deadline = Date.now() + 15000;
+      while (!existsSync(launchReceipt) && !adapterEnded && Date.now() < deadline) await pause(20);
+      const launch = json(launchReceipt);
+      const attestation = windowsJobAttestation(adapterBytes, launch?.guardianIdentity, launch?.adapterIdentity);
+      if (
+        launch?.assigned !== true ||
+        launch.token !== cancelToken ||
+        launch.adapterSha256 !== attestation.adapterSha256 ||
+        launch.guardianIdentity?.pid !== process.pid ||
+        launch.adapterIdentity?.pid !== child.pid ||
+        !Number.isFinite(Date.parse(launch.guardianIdentity?.createdAt)) ||
+        !Number.isFinite(Date.parse(launch.adapterIdentity?.createdAt))
+      ) {
+        if (!adapterEnded) stop("SIGTERM");
+        // Keep the running record: failed launch evidence proves no closure.
+        result = await closed;
+      } else {
+        record.recoveryIdentity = attestation;
+        if (recordFile) {
+          if (json(path.join(leasePath, "owner.json"))?.token !== token)
+            throw new Error("owned child lease changed before acknowledgement");
+          writeRecord(recordFile, record);
+          if (JSON.stringify(json(recordFile)) !== JSON.stringify(record))
+            throw new Error("owned child launch record changed before acknowledgement");
+        }
+        if (!cancelled) {
+          const temporaryAcknowledgement = `${acknowledgeFile}.tmp`;
+          const acknowledgement = openSync(temporaryAcknowledgement, "wx");
+          try {
+            writeFileSync(acknowledgement, cancelToken);
+            fsyncSync(acknowledgement);
+          } finally {
+            closeSync(acknowledgement);
+          }
+          renameSync(temporaryAcknowledgement, acknowledgeFile);
+        }
+        result = await closed;
+      }
     } else {
       child = spawn(command, args, {
         ...options,
@@ -247,10 +329,11 @@ async function supervise(message) {
     }
     record.childPid = child.pid ?? null;
     if (recordFile) writeRecord(recordFile, record);
-    result = await new Promise((resolve) => {
-      child.on("error", (error) => resolve({ status: null, error: { message: error.message } }));
-      child.on("close", (status, signal) => resolve({ status, signal }));
-    });
+    if (process.platform !== "win32")
+      result = await new Promise((resolve) => {
+        child.on("error", (error) => resolve({ status: null, error: { message: error.message } }));
+        child.on("close", (status, signal) => resolve({ status, signal }));
+      });
     await cancellation;
     if (recordFile) {
       record.childResult = result;
@@ -351,6 +434,10 @@ async function supervise(message) {
     clearTimeout(cancellationTimer);
     if (receipt) removePathSync(receipt, { force: true });
     if (cancelFile) removePathSync(cancelFile, { force: true });
+    if (launchReceipt) removePathSync(launchReceipt, { force: true });
+    if (acknowledgeFile) removePathSync(acknowledgeFile, { force: true });
+    if (launchReceipt) removePathSync(`${launchReceipt}.tmp`, { force: true });
+    if (acknowledgeFile) removePathSync(`${acknowledgeFile}.tmp`, { force: true });
   }
 }
 

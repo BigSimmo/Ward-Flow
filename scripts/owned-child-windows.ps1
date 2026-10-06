@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.IO;
+using System.Diagnostics;
 public static class WardOwnedJob {
   public static bool Completed = false;
   public static string FailureMessage = null;
@@ -45,7 +46,20 @@ public static class WardOwnedJob {
     return b.Append('\\',slashes*2).Append('"').ToString();
   }
   static Exception Failure() { return new Win32Exception(Marshal.GetLastWin32Error()); }
-  public static int Run(string command,string[] args,string cwd,bool verbatim,int survivorTimeout,string cancelFile,string cancelToken) {
+  static void PublishLaunch(string file,string token,string adapterHash,int guardianPid,uint rootPid) {
+    string guardianCreated;
+    using(var guardian=Process.GetProcessById(guardianPid)) guardianCreated=guardian.StartTime.ToUniversalTime().ToString("o");
+    string adapterCreated;
+    using(var adapter=Process.GetCurrentProcess()) adapterCreated=adapter.StartTime.ToUniversalTime().ToString("o");
+    if(!System.Text.RegularExpressions.Regex.IsMatch(token,"^[0-9a-f-]{36}$") || !System.Text.RegularExpressions.Regex.IsMatch(adapterHash,"^[0-9a-f]{64}$")) throw new Exception("Invalid launch identity");
+    string data="{\"token\":\""+token+"\",\"assigned\":true,\"rootPid\":"+rootPid+",\"adapterSha256\":\""+adapterHash+"\",\"guardianIdentity\":{\"pid\":"+guardianPid+",\"createdAt\":\""+guardianCreated+"\"},\"adapterIdentity\":{\"pid\":"+Process.GetCurrentProcess().Id+",\"createdAt\":\""+adapterCreated+"\"}}";
+    string temporary=file+".tmp";
+    using(var stream=new FileStream(temporary,FileMode.CreateNew,FileAccess.Write,FileShare.None)) {
+      byte[] bytes=Encoding.UTF8.GetBytes(data); stream.Write(bytes,0,bytes.Length); stream.Flush(true);
+    }
+    File.Move(temporary,file); // Publish only complete flushed receipt bytes.
+  }
+  public static int Run(string command,string[] args,string cwd,bool verbatim,int survivorTimeout,string cancelFile,string cancelToken,string launchReceipt,string acknowledgeFile,string launchToken,string adapterHash,int guardianPid) {
     IntPtr job=IntPtr.Zero; PROCESS_INFORMATION pi=new PROCESS_INFORMATION(); bool assigned=false;
     try {
       job=CreateJobObject(IntPtr.Zero,null); if(job==IntPtr.Zero) throw Failure();
@@ -58,6 +72,29 @@ public static class WardOwnedJob {
       startup.input=GetStdHandle(-10); startup.output=GetStdHandle(-11); startup.error=GetStdHandle(-12);
       if(!CreateProcess(null,line,IntPtr.Zero,IntPtr.Zero,true,0x00000004 | 0x08000000,IntPtr.Zero,cwd,ref startup,out pi)) throw Failure();
       if(!AssignProcessToJobObject(job,pi.process)) throw Failure(); assigned=true;
+      // The root remains suspended until the guardian has durably bound this
+      // actual adapter identity and assignment receipt to its child record.
+      PublishLaunch(launchReceipt,launchToken,adapterHash,guardianPid,pi.pid);
+      long acknowledgeDeadline=Now()+15000;
+      for(;;) {
+        if(Now()>acknowledgeDeadline) throw new Exception("Guardian did not acknowledge launch evidence");
+        if(File.Exists(cancelFile) && File.ReadAllText(cancelFile)==cancelToken) throw new Exception("Launch cancelled before acknowledgement");
+        if(File.Exists(acknowledgeFile)) {
+          try {
+            if(File.ReadAllText(acknowledgeFile)!=launchToken) throw new Exception("Launch acknowledgement mismatch");
+            break;
+          } catch(IOException e) {
+            // A scanner or another reader can briefly hold the atomically published
+            // acknowledgement. Retry only Windows sharing/lock violations, inside
+            // the existing deadline. The root stays suspended and cancellation
+            // is rechecked on every attempt. All other errors remain fail-closed.
+            int sharingCode=e.HResult & 0xffff;
+            if(sharingCode!=32 && sharingCode!=33) throw;
+          }
+        }
+        Thread.Sleep(20);
+      }
+      if(File.Exists(cancelFile) && File.ReadAllText(cancelFile)==cancelToken) throw new Exception("Launch cancelled before resume");
       if(ResumeThread(pi.thread)==0xffffffff) throw Failure();
       long rootExit=0; bool timedOut=false,cancelled=false;
       for(;;) {
@@ -98,6 +135,6 @@ public static class WardOwnedJob {
 }
 '@
 $payload = [Console]::In.ReadLine() | ConvertFrom-Json
-$status = [WardOwnedJob]::Run([string]$payload.command, [string[]]$payload.args, [string]$payload.cwd, [bool]$payload.verbatim, [int]$payload.survivorTimeout, [string]$payload.cancelFile, [string]$payload.cancelToken)
+$status = [WardOwnedJob]::Run([string]$payload.command, [string[]]$payload.args, [string]$payload.cwd, [bool]$payload.verbatim, [int]$payload.survivorTimeout, [string]$payload.cancelFile, [string]$payload.cancelToken, [string]$payload.launchReceipt, [string]$payload.acknowledgeFile, [string]$payload.launchToken, [string]$payload.adapterHash, [int]$payload.guardianPid)
 @{ status=$status; completed=[WardOwnedJob]::Completed; error=[WardOwnedJob]::FailureMessage } | ConvertTo-Json -Compress | Set-Content -LiteralPath $payload.receipt -Encoding UTF8
 exit $status
