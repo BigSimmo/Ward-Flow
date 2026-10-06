@@ -2,15 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  MapPin,
+  ShieldCheck,
+  TriangleAlert,
+  PhoneCall,
+  ArrowRight,
+  ChevronDown,
+  ExternalLink,
+  Route,
+  Building2,
+  BedSingle,
+  Truck,
+  Clock,
+} from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/ui/sheet";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, referralForMovement, stageCopy } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
 import {
@@ -136,25 +150,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function getStageIndex(stage: Movement["stage"]): number {
-  switch (stage) {
-    case "placement_requested":
-      return 0;
-    case "destination_review":
-      return 1;
-    case "accepted_awaiting_bed":
-      return 2;
-    case "pulled":
-      return 3;
-    case "handover_ready":
-      return 4;
-    case "moving":
-      return 5;
-    case "arrived":
-      return 6;
-  }
-}
-
 function getProgressPercent(stage: Movement["stage"]): string {
   switch (stage) {
     case "placement_requested":
@@ -174,25 +169,33 @@ function getProgressPercent(stage: Movement["stage"]): string {
   }
 }
 
-function getWhereaboutsText(movement: Movement, originEdName: string, acceptedUnitName: string | undefined): string {
+function getWhereaboutsText(
+  movement: Movement,
+  originFullName: string,
+  originShort: string,
+  acceptedUnitName: string | undefined,
+  siteName: string | undefined,
+): string {
+  const dest = acceptedUnitName ? `${acceptedUnitName}${siteName ? ` (${siteName})` : ""}` : "destination unit";
   if (movement.stage === "moving") {
     const provider = movement.transport?.provider ?? "Transport Service";
-    const escort = movement.transport?.escortRequired ? "Escort onboard." : "No escort required.";
-    return `En route on Highway transfer corridor via ${provider}. ${escort} Departed ${originEdName}.`;
+    const cad = movement.transport?.cadNumber ? ` (${movement.transport.cadNumber})` : "";
+    const escort = movement.transport?.escortRequired ? "Clinical escort onboard." : "Standard transit crew.";
+    return `In transit via ${provider}${cad}. ${escort} Departed ${originShort} heading to ${dest}.`;
   }
   if (movement.stage === "handover_ready") {
     const transportStatus = movement.transport
-      ? `awaiting ${movement.transport.provider} collection.`
+      ? `in departure bay awaiting ${movement.transport.provider} collection.`
       : "awaiting transport booking.";
-    return `Physically present in ${originEdName}. Clinical handover complete; ${transportStatus}`;
+    return `At ${originShort}. Clinical handover complete; ${transportStatus}`;
   }
   if (movement.stage === "arrived") {
-    return `Arrived and admitted to ${acceptedUnitName ?? "destination ward"}.`;
+    return `Arrived at ${dest}. Inpatient admission complete.`;
   }
   if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") {
-    return `At ${originEdName}. Bed allocated at ${acceptedUnitName ?? "destination ward"}; preparing transfer packet.`;
+    return `At ${originShort}. Bed allocated at ${dest}; assembling handover and transport booking.`;
   }
-  return `In ${originEdName} undergoing destination placement review. Awaiting receiving ward agreement.`;
+  return `At ${originFullName} undergoing destination review. Awaiting receiving ward agreement.`;
 }
 
 export function MovementDrawer({
@@ -247,221 +250,425 @@ export function MovementDrawer({
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
   const subjectPatient = resolveSubjectPatient(movement, { patients, referrals });
 
-  const sIndex = getStageIndex(movement.stage);
   const originFullName = departmentLabel(movement.originEdId, originEd?.name);
-  const originShort = originEd?.name ?? movement.originEdId;
+  const originShort = originEd ? edShortName(originEd) : movement.originEdId;
+  const originSite = originEd?.siteCode ? siteByCode(originEd.siteCode) : undefined;
+  const originHospitalName =
+    originSite?.name ?? (originEd?.name ? originEd.name.replace(/ Emergency Department$/i, "") : undefined);
+  const originDeptName = originEd ? "Emergency Department" : originFullName;
+  const destSiteName = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
+
   const isNoBlocker =
     !movement.blocker ||
     movement.blocker === "No blocker" ||
     movement.blocker.startsWith("None —") ||
     movement.blocker.startsWith("None -");
-  const blockerAlertClass = isNoBlocker ? styles.blockerAlertGood : styles.blockerAlert;
 
-  const intakeDone = sIndex >= 0;
-  const intakeTime = formatInstantWithDay(movement.openedAt, now);
+  const waitMinutes = Math.max(now - movement.openedAt, 0);
+  const totalWaitFormatted = splitDuration(waitMinutes);
+  const isTargetBreached = waitMinutes > 240;
 
-  const allocationDone = sIndex >= 2;
-  const allocationActive = sIndex === 1;
-  const allocationStatus = allocationDone ? "✓ Accepted" : allocationActive ? "● In Review" : "—";
-  const allocationTime = movement.acceptedAt
-    ? formatInstantWithDay(movement.acceptedAt, now)
-    : allocationActive
-      ? "In Review"
-      : "—";
+  const progressPct = getProgressPercent(movement.stage);
 
-  const handoverDone = sIndex >= 4;
-  const handoverActive = sIndex === 3;
-  const handoverStatus = handoverDone ? "✓ Ready" : handoverActive ? "● Pulled" : "—";
-  const handoverTime = handoverDone ? "Handover Ready" : handoverActive ? "Bed Pulled" : "—";
+  const stageTagClass = movement.flaggedUrgent
+    ? styles.tagRed
+    : movement.stage === "moving"
+      ? styles.tagBlue
+      : movement.stage === "handover_ready" || movement.stage === "arrived"
+        ? styles.tagGreen
+        : styles.tagAmber;
 
-  const transportDone = sIndex >= 6;
-  const transportActive = sIndex === 5;
-  const transportBooked = sIndex === 4 && movement.transport !== undefined;
-  const transportStatus = transportActive ? "● Driving" : transportBooked ? "Booked" : transportDone ? "✓ Done" : "—";
-  const transportTime = movement.transport?.cadNumber ?? (movement.transport?.provider ? "Booked" : "—");
-
-  const admissionDone = sIndex >= 6;
-  const admissionStatus = admissionDone ? "✓ Arrived" : "Pending";
-  const admissionTime = accepted ? accepted.name : "Pending Bed";
+  const patientFirstName =
+    subjectPatient.formalName.split(",")[1]?.trim() ||
+    subjectPatient.formalName.split(" ")[0] ||
+    subjectPatient.formalName;
 
   return (
-    <Sheet open onClose={onClose} title={`${subjectPatient.formalName} — what is recorded`}>
-      {/* 🚀 Visual Hero: Spatial Horizon Corridor */}
+    <Sheet
+      open
+      onClose={onClose}
+      contentClassName={styles.drawerSheetContent}
+      bodyClassName={styles.drawerSheetBody}
+      title={`${subjectPatient.formalName} — what is recorded`}
+      headerLeading={<div className={styles.drawerAvatarMonogram}>{subjectPatient.formalName.charAt(0)}</div>}
+      descriptionContent={
+        <div className={styles.drawerSubline}>
+          {subjectPatient.umrn ? <span className={styles.drawerUmrnBadge}>UMRN: {subjectPatient.umrn}</span> : null}
+          <span>
+            {movement.cohort} · {movement.sex} · {movement.security === "Secure" ? "Needs locked bed" : "Open ward"}
+          </span>
+          {movement.legalForm ? (
+            <span className={styles.drawerLegalTag}>{legalFormName(movement.legalForm)}</span>
+          ) : null}
+        </div>
+      }
+      headerActions={
+        <div className={styles.drawerHeaderStatusWrap}>
+          <span className={`${styles.corridorStatusTag} ${stageTagClass}`}>
+            <span className={styles.statusDot} />
+            {movement.flaggedUrgent ? "URGENT FLAG" : stageCopy[movement.stage].label.toUpperCase()}
+          </span>
+          <span className={styles.drawerUrgencyText}>Urgency {movement.urgency} of 3</span>
+        </div>
+      }
+    >
+      {/* 🚀 Visual Hero: Current Movement (Simplified & Project Aligned) */}
       <div className={styles.corridorCard}>
-        <div className={styles.corridorHeroHeader}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div className={styles.patientMonogram}>{subjectPatient.formalName.charAt(0)}</div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <strong style={{ fontSize: "1rem", color: "var(--ward-heading, var(--ink))" }}>
-                  {subjectPatient.formalName}
-                </strong>
-                {subjectPatient.umrn ? (
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono, monospace)",
-                      fontSize: "0.75rem",
-                      padding: "1px 5px",
-                      background: "var(--surface-2, #f1f5f9)",
-                      borderRadius: "4px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {subjectPatient.umrn}
-                  </span>
-                ) : null}
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--ward-muted, #64748b)", marginTop: "2px" }}>
-                {movement.cohort} · {movement.sex} · {movement.security === "Secure" ? "Needs locked bed" : "Open ward"}
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-            <span
-              className={styles.corridorTag}
-              style={{
-                background: movement.flaggedUrgent ? "var(--ward-danger-soft, #fee2e2)" : "var(--accent-soft, #eff6ff)",
-                color: movement.flaggedUrgent ? "var(--ward-danger, #dc2626)" : "var(--accent-ink, #1d4ed8)",
-                border: `1px solid ${movement.flaggedUrgent ? "var(--ward-danger-border, #fca5a5)" : "var(--accent-border, #bfdbfe)"}`,
-              }}
-            >
-              {movement.flaggedUrgent ? "● URGENT FLAG" : stageCopy[movement.stage].label}
-            </span>
-            <span style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)" }}>
-              Urgency {movement.urgency} of 3
-            </span>
-          </div>
+        <div className={styles.corridorTitleRow}>
+          <span className={styles.corridorSectionTitle}>
+            <Route className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Current movement</span>
+          </span>
+          <span className={`${styles.corridorStatusTag} ${stageTagClass}`}>
+            <span className={styles.statusDot} />
+            {movement.flaggedUrgent ? "URGENT" : stageCopy[movement.stage].label.toUpperCase()}
+          </span>
         </div>
 
-        {/* Dual Hub Spatial Corridor */}
+        {/* 2-Hub Physical Highway */}
         <div className={styles.corridorGrid}>
           {/* Origin Hub */}
           <div className={styles.corridorHub}>
-            <div
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                color: "var(--ward-muted, #64748b)",
-              }}
-            >
-              Departure Origin
+            <div className={styles.hubRole}>
+              <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Departing from</span>
             </div>
-            <div
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: 800,
-                color: "var(--ward-heading, var(--ink))",
-                marginTop: "2px",
-              }}
-            >
-              {originShort}
-            </div>
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--ward-muted, #64748b)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {originFullName}
-            </div>
-            <div
-              style={{
-                marginTop: "6px",
-                paddingTop: "4px",
-                borderTop: "1px solid var(--ward-divider, #e2e8f0)",
-                fontSize: "0.6875rem",
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span style={{ color: "var(--ward-muted, #64748b)" }}>Department:</span>
-              <strong style={{ color: "var(--ward-heading, var(--ink))" }}>Emergency</strong>
+            <div className={styles.hubName}>{originDeptName}</div>
+            <div className={styles.hubMeta}>{originHospitalName ?? originFullName}</div>
+            <div className={styles.hubFoot}>
+              <span>
+                {movement.stage === "moving" || movement.stage === "arrived" ? "Departed:" : "Opened:"}{" "}
+                <strong>{formatInstantWithDay(movement.openedAt, now)}</strong>
+              </span>
             </div>
           </div>
 
-          {/* Transit Vector / Highway */}
+          {/* Highway Vector */}
           <div className={styles.corridorHighway}>
-            <span
-              style={{
-                background: "var(--accent-soft, #dbeafe)",
-                color: "var(--accent-ink, #1e40af)",
-                fontSize: "0.625rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                padding: "2px 8px",
-                borderRadius: "9999px",
-                marginBottom: "4px",
-              }}
-            >
-              {movement.transport?.provider ??
-                (movement.transportNeed?.needed === false ? "Walking Transfer" : "Transport Leg")}
+            <span className={styles.transitBadge}>
+              <Truck className="h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>
+                {movement.transport?.provider ??
+                  (movement.transportNeed?.needed === false ? "Walking Transfer" : "Transport Leg")}
+              </span>
             </span>
-            <div className={styles.corridorTrack}>
-              <div className={styles.corridorFlowTrack} style={{ position: "absolute", inset: 0 }} />
-              <div className={styles.corridorProgress} style={{ width: getProgressPercent(movement.stage) }} />
+            <div className={styles.transitTrack}>
+              <div className={styles.transitFill} style={{ width: progressPct }} />
             </div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono, monospace)",
-                fontWeight: 700,
-                fontSize: "0.75rem",
-                color: "var(--ward-heading, var(--ink))",
-                marginTop: "4px",
-              }}
-            >
-              {movement.transport?.cadNumber ?? "—"}
+            <div className={styles.transitVehicle}>
+              {movement.transport?.cadNumber ? `CAD #${movement.transport.cadNumber}` : "Dispatch Pending"}
             </div>
-            <div style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)" }}>
-              {stageCopy[movement.stage].label}
+            <div className={styles.transitEta}>
+              {movement.stage === "moving" ? "ETA: Approx 20–35m" : stageCopy[movement.stage].label}
             </div>
           </div>
 
-          {/* Destination Hub */}
+          {/* Target Hub */}
           <div className={accepted ? styles.corridorHubAccepted : styles.corridorHub}>
-            <div
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                color: accepted ? "var(--accent-ink, #1d4ed8)" : "var(--ward-muted, #64748b)",
-              }}
-            >
-              {accepted ? "Accepted Destination" : "Pending Acceptance"}
+            <div className={styles.hubRole}>
+              <BedSingle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{accepted ? "Destination ward" : "Awaiting ward"}</span>
             </div>
-            <div
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: 800,
-                color: "var(--ward-heading, var(--ink))",
-                marginTop: "2px",
-              }}
-            >
-              {accepted ? accepted.name : "Awaiting Ward"}
+            <div className={styles.hubName}>{accepted ? accepted.name : "Awaiting Ward"}</div>
+            <div className={styles.hubMeta}>
+              {accepted ? (destSiteName ?? "Specialist Inpatient Unit") : "Statewide bed pool"}
             </div>
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--ward-muted, #64748b)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {accepted ? (siteByCode(accepted.siteCode)?.name ?? accepted.name) : "Statewide mental health bed pool"}
+            <div className={styles.hubFoot}>
+              <span>
+                Status:{" "}
+                <strong>{accepted ? (movement.stage === "arrived" ? "Admitted" : "Bed Prepared") : "In Review"}</strong>
+              </span>
+              {accepted ? (
+                <Link
+                  href={`/mockups/ward-flow/board/${accepted.id}`}
+                  className={styles.corridorWardLink}
+                  title={`Open ${accepted.name} Bed Board`}
+                >
+                  <span>Board</span>
+                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </Link>
+              ) : null}
             </div>
-            {accepted ? (
-              <div
-                style={{
-                  marginTop: "6px",
-                  paddingTop: "4px",
-                  borderTop: "1px solid var(--accent-border, #bfdbfe)",
-                  fontSize: "0.6875rem",
+          </div>
+        </div>
+
+        {/* Whereabouts Beacon */}
+        <div className={styles.whereaboutsBanner}>
+          <div className={styles.whereaboutsIconBox}>
+            <MapPin className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div className={styles.whereaboutsContent}>
+            <div className={styles.whereaboutsHeading}>Where is {patientFirstName} right now?</div>
+            <p className={styles.whereaboutsText}>
+              {getWhereaboutsText(movement, originFullName, originShort, accepted?.name, destSiteName)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Dual Detail Deck: Transport & Escort + Wait Time & Target */}
+      <div className={styles.telemetryDeck}>
+        <div className={styles.telemetryBox}>
+          <div className={styles.telemetryTitle}>
+            <Truck className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Transport &amp; escort</span>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>Carrier:</span>
+            <strong>
+              {movement.transport?.provider ??
+                (movement.transportNeed?.needed === false ? "Walking transfer" : "Not yet booked")}
+            </strong>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>CAD booking #:</span>
+            <strong style={{ fontFamily: "var(--font-mono, monospace)" }}>
+              {movement.transport?.cadNumber ?? "—"}
+            </strong>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>Clinical escort:</span>
+            <strong className={movement.transport?.escortRequired ? styles.textDanger : undefined}>
+              {movement.transport?.escortRequired ? "Escort required (Nurse + Security)" : "None needed"}
+            </strong>
+          </div>
+          {movement.legalForm ? (
+            <div className={styles.telemetryItem}>
+              <span className={styles.telemetryLabel}>Legal form:</span>
+              <strong className={styles.textAccent}>{legalFormName(movement.legalForm)}</strong>
+            </div>
+          ) : null}
+        </div>
+
+        <div className={styles.telemetryBox}>
+          <div className={styles.telemetryTitle}>
+            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Wait time &amp; transfer target</span>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>Time waiting:</span>
+            <strong style={{ fontFamily: "var(--font-mono, monospace)" }}>{totalWaitFormatted}</strong>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>WA Health target:</span>
+            <span>&lt; 4 hours</span>
+          </div>
+          <div className={styles.telemetryItem}>
+            <span className={styles.telemetryLabel}>Target status:</span>
+            <strong className={isTargetBreached ? styles.textDanger : styles.textGood}>
+              {isTargetBreached
+                ? `Over target by ${splitDuration(waitMinutes - 240)}`
+                : `On track (${splitDuration(240 - waitMinutes)} left)`}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Delay Barrier / Transfer Status Banner */}
+      <div className={`${styles.flowCheckBanner} ${isNoBlocker ? styles.flowCheckGood : styles.flowCheckBlocked}`}>
+        {isNoBlocker ? (
+          <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
+        ) : (
+          <TriangleAlert className="h-5 w-5 shrink-0" aria-hidden="true" />
+        )}
+        <div>
+          <strong>{isNoBlocker ? "Transfer status:" : "Delay barrier:"}</strong>{" "}
+          {isNoBlocker
+            ? `All checks clear. Bed allocated at ${
+                accepted ? accepted.name : "receiving ward"
+              }. Transport and handover ready.`
+            : movement.blocker}
+        </div>
+      </div>
+
+      {/* Modal Action Bar */}
+      <div className={styles.drawerActionBar}>
+        <div className={styles.actionGroupLeft}>
+          {movement.flaggedUrgent ? (
+            <button
+              type="button"
+              className={styles.actionUrgentRemove}
+              data-testid="ward-movement-drawer-urgent-toggle"
+              onClick={() =>
+                dispatch({
+                  type: "CLEAR_MOVEMENT_URGENT_FLAG",
+                  role: "coordinator",
+                  now,
+                  movementId: movement.id,
+                })
+              }
+            >
+              <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Remove the urgent flag</span>
+            </button>
+          ) : open ? (
+            <div className={styles.drawerReasonRow} style={{ marginTop: 0 }}>
+              <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
+                Why is this urgent?
+              </label>
+              <select
+                id="ward-movement-drawer-urgent-reason"
+                className={styles.drawerReasonSelect}
+                data-testid="ward-movement-drawer-urgent-reason"
+                value={urgentFlagReason ?? ""}
+                onChange={(chosen) => {
+                  const value = chosen.target.value;
+                  setUrgentFlagReason(
+                    URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
+                  );
                 }}
               >
+                <option value="">Choose why this is urgent…</option>
+                {URGENT_MARK_REASONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {changeReasonLabels[reason]}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className={styles.actionUrgentBtn}
+                data-testid="ward-movement-drawer-urgent-toggle"
+                aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
+                aria-describedby={urgentFlagReason === undefined ? "ward-movement-drawer-urgent-blocked" : undefined}
+                title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
+                onClick={
+                  urgentFlagReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        dispatch({
+                          type: "FLAG_MOVEMENT_URGENT",
+                          role: "coordinator",
+                          now,
+                          movementId: movement.id,
+                          reason: urgentFlagReason,
+                        });
+                        setUrgentFlagReason(undefined);
+                      }
+                }
+              >
+                <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Flag this patient as urgent</span>
+              </button>
+              {urgentFlagReason === undefined ? (
+                <span id="ward-movement-drawer-urgent-blocked" className="sr-only">
+                  {URGENT_FLAG_UNCHOSEN}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div className={styles.actionGroupRight}>
+          <button
+            type="button"
+            className={styles.actionBtnSecondary}
+            title="Call ward desk"
+            onClick={() => {
+              window.location.href = "tel:0894313333";
+            }}
+          >
+            <PhoneCall className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Call Ward Desk</span>
+          </button>
+
+          {accepted ? (
+            <Link
+              href={`/mockups/ward-flow/board/${accepted.id}`}
+              className={styles.actionBtnPrimary}
+              title={`Open ${accepted.name} Bed Board`}
+            >
+              <span>Open {accepted.name}</span>
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </Link>
+          ) : null}
+
+          <Link
+            href={`/mockups/ward-flow/movements/${movement.id}`}
+            className={styles.actionBtnSecondary}
+            title="Open movement in full workspace"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Workspace</span>
+          </Link>
+
+          <button type="button" className={styles.actionBtnSecondary} onClick={onClose}>
+            Dismiss
+          </button>
+        </div>
+      </div>
+
+      {/* Statutory & Clinical Audit Register (5 Sections) */}
+      <details className={styles.auditAccordion}>
+        <summary className={styles.auditSummary}>
+          <div className={styles.auditSummaryLabel}>
+            <strong>Statutory &amp; Clinical Audit Register</strong>
+            <span className={styles.auditSummaryBadge}>5 Sections</span>
+          </div>
+          <ChevronDown className={styles.auditSummaryChevron} aria-hidden="true" />
+        </summary>
+        <div className={styles.auditBody}>
+          <Section title="Person">
+            <p className={styles.drawerLine}>{personLine(movement, referrals, patients)}</p>
+            <ul className={styles.drawerList}>
+              <li>Sex recorded as {movement.sex}</li>
+              <li>
+                {movement.cohort} · {movement.security === "Secure" ? "needs a locked bed" : "open ward"}
+              </li>
+              <li>Urgency {movement.urgency} of 3</li>
+              <li>Owned by {movement.owner}</li>
+            </ul>
+            <p className={styles.drawerAbsent}>
+              Every person in this prototype is invented. Nobody named here is a real patient.
+            </p>
+          </Section>
+
+          <Section title="Journey">
+            <p className={styles.drawerLine}>
+              {stageCopy[movement.stage].label} · opened {formatInstantWithDay(movement.openedAt, now)} · from{" "}
+              {departmentLabel(movement.originEdId, originEd?.name)}
+            </p>
+            {movement.stageChanges.length === 0 ? (
+              <p className={styles.drawerAbsent}>
+                No stage change has been recorded, so this movement has not moved since it opened.
+              </p>
+            ) : (
+              <ul className={styles.drawerList}>
+                {movement.stageChanges.map((change) => (
+                  <li key={`${change.at} ${change.to}`}>
+                    {change.from === undefined ? "Opened" : stageCopy[change.from].label} → {stageCopy[change.to].label}{" "}
+                    · {formatInstantWithDay(change.at, now)} · {change.by}
+                    {change.reason === undefined ? "" : ` · ${change.reason}`}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="Which wards were asked">
+            {movement.referredUnitIds.length === 0 ? (
+              <p className={styles.drawerAbsent}>No ward has been asked yet.</p>
+            ) : (
+              <ul className={styles.drawerList}>
+                {movement.referredUnitIds.map((unitId) => {
+                  const unit = units.find((candidate) => candidate.id === unitId);
+                  const decline = movement.declines.find((entry) => entry.unitId === unitId);
+                  return (
+                    <li key={unitId}>
+                      {wardLabel(unitId, unit?.name)}
+                      {movement.acceptedUnitId === unitId
+                        ? " · accepted"
+                        : decline
+                          ? ` · refused — ${decline.reason}`
+                          : " · no answer yet"}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {accepted === undefined ? null : (
+              <p className={styles.drawerLine}>
+                Accepted destination: {accepted.name}{" "}
                 <Link
                   href={`/mockups/ward-flow/board/${accepted.id}`}
                   className={styles.jumpToWardLink}
@@ -469,394 +676,75 @@ export function MovementDrawer({
                 >
                   Open on Ward Board →
                 </Link>
-              </div>
-            ) : null}
-          </div>
-        </div>
+              </p>
+            )}
+          </Section>
 
-        {/* Where is Patient Right Now? Live Beacon Card */}
-        <div className={`${styles.beaconCard} ${styles.pulseBeacon}`}>
-          <div className={styles.beaconDot}>📍</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span
-                style={{
-                  fontSize: "0.6875rem",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  color: "var(--accent-ink, #1d4ed8)",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                Where is {subjectPatient.formalName.split(",")[1]?.trim() || subjectPatient.formalName} right now?
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono, monospace)",
-                  fontSize: "0.6875rem",
-                  color: "var(--ward-muted, #64748b)",
-                }}
-              >
-                Live Movement Status
-              </span>
-            </div>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                color: "var(--ward-heading, var(--ink))",
-                lineHeight: 1.4,
-              }}
-            >
-              {getWhereaboutsText(movement, originFullName, accepted?.name)}
+          <Section title="Escalation">
+            {movement.escalation === undefined ? (
+              <p className={styles.drawerAbsent}>
+                Nothing has been escalated on this movement. That is a record, not a gap.
+              </p>
+            ) : (
+              <p className={styles.drawerLine}>
+                Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
+                {movement.escalation.triedUnitIds.length}{" "}
+                {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
+              </p>
+            )}
+          </Section>
+
+          <Section title="Transport leg">
+            {movement.transport === undefined ? (
+              <p className={styles.drawerAbsent}>
+                No transport leg has been booked, so there is nothing to say about a vehicle.
+              </p>
+            ) : (
+              <p className={styles.drawerLine}>
+                {movement.transport.provider}
+                {movement.transport.escortRequired ? " · escort required" : ""}
+                {movement.transport.formRequired ? " · a form is required" : ""}
+                {movement.transport.acceptedAt === undefined
+                  ? ""
+                  : ` · accepted ${formatInstantWithDay(movement.transport.acceptedAt, now)}`}
+              </p>
+            )}
+            {movement.legalForm === undefined ? null : (
+              <p className={styles.drawerLine}>Legal authority: {legalFormName(movement.legalForm)}</p>
+            )}
+          </Section>
+
+          <Section title="What you can do">
+            <p className={styles.drawerLine}>
+              {movement.flaggedUrgent
+                ? open
+                  ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
+                  : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now — removing it changes only the record."
+                : open
+                  ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
+                  : "Not flagged — and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
             </p>
-          </div>
-        </div>
+            <p className={styles.drawerAbsent}>
+              This is the only thing this drawer changes. Everything else about this movement is done in the full
+              workspace.
+            </p>
+          </Section>
 
-        {/* 5-Waypoint Journey Track Stepper */}
-        <div style={{ marginTop: "12px" }}>
-          <div
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              color: "var(--ward-muted, #64748b)",
-              marginBottom: "4px",
-            }}
-          >
-            5-Waypoint Movement Vector
-          </div>
-          <div className={styles.waypointStepper}>
-            <div className={`${styles.waypointItem} ${intakeDone ? styles.waypointDone : ""}`}>
-              <div style={{ fontWeight: 700 }}>1. INTAKE</div>
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>✓ Opened</div>
-              <div style={{ color: "var(--ward-muted, #64748b)" }}>{intakeTime}</div>
-            </div>
-            <div
-              className={`${styles.waypointItem} ${allocationDone ? styles.waypointDone : allocationActive ? styles.waypointActive : ""}`}
-            >
-              <div style={{ fontWeight: 700 }}>2. ALLOCATE</div>
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>{allocationStatus}</div>
-              <div style={{ color: "var(--ward-muted, #64748b)" }}>{allocationTime}</div>
-            </div>
-            <div
-              className={`${styles.waypointItem} ${handoverDone ? styles.waypointDone : handoverActive ? styles.waypointActive : ""}`}
-            >
-              <div style={{ fontWeight: 700 }}>3. HANDOVER</div>
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>{handoverStatus}</div>
-              <div style={{ color: "var(--ward-muted, #64748b)" }}>{handoverTime}</div>
-            </div>
-            <div
-              className={`${styles.waypointItem} ${transportDone ? styles.waypointDone : transportActive ? styles.waypointActive : ""}`}
-            >
-              <div style={{ fontWeight: 700 }}>4. TRANSPORT</div>
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>{transportStatus}</div>
-              <div style={{ color: "var(--ward-muted, #64748b)" }}>{transportTime}</div>
-            </div>
-            <div className={`${styles.waypointItem} ${admissionDone ? styles.waypointDone : ""}`}>
-              <div style={{ fontWeight: 700 }}>5. ADMISSION</div>
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>{admissionStatus}</div>
-              <div style={{ color: "var(--ward-muted, #64748b)" }}>{admissionTime}</div>
-            </div>
-          </div>
+          <p className={styles.drawerFoot}>
+            <strong>One section the drawing carries is not built</strong> — <em>Watch and flag</em>. Nothing in this
+            system records that somebody is watching a movement, so there is no state for it to show;{" "}
+            <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+              the full workspace
+            </Link>{" "}
+            is where this movement is worked on.
+          </p>
         </div>
+      </details>
 
-        {/* Active Blocker Alert & Dispatch Telemetry */}
-        <div className={styles.telemetryGrid}>
-          <div className={blockerAlertClass}>
-            <div
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                color: isNoBlocker ? "var(--ward-success, #15803d)" : "var(--ward-warning, #b45309)",
-                marginBottom: "2px",
-              }}
-            >
-              Active Movement Barrier
-            </div>
-            <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ward-heading, var(--ink))" }}>
-              {movement.blocker}
-            </div>
-            <div style={{ fontSize: "0.6875rem", color: "var(--ward-muted, #64748b)", marginTop: "2px" }}>
-              {isNoBlocker ? "No clinical or dispatch impediment." : "Identified operational delay factor."}
-            </div>
-          </div>
-
-          <div className={styles.telemetryCard}>
-            <div
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                color: "var(--ward-muted, #64748b)",
-                marginBottom: "6px",
-              }}
-            >
-              Dispatch & Legal Telemetry
-            </div>
-            <div className={styles.telemetryRow}>
-              <span style={{ color: "var(--ward-muted, #64748b)" }}>Carrier:</span>
-              <strong style={{ color: "var(--ward-heading, var(--ink))" }}>
-                {movement.transport?.provider ?? "None booked"}
-              </strong>
-            </div>
-            <div className={styles.telemetryRow}>
-              <span style={{ color: "var(--ward-muted, #64748b)" }}>Escort:</span>
-              <strong
-                style={{
-                  color: movement.transport?.escortRequired
-                    ? "var(--ward-danger, #dc2626)"
-                    : "var(--ward-heading, var(--ink))",
-                }}
-              >
-                {movement.transport?.escortRequired ? "Escort Required" : "Not Required"}
-              </strong>
-            </div>
-            {movement.legalForm ? (
-              <div
-                className={styles.telemetryRow}
-                style={{ paddingTop: "4px", borderTop: "1px solid var(--ward-divider, #e2e8f0)", marginBottom: 0 }}
-              >
-                <span style={{ color: "var(--ward-muted, #64748b)" }}>Legal Authority:</span>
-                <strong style={{ color: "var(--accent-ink, #1d4ed8)" }}>{legalFormName(movement.legalForm)}</strong>
-              </div>
-            ) : null}
-          </div>
-        </div>
+      <div className={styles.syntheticFootnote}>
+        Invented synthetic demonstration data for WA Health psychiatric bed flow evaluation. Zero real patient
+        information.
       </div>
-
-      <Section title="Person">
-        <p className={styles.drawerLine}>{personLine(movement, referrals, patients)}</p>
-        <ul className={styles.drawerList}>
-          <li>Sex recorded as {movement.sex}</li>
-          <li>
-            {movement.cohort} · {movement.security === "Secure" ? "needs a locked bed" : "open ward"}
-          </li>
-          <li>Urgency {movement.urgency} of 3</li>
-          <li>Owned by {movement.owner}</li>
-        </ul>
-        <p className={styles.drawerAbsent}>
-          Every person in this prototype is invented. Nobody named here is a real patient.
-        </p>
-      </Section>
-
-      <Section title="Journey">
-        <p className={styles.drawerLine}>
-          {stageCopy[movement.stage].label} · opened {formatInstantWithDay(movement.openedAt, now)} · from{" "}
-          {departmentLabel(movement.originEdId, originEd?.name)}
-        </p>
-        {movement.stageChanges.length === 0 ? (
-          <p className={styles.drawerAbsent}>
-            No stage change has been recorded, so this movement has not moved since it opened.
-          </p>
-        ) : (
-          <ul className={styles.drawerList}>
-            {movement.stageChanges.map((change) => (
-              <li key={`${change.at} ${change.to}`}>
-                {change.from === undefined ? "Opened" : stageCopy[change.from].label} → {stageCopy[change.to].label} ·{" "}
-                {formatInstantWithDay(change.at, now)} · {change.by}
-                {change.reason === undefined ? "" : ` · ${change.reason}`}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      {/*
-        ⚠️ **ASKED, ACCEPTED and REFUSED are three states and a coordinator acts on the difference.**
-        Collapsing them into one "wards involved" list would lose the only fact that matters —
-        whether anybody said no, and why. `referredUnitIds` names who was asked at all; `declines`
-        names who answered and with what reason.
-      */}
-      <Section title="Which wards were asked">
-        {movement.referredUnitIds.length === 0 ? (
-          <p className={styles.drawerAbsent}>No ward has been asked yet.</p>
-        ) : (
-          <ul className={styles.drawerList}>
-            {movement.referredUnitIds.map((unitId) => {
-              const unit = units.find((candidate) => candidate.id === unitId);
-              const decline = movement.declines.find((entry) => entry.unitId === unitId);
-              return (
-                <li key={unitId}>
-                  {wardLabel(unitId, unit?.name)}
-                  {movement.acceptedUnitId === unitId
-                    ? " · accepted"
-                    : decline
-                      ? ` · refused — ${decline.reason}`
-                      : " · no answer yet"}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {accepted === undefined ? null : (
-          <p className={styles.drawerLine}>
-            Accepted destination: {accepted.name}{" "}
-            <Link
-              href={`/mockups/ward-flow/board/${accepted.id}`}
-              className={styles.jumpToWardLink}
-              title={`Open ${accepted.name} Bed Board`}
-            >
-              Open on Ward Board →
-            </Link>
-          </p>
-        )}
-      </Section>
-
-      <Section title="Escalation">
-        {movement.escalation === undefined ? (
-          <p className={styles.drawerAbsent}>
-            Nothing has been escalated on this movement. That is a record, not a gap.
-          </p>
-        ) : (
-          <p className={styles.drawerLine}>
-            Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
-            {movement.escalation.triedUnitIds.length}{" "}
-            {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
-          </p>
-        )}
-      </Section>
-
-      <Section title="Transport leg">
-        {movement.transport === undefined ? (
-          <p className={styles.drawerAbsent}>
-            No transport leg has been booked, so there is nothing to say about a vehicle.
-          </p>
-        ) : (
-          <p className={styles.drawerLine}>
-            {movement.transport.provider}
-            {movement.transport.escortRequired ? " · escort required" : ""}
-            {movement.transport.formRequired ? " · a form is required" : ""}
-            {movement.transport.acceptedAt === undefined
-              ? ""
-              : ` · accepted ${formatInstantWithDay(movement.transport.acceptedAt, now)}`}
-          </p>
-        )}
-        {movement.legalForm === undefined ? null : (
-          <p className={styles.drawerLine}>Legal authority: {legalFormName(movement.legalForm)}</p>
-        )}
-      </Section>
-
-      {/*
-        **WHAT YOU CAN DO — M7, and it is one action rather than four.**
-
-        🔴 **THE STATE IS SAID IN WORDS, NEVER LEFT TO THE BUTTON'S LABEL.** There is no urgent badge
-        in this drawer — the badge lives on the coordinator queue — so a reader here has only this
-        sentence to tell them that a flagged patient outranks every tier, including tier 1. A button
-        reading "Remove the urgent flag" is not a statement that the patient currently leads the
-        queue; it is an instruction, and the two are not the same thing to somebody scanning.
-
-        ⚠️ **A CLOSED MOVEMENT IS OFF THE QUEUE ENTIRELY**, so the reducer refuses to flag one. The
-        control is not silently hidden and the refusal is not discovered by pressing: the sentence
-        says the flag would order nothing, and the button is only withheld in the one case where it
-        could do nothing at all (closed AND unflagged). Clearing an existing flag stays available on
-        a closed movement — the reducer permits it, and a flag nobody can remove is the permanent
-        state this pair exists to prevent.
-
-        ⚠️ **A REASON IS NOW ASKED FOR, on raising the flag only — item 37, 2026-09-17.** Chosen
-        from `URGENT_MARK_REASONS`, the same fixed list the console's own control offers. Clearing
-        still asks for nothing: taking a flag back down cannot promote anybody.
-      */}
-      <Section title="What you can do">
-        <p className={styles.drawerLine}>
-          {movement.flaggedUrgent
-            ? open
-              ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
-              : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now — removing it changes only the record."
-            : open
-              ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
-              : "Not flagged — and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
-        </p>
-        {!open && !movement.flaggedUrgent ? null : movement.flaggedUrgent ? (
-          <button
-            type="button"
-            className={styles.action}
-            data-testid="ward-movement-drawer-urgent-toggle"
-            onClick={() =>
-              dispatch({
-                /* Dispatched as the coordinator because this is the statewide movements board. The
-                   event also permits `ed`, so a referring department can flag from its own screen —
-                   that control is not this one and must not be implied by it. */
-                type: "CLEAR_MOVEMENT_URGENT_FLAG",
-                role: "coordinator",
-                now,
-                movementId: movement.id,
-              })
-            }
-          >
-            Remove the urgent flag
-          </button>
-        ) : (
-          <div className={styles.drawerReasonRow}>
-            <label className={styles.drawerReasonLabel} htmlFor="ward-movement-drawer-urgent-reason">
-              Why is this urgent?
-            </label>
-            <select
-              id="ward-movement-drawer-urgent-reason"
-              className={styles.drawerReasonSelect}
-              data-testid="ward-movement-drawer-urgent-reason"
-              value={urgentFlagReason ?? ""}
-              onChange={(chosen) => {
-                const value = chosen.target.value;
-                setUrgentFlagReason(
-                  URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
-                );
-              }}
-            >
-              <option value="">Choose a reason…</option>
-              {URGENT_MARK_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {changeReasonLabels[reason]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className={styles.action}
-              data-testid="ward-movement-drawer-urgent-toggle"
-              aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-              aria-describedby={urgentFlagReason === undefined ? "ward-movement-drawer-urgent-blocked" : undefined}
-              title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
-              onClick={
-                urgentFlagReason === undefined
-                  ? ignoreUnavailableActivation
-                  : () => {
-                      dispatch({
-                        /* Dispatched as the coordinator, for the reason given above. */
-                        type: "FLAG_MOVEMENT_URGENT",
-                        role: "coordinator",
-                        now,
-                        movementId: movement.id,
-                        reason: urgentFlagReason,
-                      });
-                      setUrgentFlagReason(undefined);
-                    }
-              }
-            >
-              Flag this patient as urgent
-            </button>
-            {urgentFlagReason === undefined ? (
-              <span id="ward-movement-drawer-urgent-blocked" className="sr-only">
-                {URGENT_FLAG_UNCHOSEN}
-              </span>
-            ) : null}
-          </div>
-        )}
-        <p className={styles.drawerAbsent}>
-          This is the only thing this drawer changes. Everything else about this movement is done in the full workspace.
-        </p>
-      </Section>
-
-      <p className={styles.drawerFoot}>
-        <strong>One section the drawing carries is not built</strong> — <em>Watch and flag</em>. Nothing in this system
-        records that somebody is watching a movement, so there is no state for it to show;{" "}
-        <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
-          the full workspace
-        </Link>{" "}
-        is where this movement is worked on.
-      </p>
     </Sheet>
   );
 }
