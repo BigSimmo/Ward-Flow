@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useCopyDiagnostics } from "@/lib/use-copy-diagnostics";
+import { safeErrorLogDetails } from "@/lib/privacy";
 
 /**
  * Last-resort boundary for the App Router. Unlike `app/error.tsx`, this replaces
@@ -16,7 +17,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   const { copied, copyFailed, copyDiagnostics } = useCopyDiagnostics(error);
 
   useEffect(() => {
-    console.error("Fatal error captured by global-error boundary:", error);
+    console.error("Fatal error captured by global-error boundary:", safeErrorLogDetails(error));
     headingRef.current?.focus({ preventScroll: true });
   }, [error]);
 

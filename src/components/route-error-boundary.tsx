@@ -5,6 +5,7 @@ import { TriangleAlert, RefreshCw, ClipboardCopy, Check } from "lucide-react";
 
 import { cn, primaryControl } from "@/components/ui-primitives";
 import { useCopyDiagnostics } from "@/lib/use-copy-diagnostics";
+import { safeErrorLogDetails } from "@/lib/privacy";
 
 export type RouteErrorBoundaryProps = {
   /** The error thrown by the segment, forwarded by Next.js. */
@@ -43,7 +44,7 @@ export function RouteErrorBoundary({
   const { copied, copyFailed, copyDiagnostics } = useCopyDiagnostics(error);
 
   useEffect(() => {
-    console.error(logLabel, error);
+    console.error(logLabel, safeErrorLogDetails(error));
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 

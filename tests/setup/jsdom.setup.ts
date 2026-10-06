@@ -8,6 +8,8 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
+import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
+import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 export function installMatchMediaStub(matches = false) {
   Object.defineProperty(window, "matchMedia", {
@@ -41,6 +43,11 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  try {
+    applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES);
+  } catch {
+    // ignore
+  }
   try {
     window.sessionStorage.clear();
     window.localStorage.clear();

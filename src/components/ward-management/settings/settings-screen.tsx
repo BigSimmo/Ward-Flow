@@ -574,9 +574,17 @@ export function SettingsScreen() {
     try {
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem("ward-flow-demo-state-v1");
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < window.sessionStorage.length; i++) {
+          const k = window.sessionStorage.key(i);
+          if (k && (k.startsWith("wf-draft:") || k.startsWith("ward-flow-") || k.startsWith("ward_flow_"))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => window.sessionStorage.removeItem(k));
       }
       setSearchHistory([]);
-      showToast("Transient session cache and search ledger cleared.");
+      showToast("Transient session cache, drafts, and search ledger cleared.");
     } catch {
       showToast("Failed to clear transient cache.");
     }

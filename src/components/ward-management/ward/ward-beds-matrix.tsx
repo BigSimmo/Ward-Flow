@@ -56,6 +56,18 @@ interface WardBedsMatrixProps {
   now?: number;
 }
 
+function formatBedAriaLabel(bed: BedItem): string {
+  const parts: string[] = [`${bed.bedLabel} ${bed.statusText}`];
+  if (bed.patientAlias) parts.push(bed.patientAlias);
+  if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
+  if (bed.pastDate) parts.push("Past expected discharge date");
+  if (bed.isSpecialling) parts.push("1 to 1 specialling active");
+  if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined) parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
+  if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
+  if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
+  return parts.join(". ").trim();
+}
+
 export function WardBedsMatrix({
   unit,
   bedsList,
@@ -488,7 +500,7 @@ export function WardBedsMatrix({
                     data-testid={`ward-bed-card-${bed.bedNumber}`}
                     data-state={bed.status}
                     onClick={() => handleBedClick(bed)}
-                    aria-label={`${bed.bedLabel} ${bed.statusText} ${bed.patientAlias ?? ""}`.trim()}
+                    aria-label={formatBedAriaLabel(bed)}
                   >
                     <div className={styles.bedTopRow}>
                       <span className={styles.bedStatePill}>
