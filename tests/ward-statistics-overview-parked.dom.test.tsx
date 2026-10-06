@@ -275,13 +275,14 @@ describe("the statistics overview now carries real figures, honestly", () => {
     expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeInTheDocument();
   });
 
-  /** The three disclosures the brief requires, at minimum — native `<details>` elements, per the
-   *  fourth-edition design language's `.reveal` primitive. */
-  it("carries at least three disclosures", () => {
+  /** Limits sit on the page. They are not closed disclosures. */
+  it("shows recorded limits on the page rather than behind disclosures", () => {
     renderOverview();
     const main = within(screen.getByTestId("ward-statistics-overview-screen")).getByRole("main");
-    const disclosures = main.querySelectorAll("details");
-    expect(disclosures.length).toBeGreaterThanOrEqual(3);
+    expect(main.querySelectorAll("details")).toHaveLength(0);
+    expect(screen.getByTestId("ward-statistics-overview-declines-scope")).toBeVisible();
+    expect(screen.getAllByTestId("ward-statistics-overview-capacity-disclosure").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-statistics-overview-refused-so-far-disclosure")).toBeVisible();
   });
 
   it("shows the shared section title and retained reporting scope and provenance", () => {

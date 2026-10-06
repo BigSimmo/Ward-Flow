@@ -183,7 +183,6 @@ export function StatisticsScreen({
   const [edSortAsc, setEdSortAsc] = useState(false);
 
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
-  const [showTeams, setShowTeams] = useState(false);
 
   // Flow chart interactive hover state
 
@@ -344,13 +343,6 @@ export function StatisticsScreen({
           <h1 className={styles.pageTitle}>Statistics</h1>
         </header>
 
-        {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
-        <div data-testid="ward-statistics-reporting-period" className={pageStyles.reportingContext}>
-          <span>Current state</span>
-          <span>Synthetic data</span>
-          <span>{formatReportDay(now, dayZero)} · history unavailable</span>
-        </div>
-
         {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
         <WardPanel
           title="Across all services"
@@ -422,70 +414,62 @@ export function StatisticsScreen({
             </div>
           </dl>
 
-          {/* Bed measurements & Coordinator Access disclosure (Preserving contract & test assertions) */}
-          {/* Always-visible navigation to statistics sections */}
-          <details className={pageStyles.measurementDetails}>
-            <summary>Browse detailed statistics</summary>
-            <nav
-              className={styles.index}
-              aria-labelledby="ward-statistics-index-heading"
-              data-testid="ward-statistics-index"
-            >
-              <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
-                Where to look
-              </h2>
-              <ul className={styles.indexList}>
-                {STATISTICS_SECTIONS.map((sec) => (
-                  <li key={sec.id} className={styles.indexItem}>
-                    <Link
-                      href={sec.href}
-                      className={styles.indexLink}
-                      data-testid={`ward-statistics-index-entry-${sec.id}`}
-                    >
-                      <span className={styles.indexLabel}>{sec.label}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </details>
-          <details className={`${pageStyles.measurementDetails} source-print`}>
-            <summary>Bed data notes</summary>
-            <div className={styles.panelBody}>
-              <p className={styles.sectionAudience} data-testid="ward-statistics-system-audience">
-                Network and ward measures. No person-level measure is shown here.
+          <nav
+            className={styles.index}
+            aria-labelledby="ward-statistics-index-heading"
+            data-testid="ward-statistics-index"
+          >
+            <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
+              Where to look
+            </h2>
+            <ul className={styles.indexList}>
+              {STATISTICS_SECTIONS.map((sec) => (
+                <li key={sec.id} className={styles.indexItem}>
+                  <Link
+                    href={sec.href}
+                    className={styles.indexLink}
+                    data-testid={`ward-statistics-index-entry-${sec.id}`}
+                  >
+                    <span className={styles.indexLabel}>{sec.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className={styles.panelBody}>
+            <p className={styles.sectionAudience} data-testid="ward-statistics-system-audience">
+              Network and ward measures. No person-level measure is shown here.
+            </p>
+
+            <p className={styles.notice} data-testid="ward-statistics-access">
+              <CoordinatorAccessDisclaimer />
+            </p>
+
+            <article className={styles.figure} data-testid="ward-statistics-bed-readiness">
+              <h3 className={styles.figureHeading}>Beds pending</h3>
+              <p className={styles.measuredCount} data-testid="ward-statistics-preparing-count">
+                <span className={styles.measuredValue}>{preparingCount}</span>{" "}
+                {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending — cleaning, maintenance or
+                repair, or with no reason stated.
               </p>
-
-              <p className={styles.notice} data-testid="ward-statistics-access">
-                <CoordinatorAccessDisclaimer />
+              <p className={styles.figureNote}>
+                Nought means no bed is marked Pending. This count reads the flag as recorded; the model does not enforce
+                that the occupant has already left.
               </p>
+              <p className={styles.absence} data-testid="ward-statistics-readiness-timing-absent">
+                <strong>Pending duration is unavailable.</strong> Bed readiness has a yes/no flag and one shared
+                timestamp that later release actions overwrite, so no start-and-end pair can be measured.
+              </p>
+            </article>
 
-              <article className={styles.figure} data-testid="ward-statistics-bed-readiness">
-                <h3 className={styles.figureHeading}>Beds pending</h3>
-                <p className={styles.measuredCount} data-testid="ward-statistics-preparing-count">
-                  <span className={styles.measuredValue}>{preparingCount}</span>{" "}
-                  {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending — cleaning, maintenance or
-                  repair, or with no reason stated.
-                </p>
-                <p className={styles.figureNote}>
-                  Nought means no bed is marked Pending. This count reads the flag as recorded; the model does not
-                  enforce that the occupant has already left.
-                </p>
-                <p className={styles.absence} data-testid="ward-statistics-readiness-timing-absent">
-                  <strong>Pending duration is unavailable.</strong> Bed readiness has a yes/no flag and one shared
-                  timestamp that later release actions overwrite, so no start-and-end pair can be measured.
-                </p>
-              </article>
-
-              <article className={styles.figure} data-testid="ward-statistics-not-offered">
-                <h3 className={styles.figureHeading}>Empty beds that were not offered</h3>
-                <p className={styles.absence} data-testid="ward-statistics-not-offered-absent">
-                  <strong>No offer measure is available.</strong> The record holds aggregate empty and allocatable
-                  counts, with no bed-level or request-level offer event. No readiness-gap proxy is shown.
-                </p>
-              </article>
-            </div>
-          </details>
+            <article className={styles.figure} data-testid="ward-statistics-not-offered">
+              <h3 className={styles.figureHeading}>Empty beds that were not offered</h3>
+              <p className={styles.absence} data-testid="ward-statistics-not-offered-absent">
+                <strong>No offer measure is available.</strong> The record holds aggregate empty and allocatable counts,
+                with no bed-level or request-level offer event. No readiness-gap proxy is shown.
+              </p>
+            </article>
+          </div>
         </WardPanel>
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
@@ -498,75 +482,72 @@ export function StatisticsScreen({
           />
 
           {/* Patients audience contract and pull-to-arrival article */}
-          <details className={`${pageStyles.measurementDetails} source-print`}>
-            <summary>Admission timing and data notes</summary>
-            <div className={styles.panelBody}>
-              <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
-                Waiting-time measures from admission records; no ward score.
+          <div className={styles.panelBody}>
+            <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
+              Waiting-time measures from admission records; no ward score.
+            </p>
+
+            <article className={styles.figure} data-testid="ward-statistics-pull-to-arrival">
+              <h3 className={styles.figureHeading}>From a bed being given away to the person arriving in it</h3>
+              <p className={styles.figureBlurb}>
+                Time between the recorded bed pull and arrival instants on an admission.
               </p>
 
-              <article className={styles.figure} data-testid="ward-statistics-pull-to-arrival">
-                <h3 className={styles.figureHeading}>From a bed being given away to the person arriving in it</h3>
-                <p className={styles.figureBlurb}>
-                  Time between the recorded bed pull and arrival instants on an admission.
+              {arrivals.averageMinutes === null ? (
+                <p className={styles.nothingToAverage} data-testid="ward-statistics-arrival-nothing-to-average">
+                  <strong>No usable pull-and-arrival pair is recorded, so no average is shown.</strong> Missing instants
+                  and arrivals earlier than pulls are excluded, rather than treated as zero.
                 </p>
-
-                {arrivals.averageMinutes === null ? (
-                  <p className={styles.nothingToAverage} data-testid="ward-statistics-arrival-nothing-to-average">
-                    <strong>No usable pull-and-arrival pair is recorded, so no average is shown.</strong> Missing
-                    instants and arrivals earlier than pulls are excluded, rather than treated as zero.
+              ) : (
+                <>
+                  <p className={styles.headlineValue} data-testid="ward-statistics-arrival-average">
+                    {splitDuration(arrivals.averageMinutes)}
                   </p>
-                ) : (
-                  <>
-                    <p className={styles.headlineValue} data-testid="ward-statistics-arrival-average">
-                      {splitDuration(arrivals.averageMinutes)}
+                  <p className={styles.headlineCaption}>
+                    average, across{" "}
+                    <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
+                    {arrivals.measuredCount === 1 ? "admission" : "admissions"} whose two instants are both present and
+                    in the right order.
+                  </p>
+
+                  <p className={styles.figureNote} data-testid="ward-statistics-arrival-range">
+                    Shortest{" "}
+                    <span data-testid="ward-statistics-arrival-shortest">
+                      {arrivals.shortestMinutes === null ? "—" : splitDuration(arrivals.shortestMinutes)}
+                    </span>
+                    , longest{" "}
+                    <span data-testid="ward-statistics-arrival-longest">
+                      {arrivals.longestMinutes === null ? "—" : splitDuration(arrivals.longestMinutes)}
+                    </span>
+                    . Equal ends mean every measured gap is identical.
+                  </p>
+
+                  {arrivals.measuredCount > 1 &&
+                  arrivals.shortestMinutes !== null &&
+                  arrivals.longestMinutes !== null &&
+                  arrivals.shortestMinutes === arrivals.longestMinutes ? (
+                    <p className={styles.figureNote} data-testid="ward-statistics-arrival-constant-gap">
+                      <strong>Every measured gap is identical.</strong> The record shows no variation and does not
+                      establish why.
                     </p>
-                    <p className={styles.headlineCaption}>
-                      average, across{" "}
-                      <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
-                      {arrivals.measuredCount === 1 ? "admission" : "admissions"} whose two instants are both present
-                      and in the right order.
-                    </p>
+                  ) : null}
+                </>
+              )}
 
-                    <p className={styles.figureNote} data-testid="ward-statistics-arrival-range">
-                      Shortest{" "}
-                      <span data-testid="ward-statistics-arrival-shortest">
-                        {arrivals.shortestMinutes === null ? "—" : splitDuration(arrivals.shortestMinutes)}
-                      </span>
-                      , longest{" "}
-                      <span data-testid="ward-statistics-arrival-longest">
-                        {arrivals.longestMinutes === null ? "—" : splitDuration(arrivals.longestMinutes)}
-                      </span>
-                      . Equal ends mean every measured gap is identical.
-                    </p>
+              <p className={styles.figureNote} data-testid="ward-statistics-arrival-population">
+                <span data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</span> measured admissions
+                have ended and remain in this historic measure. A further{" "}
+                <span data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</span>{" "}
+                {arrivals.awaitingArrivalCount === 1 ? "arrival is" : "arrivals are"} still pending and excluded.
+              </p>
 
-                    {arrivals.measuredCount > 1 &&
-                    arrivals.shortestMinutes !== null &&
-                    arrivals.longestMinutes !== null &&
-                    arrivals.shortestMinutes === arrivals.longestMinutes ? (
-                      <p className={styles.figureNote} data-testid="ward-statistics-arrival-constant-gap">
-                        <strong>Every measured gap is identical.</strong> The record shows no variation and does not
-                        establish why.
-                      </p>
-                    ) : null}
-                  </>
-                )}
-
-                <p className={styles.figureNote} data-testid="ward-statistics-arrival-population">
-                  <span data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</span> measured
-                  admissions have ended and remain in this historic measure. A further{" "}
-                  <span data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</span>{" "}
-                  {arrivals.awaitingArrivalCount === 1 ? "arrival is" : "arrivals are"} still pending and excluded.
-                </p>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-arrival-incoherent">
-                  <span className={styles.measuredValue}>{arrivals.incoherentCount}</span>{" "}
-                  {arrivals.incoherentCount === 1 ? "admission has" : "admissions have"} arrival before bed pull and
-                  {arrivals.incoherentCount === 1 ? " is" : " are"} excluded, never treated as zero.
-                </p>
-              </article>
-            </div>
-          </details>
+              <p className={styles.measuredCount} data-testid="ward-statistics-arrival-incoherent">
+                <span className={styles.measuredValue}>{arrivals.incoherentCount}</span>{" "}
+                {arrivals.incoherentCount === 1 ? "admission has" : "admissions have"} arrival before bed pull and
+                {arrivals.incoherentCount === 1 ? " is" : " are"} excluded, never treated as zero.
+              </p>
+            </article>
+          </div>
         </WardPanel>
 
         {/* ══════════ TWO-COLUMN GRID 1: PRESSURE & ED WAITS ══════════ */}
@@ -721,92 +702,87 @@ export function StatisticsScreen({
               <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit">Compare wards and departments ↗</Link>
             </p>
 
-            {/* Pressure articles (preserved for test suite) */}
-            <details className={`${pageStyles.measurementDetails} source-print`}>
-              <summary>Discharge blockers and refusals</summary>
-              <div className={styles.panelBody}>
-                <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
-                  <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
-                  <p className={styles.figureBlurb}>
-                    Open movements with at least one recorded ward refusal and no ward currently deciding.
-                  </p>
+            <div className={styles.panelBody}>
+              <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
+                <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
+                <p className={styles.figureBlurb}>
+                  Open movements with at least one recorded ward refusal and no ward currently deciding.
+                </p>
 
-                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
-                    <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
-                      {refused.count}
-                    </span>{" "}
-                    of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
-                    open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
-                  </p>
+                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
+                  <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
+                    {refused.count}
+                  </span>{" "}
+                  of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
+                  open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
+                </p>
 
-                  <p className={styles.figureNote} data-testid="ward-statistics-refused-so-far-why-so-far">
-                    <strong>&ldquo;So far&rdquo; is the limit of the record.</strong> There is no exhausted-network
-                    marker. At most{" "}
-                    <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>{" "}
-                    wards can be deciding together, but the lifetime number asked is not recorded. This is a current
-                    worklist, not a count of people no ward would take.
-                  </p>
+                <p className={styles.figureNote} data-testid="ward-statistics-refused-so-far-why-so-far">
+                  <strong>&ldquo;So far&rdquo; is the limit of the record.</strong> There is no exhausted-network
+                  marker. At most{" "}
+                  <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>{" "}
+                  wards can be deciding together, but the lifetime number asked is not recorded. This is a current
+                  worklist, not a count of people no ward would take.
+                </p>
 
-                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
-                    <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
-                    {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation
-                    instead. Escalations are classified first, so this is a floor. An escalation records an opinion, not
-                    a derived finding that the network was exhausted.
-                  </p>
-                </article>
+                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
+                  <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
+                  {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation instead.
+                  Escalations are classified first, so this is a floor. An escalation records an opinion, not a derived
+                  finding that the network was exhausted.
+                </p>
+              </article>
 
-                <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
-                  <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
-                  <p className={styles.figureBlurb}>
-                    Admissions not departed, grouped by their recorded discharge blocker. Movement blockers are
-                    excluded.
-                  </p>
+              <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
+                <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
+                <p className={styles.figureBlurb}>
+                  Admissions not departed, grouped by their recorded discharge blocker. Movement blockers are excluded.
+                </p>
 
-                  <p
-                    className={styles.measuredCount}
-                    data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                <p
+                  className={styles.measuredCount}
+                  data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                >
+                  <span
+                    className={styles.measuredValue}
+                    data-testid="ward-statistics-blocked-discharges-by-reason-total"
                   >
-                    <span
-                      className={styles.measuredValue}
-                      data-testid="ward-statistics-blocked-discharges-by-reason-total"
+                    {blocked.totalCount}
+                  </span>{" "}
+                  blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
+                  <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                    {blocked.admissionCount}
+                  </span>{" "}
+                  {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
+                </p>
+
+                <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
+                  {blocked.tallies.map((tally) => (
+                    <li
+                      key={tally.reason}
+                      className={styles.tallyRow}
+                      data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
                     >
-                      {blocked.totalCount}
-                    </span>{" "}
-                    blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                      {blocked.admissionCount}
-                    </span>{" "}
-                    {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
-                  </p>
-
-                  <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                    {blocked.tallies.map((tally) => (
-                      <li
-                        key={tally.reason}
-                        className={styles.tallyRow}
-                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
+                      <span className={styles.tallyReason}>{tally.reason}</span>
+                      <span
+                        className={styles.tallyCount}
+                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
                       >
-                        <span className={styles.tallyReason}>{tally.reason}</span>
-                        <span
-                          className={styles.tallyCount}
-                          data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
-                        >
-                          {tally.count}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                        {tally.count}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
 
-                  <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                    All{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                      {blocked.vocabularySize}
-                    </span>{" "}
-                    allowed blockers are shown. Nought means checked with no matching admission, not unavailable.
-                  </p>
-                </article>
-              </div>
-            </details>
+                <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+                  All{" "}
+                  <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+                    {blocked.vocabularySize}
+                  </span>{" "}
+                  allowed blockers are shown. Nought means checked with no matching admission, not unavailable.
+                </p>
+              </article>
+            </div>
           </WardPanel>
 
           {/* Emergency departments */}
@@ -962,91 +938,83 @@ export function StatisticsScreen({
               </table>
             </div>
 
-            <p className={pageStyles.panelFoot}>
-              Wait bands overlap. Median is across people, not department averages.
-            </p>
+            <div className={styles.panelBody}>
+              <article className={styles.figure} data-testid="ward-statistics-declines">
+                <h3 className={styles.figureHeading}>Declines per ward</h3>
 
-            {/* Declines articles (preserved for test suite) */}
-            <details className={`${pageStyles.measurementDetails} source-print`}>
-              <summary>Why no per-ward number is shown</summary>
-              <div className={styles.panelBody}>
-                <article className={styles.figure} data-testid="ward-statistics-declines">
-                  <h3 className={styles.figureHeading}>Declines per ward</h3>
+                <p className={styles.absence} data-testid="ward-statistics-declines-withheld">
+                  <strong>No ward-attributable decline measure.</strong> Referral and movement declines describe
+                  different populations, so no per-ward number is shown.
+                </p>
+                <p className={styles.figureNote} data-testid="ward-statistics-declines-reason">
+                  A referral names a ward only when that ward accepts; referral declines do not name a ward. Movement
+                  declines name a ward for people already inside an emergency department. Choosing either source would
+                  define a different measure.
+                </p>
+              </article>
 
-                  <p className={styles.absence} data-testid="ward-statistics-declines-withheld">
-                    <strong>No ward-attributable decline measure.</strong> Referral and movement declines describe
-                    different populations, so no per-ward number is shown.
+              <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
+                <h3 className={styles.figureHeading}>Declines by reason</h3>
+                <p className={styles.figureBlurb}>
+                  Movement declines grouped by the ward&apos;s recorded reason. Front-door referral declines are
+                  excluded.
+                </p>
+
+                {!declinesReadout.ok ? (
+                  <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
+                    {declinesReadout.statement}
                   </p>
-                  <p className={styles.figureNote} data-testid="ward-statistics-declines-reason">
-                    A referral names a ward only when that ward accepts; referral declines do not name a ward. Movement
-                    declines name a ward for people already inside an emergency department. Choosing either source would
-                    define a different measure.
-                  </p>
-                </article>
-
-                <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
-                  <h3 className={styles.figureHeading}>Declines by reason</h3>
-                  <p className={styles.figureBlurb}>
-                    Movement declines grouped by the ward&apos;s recorded reason. Front-door referral declines are
-                    excluded.
-                  </p>
-
-                  {!declinesReadout.ok ? (
-                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
-                      {declinesReadout.statement}
+                ) : (
+                  <>
+                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
+                      <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
+                        {declinesReadout.value.totalCount}
+                      </span>{" "}
+                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
+                        {declinesReadout.value.movementsWithDeclinesCount}
+                      </span>{" "}
+                      of the{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-movements">
+                        {declinesReadout.value.movementCount}
+                      </span>{" "}
+                      {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
                     </p>
-                  ) : (
-                    <>
-                      <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
-                        <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
-                          {declinesReadout.value.totalCount}
-                        </span>{" "}
-                        {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
-                        <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                          {declinesReadout.value.movementsWithDeclinesCount}
-                        </span>{" "}
-                        of the{" "}
-                        <span data-testid="ward-statistics-declines-by-reason-movements">
-                          {declinesReadout.value.movementCount}
-                        </span>{" "}
-                        {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
-                      </p>
 
-                      <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
-                        {declinesReadout.value.tallies.map((tally) => (
-                          <li
-                            key={tally.reason}
-                            className={styles.tallyRow}
-                            data-testid={`ward-statistics-decline-${tally.reason}`}
+                    <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
+                      {declinesReadout.value.tallies.map((tally) => (
+                        <li
+                          key={tally.reason}
+                          className={styles.tallyRow}
+                          data-testid={`ward-statistics-decline-${tally.reason}`}
+                        >
+                          <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
+                          <span
+                            className={styles.tallyCount}
+                            data-testid={`ward-statistics-decline-${tally.reason}-count`}
                           >
-                            <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
-                            <span
-                              className={styles.tallyCount}
-                              data-testid={`ward-statistics-decline-${tally.reason}-count`}
-                            >
-                              {tally.count}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                            {tally.count}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
 
-                      <p className={styles.figureNote} data-testid="ward-statistics-declines-by-reason-generated">
-                        All{" "}
-                        <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                          {declinesReadout.value.vocabularySize}
-                        </span>{" "}
-                        allowed reasons are shown. Nought means checked with no matching decline.
-                      </p>
-                    </>
-                  )}
-                  <p className={styles.figureNote}>
-                    Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed
-                    by the referral-side vocabulary rather than this movement list. Closed movements remain in this
-                    historical count.
-                  </p>
-                </article>
-              </div>
-            </details>
+                    <p className={styles.figureNote} data-testid="ward-statistics-declines-by-reason-generated">
+                      All{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                        {declinesReadout.value.vocabularySize}
+                      </span>{" "}
+                      allowed reasons are shown. Nought means checked with no matching decline.
+                    </p>
+                  </>
+                )}
+                <p className={styles.figureNote}>
+                  Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by
+                  the referral-side vocabulary rather than this movement list. Closed movements remain in this
+                  historical count.
+                </p>
+              </article>
+            </div>
           </WardPanel>
         </div>
 
@@ -1069,7 +1037,6 @@ export function StatisticsScreen({
                     value={teamSearchQuery}
                     onChange={(event) => {
                       setTeamSearchQuery(event.target.value);
-                      setShowTeams(true);
                     }}
                   />
                 </div>
@@ -1078,26 +1045,19 @@ export function StatisticsScreen({
                 <p className={pageStyles.scopeNote} data-testid="ward-statistics-community-landing-absence">
                   Community activity totals are not recorded.
                 </p>
-                <details
-                  className={pageStyles.teamDirectory}
-                  open={showTeams}
-                  onToggle={(event) => setShowTeams(event.currentTarget.open)}
-                >
-                  <summary>Choose a community team</summary>
-                  <ul className={styles.indexList} data-testid="ward-statistics-community-list">
-                    {filteredAndSortedTeams.map((team) => (
-                      <li key={team.id} className={styles.indexItem}>
-                        <Link
-                          href={communityStatisticsHref(team.id)}
-                          className={styles.indexLink}
-                          data-testid={`ward-statistics-community-link-${team.id}`}
-                        >
-                          <span className={styles.indexLabel}>{team.name}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
+                <ul className={styles.indexList} data-testid="ward-statistics-community-list">
+                  {filteredAndSortedTeams.map((team) => (
+                    <li key={team.id} className={styles.indexItem}>
+                      <Link
+                        href={communityStatisticsHref(team.id)}
+                        className={styles.indexLink}
+                        data-testid={`ward-statistics-community-link-${team.id}`}
+                      >
+                        <span className={styles.indexLabel}>{team.name}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
                 {filteredAndSortedTeams.length === 0 && <p className={pageStyles.scopeNote}>No matching teams.</p>}
               </div>
             </WardPanel>
@@ -1145,44 +1105,39 @@ export function StatisticsScreen({
               </dl>
 
               <p className={pageStyles.panelFoot}>
-                <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link> · Withdrawn referrals remain in the
-                raised total.
+                <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link>
               </p>
 
-              {/* Referrals article for test suite */}
-              <details className={`${pageStyles.measurementDetails} source-print`}>
-                <summary>Referral to bed joining detail</summary>
-                <div className={styles.panelBody}>
-                  <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
-                    <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
+              <div className={styles.panelBody}>
+                <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
+                  <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
 
-                    <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
-                      <strong>No referral-to-bed duration is published.</strong> An exact referral link does not
-                      establish that the referral started the wait that ended with this admission. The counts below
-                      report coherent linked records without turning them into a duration.
-                    </p>
+                  <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
+                    <strong>No referral-to-bed duration is published.</strong> An exact referral link does not establish
+                    that the referral started the wait that ended with this admission. The counts below report coherent
+                    linked records without turning them into a duration.
+                  </p>
 
-                    <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
-                      <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
-                        {join.chronologicallyCoherentCount}
-                      </span>{" "}
-                      of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
-                      {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
-                      arrived no earlier than the referral was raised.
-                    </p>
-                    <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
-                      Matched from{" "}
-                      <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
-                      {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
-                      <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
-                      {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
-                    </p>
-                    <p className={styles.figureNote}>
-                      Counts are recalculated from the current referral and admission records.
-                    </p>
-                  </article>
-                </div>
-              </details>
+                  <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
+                    <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
+                      {join.chronologicallyCoherentCount}
+                    </span>{" "}
+                    of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
+                    {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
+                    arrived no earlier than the referral was raised.
+                  </p>
+                  <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
+                    Matched from{" "}
+                    <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
+                    {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
+                    <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
+                    {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
+                  </p>
+                  <p className={styles.figureNote}>
+                    Counts are recalculated from the current referral and admission records.
+                  </p>
+                </article>
+              </div>
             </WardPanel>
 
             {/* Choose a health service */}
