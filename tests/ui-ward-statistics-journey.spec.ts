@@ -222,7 +222,7 @@ test.describe("@mockup page-specific statistics insights", () => {
     await page.goto("/mockups/ward-flow/statistics/community/bentley", { waitUntil: "networkidle" });
     await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
     const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
-    await detail.locator("summary").first().click();
+    await expect(detail.locator("summary")).toHaveCount(0);
     const chart = page.getByTestId("statistics-community-comparison-chart");
     await chart.getByLabel("Search Team comparison").fill("Bentley");
     await expect(chart.locator("button[data-chart-record]")).toHaveCount(1);
@@ -238,38 +238,12 @@ test.describe("@mockup page-specific statistics insights", () => {
   });
 });
 
-test("@mockup ward disclosure rows stay inset and the chart data view preserves records", async ({ page }) => {
+test("@mockup ward bed figures stay visible and the chart data view preserves records", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
   const beds = page.getByTestId("ward-statistics-ward-beds-now");
-  const summaries = beds.locator("details > summary");
-  await expect(summaries).toHaveCount(3);
-  const geometry = await summaries.evaluateAll((nodes) =>
-    nodes.map((node) => {
-      const row = node as HTMLElement;
-      const style = getComputedStyle(row);
-      const icon = getComputedStyle(row, "::after");
-      return {
-        left: row.getBoundingClientRect().left,
-        padding: parseFloat(style.paddingLeft),
-        height: row.getBoundingClientRect().height,
-        marker: style.listStyleType,
-        iconWidth: parseFloat(icon.width),
-      };
-    }),
-  );
-  for (const row of geometry) {
-    expect(row.left).toBe(geometry[0].left);
-    expect(row.padding).toBeGreaterThanOrEqual(16);
-    expect(row.height).toBeGreaterThanOrEqual(48);
-    expect(row.marker).toBe("none");
-    expect(row.iconWidth).toBeGreaterThan(0);
-  }
-  await summaries.first().focus();
-  await page.keyboard.press("Enter");
-  await expect(beds.getByRole("table")).toBeVisible();
-  await page.keyboard.press("Enter");
-  await expect(beds.getByRole("table")).toBeHidden();
+  await expect(beds.locator("details > summary")).toHaveCount(0);
+  await expect(beds.getByRole("table").first()).toBeVisible();
   const chart = page.getByTestId("statistics-ward-stays-chart");
   await chart.getByRole("button", { name: "Current length of stay data view" }).click();
   await expect(chart.getByRole("table")).toBeVisible();

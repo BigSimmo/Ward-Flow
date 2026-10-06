@@ -1,3 +1,7 @@
+.shownSection {
+  min-width: 0;
+  scroll-margin-top: 7.5rem;
+}
 .disclosure {
   min-width: 0;
   background: var(--surface);
