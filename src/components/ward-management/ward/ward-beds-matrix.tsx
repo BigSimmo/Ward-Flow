@@ -62,7 +62,8 @@ function formatBedAriaLabel(bed: BedItem): string {
   if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
   if (bed.pastDate) parts.push("Past expected discharge date");
   if (bed.isSpecialling) parts.push("1 to 1 specialling active");
-  if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined) parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
+  if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
+    parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
   return parts.join(". ").trim();
