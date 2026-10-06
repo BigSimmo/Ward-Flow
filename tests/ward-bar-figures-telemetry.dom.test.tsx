@@ -27,7 +27,7 @@ function AdvanceClock({ minutes }: { minutes: number }) {
     <button
       type="button"
       data-testid="test-advance-clock"
-      onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes })}
+      onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: minutes > 0 ? minutes : 70 })}
     >
       advance clock
     </button>
@@ -68,46 +68,48 @@ describe("Figures in the Tools workspace", () => {
 
   it("keeps deadline status reactive when the demonstration clock advances", () => {
     const tools = openTools();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
-    fireEvent.click(within(tools).getByTestId("ward-demo-controls-trigger"));
-    fireEvent.click(within(tools).getByTestId("ward-demo-advance-60"));
-    fireEvent.click(within(tools).getByRole("button", { name: "Overview" }));
+    expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/Nothing flagged/i);
+    fireEvent.click(screen.getByTestId("test-advance-clock"));
     expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/deadline passed|due within/i);
   });
 
-  it("shows deadline flags and all figure clusters within the same Tools dialog", () => {
+  it("shows deadline flags and all figure groups within the same Tools dialog", () => {
     const tools = openTools(70);
     const launch = within(tools).getByTestId("ward-bar-figures-trigger");
     expect(launch.textContent).toMatch(/deadline passed|due within/i);
     fireEvent.click(launch);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
     expect(within(tools).getByTestId("ward-stats-drawer-content")).toBeVisible();
-    for (const heading of ["Risk & Statutory Clocks", "Supply & Capacity", "Demand & Flow"]) {
-      expect(within(tools).getByText(heading)).toBeVisible();
+    for (const heading of ["Beds", "Pressure", "Due", "Movement"]) {
+      fireEvent.click(within(tools).getByRole("button", { name: heading, exact: true }));
+      expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
     }
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
-    expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
   });
 
-  it("keeps utilities and demo controls accessible through their sections", () => {
+  it("keeps utilities and due now accessible through their sections", () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
     expect(within(tools).getByText("Catchment resolver")).toBeVisible();
     expect(within(tools).getByText("Form date review")).toBeVisible();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
-    expect(within(tools).getByRole("button", { name: /change view/i })).toBeVisible();
+    fireEvent.click(within(tools).getByRole("button", { name: "Due now" }));
+    const dueList = within(tools).queryByRole("list", { name: "Due now" });
+    if (dueList) expect(dueList).toBeVisible();
+    else expect(within(tools).getByText(/Nothing is due/)).toBeVisible();
   });
 
   it("filters the directory without losing its navigation links", () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByRole("button", { name: "Directory" }));
-    const wardList = within(tools).getByRole("list", { name: "Ward contacts" });
+    fireEvent.click(within(tools).getByRole("button", { name: /^Wards / }));
+    const wardList = within(tools).getByRole("list", { name: "Directory results" });
     const firstLink = within(wardList).getAllByRole("link")[0];
-    const name = firstLink.querySelector("span")!.textContent!;
+    const name = firstLink.textContent!;
     const href = firstLink.getAttribute("href");
-    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), { target: { value: name } });
-    expect(within(wardList).getByRole("link", { name: new RegExp(name) })).toHaveAttribute("href", href);
-    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), {
+    fireEvent.change(within(tools).getByRole("textbox", { name: "Search directory" }), { target: { value: name } });
+    expect(within(wardList).getByRole("link", { name })).toHaveAttribute("href", href);
+    fireEvent.change(within(tools).getByRole("textbox", { name: "Search directory" }), {
       target: { value: "no-such-unit" },
     });
     expect(within(wardList).queryAllByRole("link")).toHaveLength(0);

@@ -238,8 +238,8 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-demonstration-data",
     domainId: "cat-reset",
-    label: "Demonstration Data Controls Location",
-    keywords: "demonstration data clock scenario reset tools drawer bar q7 q-7",
+    label: "Practice clock and change view",
+    keywords: "demonstration data clock scenario reset change view practice settings q7 q-7",
   },
 ];
 

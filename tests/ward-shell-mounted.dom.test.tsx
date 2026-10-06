@@ -49,6 +49,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { SettingsPracticeControls } from "@/components/ward-management/settings/settings-practice-controls";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
@@ -172,19 +173,15 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     expect(screen.queryByTestId("ward-shell-place")).toBeNull();
   });
 
-  it("exactly one role switcher renders on a real route — never zero, never two", async () => {
-    // "Present" is not enough: a regression that mounted a second copy would show up only as a
-    // count of 2, never as an absence `getByRole` would also catch.
-    //
-    // `WardBar`'s own copy lives inside its Tools drawer (a `<Sheet>`, which renders nothing at
-    // all while closed — see the `beforeEach` above), so it must actually be opened by clicking
-    // the real trigger, the same way a person — and `ui-ward-roles.spec.ts`'s own journey —
-    // reaches it. A bare render without this click would find only whichever source is ALWAYS
-    // visible and silently miss a second, drawer-hidden one.
+  it("settings mounts the role switcher once, and Tools does not add a second", async () => {
+    // Change view lives on Settings. The bar is still mounted beside it, and opening Tools must
+    // not add another copy.
     const user = userEvent.setup();
-    renderWardRoute();
+    pathnameState.pathname = "/mockups/ward-flow/settings";
+    render(renderShellChrome(<SettingsPracticeControls />));
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
-    await user.click(screen.getByRole("button", { name: "Demo" }));
     expect(screen.getAllByRole("button", { name: /change view/i })).toHaveLength(1);
+    expect(screen.getAllByTestId("ward-demo-controls-trigger")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Demo" })).toBeNull();
   });
 });

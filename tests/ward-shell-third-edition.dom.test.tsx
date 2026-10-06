@@ -698,7 +698,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps demo controls and the role switcher in Tools while account utilities stay out", async () => {
+  it("keeps Due now in Tools and leaves practice controls off that drawer", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -706,12 +706,11 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeInTheDocument();
+    expect(withinDialog.getByRole("button", { name: "Due now" })).toBeInTheDocument();
+    expect(withinDialog.queryByTestId("ward-demo-controls-trigger")).not.toBeInTheDocument();
+    expect(withinDialog.queryByRole("button", { name: /change view/i })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
-    // The role switcher renders its own labelled control — asserting the heading it sits under
-    // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Demonstration")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {

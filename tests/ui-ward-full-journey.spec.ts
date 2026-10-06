@@ -101,23 +101,14 @@ async function goViaRail(page: Page, href: string, screenTestId: string) {
   await waitForScreen(page, screenTestId);
 }
 
-/**
- * The role switcher lives inside `WardBar`'s Tools drawer (Task 8, 2026-09-11) — opening it is a
- * precondition for reaching "Change view" at all. Mirrors `ui-ward-roles.spec.ts`'s own
- * `ensureToolsOpen`/`ensureToolsClosed`, which that file's comments record the exact failure shape
- * for (the drawer covers its own trigger, so closing by re-clicking the trigger is intercepted by
- * the drawer it opened).
- */
-async function ensureToolsOpen(page: Page) {
-  const trigger = page.getByTestId("ward-bar-tools-trigger");
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
+/** Change view lives on Settings. Close Tools first so its backdrop cannot cover the rail. */
+async function ensurePracticeOpen(page: Page) {
+  await ensureToolsClosed(page);
+  const panel = page.getByTestId("ward-settings-demonstration");
+  if (!(await panel.isVisible())) {
+    await page.getByTestId("ward-rail").getByRole("link", { name: "Settings" }).click();
+    await expect(panel).toBeVisible();
   }
-  await page
-    .getByRole("dialog", { name: "Tools" })
-    .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Demo", exact: true })
-    .click();
 }
 
 async function ensureToolsClosed(page: Page) {
@@ -131,7 +122,7 @@ async function ensureToolsClosed(page: Page) {
  *  menu, never a typed URL. `locator` narrows to the menu group ("Ward", "Emergency department")
  *  or the always-present item ("Coordinator", "Officer") the caller wants. */
 async function switchView(page: Page, pick: (menu: Locator) => Locator, screenTestId: string) {
-  await ensureToolsOpen(page);
+  await ensurePracticeOpen(page);
   await page.getByRole("button", { name: /^Change view/ }).click();
   const menu = page.getByRole("menu", { name: "Change view" });
   await expect(menu).toBeVisible();

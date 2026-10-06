@@ -67,6 +67,7 @@ import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
 } from "@/components/ward-management/shell/ward-wallboard-store";
+import { SettingsPracticeControls } from "./settings-practice-controls";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
@@ -114,11 +115,9 @@ function clampDueSoonUrgent(urgentCandidate: number, soonValue: number): number 
  * It looks like it works and silently does nothing, and a reader who touches it believes they have
  * changed something. **So every control here names what reads it, or it does not exist.**
  *
- * ⚠️ **NO DEMONSTRATION CONTROL BELONGS ON THIS SCREEN.** Owner ruling Q-7 puts the clock, the
- * scenario and Reset in the Tools drawer, *"nothing a demonstration needs is lost, and nothing reads
- * as a real control"*. The drawing correctly omits them. 🔴 **A settings screen is exactly where a
- * later well-meaning reader puts them back** — see the note rendered below, which exists so their
- * absence reads as a decision rather than an oversight.
+ * Practice clock, scenario, reset and Change view live in the Demonstration data panel below.
+ * Tools used to host them. They moved here so Tools could use that tab for Due now. The controls
+ * still say they are not a clinical action.
  */
 
 const THRESHOLD_STATE_WORDS: Record<ThresholdState, string> = {
@@ -2820,11 +2819,10 @@ export function SettingsScreen() {
                         {isRowVisible("setting-demonstration-data") && (
                           <WardPanel title="Demonstration data" testId="ward-settings-demonstration">
                             <div className={styles.compactBody}>
-                              <div className={styles.calloutCard}>
-                                <p className={styles.calloutText}>
-                                  Clock, scenario and data reset controls are in <strong>Tools</strong> in the bar.
-                                </p>
-                              </div>
+                              <p className={styles.body}>
+                                Practice clock, scenario and change view. These do not change a clinical record.
+                              </p>
+                              <SettingsPracticeControls />
                             </div>
                           </WardPanel>
                         )}

@@ -30,39 +30,16 @@ async function gotoWard(page: Page, unitId: string): Promise<Locator> {
 }
 
 /**
- * ⚠️ **RE-DERIVED, Task 8, 2026-09-11.** `WardDemoControls` and `WardRoleSwitcher` used to live
- * directly in `ClinicalRail` — always in the DOM, never behind a control of their own — so every
- * call site below that reached for "Change view" or the demo-controls trigger found it
- * immediately. The third-edition shell (`shell/ward-bar.tsx`) moves both into its own Tools
- * drawer instead (a `<Sheet>`, which renders nothing at all while closed), per the master plan's
- * own ruling that nothing a demonstration needs may be lost in the move. Opening it is now a
- * precondition for every one of those call sites, not a step this spec used to need.
- *
- * Checks `aria-expanded` rather than clicking unconditionally, in both directions: `WardBar`'s
- * Tools trigger TOGGLES the drawer, so an unconditional click when it is already in the target
- * state would flip it the wrong way. `ensureToolsOpen` matters because this journey calls into
- * the drawer more than once per test (the role-switcher loop changes role four times); Playwright
- * mid-retry could otherwise find it already open and close it by clicking again.
- *
- * `ensureToolsClosed` matters for a sharper reason, found live rather than reasoned out: `WardBar`
- * persists across the client-side navigation `switchTo` triggers below (same layout, same
- * component instance — a route change alone never unmounts it), so its own `openPanel` state
- * persists too. Left open, the Tools `<Sheet>`'s own backdrop — a `position: fixed` overlay
- * covering the page — stayed in the DOM on the destination screen and intercepted every pointer
- * event meant for it, which is exactly what timed out clicking a queue row on Coordinator right
- * after switching there. `switchTo` closes the drawer itself once the destination is chosen,
- * rather than leaving that to every call site.
+ * Practice clock and Change view live on Settings. Reach them through the rail link so the
+ * layout provider stays mounted. Close Tools first: its backdrop covers the rail.
  */
-async function ensureToolsOpen(page: Page): Promise<void> {
-  const trigger = page.getByTestId("ward-bar-tools-trigger");
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
+async function ensurePracticeOpen(page: Page): Promise<void> {
+  await ensureToolsClosed(page);
+  const panel = page.getByTestId("ward-settings-demonstration");
+  if (!(await panel.isVisible())) {
+    await page.getByTestId("ward-rail").getByRole("link", { name: "Settings" }).click();
+    await expect(panel).toBeVisible();
   }
-  await page
-    .getByRole("dialog", { name: "Tools" })
-    .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Demo", exact: true })
-    .click();
 }
 
 /**
@@ -166,7 +143,7 @@ test.describe("@mockup Ward screen", () => {
     // layout-level sibling of `wardScreen` rather than a descendant of it — `page`-scoped, not
     // `wardScreen`-scoped, and only present once the drawer is open. See `ensureToolsOpen`'s own
     // header for why opening is conditional rather than an unconditional click.
-    await ensureToolsOpen(page);
+    await ensurePracticeOpen(page);
 
     // The trigger must never be mistaken for a clinical action — checked in words, not merely by
     // colour: its accessible name and title both say so explicitly.
@@ -188,8 +165,9 @@ test.describe("@mockup Ward screen", () => {
     await advanceClock.click();
     await advanceClock.click();
 
-    // The one thing spec §5 says the control exists to demonstrate: a held bed watched
-    // expiring in seconds. 3 hours 45 minutes advanced against a 240-minute (4-hour) hold leaves 15.
+    // The clock lives on Settings. The layout provider keeps the advanced time when we return
+    // to the ward. 3 hours 45 minutes against a 240-minute hold leaves 15.
+    await page.goBack();
     await expect(card).toContainText("Bed pull 15m left");
     await expect(card).not.toContainText("Bed pull 4h 00m left");
   });
@@ -983,7 +961,7 @@ test.describe("@mockup Role switcher — the loop", () => {
      * `WardBar`'s Tools drawer now (Task 8, 2026-09-11) — see those helpers' own header.
      */
     async function switchTo(menuItemName: string) {
-      await ensureToolsOpen(page);
+      await ensurePracticeOpen(page);
       await switcherTrigger().click();
       const matches = page.getByRole("menuitem", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one menu item`).toHaveCount(1);
@@ -1176,7 +1154,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // `ensureToolsOpen`/`ensureToolsClosed` bracket the switch: the switcher lives inside
     // `WardBar`'s Tools drawer now (Task 8, 2026-09-11) — see those helpers' own header.
     async function switchTo(menuItemName: string) {
-      await ensureToolsOpen(page);
+      await ensurePracticeOpen(page);
       await switcherTrigger().click();
       const matches = page.getByRole("menuitem", { name: menuItemName });
       await expect(matches, `"${menuItemName}" must resolve to exactly one menu item`).toHaveCount(1);

@@ -1,0 +1,149 @@
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.metric,
+.glance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.125rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 1.125rem;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.metric span,
+.glance span {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.glance > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.metric strong,
+.glance strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  letter-spacing: -0.03em;
+}
+
+.glance {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--surface), var(--surface-2));
+}
+
+.glance small {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.metric:focus-visible,
+.glance:focus-visible,
+.quiet:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.metric[data-flagged="true"] strong,
+.metric[data-flagged="true"] span {
+  color: var(--ward-danger);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.quiet {
+  align-self: flex-start;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.dueList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dueList a {
+  display: grid;
+  gap: 0.125rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: 1.125rem;
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.dueList a[data-tone="alert"] {
+  background: var(--ward-danger-soft);
+  box-shadow: inset 3px 0 0 var(--ward-danger);
+}
+
+.dueList strong {
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.dueList small {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.dueList a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  padding: 0.875rem;
+  border: 1px dashed var(--line);
+  border-radius: 1.125rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.practice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -2609,7 +2609,7 @@
 
 /* Compact modular drawers. Curved surfaces use the existing theme palette. */
 .drawerSheetWide {
-  max-width: min(calc(100vw - 1.5rem), 35rem) !important;
+  max-width: min(calc(100vw - 1.5rem), 44rem) !important;
 }
 .drawerSheetReferral {
   max-width: min(calc(100vw - 1.5rem), 38rem) !important;
