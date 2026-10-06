@@ -1745,7 +1745,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onClick={() => setNotificationCenterOpen((prev) => !prev)}
                   aria-expanded={notificationCenterOpen}
                   data-testid="ward-notifications-toggle-btn"
-                  title="View Ward Tasks, Coordinator Buzzes & Census Alerts"
+                  title="Buzzes, urgent tasks and notices"
                 >
                   <svg
                     viewBox="0 0 24 24"

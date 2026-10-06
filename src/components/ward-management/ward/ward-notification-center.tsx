@@ -365,7 +365,7 @@ export function WardNotificationCenter({
         {showNotices && (
           <section className={styles.section} aria-labelledby={`${baseId}-heading-notices`}>
             <h3 id={`${baseId}-heading-notices`} className={styles.sectionTitle}>
-              Direct Ward Notices
+              Notices
               <span className={styles.sectionCount}>
                 ({wardNotices.length}
                 <span className="sr-only"> sample records</span>)
