@@ -81,7 +81,7 @@ These are hard gates, not tasks for now. The owner has parked them; do not re-as
 safety review (R2-6).
 
 - Outside reviews: Aboriginal cultural safety, medical device (TGA), clinical safety officer, privacy,
-  WA legal advice on forms, catchment data, and post-incident review (owner item 63).
+  WA legal advice on forms, catchment data, and post-incident review (owner item 63, D-36; operational postures and compliance dossiers ratified in D-37; execution scheduled pre-pilot).
 - Internal patient codes (item 58) to be decided again.
 - On-call roster data is illustrative only.
 - Reverse the prototype-mode relaxations in `AGENTS.md` (#32): clinical-safety and legal sign-off
