@@ -883,6 +883,11 @@ function WardFlowWorld({
     [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes],
   );
 
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
+
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
@@ -945,7 +950,7 @@ function WardFlowWorld({
         }),
       patients: state.patients,
       admissions: state.admissions,
-      now,
+      get now() { return nowRef.current; },
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,
@@ -971,7 +976,6 @@ function WardFlowWorld({
       state,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
-      now,
       dayZero,
       dispatch,
       focusMovementId,
@@ -994,7 +998,7 @@ function WardFlowWorld({
          * must start again from the restored world rather than keep the seed's. A first visit, or a
          * reload with nothing changed, never takes this path, so its tree is never rebuilt.
          */}
-        <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+        <Fragment>{children}</Fragment>
       </WardFlowClockContext.Provider>
     </WardFlowContext.Provider>
   );

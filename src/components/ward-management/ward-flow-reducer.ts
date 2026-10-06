@@ -54,6 +54,7 @@ import {
   eligibility,
   adjustSexMix,
   mixSexOf,
+  sexDesignationAccepts,
   referralEligibility,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
@@ -4758,6 +4759,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
       const arriverSex = mixSexOf(movement.gender, movement.sex);
+
+      if (unit.sexDesignation !== "Undesignated") {
+        if (!arriverSex || !sexDesignationAccepts(unit.sexDesignation, arriverSex)) {
+          return reject(
+            state,
+            event,
+            `cannot arrive patient on ${unit.name}: unit is ${unit.sexDesignation.toLowerCase()} and does not accept ${arriverSex ?? "unspecified sex"} patient (gender mismatch)`,
+          );
+        }
+      }
+
       const updatedUnit: Unit = {
         ...unit,
         empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1), confirmedAt: event.now },
