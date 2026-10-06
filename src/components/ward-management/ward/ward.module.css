@@ -4949,7 +4949,7 @@
 }
 
 .constraintChip[data-active="true"] {
-  background: var(--warn-soft);
+  background: transparent;
   border-color: var(--warn);
   color: var(--ink);
   font-weight: 600;
