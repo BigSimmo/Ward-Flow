@@ -1008,8 +1008,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
       : undefined;
     const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, new Date()) : null;
-    const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? unit.cohort;
+    const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? null;
     const patientHomeRegion = admission?.homeRegion ?? null;
+
+    const patient = patientInfo?.patient;
+    const expectedDischargeLabel =
+      admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+        ? formatInstantWithDay(admission.expectedDischargeAt, now)
+        : null;
 
     return {
       bedNumber,
@@ -1040,6 +1046,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       age: patientAge,
       sex: patientSex,
       homeRegion: patientHomeRegion,
+      preferredName: patient?.preferredName,
+      gender: patient?.gender,
+      suburb: patient?.suburb,
+      generalPractitioner: patient?.generalPractitioner,
+      catchmentCommunityTeam: patient?.catchmentCommunityTeam,
+      highAcuity: admission?.highAcuity === true,
+      dischargeDateMoves: admission ? admission.dischargeDateMoves : null,
+      dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
+      dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
+      expectedDischargeLabel,
     };
   });
 
