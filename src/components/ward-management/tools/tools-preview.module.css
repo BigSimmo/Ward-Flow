@@ -3,11 +3,13 @@
   --p-panel: rgba(249, 251, 254, 0.86);
   --p-card: rgba(255, 255, 255, 0.76);
   --p-ink: #243548;
-  --p-muted: #68798b;
+  --p-muted: #5f7185;
   --p-blue: #315b7b;
   --p-soft: #e7eef5;
   --p-line: rgba(78, 103, 130, 0.12);
-  --p-shadow: 0 6px 26px rgba(35, 61, 88, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --p-shadow:
+    0 8px 26px rgba(35, 61, 88, 0.045), 0 1px 3px rgba(35, 61, 88, 0.025), inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
   font-family: var(--font-sans, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   color: var(--p-ink);
   background:
@@ -118,7 +120,7 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 25px;
+  border-radius: 22px;
   background: var(--p-panel);
   backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
@@ -180,35 +182,78 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0 17px;
-  padding: 4px;
-  gap: 3px;
-  background: var(--p-card);
-  box-shadow: var(--p-shadow);
+  padding: 5px;
+  gap: 4px;
+  background: color-mix(in srgb, var(--p-soft) 50%, transparent);
   border-radius: 15px;
+  box-shadow:
+    inset 0 1px 3px rgba(35, 61, 88, 0.035),
+    inset 0 0 0 1px var(--p-line),
+    0 1px 0 rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
 }
 .nav button {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   justify-content: center;
   align-items: center;
-  min-height: 55px;
-  padding: 7px 2px;
+  min-height: 65px;
+  padding: 7px 2px 9px;
   border: 0;
   border-radius: 11px;
   background: transparent;
   color: var(--p-muted);
-  font-size: 10px;
-  font-weight: 550;
-  transition: background 0.15s;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
 }
-.nav button[aria-pressed="true"] {
-  background: #31536f;
-  color: #fff;
+.nav button > svg {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border-radius: 8px;
+  stroke-width: 1.6;
+}
+.nav button:hover {
+  background: color-mix(in srgb, var(--p-card) 60%, transparent);
+}
+.nav button[aria-selected="true"] {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--p-card) 90%, white), var(--p-card));
+  color: var(--p-ink);
+  font-weight: 650;
   box-shadow:
-    0 4px 12px rgba(33, 61, 85, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 4px 12px rgba(33, 61, 85, 0.075),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65),
+    inset 0 1px 0 white;
+}
+.nav button[aria-selected="true"] > svg {
+  color: #fff;
+  background: linear-gradient(145deg, #5a7e9b, #31536f);
+  box-shadow:
+    0 2px 4px rgba(33, 61, 85, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.nav button[aria-selected="true"]::after {
+  position: absolute;
+  content: "";
+  width: 15px;
+  height: 2px;
+  bottom: 3px;
+  border-radius: 2px;
+  background: #7896af;
+}
+.stage[data-preview-theme="dark"] .nav button[aria-selected="true"] {
+  background: linear-gradient(145deg, #42586d, #31465a);
+  box-shadow:
+    0 5px 15px rgba(0, 0, 0, 0.13),
+    inset 0 0 0 1px rgba(200, 220, 240, 0.12),
+    inset 0 1px 0 rgba(230, 240, 255, 0.12);
 }
 .body {
   padding: 0 20px 20px;
@@ -222,7 +267,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 17px 0 21px;
+  margin: 14px 0 14px;
   gap: 8px;
   color: var(--p-muted);
   font-size: 10px;
@@ -246,7 +291,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin: 0 0 15px;
+  margin: 0 0 13px;
 }
 .sectionTitle h3 {
   font-size: 19px;
@@ -425,7 +470,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--p-line);
 }
 .dueRow > span {
@@ -605,7 +650,7 @@
   margin-bottom: 14px;
 }
 .metricGrid .metric {
-  min-height: 112px;
+  min-height: 100px;
   padding: 12px;
 }
 .metricGrid .metric > strong {
@@ -999,4 +1044,186 @@
 .stage[data-preview-open="false"] .stageIntro {
   display: block;
   max-width: 100%;
+}
+
+/* Shared finishing details keep the five panels on one material and spacing scale. */
+.metric,
+.card,
+.contact,
+.utilityGrid > button,
+.search {
+  backdrop-filter: blur(14px);
+}
+.metric > small {
+  font-size: 10px;
+}
+.metricGrid .metric > span {
+  color: var(--p-muted);
+  font-weight: 550;
+  font-size: 10px;
+}
+.metricGrid .metric > strong {
+  margin: 7px 0 5px;
+}
+.metricGrid .metric > small {
+  font-size: 9px;
+}
+.filters {
+  gap: 4px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--p-soft) 48%, transparent);
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px var(--p-line);
+  width: fit-content;
+  max-width: 100%;
+}
+.filters button {
+  background: transparent;
+  min-height: 32px;
+  padding: 7px 9px;
+}
+.filters button[aria-pressed="true"] {
+  background: var(--p-card);
+  border-color: transparent;
+  box-shadow: var(--p-shadow);
+  color: var(--p-blue);
+}
+.search {
+  padding: 13px 14px;
+  border-radius: 12px;
+}
+.search:focus-within {
+  box-shadow:
+    var(--p-shadow),
+    0 0 0 2px color-mix(in srgb, var(--p-blue) 25%, transparent);
+}
+.search input {
+  font-size: 11px;
+}
+.search button {
+  min-height: 28px;
+  min-width: 28px;
+  border-radius: 7px;
+  background: var(--p-soft);
+}
+.contact {
+  display: flex;
+  flex-direction: column;
+}
+.contact > p {
+  margin: 9px 0 5px;
+}
+.contactDetails {
+  padding: 9px 0 10px;
+  margin: 0;
+  gap: 10px;
+}
+.contact details,
+.pending {
+  margin-top: auto;
+}
+.contactTop strong,
+.contactTop a {
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+.contactDetails > * {
+  font-size: 11px;
+}
+.contactIcon {
+  background: linear-gradient(145deg, var(--p-card), var(--p-soft));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.utilityGrid > button {
+  padding: 14px;
+  gap: 6px;
+}
+.utilityGrid > button > svg:first-child {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  background: var(--p-soft);
+  border-radius: 9px;
+  margin-bottom: 3px;
+}
+.utilityGrid > button[aria-pressed="true"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--p-card) 75%, var(--p-soft));
+  box-shadow:
+    var(--p-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--p-blue) 35%, transparent);
+}
+.inputs input {
+  background: color-mix(in srgb, var(--p-card) 75%, transparent);
+  box-shadow: inset 0 2px 4px rgba(35, 61, 88, 0.025);
+}
+.calculation {
+  padding: 17px 0 12px;
+  gap: 0;
+}
+.calculation > strong {
+  flex: 1;
+}
+.calculation > strong + strong {
+  border-left: 1px solid var(--p-line);
+  padding-left: 24px;
+}
+.action {
+  background: color-mix(in srgb, var(--p-soft) 38%, transparent);
+}
+.action:hover,
+.dueRow:hover {
+  background: var(--p-soft);
+}
+.copyButton {
+  background: linear-gradient(145deg, #496e8c, #31536f);
+  box-shadow:
+    0 5px 15px rgba(33, 61, 85, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.appearance {
+  padding: 12px 14px;
+}
+@media (max-width: 620px) {
+  .nav {
+    gap: 2px;
+    padding: 4px;
+  }
+  .nav button {
+    font-size: 9px;
+    min-height: 62px;
+  }
+  .nav button > svg {
+    width: 27px;
+    height: 27px;
+  }
+  .metric > small {
+    font-size: 9px;
+  }
+  .filters button {
+    min-height: 36px;
+  }
+}
+.twoColumn > .card {
+  padding: 12px;
+}
+.cardHeading {
+  margin-bottom: 10px;
+}
+.dueRow {
+  padding: 6px 0;
+}
+.dueRow > span {
+  gap: 3px;
+}
+.action {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.utilityGrid > button {
+  padding: 12px 14px;
+}
+.calculation {
+  padding-top: 13px;
+  padding-bottom: 9px;
 }

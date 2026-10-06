@@ -348,14 +348,29 @@ export function ToolsPreview() {
               <X aria-hidden="true" />
             </button>
           </header>
-          <nav className={styles.nav} aria-label="Tools sections">
+          <nav className={styles.nav} role="tablist" aria-label="Tools sections">
             {sections.map(([key, label, Icon]) => (
               <button
                 key={key}
+                id={`preview-tab-${key}`}
                 type="button"
-                aria-pressed={section === key}
+                role="tab"
+                aria-selected={section === key}
+                tabIndex={section === key ? 0 : -1}
                 aria-controls={`preview-${key}`}
                 onClick={() => setSection(key)}
+                onKeyDown={(event) => {
+                  const index = sections.findIndex(([id]) => id === key);
+                  let next: number;
+                  if (event.key === "ArrowRight") next = (index + 1) % sections.length;
+                  else if (event.key === "ArrowLeft") next = (index + sections.length - 1) % sections.length;
+                  else if (event.key === "Home") next = 0;
+                  else if (event.key === "End") next = sections.length - 1;
+                  else return;
+                  event.preventDefault();
+                  setSection(sections[next][0]);
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("[role=tab]")[next]?.focus();
+                }}
               >
                 <Icon aria-hidden="true" />
                 <span>{label}</span>
@@ -370,7 +385,7 @@ export function ToolsPreview() {
               </span>
               <time>{formatInstant(now)} AWST</time>
             </div>
-            <div id={`preview-${section}`}>
+            <div id={`preview-${section}`} role="tabpanel" aria-labelledby={`preview-tab-${section}`} tabIndex={0}>
               {section === "overview" && (
                 <>
                   <div className={styles.sectionTitle}>
