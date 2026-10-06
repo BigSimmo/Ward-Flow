@@ -23,7 +23,6 @@ interface WardDischargesMatrixProps {
   confirmBedRelease: (id: string) => void;
   clearBedReleaseBlock: (id: string) => void;
   endLeaveBed: (id: string) => void;
-  onOpenDecisions?: () => void;
 }
 
 export function WardDischargesMatrix({
@@ -35,7 +34,6 @@ export function WardDischargesMatrix({
   confirmBedRelease,
   clearBedReleaseBlock,
   endLeaveBed,
-  onOpenDecisions,
 }: WardDischargesMatrixProps) {
   const [subTab, setSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
 
@@ -46,15 +44,6 @@ export function WardDischargesMatrix({
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Discharges, Departures &amp; Barrier Resolution Matrix</h2>
         </div>
-        <button
-          type="button"
-          className={`${styles.btnDischargeAction} ${styles.btnSec}`}
-          onClick={() => {
-            if (onOpenDecisions) onOpenDecisions();
-          }}
-        >
-          + Flag Bed Coming Free
-        </button>
       </div>
 
       {/* Stream Tabs */}
