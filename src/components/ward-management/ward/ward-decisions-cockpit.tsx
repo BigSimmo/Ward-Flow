@@ -363,7 +363,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <span>Illustrative decision cockpit</span>
             <span
               className={`${styles.chip} ${styles.chipNeutral}`}
-              style={{ fontSize: "10px", textTransform: "uppercase" }}
+              style={{ fontSize: "12px", textTransform: "uppercase" }}
             >
               Non-Duplication Rule Applied
             </span>
@@ -585,7 +585,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipGood}`}
-                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "12px" }}
               >
                 GATE 1 · 07:00–09:30
               </span>
@@ -611,7 +611,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>Active Limiters:</span>
+                  <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>Active Limiters:</span>
                   <button
                     type="button"
                     className={styles.constraintPill}
@@ -657,7 +657,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
 
               <div className={styles.capacityControlsWrap}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <div style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>
+                  <div style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>
                     Staffed:
                   </div>
                   <div className={styles.microStepper}>
@@ -712,7 +712,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipDanger}`}
-                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "12px" }}
               >
                 GATE 2 · 09:30–13:00
               </span>
@@ -778,7 +778,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                         {intakeState === "declined" && "Referral Declined · Returned to Central Bed Flow"}
                         {intakeState === "deferred" && "ED MO Review Requested · SLA Timer Paused"}
                       </div>
-                      <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                      <div style={{ fontSize: "12px", opacity: 0.9 }}>
                         {intakeState === "accepted" &&
                           "Demonstration only: no admission or bed allocation has been recorded."}
                         {intakeState === "declined" &&
@@ -807,11 +807,11 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipGood}`}
-                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "12px" }}
               >
                 GATE 3 · 11:00–14:00
               </span>
-              <span className={`${styles.chip} ${styles.chipAccent}`} style={{ fontSize: "10px" }}>
+              <span className={`${styles.chip} ${styles.chipAccent}`} style={{ fontSize: "12px" }}>
                 ⚡ Current Midday Window
               </span>
               <h2 className={styles.panelTitle}>Departure Authorizations &amp; Barrier Escalation</h2>
@@ -870,7 +870,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                         <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
                           Departure Authorized &amp; Bed 04 Vacated
                         </div>
-                        <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                        <div style={{ fontSize: "12px", opacity: 0.9 }}>
                           Released to Environmental Services for turnover cleaning. Escort verified at ward reception.
                         </div>
                       </div>
@@ -933,7 +933,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                             ? "Discharge Barrier Escalated"
                             : "Discharge Postponed to Tomorrow"}
                         </div>
-                        <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                        <div style={{ fontSize: "12px", opacity: 0.9 }}>
                           {rowanState === "escalated"
                             ? "Urgent Social Work Senior Lead & NDIS Coordinator Liaison Dispatched."
                             : "Patient bed held until tomorrow's morning MDT rounds."}
@@ -960,7 +960,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipAccent}`}
-                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "12px" }}
               >
                 GATE 4 · 14:00–18:00
               </span>
@@ -1024,7 +1024,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                         {marcusState === "extended" && "Leave Window Extended"}
                         {marcusState === "awol" && "AWOL Declared — Statutory Alert Triggered"}
                       </div>
-                      <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                      <div style={{ fontSize: "12px", opacity: 0.9 }}>
                         {marcusState === "returned" &&
                           "Mental state exam verified. Section 17 Form 7 closed on ward record."}
                         {marcusState === "extended" && "New return target: 15:00 AWST. Treating consultant notified."}
@@ -1097,7 +1097,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             <span style={{ color: "var(--good)", fontWeight: 700 }}>✓</span>
             <h3 className={styles.panelTitle}>Demonstration interaction history</h3>
           </div>
-          <span className={`${styles.chip} ${styles.chipNeutral}`} style={{ fontSize: "10.5px" }}>
+          <span className={`${styles.chip} ${styles.chipNeutral}`} style={{ fontSize: "12px" }}>
             Illustrative local log; not a clinical audit record
           </span>
         </div>

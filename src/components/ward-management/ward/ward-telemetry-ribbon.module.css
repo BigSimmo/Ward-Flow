@@ -2,12 +2,12 @@
 .ribbon {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: visible;
+  gap: 0;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 46%, transparent);
+  border: 0;
+  border-radius: 0.55rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 30%, transparent);
+  overflow: hidden;
   margin-bottom: 0;
 }
 
@@ -21,6 +21,14 @@
   .ribbon {
     grid-template-columns: 1fr;
   }
+
+  .cell {
+    box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--line) 40%, transparent);
+  }
+
+  .cell:last-child {
+    box-shadow: none;
+  }
 }
 
 .preparationNote {
@@ -29,14 +37,12 @@
 
 .cell {
   min-width: 0;
-  padding: 7px 10px 8px;
+  padding: 8px 12px 9px;
   position: relative;
   border: 0;
-  border-radius: 0.5rem;
-  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 42%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent),
-    inset 0 0 0 1px color-mix(in oklab, var(--line) 26%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset -1px 0 0 color-mix(in oklab, var(--line) 40%, transparent);
   display: grid;
   grid-template-rows: auto auto auto;
   align-content: start;
@@ -46,11 +52,11 @@
 }
 
 .cell:last-child {
-  border-right: 0;
+  box-shadow: none;
 }
 
 .cell:hover {
-  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 58%, transparent);
+  background: color-mix(in oklab, var(--surface) 42%, transparent);
 }
 
 .cell::before {

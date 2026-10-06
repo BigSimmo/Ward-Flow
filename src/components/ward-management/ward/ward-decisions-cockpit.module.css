@@ -4,27 +4,41 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 10px;
+  align-items: start;
   width: 100%;
   color: var(--ink);
   font-family: inherit;
 }
 
+.container > :not(.panel) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Non-Duplication Contract Banner */
 .contractBanner {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--r1, 8px);
-  padding: 10px 16px;
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.75rem;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
-  box-shadow: var(--lift-sm);
+  gap: 10px 16px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--accent),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .contractTitle {
@@ -67,11 +81,14 @@
 
 /* Shift Milestone & Progress Gate Ribbon */
 .shiftRibbon {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  padding: 12px 16px;
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.75rem;
+  padding: 10px 12px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent),
+    0 16px 36px -26px color-mix(in srgb, var(--ink) 40%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .ribbonHead {
@@ -123,21 +140,22 @@
 }
 
 .gateCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 9px 12px;
+  background: color-mix(in oklab, var(--surface) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 24%, transparent);
+  border-radius: 0.55rem;
+  padding: 8px 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent);
 }
 
 .gateCard:hover {
-  border-color: var(--line-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
 }
 
 .gateCardTop {
@@ -172,26 +190,33 @@
 }
 
 .gateComplete {
-  border-left: 3px solid var(--good);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    inset 3px 0 0 var(--good);
 }
 
 .gateUrgent {
-  border-left: 3px solid var(--danger);
-  background: linear-gradient(90deg, var(--danger-soft) 0%, var(--surface-2) 30%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    inset 3px 0 0 var(--danger);
 }
 
 .gateReady {
-  border-left: 3px solid var(--good);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    inset 3px 0 0 var(--good);
 }
 
 .gatePending {
-  border-left: 3px solid var(--accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    inset 3px 0 0 var(--accent);
 }
 
 .gateActiveWindow {
   box-shadow:
-    0 0 0 1px var(--accent),
-    var(--lift-sm);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--accent) 55%, transparent);
 }
 
 /* Action Queue & Filter Bar */
@@ -221,53 +246,77 @@
 }
 
 .filterPills {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  align-self: flex-start;
+  width: max-content;
+  max-width: 100%;
+  gap: 2px;
   flex-wrap: wrap;
+  padding: 3px;
+  border-radius: 0.65rem;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 58%, transparent);
+  box-shadow:
+    inset 0 1px 1px color-mix(in oklab, var(--ink) 7%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--line) 28%, transparent);
 }
 
 .filterPill {
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  letter-spacing: -0.01em;
+  padding: 5px 10px;
+  border-radius: 0.45rem;
+  background: transparent;
+  border: 0;
   color: var(--ink-soft);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    color 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
 .filterPill:hover {
-  background: var(--surface-2);
+  background: color-mix(in oklab, var(--surface) 48%, transparent);
   color: var(--ink);
-  border-color: var(--line-strong);
+}
+
+.filterPill:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .filterPill[data-active="true"] {
-  background: var(--ink);
-  color: var(--surface);
-  border-color: var(--ink);
+  background: color-mix(in oklab, var(--surface) 94%, transparent);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 95%, transparent),
+    0 1px 1px color-mix(in srgb, var(--ink) 6%, transparent),
+    0 8px 16px -12px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 /* Gate Panel Container */
 .panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 74%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent),
+    0 16px 36px -26px color-mix(in srgb, var(--ink) 38%, transparent);
+  backdrop-filter: blur(16px) saturate(1.15);
   overflow: hidden;
+  min-width: 0;
 }
 
 .panelStrip {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  padding: 8px 16px;
+  background: color-mix(in oklab, var(--surface) 28%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -381,16 +430,16 @@
 
 /* Condensed Decision Card Component */
 .decisionCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
-  margin-bottom: 7px;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 40%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.55rem;
+  padding: 8px 10px;
+  margin-bottom: 6px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.15s ease;
   position: relative;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent);
 }
 
 .decisionCard:last-child {
@@ -398,28 +447,31 @@
 }
 
 .decisionCard:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
 }
 
 .decisionCard[data-priority="urgent"] {
-  border-left: 4px solid var(--danger);
-  background: linear-gradient(90deg, var(--danger-soft) 0%, var(--surface-2) 20%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent),
+    inset 3px 0 0 var(--danger);
 }
 
 .decisionCard[data-priority="ready"] {
-  border-left: 4px solid var(--good);
-  background: linear-gradient(90deg, var(--good-soft) 0%, var(--surface-2) 20%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent),
+    inset 3px 0 0 var(--good);
 }
 
 .decisionCard[data-priority="barrier"] {
-  border-left: 4px solid var(--warn);
-  background: linear-gradient(90deg, var(--warn-soft) 0%, var(--surface-2) 20%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent),
+    inset 3px 0 0 var(--warn);
 }
 
 .decisionCard[data-priority="governance"] {
-  border-left: 4px solid var(--accent);
-  background: linear-gradient(90deg, var(--accent-soft) 0%, var(--surface-2) 20%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 70%, transparent),
+    inset 3px 0 0 var(--accent);
 }
 
 .decisionCardHead {
@@ -435,7 +487,7 @@
   flex-direction: column;
   gap: 3px;
   flex: 1;
-  min-width: 280px;
+  min-width: 0;
 }
 
 .decisionCardTitle {
@@ -624,10 +676,11 @@
 
 /* Live Shift Audit Trail */
 .auditSection {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
+  background: color-mix(in oklab, var(--surface) 74%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.75rem;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent);
 }
 
 .auditTable {

@@ -226,7 +226,7 @@ export function WardDischargesMatrix({
               <div
                 key={release.id}
                 className={styles.dischargeStrip}
-                style={{ borderLeftColor: "var(--danger)" }}
+                data-tone="critical"
                 data-testid={`ward-barrier-${release.id}`}
               >
                 <div className={styles.dischargeLeft}>
