@@ -17,6 +17,7 @@ import styles from "./ward-panel.module.css";
  */
 export function WardPanel({
   title,
+  accessibleName,
   count,
   blurb,
   blurbInHeader = false,
@@ -27,6 +28,8 @@ export function WardPanel({
   children,
 }: {
   title: string;
+  /** Region name when the visible heading is shorter than the name tests and screen readers use. */
+  accessibleName?: string;
   count?: string;
   blurb?: string;
   blurbInHeader?: boolean;
@@ -46,7 +49,7 @@ export function WardPanel({
   return (
     <section
       className={styles.panel}
-      aria-label={title}
+      aria-label={accessibleName ?? title}
       data-testid={testId}
       data-ward-primitive="panel"
       data-tab-section={dataTabSection}
