@@ -1829,6 +1829,8 @@
 td.workspaceMeasure,
 span.workspaceMeasure,
 .layout[data-layout="workspace"] td.workspaceMeasure,
-.layout[data-layout="workspace"] span.workspaceMeasure {
+.layout[data-layout="workspace"] span.workspaceMeasure,
+.cause.workspaceMeasure,
+.update.workspaceMeasure {
   font-size: 12px;
 }
