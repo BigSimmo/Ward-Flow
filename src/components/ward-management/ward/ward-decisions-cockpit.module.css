@@ -47,6 +47,43 @@
   border-color: var(--line-strong);
 }
 
+.toneStaffing {
+  --tone: var(--accent);
+}
+
+.toneIntake {
+  --tone: var(--danger);
+}
+
+.toneDepartures {
+  --tone: var(--warn);
+}
+
+.toneLeave {
+  --tone: var(--good);
+}
+
+.summary.toneStaffing,
+.summary.toneIntake,
+.summary.toneDepartures,
+.summary.toneLeave,
+.panel.toneStaffing,
+.panel.toneIntake,
+.panel.toneDepartures,
+.panel.toneLeave {
+  box-shadow:
+    inset 2px 0 0 var(--tone),
+    inset 0 1px 0 var(--surface-highlight, transparent),
+    var(--lift);
+}
+
+.toneStaffing .summaryTitle svg,
+.toneIntake .summaryTitle svg,
+.toneDepartures .summaryTitle svg,
+.toneLeave .summaryTitle svg {
+  color: var(--tone);
+}
+
 .summary:active {
   background: var(--surface-2);
 }
@@ -172,13 +209,13 @@
 }
 
 .filter[data-active="true"] {
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
   background: var(--surface);
-  color: var(--ink);
+  color: var(--accent-ink, var(--accent));
   box-shadow:
     inset 0 1px 0 var(--surface-highlight, transparent),
-    0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent),
-    0 6px 14px -8px color-mix(in srgb, var(--ink) 45%, transparent);
+    inset 0 -2px 0 var(--accent),
+    0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .board {
@@ -281,12 +318,32 @@
   white-space: nowrap;
 }
 
-.good,
-.danger,
-.warn,
-.accent,
+.good {
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 32%, var(--line));
+  background: color-mix(in srgb, var(--good) 10%, var(--surface));
+}
+
+.danger {
+  color: var(--danger-ink, var(--danger));
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 36%, var(--line));
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+}
+
+.accent {
+  color: var(--accent-ink, var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
 .neutral {
-  color: var(--ink);
+  color: var(--ink-soft);
 }
 
 .action,
@@ -305,23 +362,24 @@
 }
 
 .action {
-  border: 1px solid var(--line-strong);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
-  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--ink));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--on-accent) 20%, transparent), transparent 46%), var(--accent);
+  color: var(--on-accent);
   box-shadow:
-    inset 0 1px 0 var(--surface-highlight, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--ink) 8%, transparent),
-    0 1px 1px color-mix(in srgb, var(--ink) 6%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--on-accent) 32%, transparent),
+    0 1px 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .action:hover {
-  border-color: color-mix(in srgb, var(--ink) 24%, var(--line-strong));
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--on-accent) 12%, transparent), transparent 46%),
+    color-mix(in srgb, var(--accent) 86%, var(--ink));
 }
 
 .action:active {
-  background: var(--sunk);
-  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--accent) 78%, var(--ink));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 24%, transparent);
 }
 
 .actionQuiet {
@@ -352,6 +410,11 @@
 @media (max-width: 960px) {
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .board,
+  .board:has(> .stack:only-child) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

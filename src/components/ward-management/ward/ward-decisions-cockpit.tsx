@@ -171,7 +171,7 @@ function Queue({
       <div className={styles.summaryGrid}>
         <button
           type="button"
-          className={styles.summary}
+          className={`${styles.summary} ${styles.toneStaffing}`}
           aria-label="Staffing, 07:00–09:30"
           onClick={() => jumpTo("gate-staffing")}
           onKeyDown={(event) => onSummaryKey(event, "gate-staffing")}
@@ -186,7 +186,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={styles.summary}
+          className={`${styles.summary} ${styles.toneIntake}`}
           aria-label="Intake, 09:30–13:00"
           onClick={() => jumpTo("gate-intake")}
           onKeyDown={(event) => onSummaryKey(event, "gate-intake")}
@@ -201,7 +201,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={styles.summary}
+          className={`${styles.summary} ${styles.toneDepartures}`}
           aria-label="Departures, 11:00–14:00"
           onClick={() => jumpTo("gate-departures")}
           onKeyDown={(event) => onSummaryKey(event, "gate-departures")}
@@ -216,7 +216,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={styles.summary}
+          className={`${styles.summary} ${styles.toneLeave}`}
           aria-label="Leave, 14:00–18:00"
           onClick={() => jumpTo("gate-leave")}
           onKeyDown={(event) => onSummaryKey(event, "gate-leave")}
@@ -264,7 +264,7 @@ function Queue({
         {showStaffing || showIntake || showLeave ? (
           <div className={styles.stack}>
             {showStaffing ? (
-              <section className={styles.panel} id="gate-staffing" aria-label="Staffing">
+              <section className={`${styles.panel} ${styles.toneStaffing}`} id="gate-staffing" aria-label="Staffing">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Staffing</h3>
                   <span className={styles.panelWindow}>07:00–09:30</span>
@@ -299,7 +299,7 @@ function Queue({
             ) : null}
 
             {showIntake ? (
-              <section className={styles.panel} id="gate-intake" aria-label="Intake">
+              <section className={`${styles.panel} ${styles.toneIntake}`} id="gate-intake" aria-label="Intake">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Intake</h3>
                   <span className={styles.panelWindow}>09:30–13:00</span>
@@ -328,7 +328,7 @@ function Queue({
             ) : null}
 
             {showLeave ? (
-              <section className={styles.panel} id="gate-leave" aria-label="Leave">
+              <section className={`${styles.panel} ${styles.toneLeave}`} id="gate-leave" aria-label="Leave">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Leave</h3>
                   <span className={styles.panelWindow}>14:00–18:00</span>
@@ -353,7 +353,11 @@ function Queue({
 
         {showDepartures ? (
           <div className={styles.stack}>
-            <section className={styles.panel} id="gate-departures" aria-label="Departures">
+            <section
+              className={`${styles.panel} ${styles.toneDepartures}`}
+              id="gate-departures"
+              aria-label="Departures"
+            >
               <header className={styles.panelHead}>
                 <h3 className={styles.panelTitle}>Departures</h3>
                 <span className={styles.panelWindow}>11:00–14:00</span>
