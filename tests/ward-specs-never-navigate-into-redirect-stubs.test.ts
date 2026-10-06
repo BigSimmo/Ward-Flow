@@ -270,7 +270,8 @@ function renderableTestIds(route: string): Set<string> {
  * The names come from the same place the ids did — the call site. `WardPanel` renders
  * `aria-label={title}` and `<Heading>{title}</Heading>` from one `title` prop, so a literal
  * `title="Who is being carried"` is simultaneously the region's name and its heading's name.
- * `aria-label="…"` written directly is collected too.
+ * `aria-label="…"` written directly is collected too. A `title={cond ? "A" : "B"}` expression
+ * is the same prop: both quoted arms are names the screen can expose.
  *
  * ⚠️ **Deliberately generous, for the reason the `testId` arm is:** a name this misses becomes a
  * FALSE POSITIVE against correct code, while a name it over-collects only costs a missed defect.
@@ -282,6 +283,15 @@ function renderableNames(route: string): Set<string> {
     for (const match of source.matchAll(/\b(?:title|aria-label|label)=\{?["'`]([^"'`{}]+)["'`]/gu)) {
       const name = match[1].trim();
       if (name) names.add(name);
+    }
+    // `title={cond ? "Transport right now" : "Shape of the day"}` has no literal after `=`.
+    // The quoted arms are still accessible names. Missing one flags a real panel wait as a defect.
+    for (const match of source.matchAll(/\b(?:title|aria-label|label)=\{/gu)) {
+      const expr = enclosingBlockAfter(source, match.index + match[0].length);
+      for (const literal of expr.matchAll(/["'`]([^"'`{}]+)["'`]/gu)) {
+        const name = literal[1].trim();
+        if (name) names.add(name);
+      }
     }
   }
   return names;
@@ -796,7 +806,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
      * 🔴 **THE ARM THAT WOULD HAVE CAUGHT THE VERY REPAIR THIS GUARD WAS WRITTEN ABOUT.** `origin/main`
      * re-pointed its Movements tests by the panel's accessible NAME, deliberately, so a test-id-only
      * guard could not have told those from broken ones. Both names below are real:
-     * "Transport right now" is a `WardPanel title=` literal on `MovementsScreen`; the other is not.
+     * "Transport right now" is a WardPanel title on MovementsScreen; the other is not.
      */
     const spec = (name: string) =>
       [
