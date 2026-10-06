@@ -32,12 +32,7 @@ import {
   changeReasonLabels,
   type UrgentMarkReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  ED_ACCESS_TARGET_MINUTES,
-  type Movement,
-  type Referral,
-  type Unit,
-} from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./movements.module.css";
 
@@ -209,6 +204,7 @@ export function MovementDrawer({
   units,
   referrals,
   patients,
+  edAccessTargetMinutes,
   dispatch,
   onClose,
 }: {
@@ -230,6 +226,12 @@ export function MovementDrawer({
    * provider per screen keeps the source obvious.
    */
   units: Unit[];
+  /**
+   * Coordinator-configured ED access target, threaded from the screen's `configuration` rather
+   * than the module default. Reading the default constant here would ignore a saved settings
+   * change (`tests/ward-configuration-read-sites.test.ts`).
+   */
+  edAccessTargetMinutes: number;
   /**
    * Threaded from the screen for the same reason `units` and `referrals` are — one provider reader
    * per screen, so the thing this drawer writes to is visibly the same store the board behind it
@@ -271,8 +273,7 @@ export function MovementDrawer({
 
   const waitMinutes = Math.max(now - movement.openedAt, 0);
   const totalWaitFormatted = splitDuration(waitMinutes);
-  const accessTargetMinutes = ED_ACCESS_TARGET_MINUTES;
-  const pastAccessTarget = waitMinutes > accessTargetMinutes;
+  const pastAccessTarget = waitMinutes > edAccessTargetMinutes;
 
   const progressPct = getProgressPercent(movement.stage);
 
@@ -453,14 +454,14 @@ export function MovementDrawer({
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>ED access target:</span>
-            <span className={styles.telemetryMono}>{splitDuration(accessTargetMinutes)}</span>
+            <span className={styles.telemetryMono}>{splitDuration(edAccessTargetMinutes)}</span>
           </div>
           <div className={styles.telemetryItem}>
             <span className={styles.telemetryLabel}>Target status:</span>
             <strong className={pastAccessTarget ? styles.textDanger : styles.textGood}>
               {pastAccessTarget
-                ? `Past access target by ${splitDuration(waitMinutes - accessTargetMinutes)}`
-                : `Within access target (${splitDuration(accessTargetMinutes - waitMinutes)} left)`}
+                ? `Past access target by ${splitDuration(waitMinutes - edAccessTargetMinutes)}`
+                : `Within access target (${splitDuration(edAccessTargetMinutes - waitMinutes)} left)`}
             </strong>
           </div>
         </div>
