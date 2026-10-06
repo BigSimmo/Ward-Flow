@@ -1314,7 +1314,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             >
               Start a new capacity observation from the current count
             </button>
-          )}
+          )}{" "}
           Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}. Writes to{" "}
           {unit.name} only &mdash; never any other ward.
         </p>
