@@ -488,30 +488,36 @@ export function MovementDrawer({
       <div className={styles.drawerActionBar}>
         <div className={styles.actionGroupLeft}>
           {movement.flaggedUrgent ? (
-            <button
-              type="button"
-              className={styles.actionUrgentRemove}
-              data-testid="ward-movement-drawer-urgent-toggle"
-              onClick={() =>
-                dispatch({
-                  type: "CLEAR_MOVEMENT_URGENT_FLAG",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                })
-              }
-            >
-              <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>Remove the urgent flag</span>
-            </button>
+            <div className={styles.urgencyActiveGroup}>
+              <span className={styles.urgentActiveBadge}>
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>URGENT PRIORITY</span>
+              </span>
+              <button
+                type="button"
+                className={styles.actionUrgentRemove}
+                data-testid="ward-movement-drawer-urgent-toggle"
+                onClick={() =>
+                  dispatch({
+                    type: "CLEAR_MOVEMENT_URGENT_FLAG",
+                    role: "coordinator",
+                    now,
+                    movementId: movement.id,
+                  })
+                }
+              >
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>Remove the urgent flag</span>
+              </button>
+            </div>
           ) : open ? (
-            <div className={styles.drawerReasonRow} style={{ marginTop: 0 }}>
+            <div className={styles.urgencyCapsule}>
               <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
                 Why is this urgent?
               </label>
               <select
                 id="ward-movement-drawer-urgent-reason"
-                className={styles.drawerReasonSelect}
+                className={styles.urgencySelect}
                 data-testid="ward-movement-drawer-urgent-reason"
                 value={urgentFlagReason ?? ""}
                 onChange={(chosen) => {
@@ -550,7 +556,7 @@ export function MovementDrawer({
                       }
                 }
               >
-                <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>Flag this patient as urgent</span>
               </button>
               {urgentFlagReason === undefined ? (
@@ -566,14 +572,23 @@ export function MovementDrawer({
           <button
             type="button"
             className={styles.actionBtnSecondary}
-            title="Call ward desk"
+            title="Call ward desk (08 9431 3333)"
             onClick={() => {
               window.location.href = "tel:0894313333";
             }}
           >
-            <PhoneCall className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <PhoneCall className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>Call Ward Desk</span>
           </button>
+
+          <Link
+            href={`/mockups/ward-flow/movements/${movement.id}`}
+            className={styles.actionBtnSecondary}
+            title="Open movement in full workspace"
+          >
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Workspace</span>
+          </Link>
 
           {accepted ? (
             <Link
@@ -584,18 +599,24 @@ export function MovementDrawer({
               <span>Open {accepted.name}</span>
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </Link>
-          ) : null}
+          ) : (
+            <Link
+              href={`/mockups/ward-flow/movements/${movement.id}`}
+              className={styles.actionBtnPrimary}
+              title="Review potential destination wards in workspace"
+            >
+              <span>Review Wards</span>
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </Link>
+          )}
 
-          <Link
-            href={`/mockups/ward-flow/movements/${movement.id}`}
-            className={styles.actionBtnSecondary}
-            title="Open movement in full workspace"
+          <button
+            type="button"
+            className={styles.actionBtnGhost}
+            onClick={onClose}
+            aria-label="Dismiss drawer"
+            title="Close this drawer"
           >
-            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Workspace</span>
-          </Link>
-
-          <button type="button" className={styles.actionBtnSecondary} onClick={onClose}>
             Dismiss
           </button>
         </div>
@@ -612,39 +633,79 @@ export function MovementDrawer({
         </summary>
         <div className={styles.auditBody}>
           <Section title="Person">
-            <p className={styles.drawerLine}>{personLine(movement, referrals, patients)}</p>
-            <ul className={styles.drawerList}>
-              <li>Sex recorded as {movement.sex}</li>
-              <li>
-                {movement.cohort} · {movement.security === "Secure" ? "needs a locked bed" : "open ward"}
-              </li>
-              <li>Urgency {movement.urgency} of 3</li>
-              <li>Owned by {movement.owner}</li>
-            </ul>
+            <div className={styles.auditPatientCard}>
+              <div className={styles.auditPatientMain}>
+                <div className={styles.auditPatientName}>{subjectPatient.formalName}</div>
+                <div className={styles.auditPatientBadges}>
+                  {subjectPatient.umrn ? (
+                    <span className={styles.auditUmrnBadge}>UMRN: {subjectPatient.umrn}</span>
+                  ) : null}
+                  <span className={styles.auditBadge}>
+                    {movement.cohort} · {movement.sex}
+                  </span>
+                  <span className={movement.security === "Secure" ? styles.auditBadgeSecure : styles.auditBadge}>
+                    {movement.security === "Secure" ? "Needs locked bed" : "Open ward"}
+                  </span>
+                  {movement.legalForm ? (
+                    <span className={styles.auditBadgeLegal}>{legalFormName(movement.legalForm)}</span>
+                  ) : (
+                    <span className={styles.auditBadgeMuted}>Voluntary / Informal</span>
+                  )}
+                </div>
+              </div>
+              <div className={styles.auditMetaGrid}>
+                <div className={styles.auditMetaItem}>
+                  <span className={styles.auditMetaLabel}>Case Owner:</span>
+                  <span className={styles.auditMetaValue}>{movement.owner}</span>
+                </div>
+                <div className={styles.auditMetaItem}>
+                  <span className={styles.auditMetaLabel}>Urgency Priority:</span>
+                  <span className={styles.auditMetaValue}>Tier {movement.urgency} of 3</span>
+                </div>
+              </div>
+            </div>
+            <p className={styles.auditProvenanceLine}>
+              <strong>Statutory Record Link:</strong> {personLine(movement, referrals, patients)}
+            </p>
             <p className={styles.drawerAbsent}>
               Every person in this prototype is invented. Nobody named here is a real patient.
             </p>
           </Section>
 
           <Section title="Journey">
-            <p className={styles.drawerLine}>
-              {stageCopy[movement.stage].label} · opened {formatInstantWithDay(movement.openedAt, now)} · from{" "}
-              {departmentLabel(movement.originEdId, originEd?.name)}
-            </p>
+            <div className={styles.auditJourneySummary}>
+              <div className={styles.auditJourneyOrigin}>
+                <strong>Origin Department:</strong> {departmentLabel(movement.originEdId, originEd?.name)}
+              </div>
+              <div className={styles.auditJourneyOpened}>
+                <strong>Opened:</strong> {formatInstantWithDay(movement.openedAt, now)} ({totalWaitFormatted} waiting)
+              </div>
+            </div>
             {movement.stageChanges.length === 0 ? (
               <p className={styles.drawerAbsent}>
                 No stage change has been recorded, so this movement has not moved since it opened.
               </p>
             ) : (
-              <ul className={styles.drawerList}>
+              <div className={styles.auditTimeline}>
                 {movement.stageChanges.map((change) => (
-                  <li key={`${change.at} ${change.to}`}>
-                    {change.from === undefined ? "Opened" : stageCopy[change.from].label} → {stageCopy[change.to].label}{" "}
-                    · {formatInstantWithDay(change.at, now)} · {change.by}
-                    {change.reason === undefined ? "" : ` · ${change.reason}`}
-                  </li>
+                  <div key={`${change.at} ${change.to}`} className={styles.auditTimelineItem}>
+                    <div className={styles.auditTimelineDot} />
+                    <div className={styles.auditTimelineContent}>
+                      <div className={styles.auditTimelineHeading}>
+                        <span className={styles.auditStageChange}>
+                          {change.from === undefined ? "Opened" : stageCopy[change.from].label} →{" "}
+                          {stageCopy[change.to].label}
+                        </span>
+                        <span className={styles.auditTimelineTime}>{formatInstantWithDay(change.at, now)}</span>
+                      </div>
+                      <div className={styles.auditTimelineBy}>
+                        Recorded by {change.by}
+                        {change.reason === undefined ? "" : ` · Reason: ${change.reason}`}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </Section>
 
@@ -652,26 +713,49 @@ export function MovementDrawer({
             {movement.referredUnitIds.length === 0 ? (
               <p className={styles.drawerAbsent}>No ward has been asked yet.</p>
             ) : (
-              <ul className={styles.drawerList}>
+              <div className={styles.auditWardsList}>
                 {movement.referredUnitIds.map((unitId) => {
                   const unit = units.find((candidate) => candidate.id === unitId);
                   const decline = movement.declines.find((entry) => entry.unitId === unitId);
+                  const isAccepted = movement.acceptedUnitId === unitId;
                   return (
-                    <li key={unitId}>
-                      {wardLabel(unitId, unit?.name)}
-                      {movement.acceptedUnitId === unitId
-                        ? " · accepted"
-                        : decline
-                          ? ` · refused — ${decline.reason}`
-                          : " · no answer yet"}
-                    </li>
+                    <div
+                      key={unitId}
+                      className={`${styles.auditWardCard} ${
+                        isAccepted
+                          ? styles.auditWardAccepted
+                          : decline
+                            ? styles.auditWardDeclined
+                            : styles.auditWardPending
+                      }`}
+                    >
+                      <div className={styles.auditWardHeader}>
+                        <strong className={styles.auditWardName}>{wardLabel(unitId, unit?.name)}</strong>
+                        {isAccepted ? (
+                          <span className={styles.wardStatusTagAccepted}>Accepted</span>
+                        ) : decline ? (
+                          <span className={styles.wardStatusTagDeclined}>Refused</span>
+                        ) : (
+                          <span className={styles.wardStatusTagPending}>Awaiting response</span>
+                        )}
+                      </div>
+                      {decline ? (
+                        <div className={styles.auditWardReason}>Reason: {decline.reason}</div>
+                      ) : isAccepted ? (
+                        <div className={styles.auditWardAcceptedMeta}>
+                          Confirmed receiving inpatient unit. Bed allocation active.
+                        </div>
+                      ) : null}
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             )}
             {accepted === undefined ? null : (
-              <p className={styles.drawerLine}>
-                Accepted destination: {accepted.name}{" "}
+              <div className={styles.auditAcceptedBanner}>
+                <span>
+                  <strong>Accepted destination:</strong> {accepted.name}
+                </span>
                 <Link
                   href={`/mockups/ward-flow/board/${accepted.id}`}
                   className={styles.jumpToWardLink}
@@ -679,7 +763,7 @@ export function MovementDrawer({
                 >
                   Open on Ward Board →
                 </Link>
-              </p>
+              </div>
             )}
           </Section>
 
@@ -689,11 +773,18 @@ export function MovementDrawer({
                 Nothing has been escalated on this movement. That is a record, not a gap.
               </p>
             ) : (
-              <p className={styles.drawerLine}>
-                Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
-                {movement.escalation.triedUnitIds.length}{" "}
-                {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
-              </p>
+              <div className={styles.auditEscalationCard}>
+                <div className={styles.auditEscalationHeader}>
+                  <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <strong>Duty Bed Executive / Clinical Escalation Logged</strong>
+                </div>
+                <p className={styles.drawerLine}>
+                  Escalated to <strong>{movement.escalation.contact}</strong> on{" "}
+                  <strong>{formatInstantWithDay(movement.escalation.at, now)}</strong>, after{" "}
+                  {movement.escalation.triedUnitIds.length}{" "}
+                  {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
+                </p>
+              </div>
             )}
           </Section>
 
@@ -703,17 +794,43 @@ export function MovementDrawer({
                 No transport leg has been booked, so there is nothing to say about a vehicle.
               </p>
             ) : (
-              <p className={styles.drawerLine}>
-                {movement.transport.provider}
-                {movement.transport.escortRequired ? " · escort required" : ""}
-                {movement.transport.formRequired ? " · a form is required" : ""}
-                {movement.transport.acceptedAt === undefined
-                  ? ""
-                  : ` · accepted ${formatInstantWithDay(movement.transport.acceptedAt, now)}`}
-              </p>
+              <div className={styles.auditTransportCard}>
+                <div className={styles.auditTransportRow}>
+                  <span className={styles.telemetryLabel}>Carrier / Service:</span>
+                  <strong>{movement.transport.provider}</strong>
+                </div>
+                {movement.transport.cadNumber ? (
+                  <div className={styles.auditTransportRow}>
+                    <span className={styles.telemetryLabel}>Dispatch CAD #:</span>
+                    <strong className={styles.telemetryMono}>{movement.transport.cadNumber}</strong>
+                  </div>
+                ) : null}
+                <div className={styles.auditTransportRow}>
+                  <span className={styles.telemetryLabel}>Clinical Escort:</span>
+                  <strong className={movement.transport.escortRequired ? styles.textDanger : undefined}>
+                    {movement.transport.escortRequired
+                      ? "Escort required (Nurse + Security)"
+                      : "Standard transit crew (no escort)"}
+                  </strong>
+                </div>
+                {movement.transport.formRequired ? (
+                  <div className={styles.auditTransportRow}>
+                    <span className={styles.telemetryLabel}>Transport Statutory Form:</span>
+                    <strong>Required under MHA 2014</strong>
+                  </div>
+                ) : null}
+                {movement.transport.acceptedAt ? (
+                  <div className={styles.auditTransportRow}>
+                    <span className={styles.telemetryLabel}>Booking Accepted:</span>
+                    <span>{formatInstantWithDay(movement.transport.acceptedAt, now)}</span>
+                  </div>
+                ) : null}
+              </div>
             )}
             {movement.legalForm === undefined ? null : (
-              <p className={styles.drawerLine}>Legal authority: {legalFormName(movement.legalForm)}</p>
+              <p className={styles.drawerLine} style={{ marginTop: "0.5rem" }}>
+                Legal authority: <strong>{legalFormName(movement.legalForm)}</strong>
+              </p>
             )}
           </Section>
 
