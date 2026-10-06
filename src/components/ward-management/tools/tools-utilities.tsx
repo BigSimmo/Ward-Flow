@@ -19,18 +19,20 @@ export function ToolsUtilities() {
   return (
     <div className={styles.stack}>
       <p className={styles.note}>Look up a catchment, or review form dates somebody has already recorded.</p>
-      <section className={shell.toolsSection}>
-        <h3 className={shell.toolsHeading}>
-          Catchment resolver <span>WA Health</span>
-        </h3>
-        <WardCatchmentResolver />
-      </section>
-      <section className={shell.toolsSection}>
-        <h3 className={shell.toolsHeading}>
-          Form date review <span>Recorded times only</span>
-        </h3>
-        <WardMhaCalculator />
-      </section>
+      <div className={styles.utilityGrid}>
+        <section className={shell.toolsSection}>
+          <h3 className={shell.toolsHeading}>
+            Catchment resolver <span>WA Health</span>
+          </h3>
+          <WardCatchmentResolver />
+        </section>
+        <section className={shell.toolsSection}>
+          <h3 className={shell.toolsHeading}>
+            Form date review <span>Recorded times only</span>
+          </h3>
+          <WardMhaCalculator />
+        </section>
+      </div>
     </div>
   );
 }

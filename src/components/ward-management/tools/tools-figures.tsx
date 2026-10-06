@@ -39,17 +39,15 @@ function Meter({
   const width = beds <= 0 ? 0 : Math.min(100, Math.round((occupied / beds) * 100));
   return (
     <div className={styles.meter}>
+      <span className={styles.meterLabel}>{label}</span>
       <strong>{percent}</strong>
-      <div>
-        <span className={styles.meterLabel}>{label}</span>
-        <div className={styles.track} aria-hidden="true">
-          <span style={{ width: `${width}%` }} />
-        </div>
-        <p className={styles.meterNote}>
-          {occupied} of {beds} staffed · {pulled} pulled
-          {note ? ` · ${note}` : ""}
-        </p>
+      <div className={styles.track} aria-hidden="true">
+        <span style={{ width: `${width}%` }} />
       </div>
+      <p className={styles.meterNote}>
+        {occupied} of {beds} staffed · {pulled} pulled
+        {note ? ` · ${note}` : ""}
+      </p>
     </div>
   );
 }
@@ -126,28 +124,30 @@ export function ToolsFigures({
           </button>
         ))}
       </div>
-      {group === "beds" ? (
-        <div className={styles.meters}>
-          <Meter
-            label={model.networkContext && role !== "ed" ? "This ward" : "Occupied"}
-            occupied={model.occupancy.occupied}
-            beds={model.occupancy.beds}
-            percent={model.occupancy.percent}
-            pulled={model.occupancy.pulled}
-            note={model.notAllEligible ? "Not all eligible for this department" : undefined}
-          />
-          {model.networkOccupancy ? (
+      <div className={group === "beds" ? styles.bedsBento : undefined}>
+        {group === "beds" ? (
+          <div className={styles.meters}>
             <Meter
-              label="Whole network"
-              occupied={model.networkOccupancy.occupied}
-              beds={model.networkOccupancy.beds}
-              percent={model.networkOccupancy.percent}
-              pulled={model.networkOccupancy.pulled}
+              label={model.networkContext && role !== "ed" ? "This ward" : "Occupied"}
+              occupied={model.occupancy.occupied}
+              beds={model.occupancy.beds}
+              percent={model.occupancy.percent}
+              pulled={model.occupancy.pulled}
+              note={model.notAllEligible ? "Not all eligible for this department" : undefined}
             />
-          ) : null}
-        </div>
-      ) : null}
-      <Ledger rows={rows} label={groupLabel} />
+            {model.networkOccupancy ? (
+              <Meter
+                label="Whole network"
+                occupied={model.networkOccupancy.occupied}
+                beds={model.networkOccupancy.beds}
+                percent={model.networkOccupancy.percent}
+                pulled={model.networkOccupancy.pulled}
+              />
+            ) : null}
+          </div>
+        ) : null}
+        <Ledger rows={rows} label={groupLabel} />
+      </div>
       {group === "beds" && model.services.length > 0 ? (
         <div className={styles.services}>
           <p className={styles.sectionLabel}>By service</p>

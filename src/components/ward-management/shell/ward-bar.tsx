@@ -1480,13 +1480,13 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsTriggerRef}
         desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
-        headerClassName={styles.drawerHeader}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${styles.drawerSheetTools}`}
+        headerClassName={`${styles.drawerHeader} ${styles.drawerHeaderTools}`}
         titleClassName={styles.drawerTitle}
         closeButtonClassName={styles.drawerClose}
-        bodyClassName={styles.drawerBody}
+        bodyClassName={`${styles.drawerBody} ${styles.drawerBodyTools}`}
         footer={<p className={styles.drawerFoot}>Demo tools, not part of the clinical record.</p>}
-        footerClassName={styles.drawerFooter}
+        footerClassName={`${styles.drawerFooter} ${styles.drawerFooterTools}`}
       >
         <div className={styles.toolsNav} role="group" aria-label="Tools sections">
           {(

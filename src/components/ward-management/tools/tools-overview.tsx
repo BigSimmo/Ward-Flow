@@ -33,8 +33,8 @@ export function ToolsOverview({
     { id: "auto", label: "System", icon: Monitor },
   ];
   return (
-    <div className={styles.stack}>
-      <div className={styles.strip} aria-label="Live figures">
+    <div className={styles.bento}>
+      <div className={styles.metrics} aria-label="Live figures">
         <button type="button" className={styles.metric} onClick={() => onOpenFigures("beds")}>
           <span>Ready</span>
           <strong>{model.beds.find((row) => row.id === "ready")?.value ?? "—"}</strong>
@@ -54,7 +54,7 @@ export function ToolsOverview({
         </button>
       </div>
 
-      <section className={styles.module}>
+      <section className={styles.appearanceBar}>
         <h3 className={styles.moduleTitle}>Appearance</h3>
         <div className={styles.segment} role="group" aria-label="Appearance theme">
           {themes.map((theme) => {
@@ -74,35 +74,32 @@ export function ToolsOverview({
         </div>
       </section>
 
-      <section className={styles.module}>
-        <h3 className={styles.moduleTitle}>Quick actions</h3>
-        <div className={styles.actions}>
-          <Link href={handoverHref()} onClick={onNavigate}>
-            <FileText aria-hidden="true" />
-            <span>
-              Handover sheet<small>Review and print the current handover</small>
-            </span>
-            <ChevronRight aria-hidden="true" />
-          </Link>
-          <button type="button" onClick={onRaiseReferral}>
-            <Plus aria-hidden="true" />
-            <span>
-              Raise a referral<small>Review details and choose a destination</small>
-            </span>
-            <ChevronRight aria-hidden="true" />
-          </button>
-          <Link href={settingsHref()} onClick={onNavigate}>
-            <Settings aria-hidden="true" />
-            <span>
-              Settings<small>Configuration and preferences</small>
-            </span>
-            <ChevronRight aria-hidden="true" />
-          </Link>
-        </div>
-        <a href={digestHref()} className={styles.quiet}>
-          Ward Flow Digest
-        </a>
-      </section>
+      <div className={styles.actions} aria-label="Quick actions">
+        <Link href={handoverHref()} onClick={onNavigate}>
+          <FileText aria-hidden="true" />
+          <span>
+            Handover sheet<small>Review and print the current handover</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </Link>
+        <button type="button" onClick={onRaiseReferral}>
+          <Plus aria-hidden="true" />
+          <span>
+            Raise a referral<small>Review details and choose a destination</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </button>
+        <Link href={settingsHref()} onClick={onNavigate}>
+          <Settings aria-hidden="true" />
+          <span>
+            Settings<small>Configuration and preferences</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </Link>
+      </div>
+      <a href={digestHref()} className={styles.quiet}>
+        Ward Flow Digest
+      </a>
     </div>
   );
 }
