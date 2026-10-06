@@ -44,8 +44,8 @@
  * it.** That holds against every screen's furniture because it never negotiates with any of it.
  */
 .tallyDepartments {
-  width: calc(100% + 1.75rem);
-  margin: 0.75rem -0.875rem 0;
+  width: 100%;
+  margin: 0;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--t-1);
@@ -53,7 +53,7 @@
 }
 
 .tallyDepartments caption {
-  padding: 0.5rem 0.875rem 0.375rem;
+  padding: 0.75rem 0.875rem 0.375rem;
   text-align: left;
   color: var(--ink);
   font-weight: 600;
@@ -61,9 +61,10 @@
 
 .tallyDepartments th,
 .tallyDepartments td {
-  border-bottom: 1px solid var(--line);
-  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  padding: 0.5rem 0.625rem;
   text-align: right;
+  background: transparent;
 }
 
 .tallyDepartments th:first-child,
@@ -78,7 +79,7 @@
 }
 
 .tallyDepartments thead th {
-  background: var(--surface-2);
+  background: transparent;
   color: var(--muted);
   font-size: var(--t-0);
   font-weight: 600;
@@ -3220,52 +3221,18 @@
   width: 100%;
 }
 
-/* Activity drawer: flat tabs, compact tally, icon rows. */
+/* Activity drawer: pill toggle, glass cards, room to read. */
 .activitySegments {
-  margin: 0 0.875rem;
-  padding: 0;
-  gap: 0.25rem;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.activitySegments button {
-  min-height: var(--spacing-tap, 3rem);
-  height: auto;
-  padding: 0 0.25rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  font-weight: 500;
-  box-shadow: none;
-}
-.activitySegments button[aria-pressed="true"] {
-  background: transparent;
-  color: var(--ink);
-  font-weight: 650;
-  border-bottom-color: var(--ink);
-  box-shadow: none;
-}
-.activitySegments button span,
-.activitySegments button[aria-pressed="true"] span {
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  font-weight: 600;
+  margin: 0.75rem 1rem 0.25rem;
 }
 .activityToolbar {
-  padding: 0.5rem 0.875rem 0;
+  padding: 0.75rem 1rem 0;
 }
 .activityMeta {
   display: flex;
   align-items: baseline;
-  gap: 0.375rem;
-  margin: 0 0 0.125rem;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
   color: var(--muted);
   font-size: var(--t-0);
 }
@@ -3274,29 +3241,9 @@
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
-.filterChipsTrack {
-  padding: 0;
-  gap: 0.125rem;
-}
-.filterChip {
-  min-height: var(--spacing-tap, 3rem);
-  padding-inline: 0.5rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-}
-.filterChip[aria-pressed="true"],
-.filterChip[aria-pressed="true"]:hover {
-  background: transparent;
-  color: var(--ink);
-  border-color: transparent;
-  border-bottom-color: var(--ink);
-  font-weight: 650;
-}
 .activitySection {
-  gap: 0.5rem;
-  padding: 0.625rem 0.875rem 0.75rem;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem 1.125rem;
 }
 .tallyIntro {
   display: flex;
@@ -3319,8 +3266,6 @@
   letter-spacing: -0.02em;
   text-transform: none;
 }
-.tallyPurpose,
-.tallySituation,
 .activityNote {
   margin: 0;
   color: var(--muted);
@@ -3329,72 +3274,88 @@
 }
 .activityTiles {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.375rem;
+  gap: 0.5rem;
 }
 .activityTile {
-  gap: 0;
-  padding: 0.25rem 0.375rem 0.25rem 0.5rem;
+  gap: 0.125rem;
+  padding: 0.625rem 0.625rem 0.5rem;
   border: 0;
-  border-left: 2px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow:
+    0 10px 28px color-mix(in srgb, var(--ink) 6%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(14px);
 }
 .activityTile small {
-  line-height: 1.2;
+  line-height: 1.25;
 }
 .activityTile b {
-  font-size: var(--t-2);
+  font-size: var(--t-3);
 }
-.activityTile[data-tone="good"] {
-  border-color: transparent;
-  border-left-color: var(--good);
-}
-.activityTile[data-tone="warning"] {
-  border-color: transparent;
-  border-left-color: var(--warn);
-}
+.activityTile[data-tone="good"],
+.activityTile[data-tone="warning"],
 .activityTile[data-tone="danger"] {
-  border-color: transparent;
-  border-left-color: var(--danger);
+  border: 0;
+}
+.activityTile[data-tone="good"] b {
+  color: var(--good);
+}
+.activityTile[data-tone="warning"] b {
+  color: var(--warn);
+}
+.activityTile[data-tone="danger"] b {
+  color: var(--danger);
+}
+.tallyPanel {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  box-shadow:
+    0 12px 32px color-mix(in srgb, var(--ink) 7%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(16px);
 }
 .activityHead {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.375rem;
 }
 .activityFeed {
-  gap: 0;
+  gap: 0.5rem;
 }
 .activityFeed li,
 .activityFeed li[data-tone="warning"],
 .activityFeed li[data-tone="danger"] {
   display: grid;
   align-items: start;
-  grid-template-columns: max-content 1.5rem minmax(0, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: max-content 1.75rem minmax(0, 1fr);
+  gap: 0.625rem;
   margin: 0;
-  padding: 0.375rem 0;
+  padding: 0.625rem 0.75rem;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  box-shadow:
+    0 8px 22px color-mix(in srgb, var(--ink) 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(12px);
 }
 .kindMark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.375rem;
-  height: 1.375rem;
+  width: 1.625rem;
+  height: 1.625rem;
   margin-top: 0.0625rem;
   border: 1.5px solid var(--line-strong);
   border-radius: 50%;
-  background: transparent;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   color: var(--ink-soft);
   justify-self: center;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--ink) 5%, transparent);
 }
 .kindMark svg {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.8125rem;
+  height: 0.8125rem;
 }
 .kindMark[data-tone="warning"] {
   border-color: var(--warn);
@@ -3405,10 +3366,10 @@
   color: var(--danger);
 }
 .feedContent {
-  gap: 0.125rem;
+  gap: 0.25rem;
 }
 .feedText {
-  line-height: 1.35;
+  line-height: 1.4;
 }
 .feedSubject {
   display: flex;

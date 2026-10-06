@@ -98,7 +98,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(tally).not.toBeNull();
     expect(tally).toHaveTextContent("Where to look first");
     expect(tally).toHaveTextContent("Movements");
-    expect(tally).toHaveTextContent("This is the network as it stands now.");
+    expect(tally).not.toHaveTextContent("Longest wait is");
     expect(within(sheet).getByRole("table", { name: "Emergency departments, worst first" })).toBeInTheDocument();
     expect(within(sheet).getByText("Open movements")).toBeInTheDocument();
     expect(within(sheet).getByText("Beds ready")).toBeInTheDocument();

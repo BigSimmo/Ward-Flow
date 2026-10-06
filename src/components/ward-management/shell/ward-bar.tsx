@@ -40,7 +40,6 @@ import { standingFigures, WardStatsDrawerContent } from "@/components/ward-manag
 import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import type { EdPressure } from "@/components/ward-management/ward-pressure";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
@@ -253,26 +252,6 @@ function activityChangeIcon(change: Pick<WardActivityChange, "kind" | "category"
   const category = activityChangeCategory(change);
   if (category !== "other") return ACTIVITY_KIND_ICONS[category];
   return FileText;
-}
-
-/** Where the pressure is, from the emergency-department rows the tally already holds. */
-function networkSituation(departments: readonly EdPressure[]): string {
-  const waiting = departments.filter((row) => row.waiting > 0);
-  const duePassed = departments.reduce((sum, row) => sum + row.breaching, 0);
-  const longest = waiting.reduce<EdPressure | undefined>(
-    (best, row) => (!best || row.longestWaitMinutes > best.longestWaitMinutes ? row : best),
-    undefined,
-  );
-  const waitSentence = longest
-    ? `Longest wait is ${splitDuration(longest.longestWaitMinutes)} at ${longest.ed.siteCode}. ${waiting.length === 1 ? "1 department has" : `${waiting.length} departments have`} someone waiting.`
-    : "No one is waiting in an emergency department.";
-  const dueSentence =
-    duePassed === 0
-      ? "No recorded due time has passed."
-      : duePassed === 1
-        ? "1 recorded due time has passed."
-        : `${duePassed} recorded due times have passed.`;
-  return `${waitSentence} ${dueSentence}`;
 }
 
 const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
@@ -1451,7 +1430,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               <div className={styles.tallyIntro}>
                 <p className={styles.tallyScreen}>{shownActivity.pageTitle}</p>
                 <p className={styles.activityTitle}>Where to look first</p>
-                <p className={styles.tallyPurpose}>This is the network as it stands now. History is on Activity.</p>
               </div>
               {shownActivity.tiles.length > 0 ? (
                 <div className={styles.activityTiles}>
@@ -1464,8 +1442,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 </div>
               ) : null}
               {usesDerivedActivity ? (
-                <>
-                  <p className={styles.tallySituation}>{networkSituation(commandActivity.departments)}</p>
+                <div className={styles.tallyPanel}>
                   <table className={styles.tallyDepartments}>
                     <caption>Emergency departments, worst first</caption>
                     <thead>
@@ -1495,7 +1472,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                       ))}
                     </tbody>
                   </table>
-                </>
+                </div>
               ) : null}
             </>
           ) : (
