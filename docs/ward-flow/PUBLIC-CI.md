@@ -48,6 +48,9 @@ Details that keep the split sound:
   (`WARD_GATE_BUILD=1`); the deployed build still runs it.
 - **Build cache.** Browser jobs restore Next's working cache from the last run on the same PR. Next
   validates every entry against the source, so a warm cache changes speed, not what is built.
+- **Browser cache.** Browser jobs restore the Playwright Chromium download (`~/.cache/ms-playwright`),
+  keyed by the installed Playwright version, and still install the system libraries every run. Only
+  runs on `main` save it, so pull requests reuse main's copy without adding their own.
 - **Contracts.** `scripts/ward-ci-public/check-contracts.mjs` fails if the required job stops needing
   any of the three, if a shard or group matrix does not match its count, or if the browser builds skip
   their type check without the static job's route-type check.
@@ -78,6 +81,10 @@ about ten seconds:
   without an approved entry in `diff-integrity.json`.
 
 Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
+
+The static job also runs whole-tree ESLint (errors only) on every run, pull requests included, so an
+ESLint config, rule or plugin change that breaks a file the PR did not touch fails on the PR instead
+of first on `main`.
 
 ## Scope by change
 
