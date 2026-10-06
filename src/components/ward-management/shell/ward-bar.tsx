@@ -1601,6 +1601,17 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Quick actions</h3>
+            <Link
+              href="/mockups/ward-flow/tools-preview"
+              className={styles.toolItem}
+              onClick={() => closePopover("tools", false)}
+            >
+              <Wrench aria-hidden="true" />
+              <span>
+                Preview redesigned tools<em>Explore the interactive design proposal</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </Link>
             <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
               <FileText aria-hidden="true" />
               <span>

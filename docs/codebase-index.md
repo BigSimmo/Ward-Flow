@@ -605,6 +605,8 @@ sequenceDiagram
 
 ### Ward Flow (`src/app/mockups/ward-flow/`, `src/components/ward-management/`)
 
+- **Tools design preview:** `/mockups/ward-flow/tools-preview`, linked from Tools quick actions. `tools/tools-preview.tsx` and its CSS Module provide the interactive five-section proposal, using shared synthetic state, existing catchment/form tools and published community reference contacts. This is a mockup awaiting owner review, not a replacement for the current drawer.
+
 Synthetic prototype for WA metro psychiatry patient flow: getting a patient from an emergency
 department to an inpatient psychiatric bed. Offline and fixture-backed — no provider calls, no
 persistence, no patient-identifiable data. Advisory only: the system proposes destinations with
