@@ -64,8 +64,13 @@ function findRecordRow(container: HTMLElement, id: string): HTMLElement {
   return rows[0];
 }
 
+function openShapeOfTheDay(): HTMLElement {
+  fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
+  return screen.getByRole("region", { name: "Shape of the day" });
+}
+
 function openTransportSummary(): HTMLElement {
-  const summary = screen.getByRole("region", { name: /Shape of the day/u });
+  const summary = openShapeOfTheDay();
   fireEvent.click(
     within(within(summary).getByRole("group", { name: "Movement summary" })).getByRole("button", {
       name: /Transport/u,
@@ -355,7 +360,7 @@ describe("the Movements screen", () => {
 
   it("shows the open-stage summary count for every stage, stating zero in words rather than a bare 0", () => {
     renderScreen();
-    const panel = screen.getByRole("region", { name: /Shape of the day/u });
+    const panel = openShapeOfTheDay();
     const openStages = journeyStages(openMovements, NOW);
     for (const stage of openStages) {
       const item = within(panel).getByText(stage.label).closest("li");
