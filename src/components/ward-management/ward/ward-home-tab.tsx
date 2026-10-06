@@ -369,37 +369,36 @@ export function WardHomeTab({
         </div>
 
         <div className={styles.sideColumn}>
-          <div className={styles.sideSwitch} role="tablist" aria-label="Shift log or awaiting answer">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={sidePane === "log"}
-              className={styles.sideSwitchBtn}
-              onClick={() => setSidePane("log")}
-            >
-              Shift log
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={sidePane === "awaiting"}
-              className={styles.sideSwitchBtn}
-              onClick={() => setSidePane("awaiting")}
-            >
-              Awaiting your answer
-              <span className={styles.sideCount}>{incoming.length}</span>
-            </button>
-          </div>
-          <div className={styles.logCard} data-active={sidePane === "log" ? "true" : "false"}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Shift log</span>
+          <div className={styles.logCard}>
+            <div className={`${styles.cardHead} ${styles.sideHead}`}>
+              <div className={styles.sideSwitch} role="tablist" aria-label="Shift log or awaiting answer">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidePane === "log"}
+                  className={styles.sideSwitchBtn}
+                  onClick={() => setSidePane("log")}
+                >
+                  Shift log
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidePane === "awaiting"}
+                  className={styles.sideSwitchBtn}
+                  onClick={() => setSidePane("awaiting")}
+                >
+                  Awaiting your answer
+                  <span className={styles.sideCount}>{incoming.length}</span>
+                </button>
               </div>
-              <span className={styles.statusWord} data-tone="good">
-                Active
-              </span>
+              {sidePane === "log" ? (
+                <span className={styles.statusWord} data-tone="good">
+                  Active
+                </span>
+              ) : null}
             </div>
-            <div className={styles.logBody}>
+            <div className={styles.logBody} data-active={sidePane === "log" ? "true" : "false"}>
               {logRows.length === 0 ? (
                 <p className={styles.timelineEmpty}>No shift activity recorded yet.</p>
               ) : (
@@ -428,169 +427,170 @@ export function WardHomeTab({
                 </ol>
               )}
             </div>
-          </div>
 
-          <section
-            id="ward-awaiting-answer"
-            aria-label="Awaiting your answer"
-            className={`${styles.card} ${styles.awaitingCard}`}
-            data-active={sidePane === "awaiting" ? "true" : "false"}
-            tabIndex={0}
-          >
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <h2 className={styles.awaitingHeading}>
-                  {presentation === "answer" ? "Bed request" : "Awaiting your answer"}
-                </h2>
-              </div>
-              <span className={styles.statusWord}>{incoming.length} waiting</span>
-            </div>
-            <div className={styles.cardBody}>
-              {incoming.length === 0 ? (
-                <p className={styles.placeholder}>No referral is currently awaiting an answer from {unit.name}.</p>
-              ) : (
-                <ul className={styles.awaitingList}>
-                  {visibleIncoming.map((movement) => {
-                    const blocked = referralAnswerBlocked(movement, unit);
-                    const notice = restrictionNotice(movement, unit);
-                    const eligibilityIssue = eligibilityWarning(movement, unit, now);
-                    const declineOpen = declineOpenFor === movement.id;
+            <section
+              id="ward-awaiting-answer"
+              aria-label="Awaiting your answer"
+              className={styles.awaitingCard}
+              data-active={sidePane === "awaiting" ? "true" : "false"}
+              tabIndex={0}
+            >
+              <h2 className={styles.awaitingHeading}>
+                {presentation === "answer" ? "Bed request" : "Awaiting your answer"}
+              </h2>
+              <div className={styles.cardBody}>
+                {incoming.length === 0 ? (
+                  <p className={styles.placeholder}>No referral is currently awaiting an answer from {unit.name}.</p>
+                ) : (
+                  <ul className={styles.awaitingList}>
+                    {visibleIncoming.map((movement) => {
+                      const blocked = referralAnswerBlocked(movement, unit);
+                      const notice = restrictionNotice(movement, unit);
+                      const eligibilityIssue = eligibilityWarning(movement, unit, now);
+                      const declineOpen = declineOpenFor === movement.id;
 
-                    return (
-                      <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
-                        <div className={styles.awaitingIdentity}>
-                          <span className={styles.awaitingName}>Incoming patient</span>
-                          <span className={styles.awaitingMeta}>
-                            {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                            {movement.legalStatus}
-                          </span>
-                        </div>
+                      return (
+                        <li
+                          key={movement.id}
+                          className={styles.awaitingRow}
+                          data-testid={`ward-incoming-${movement.id}`}
+                        >
+                          <div className={styles.awaitingIdentity}>
+                            <span className={styles.awaitingName}>Incoming patient</span>
+                            <span className={styles.awaitingMeta}>
+                              {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
+                              {movement.legalStatus}
+                            </span>
+                          </div>
 
-                        {notice ? (
-                          <span
-                            className={notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice}
-                            data-testid={`ward-restriction-notice-${movement.id}`}
-                            data-level={notice.level}
-                            style={{ display: "inline-block", margin: "4px 0" }}
-                          >
-                            {notice.text}
-                          </span>
-                        ) : null}
+                          {notice ? (
+                            <span
+                              className={
+                                notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice
+                              }
+                              data-testid={`ward-restriction-notice-${movement.id}`}
+                              data-level={notice.level}
+                              style={{ display: "inline-block", margin: "4px 0" }}
+                            >
+                              {notice.text}
+                            </span>
+                          ) : null}
 
-                        {eligibilityIssue ? (
-                          <span
-                            className={styles.noticeProminent}
-                            data-testid={`ward-eligibility-warning-${movement.id}`}
-                            data-level={eligibilityIssue.level}
-                            style={{ display: "inline-block", margin: "4px 0" }}
-                          >
-                            {eligibilityIssue.text}
-                          </span>
-                        ) : null}
+                          {eligibilityIssue ? (
+                            <span
+                              className={styles.noticeProminent}
+                              data-testid={`ward-eligibility-warning-${movement.id}`}
+                              data-level={eligibilityIssue.level}
+                              style={{ display: "inline-block", margin: "4px 0" }}
+                            >
+                              {eligibilityIssue.text}
+                            </span>
+                          ) : null}
 
-                        <div className={styles.awaitingActions}>
-                          <button
-                            type="button"
-                            data-testid={`ward-accept-${movement.id}`}
-                            aria-disabled={blocked ? "true" : undefined}
-                            aria-describedby={blocked ? `ward-accept-unavailable-${movement.id}` : undefined}
-                            title={blocked ?? undefined}
-                            className={`${styles.btnAlertAct} ${styles.btnAccept}`}
-                            onClick={
-                              blocked
-                                ? ignoreUnavailableActivation
-                                : () => {
-                                    if (onAcceptInPrinciple) {
-                                      onAcceptInPrinciple(movement.id, unit.id);
-                                    } else {
-                                      priorRejectionCountRef.current = rejections.length;
-                                      setCheckToken((token) => token + 1);
+                          <div className={styles.awaitingActions}>
+                            <button
+                              type="button"
+                              data-testid={`ward-accept-${movement.id}`}
+                              aria-disabled={blocked ? "true" : undefined}
+                              aria-describedby={blocked ? `ward-accept-unavailable-${movement.id}` : undefined}
+                              title={blocked ?? undefined}
+                              className={`${styles.btnAlertAct} ${styles.btnAccept}`}
+                              onClick={
+                                blocked
+                                  ? ignoreUnavailableActivation
+                                  : () => {
+                                      if (onAcceptInPrinciple) {
+                                        onAcceptInPrinciple(movement.id, unit.id);
+                                      } else {
+                                        priorRejectionCountRef.current = rejections.length;
+                                        setCheckToken((token) => token + 1);
+                                      }
                                     }
-                                  }
-                            }
-                          >
-                            Accept in principle
-                          </button>
-                          <button
-                            type="button"
-                            data-testid={`ward-decline-toggle-${movement.id}`}
-                            aria-disabled={blocked ? "true" : undefined}
-                            aria-describedby={blocked ? `ward-decline-unavailable-${movement.id}` : undefined}
-                            title={blocked ?? undefined}
-                            aria-expanded={declineOpen}
-                            className={styles.btnAlertAct}
-                            onClick={blocked ? ignoreUnavailableActivation : () => toggleDecline(movement.id)}
-                          >
-                            Decline
-                          </button>
-                        </div>
-
-                        {blocked ? (
-                          <>
-                            <span id={`ward-accept-unavailable-${movement.id}`} className="sr-only">
-                              {blocked}
-                            </span>
-                            <span id={`ward-decline-unavailable-${movement.id}`} className="sr-only">
-                              {blocked}
-                            </span>
-                          </>
-                        ) : null}
-
-                        {lastActionRejection?.movementId === movement.id ? (
-                          <p
-                            className={styles.noticeProminent}
-                            role="alert"
-                            data-testid={`ward-action-rejection-${movement.id}`}
-                            style={{ marginTop: "6px" }}
-                          >
-                            {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ??
-                              lastActionRejection.attempted}{" "}
-                            not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
-                          </p>
-                        ) : null}
-
-                        {overrideReasonForm(movement.id)}
-
-                        {declineOpen && !blocked ? (
-                          <form
-                            onSubmit={(event) => submitDecline(event, movement.id)}
-                            data-testid={`ward-decline-form-${movement.id}`}
-                            style={{
-                              marginTop: "10px",
-                              padding: "10px",
-                              background: "var(--surface)",
-                              borderRadius: "var(--r1)",
-                            }}
-                          >
-                            <fieldset style={{ border: "none", padding: 0, margin: "0 0 8px 0" }}>
-                              <legend style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
-                                Decline reason for this patient
-                              </legend>
-                              {DECLINE_REASONS.map((reason) => (
-                                <label key={reason} style={{ display: "block", fontSize: "12px", margin: "4px 0" }}>
-                                  <input
-                                    type="radio"
-                                    name={`decline-reason-${movement.id}`}
-                                    value={reason}
-                                    checked={declineReason === reason}
-                                    onChange={() => setDeclineReason(reason)}
-                                  />{" "}
-                                  {reason.replace(/_/g, " ")}
-                                </label>
-                              ))}
-                            </fieldset>
-                            <button type="submit" disabled={!declineReason} className={styles.btnAlertAct}>
-                              Confirm decline
+                              }
+                            >
+                              Accept in principle
                             </button>
-                          </form>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </section>
+                            <button
+                              type="button"
+                              data-testid={`ward-decline-toggle-${movement.id}`}
+                              aria-disabled={blocked ? "true" : undefined}
+                              aria-describedby={blocked ? `ward-decline-unavailable-${movement.id}` : undefined}
+                              title={blocked ?? undefined}
+                              aria-expanded={declineOpen}
+                              className={styles.btnAlertAct}
+                              onClick={blocked ? ignoreUnavailableActivation : () => toggleDecline(movement.id)}
+                            >
+                              Decline
+                            </button>
+                          </div>
+
+                          {blocked ? (
+                            <>
+                              <span id={`ward-accept-unavailable-${movement.id}`} className="sr-only">
+                                {blocked}
+                              </span>
+                              <span id={`ward-decline-unavailable-${movement.id}`} className="sr-only">
+                                {blocked}
+                              </span>
+                            </>
+                          ) : null}
+
+                          {lastActionRejection?.movementId === movement.id ? (
+                            <p
+                              className={styles.noticeProminent}
+                              role="alert"
+                              data-testid={`ward-action-rejection-${movement.id}`}
+                              style={{ marginTop: "6px" }}
+                            >
+                              {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ??
+                                lastActionRejection.attempted}{" "}
+                              not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
+                            </p>
+                          ) : null}
+
+                          {overrideReasonForm(movement.id)}
+
+                          {declineOpen && !blocked ? (
+                            <form
+                              onSubmit={(event) => submitDecline(event, movement.id)}
+                              data-testid={`ward-decline-form-${movement.id}`}
+                              style={{
+                                marginTop: "10px",
+                                padding: "10px",
+                                background: "var(--surface)",
+                                borderRadius: "var(--r1)",
+                              }}
+                            >
+                              <fieldset style={{ border: "none", padding: 0, margin: "0 0 8px 0" }}>
+                                <legend style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
+                                  Decline reason for this patient
+                                </legend>
+                                {DECLINE_REASONS.map((reason) => (
+                                  <label key={reason} style={{ display: "block", fontSize: "12px", margin: "4px 0" }}>
+                                    <input
+                                      type="radio"
+                                      name={`decline-reason-${movement.id}`}
+                                      value={reason}
+                                      checked={declineReason === reason}
+                                      onChange={() => setDeclineReason(reason)}
+                                    />{" "}
+                                    {reason.replace(/_/g, " ")}
+                                  </label>
+                                ))}
+                              </fieldset>
+                              <button type="submit" disabled={!declineReason} className={styles.btnAlertAct}>
+                                Confirm decline
+                              </button>
+                            </form>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 
