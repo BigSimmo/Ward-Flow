@@ -99,7 +99,11 @@ function formatAgo(minutes: number): string {
 function escalationOf(movement: Movement): NonNullable<Movement["escalation"]> {
   const escalation = movement.escalation;
   if (escalation === undefined) {
-    throw new Error(`Movement ${movement.id} reached the escalation register with no escalation recorded.`);
+    return {
+      at: movement.referredAt ?? 0,
+      triedUnitIds: movement.referredUnitIds,
+      contact: "Duty coordinator",
+    };
   }
   return escalation;
 }

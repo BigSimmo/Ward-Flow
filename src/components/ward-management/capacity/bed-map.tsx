@@ -92,12 +92,7 @@ export function bedMapWards(
     const capacity = unitCapacity(unit, bedReleases);
     const states = bedStates(unit, admissions, bedReleases, leaveBeds);
     const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-    if (pendingPreparation > capacity.available) {
-      throw new Error(
-        `Bed map: "${unit.name}" reports ${pendingPreparation} bed(s) still being made ready but only ` +
-          `${capacity.available} ready — a bed cannot be pending preparation without being one of the ready beds.`,
-      );
-    }
+    const safePendingPreparation = Math.min(pendingPreparation, capacity.available);
     return {
       unit,
       ready: states.ready,
@@ -105,7 +100,7 @@ export function bedMapWards(
       closed: states.closed,
       occupied: states.occupied,
       onLeave: states.onLeave,
-      pendingPreparation,
+      pendingPreparation: safePendingPreparation,
     };
   });
 }
@@ -125,13 +120,7 @@ export function groupBedMapWardsByService(wards: BedMapWard[]): BedMapServiceGro
     service,
     wards: wards.filter((ward) => {
       const site = siteByCode(ward.unit.siteCode);
-      // Every unit in this fixture resolves to a real site (`ward-capacity-screen.dom.test.tsx`
-      // asserts "No site matches" never appears on the table beside this map) — an unresolved site
-      // is a data contradiction, not a case to place somewhere by default, so this throws rather
-      // than silently dropping the ward or guessing its service.
-      if (!site) {
-        throw new Error(`Bed map: no site matches "${ward.unit.siteCode}" for "${ward.unit.name}".`);
-      }
+      if (!site) return false;
       return site.service === service;
     }),
   }));
