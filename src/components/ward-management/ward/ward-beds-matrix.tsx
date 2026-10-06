@@ -42,6 +42,21 @@ export interface BedItem {
   age?: number | null;
   sex?: string | null;
   homeRegion?: string | null;
+  /** How this person wants to be addressed, when that differs from the record name. */
+  preferredName?: string;
+  /** Gender recorded for bed placement. Never filled in from sex. */
+  gender?: string;
+  suburb?: string;
+  generalPractitioner?: string;
+  catchmentCommunityTeam?: string;
+  highAcuity?: boolean;
+  dischargeDateMoves?: number | null;
+  /** True only when the ward has confirmed the discharge. Absent means not this person's bed. */
+  dischargeConfirmed?: boolean | null;
+  dischargeConfirmedBy?: string | null;
+  /** The ward's own expected leaving time, already worded for this moment. */
+  expectedDischargeLabel?: string | null;
+  dischargeBarrier?: string | null;
   [key: string]: unknown;
 }
 
@@ -66,8 +81,32 @@ function formatBedAriaLabel(bed: BedItem): string {
     parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
+  if (bed.tentativeDiagnosis) parts.push(`Tentative diagnosis: ${bed.tentativeDiagnosis}`);
+  const expectedLeave = expectedLeaveLine(bed);
+  if (expectedLeave) parts.push(expectedLeave);
   return parts.join(". ").trim();
 }
+
+function expectedLeaveLine(bed: BedItem): string | null {
+  if (bed.status === "ready" || bed.patientAlias == null) return null;
+  if (bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays < 0)) {
+    return "Past the ward's own date";
+  }
+  if (typeof bed.expectedDays !== "number") return null;
+  if (bed.expectedDays === 0) return "Expected out today";
+  if (bed.expectedDays === 1) return "Expected out in 1 day";
+  return `Expected out in ${bed.expectedDays} days`;
+}
+
+function personMetaLine(bed: BedItem): string | null {
+  const parts: string[] = [];
+  if (typeof bed.age === "number") parts.push(`${bed.age}yo`);
+  if (bed.sex) parts.push(bed.sex);
+  if (bed.homeRegion) parts.push(bed.homeRegion);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 
 export function WardBedsMatrix({
   unit,
@@ -80,7 +119,7 @@ export function WardBedsMatrix({
 }: WardBedsMatrixProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "needs-look" | "ready" | "nobody-due">("all");
   const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
-  const [quietShiftPreview, setQuietShiftPreview] = useState(false);
+  const [shiftGroup, setShiftGroup] = useState<ShiftGroup>("all");
 
   // Optional: matrix chrome still renders in isolated tests without a provider.
   const bedReleasesList = useContext(WardFlowContext)?.bedReleases ?? [];
@@ -171,6 +210,7 @@ export function WardBedsMatrix({
     return [
       {
         key: "shift-1",
+        group: "due-out" as const,
         bedNumber: 5,
         title: "Expected discharge",
         badge: "4d overdue",
@@ -185,6 +225,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-2",
+        group: "due-out" as const,
         bedNumber: 9,
         title: "Confirmed discharge",
         badge: "3d overdue",
@@ -199,6 +240,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-3",
+        group: "due-out" as const,
         bedNumber: 15,
         title: "Expected discharge",
         badge: "3d overdue",
@@ -213,6 +255,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-4",
+        group: "off-ward" as const,
         bedNumber: 6,
         title: "Away at an ED",
         badge: "Away at ED",
@@ -224,6 +267,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-5",
+        group: "off-ward" as const,
         bedNumber: 7,
         title: "Away at an ED",
         badge: "Still at ED",
@@ -235,6 +279,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-6",
+        group: "in-transit" as const,
         bedNumber: 3,
         title: "Pulled bed",
         badge: "In transit",
@@ -246,6 +291,7 @@ export function WardBedsMatrix({
       },
       {
         key: "shift-7",
+        group: "in-transit" as const,
         bedNumber: 18,
         title: "Pulled bed",
         badge: "In transit",
@@ -258,11 +304,13 @@ export function WardBedsMatrix({
     ];
   }, []);
 
+  const dueOutCount = shiftItems.filter((item) => item.group === "due-out").length;
+  const offWardCount = shiftItems.filter((item) => item.group === "off-ward").length;
+  const inTransitCount = shiftItems.filter((item) => item.group === "in-transit").length;
+  const visibleShiftItems = shiftGroup === "all" ? shiftItems : shiftItems.filter((item) => item.group === shiftGroup);
+
   return (
     <div className={styles.matrixWrap}>
-      {/* ─────────────────────────────────────────────────────────────
-         COMPACT "NEEDS YOU THIS SHIFT" STRIP (IMAGE 4 COMPACTED)
-         ───────────────────────────────────────────────────────────── */}
       <section className={styles.shiftBanner} aria-label="Shift actions and alerts">
         <div className={styles.shiftBannerHead}>
           <div className={styles.shiftTitleGroup}>
@@ -271,43 +319,43 @@ export function WardBedsMatrix({
                 <circle cx="8" cy="8" r="6" />
                 <path d="M8 4.5v3.5l2.5 1.5" />
               </svg>
-              NEEDS YOU THIS SHIFT
+              Needs you this shift
             </span>
             <span className={styles.shiftSubtitle}>
-              {quietShiftPreview
-                ? "0 actions pending"
-                : `${shiftItems.length} clinical and bed flow actions required before handover at 15:30`}
+              {visibleShiftItems.length} of {shiftItems.length} before handover at 15:30
             </span>
           </div>
 
-          <div className={styles.shiftToggleGroup} role="group" aria-label="Shift action view mode">
-            <button
-              type="button"
-              className={`${styles.shiftToggleBtn} ${!quietShiftPreview ? styles.active : ""}`}
-              onClick={() => setQuietShiftPreview(false)}
-            >
-              This shift ({shiftItems.length})
-            </button>
-            <button
-              type="button"
-              className={`${styles.shiftToggleBtn} ${quietShiftPreview ? styles.active : ""}`}
-              onClick={() => setQuietShiftPreview(true)}
-            >
-              Preview: quiet shift
-            </button>
+          <div className={styles.segment} role="group" aria-label="Shift actions">
+            {(
+              [
+                ["all", "All", shiftItems.length],
+                ["due-out", "Due out", dueOutCount],
+                ["off-ward", "Off the ward", offWardCount],
+                ["in-transit", "In transit", inTransitCount],
+              ] as const
+            ).map(([id, label, count]) => (
+              <button
+                key={id}
+                type="button"
+                className={styles.segmentBtn}
+                aria-pressed={shiftGroup === id}
+                onClick={() => setShiftGroup(id)}
+              >
+                <span>{label}</span>
+                <span className={styles.segmentCount}>{count}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {quietShiftPreview ? (
+        {visibleShiftItems.length === 0 ? (
           <div className={styles.shiftEmptyNotice}>
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 8l3 3 7-7" />
-            </svg>
-            <span>All shift actions cleared &middot; Ward running smoothly with zero flow bottlenecks</span>
+            <span>Nothing in this group right now.</span>
           </div>
         ) : (
           <div className={styles.shiftDenseGrid}>
-            {shiftItems.map((item) => (
+            {visibleShiftItems.map((item) => (
               <div key={item.key} className={styles.shiftTileCompact} data-tone={item.borderTone}>
                 <div className={styles.shiftTileTop}>
                   <div className={styles.shiftTagGroup}>
@@ -328,18 +376,20 @@ export function WardBedsMatrix({
                   </div>
                   <span className={styles.shiftTimeAgo}>{item.tag}</span>
                 </div>
-                <div className={styles.shiftTextLine}>{item.desc}</div>
-                <div className={styles.shiftTileActions}>
-                  {item.actions.map((act, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={styles.btnShiftAction}
-                      onClick={() => setSelectedBed(item.bedNumber)}
-                    >
-                      {act.label}
-                    </button>
-                  ))}
+                <div className={styles.shiftTileBody}>
+                  <div className={styles.shiftTextLine}>{item.desc}</div>
+                  <div className={styles.shiftTileActions}>
+                    {item.actions.map((act) => (
+                      <button
+                        key={act.label}
+                        type="button"
+                        className={styles.btnShiftAction}
+                        onClick={() => setSelectedBed(item.bedNumber)}
+                      >
+                        {act.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -360,28 +410,33 @@ export function WardBedsMatrix({
             <span className="sr-only">{pendingPreparation} still being made ready</span>
           </div>
 
-          <label className={styles.orderSelectLabel}>
-            <span>Order</span>
-            <select
-              className={styles.orderSelect}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "stay" | "room" | "attention")}
-              aria-label="Sort beds order"
-            >
-              <option value="stay">Longest stay first</option>
-              <option value="room">Room number</option>
-              <option value="attention">Attention needed</option>
-            </select>
-          </label>
+          <div className={styles.segment} role="group" aria-label="Sort beds order">
+            <span className={styles.segmentLabel}>Order</span>
+            {(
+              [
+                ["stay", "Longest stay"],
+                ["room", "Room number"],
+                ["attention", "Needs attention"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={styles.segmentBtn}
+                aria-pressed={sortBy === id}
+                onClick={() => setSortBy(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Controls Bar: Filter Pills */}
         <div className={styles.bedsControlsBar}>
-          <div className={styles.filterPillsGroup} role="group" aria-label="Filter beds">
-            {/* Preserved test contract button: All beds ({unit.beds}) */}
+          <div className={styles.segment} role="group" aria-label="Filter beds">
             <button
               type="button"
-              className={`${styles.filterPillBtn} ${activeFilter === "all" && selectedPod === "all" ? styles.active : ""}`}
+              className={styles.segmentBtn}
               aria-pressed={activeFilter === "all" && selectedPod === "all"}
               onClick={() => {
                 setActiveFilter("all");
@@ -393,58 +448,59 @@ export function WardBedsMatrix({
 
             <button
               type="button"
-              className={`${styles.filterPillBtn} ${activeFilter === "needs-look" ? styles.active : ""}`}
+              className={styles.segmentBtn}
               aria-pressed={activeFilter === "needs-look"}
               onClick={() => setActiveFilter("needs-look")}
             >
               <span>Needs a look</span>
-              <span className={styles.filterPillCount}>{needsLookBeds.length}</span>
+              <span className={styles.segmentCount}>{needsLookBeds.length}</span>
             </button>
 
             <button
               type="button"
-              className={`${styles.filterPillBtn} ${activeFilter === "ready" ? styles.active : ""}`}
+              className={styles.segmentBtn}
               aria-pressed={activeFilter === "ready"}
               onClick={() => setActiveFilter("ready")}
             >
               <span>Ready</span>
-              <span className={styles.filterPillCount}>{readyCount}</span>
+              <span className={styles.segmentCount}>{readyCount}</span>
             </button>
 
             <button
               type="button"
-              className={`${styles.filterPillBtn} ${activeFilter === "nobody-due" ? styles.active : ""}`}
+              className={styles.segmentBtn}
               aria-pressed={activeFilter === "nobody-due"}
               onClick={() => setActiveFilter("nobody-due")}
             >
               <span>Nobody due out</span>
-              <span className={styles.filterPillCount}>{nobodyDueOutBeds.length}</span>
+              <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
             </button>
 
             {isMixed ? (
               <>
                 <button
                   type="button"
-                  className={styles.filterPillBtn}
+                  className={styles.segmentBtn}
                   aria-pressed={selectedPod === "locked"}
                   onClick={() => setSelectedPod("locked")}
                 >
-                  Locked ({lockedCount})
+                  <span>Locked</span>
+                  <span className={styles.segmentCount}>{lockedCount}</span>
                 </button>
                 <button
                   type="button"
-                  className={styles.filterPillBtn}
+                  className={styles.segmentBtn}
                   aria-pressed={selectedPod === "open"}
                   onClick={() => setSelectedPod("open")}
                 >
-                  Open ({openCount})
+                  <span>Open</span>
+                  <span className={styles.segmentCount}>{openCount}</span>
                 </button>
               </>
             ) : null}
           </div>
         </div>
 
-        {/* Preserved test contract position caption */}
         <p className={styles.positionCaption} data-testid="ward-beds-position-caption">
           Bed numbers show position on this board; no bed number is recorded for anyone.
         </p>
@@ -513,10 +569,12 @@ export function WardBedsMatrix({
                     </div>
 
                     {bed.patientAlias ? (
-                      <div>
-                        <div className={styles.bedPatientInfo}>
-                          {bed.sex ?? "Patient"} &middot; {bed.homeRegion ?? "Perth Metropolitan"}
-                        </div>
+                      <div className={styles.bedCardBody}>
+                        <div className={styles.bedPatientName}>{bed.patientAlias}</div>
+                        {personMetaLine(bed) ? <div className={styles.bedPatientSub}>{personMetaLine(bed)}</div> : null}
+                        {bed.tentativeDiagnosis ? (
+                          <div className={styles.bedNoteDesc}>Tentative: {bed.tentativeDiagnosis}</div>
+                        ) : null}
                         <div className={styles.bedStayBandLabel}>
                           {bed.stayBand ??
                             (stayDaysNum
@@ -529,6 +587,9 @@ export function WardBedsMatrix({
                                     : "Over 3 months"
                               : "Acute stay")}
                         </div>
+                        {expectedLeaveLine(bed) ? (
+                          <div className={styles.bedExpected}>{expectedLeaveLine(bed)}</div>
+                        ) : null}
                       </div>
                     ) : isReady ? (
                       <div>
@@ -567,6 +628,7 @@ export function WardBedsMatrix({
                       {isPulled && <span className={styles.badgePulled}>Allocated</span>}
                       {isClosed && <span className={styles.badgeClosed}>Unfillable</span>}
                       {isReady && <span className={styles.badgeReady}>Fillable Now</span>}
+                      {bed.blockReason ? <span className={styles.bedCardChip}>{bed.blockReason}</span> : null}
                       {bed.isSpecialling && <span className={styles.bedCardChip}>1:1 Watch</span>}
                       {bed.isHdu && <span className={styles.bedCardChip}>HDU</span>}
                     </div>
@@ -581,14 +643,6 @@ export function WardBedsMatrix({
            FOOTER NOTES, CENSUS & ACCESSIBLE LEGEND
            ───────────────────────────────────────────────────────────── */}
         <div className={styles.bedsFooterNotes}>
-          <div className={styles.censusSummaryText}>
-            Eighteen beds of twenty on this ward are taken. Longest stay first; beds without a recorded stay follow
-            recorded order.
-          </div>
-          <div className={styles.tentativeDisclaimer}>
-            Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.
-          </div>
-
           <div className={styles.bedKeyLegend} aria-label="Bed stay bands and symbol key">
             <div className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.dotBand1}`} />

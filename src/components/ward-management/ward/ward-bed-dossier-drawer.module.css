@@ -63,6 +63,20 @@
   min-width: 0;
 }
 
+.drawerHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drawerKicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .drawerBedBadge {
   padding: 3px 8px;
   border-radius: var(--pill, 999px);
@@ -360,6 +374,12 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.blockerEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .btnSecondary {
