@@ -344,6 +344,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       data-testid="ward-delays-page"
     >
       <main id="main-content" className={styles.main}>
+        <h1 className={styles.landmarkTitle}>Delays</h1>
         <div className={styles.countStrip} aria-label="Waiting counts">
           <div className={styles.statPill}>
             <Users size={14} aria-hidden="true" />

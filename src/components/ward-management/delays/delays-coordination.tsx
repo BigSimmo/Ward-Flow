@@ -40,13 +40,17 @@ import {
   delayCatchments,
   delayRadarBand,
   delayRadarGroups,
-  OVER_TWELVE_HOURS_MINUTES,
+  overTwelveHoursMinutes,
   type CatchmentOrigin,
   type DelayRecord,
   type RadarBand,
 } from "./delays-view-model";
 import { DelaysWaitTimeline } from "./delays-data-views";
 import styles from "./delays-coordination.module.css";
+
+const severeWaitHours = ED_SEVERE_PRESSURE_WAIT_MINUTES / 60;
+const twelveWaitHours = overTwelveHoursMinutes / 60;
+const fourWaitHours = severeWaitHours / 2;
 
 export type DelayQueueScope = { owner: DelayOwnerId } | { origin: CatchmentOrigin };
 type Props = {
@@ -62,7 +66,7 @@ const GRAPHS: { id: Graph; label: string; title: string; subtitle: string }[] = 
     id: "catchment",
     label: "Catchment pressure",
     title: "Catchment pressure",
-    subtitle: "Recorded waits, who was already waiting, and who crosses 8h and 12h if nothing changes",
+    subtitle: `Recorded waits, who was already waiting, and who crosses ${severeWaitHours}h and ${twelveWaitHours}h if nothing changes`,
   },
   { id: "radar", label: "Crisis radar", title: "Crisis radar", subtitle: "Each person by recorded ED wait" },
   { id: "timeline", label: "Wait Timeline", title: "Wait timeline", subtitle: "Elapsed wait and last recorded change" },
@@ -183,16 +187,15 @@ function waitBands(rows: DelayRecord[], now: Instant) {
       count: rows.filter(({ movement }) => wait(movement) < ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
     },
     {
-      label: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}–${OVER_TWELVE_HOURS_MINUTES / 60}h`,
+      label: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}–${overTwelveHoursMinutes / 60}h`,
       count: rows.filter(
-        ({ movement }) =>
-          wait(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && wait(movement) < OVER_TWELVE_HOURS_MINUTES,
+        ({ movement }) => wait(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && wait(movement) < overTwelveHoursMinutes,
       ).length,
     },
     {
-      label: `Over ${OVER_TWELVE_HOURS_MINUTES / 60}h`,
+      label: `Over ${overTwelveHoursMinutes / 60}h`,
       count: rows.filter(
-        ({ movement }) => wait(movement) >= OVER_TWELVE_HOURS_MINUTES && wait(movement) < LONG_WAIT_MINUTES,
+        ({ movement }) => wait(movement) >= overTwelveHoursMinutes && wait(movement) < LONG_WAIT_MINUTES,
       ).length,
     },
     {
@@ -403,7 +406,7 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
       <svg
         className={styles.desktopPressure}
         viewBox={`0 0 ${width} ${height}`}
-        aria-label={`People waiting by origin catchment. ${stats.map((entry) => `${CATCHMENTS[entry.origin].short}: ${entry.total} waiting, ${entry.over8} over 8 hours, ${entry.over12} over 12 hours`).join("; ")}`}
+        aria-label={`People waiting by origin catchment. ${stats.map((entry) => `${CATCHMENTS[entry.origin].short}: ${entry.total} waiting, ${entry.over8} over ${severeWaitHours} hours, ${entry.over12} over ${twelveWaitHours} hours`).join("; ")}`}
         role="group"
         onMouseMove={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
@@ -562,12 +565,24 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
               {CATCHMENTS[hovered.origin].code ? ` · ${CATCHMENTS[hovered.origin].code}` : ""}
             </strong>
             <span>Waiting {hovered.total}</span>
-            <span>Over 8h {hovered.over8}</span>
-            <span>Over 12h {hovered.over12}</span>
-            <span>Still waiting from 4h ago {hovered.stillWaiting4hAgo}</span>
-            <span>Still waiting from 8h ago {hovered.stillWaiting8hAgo}</span>
-            <span>If nothing changes, over 8h in 4h {hovered.expectedOver8}</span>
-            <span>If nothing changes, over 12h in 4h {hovered.expectedOver12}</span>
+            <span>
+              Over {severeWaitHours}h {hovered.over8}
+            </span>
+            <span>
+              Over {twelveWaitHours}h {hovered.over12}
+            </span>
+            <span>
+              Still waiting from {fourWaitHours}h ago {hovered.stillWaiting4hAgo}
+            </span>
+            <span>
+              Still waiting from {severeWaitHours}h ago {hovered.stillWaiting8hAgo}
+            </span>
+            <span>
+              If nothing changes, over {severeWaitHours}h in {fourWaitHours}h {hovered.expectedOver8}
+            </span>
+            <span>
+              If nothing changes, over {twelveWaitHours}h in {fourWaitHours}h {hovered.expectedOver12}
+            </span>
           </div>
         )}
       </div>
@@ -594,11 +609,11 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
           </div>
           <div data-danger>
             <b>{choice.over12}</b>
-            <small>over {OVER_TWELVE_HOURS_MINUTES / 60}h</small>
+            <small>over {overTwelveHoursMinutes / 60}h</small>
           </div>
           <div>
             <b>{choice.expectedOver8}</b>
-            <small>over 8h if nothing changes</small>
+            <small>over {severeWaitHours}h if nothing changes</small>
           </div>
           <button type="button" className={styles.primary} onClick={() => onViewQueue({ origin: choice.origin })}>
             View {choice.total} people
@@ -610,10 +625,10 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
       <footer className={styles.chartFooter}>
         <div className={styles.keys}>
           <Key>Waiting</Key>
-          <Key amber>Over 8h</Key>
-          <Key tone="danger">Over 12h</Key>
-          <Key tone="muted">Still waiting from 4h ago</Key>
-          <Key tone="expected">Over 8h if nothing changes</Key>
+          <Key amber>Over {severeWaitHours}h</Key>
+          <Key tone="danger">Over {twelveWaitHours}h</Key>
+          <Key tone="muted">Still waiting from {fourWaitHours}h ago</Key>
+          <Key tone="expected">Over {severeWaitHours}h if nothing changes</Key>
         </div>
         <span>
           <Info size={14} aria-hidden="true" />

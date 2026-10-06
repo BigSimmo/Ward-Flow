@@ -1139,7 +1139,11 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                             <Urgency movement={movement} />
                           </td>
                         )}
-                        <td className={styles.cause} data-ward-type-floor="delays-cause" title={causeName(cause)}>
+                        <td
+                          className={view === "workspace" ? `${styles.cause} ${styles.workspaceMeasure}` : styles.cause}
+                          data-ward-type-floor="delays-cause"
+                          title={causeName(cause)}
+                        >
                           {SHORT_CAUSE[cause]}
                           <LegalNote movement={movement} now={now} />
                         </td>
@@ -1150,7 +1154,9 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                         )}
                         <td>
                           <span
-                            className={styles.update}
+                            className={
+                              view === "workspace" ? `${styles.update} ${styles.workspaceMeasure}` : styles.update
+                            }
                             data-ward-type-floor="delays-since"
                             data-recorded={recordedUpdate(movement, now) !== "No update recorded"}
                           >

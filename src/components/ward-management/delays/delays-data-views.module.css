@@ -1820,3 +1820,15 @@
     color: CanvasText;
   }
 }
+
+/*
+ * Workspace cause and update text is 12px. The older parent override loses in the
+ * production bundle, where the cell keeps the 13px table step. The class sits on
+ * the measured cell, so it does not depend on that parent selector.
+ */
+td.workspaceMeasure,
+span.workspaceMeasure,
+.layout[data-layout="workspace"] td.workspaceMeasure,
+.layout[data-layout="workspace"] span.workspaceMeasure {
+  font-size: 12px;
+}
