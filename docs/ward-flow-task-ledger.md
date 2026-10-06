@@ -8341,7 +8341,7 @@ Key architectural and pipeline deliveries:
 3. **Isolated Next.js Build Cache (PR #76, `8aa6125`):**
    - Configured Next.js `.next/cache` restoration on pull requests from `main`, while restricting cache saves exclusively to runs on `main` to prevent cache poisoning across PR branches.
 4. **Full-Tree Linting & Playwright Chromium Cache (PR #77, `70a6035`):**
-   - Promoted repository-wide ESLint (`npm run lint:tree`, errors only) to run on every PR, preventing lint regressions in untouched files from landing on `main`.
+   - Promoted repository-wide ESLint (`npm run lint`, errors only) to run on every PR, preventing lint regressions in untouched files from landing on `main`.
    - Cached Playwright Chromium binaries (`~/.cache/ms-playwright`) keyed by `@playwright/test` lockfile version, saving ~1.5 minutes per browser runner (cache saved from `main` only).
 5. **Empirical Shard Rebalancing (PR #78, `5861826`):**
    - Recalculated test file execution costs in `scripts/ward-flow/unit-durations.json` using median execution timings from CI V8 coverage blob reports.
