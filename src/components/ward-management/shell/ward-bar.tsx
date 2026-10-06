@@ -4,22 +4,33 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   Activity,
+  AlertCircle,
+  ArrowRightLeft,
+  ArrowUpRight,
   BarChart3,
   BookOpen,
   Check,
   ChevronDown,
   ChevronRight,
+  CircleOff,
   ClipboardCheck,
+  FilePlus,
   FileText,
+  Gauge,
+  LogIn,
   Plus,
+  RefreshCw,
   Settings,
   Search,
+  Shield,
+  ShieldX,
   Moon,
   Sun,
   Monitor,
   Calculator,
   FlaskConical,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +40,7 @@ import { standingFigures, WardStatsDrawerContent } from "@/components/ward-manag
 import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import type { EdPressure } from "@/components/ward-management/ward-pressure";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
@@ -80,7 +92,14 @@ import {
   settingsHref,
   unitHref,
 } from "./ward-facade";
-import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
+import type {
+  WardActivityCategory,
+  WardActivityChange,
+  WardActivityContent,
+  WardActivityKind,
+  WardAppearance,
+  WardPrimaryAction,
+} from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
@@ -212,8 +231,48 @@ const ACTIVITY_CATEGORY_CHIPS: { id: ActivityCategoryFilter; label: string }[] =
   { id: "transfer", label: "Transfers" },
 ];
 
+const ACTIVITY_KIND_ICONS: Record<WardActivityKind, LucideIcon> = {
+  referral: FilePlus,
+  opened: LogIn,
+  transfer: ArrowRightLeft,
+  decline: CircleOff,
+  escalation: ArrowUpRight,
+  urgency: Gauge,
+  deadline: AlertCircle,
+  refused: ShieldX,
+  override: Shield,
+  capacity: RefreshCw,
+};
+
 function activityChangeCategory(change: { category?: WardActivityCategory }): WardActivityCategory {
   return change.category ?? "other";
+}
+
+function activityChangeIcon(change: Pick<WardActivityChange, "kind" | "category">): LucideIcon {
+  if (change.kind) return ACTIVITY_KIND_ICONS[change.kind];
+  const category = activityChangeCategory(change);
+  if (category !== "other") return ACTIVITY_KIND_ICONS[category];
+  return FileText;
+}
+
+/** Where the pressure is, from the emergency-department rows the tally already holds. */
+function networkSituation(departments: readonly EdPressure[]): string {
+  const waiting = departments.filter((row) => row.waiting > 0);
+  const duePassed = departments.reduce((sum, row) => sum + row.breaching, 0);
+  const longest = waiting.reduce<EdPressure | undefined>(
+    (best, row) => (!best || row.longestWaitMinutes > best.longestWaitMinutes ? row : best),
+    undefined,
+  );
+  const waitSentence = longest
+    ? `Longest wait is ${splitDuration(longest.longestWaitMinutes)} at ${longest.ed.siteCode}. ${waiting.length === 1 ? "1 department has" : `${waiting.length} departments have`} someone waiting.`
+    : "No one is waiting in an emergency department.";
+  const dueSentence =
+    duePassed === 0
+      ? "No recorded due time has passed."
+      : duePassed === 1
+        ? "1 recorded due time has passed."
+        : `${duePassed} recorded due times have passed.`;
+  return `${waitSentence} ${dueSentence}`;
 }
 
 const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
@@ -379,7 +438,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const service = useServiceScope();
   const appearance = useAppearanceStore();
   const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "demo">("overview");
-  const [activityQuery, setActivityQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<ActivityCategoryFilter>("all");
@@ -560,9 +618,10 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         bedReleases,
         leaveBeds,
         refreshRequests,
+        patients,
         now,
       }),
-    [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, patients, now],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
@@ -592,13 +651,10 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   }, [shownActivity?.changes]);
   const filteredActivityChanges = useMemo(() => {
     const changes = shownActivity?.changes ?? [];
-    const query = activityQuery.trim().toLowerCase();
     return changes.filter(
-      (change) =>
-        (activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter) &&
-        `${change.text} ${change.time}`.toLowerCase().includes(query),
+      (change) => activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter,
     );
-  }, [shownActivity?.changes, activityCategoryFilter, activityQuery]);
+  }, [shownActivity?.changes, activityCategoryFilter]);
   const scopedNotices = useMemo(
     () =>
       notices
@@ -606,11 +662,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         .sort((left, right) => right.raisedAt - left.raisedAt),
     [notices, now, placeId, role],
   );
-  const visibleNotices = scopedNotices.filter(
-    (notice) =>
-      (!unreadOnly || notice.readAt === undefined) &&
-      notice.sentence.toLowerCase().includes(activityQuery.trim().toLowerCase()),
-  );
+  const visibleNotices = scopedNotices.filter((notice) => !unreadOnly || notice.readAt === undefined);
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
   // so the unread tally is a separate derived count rather than a second filtered array.
@@ -1234,29 +1286,15 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
         {activityPart === "activity" ? (
           <div className={styles.activityToolbar}>
-            <div className={styles.drawerSummary}>
-              <div>
-                <strong>{shownActivity?.changes.length ?? 0}</strong>
-                <span>Recorded events</span>
-              </div>
-              <div>
-                <strong>{unreadNoticeCount}</strong>
-                <span>Unread notices</span>
-              </div>
-              <div>
-                <strong>{formatInstant(now)}</strong>
-                <span>Demo time</span>
-              </div>
-            </div>
-            <label className={styles.drawerSearch}>
-              <Search aria-hidden="true" />
-              <input
-                aria-label="Search activity"
-                placeholder="Search events and notices…"
-                value={activityQuery}
-                onChange={(event) => setActivityQuery(event.target.value)}
-              />
-            </label>
+            <p className={styles.activityMeta}>
+              <span>
+                <strong>{shownActivity?.changes.length ?? 0}</strong> recorded
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <strong>{unreadNoticeCount}</strong> unread
+              </span>
+            </p>
             <div
               className={styles.filterChipsTrack}
               role="group"
@@ -1332,50 +1370,39 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             </>
           ) : null}
           <p className={styles.activityHead}>
-            Recent changes <span>{filteredActivityChanges.length}</span>
+            What has happened <span>{filteredActivityChanges.length}</span>
           </p>
           {!shownActivity && scopedNotices.length === 0 ? (
             <p className={styles.activityEmpty}>{service ? `No event today in ${service}.` : "No event today."}</p>
           ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
             <p className={styles.activityEmpty}>No event today.</p>
           ) : filteredActivityChanges.length === 0 ? (
-            <div className={styles.activityEmpty}>
-              <Search aria-hidden="true" />
-              <strong>No matching events</strong>
-              <p>Try another search or event category.</p>
-              <button
-                type="button"
-                className={styles.filterChip}
-                onClick={() => {
-                  setActivityQuery("");
-                  setActivityCategoryFilter("all");
-                }}
-              >
-                Clear event filters
-              </button>
-            </div>
+            <p className={styles.activityNote}>No events in this category.</p>
           ) : (
             <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
               {filteredActivityChanges.map((change) => {
                 const tone = activityToneFor(change.id);
+                const Icon = activityChangeIcon(change);
                 return (
                   <li
                     key={change.id}
                     className={styles.feedRow}
                     data-tone={tone}
+                    data-kind={change.kind ?? activityChangeCategory(change)}
                     data-category={activityChangeCategory(change)}
                   >
                     <time className={styles.feedTime}>{change.time}</time>
-                    <span className={`${styles.eventDot} ${styles.feedToneDot}`} data-tone={tone} aria-hidden="true" />
+                    <span className={styles.kindMark} data-tone={tone} aria-hidden="true">
+                      <Icon />
+                    </span>
                     <div className={styles.feedContent}>
-                      <span className={styles.eventLabel} data-tone={tone}>
-                        {tone === "danger"
-                          ? "Deadline or refused action"
-                          : tone === "warning"
-                            ? "Needs attention"
-                            : "Recorded update"}
-                      </span>
                       <span className={styles.feedText}>{change.text}</span>
+                      {change.subject ? (
+                        <span className={styles.feedSubject}>
+                          <span>{change.subject.name}</span>
+                          <span className={styles.feedUmrn}>{change.subject.umrn}</span>
+                        </span>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -1421,7 +1448,11 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         <section id="ward-bar-activity-tally" className={styles.activitySection} hidden={activityPart !== "tally"}>
           {shownActivity ? (
             <>
-              <p className={styles.activityTitle}>{shownActivity.pageTitle} now</p>
+              <div className={styles.tallyIntro}>
+                <p className={styles.tallyScreen}>{shownActivity.pageTitle}</p>
+                <p className={styles.activityTitle}>Where to look first</p>
+                <p className={styles.tallyPurpose}>This is the network as it stands now. History is on Activity.</p>
+              </div>
               {shownActivity.tiles.length > 0 ? (
                 <div className={styles.activityTiles}>
                   {shownActivity.tiles.map((tile) => (
@@ -1433,35 +1464,38 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 </div>
               ) : null}
               {usesDerivedActivity ? (
-                <table className={styles.tallyDepartments}>
-                  <caption>Emergency departments</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Department</th>
-                      <th scope="col">Waiting</th>
-                      <th scope="col">Longest</th>
-                      <th scope="col">Due times passed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commandActivity.departments.map((row) => (
-                      <tr key={row.ed.id}>
-                        <th scope="row">
-                          <Link
-                            href={edHref(row.ed.id)}
-                            onClick={() => closePopover("activity", false)}
-                            title={row.ed.name}
-                          >
-                            {row.ed.siteCode}
-                          </Link>
-                        </th>
-                        <td>{row.waiting}</td>
-                        <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
-                        <td data-breached={row.breaching > 0}>{row.breaching}</td>
+                <>
+                  <p className={styles.tallySituation}>{networkSituation(commandActivity.departments)}</p>
+                  <table className={styles.tallyDepartments}>
+                    <caption>Emergency departments, worst first</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Department</th>
+                        <th scope="col">Waiting</th>
+                        <th scope="col">Longest</th>
+                        <th scope="col">Due times passed</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {commandActivity.departments.map((row) => (
+                        <tr key={row.ed.id}>
+                          <th scope="row">
+                            <Link
+                              href={edHref(row.ed.id)}
+                              onClick={() => closePopover("activity", false)}
+                              title={row.ed.name}
+                            >
+                              {row.ed.siteCode}
+                            </Link>
+                          </th>
+                          <td>{row.waiting}</td>
+                          <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
+                          <td data-breached={row.breaching > 0}>{row.breaching}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               ) : null}
             </>
           ) : (

@@ -31,7 +31,8 @@ describe("Command activity from current records", () => {
     const count = (value: typeof before) =>
       Number(value.content.tiles.find((tile) => tile.label === "Open movements")?.value);
     expect(count(after)).toBe(count(before) + 1);
-    expect(after.content.changes.some((event) => event.text.includes("WF-ACTIVITY-CHECK"))).toBe(true);
+    expect(after.content.changes.some((event) => event.id.includes("WF-ACTIVITY-CHECK"))).toBe(true);
+    expect(after.content.changes.some((event) => event.text.includes("WF-ACTIVITY-CHECK"))).toBe(false);
   });
 
   it("shows the opening urgency tier on past events, not the current tier (WF-49)", () => {
@@ -64,6 +65,7 @@ describe("Command activity from current records", () => {
       bedReleases: [],
       leaveBeds: [],
       refreshRequests: [],
+      patients: after.patients,
       now: changedAt,
     });
 
@@ -76,7 +78,13 @@ describe("Command activity from current records", () => {
       (event) => event.id === `urgency-change:${target.id}:${changedAt}:0`,
     );
     expect(changeEvent).toBeDefined();
-    expect(changeEvent!.text).toBe(`${target.id} urgency changed from Tier ${openingTier} to Tier ${changedTier}.`);
+    expect(changeEvent!.text).toBe(`Urgency changed from Tier ${openingTier} to Tier ${changedTier}.`);
+    expect(changeEvent!.text).not.toContain(target.id);
+    expect(changeEvent!.kind).toBe("urgency");
+    expect(openedEvent!.kind).toBe("opened");
+    expect(openedEvent!.text).not.toContain(target.id);
+    expect(openedEvent!.subject?.name.length).toBeGreaterThan(0);
+    expect(openedEvent!.subject?.umrn).toMatch(/^UM/u);
   });
 
   it("shows the current tier for a movement whose urgency has never changed (WF-49)", () => {
@@ -93,6 +101,7 @@ describe("Command activity from current records", () => {
       bedReleases: [],
       leaveBeds: [],
       refreshRequests: [],
+      patients: state.patients,
       now: NOW_ANCHOR,
     });
 
@@ -132,6 +141,7 @@ describe("Command activity from current records", () => {
       bedReleases: [],
       leaveBeds: [],
       refreshRequests: [],
+      patients: state.patients,
       now: NOW_ANCHOR,
     });
 
@@ -141,6 +151,13 @@ describe("Command activity from current records", () => {
     expect(result.content.changes.find((change) => change.id.startsWith("stage:WF-CATEGORY-STAGE:"))?.category).toBe(
       "transfer",
     );
+    expect(result.content.changes.find((change) => change.id.startsWith("stage:WF-CATEGORY-STAGE:"))?.kind).toBe(
+      "transfer",
+    );
+    expect(result.content.changes.find((change) => change.id.startsWith("stage:WF-CATEGORY-STAGE:"))?.text).toBe(
+      "Moved to bed pulled.",
+    );
     expect(result.content.changes.find((change) => change.id.startsWith("movement-opened:"))?.category).toBe("other");
+    expect(result.content.changes.some((change) => /\b(?:WF|RF)-/.test(change.text))).toBe(false);
   });
 });

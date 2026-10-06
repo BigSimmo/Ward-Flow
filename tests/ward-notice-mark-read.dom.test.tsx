@@ -168,7 +168,5 @@ it("filters unread notices explicitly and preserves read notices under All", asy
   expect(dispatch.mock.calls).toHaveLength(before);
   await user.click(within(sheet).getByRole("button", { name: "Unread only" }));
   expect(within(notices).getByText(READ_NOTICE.sentence)).toBeVisible();
-  await user.type(within(sheet).getByRole("textbox", { name: "Search activity" }), "accepted");
-  expect(within(notices).getAllByRole("listitem")).toHaveLength(1);
-  expect(within(notices).getByText(READ_NOTICE.sentence)).toBeVisible();
+  expect(within(sheet).queryByRole("textbox", { name: "Search activity" })).toBeNull();
 });

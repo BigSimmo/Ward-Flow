@@ -4,17 +4,38 @@ import type {
   BedRelease,
   LeaveBed,
   Movement,
+  MovementStage,
   Referral,
   Rejection,
   Unit,
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import {
+  createPatientResolver,
+  type PatientResolutionSubject,
+} from "@/components/ward-management/ward-patient-resolver";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
-import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
+import type {
+  WardActivityCategory,
+  WardActivityContent,
+  WardActivityKind,
+  WardActivitySubject,
+} from "./ward-shell-types";
 
 export type WardActivityEventTone = "info" | "warning" | "danger";
+
+const STAGE_PHRASE: Record<MovementStage, string> = {
+  placement_requested: "placement requested",
+  destination_review: "destination review",
+  accepted_awaiting_bed: "accepted, awaiting a bed",
+  pulled: "bed pulled",
+  handover_ready: "handover ready",
+  moving: "moving",
+  arrived: "arrived",
+};
 
 type ActivityEvent = {
   at: Instant;
@@ -22,6 +43,8 @@ type ActivityEvent = {
   text: string;
   tone: WardActivityEventTone;
   category: WardActivityCategory;
+  kind: WardActivityKind;
+  subject?: WardActivitySubject;
 };
 
 export type CommandActivity = {
@@ -39,8 +62,18 @@ export type CommandActivityInput = {
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
   refreshRequests: { unitId: string; at: Instant; byRole: string }[];
+  patients: Patient[];
   now: Instant;
 };
+
+function stagePhrase(stage: string): string {
+  return STAGE_PHRASE[stage as MovementStage] ?? stage.replaceAll("_", " ");
+}
+
+function sentenceCase(value: string): string {
+  const text = value.replaceAll("_", " ");
+  return text.length === 0 ? text : text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 /**
  * Command has no append-only event stream. Its Activity feed therefore reads the timestamped
@@ -48,13 +81,20 @@ export type CommandActivityInput = {
  * synthetic state, not a claim that a provider is connected or that every transition is retained.
  */
 export function deriveCommandActivity(input: CommandActivityInput): CommandActivity {
-  const { movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now } = input;
+  const { movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, patients, now } = input;
   const unitNames = new Map(units.map((unit) => [unit.id, unit.name]));
   const departmentNames = new Map(allEmergencyDepartments().map((department) => [department.id, department.name]));
+  const resolvePatient = createPatientResolver({ patients, referrals, movements });
+  const person = (subject: PatientResolutionSubject): WardActivitySubject | undefined => {
+    const resolved = resolvePatient(subject);
+    if (!resolved.patient) return undefined;
+    return { name: resolved.displayName, umrn: resolved.umrn };
+  };
   const events: ActivityEvent[] = [];
 
   for (const movement of movements) {
     const department = departmentNames.get(movement.originEdId) ?? movement.originEdId;
+    const who = person(movement);
     // The opening tier is whatever the FIRST recorded urgency change moved it FROM. An empty
     // `urgencyChanges` means the tier never changed, so the current tier was also the opening
     // one (ward-model.ts). Using `movement.urgency` here would print today's tier on an event
@@ -63,18 +103,22 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     events.push({
       at: movement.openedAt,
       id: `movement-opened:${movement.id}`,
-      text: `${movement.id} opened at ${department}, Tier ${openingUrgency}.`,
+      text: `Opened at ${department}, Tier ${openingUrgency}.`,
       tone: "info",
       category: "other",
+      kind: "opened",
+      subject: who,
     });
 
     movement.urgencyChanges.forEach((change, index) => {
       events.push({
         at: change.at,
         id: `urgency-change:${movement.id}:${change.at}:${index}`,
-        text: `${movement.id} urgency changed from Tier ${change.from} to Tier ${change.to}.`,
+        text: `Urgency changed from Tier ${change.from} to Tier ${change.to}.`,
         tone: "info",
         category: "other",
+        kind: "urgency",
+        subject: who,
       });
     });
 
@@ -83,9 +127,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: dueAt,
         id: `legal-deadline:${movement.id}:${dueAt}`,
-        text: `${movement.id} passed its recorded legal deadline at ${department}.`,
+        text: `Passed its recorded legal deadline at ${department}.`,
         tone: "danger",
         category: "other",
+        kind: "deadline",
+        subject: who,
       });
     }
 
@@ -93,9 +139,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: decline.at,
         id: `decline:${movement.id}:${decline.unitId}:${decline.at}:${index}`,
-        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${decline.reason.replaceAll("_", " ")}.`,
+        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined. ${sentenceCase(decline.reason)}.`,
         tone: "warning",
         category: "decline",
+        kind: "decline",
+        subject: who,
       });
     });
 
@@ -103,9 +151,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: movement.escalation.at,
         id: `escalation:${movement.id}:${movement.escalation.at}`,
-        text: `${movement.id} escalated to ${movement.escalation.contact}.`,
+        text: `Escalated to ${movement.escalation.contact}.`,
         tone: "warning",
         category: "escalation",
+        kind: "escalation",
+        subject: who,
       });
     }
 
@@ -114,9 +164,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: override.at,
         id: `override:${movement.id}:${override.at}:${index}`,
-        text: `Override recorded on ${movement.id}${destinations ? ` for ${destinations}` : ""}.`,
+        text: `Override recorded${destinations ? ` for ${destinations}` : ""}.`,
         tone: "warning",
         category: "other",
+        kind: "override",
+        subject: who,
       });
     });
 
@@ -124,28 +176,35 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: change.at,
         id: `stage:${movement.id}:${change.at}:${index}`,
-        text: `${movement.id} moved to ${change.to.replaceAll("_", " ")}.`,
+        text: `Moved to ${stagePhrase(change.to)}.`,
         tone: "info",
         category: "transfer",
+        kind: "transfer",
+        subject: who,
       });
     });
   }
 
   for (const referral of referrals) {
+    const who = person(referral);
     events.push({
       at: referral.raisedAt,
       id: `referral-raised:${referral.id}`,
-      text: `${referral.id} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
+      text: `Referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
       tone: "info",
       category: "referral",
+      kind: "referral",
+      subject: who,
     });
     if (referral.triagedAt !== undefined) {
       events.push({
         at: referral.triagedAt,
         id: `referral-triaged:${referral.id}:${referral.triagedAt}`,
-        text: `${referral.id} triaged.`,
+        text: "Referral triaged.",
         tone: "info",
         category: "referral",
+        kind: "referral",
+        subject: who,
       });
     }
   }
@@ -154,9 +213,11 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     events.push({
       at: rejection.at,
       id: `rejection:${rejection.id}`,
-      text: `${rejection.movementId}: ${rejection.attempted} was refused. ${rejection.reason}`,
+      text: `${sentenceCase(rejection.attempted)} was refused. ${rejection.reason}`,
       tone: "danger",
       category: "other",
+      kind: "refused",
+      subject: person({ movementId: rejection.movementId }),
     });
   }
 
@@ -167,6 +228,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       text: `Capacity refresh requested from ${unitNames.get(request.unitId) ?? request.unitId} by ${request.byRole}.`,
       tone: "info",
       category: "other",
+      kind: "capacity",
     });
   });
 
@@ -193,6 +255,8 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
         time: formatInstantWithDay(event.at, now),
         text: event.text,
         category: event.category,
+        kind: event.kind,
+        subject: event.subject,
       })),
     },
     lastEventAt: ordered[0]?.at,

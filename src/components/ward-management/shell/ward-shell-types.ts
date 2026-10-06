@@ -42,17 +42,42 @@ export type WardActivityTile = {
 /** Category tag for Activity feed rows — drives the drawer's category chips. */
 export type WardActivityCategory = "escalation" | "decline" | "referral" | "transfer" | "other";
 
+/**
+ * What kind of recorded event a feed row is. Drives the row icon. Optional on page-supplied
+ * activity; the four named categories map onto the same icons when `kind` is absent.
+ */
+export type WardActivityKind =
+  | "referral"
+  | "opened"
+  | "transfer"
+  | "decline"
+  | "escalation"
+  | "urgency"
+  | "deadline"
+  | "refused"
+  | "override"
+  | "capacity";
+
+/** The person a feed row is about, when one record resolves. Never an invented identity. */
+export type WardActivitySubject = {
+  name: string;
+  umrn: string;
+};
+
 /** One row in the Activity drawer's recent-changes feed. */
 export type WardActivityChange = {
   id: string;
   /** Already formatted by the caller's own clock formatter — this file names no time format. */
   time: string;
+  /** A short sentence. Derived rows do not include movement or referral ids. */
   text: string;
   /**
    * Optional on page-supplied activity. Missing means "other" for chip filtering so the four
    * named chips never falsely include an untagged row; All still shows every row.
    */
   category?: WardActivityCategory;
+  kind?: WardActivityKind;
+  subject?: WardActivitySubject;
 };
 
 /**

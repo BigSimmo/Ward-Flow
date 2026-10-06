@@ -44,15 +44,16 @@
  * it.** That holds against every screen's furniture because it never negotiates with any of it.
  */
 .tallyDepartments {
-  width: 100%;
-  margin-top: 1.25rem;
+  width: calc(100% + 1.75rem);
+  margin: 0.75rem -0.875rem 0;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: var(--t-1);
   font-variant-numeric: tabular-nums;
 }
 
 .tallyDepartments caption {
-  padding-block: 0.75rem;
+  padding: 0.5rem 0.875rem 0.375rem;
   text-align: left;
   color: var(--ink);
   font-weight: 600;
@@ -61,18 +62,39 @@
 .tallyDepartments th,
 .tallyDepartments td {
   border-bottom: 1px solid var(--line);
-  padding: 0.625rem 0.375rem;
+  padding: 0.375rem 0.5rem;
   text-align: right;
 }
 
-.tallyDepartments th:first-child {
+.tallyDepartments th:first-child,
+.tallyDepartments td:first-child {
   text-align: left;
+  padding-left: 0.875rem;
 }
 
-.tallyDepartments thead {
+.tallyDepartments th:last-child,
+.tallyDepartments td:last-child {
+  padding-right: 0.875rem;
+}
+
+.tallyDepartments thead th {
   background: var(--surface-2);
   color: var(--muted);
   font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.tallyDepartments th:nth-child(1) {
+  width: 28%;
+}
+.tallyDepartments th:nth-child(2) {
+  width: 18%;
+}
+.tallyDepartments th:nth-child(3) {
+  width: 22%;
+}
+.tallyDepartments th:nth-child(4) {
+  width: 32%;
 }
 
 .tallyDepartments a {
@@ -3196,6 +3218,209 @@
 }
 .tasksBody > aside {
   width: 100%;
+}
+
+/* Activity drawer: flat tabs, compact tally, icon rows. */
+.activitySegments {
+  margin: 0 0.875rem;
+  padding: 0;
+  gap: 0.25rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.activitySegments button {
+  min-height: var(--spacing-tap, 3rem);
+  height: auto;
+  padding: 0 0.25rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 500;
+  box-shadow: none;
+}
+.activitySegments button[aria-pressed="true"] {
+  background: transparent;
+  color: var(--ink);
+  font-weight: 650;
+  border-bottom-color: var(--ink);
+  box-shadow: none;
+}
+.activitySegments button span,
+.activitySegments button[aria-pressed="true"] span {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+}
+.activityToolbar {
+  padding: 0.5rem 0.875rem 0;
+}
+.activityMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin: 0 0 0.125rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.activityMeta strong {
+  color: var(--ink);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.filterChipsTrack {
+  padding: 0;
+  gap: 0.125rem;
+}
+.filterChip {
+  min-height: var(--spacing-tap, 3rem);
+  padding-inline: 0.5rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+.filterChip[aria-pressed="true"],
+.filterChip[aria-pressed="true"]:hover {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+  border-bottom-color: var(--ink);
+  font-weight: 650;
+}
+.activitySection {
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem 0.75rem;
+}
+.tallyIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.tallyScreen {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tallyIntro .activityTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.tallyPurpose,
+.tallySituation,
+.activityNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+.activityTiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+.activityTile {
+  gap: 0;
+  padding: 0.25rem 0.375rem 0.25rem 0.5rem;
+  border: 0;
+  border-left: 2px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.activityTile small {
+  line-height: 1.2;
+}
+.activityTile b {
+  font-size: var(--t-2);
+}
+.activityTile[data-tone="good"] {
+  border-color: transparent;
+  border-left-color: var(--good);
+}
+.activityTile[data-tone="warning"] {
+  border-color: transparent;
+  border-left-color: var(--warn);
+}
+.activityTile[data-tone="danger"] {
+  border-color: transparent;
+  border-left-color: var(--danger);
+}
+.activityHead {
+  margin-bottom: 0.25rem;
+}
+.activityFeed {
+  gap: 0;
+}
+.activityFeed li,
+.activityFeed li[data-tone="warning"],
+.activityFeed li[data-tone="danger"] {
+  display: grid;
+  align-items: start;
+  grid-template-columns: max-content 1.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.375rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.kindMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  margin-top: 0.0625rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  justify-self: center;
+}
+.kindMark svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.kindMark[data-tone="warning"] {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.kindMark[data-tone="danger"] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.feedContent {
+  gap: 0.125rem;
+}
+.feedText {
+  line-height: 1.35;
+}
+.feedSubject {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.3;
+}
+.feedUmrn {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 @media (max-width: 640px) {
   .drawerSheetWide,

@@ -87,13 +87,21 @@ describe("Activity drawer is consistently wired across all screens", () => {
     const feed = within(sheet).getByRole("list", { name: "Recent changes" });
     const items = within(feed).getAllByRole("listitem");
     expect(items).toHaveLength(20);
+    const feedText = items.map((item) => item.textContent ?? "").join("\n");
+    expect(feedText).toMatch(/UM\d+/u);
+    expect(feedText).not.toMatch(/\b(?:WF|RF)-/u);
+    expect(items.every((item) => item.hasAttribute("data-kind"))).toBe(true);
 
     // Switch to live tally tab
     await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Movements now")).toBeInTheDocument();
+    const tally = sheet.querySelector("#ward-bar-activity-tally");
+    expect(tally).not.toBeNull();
+    expect(tally).toHaveTextContent("Where to look first");
+    expect(tally).toHaveTextContent("Movements");
+    expect(tally).toHaveTextContent("This is the network as it stands now.");
+    expect(within(sheet).getByRole("table", { name: "Emergency departments, worst first" })).toBeInTheDocument();
     expect(within(sheet).getByText("Open movements")).toBeInTheDocument();
     expect(within(sheet).getByText("Beds ready")).toBeInTheDocument();
-    expect(within(sheet).getByRole("table", { name: "Emergency departments" })).toBeInTheDocument();
   });
 
   it("shows the same 20 system events and 'Delays' live tally on the delays screen", async () => {
@@ -108,7 +116,9 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
 
     await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Delays now")).toBeInTheDocument();
+    const tally = sheet.querySelector("#ward-bar-activity-tally");
+    expect(tally).toHaveTextContent("Where to look first");
+    expect(tally).toHaveTextContent("Delays");
   });
 
   it("resolves the unit place name on a ward route while keeping the consistent 20 events", async () => {
@@ -124,7 +134,9 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
 
     await user.click(segButtons[1]);
-    expect(within(sheet).getByText(`${unitName} now`)).toBeInTheDocument();
+    const tally = sheet.querySelector("#ward-bar-activity-tally");
+    expect(tally).toHaveTextContent("Where to look first");
+    expect(tally).toHaveTextContent(unitName);
   });
 
   it("shows 'Command' live tally on the command root screen", async () => {
@@ -136,6 +148,8 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(segButtons[1].textContent).toMatch(/Live tally\s*Command/u);
 
     await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Command now")).toBeInTheDocument();
+    const tally = sheet.querySelector("#ward-bar-activity-tally");
+    expect(tally).toHaveTextContent("Where to look first");
+    expect(tally).toHaveTextContent("Command");
   });
 });
