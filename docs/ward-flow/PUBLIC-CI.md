@@ -26,7 +26,9 @@ Details that keep the split sound:
   to every fifth file). Every runner computes the same deal, so the shards stay disjoint. Each shard's
   floors scale with its share of the files, and each shard runs as one vitest process. Each shard is
   compared only with the expected-reds manifest entries for its own files, so the shards cover every
-  file and every entry exactly once. Refresh the cost record when the shards drift apart.
+  file and every entry exactly once. Refresh the cost record when the shards drift apart, from a recent
+  run's `ward-coverage-blob-*` artifacts: each shard's Vitest blob report records every file's cost on
+  the real runner, with coverage on.
 - **Coverage.** Each unit shard also records V8 coverage for its own files into a Vitest blob report
   (`WARD_COVERAGE_BLOB_DIR`), with the thresholds switched off for that one slice. The coverage job
   downloads all five blobs, fails if any shard's blob is missing, and runs
