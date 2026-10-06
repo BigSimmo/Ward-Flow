@@ -25,9 +25,15 @@ describe("the public Ward Flow browser journeys lane", () => {
     expect(workflow).toMatch(/^on:\s*\n {2}pull_request:\s*\n {4}branches: \[main\]/mu);
     expect(workflow).toMatch(/^ {2}merge_group:/mu);
     const browser = job("browser");
-    // No job-level draft/flag gate may silently bypass the browser result. The planner narrows
-    // only the install step, and the later steps must follow the successful install/Chromium step.
-    expect(browser.slice(0, browser.indexOf("    steps:"))).not.toMatch(/^ {4}if:/mu);
+    // No job-level draft/flag gate may silently bypass the browser result. The only job-level gate is
+    // the main-push reuse proof (an identical tree whose PR run already passed every browser group),
+    // and the aggregate then requires the job to be skipped, never failed. The planner narrows only
+    // the install step, and the later steps must follow the successful install/Chromium step.
+    const header = browser.slice(0, browser.indexOf("    steps:"));
+    expect(header.match(/^ {4}if:.*$/gmu)).toEqual([
+      "    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}",
+    ]);
+    expect(job("reuse")).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
     expect(browser).not.toContain("WARD_JOURNEYS_BLOCKING");
     expect(browser).toContain("run: node scripts/ward-ci-public/plan.mjs");
     expect(browser).toContain("if: ${{ !cancelled() && steps.plan.outputs.browser == 'true' }}");
@@ -58,11 +64,13 @@ describe("the public Ward Flow browser journeys lane", () => {
   it("requires a successful browser result in the always-running aggregate", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
-    expect(required).toContain("needs: [static, unit, browser, secret-scan, build, coverage]");
+    expect(required).toContain("needs: [reuse, static, unit, browser, secret-scan, build, coverage]");
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain(
-      'run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success',
+      'if [ "$REUSE_VERIFIED" != true ]; then\n            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success\n',
     );
+    // On a verified main reuse the browser groups must be skipped, not failed or cancelled.
+    expect(required).toContain('test "$BROWSER_RESULT" = skipped');
   });
 
   it("selects ward specs by pattern so a new journey is not silently omitted", () => {

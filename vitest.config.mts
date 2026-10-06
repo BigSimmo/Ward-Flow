@@ -32,27 +32,33 @@ const config = {
       // core threshold remains scoped to its historical files so expanding the
       // inventory cannot weaken that regression floor.
       include: [...COVERAGE_INCLUDE_GLOBS],
-      thresholds: {
-        // Whole-repository floors sit below the 2026-08-13 current-main measurement
-        // (54.41/51.51/56.37/55.79) but close the previous no-global-floor gap.
-        statements: 52,
-        branches: 49,
-        functions: 54,
-        lines: 53,
-        // Broad regression floor. Re-ratcheted 2026-07-29: the previous values
-        // (48/38/43/50) had drifted 14-17pp below measured coverage
-        // (63.99/55.29/57.6/66.19), so a change could delete a large amount of
-        // coverage and still pass. Each floor now sits ~2pp under measured — enough
-        // headroom for a PR that ships an uncovered surface, not enough to hide a
-        // regression. Re-measure with `npm run test:coverage` and raise these when
-        // the gap grows past ~5pp again; never lower them to make a red gate green.
-        "src/{lib/**/*.ts,app/**/route.ts,components/**/*.{ts,tsx}}": {
-          statements: 62,
-          branches: 53,
-          functions: 55,
-          lines: 64,
-        },
-      },
+      // CI unit shards record coverage for their own slice only (WARD_COVERAGE_BLOB_DIR, see
+      // scripts/check-ward-expected-reds.mjs gateBatchArgs), which can never meet whole-suite floors.
+      // The coverage job merges every shard's blob report and applies these thresholds, unchanged, to
+      // the whole suite. Every other run, including `npm run test:coverage`, applies them as before.
+      thresholds: process.env.WARD_COVERAGE_BLOB_DIR
+        ? undefined
+        : {
+            // Whole-repository floors sit below the 2026-08-13 current-main measurement
+            // (54.41/51.51/56.37/55.79) but close the previous no-global-floor gap.
+            statements: 52,
+            branches: 49,
+            functions: 54,
+            lines: 53,
+            // Broad regression floor. Re-ratcheted 2026-07-29: the previous values
+            // (48/38/43/50) had drifted 14-17pp below measured coverage
+            // (63.99/55.29/57.6/66.19), so a change could delete a large amount of
+            // coverage and still pass. Each floor now sits ~2pp under measured — enough
+            // headroom for a PR that ships an uncovered surface, not enough to hide a
+            // regression. Re-measure with `npm run test:coverage` and raise these when
+            // the gap grows past ~5pp again; never lower them to make a red gate green.
+            "src/{lib/**/*.ts,app/**/route.ts,components/**/*.{ts,tsx}}": {
+              statements: 62,
+              branches: 53,
+              functions: 55,
+              lines: 64,
+            },
+          },
     },
     // Two projects run under one `npm run test` invocation. `extends: true` makes
     // each inherit the shared root config above (coverage, timeouts, resolve.alias

@@ -15,13 +15,22 @@ function requireWorkflow(source) {
     /persist-credentials: false/u,
     /name: Ward Flow required/u,
     /if: always\(\)/u,
-    /needs: \[static, unit, browser, secret-scan, build, coverage\]/u,
+    /needs: \[reuse, static, unit, browser, secret-scan, build, coverage\]/u,
     /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$BUILD_RESULT" = success && test "\$COVERAGE_RESULT" = success/u,
     /SECRET_SCAN_RESULT: \$\{\{ needs\.secret-scan\.result \}\}/u,
     /BUILD_RESULT: \$\{\{ needs\.build\.result \}\}/u,
     /COVERAGE_RESULT: \$\{\{ needs\.coverage\.result \}\}/u,
-    // Coverage thresholds (vitest.config.mts) are enforced over the whole unit suite.
-    /^ {8}run: npm run test:coverage$/mu,
+    // Coverage thresholds (vitest.config.mts) are enforced over the whole unit suite: every shard
+    // records a blob report and the coverage job merges all of them before judging the thresholds.
+    /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner\.temp \}\}\/ward-coverage-blobs/u,
+    /if-no-files-found: error/u,
+    /^ {10}node node_modules\/vitest\/vitest\.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage$/mu,
+    // Main-push reuse: only on a push to main, and the skipped path still requires static checks and
+    // the secret scan, with the four reused jobs skipped rather than failed or cancelled.
+    /if: \$\{\{ github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' \}\}/u,
+    /run: node scripts\/ward-ci-public\/main-reuse\.mjs/u,
+    /if \[ "\$REUSE_VERIFIED" != true \]; then\n/u,
+    /test "\$STATIC_RESULT" = success && test "\$SECRET_SCAN_RESULT" = success && test "\$UNIT_RESULT" = skipped && test "\$BROWSER_RESULT" = skipped && test "\$BUILD_RESULT" = skipped && test "\$COVERAGE_RESULT" = skipped/u,
     // Secret scan: a pinned gitleaks release verified against a pinned SHA-256, over full history,
     // honouring the reviewed fingerprints.
     /GITLEAKS_SHA256: [0-9a-f]{64}\n/u,
@@ -96,6 +105,22 @@ function requireWorkflow(source) {
     /- name: Lint the whole tree\n\s*if: [^\n]*\n\s*run: node --max-old-space-size=8192 node_modules\/eslint\/bin\/eslint\.js src tests scripts [^\n]*--quiet[^\n]*\n/u,
   );
   assert.doesNotMatch(source, /if ! node[^\n]*eslint/u);
+  // The coverage job must judge the thresholds: it may never set the shard flag that drops them, and it
+  // must expect a blob from every unit shard.
+  const jobText = (name) =>
+    new RegExp(`^ {2}${name}:\\n([\\s\\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\\n|(?![\\s\\S]))`, "mu").exec(source)?.[1];
+  const coverageJob = jobText("coverage");
+  assert.ok(coverageJob, "the coverage job is required");
+  assert.doesNotMatch(coverageJob, /WARD_COVERAGE_BLOB_DIR/u);
+  assert.match(coverageJob, /needs: \[reuse, unit\]/u);
+  assert.equal(Number(/WARD_SHARD_COUNT: "(\d+)"/u.exec(coverageJob)?.[1]), count);
+  // Only the four reusable jobs may be skipped by the reuse proof; static and secret scan always run.
+  const reuseGate = "if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}";
+  for (const name of ["unit", "browser", "build", "coverage"]) assert.ok(jobText(name)?.includes(reuseGate), name);
+  for (const name of ["static", "secret-scan"]) assert.doesNotMatch(jobText(name) ?? "", /needs\.reuse/u);
+  const reuseJob = jobText("reuse");
+  assert.ok(reuseJob, "the main reuse job is required");
+  assert.doesNotMatch(reuseJob, /contents: write|pull-requests: write|actions: write/u);
 }
 
 requireWorkflow(workflow);
@@ -105,14 +130,38 @@ for (const bad of [
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
   workflow.replace(
-    "needs: [static, unit, browser, secret-scan, build, coverage]",
-    "needs: [static, browser, secret-scan, build]",
+    "needs: [reuse, static, unit, browser, secret-scan, build, coverage]",
+    "needs: [reuse, static, browser, secret-scan, build]",
   ),
-  workflow.replace("needs: [static, unit, browser, secret-scan, build, coverage]", "needs: [static, unit, browser]"),
+  workflow.replace(
+    "needs: [reuse, static, unit, browser, secret-scan, build, coverage]",
+    "needs: [static, unit, browser]",
+  ),
   workflow.replace(' && test "$SECRET_SCAN_RESULT" = success', ""),
   workflow.replace(' && test "$BUILD_RESULT" = success', ""),
   workflow.replace(' && test "$COVERAGE_RESULT" = success', ""),
-  workflow.replace("run: npm run test:coverage", "run: npm test"),
+  workflow.replace('--merge-reports="$WARD_SHARD_BLOBS" --coverage', '--merge-reports="$WARD_SHARD_BLOBS"'),
+  workflow.replace('WARD_SHARD_COUNT: "5"', 'WARD_SHARD_COUNT: "4"'),
+  workflow.replace(
+    "          WARD_SHARD_COUNT:",
+    "          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/x\n          WARD_SHARD_COUNT:",
+  ),
+  workflow.replace("          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs\n", ""),
+  workflow.replace("if-no-files-found: error", "if-no-files-found: warn"),
+  workflow.replace(' && test "$UNIT_RESULT" = skipped', ""),
+  workflow.replace(
+    'test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped',
+    'test "$UNIT_RESULT" = skipped',
+  ),
+  workflow.replace(
+    "    name: Ward Flow production build\n    needs: reuse\n    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}\n",
+    "    name: Ward Flow production build\n    needs: reuse\n",
+  ),
+  workflow.replace(
+    "    name: Ward Flow static checks\n",
+    "    name: Ward Flow static checks\n    needs: reuse\n    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}\n",
+  ),
+  workflow.replace("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}", "if: always()"),
   workflow.replace("  push:\n    branches: [main]\n", ""),
   workflow.replace(/\| sha256sum -c -/u, "| cat"),
   workflow.replace("--gitleaks-ignore-path .gitleaksignore", ""),

@@ -393,6 +393,39 @@ export function selectGateShard(population, { index, count }, durations = {}) {
   return shards[index - 1].files.sort();
 }
 
+/**
+ * The vitest arguments for one gate batch. Without a coverage blob directory this is the gate's
+ * long-standing JSON-only run. In public CI each unit shard also records V8 coverage for its own files
+ * and writes it to a Vitest blob report (WARD_COVERAGE_BLOB_DIR, set by .github/workflows/ward-flow.yml).
+ * The coverage job then merges every shard's blob with `vitest --merge-reports --coverage`, which
+ * applies the vitest.config.mts thresholds once, to the whole suite. vitest.config.mts drops the
+ * thresholds while WARD_COVERAGE_BLOB_DIR is set, because one shard's slice can never meet
+ * whole-suite floors. The JSON report this gate judges is written exactly as before.
+ */
+export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex }) {
+  if (!coverageBlobDir) return ["run", "--pool=forks", "--reporter=json", `--outputFile=${batchReport}`, ...files];
+  if (!shard) throw new Error("WARD_COVERAGE_BLOB_DIR is only supported together with WARD_GATE_SHARD.");
+  const label = `shard-${shard.index}-of-${shard.count}-batch-${String(batchIndex + 1).padStart(3, "0")}`;
+  return [
+    "run",
+    "--pool=forks",
+    "--reporter=json",
+    `--outputFile.json=${batchReport}`,
+    "--reporter=blob",
+    `--outputFile.blob=${path.join(coverageBlobDir, `blob-${label}.json`)}`,
+    "--coverage.enabled=true",
+    "--coverage.reporter=text-summary",
+    `--coverage.reportsDirectory=${path.join(coverageBlobDir, `coverage-${label}`)}`,
+    ...files,
+  ];
+}
+
+/** The blob report a coverage-recording batch must leave behind (see gateBatchArgs). */
+export function gateBatchBlobPath(args) {
+  const flag = args.find((arg) => arg.startsWith("--outputFile.blob="));
+  return flag ? flag.slice("--outputFile.blob=".length) : null;
+}
+
 /** Measured seconds per unit test file, or {} when the record is missing or unreadable. */
 export function readUnitDurations(file = UNIT_DURATIONS) {
   try {
@@ -561,11 +594,13 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
       ALLOW_PROVIDER_TESTS: "false",
       WARD_GATE_EXCLUDE_FILES: skippedTooling.join("\n"),
     };
+    const coverageBlobDir = process.env.WARD_COVERAGE_BLOB_DIR || "";
+    if (coverageBlobDir && !shard) fail(["WARD_COVERAGE_BLOB_DIR is only supported together with WARD_GATE_SHARD."]);
     const environmentFingerprint = fullGateInputIdentity({
       root: projectRoot,
       env: gateEnvironment,
       population,
-      args: ["run", "--pool=forks", "--reporter=json"],
+      args: ["run", "--pool=forks", "--reporter=json", ...(coverageBlobDir ? ["--coverage", "--reporter=blob"] : [])],
     });
     const recheck = process.env.WARD_FULL_GATE_RECHECK;
     let report;
@@ -649,27 +684,21 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         // A CI shard is one runner's whole share: one vitest process (still split by the command
         // length limit) avoids a second start-up and a second slowest-file tail.
         ...(shard ? { maxFiles: Number.POSITIVE_INFINITY } : {}),
-        runBatch: ({ files, reportPath: batchReport }) => {
+        runBatch: ({ files, index, reportPath: batchReport }) => {
+          const args = gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex: index });
           try {
-            execFileSync(
-              process.execPath,
-              [
-                path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"),
-                "run",
-                "--pool=forks",
-                "--reporter=json",
-                `--outputFile=${batchReport}`,
-                ...files,
-              ],
-              {
-                cwd: projectRoot,
-                stdio: ["ignore", "ignore", "inherit"],
-                env: gateEnvironment,
-              },
-            );
+            execFileSync(process.execPath, [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args], {
+              cwd: projectRoot,
+              stdio: ["ignore", "ignore", "inherit"],
+              env: gateEnvironment,
+            });
           } catch {
             /* The report retains failed assertions; absence or incompleteness still fails. */
           }
+          // A shard that recorded no coverage would leave the merged whole-suite coverage short, so a
+          // missing blob fails this shard rather than surfacing later as a lower percentage.
+          const blob = gateBatchBlobPath(args);
+          if (blob && !existsSync(blob)) fail([`Coverage blob report missing for batch ${index + 1}: ${blob}`]);
         },
       });
     }
