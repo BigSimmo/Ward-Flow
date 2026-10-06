@@ -353,7 +353,7 @@ describe("Ward Flow sidebar counts, against their own derivations", () => {
     ["Capacity", () => `Capacity, ${rollup.service.availableNow} beds ready now`],
     ["Delays", () => `Delays, ${severeDelays} at a time limit or with nowhere to go`],
     ["Discharges", () => `Discharges, ${rollup.service.blockedToday} discharges held up`],
-    ["Referral board", () => `Referral board, ${queuedReferrals} awaiting a decision`],
+    ["Referrals", () => `Referrals, ${queuedReferrals} awaiting a decision`],
   ])("states %s exactly as its own derivation computes it", (label, expected) => {
     cleanup();
     expect(nameOf(label)).toBe(expected());

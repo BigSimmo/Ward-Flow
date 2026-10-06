@@ -728,11 +728,11 @@ export function WardRail({ asAt }: WardRailProps) {
               <span className={styles.pulseDot} data-code={mostPressingAlert.code} aria-hidden="true" />
               <span className={styles.capacityPulsePair}>
                 <span className={styles.capacityPulseLabel}>
-                  <span className={styles.capacityPulseKind}>Metro</span>
+                  <span className={styles.capacityPulseKind}>Metro </span>
                   {bedAlerts.metroOccupancyPercent === null ? "—" : `${bedAlerts.metroOccupancyPercent}%`}
                 </span>
                 <span className={styles.capacityPulseLabel}>
-                  <span className={styles.capacityPulseKind}>{mostPressingAlert.shortName}</span>
+                  <span className={styles.capacityPulseKind}>{mostPressingAlert.shortName} </span>
                   {mostPressingAlert.occupancyPercent}%
                 </span>
               </span>

@@ -287,7 +287,7 @@ describe("the coordinator's registers drawer", () => {
     );
 
     expect(screen.getByTestId("ward-exceptions-toggle-decline-count")).toHaveTextContent("0 declines");
-    expect(screen.getByTestId("ward-exceptions-toggle-override-count")).toHaveTextContent("0 overrides");
+    expect(screen.getByTestId("ward-exceptions-toggle-override-count")).toHaveTextContent("No overrides");
     expect(screen.getByTestId("ward-exceptions-toggle-count")).toHaveTextContent("0 exceptions");
     expect(screen.getByTestId("ward-exceptions-toggle-refusal-count")).toHaveTextContent("0 refused");
 
