@@ -6,7 +6,7 @@ import { MovementDrawer } from "@/components/ward-management/movements/movement-
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import type { Movement } from "@/components/ward-management/ward-model";
+import { ED_ACCESS_TARGET_MINUTES, type Movement } from "@/components/ward-management/ward-model";
 
 /**
  * The owner asked the urgent flag to do TWO things: sort to the top, and be VISIBLE.
@@ -136,6 +136,7 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
         units={[]}
         referrals={[]}
         patients={[]}
+        edAccessTargetMinutes={ED_ACCESS_TARGET_MINUTES}
         dispatch={dispatch as never}
         onClose={() => {}}
       />,
