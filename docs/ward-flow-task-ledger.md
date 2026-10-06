@@ -8432,3 +8432,17 @@ recording, referral/contact destinations, scrolling, overflow and keyboard focus
 is local to this worktree at `.local/tasks-polish/result.json` and its accompanying screenshots.
 The synthetic provider's existing session behaviour is retained; no save/reload or backend
 persistence claim is made. Local engineering only; no publication or deployment performed.
+
+Follow-up on the same task, 7 October 2026: added restrained ambient elevation, theme-aware
+inner highlights, frosted surfaces and consistent header alignment without changing the task
+layout or actions. The task Sheet has a moderate 20px corner, with proportionally smaller card,
+icon and button corners. Forced-colour controls retain explicit borders.
+
+Production `npm run build` passed (installed Next.js 16.3.3, including its TypeScript check and
+49 generated static pages). Reused the passing 40-test behaviour evidence because this follow-up
+changes only CSS. Re-ran the browser interaction/visual probe on the refined source: light/dark
+desktop, narrow/short phones, real touch emulation, 48px touch targets, state filters, acknowledgement,
+escalation, referral/contact navigation, overflow, scrolling and keyboard focus return passed
+with no page errors. Updated screenshots and `.local/tasks-polish/result.json`; build output is
+`.local/tasks-polish/build.log`. Publication to a task-branch PR is now explicitly requested;
+merge/deployment are not part of this task.
