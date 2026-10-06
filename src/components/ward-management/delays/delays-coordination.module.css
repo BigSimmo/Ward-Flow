@@ -1751,12 +1751,41 @@
 .graphTabs button {
   border-radius: 8px;
 }
-.graphTabs {
+.graphTabs,
+.serviceMarks {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
   padding: 2px;
-  background: color-mix(in srgb, var(--dc-ink) 4%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--dc-ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dc-ink) 5%, var(--surface));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--dc-ink) 5%, transparent);
+  overflow: visible;
 }
-.graphTabs button[aria-selected="true"] {
+.graphTabs button,
+.serviceMarks button {
+  border: 0;
+  border-right: 0;
+  border-bottom: 0;
   border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  padding: 6px 10px;
+  min-height: 28px;
+}
+.graphTabs button[aria-selected="true"],
+.serviceMarks button[aria-pressed="true"] {
+  border-radius: 6px;
+  border-bottom-color: transparent;
+  background: var(--surface);
+  color: var(--dc-ink);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    0 1px 2px color-mix(in srgb, var(--dc-ink) 10%, transparent);
 }
 @media (prefers-reduced-transparency: reduce) {
   .runway,
@@ -1770,10 +1799,18 @@
 @media (forced-colors: active) {
   .runway,
   .graphPanel,
-  .ownerCard {
+  .ownerCard,
+  .graphTabs,
+  .serviceMarks {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
     backdrop-filter: none;
+  }
+  .graphTabs button[aria-selected="true"],
+  .serviceMarks button[aria-pressed="true"] {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
   }
 }

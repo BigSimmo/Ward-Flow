@@ -7199,18 +7199,60 @@
   background: color-mix(in srgb, var(--ink) 4%, var(--surface));
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
-.tabbar {
-  border-radius: 8px;
+.tabbar,
+.systemicFilterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  margin: 10px 12px 0;
   padding: 2px;
-  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 5%, var(--surface));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--ink) 5%, transparent);
 }
-.tabBtnActive {
+.systemicFilterBar {
+  margin: 0 0 8px;
+}
+.tabBtn,
+.systemicChip {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+.tabBtnActive,
+.systemicChipActive {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 .tabBtnActive::after {
   content: none;
+}
+.tabNum,
+.systemicChipBadge,
+.chipCount {
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--muted);
+  box-shadow: none;
+}
+.tabBtnActive .tabNum,
+.systemicChipActive .chipCount,
+.systemicChipActive .systemicChipBadge {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
 }
 .row,
 .attentionCard {
@@ -7247,10 +7289,18 @@
 @media (forced-colors: active) {
   .countStrip .statPill,
   .queueScope,
+  .tabbar,
+  .systemicFilterBar,
   .screen[data-ward-page="delays"] [data-ward-primitive="panel"] {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
     backdrop-filter: none;
+  }
+  .tabBtnActive,
+  .systemicChipActive {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
   }
 }
