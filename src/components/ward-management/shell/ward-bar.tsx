@@ -1372,7 +1372,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                   >
                     <time className={styles.feedTime}>{change.time}</time>
                     <span className={styles.kindMark} data-tone={tone} aria-hidden="true">
-                      <Icon />
+                      <Icon aria-hidden="true" />
                     </span>
                     <div className={styles.feedContent}>
                       <span className={styles.feedText}>{change.text}</span>
