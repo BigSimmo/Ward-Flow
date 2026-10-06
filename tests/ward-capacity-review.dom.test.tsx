@@ -58,6 +58,8 @@ describe("capacity review corrections", () => {
     expect(within(wards).getByRole("button", { name: /^Has a bed ready/u })).toHaveTextContent("3");
     expect(within(wards).getByRole("button", { name: /^Has a locked bed ready/u })).toHaveTextContent("1");
     expect(within(wards).getByRole("button", { name: /^Needs confirming/u })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Highlight ready wards/u })).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: /^Locked beds ready/u })).toHaveTextContent("1");
   });
 
   it("reports an empty service with zero matching wards and zero highlight counts", () => {
@@ -65,6 +67,7 @@ describe("capacity review corrections", () => {
     renderCapacity();
     const wards = screen.getByRole("region", { name: "Wards" });
     expect(wards).toHaveTextContent("0 wards in CAHS, 0 matching");
+    expect(screen.getByRole("button", { name: /^Highlight ready wards/u })).toHaveTextContent("0");
     for (const button of within(wards).getAllByRole("button", {
       name: /^(All|Has a bed ready|Has a locked bed ready|Needs confirming)/u,
     })) {

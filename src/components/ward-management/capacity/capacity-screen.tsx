@@ -679,16 +679,13 @@ export function CapacityScreen() {
                       </>
                     )}
                   </div>
-                  <div className={styles.networkActions} aria-label="Network shortcuts">
+                  <div className={styles.networkActions} aria-label="Ward table shortcuts">
                     {networkFilters.slice(1).map((filter) => (
                       <button
                         type="button"
                         key={filter.id}
                         aria-pressed={networkFilterId === filter.id}
-                        onClick={() => {
-                          setNetworkFilterId(filter.id);
-                          document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
-                        }}
+                        onClick={() => highlightWards(filter.id)}
                       >
                         <span>
                           {filter.id === "ready"
@@ -697,7 +694,7 @@ export function CapacityScreen() {
                               ? "Locked beds ready"
                               : "Check confirmations"}
                         </span>
-                        <strong>{networkRows.filter(filter.predicate).length}</strong>
+                        <strong>{scopedNetworkRows.filter(filter.predicate).length}</strong>
                       </button>
                     ))}
                     <Link href="/mockups/ward-flow/discharges">
