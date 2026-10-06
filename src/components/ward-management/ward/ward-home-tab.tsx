@@ -95,7 +95,6 @@ interface WardHomeTabProps {
 export function WardHomeTab({
   unit,
   units,
-  capacity,
   accepted,
   incoming,
   withdrawn,
@@ -112,9 +111,6 @@ export function WardHomeTab({
   rejections,
   setCheckToken,
   recentAnswers,
-  breakdown,
-  pendingBedReleasesCount,
-  unitLeaveBedsCount,
   resolvePatientIdentity,
   lastActionRejection,
   overrideReasonForm,
@@ -143,10 +139,6 @@ export function WardHomeTab({
     (release) => release.unitId === unit.id && release.state === "discharged",
   );
   const unitLeaveBeds = (leaveBeds ?? []).filter((bed) => bed.unitId === unit.id);
-  const soonestLeaveReturn = unitLeaveBeds.reduce<Instant | null>((soonest, bed) => {
-    if (soonest === null || bed.expectedReturn < soonest) return bed.expectedReturn;
-    return soonest;
-  }, null);
 
   function toggleLocalCheck(id: string) {
     setLocalChecks((current) => ({ ...current, [id]: current[id] === null ? now : null }));
@@ -172,12 +164,6 @@ export function WardHomeTab({
 
   const capacityConfirmed = unit.allocatable.confirmedAt !== undefined;
   const referralsClear = incoming.length === 0;
-  const occupancyPercent = unit.beds > 0 ? Math.round((capacity.occupied / unit.beds) * 100) : 0;
-  const unconfirmedEmpty = Math.max(unit.empty.value - capacity.available, 0);
-  const leavingFoot =
-    breakdown.expectedToday > 0
-      ? `${breakdown.confirmedToday} confirmed · ${breakdown.expectedToday} expected`
-      : `${breakdown.confirmedToday} confirmed`;
   const shiftChecks = [
     capacityConfirmed,
     morningRollupConfirmed,
@@ -290,76 +276,6 @@ export function WardHomeTab({
       ))}
 
       <div className={styles.homeGrid}>
-        <div className={`${styles.card} ${styles.bedsCard}`}>
-          <div className={styles.bedsStrip} aria-label="Beds now">
-            <div className={styles.bedsIdentity}>
-              <span className={styles.bedsName}>Beds now</span>
-              <span className={styles.bedsMeta}>
-                <span className="sr-only">Occupied </span>
-                {capacity.occupied} of {unit.beds}
-                <span aria-hidden="true"> · </span>
-                {occupancyPercent}%
-              </span>
-            </div>
-            <div className={styles.censusRow}>
-              <div className={styles.censusMetric}>
-                <span className={styles.censusBoxVal} data-tone="good">
-                  {capacity.available}
-                </span>
-                <span className={styles.censusCopy}>
-                  <span className={styles.censusBoxLabel}>Empty</span>
-                  <span
-                    className={styles.censusBoxFoot}
-                    title={
-                      unconfirmedEmpty > 0
-                        ? `Ready. ${unconfirmedEmpty} empty ${unconfirmedEmpty === 1 ? "bed is" : "beds are"} not confirmed allocatable.`
-                        : "Ready"
-                    }
-                  >
-                    {unconfirmedEmpty > 0 ? `Ready · ${unconfirmedEmpty} unconfirmed` : "Ready"}
-                  </span>
-                </span>
-              </div>
-              <div className={styles.censusMetric}>
-                <span className={styles.censusBoxVal}>{accepted.length}</span>
-                <span className={styles.censusCopy}>
-                  <span className={styles.censusBoxLabel}>Inbound</span>
-                  <span className={styles.censusBoxFoot}>Accepted</span>
-                </span>
-              </div>
-              <div className={styles.censusMetric}>
-                <span className={styles.censusBoxVal}>{pendingBedReleasesCount}</span>
-                <span className={styles.censusCopy}>
-                  <span className={styles.censusBoxLabel}>Leaving today</span>
-                  <span className={styles.censusBoxFoot} title={leavingFoot}>
-                    {leavingFoot}
-                  </span>
-                </span>
-              </div>
-              <div className={styles.censusMetric}>
-                <span className={styles.censusBoxVal} data-tone={unitLeaveBedsCount > 0 ? "warn" : undefined}>
-                  {unitLeaveBedsCount}
-                </span>
-                <span className={styles.censusCopy}>
-                  <span className={styles.censusBoxLabel}>On leave</span>
-                  <span className={styles.censusBoxFoot}>
-                    {soonestLeaveReturn === null ? "None due" : `Back ${formatInstant(soonestLeaveReturn)}`}
-                  </span>
-                </span>
-              </div>
-              <div className={styles.censusMetric}>
-                <span className={styles.censusBoxVal} data-tone={pendingPreparation > 0 ? "warn" : undefined}>
-                  {pendingPreparation}
-                </span>
-                <span className={styles.censusCopy}>
-                  <span className={styles.censusBoxLabel}>Preparing</span>
-                  <span className={styles.censusBoxFoot}>Being made ready</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className={`${styles.card} ${styles.checksCard}`}>
           <div className={styles.cardHead}>
             <div className={styles.cardTitle}>

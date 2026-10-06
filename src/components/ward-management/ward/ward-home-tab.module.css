@@ -121,20 +121,13 @@
   outline-offset: 2px;
 }
 
-/* Beds now is a full-width bar. Checks sit beside the log and awaiting column. */
+/* Checks sit beside the log and awaiting column. */
 .homeGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(17rem, 0.78fr);
-  grid-template-areas:
-    "beds beds"
-    "checks side";
+  grid-template-areas: "checks side";
   gap: 12px;
   align-items: stretch;
-}
-
-.bedsCard {
-  grid-area: beds;
-  align-self: start;
 }
 
 .checksCard {
@@ -211,7 +204,6 @@
   .homeGrid {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "beds"
       "checks"
       "side";
   }
@@ -258,141 +250,6 @@
 
 .cardBody {
   padding: 8px;
-}
-
-.bedsStrip {
-  display: flex;
-  align-items: stretch;
-  min-height: 0;
-}
-
-.bedsIdentity {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1px;
-  flex: 0 0 auto;
-  min-width: 6.75rem;
-  padding: 7px 12px;
-  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 42%, transparent);
-  box-shadow: inset -1px 0 0 color-mix(in oklab, var(--line) 32%, transparent);
-}
-
-.bedsName {
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.15;
-  color: var(--ink);
-}
-
-.bedsMeta {
-  font-size: 12px;
-  line-height: 1.15;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.censusRow {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  flex: 1 1 auto;
-  gap: 0;
-  min-width: 0;
-}
-
-@media (max-width: 900px) {
-  .bedsStrip {
-    flex-direction: column;
-  }
-
-  .bedsIdentity {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--line) 32%, transparent);
-  }
-
-  .censusRow {
-    grid-template-columns: repeat(5, minmax(7.5rem, 1fr));
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 600px) {
-  .censusRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow-x: visible;
-  }
-}
-
-.censusMetric {
-  min-width: 0;
-  padding: 6px 10px;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: inset -1px 0 0 color-mix(in oklab, var(--line) 28%, transparent);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.censusMetric:last-child {
-  box-shadow: none;
-}
-
-@media (max-width: 600px) {
-  .censusMetric,
-  .censusMetric:last-child {
-    box-shadow: inset -1px -1px 0 color-mix(in oklab, var(--line) 28%, transparent);
-  }
-}
-
-.censusCopy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 0;
-}
-
-.censusBoxLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
-}
-
-.censusBoxVal {
-  font-size: 1.25rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  flex: none;
-  color: var(--ink);
-}
-
-.censusBoxVal[data-tone="good"] {
-  color: var(--good);
-}
-
-.censusBoxVal[data-tone="warn"] {
-  color: var(--warn);
-}
-
-.censusBoxFoot {
-  font-size: 12px;
-  line-height: 1.15;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Shift Handshake Checklist */
