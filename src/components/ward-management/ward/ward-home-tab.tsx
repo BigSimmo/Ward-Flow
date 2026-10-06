@@ -279,139 +279,134 @@ export function WardHomeTab({
         </div>
       ))}
 
-      {/* 2. Home 2-Column Command Grid */}
       <div className={styles.homeGrid}>
-        {/* Left Column: Census Radar & Shift Safety Handshake */}
-        <div>
-          {/* Census Radar */}
-          <div className={styles.card}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Beds now</span>
-              </div>
+        <div className={`${styles.card} ${styles.bedsCard}`}>
+          <div className={styles.cardHead}>
+            <div className={styles.cardTitle}>
+              <span>Beds now</span>
             </div>
-            <div className={styles.cardBody}>
-              <div className={styles.censusRow}>
-                <div className={styles.censusMetric}>
-                  <span className={styles.censusBoxLabel}>Empty</span>
-                  <span className={styles.censusBoxVal} data-tone="good">
-                    {capacity.available}
-                  </span>
-                  <span className={styles.censusBoxFoot}>Ready</span>
-                </div>
-                <div className={styles.censusMetric}>
-                  <span className={styles.censusBoxLabel}>Inbound</span>
-                  <span className={styles.censusBoxVal}>{accepted.length}</span>
-                  <span className={styles.censusBoxFoot}>Accepted</span>
-                </div>
-                <div className={styles.censusMetric}>
-                  <span className={styles.censusBoxLabel}>Leaving today</span>
-                  <span className={styles.censusBoxVal}>{pendingBedReleasesCount}</span>
-                  <span className={styles.censusBoxFoot}>{breakdown.confirmedToday} confirmed</span>
-                </div>
-                <div className={styles.censusMetric}>
-                  <span className={styles.censusBoxLabel}>On leave</span>
-                  <span className={styles.censusBoxVal} data-tone={unitLeaveBedsCount > 0 ? "warn" : undefined}>
-                    {unitLeaveBedsCount}
-                  </span>
-                  <span className={styles.censusBoxFoot}>
-                    {soonestLeaveReturn === null ? "None due" : `Back ${formatInstant(soonestLeaveReturn)}`}
-                  </span>
-                </div>
+          </div>
+          <div className={styles.cardBody}>
+            <div className={styles.censusRow}>
+              <div className={styles.censusMetric}>
+                <span className={styles.censusBoxLabel}>Empty</span>
+                <span className={styles.censusBoxVal} data-tone="good">
+                  {capacity.available}
+                </span>
+                <span className={styles.censusBoxFoot}>Ready</span>
+              </div>
+              <div className={styles.censusMetric}>
+                <span className={styles.censusBoxLabel}>Inbound</span>
+                <span className={styles.censusBoxVal}>{accepted.length}</span>
+                <span className={styles.censusBoxFoot}>Accepted</span>
+              </div>
+              <div className={styles.censusMetric}>
+                <span className={styles.censusBoxLabel}>Leaving today</span>
+                <span className={styles.censusBoxVal}>{pendingBedReleasesCount}</span>
+                <span className={styles.censusBoxFoot}>{breakdown.confirmedToday} confirmed</span>
+              </div>
+              <div className={styles.censusMetric}>
+                <span className={styles.censusBoxLabel}>On leave</span>
+                <span className={styles.censusBoxVal} data-tone={unitLeaveBedsCount > 0 ? "warn" : undefined}>
+                  {unitLeaveBedsCount}
+                </span>
+                <span className={styles.censusBoxFoot}>
+                  {soonestLeaveReturn === null ? "None due" : `Back ${formatInstant(soonestLeaveReturn)}`}
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className={styles.card}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Shift checks</span>
-              </div>
-              <span className={styles.checkBadge}>
-                {checksDone} of {shiftChecks.length} done
-              </span>
+        <div className={`${styles.card} ${styles.checksCard}`}>
+          <div className={styles.cardHead}>
+            <div className={styles.cardTitle}>
+              <span>Shift checks</span>
             </div>
-            <div className={styles.cardBody}>
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <span className={styles.checkMark} data-done={capacityConfirmed} aria-hidden="true" />
-                  <span>
-                    <strong>Capacity numbers.</strong>{" "}
-                    {capacityConfirmed && unit.allocatable.confirmedAt !== undefined
-                      ? `Confirmed ${formatInstant(unit.allocatable.confirmedAt)}.`
-                      : "Not confirmed this shift."}
-                  </span>
-                </div>
-                {capacityConfirmed ? (
-                  <span className={styles.statusWord} data-tone="good">
-                    Verified
-                  </span>
-                ) : (
-                  <button type="button" className={styles.btnAlertAct} onClick={() => onOpenConfirmNumbers?.()}>
-                    Confirm
-                  </button>
-                )}
+            <span className={styles.checkBadge}>
+              {checksDone} of {shiftChecks.length} done
+            </span>
+          </div>
+          <div className={styles.cardBody}>
+            <div className={styles.checkItem}>
+              <div className={styles.checkLeft}>
+                <span className={styles.checkMark} data-done={capacityConfirmed} aria-hidden="true" />
+                <span>
+                  <strong>Capacity numbers.</strong>{" "}
+                  {capacityConfirmed && unit.allocatable.confirmedAt !== undefined
+                    ? `Confirmed ${formatInstant(unit.allocatable.confirmedAt)}.`
+                    : "Not confirmed this shift."}
+                </span>
               </div>
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <span className={styles.checkMark} data-done={morningRollupConfirmed} aria-hidden="true" />
-                  <span>
-                    <strong>Morning rollup.</strong> {morningRollupConfirmed ? "Confirmed today." : "Still due."}
-                  </span>
-                </div>
-                {morningRollupConfirmed ? (
-                  <span className={styles.statusWord} data-tone="good">
-                    Verified
-                  </span>
-                ) : (
-                  <button type="button" className={styles.btnAlertAct} onClick={() => onConfirmMorningRollup?.()}>
-                    Confirm
-                  </button>
-                )}
-              </div>
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <span className={styles.checkMark} data-done={referralsClear} aria-hidden="true" />
-                  <span>
-                    <strong>Unanswered referrals.</strong>{" "}
-                    {referralsClear ? "None waiting." : `${incoming.length} waiting.`}
-                  </span>
-                </div>
-                {referralsClear ? (
-                  <span className={styles.statusWord} data-tone="good">
-                    Clear
-                  </span>
-                ) : (
-                  <button type="button" className={styles.btnAlertAct} onClick={focusAwaiting}>
-                    Answer
-                  </button>
-                )}
-              </div>
-              {(
-                [
-                  ["drugs", "Controlled drug count", "Tick when the register has been checked."],
-                  ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked."],
-                  ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed."],
-                ] as const
-              ).map(([id, label, hint]) => (
-                <div className={styles.checkItem} key={id}>
-                  <label className={styles.checkLeft}>
-                    <input
-                      type="checkbox"
-                      checked={localChecks[id] !== null}
-                      onChange={() => toggleLocalCheck(id)}
-                      aria-label={label}
-                    />
-                    <span>
-                      <strong>{label}.</strong> {hint} On this screen only. Not sent.
-                    </span>
-                  </label>
-                  <span className={styles.statusWord} data-tone={localChecks[id] !== null ? "good" : "warn"}>
-                    {localChecks[id] !== null ? formatInstant(localChecks[id]) : "Due"}
-                  </span>
-                </div>
-              ))}
+              {capacityConfirmed ? (
+                <span className={styles.statusWord} data-tone="good">
+                  Verified
+                </span>
+              ) : (
+                <button type="button" className={styles.btnAlertAct} onClick={() => onOpenConfirmNumbers?.()}>
+                  Confirm
+                </button>
+              )}
             </div>
+            <div className={styles.checkItem}>
+              <div className={styles.checkLeft}>
+                <span className={styles.checkMark} data-done={morningRollupConfirmed} aria-hidden="true" />
+                <span>
+                  <strong>Morning rollup.</strong> {morningRollupConfirmed ? "Confirmed today." : "Still due."}
+                </span>
+              </div>
+              {morningRollupConfirmed ? (
+                <span className={styles.statusWord} data-tone="good">
+                  Verified
+                </span>
+              ) : (
+                <button type="button" className={styles.btnAlertAct} onClick={() => onConfirmMorningRollup?.()}>
+                  Confirm
+                </button>
+              )}
+            </div>
+            <div className={styles.checkItem}>
+              <div className={styles.checkLeft}>
+                <span className={styles.checkMark} data-done={referralsClear} aria-hidden="true" />
+                <span>
+                  <strong>Unanswered referrals.</strong>{" "}
+                  {referralsClear ? "None waiting." : `${incoming.length} waiting.`}
+                </span>
+              </div>
+              {referralsClear ? (
+                <span className={styles.statusWord} data-tone="good">
+                  Clear
+                </span>
+              ) : (
+                <button type="button" className={styles.btnAlertAct} onClick={focusAwaiting}>
+                  Answer
+                </button>
+              )}
+            </div>
+            {(
+              [
+                ["drugs", "Controlled drug count", "Tick when the register has been checked."],
+                ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked."],
+                ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed."],
+              ] as const
+            ).map(([id, label, hint]) => (
+              <div className={styles.checkItem} key={id}>
+                <label className={styles.checkLeft}>
+                  <input
+                    type="checkbox"
+                    checked={localChecks[id] !== null}
+                    onChange={() => toggleLocalCheck(id)}
+                    aria-label={label}
+                  />
+                  <span>
+                    <strong>{label}.</strong> {hint} On this screen only. Not sent.
+                  </span>
+                </label>
+                <span className={styles.statusWord} data-tone={localChecks[id] !== null ? "good" : "warn"}>
+                  {localChecks[id] !== null ? formatInstant(localChecks[id]) : "Due"}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -438,11 +433,14 @@ export function WardHomeTab({
                         <strong>{row.title}</strong>
                         <span className={styles.timelineDetail}>{row.detail}</span>
                         {row.nested ? (
-                          <ul className={styles.timelineNested}>
-                            {row.nested.map((item) => (
-                              <li key={item.key}>{item.detail}</li>
-                            ))}
-                          </ul>
+                          <details className={styles.timelineMore}>
+                            <summary>Times ({row.nested.length})</summary>
+                            <ul className={styles.timelineNested}>
+                              {row.nested.map((item) => (
+                                <li key={item.key}>{item.detail}</li>
+                              ))}
+                            </ul>
+                          </details>
                         ) : null}
                       </span>
                       <span className={styles.statusWord}>{row.status}</span>
