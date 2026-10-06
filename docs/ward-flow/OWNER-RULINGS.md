@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**510 rulings/items extracted, across 30 of 35 files.**
+**518 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -24,7 +24,7 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 34 time(s) below (e.g. `D-1`).
+independently in more than one file 42 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
@@ -164,14 +164,30 @@ safe global key across 30 files.
 | ↳ | `decisions.md`:358 | D-27. Ward Flow uses its dedicated repository (28 September) |
 | `D-28` | `decisions.md`:371 | D-28. Design Modernization & Anti-Box Architecture (30 September 2026) |
 | `D-29` | `decisions.md`:384 | D-29. Act time limits shown as a labelled synthetic demo (4 October 2026) |
-| `D-30` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1238 | D-30 · `Unit.forensic` is a WARD flag, and every rendered string says so |
-| `D-31` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1367 | D-31 · The plan's disposition — delete one half, re-derive the other |
-| `D-32` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1289 | D-32 · D-6 is restated: ONE WORDING PER STATE, and the states are named |
-| `D-33` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1322 | D-33 · "Nothing outstanding" does three jobs, and only one of them may keep the words |
-| `D-34` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1347 | D-34 · A hypothetical destination row may not use obligation vocabulary at all |
-| `D-35` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1388 | D-35 · The ED pressure strip does not narrow to the selected service, and #6 is CLOSED |
-| `D-36` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1405 | D-36 · _Referrals into this ward_ / _into the team_ — PRESENTATION, with a condition |
-| `D-37` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1411 | D-37 · _Clinically ready, not yet gone_ — PRESENTATION, and the heading must name its subject |
+| `D-30` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1238 | D-30 · `Unit.forensic` is a WARD flag, and every rendered string says so |
+| ↳ | `decisions.md`:399 | D-30. Central Coordinator Approval for Inter-Ward Bed Transfers (6 October 2026) |
+| `D-31` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1367 | D-31 · The plan's disposition — delete one half, re-derive the other |
+| ↳ | `decisions.md`:405 | D-31. Gender-Diverse Bed Placement Policy & Clinical Override Safety (6 October 2026) |
+| `D-32` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1289 | D-32 · D-6 is restated: ONE WORDING PER STATE, and the states are named |
+| ↳ | `decisions.md`:411 | D-32. FIFO Waiting Time with Clinical Triage Badging vs Algorithmic Urgency Sorting (6 October 2026) |
+| `D-33` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1322 | D-33 · "Nothing outstanding" does three jobs, and only one of them may keep the words |
+| ↳ | `decisions.md`:417 | D-33. Separation of Local Ward Shift Notes from Statewide Coordinator Telemetry (6 October 2026) |
+| `D-34` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1347 | D-34 · A hypothetical destination row may not use obligation vocabulary at all |
+| ↳ | `decisions.md`:423 | D-34. Acute Medical Deterioration Bed Release and Escalation Protocol (6 October 2026) |
+| `D-35` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1388 | D-35 · The ED pressure strip does not narrow to the selected service, and #6 is CLOSED |
+| ↳ | `decisions.md`:429 | D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026) |
+| `D-36` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1405 | D-36 · _Referrals into this ward_ / _into the team_ — PRESENTATION, with a condition |
+| ↳ | `decisions.md`:435 | D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026) |
+| `D-37` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1411 | D-37 · _Clinically ready, not yet gone_ — PRESENTATION, and the heading must name its subject |
+| ↳ | `decisions.md`:450 | D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) |
 | `D-38` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |
 | `D-39` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |
 | `D-40` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1445 | D-40 · An empty check array never claims reconciliation — on either shell surface |
@@ -455,7 +471,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-29 item(s):
+37 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -486,6 +502,14 @@ safe global key across 30 files.
 - `D-27` — line 358, heading: "D-27. Ward Flow uses its dedicated repository (28 September)"
 - `D-28` — line 371, heading: "D-28. Design Modernization & Anti-Box Architecture (30 September 2026)"
 - `D-29` — line 384, heading: "D-29. Act time limits shown as a labelled synthetic demo (4 October 2026)"
+- `D-30` — line 399, heading: "D-30. Central Coordinator Approval for Inter-Ward Bed Transfers (6 October 2026)"
+- `D-31` — line 405, heading: "D-31. Gender-Diverse Bed Placement Policy & Clinical Override Safety (6 October 2026)"
+- `D-32` — line 411, heading: "D-32. FIFO Waiting Time with Clinical Triage Badging vs Algorithmic Urgency Sorting (6 October 2026)"
+- `D-33` — line 417, heading: "D-33. Separation of Local Ward Shift Notes from Statewide Coordinator Telemetry (6 October 2026)"
+- `D-34` — line 423, heading: "D-34. Acute Medical Deterioration Bed Release and Escalation Protocol (6 October 2026)"
+- `D-35` — line 429, heading: "D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)"
+- `D-36` — line 435, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)"
+- `D-37` — line 450, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
