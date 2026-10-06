@@ -285,7 +285,8 @@ function Queue({
                 <Chip tone="good">Done</Chip>
               </div>
             ) : null}
-            {wired ? children : <p className={styles.empty}>Not wired in this prototype.</p>}
+            {children}
+            {!wired && !onConfirmRollup ? <p className={styles.empty}>Not wired in this prototype.</p> : null}
           </div>
         </section>
       ) : null}
