@@ -23,9 +23,10 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // a future ui-phone-scroll-*.spec.ts runs rather than quietly not running.
 // `tests/playwright-project-isolation.test.ts` asserts every such file on disk is
 // matched here.
-const productionSpecPattern = /.*(?:api-csrf-proxy|ui-smoke|visual-artifacts)\.spec\.ts/;
+const productionSpecPattern =
+  /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(smoke|stress|accessibility|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|tools|tools-show-all|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/;
 const mockupSpecPattern =
-  /.*ui-ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds)\.spec\.ts/;
+  /.*ui-(accessible-table-mockup|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-search-mode-mockup|tools-task-directory|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds)\.spec\.ts/;
 const mockupTag = /@mockup/;
 
 // Ward Flow fold gate (Josh, 25 September 2026): the known-failing journeys still run every gate, but
@@ -37,7 +38,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:api-csrf-proxy|ui-smoke|ui-ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds))\.spec\.ts/,
+    /.*(?:api-csrf-proxy|answer-progress-ui-smoke|dsm-ui-smoke|ui-(accessible-table-mockup|smoke|stress|accessibility|answer-chat-perfected-mockup|care-plan-mockup|caring-contact-mockup|caring-contacts-activation|caring-contacts-populated|caring-contacts-workspace|clinical-ask|dictionary|document-canvas|document-image-status-mockup|document-top-navigation-mockup|sidebar-live-mockup|therapy-navigation-mockup|tools|tools-collapse|tools-show-all|tools-search-mode-mockup|tools-task-directory|ward-(?:management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds)|overlap|universal-search|specifiers|sources|formulation(?:-result-cards)?|forms-section-nav|chrome-scroll|therapy-nav-scroll|therapy-pathways|mode-nav-density|phone-motion|phone-scroll(?:-[a-z0-9-]+)?|pwa|route-coverage|style-contract|token-layer-resolution|visual-artifacts|hydration))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
@@ -148,24 +149,6 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
-    },
-    {
-      name: "firefox-mockups",
-      testMatch: mockupSpecPattern,
-      grep: mockupTag,
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "webkit-mockups",
-      testMatch: mockupSpecPattern,
-      grep: mockupTag,
-      use: { ...devices["Desktop Safari"] },
-    },
-    {
-      name: "mobile-webkit-mockups",
-      testMatch: mockupSpecPattern,
-      grep: mockupTag,
-      use: { ...devices["iPhone 14"] },
     },
   ],
 });

@@ -61,9 +61,9 @@ export function WardFlowErrorPanel({
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    // Redact potential UMRN/identifiers before writing to console without widening outward seam
-    const safeMsg = typeof error.message === "string" ? error.message.replace(/\bUM\d{6}\b/gi, "[REDACTED-UMRN]") : "";
-    console.error(logLabel, error.name ? `${error.name}: ${safeMsg}` : safeMsg);
+    // The whole error object, not `error.message`: the console entry is where the stack is
+    // reachable in production as well as development.
+    console.error(logLabel, error);
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 
