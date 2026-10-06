@@ -88,7 +88,16 @@ describe("delay graph population and boundaries", () => {
       cause: "awaiting_coordinator" as const,
     }));
     const unknown = delayCatchments(records, NOW_ANCHOR).find((entry) => entry.origin === "unrecorded");
-    expect(unknown).toMatchObject({ total: 4, over8: 3, over24: 1 });
+    expect(unknown).toMatchObject({
+      total: 4,
+      over8: 3,
+      over12: 2,
+      over24: 1,
+      stillWaiting4hAgo: 4,
+      stillWaiting8hAgo: 3,
+      expectedOver8: 4,
+      expectedOver12: 3,
+    });
   });
   it("reconciles grouped radar intervals and keeps all outliers outside the linear axis", () => {
     const graph = delayRadarGroups(rows, NOW_ANCHOR);
