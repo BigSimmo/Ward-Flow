@@ -1205,13 +1205,14 @@ export type WardFlowEvent =
       originSiteCode: string;
       transportNeeded: boolean;
       /**
-       * ⚠️ THE WRITTEN HISTORY. The only free text this event carries, and the only part of a
-       * referral that arrives unvalidated.
+       * ⚠️ THE WRITTEN HISTORY. The clinical story, and one of the free-text fields on this event.
        *
-       * Every other field on this event is a closed union, a boolean, a membership-checked code or
-       * an id, and the reducer refuses anything outside the set. **This one is whatever a person
-       * typed.** The reducer checks its LENGTH and nothing else — it cannot check meaning, and it
-       * must not try.
+       * The others are the callback and documentation notes listed beside it (`referrerPhone`,
+       * `referrerEmail`, `referrerLocation`, `anythingElseNote`, `clearanceExpectedNote`,
+       * `clearanceContactName`, `clearanceContactNumber`) and `sendingTeamName`. Each is whatever
+       * a person typed. The reducer checks LENGTH and nothing else — it cannot check meaning, and
+       * it must not try. Closed unions, booleans, membership-checked codes and ids are refused
+       * when they fall outside their set.
        *
        * ⚠️ **PASSED THROUGH UNTOUCHED.** No trim, no collapse of whitespace, no normalisation. A
        * referrer's paragraph breaks are part of what they wrote. `RECEIVE_REFERRAL` rejects an
@@ -1224,6 +1225,21 @@ export type WardFlowEvent =
        * derived from it.
        */
       history: string;
+      /** Callback phone for the receiving team. Omit when not collected. */
+      referrerPhone?: string;
+      /** Callback email for the receiving team. Omit when not collected. */
+      referrerEmail?: string;
+      /** Role of the person sending. A `WardFlowRole`, never a free-text job title. */
+      referrerRole?: WardFlowRole;
+      /** Where the referrer says they are calling from. */
+      referrerLocation?: string;
+      medicationChartAttached?: boolean;
+      observationChartAttached?: boolean;
+      triageAndRampCompleted?: boolean;
+      anythingElseNote?: string;
+      clearanceExpectedNote?: string;
+      clearanceContactName?: string;
+      clearanceContactNumber?: string;
       /**
        * T15 (item 12): the front door's own optional diagnosis category — see
        * `Referral.tentativeDiagnosis`'s own doc comment for the vocabulary and why it starts here.

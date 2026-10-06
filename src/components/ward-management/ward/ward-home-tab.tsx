@@ -24,6 +24,11 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   PATIENT_ARRIVED: "Confirm Arrival",
 };
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import {
+  addressingStreamStatus,
+  REFERRAL_STREAM_STATUS_LABELS,
+  wardReferralsFor,
+} from "@/components/ward-management/ward-referrals";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
   if (movement.stage !== "destination_review") {
@@ -113,7 +118,8 @@ export function WardHomeTab({
   onAcceptInPrinciple,
   liveFormAlerts,
 }: WardHomeTabProps) {
-  const { bedReleases, leaveBeds = [] } = useWardFlow();
+  const { bedReleases, leaveBeds = [], referrals = [], movements = [], patients = [] } = useWardFlow();
+  const wardInbox = wardReferralsFor(referrals, unit.id);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [affirmationChecked, setAffirmationChecked] = useState(false);
 
@@ -390,6 +396,61 @@ export function WardHomeTab({
           </div>
         </div>
       </div>
+
+      <section
+        aria-label="Referrals sent to this ward"
+        className={styles.card}
+        style={{ marginTop: "1rem" }}
+        data-testid="ward-referral-inbox"
+        tabIndex={0}
+      >
+        <div className={styles.cardHead}>
+          <div className={styles.cardTitle}>
+            <h2 style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}>Referrals sent to this ward</h2>
+          </div>
+          <span className={styles.pillBadge}>{wardInbox.length} named</span>
+        </div>
+        <div className={styles.cardBody}>
+          {wardInbox.length === 0 ? (
+            <p className={styles.placeholder} style={{ padding: "12px", color: "var(--muted)", fontSize: "12.5px" }}>
+              No referral has named {unit.name}.
+            </p>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {wardInbox.map((referral) => {
+                const addressing = referral.destinations.find(
+                  (candidate) =>
+                    candidate.destination.kind === "psychiatric_ward" &&
+                    (candidate.destination.requestedUnitIds ?? []).includes(unit.id),
+                );
+                const status = addressing ? addressingStreamStatus(addressing, referral, movements) : "awaiting";
+                const person = resolveSubjectPatient(referral, { patients, referrals, movements });
+                return (
+                  <li
+                    key={referral.id}
+                    data-testid={`ward-referral-inbox-${referral.id}`}
+                    style={{
+                      padding: "12px",
+                      border: "1px solid var(--line)",
+                      borderRadius: "var(--r1)",
+                      marginBottom: "10px",
+                      background: "var(--surface-2)",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: "13px" }}>
+                      {person.displayName} · {referral.id}
+                    </span>
+                    <span style={{ display: "block", fontSize: "12px", color: "var(--ink-soft)" }}>
+                      {referral.ageBand} · {REFERRAL_STREAM_STATUS_LABELS[status]}
+                      {referral.sendingTeamName ? ` · ${referral.sendingTeamName}` : ""}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </section>
 
       {/* 3. Incoming Referrals Awaiting Answer (Preserves all accessibility and test contracts) */}
       <section aria-label="Awaiting your answer" className={styles.card} style={{ marginTop: "1rem" }} tabIndex={0}>

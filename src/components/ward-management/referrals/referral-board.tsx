@@ -6,7 +6,13 @@ import Link from "next/link";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
+import {
+  genderReviewNeeded,
+  type Movement,
+  type Referral,
+  type ReferralAddressing,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -18,6 +24,13 @@ import {
   decidedReferrals,
   recentlyDecidedReferrals,
   referralQueueOrder,
+  REFERRAL_STREAMS,
+  REFERRAL_STREAM_LABELS,
+  REFERRAL_STREAM_STATUSES,
+  REFERRAL_STREAM_STATUS_LABELS,
+  referralStreamOf,
+  addressingStreamStatus,
+  type ReferralStreamStatus,
   referralPersonFactsStatingSex,
   referralSexCell,
   acceptedAddressing,
@@ -324,6 +337,91 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   () => (typeof window.matchMedia === "function" ? window.matchMedia(SPLIT_DETAIL_MEDIA_QUERY).matches : false),
   false,
 );
+
+function streamStatusVisible(
+  status: ReferralStreamStatus,
+  statusFilter: "all" | "pending" | "accepted" | "declined",
+): boolean {
+  if (statusFilter === "pending") return status === "awaiting";
+  if (statusFilter === "accepted") return status === "accepted" || status === "waitlisted";
+  if (statusFilter === "declined") return status === "declined";
+  return true;
+}
+
+function ReferralStreamBoard({
+  referrals,
+  movements,
+  statusFilter,
+  onSelect,
+}: {
+  referrals: readonly Referral[];
+  movements: readonly Movement[];
+  statusFilter: "all" | "pending" | "accepted" | "declined";
+  onSelect: (referralId: string) => void;
+}) {
+  return (
+    <div className={styles.streamBoard} data-testid="ward-referral-streams">
+      {REFERRAL_STREAMS.map((stream) => {
+        const groups = new Map<ReferralStreamStatus, { referral: Referral; addressing: ReferralAddressing }[]>();
+        for (const status of REFERRAL_STREAM_STATUSES) groups.set(status, []);
+        for (const referral of referrals) {
+          for (const addressing of referral.destinations) {
+            if (referralStreamOf(addressing.destination.kind) !== stream) continue;
+            const status = addressingStreamStatus(addressing, referral, movements);
+            if (!streamStatusVisible(status, statusFilter)) continue;
+            groups.get(status)?.push({ referral, addressing });
+          }
+        }
+        for (const [status, rows] of groups) {
+          rows.sort((left, right) => {
+            if (status === "awaiting") {
+              return left.referral.urgency - right.referral.urgency || left.referral.raisedAt - right.referral.raisedAt;
+            }
+            const leftAt = left.addressing.decidedAt ?? left.referral.raisedAt;
+            const rightAt = right.addressing.decidedAt ?? right.referral.raisedAt;
+            return rightAt - leftAt;
+          });
+        }
+        const occupied = REFERRAL_STREAM_STATUSES.filter((status) => (groups.get(status)?.length ?? 0) > 0);
+        return (
+          <section
+            key={stream}
+            className={styles.section}
+            aria-label={`${REFERRAL_STREAM_LABELS[stream]} stream`}
+            data-testid={`ward-referral-stream-${stream}`}
+          >
+            <h2 className={styles.sectionHeading}>{REFERRAL_STREAM_LABELS[stream]}</h2>
+            {occupied.length === 0 ? (
+              <p className={styles.emptyNote}>No referrals in this stream.</p>
+            ) : (
+              occupied.map((status) => (
+                <div key={status}>
+                  <h3 className={styles.streamStatus}>{REFERRAL_STREAM_STATUS_LABELS[status]}</h3>
+                  <ul className={styles.streamList}>
+                    {(groups.get(status) ?? []).map(({ referral }) => (
+                      <li key={`${stream}-${status}-${referral.id}`}>
+                        <button
+                          type="button"
+                          className={styles.streamRow}
+                          data-testid={`ward-referral-stream-${stream}-${status}-${referral.id}`}
+                          onClick={() => onSelect(referral.id)}
+                        >
+                          {referral.id}
+                          {" · "}
+                          {referralDestinationLabels(referral).join(", ")}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFirst?: boolean } = {}) {
   const { referrals, units, dispatch, rejections, movements = [], patients = [] } = useWardFlow();
@@ -756,6 +854,12 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             />
           ) : null}
           <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
+            <ReferralStreamBoard
+              referrals={referrals.filter((referral) => matchesSearch(referral) && matchesChip(referral))}
+              movements={movements}
+              statusFilter={statusFilter}
+              onSelect={handleSelect}
+            />
             {showQueued && (
               <QueuedSection
                 queued={queued}

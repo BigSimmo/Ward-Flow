@@ -2214,6 +2214,13 @@ export type ReferralDestination =
        * may be turned into a remaining count.
        */
       highAcuityNursingNeeded: boolean;
+      /**
+       * Wards the referrer asked, by unit id. One ward destination can name several wards; the
+       * engine still refuses a second ward destination. Absent means the referrer asked for a
+       * ward bed without naming which ward. Each id is a real unit. The total number of places
+       * on the referral, counting each named ward, stays within `PARALLEL_REFERRAL_CAP`.
+       */
+      requestedUnitIds?: readonly string[];
     }
   | {
       kind: "emergency_department";
@@ -2522,6 +2529,12 @@ export type ReferralHistoryField = keyof typeof REFERRAL_HISTORY_LIMITS;
  */
 export const SENDING_TEAM_NAME_LIMIT = 120;
 
+/** Phone, email, role location and clearance contact. Refused past this, never shortened. */
+export const REFERRER_CONTACT_MAX_CHARACTERS = 120;
+
+/** Short documentation notes on a referral. Refused past this, never shortened. */
+export const REFERRAL_SHORT_NOTE_MAX_CHARACTERS = 500;
+
 /* `REQUIRED_HISTORY_FIELD` was declared here until the owner's ruling of 2026-09-05: ONE story
  * box, OPTIONAL. There is no required history field any more, so the constant is gone rather than
  * left pointing at a rule nobody enforces. The reducer's blank-refusal went with it. */
@@ -2651,6 +2664,31 @@ export type Referral = {
    * The sending bed stays occupied until the person arrives at the destination.
    */
   originUnitId?: string;
+  /**
+   * Callback for the receiving team. Operational contact for the person sending, never a fact
+   * about the patient. Absent means the drawer did not collect it. A present value is refused
+   * when blank or over `REFERRER_CONTACT_MAX_CHARACTERS`.
+   */
+  referrerPhone?: string;
+  referrerEmail?: string;
+  /** A role, the same vocabulary as every other decision on this record. */
+  referrerRole?: WardFlowRole;
+  /** The service or site the referrer named as where they are calling from. */
+  referrerLocation?: string;
+  /** The referrer marked a medication chart as attached. The file itself is not stored. */
+  medicationChartAttached?: boolean;
+  /** The referrer marked an observation chart as attached. The file itself is not stored. */
+  observationChartAttached?: boolean;
+  /** Whether triage and ramp were marked complete. Absent means the question was not on this path. */
+  triageAndRampCompleted?: boolean;
+  /** Short note when the referrer said there is something else to send. */
+  anythingElseNote?: string;
+  /** What the referrer typed for when medical clearance is expected. Not a calculated time. */
+  clearanceExpectedNote?: string;
+  /** Who to call about medical clearance. A name the referrer typed, not the patient's name. */
+  clearanceContactName?: string;
+  /** Number to call about medical clearance. */
+  clearanceContactNumber?: string;
   /**
    * WHICH TEAM OR SERVICE SENT THIS REFERRAL, BY NAME. Owner, 2026-09-12, asked directly: *"Should
    * a referral record which team or service sent it, not just which hospital?"* -- **"Yes it

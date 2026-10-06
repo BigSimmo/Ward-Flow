@@ -100,6 +100,8 @@ import {
   REFERRAL_DECLINE_REASONS,
   REFERRAL_HISTORY_LIMITS,
   SENDING_TEAM_NAME_LIMIT,
+  REFERRER_CONTACT_MAX_CHARACTERS,
+  REFERRAL_SHORT_NOTE_MAX_CHARACTERS,
   type CommunityDeclineReason,
   type ReferralCorrection,
   type ReferralHistoryField,
@@ -6122,6 +6124,93 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECEIVE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`,
         );
       }
+      const contactFields = [
+        ["referrerPhone", event.referrerPhone],
+        ["referrerEmail", event.referrerEmail],
+        ["referrerLocation", event.referrerLocation],
+        ["clearanceContactName", event.clearanceContactName],
+        ["clearanceContactNumber", event.clearanceContactNumber],
+      ] as const;
+      for (const [label, value] of contactFields) {
+        if (value === undefined) continue;
+        if (value.trim() === "") {
+          return reject(state, event, `RECEIVE_REFERRAL ${label} is present but blank — omit the field instead`);
+        }
+        if (value.length > REFERRER_CONTACT_MAX_CHARACTERS) {
+          return reject(
+            state,
+            event,
+            `RECEIVE_REFERRAL ${label} is ${value.length} characters and the maximum is ${REFERRER_CONTACT_MAX_CHARACTERS}`,
+          );
+        }
+      }
+      const noteFields = [
+        ["anythingElseNote", event.anythingElseNote],
+        ["clearanceExpectedNote", event.clearanceExpectedNote],
+      ] as const;
+      for (const [label, value] of noteFields) {
+        if (value === undefined) continue;
+        if (value.trim() === "") {
+          return reject(state, event, `RECEIVE_REFERRAL ${label} is present but blank — omit the field instead`);
+        }
+        if (value.length > REFERRAL_SHORT_NOTE_MAX_CHARACTERS) {
+          return reject(
+            state,
+            event,
+            `RECEIVE_REFERRAL ${label} is ${value.length} characters and the maximum is ${REFERRAL_SHORT_NOTE_MAX_CHARACTERS}`,
+          );
+        }
+      }
+      if (event.referrerRole !== undefined) {
+        const roles = [
+          "coordinator",
+          "ed",
+          "ward",
+          "officer",
+          "demo",
+          "community",
+          "bed_manager",
+          "executive",
+        ] as const;
+        if (!roles.includes(event.referrerRole)) {
+          return reject(state, event, `RECEIVE_REFERRAL referrerRole must be a Ward Flow role`);
+        }
+      }
+      for (const [label, value] of [
+        ["medicationChartAttached", event.medicationChartAttached],
+        ["observationChartAttached", event.observationChartAttached],
+        ["triageAndRampCompleted", event.triageAndRampCompleted],
+      ] as const) {
+        if (value !== undefined && typeof value !== "boolean") {
+          return reject(state, event, `RECEIVE_REFERRAL ${label} must be yes or no`);
+        }
+      }
+      if (wardDestination?.kind === "psychiatric_ward" && wardDestination.requestedUnitIds !== undefined) {
+        const ids = wardDestination.requestedUnitIds;
+        if (ids.length === 0) {
+          return reject(
+            state,
+            event,
+            "RECEIVE_REFERRAL requestedUnitIds is present but empty — omit the field to name no ward",
+          );
+        }
+        if (new Set(ids).size !== ids.length) {
+          return reject(state, event, "RECEIVE_REFERRAL requestedUnitIds names the same ward twice");
+        }
+        for (const unitId of ids) {
+          if (!findUnit(state, unitId)) {
+            return reject(state, event, `RECEIVE_REFERRAL requestedUnitIds names a ward that is not in the network`);
+          }
+        }
+        const otherPlaces = event.destinations.length - 1;
+        if (ids.length + otherPlaces > state.configuration.parallelReferralCap) {
+          return reject(
+            state,
+            event,
+            `RECEIVE_REFERRAL may name at most ${state.configuration.parallelReferralCap} places, not ${ids.length + otherPlaces}`,
+          );
+        }
+      }
       const sequence = state.frontDoorReferralSequence + 1;
       const created: Referral = {
         id: nextFrontDoorReferralId(sequence),
@@ -6150,6 +6239,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // indent and paragraph breaks are part of what they wrote, and a reducer that tidies
         // prose is a reducer that has an opinion about prose.
         history: event.history,
+        referrerPhone: event.referrerPhone,
+        referrerEmail: event.referrerEmail,
+        referrerRole: event.referrerRole,
+        referrerLocation: event.referrerLocation,
+        medicationChartAttached: event.medicationChartAttached,
+        observationChartAttached: event.observationChartAttached,
+        triageAndRampCompleted: event.triageAndRampCompleted,
+        anythingElseNote: event.anythingElseNote,
+        clearanceExpectedNote: event.clearanceExpectedNote,
+        clearanceContactName: event.clearanceContactName,
+        clearanceContactNumber: event.clearanceContactNumber,
         // T15 (item 12): absent means nobody has recorded one — never defaulted, never derived
         // from anything else on the referral.
         tentativeDiagnosis: event.tentativeDiagnosis,

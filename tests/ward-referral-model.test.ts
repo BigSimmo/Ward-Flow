@@ -1110,6 +1110,19 @@ describe("Referral privacy — structural", () => {
     "genderPlacements",
     // Ward-to-ward stepdown transfer: originUnitId identifies the transferring ward.
     "originUnitId",
+    // Callback and documentation marks from the referral drawer. Operational, about the
+    // sending team, not facts copied from the patient record.
+    "referrerPhone",
+    "referrerEmail",
+    "referrerRole",
+    "referrerLocation",
+    "medicationChartAttached",
+    "observationChartAttached",
+    "triageAndRampCompleted",
+    "anythingElseNote",
+    "clearanceExpectedNote",
+    "clearanceContactName",
+    "clearanceContactNumber",
   ].sort();
 
   /**
@@ -1167,6 +1180,8 @@ describe("Referral privacy — structural", () => {
       "secureBedNeeded",
       "involuntaryBedNeeded",
       "highAcuityNursingNeeded",
+      // Wards the referrer named on the one ward destination. Unit ids, not a person fact.
+      "requestedUnitIds",
     ].sort(),
     emergency_department: ["kind", "edId", "purpose"].sort(),
     community_team: ["kind", "teamName"].sort(),
@@ -1194,6 +1209,7 @@ describe("Referral privacy — structural", () => {
       secureBedNeeded: false,
       involuntaryBedNeeded: false,
       highAcuityNursingNeeded: false,
+      requestedUnitIds: ["rph-adult-secure"],
     };
     const canonicalEd: Required<Extract<ReferralDestination, { kind: "emergency_department" }>> = {
       kind: "emergency_department",
@@ -1265,6 +1281,7 @@ describe("Referral privacy — structural", () => {
             secureBedNeeded: false,
             involuntaryBedNeeded: false,
             highAcuityNursingNeeded: false,
+            requestedUnitIds: ["rph-adult-secure"],
           },
           state: "accepted",
           acceptedUnitId: "rph-adult-secure",
@@ -1320,6 +1337,17 @@ describe("Referral privacy — structural", () => {
         },
       ],
       originUnitId: "rph-adult-secure",
+      referrerPhone: "0400000000",
+      referrerEmail: "referrer@example.test",
+      referrerRole: "community",
+      referrerLocation: "Peel",
+      medicationChartAttached: true,
+      observationChartAttached: false,
+      triageAndRampCompleted: true,
+      anythingElseNote: "A short extra note.",
+      clearanceExpectedNote: "This afternoon, as typed.",
+      clearanceContactName: "Synthetic contact",
+      clearanceContactNumber: "0400000001",
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_REFERRAL_FIELDS);
     // Exact equality on the arm as well: `Required<Referral>` forces every OUTER field to be

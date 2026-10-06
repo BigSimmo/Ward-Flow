@@ -94,17 +94,16 @@ describe("the referral drawer shows only what the record holds", () => {
     expect(screen.queryByText("Code Black")).not.toBeInTheDocument();
   });
 
-  it("retains the clinical draft and placement choice when switching sections", () => {
+  it("retains the patient story and placement choice when switching sections", () => {
     renderDrawer();
     const sections = within(screen.getByRole("group", { name: "Referral sections" }));
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    const clinician = screen.getByLabelText(/Referring Clinician & Origin Unit/);
-    fireEvent.change(clinician, { target: { value: "Synthetic clinician draft" } });
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    const story = screen.getByLabelText("Patient story");
+    fireEvent.change(story, { target: { value: "Synthetic patient story" } });
     fireEvent.change(screen.getByLabelText(/Placement Destination Tier/), { target: { value: "community" } });
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    expect(clinician).toHaveValue("Synthetic clinician draft");
+    fireEvent.click(sections.getByRole("button", { name: "Documentation" }));
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    expect(story).toHaveValue("Synthetic patient story");
     expect(screen.getByLabelText(/Placement Destination Tier/)).toHaveValue("community");
   });
 
@@ -112,10 +111,10 @@ describe("the referral drawer shows only what the record holds", () => {
     renderDrawer();
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
-        name: "Clinical",
+        name: "Referral",
       }),
     );
-    expect(screen.getByLabelText(/Provisional Psychiatric Diagnosis/)).toHaveValue("");
+    expect(screen.getByLabelText(/Provisional psychiatric diagnosis/)).toHaveValue("");
   });
 
   // 26 Sept 2026: the urgency picker offered typed hour windows ("< 2 hours · Active Breach", and a

@@ -1,26 +1,26 @@
 "use client";
 
-import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
-  Ambulance,
-  ArrowRight,
-  Clock,
-  Lock,
-  MapPin,
-  Plus,
-  Search,
-  Send,
-  ShieldAlert,
-  ShieldCheck,
-  User,
-  Users,
-  X,
-} from "lucide-react";
+import { Activity, Clock, Lock, MapPin, Plus, Search, Send, ShieldAlert, ShieldCheck, User, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 
+import {
+  catchmentCanRouteAutomatically,
+  catchmentRoutingDestinations,
+  lookupCatchment,
+} from "@/components/ward-management/ward-catchment";
+import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import {
+  CatchmentSection,
+  ClinicalPresentationSection,
+  DocumentationSection,
+  DrawerNext,
+  LocationsSection,
+  ReferringSourceSection,
+  SendContactDialog,
+} from "@/components/ward-management/referrals/referral-flow-sections";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
@@ -38,21 +38,21 @@ import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designati
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
+  RECORDED_SEXES,
   URGENCY_LEVELS,
   type Cohort,
   type HealthService,
+  type HomeRegion,
   type Movement,
   type Referral,
+  type ReferralDestination,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
 
 /**
@@ -82,23 +82,6 @@ const LEGAL_STATUS_FORM_CODES = ["1A", "4A", "5A"] as const;
 function legalStatusOptionLabel(code: string): string {
   const title = formTitleForCode(code);
   return title === null ? `Form ${code}` : `Form ${code} (${title})`;
-}
-
-function transportLabel(code: string): string {
-  switch (code) {
-    case "mht":
-      return "Mental Health Transport (Contracted MHT)";
-    case "police":
-      return "Police Escort (WAPOL Transit)";
-    case "rfds":
-      return "RFDS Aeromedical Flight Escort";
-    case "stjohn":
-      return "St John Ambulance (Priority 2 Escort)";
-    case "carer":
-      return "Patient / Carer Accompanied Transport";
-    default:
-      return "Mental Health Transport";
-  }
 }
 
 type WardReferralDrawerProps = {
@@ -319,16 +302,10 @@ function WardReferralDrawerContent({
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<"patient" | "referral" | "clinical" | "placement">("patient");
+  const [activeSection, setActiveSection] = useState<"patient" | "referral" | "documentation" | "locations">("patient");
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
-  const [selectedDestUnitId, setSelectedDestUnitId] = useState<string | null>(null);
-  const [expandedGates, setExpandedGates] = useState<Record<string, boolean>>({});
-  function toggleGates(unitId: string) {
-    setExpandedGates((prev) => ({ ...prev, [unitId]: !prev[unitId] }));
-  }
-
-  const { movements, patients, referrals, dayZero, dispatch } = useWardFlow();
+  const { movements, patients, referrals, dayZero, dispatch, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const sampleProfiles = useMemo(
     () =>
@@ -376,11 +353,39 @@ function WardReferralDrawerContent({
     defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open",
   );
   const [provisionalDiag, setProvisionalDiag] = useState(defaultPatient.provisionalDiag);
-  const [doctorNote, setDoctorNote] = useState(defaultPatient.doctorNote);
   const [clinicalSummary, setClinicalSummary] = useState(defaultPatient.clinicalSummary);
-  const [transport, setTransport] = useState(defaultPatient.transportVal);
-  const [transitNote, setTransitNote] = useState(defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(defaultPatient.riskFlags);
+  const [catchmentConfirmed, setCatchmentConfirmed] = useState(false);
+  const [catchmentEditing, setCatchmentEditing] = useState(false);
+  const [catchmentQuery, setCatchmentQuery] = useState("");
+  const [confirmedClinic, setConfirmedClinic] = useState("");
+  const [confirmedSuburb, setConfirmedSuburb] = useState("");
+  const [referringSetting, setReferringSetting] = useState<"" | "community" | "emergency">("");
+  const [referringService, setReferringService] = useState("");
+  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(
+    (movements.find((movement) => movement.id === initialPatientKey)?.homeRegion ?? "") as HomeRegion | "",
+  );
+  const [originSiteCode, setOriginSiteCode] = useState("");
+  const [ageBand, setAgeBand] = useState<Cohort | "">(
+    movements.find((movement) => movement.id === initialPatientKey)?.cohort ?? "",
+  );
+  const [clearanceAnswer, setClearanceAnswer] = useState<"" | "yes" | "no">("");
+  const [clearanceWhen, setClearanceWhen] = useState("");
+  const [clearanceName, setClearanceName] = useState("");
+  const [clearanceNumber, setClearanceNumber] = useState("");
+  const [triageRamp, setTriageRamp] = useState<"" | "yes" | "no">("");
+  const [medicationChartAttached, setMedicationChartAttached] = useState(false);
+  const [observationChartAttached, setObservationChartAttached] = useState(false);
+  const [anythingElse, setAnythingElse] = useState<"" | "yes" | "no">("");
+  const [anythingElseNote, setAnythingElseNote] = useState("");
+  const [referrerRole, setReferrerRole] = useState<WardFlowRole | "">("");
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const [selectedEdId, setSelectedEdId] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState("");
+  const [contactOpen, setContactOpen] = useState(false);
+  const [callbackPhone, setCallbackPhone] = useState("");
+  const [callbackEmail, setCallbackEmail] = useState("");
+  const [callbackLocation, setCallbackLocation] = useState("");
 
   // Body scroll locking on mobile/desktop while drawer is open
   useEffect(() => {
@@ -446,7 +451,6 @@ function WardReferralDrawerContent({
     setActivePatientKey(key);
     setSearchQuery("");
     setIsSearchOpen(false);
-    setSelectedDestUnitId(null);
     setArrivalPlanOpen(false);
 
     // Synchronize all form fields with selected patient profile
@@ -456,11 +460,20 @@ function WardReferralDrawerContent({
     setDestType(p.destType);
     setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
     setProvisionalDiag(p.provisionalDiag);
-    setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
-    setTransport(p.transportVal);
-    setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
+    setCatchmentConfirmed(false);
+    setCatchmentEditing(false);
+    setCatchmentQuery("");
+    setConfirmedClinic("");
+    setConfirmedSuburb("");
+    setSelectedUnitIds([]);
+    setSelectedEdId("");
+    setSelectedTeam("");
+    setContactOpen(false);
+    const nextMovement = movements.find((movement) => movement.id === key);
+    setHomeRegion(nextMovement?.homeRegion ?? "");
+    setAgeBand(nextMovement?.cohort ?? "");
 
     if (onSelectPatient) {
       onSelectPatient(key);
@@ -487,115 +500,228 @@ function WardReferralDrawerContent({
     });
   }, [searchQuery, sampleProfiles]);
 
-  // Real-time capacity match & consequence derivation bound to live capacity records
-  const realTimeMatch = useMemo(() => {
-    // The recorded urgency tier only (26 Sept 2026). The hour windows ("< 2 hours", "Active Breach")
-    // were typed here with no source, and Ward Flow computes no placement deadline (legal D5).
-    const recordedTier = URGENCY_LEVELS.find((level) => String(level) === urgency);
-    const acuityTarget = recordedTier === undefined ? "not recorded" : urgencyTierLabel(recordedTier);
-    // The catchment and suburb come from the person's record; a made-up "South Metropolitan" or
-    // "Metropolitan" used to stand in when it held none.
-    const catchmentTitle = currentPatient.catchment
-      ? `${currentPatient.catchment} Catchment`
-      : "Catchment not recorded";
+  // The bed figure on the patient card. Ready beds are not reduced while a bed is being made
+  // ready (owner ruling, 2026-09-05): the number stays, and preparation is a separate sentence.
+  const patientCohort = currentPatient.cohort;
+  let bedPillText = "Community Transfer";
+  if (destType === "ed") {
+    bedPillText = "Observation beds not recorded";
+  } else if (destType !== "community") {
+    const matchingRecords = capacityRecords.filter(
+      (record) => record.cohort === patientCohort && record.security === security,
+    );
+    const readyBedsCount = matchingRecords.reduce((sum, record) => sum + record.readyBeds, 0);
+    const pulledBedsCount = matchingRecords.reduce((sum, record) => sum + record.pulledBeds, 0);
+    const closedBedsCount = matchingRecords.reduce((sum, record) => sum + record.closedBeds, 0);
+    bedPillText = `${readyBedsCount} Bed${readyBedsCount === 1 ? "" : "s"} Ready · ${pulledBedsCount} Pulled · ${closedBedsCount} Closed`;
+  }
 
-    if (destType === "community") {
-      return {
-        pillText: "Community Transfer",
-        pillTone: "south" as const,
-        targetDestination: "Catchment Community Mental Health Team",
-        catchmentTitle,
-        consequences: [
-          `Routing to: Catchment Community Mental Health Team (${currentPatient.suburb ? `${currentPatient.suburb} catchment` : "suburb not recorded"})`,
-          `Statutory Invariant: A bed request and a community referral cannot travel together.`,
-          `Order status: Non-inpatient community follow-up and assertive outreach under ${legalStatus}.`,
-          `Transport Logistics: ${transportLabel(transport)} — community clinic appointment notified.`,
-        ],
-      };
-    }
+  const subject = liveMovement ? resolveSubjectPatient(liveMovement, { movements, patients, referrals }) : undefined;
+  const recordedSuburb = currentPatient.suburb.trim();
+  const suburbLookup = recordedSuburb ? lookupCatchment(recordedSuburb) : null;
+  const autoClinics =
+    suburbLookup && catchmentCanRouteAutomatically(suburbLookup)
+      ? [...new Set(catchmentRoutingDestinations(suburbLookup) ?? [])]
+      : [];
+  const autoClinic = autoClinics.length === 1 ? autoClinics[0]! : null;
+  const autoSuburb = suburbLookup && suburbLookup.suburb ? suburbLookup.suburb : "";
 
-    if (destType === "ed") {
-      // Ward Flow holds no emergency department observation beds. "1 Bed Ready" and an observation
-      // unit at every department used to be typed in here (25 September 2026 audit, A6).
-      const edName = currentPatient.origin.split("·")[0].trim();
-      return {
-        pillText: "Observation beds not recorded",
-        pillTone: "muted" as const,
-        targetDestination: edName,
-        catchmentTitle,
-        consequences: [
-          `Placement candidate: ${currentPatient.name} (${ageSexLabel(currentPatient)} · Observation Tier)`,
-          `Current Origin: ${currentPatient.origin}`,
-          `Recorded urgency: ${acuityTarget}.`,
-          `Eligible Bays: observation beds are not recorded in Ward Flow.`,
-        ],
-      };
-    }
-
-    // Acute Inpatient Ward Bed dynamically bound to live capacity records
-    const patientCohort = currentPatient.cohort;
-
-    const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);
-
-    const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
-    const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    const closedBedsCount = matchingRecords.reduce((sum, r) => sum + r.closedBeds, 0);
-    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
-    // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
-    // sentence beside it is what was missing here.
-    const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
-    const pillText = `${readyBedsCount} Bed${readyBedsCount === 1 ? "" : "s"} Ready · ${pulledBedsCount} Pulled · ${closedBedsCount} Closed`;
-    const pillTone = readyBedsCount > 0 ? ("good" as const) : ("danger" as const);
-
-    const sortedUnits = [...matchingRecords].sort((a, b) => {
-      const aMatch =
-        a.healthService && currentPatient.catchment?.toLowerCase().includes(a.healthService.toLowerCase()) ? 1 : 0;
-      const bMatch =
-        b.healthService && currentPatient.catchment?.toLowerCase().includes(b.healthService.toLowerCase()) ? 1 : 0;
-      if (aMatch !== bMatch) return bMatch - aMatch;
-      return b.readyBeds - a.readyBeds;
-    });
-
-    const bestUnit = sortedUnits[0];
-    const targetDestination = bestUnit
-      ? `${bestUnit.hospital} ${bestUnit.name} (${bestUnit.readyBeds} Bed${bestUnit.readyBeds === 1 ? "" : "s"} Ready)`
-      : `${patientCohort} ${security} Unit`;
-
-    const eligibleWards =
-      sortedUnits
-        .slice(0, 3)
-        .map((u) => `${u.name} (${u.readyBeds} bed${u.readyBeds === 1 ? "" : "s"} ready)`)
-        .join(" · ") || "No eligible beds currently open";
-
-    return {
-      pillText,
-      pillTone,
-      pendingPreparationCount,
-      targetDestination,
-      sortedUnits,
-      catchmentTitle,
-      consequences: [
-        `Placement candidate: ${currentPatient.name} (${ageSexLabel(currentPatient)} · ${security} Unit)`,
-        `Current Origin: ${currentPatient.origin}`,
-        `Recorded urgency: ${acuityTarget}.`,
-        `Authorized Escort: ${transportLabel(transport)} · Destination: ${targetDestination}`,
-        `Eligible Wards: ${eligibleWards}`,
-      ],
-    };
-  }, [destType, security, legalStatus, urgency, transport, currentPatient, capacityRecords]);
-
-  const effectiveDestination = useMemo(() => {
-    if (destType === "ward" && selectedDestUnitId && realTimeMatch.sortedUnits) {
-      const matched = realTimeMatch.sortedUnits.find((u) => u.unitId === selectedDestUnitId);
-      if (matched) {
-        return `${matched.hospital} ${matched.name} (${matched.readyBeds} Bed${matched.readyBeds === 1 ? "" : "s"} Ready)`;
+  const searchLookup = catchmentQuery.trim().length >= 2 ? lookupCatchment(catchmentQuery.trim()) : null;
+  const searchChoices: { clinic: string; suburb: string }[] = [];
+  let searchNote = "";
+  if (searchLookup?.state === "unknown") {
+    searchNote = "That suburb is not in the catchment table. Nothing has been filled in.";
+  } else if (searchLookup?.state === "contested") {
+    searchNote = "This suburb has more than one catchment. Choose one.";
+    const suburbName = searchLookup.suburb;
+    for (const answer of searchLookup.answers) {
+      for (const clinic of answer.clinics) {
+        searchChoices.push({ clinic, suburb: suburbName });
       }
     }
-    return realTimeMatch.targetDestination;
-  }, [destType, selectedDestUnitId, realTimeMatch.sortedUnits, realTimeMatch.targetDestination]);
+  } else if (searchLookup && catchmentCanRouteAutomatically(searchLookup)) {
+    const suburbName = searchLookup.suburb ?? "";
+    for (const clinic of [...new Set(catchmentRoutingDestinations(searchLookup) ?? [])]) {
+      searchChoices.push({ clinic, suburb: suburbName });
+    }
+    if (searchChoices.length === 0) searchNote = "No catchment team is recorded for that suburb.";
+  }
+
+  function confirmCatchment(clinic: string, suburb: string) {
+    setConfirmedClinic(clinic);
+    setConfirmedSuburb(suburb);
+    setCatchmentConfirmed(true);
+    setCatchmentEditing(false);
+    setCatchmentQuery("");
+  }
+
+  const departments = allEmergencyDepartments();
+  const teamOptions = communityTeamOptions();
+  const sourceServices =
+    referringSetting === "community"
+      ? teamOptions.map((team) => ({ value: team, label: team }))
+      : referringSetting === "emergency"
+        ? departments.map((department) => ({ value: department.id, label: department.name }))
+        : [];
+  const serviceLabel =
+    referringSetting === "emergency"
+      ? (departments.find((department) => department.id === referringService)?.name ?? "")
+      : referringService;
+
+  function chooseSetting(next: "community" | "emergency") {
+    setReferringSetting(next);
+    setReferringService("");
+    if (next === "community") setReferrerRole("community");
+    if (next === "emergency") setReferrerRole("ed");
+  }
+
+  function chooseService(value: string) {
+    setReferringService(value);
+    if (referringSetting === "emergency") {
+      const department = departments.find((item) => item.id === value);
+      if (department) setOriginSiteCode(department.siteCode);
+    }
+  }
+
+  const placeCount = selectedUnitIds.length + (selectedEdId ? 1 : 0) + (selectedTeam ? 1 : 0);
+  const atCap = placeCount >= 3;
+
+  function toggleUnit(unitId: string) {
+    setSelectedUnitIds((current) => {
+      if (current.includes(unitId)) return current.filter((id) => id !== unitId);
+      const nextCount = current.length + (selectedEdId ? 1 : 0) + (selectedTeam ? 1 : 0) + 1;
+      if (nextCount > 3) return current;
+      return [...current, unitId];
+    });
+  }
+
+  function chooseEd(id: string) {
+    if (id && !selectedEdId && selectedUnitIds.length + (selectedTeam ? 1 : 0) + 1 > 3) return;
+    setSelectedEdId(id);
+  }
+
+  function chooseTeam(name: string) {
+    if (name && !selectedTeam && selectedUnitIds.length + (selectedEdId ? 1 : 0) + 1 > 3) return;
+    setSelectedTeam(name);
+  }
+
+  const waitlistByUnit = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const movement of movements) {
+      if (movement.closure) continue;
+      for (const unitId of movement.waitlistedUnitIds ?? []) {
+        counts[unitId] = (counts[unitId] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [movements]);
+
+  const summary = [
+    ...selectedUnitIds.map((id) => {
+      const unit = capacityRecords.find((record) => record.unitId === id);
+      return unit ? `${unit.hospital} · ${unit.name}` : id;
+    }),
+    ...(selectedEdId ? [departments.find((department) => department.id === selectedEdId)?.name ?? selectedEdId] : []),
+    ...(selectedTeam ? [selectedTeam] : []),
+  ];
+
+  const patientReady = catchmentConfirmed;
+  const referralReady =
+    referringSetting !== "" &&
+    referringService !== "" &&
+    homeRegion !== "" &&
+    originSiteCode !== "" &&
+    ageBand !== "" &&
+    (urgency === "1" || urgency === "2" || urgency === "3");
+  const documentationReady =
+    clearanceAnswer !== "" &&
+    triageRamp !== "" &&
+    referrerRole !== "" &&
+    (clearanceAnswer !== "no" ||
+      (clearanceWhen.trim() !== "" && clearanceName.trim() !== "" && clearanceNumber.trim() !== "")) &&
+    (anythingElse !== "yes" || anythingElseNote.trim() !== "");
+
+  function goTo(section: "patient" | "referral" | "documentation" | "locations") {
+    setActiveSection(section);
+    setIsSearchOpen(false);
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+  }
+
+  function markClearance(answer: "yes" | "no") {
+    setClearanceAnswer(answer);
+    const shouldBeCleared = answer === "yes";
+    if (shouldBeCleared !== isMedicalCleared) handleToggleMedicalClearance();
+  }
+
+  const callbackReady =
+    callbackPhone.trim() !== "" && callbackEmail.includes("@") && referrerRole !== "" && callbackLocation.trim() !== "";
+  const sendBaseline = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (sendBaseline.current === null) return;
+    const before = sendBaseline.current;
+    sendBaseline.current = null;
+    if (rejections.length > before) {
+      announceToWardShell(rejections[rejections.length - 1]?.reason ?? "The referral was not accepted.");
+      return;
+    }
+    announceToWardShell("Referral sent.");
+  }, [rejections, referrals]);
 
   function handleDispatch() {
-    announceToWardShell("Sending the referral is not wired in this prototype.");
+    if (!callbackReady || !referralReady || !patientReady || !documentationReady || placeCount === 0 || !ageBand) {
+      announceToWardShell("The referral is not ready to send.");
+      return;
+    }
+    const destinations: ReferralDestination[] = [];
+    if (selectedUnitIds.length > 0) {
+      const sex = liveMovement && RECORDED_SEXES.includes(liveMovement.sex) ? liveMovement.sex : "Not recorded";
+      destinations.push({
+        kind: "psychiatric_ward",
+        sex,
+        gender: liveMovement?.gender,
+        secureBedNeeded: security === "Secure",
+        involuntaryBedNeeded: legalStatus !== "Voluntary" && legalStatus !== "Not recorded",
+        highAcuityNursingNeeded: false,
+        requestedUnitIds: selectedUnitIds,
+      });
+    }
+    if (selectedEdId) {
+      destinations.push({ kind: "emergency_department", edId: selectedEdId, purpose: "psychiatric_review" });
+    }
+    if (selectedTeam) {
+      destinations.push({ kind: "community_team", teamName: selectedTeam });
+    }
+    sendBaseline.current = rejections.length;
+    dispatch({
+      type: "RECEIVE_REFERRAL",
+      role: referringSetting === "emergency" ? "ed" : "community",
+      now,
+      patientId: subject?.patient?.id,
+      ageBand,
+      suburb: confirmedSuburb ? { kind: "named", name: confirmedSuburb } : { kind: "unknown", reason: "not_known" },
+      destinations,
+      homeRegion,
+      source: referringSetting === "emergency" ? "ed_medical" : "community",
+      sendingTeamName: serviceLabel || undefined,
+      urgency: Number(urgency) as 1 | 2 | 3,
+      originSiteCode,
+      transportNeeded: Boolean(liveMovement?.arrivalDetails),
+      history: clinicalSummary,
+      tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
+      referrerPhone: callbackPhone.trim(),
+      referrerEmail: callbackEmail.trim(),
+      referrerRole,
+      referrerLocation: callbackLocation.trim(),
+      medicationChartAttached,
+      observationChartAttached,
+      triageAndRampCompleted: triageRamp === "yes",
+      anythingElseNote: anythingElse === "yes" ? anythingElseNote : undefined,
+      clearanceExpectedNote: clearanceAnswer === "no" ? clearanceWhen.trim() : undefined,
+      clearanceContactName: clearanceAnswer === "no" ? clearanceName.trim() : undefined,
+      clearanceContactNumber: clearanceAnswer === "no" ? clearanceNumber.trim() : undefined,
+    });
+    setContactOpen(false);
   }
 
   return (
@@ -650,8 +776,8 @@ function WardReferralDrawerContent({
             [
               ["patient", "Patient", User],
               ["referral", "Referral", ShieldCheck],
-              ["clinical", "Clinical", Activity],
-              ["placement", "Placement", MapPin],
+              ["documentation", "Documentation", Activity],
+              ["locations", "Locations", MapPin],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -888,7 +1014,7 @@ function WardReferralDrawerContent({
                       </div>
                       <div className={styles.triageCompatSub}>Origin: {currentPatient.origin.split("·")[0].trim()}</div>
                       <div className={styles.triageBedAvailability}>
-                        <span className={styles.triageBedCount}>{realTimeMatch.pillText}</span>
+                        <span className={styles.triageBedCount}>{bedPillText}</span>
                       </div>
                     </div>
                   </div>
@@ -935,54 +1061,23 @@ function WardReferralDrawerContent({
               </div>
             </section>
 
-            {liveMovement && canSetArrivalPlan(liveMovement) ? (
-              <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
-                <div className={styles.refCardHead}>
-                  <h3 className={styles.refCardTitle}>
-                    <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
-                    <span>Arrival plan</span>
-                  </h3>
-                  <span className="badgePill">Ward ETA</span>
-                </div>
-                <div className={styles.arrivalPlanCard}>
-                  {liveMovement.arrivalDetails ? (
-                    <ul className={styles.arrivalPlanFacts}>
-                      <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
-                      <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
-                      <li>
-                        Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST
-                      </li>
-                    </ul>
-                  ) : (
-                    <p className={styles.refCardSubtitle}>
-                      No arrival plan recorded. Setting one records how they are arriving and the estimated ward time,
-                      and clears the pull clock.
-                    </p>
-                  )}
-                  {isArrivalLate(liveMovement, now) ? (
-                    <p
-                      className={styles.arrivalLate}
-                      role="status"
-                      data-testid="ward-referral-arrival-late"
-                      title={OPERATIONAL_DEFAULT_LABEL}
-                    >
-                      Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
-                      marked arrived.
-                    </p>
-                  ) : null}
-                  <div className={styles.arrivalPlanAction}>
-                    <button
-                      type="button"
-                      className={styles.patientChipBtn}
-                      data-testid="ward-referral-arrival-plan-toggle"
-                      onClick={() => setArrivalPlanOpen(true)}
-                    >
-                      {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
-                    </button>
-                  </div>
-                </div>
-              </section>
-            ) : null}
+            <CatchmentSection
+              suggestion={autoClinic}
+              confirmedClinic={confirmedClinic}
+              confirmed={catchmentConfirmed}
+              editing={catchmentEditing}
+              query={catchmentQuery}
+              choices={searchChoices}
+              note={searchNote}
+              onConfirmSuggestion={() => confirmCatchment(autoClinic ?? "", autoSuburb)}
+              onChange={() => {
+                setCatchmentEditing(true);
+                setCatchmentConfirmed(false);
+              }}
+              onQuery={setCatchmentQuery}
+              onPick={confirmCatchment}
+            />
+            {patientReady ? <DrawerNext onClick={() => goTo("referral")} /> : null}
           </div>
           <div id={`${sectionId}-referral`} className={styles.sectionPanel} hidden={activeSection !== "referral"}>
             {/* 2. STATUTORY LEGAL STATUS & PLACEMENT URGENCY */}
@@ -1081,453 +1176,149 @@ function WardReferralDrawerContent({
                 </div>
               </div>
             </section>
+            <ReferringSourceSection
+              setting={referringSetting}
+              service={referringService}
+              services={sourceServices}
+              homeRegion={homeRegion}
+              originSiteCode={originSiteCode}
+              sites={wardSites.map((site) => ({ code: site.code, name: site.name }))}
+              ageBand={ageBand}
+              onSetting={chooseSetting}
+              onService={chooseService}
+              onHomeRegion={setHomeRegion}
+              onOriginSite={setOriginSiteCode}
+              onAgeBand={setAgeBand}
+            />
+            <ClinicalPresentationSection
+              diagnosis={provisionalDiag}
+              story={clinicalSummary}
+              riskFlags={riskFlags}
+              onDiagnosis={setProvisionalDiag}
+              onStory={setClinicalSummary}
+              onToggleRisk={toggleRisk}
+            />
+            {referralReady ? <DrawerNext onClick={() => goTo("documentation")} /> : null}
           </div>
-          <div id={`${sectionId}-clinical`} className={styles.sectionPanel} hidden={activeSection !== "clinical"}>
-            {/* 3. CLINICAL PRESENTATION & DIAGNOSTIC DOSSIER */}
-            <section className={styles.refCard}>
-              <div className={styles.refCardHead}>
-                <h3 className={styles.refCardTitle}>
-                  <Activity aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>3. Clinical Presentation &amp; Diagnostic Dossier</span>
-                </h3>
-                <span className="badgePill">Clinical Assessment</span>
-              </div>
-
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refDiagSelect">
-                    <span>Provisional Psychiatric Diagnosis</span>
-                    <span className={styles.fieldLabelHint}>Primary Impairment</span>
-                  </label>
-                  <select
-                    className={styles.fieldSelect}
-                    id="refDiagSelect"
-                    value={provisionalDiag}
-                    onChange={(e) => setProvisionalDiag(e.target.value)}
-                  >
-                    <option value="">Not recorded</option>
-                    <option value="psychosis">Schizophreniform Disorder / Acute Psychotic Episode</option>
-                    <option value="bipolar">Bipolar I Disorder · Acute Mania with Psychosis</option>
-                    <option value="depression">Major Depressive Episode · Severe with Suicide Risk</option>
-                    <option value="delirium">Delirium / Organic Mental Disorder</option>
-                    <option value="substance">Substance-Induced Psychotic Disorder</option>
-                  </select>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refDocInput">
-                    <span>Referring Clinician &amp; Origin Unit</span>
-                    <span className={styles.fieldLabelHint}>AHPRA Practitioner</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.fieldInput}
-                    id="refDocInput"
-                    value={doctorNote}
-                    onChange={(e) => setDoctorNote(e.target.value)}
-                    data-gramm="false"
-                    data-enable-grammarly="false"
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="refSummaryText">
-                  <span>Mental State Examination &amp; Presentation Summary</span>
-                  <span className={styles.fieldLabelHint}>Clinical Narrative</span>
-                </label>
-                <textarea
-                  className={styles.clinicalTextarea}
-                  id="refSummaryText"
-                  rows={3}
-                  value={clinicalSummary}
-                  onChange={(e) => setClinicalSummary(e.target.value)}
-                  data-gramm="false"
-                  data-enable-grammarly="false"
-                  spellCheck={false}
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel} id="riskFlagsLabel">
-                  <span>Active Behavioural &amp; Clinical Risk Flags</span>
-                  <span className={styles.fieldLabelHint}>Select all active</span>
-                </div>
-                <div className={styles.riskTagGrid} role="group" aria-labelledby="riskFlagsLabel">
-                  <button
-                    type="button"
-                    className={styles.riskTagChip}
-                    data-checked={riskFlags.aggression}
-                    onClick={() => toggleRisk("aggression")}
-                  >
-                    <AlertTriangle aria-hidden="true" style={{ width: 13, height: 13 }} />
-                    <span>Aggression Risk</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.riskTagChip}
-                    data-checked={riskFlags.absconding}
-                    onClick={() => toggleRisk("absconding")}
-                  >
-                    <ArrowRight aria-hidden="true" style={{ width: 13, height: 13 }} />
-                    <span>Absconding Risk</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.riskTagChip}
-                    data-checked={riskFlags.medical}
-                    onClick={() => toggleRisk("medical")}
-                  >
-                    <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
-                    <span>Acute Medical Comorbidity</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.riskTagChip}
-                    data-checked={riskFlags.vulnerable}
-                    onClick={() => toggleRisk("vulnerable")}
-                  >
-                    <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
-                    <span>Vulnerable Adult Protection</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.riskTagChip}
-                    data-checked={riskFlags.suicide}
-                    onClick={() => toggleRisk("suicide")}
-                  >
-                    <AlertCircle aria-hidden="true" style={{ width: 13, height: 13 }} />
-                    <span>Suicide / Self-Harm Vigilance</span>
-                  </button>
-                </div>
-              </div>
-            </section>
+          <div
+            id={`${sectionId}-documentation`}
+            className={styles.sectionPanel}
+            hidden={activeSection !== "documentation"}
+          >
+            <DocumentationSection
+              clearance={clearanceAnswer}
+              clearanceWhen={clearanceWhen}
+              clearanceName={clearanceName}
+              clearanceNumber={clearanceNumber}
+              triageRamp={triageRamp}
+              medicationAttached={medicationChartAttached}
+              observationAttached={observationChartAttached}
+              anythingElse={anythingElse}
+              anythingElseNote={anythingElseNote}
+              serviceLabel={serviceLabel}
+              role={referrerRole}
+              onClearance={markClearance}
+              onClearanceWhen={setClearanceWhen}
+              onClearanceName={setClearanceName}
+              onClearanceNumber={setClearanceNumber}
+              onTriageRamp={setTriageRamp}
+              onMedicationFile={() => setMedicationChartAttached(true)}
+              onObservationFile={() => setObservationChartAttached(true)}
+              onAnythingElse={setAnythingElse}
+              onAnythingElseNote={setAnythingElseNote}
+              onRole={setReferrerRole}
+            />
+            {documentationReady ? <DrawerNext onClick={() => goTo("locations")} /> : null}
           </div>
-          <div id={`${sectionId}-placement`} className={styles.sectionPanel} hidden={activeSection !== "placement"}>
-            {/* 4. AUTHORIZED TRANSPORT & ESCORT LOGISTICS */}
-            <section className={styles.refCard}>
-              <div className={styles.refCardHead}>
-                <h3 className={styles.refCardTitle}>
-                  <Ambulance aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>4. Authorized Transport &amp; Escort Logistics</span>
-                </h3>
-                <span className="badgePill">Escort Authority</span>
-              </div>
-
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refTransportSelect">
-                    <span>Authorized Transport Provider</span>
-                    <span className={styles.fieldLabelHint}>Escort Tier</span>
-                  </label>
-                  <select
-                    className={styles.fieldSelect}
-                    id="refTransportSelect"
-                    value={transport}
-                    onChange={(e) => setTransport(e.target.value)}
-                  >
-                    <option value="mht">Mental Health Transport Service (Contracted MHT)</option>
-                    <option value="police">Police Escort (WAPOL Involuntary Transit)</option>
-                    <option value="rfds">RFDS Aeromedical Flight Escort</option>
-                    <option value="stjohn">St John Ambulance (Priority 2 Clinical Escort)</option>
-                    <option value="carer">Patient / Carer Accompanied Transport</option>
-                  </select>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refTransitInput">
-                    <span>Dispatch Reference / Staging Bay</span>
-                    <span className={styles.fieldLabelHint}>Transport Coordination</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.fieldInput}
-                    id="refTransitInput"
-                    value={transitNote}
-                    onChange={(e) => setTransitNote(e.target.value)}
-                    data-gramm="false"
-                    data-enable-grammarly="false"
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* 5. REAL-TIME INPATIENT CAPACITY MATCH */}
-            <section className={styles.refCard}>
-              <div className={styles.refCardHead}>
-                <h3 className={styles.refCardTitle}>
-                  <Users aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>5. Real-Time Inpatient Capacity Match</span>
-                </h3>
-                <span
-                  className="badgePill"
-                  style={{
-                    color:
-                      realTimeMatch.pillTone === "south"
-                        ? "var(--svc-south)"
-                        : realTimeMatch.pillTone === "muted"
-                          ? "var(--muted)"
-                          : "var(--good)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {realTimeMatch.pillText}
-                </span>
-              </div>
-              {/*
-            Its OWN block, never appended to the pill above. `ward-screen.tsx` found in a browser
-            that "Ready 2" immediately followed by "1 still being made ready" reads as 21. Renders
-            only when there is one: an absence here is silence, never a "0 being made ready", which
-            would be a claim nobody made. Wording copied verbatim from `ward-board.tsx` rather than
-            written again - four screens stating one clinical fact should state it identically.
-          */}
-              {(realTimeMatch.pendingPreparationCount ?? 0) > 0 ? (
-                <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
-                  {realTimeMatch.pendingPreparationCount} of them{" "}
-                  {realTimeMatch.pendingPreparationCount === 1 ? "is" : "are"} still being made ready - the bed stays
-                  offered and stays counted, but the ward cannot admit into it yet.
-                </p>
-              ) : null}
-
-              {/* Destination Rows with Distinct Card Borders & Status Indicators (Alternative 2 3-Tier Status Matrix) */}
-              <div className={styles.destinationList} role="list" aria-label="Placement Destination Options">
-                {destType === "ward" && realTimeMatch.sortedUnits && realTimeMatch.sortedUnits.length > 0 ? (
-                  (() => {
-                    const tier1Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds > 0);
-                    const tier2Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds === 0);
-
-                    const renderUnitCard = (u: WardCapacityRecord, isTier1: boolean) => {
-                      const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
-                      const isGateExpanded = expandedGates[u.unitId] ?? false;
-
-                      return (
-                        <div
-                          key={u.unitId}
-                          role="listitem"
-                          className={`${styles.destinationRowCard} ${isTier1 ? styles.destinationRowCardReady : styles.destinationRowCardTurnaround}`}
-                          data-selected={isSelected}
-                          onClick={() => setSelectedDestUnitId(u.unitId)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setSelectedDestUnitId(u.unitId);
-                            }
-                          }}
+          <div id={`${sectionId}-locations`} className={styles.sectionPanel} hidden={activeSection !== "locations"}>
+            <LocationsSection
+              units={capacityRecords}
+              waitlistByUnit={waitlistByUnit}
+              clinic={confirmedClinic}
+              selectedUnitIds={selectedUnitIds}
+              onToggleUnit={toggleUnit}
+              departments={departments.map((department) => ({ id: department.id, name: department.name }))}
+              selectedEdId={selectedEdId}
+              onSelectEd={chooseEd}
+              teams={teamOptions}
+              selectedTeam={selectedTeam}
+              onSelectTeam={chooseTeam}
+              atCap={atCap}
+              summary={summary}
+              onOpenSend={() => {
+                setCallbackLocation(serviceLabel);
+                setContactOpen(true);
+              }}
+              arrival={
+                liveMovement && canSetArrivalPlan(liveMovement) ? (
+                  <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
+                    <div className={styles.refCardHead}>
+                      <h3 className={styles.refCardTitle}>
+                        <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
+                        <span>Arrival plan</span>
+                      </h3>
+                    </div>
+                    <div className={styles.arrivalPlanCard}>
+                      {liveMovement.arrivalDetails ? (
+                        <ul className={styles.arrivalPlanFacts}>
+                          <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
+                          <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
+                          <li>
+                            Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)}{" "}
+                            AWST
+                          </li>
+                        </ul>
+                      ) : (
+                        <p className={styles.plainCopy}>
+                          No arrival plan recorded. Setting one records how they are arriving and the estimated ward
+                          time.
+                        </p>
+                      )}
+                      {isArrivalLate(liveMovement, now) ? (
+                        <p className={styles.arrivalLate} role="status" data-testid="ward-referral-arrival-late">
+                          Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time.
+                          Not marked arrived.
+                        </p>
+                      ) : null}
+                      <div className={styles.arrivalPlanAction}>
+                        <button
+                          type="button"
+                          className={styles.patientChipBtn}
+                          data-testid="ward-referral-arrival-plan-toggle"
+                          onClick={() => setArrivalPlanOpen(true)}
                         >
-                          <div className={styles.destRowMain}>
-                            <div className={styles.destRowHeader}>
-                              <span
-                                className={styles.destStatusIndicator}
-                                data-available={u.readyBeds > 0}
-                                aria-hidden="true"
-                              />
-                              <span className={styles.destRowHospital}>{u.hospital}</span>
-                              <span className={styles.destAllocationId}>{u.unitId}</span>
-                            </div>
-                            <div className={styles.destRowUnitName}>{u.name}</div>
-                            <div className={styles.destRowTags}>
-                              <span className={styles.destTag}>{u.healthService}</span>
-                              <span className={styles.destTag}>{u.cohort}</span>
-                              <span className={styles.destTag}>{u.security} Unit</span>
-                            </div>
-                          </div>
-
-                          <div className={styles.destRowCapacity}>
-                            <div className={styles.destBedCountGroup}>
-                              <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
-                                <strong>{u.readyBeds}</strong> Ready
-                              </span>
-                              <span className={styles.destHeldCount}>
-                                <strong>{u.pulledBeds}</strong> Pulled
-                              </span>
-                              <span className={styles.destHeldCount}>
-                                <strong>{u.closedBeds}</strong> Closed
-                              </span>
-                            </div>
-                            {(u.pendingPreparation ?? 0) > 0 ? (
-                              <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
-                            ) : null}
-                            <span className={styles.destSelectIndicator}>
-                              {isSelected ? "Selected Target" : "Select Target"}
-                            </span>
-                          </div>
-
-                          {/* Interactive Criteria Gate Dropdown */}
-                          <div className={styles.gateSummary} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              className={`${styles.gateToggle} ${isTier1 ? "" : styles.gateToggleWarn}`}
-                              onClick={() => toggleGates(u.unitId)}
-                              aria-expanded={isGateExpanded}
-                            >
-                              <span>
-                                {isTier1
-                                  ? "✓ 10/10 Statutory & Clinical Criteria Met"
-                                  : "✓ 10/10 Clinical Criteria Met · Bed Turnaround in Progress"}
-                              </span>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {isGateExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
-                              </span>
-                            </button>
-                            {isGateExpanded ? (
-                              <div className={styles.gateGrid}>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Clinical Acuity: {u.security} Unit Appropriate
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
-                                <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
-                                  {isMedicalCleared
-                                    ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
-                                    : "⏳ Medical Clearance: Pending MO Signoff"}
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
-                                </div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
-                                </div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Physical Mobility: Ground Floor Direct Access
-                                </div>
-                                <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
-                                  {isTier1
-                                    ? "✓ Bed Availability: Ready to Admit"
-                                    : "⏳ Bed Status: Awaiting Bed Turnover"}
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      );
-                    };
-
-                    return (
-                      <>
-                        {tier1Units.length > 0 ? (
-                          <div className={styles.tierSection}>
-                            <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
-                                <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
-                              </div>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {tier1Units.length} Available
-                              </span>
-                            </div>
-                            {tier1Units.map((u) => renderUnitCard(u, true))}
-                          </div>
-                        ) : null}
-
-                        {tier2Units.length > 0 ? (
-                          <div className={styles.tierSection}>
-                            <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span className={styles.pulseDot} />
-                                <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
-                              </div>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {tier2Units.length} Units Full
-                              </span>
-                            </div>
-                            {tier2Units.map((u) => renderUnitCard(u, false))}
-                          </div>
-                        ) : null}
-                      </>
-                    );
-                  })()
-                ) : destType === "community" ? (
-                  <div className={styles.destinationRowCard} data-selected={true}>
-                    <div className={styles.destRowMain}>
-                      <div className={styles.destRowHeader}>
-                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                        <span className={styles.destRowHospital}>Catchment CMHT</span>
-                        <span className={styles.destAllocationId}>cmht-outreach</span>
-                      </div>
-                      <div className={styles.destRowUnitName}>Community Mental Health Team</div>
-                      <div className={styles.destRowTags}>
-                        <span className={styles.destTag}>{currentPatient.catchment || "South Metropolitan"}</span>
-                        <span className={styles.destTag}>Assertive Outreach</span>
+                          {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                        </button>
                       </div>
                     </div>
-                    <div className={styles.destRowCapacity}>
-                      <span className={styles.destReadyCount} data-has-beds={true}>
-                        <strong>Community</strong> Transfer
-                      </span>
-                      <span className={styles.destSelectIndicator}>Active Route</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={styles.destinationRowCard} data-selected={true}>
-                    <div className={styles.destRowMain}>
-                      <div className={styles.destRowHeader}>
-                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                        <span className={styles.destRowHospital}>{currentPatient.origin.split("·")[0].trim()}</span>
-                        <span className={styles.destAllocationId}>ed-obs-tier</span>
-                      </div>
-                      <div className={styles.destRowUnitName}>Specialist ED Mental Health Observation Unit</div>
-                      <div className={styles.destRowTags}>
-                        <span className={styles.destTag}>Observation Tier</span>
-                        <span className={styles.destTag}>Rapid Stabilization</span>
-                      </div>
-                    </div>
-                    <div className={styles.destRowCapacity}>
-                      <span className={styles.destReadyCount} data-has-beds={true}>
-                        <strong>1 Bed</strong> Ready
-                      </span>
-                      <span className={styles.destSelectIndicator}>Active Route</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.consequenceCard}>
-                <div className={styles.cqHeader}>
-                  <span>Matching Inpatient Capacity in Catchment</span>
-                  <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
-                    {realTimeMatch.catchmentTitle}
-                  </span>
-                </div>
-                <ul className={styles.cqList}>
-                  {realTimeMatch.consequences.map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-                </ul>
-              </div>
-            </section>
+                  </section>
+                ) : null
+              }
+              contact={
+                contactOpen ? (
+                  <SendContactDialog
+                    phone={callbackPhone}
+                    email={callbackEmail}
+                    role={referrerRole}
+                    location={callbackLocation}
+                    canSend={callbackReady}
+                    onPhone={setCallbackPhone}
+                    onEmail={setCallbackEmail}
+                    onRole={setReferrerRole}
+                    onLocation={setCallbackLocation}
+                    onSend={handleDispatch}
+                    onCancel={() => setContactOpen(false)}
+                  />
+                ) : null
+              }
+            />
           </div>
         </div>
         {/* 6. SEND REFERRAL STICKY ACTION FOOTER */}
         <div className={styles.sendReferralFoot}>
-          <div className={styles.sendTargetSummary}>
-            <span className={styles.sendTargetLabel}>
-              <MapPin aria-hidden="true" style={{ width: 14, height: 14 }} />
-              <span>Destination preview · demo draft</span>
-            </span>
-            <span className={styles.sendTargetName}>{effectiveDestination}</span>
-          </div>
           <div className={styles.sendActionCluster}>
             <button type="button" className={styles.btnCancelReferral} onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="button"
-              className={styles.btnSendReferral}
-              onClick={handleDispatch}
-              title="Not wired in this prototype."
-            >
-              <Send aria-hidden="true" style={{ width: 15, height: 15 }} />
-              <span>Send referral</span>
             </button>
           </div>
         </div>

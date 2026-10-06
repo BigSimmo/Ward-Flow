@@ -58,8 +58,10 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   // `state.patients` gains a typed given name, family name, record number (`umrn`) and date of
   // birth — the clearest identity disclosure this model can produce (`patients/add-patient.tsx`).
   "ADD_PATIENT",
-  // `history` is this event's own "the only free text this event carries" (see its doc comment in
-  // `ward-flow-events.ts`), and `sendingTeamName` is the typed free-text box named above.
+  // Free text on this event: `history`, `sendingTeamName`, and the callback and documentation
+  // notes (`referrerPhone`, `referrerEmail`, `referrerLocation`, `anythingElseNote`,
+  // `clearanceExpectedNote`, `clearanceContactName`, `clearanceContactNumber`). Each is stored
+  // for the receiving team, length-capped, and never treated as a fact about the patient.
   "RECEIVE_REFERRAL",
   // `blocker` IS the free prose — "so a human can say what is actually happening, IN THEIR WORDS".
   "RECORD_MOVEMENT_BLOCKER",

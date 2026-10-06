@@ -2262,4 +2262,172 @@
     background: Highlight;
     color: HighlightText;
   }
+  .placeCard[data-catchment="in"],
+  .placeCard[data-catchment="out"] {
+    border-color: CanvasText;
+  }
+}
+
+.stepActions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.75rem 0 1rem;
+}
+
+.stepNext,
+.choiceButton {
+  min-height: var(--ward-tap, 3rem);
+  min-width: var(--ward-tap, 3rem);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.stepNext {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+.choiceButton[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+.plainCopy {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.45;
+}
+
+.plainLabel {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: var(--t-0);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.catchmentConfirmed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choiceList {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.placeList {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.placeCard {
+  border: 2px solid var(--line);
+  border-radius: var(--r1, 0.75rem);
+  background: var(--surface);
+}
+
+.placeCard[data-catchment="in"] {
+  border-color: var(--good);
+}
+
+.placeCard[data-catchment="out"] {
+  border-color: var(--danger);
+}
+
+.placeLabel {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  min-height: var(--ward-tap, 3rem);
+  cursor: pointer;
+}
+
+.placeBody {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.placeTitle {
+  font-weight: 700;
+}
+
+.placeId {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.placeMeta {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.uploadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--ward-tap, 3rem);
+}
+
+.uploadMark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploadMark[data-done="true"] {
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.uploadMark svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.sendSummary,
+.sendDialog {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 0.75rem);
+  background: var(--surface);
+  display: grid;
+  gap: 0.75rem;
 }

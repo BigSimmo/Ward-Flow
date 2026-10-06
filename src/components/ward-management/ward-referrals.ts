@@ -464,6 +464,76 @@ export function edArrivedFor(
   return here.sort((a, b) => a.referral.raisedAt - b.referral.raisedAt);
 }
 
+/** The three referral streams on the board and in the inboxes. */
+export const REFERRAL_STREAMS = ["community", "emergency", "ward"] as const;
+export type ReferralStream = (typeof REFERRAL_STREAMS)[number];
+
+export const REFERRAL_STREAM_STATUSES = [
+  "awaiting",
+  "accepted",
+  "waitlisted",
+  "declined",
+  "cancelled",
+  "withdrawn",
+] as const;
+export type ReferralStreamStatus = (typeof REFERRAL_STREAM_STATUSES)[number];
+
+export const REFERRAL_STREAM_LABELS: Record<ReferralStream, string> = {
+  community: "Community",
+  emergency: "Emergency",
+  ward: "Ward",
+};
+
+export const REFERRAL_STREAM_STATUS_LABELS: Record<ReferralStreamStatus, string> = {
+  awaiting: "Awaiting answer",
+  accepted: "Accepted",
+  waitlisted: "Waitlisted",
+  declined: "Declined",
+  cancelled: "Cancelled because another place accepted",
+  withdrawn: "Withdrawn by the referrer",
+};
+
+export function referralStreamOf(kind: ReferralDestinationKind): ReferralStream {
+  if (kind === "community_team") return "community";
+  if (kind === "emergency_department") return "emergency";
+  return "ward";
+}
+
+/**
+ * The answer group for one destination. Waitlisted is not a referral state: it is an accepted
+ * ward destination whose linked movement is already waitlisted at that unit.
+ */
+export function addressingStreamStatus(
+  addressing: ReferralAddressing,
+  referral: Referral,
+  movements: readonly Movement[],
+): ReferralStreamStatus {
+  if (addressing.withdrawnAt !== undefined) return "withdrawn";
+  if (addressing.state === "cancelled") return "cancelled";
+  if (addressing.state === "declined") return "declined";
+  if (addressing.state === "accepted") {
+    const unitId = addressing.destination.kind === "psychiatric_ward" ? addressing.acceptedUnitId : undefined;
+    const linked = movements.find((movement) => movement.referralId === referral.id && movement.closure === undefined);
+    if (unitId !== undefined && (linked?.waitlistedUnitIds ?? []).includes(unitId)) return "waitlisted";
+    return "accepted";
+  }
+  return "awaiting";
+}
+
+/** Front-door referrals that named this ward. The ward's movement inbox does not see these. */
+export function wardReferralsFor(referrals: readonly Referral[], unitId: string): Referral[] {
+  return referrals.filter((referral) =>
+    referral.destinations.some((addressing) => {
+      const destination = addressing.destination;
+      return (
+        destination.kind === "psychiatric_ward" &&
+        (destination.requestedUnitIds ?? []).includes(unitId) &&
+        addressing.withdrawnAt === undefined
+      );
+    }),
+  );
+}
+
 export function edReferralsFor(
   referrals: readonly Referral[],
   edId: string,
