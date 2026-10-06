@@ -390,7 +390,7 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
   function renderGraph() {
     const width = 1100;
     const height = 310;
-    const left = 64;
+    const left = 84;
     const right = 36;
     const top = 28;
     const bottom = height - 52;
