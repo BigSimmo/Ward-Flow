@@ -1677,6 +1677,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       className={styles.screen}
       data-testid="ward-unit-screen"
       data-presentation={presentation}
+      data-decisions={activeTab === "return" ? "true" : "false"}
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="ward"
     >
@@ -1859,14 +1860,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </div>
           </div>
 
-          {/* Unified Flight Deck Telemetry Ribbon */}
-          <WardTelemetryRibbon
-            unit={unit}
-            capacity={capacity}
-            staffedSpecialling={staffedSpecialling}
-            acceptedCount={accepted.length}
-            onOpenBedList={() => setActiveTab("return")}
-          />
+          <div className={styles.telemetrySlot}>
+            {/* Unified Flight Deck Telemetry Ribbon */}
+            <WardTelemetryRibbon
+              unit={unit}
+              capacity={capacity}
+              staffedSpecialling={staffedSpecialling}
+              acceptedCount={accepted.length}
+              onOpenBedList={() => setActiveTab("return")}
+            />
+          </div>
 
           {/* Operational Tab Navigation Bar Integrated at Bottom of Command Horizon */}
           <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
