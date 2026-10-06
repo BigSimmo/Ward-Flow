@@ -264,11 +264,7 @@ function Queue({
         {showStaffing || showIntake || showLeave ? (
           <div className={styles.stack}>
             {showStaffing ? (
-              <section
-                className={`${styles.panel} ${rollupOverdue ? styles.signalDanger : ""}`}
-                id="gate-staffing"
-                aria-label="Staffing"
-              >
+              <section className={styles.panel} id="gate-staffing" aria-label="Staffing">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Staffing</h3>
                   <span className={styles.panelWindow}>07:00–09:30</span>
@@ -306,11 +302,7 @@ function Queue({
             ) : null}
 
             {showIntake ? (
-              <section
-                className={`${styles.panel} ${intakes.length > 0 ? styles.signalDanger : ""}`}
-                id="gate-intake"
-                aria-label="Intake"
-              >
+              <section className={styles.panel} id="gate-intake" aria-label="Intake">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Intake</h3>
                   <span className={styles.panelWindow}>09:30–13:00</span>
@@ -364,11 +356,7 @@ function Queue({
 
         {showDepartures ? (
           <div className={styles.stack}>
-            <section
-              className={`${styles.panel} ${blockedCount > 0 ? styles.signalWarn : ""}`}
-              id="gate-departures"
-              aria-label="Departures"
-            >
+            <section className={styles.panel} id="gate-departures" aria-label="Departures">
               <header className={styles.panelHead}>
                 <h3 className={styles.panelTitle}>Departures</h3>
                 <span className={styles.panelWindow}>11:00–14:00</span>
