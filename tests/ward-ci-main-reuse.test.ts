@@ -159,7 +159,9 @@ describe("unit shard coverage blobs", () => {
 
   it("drops the thresholds only for a shard's slice, never for the merging coverage job", () => {
     const config = readFileSync(new URL("../vitest.config.mts", import.meta.url), "utf8");
-    expect(config).toMatch(/thresholds: process\.env\.WARD_COVERAGE_BLOB_DIR\s*\?\s*undefined\s*:\s*\{/u);
+    expect(config).toContain(
+      "if (process.env.WARD_COVERAGE_BLOB_DIR) delete (config.test.coverage as { thresholds?: unknown }).thresholds;",
+    );
     const coverageJob = workflow.slice(workflow.indexOf("\n  coverage:\n"), workflow.indexOf("\n  required:\n"));
     expect(coverageJob).not.toContain("WARD_COVERAGE_BLOB_DIR");
     expect(coverageJob).toContain('--merge-reports="$WARD_SHARD_BLOBS" --coverage');
