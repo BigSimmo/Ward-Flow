@@ -1,5 +1,7 @@
 "use client";
 
+import { WardReferralInbox } from "../referrals/ward-referral-inbox";
+
 import Link from "next/link";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
@@ -1668,6 +1670,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </p>
         ) : null}
 
+        <WardReferralInbox unitId={unit.id} />
         {/* Prominent Top Action Bar & Capacity Glance */}
         {/* Prominent Top Action Bar & Capacity Glance */}
         <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>

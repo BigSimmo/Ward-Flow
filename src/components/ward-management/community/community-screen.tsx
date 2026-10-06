@@ -1,4 +1,6 @@
 "use client";
+
+import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
 
@@ -2196,6 +2198,7 @@ export function CommunityScreen({
                                 {referral.history ||
                                   `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
                               </div>
+                              <ReferralIntakeSummary intake={referral.intake} />
                               <p className={styles.cardDetail} style={{ display: "none" }}>
                                 {referralWaitLine(referral, now)}
                               </p>

@@ -922,6 +922,8 @@ describe("referrals fixture — the awkward cases (seed rule 4)", () => {
  */
 describe("Referral privacy — structural", () => {
   const ALLOWED_REFERRAL_FIELDS = [
+    // Owner-requested confirmed drawer dossier, 7 October 2026. No patient identity is copied.
+    "intake",
     "id",
     /*
      * ⚠️ ADDED 2026-09-02 BY OWNER RULING, AND THIS LIST'S OWN PROSE FORBIDS IT — WHICH IS WHY THE
@@ -1142,6 +1144,7 @@ describe("Referral privacy — structural", () => {
    * and the arm list, because neither looks here.
    */
   const ALLOWED_ADDRESSING_FIELDS = [
+    "waitlistedAt",
     "destination",
     "state",
     "decidedAt",
@@ -1161,6 +1164,7 @@ describe("Referral privacy — structural", () => {
     // about the person, deliberately wider than `sex` (see `ReferralGender`'s own doc comment,
     // `ward-model.ts`, for why it carries a third value `sex` cannot).
     psychiatric_ward: [
+      "unitId",
       "kind",
       "sex",
       "gender",
@@ -1189,6 +1193,7 @@ describe("Referral privacy — structural", () => {
   it("⚠️ MATCHES THE TYPE ITSELF, not just whatever the fixture happens to contain", () => {
     const canonicalWard: Required<Extract<ReferralDestination, { kind: "psychiatric_ward" }>> = {
       kind: "psychiatric_ward",
+      unitId: "rph-adult-secure",
       sex: "Female",
       gender: "Female",
       secureBedNeeded: false,
@@ -1245,6 +1250,23 @@ describe("Referral privacy — structural", () => {
     // (partly-decided) referral would show. TYPE-CHECKED half of the guard — see this describe
     // block's own doc comment for why a runtime companion follows.
     const canonical: Required<Referral> = {
+      intake: {
+        catchment: { teamName: "Inner City Clinic", confirmed: true },
+        reasonForReferral: "Synthetic referral",
+        legalStatus: "Voluntary",
+        riskFlags: [],
+        medicalClearance: { cleared: true },
+        triageAndRampCompleted: true,
+        additionalDocuments: false,
+        charts: [],
+        referrer: {
+          name: "Demo Referrer",
+          phone: "0412345678",
+          email: "demo@example.com",
+          role: "Nurse",
+          location: "RPH",
+        },
+      },
       // The pointer, present here because `Required<Referral>` forces every field to be
       // supplied — which is what makes this literal a guard rather than a sample.
       patientId: "PT-A1",
@@ -1258,8 +1280,10 @@ describe("Referral privacy — structural", () => {
         // Fully populated, including every optional field, for the same reason the outer literal is:
         // this is the exhaustive half of the guard and it has to reach the fields it is guarding.
         {
+          waitlistedAt: NOW_ANCHOR,
           destination: {
             kind: "psychiatric_ward",
+            unitId: "rph-adult-secure",
             sex: "Female",
             gender: "Female",
             secureBedNeeded: false,

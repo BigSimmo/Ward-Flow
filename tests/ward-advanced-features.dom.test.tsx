@@ -146,7 +146,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
   });
 
   describe("Option 3: Pre-Admission Medical Clearance Checkpoint", () => {
-    it("renders Medical Clearance toggle card in Referral Drawer and handles toggle", () => {
+    it("opens Documentation from the clearance summary and records the clearance draft", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardReferralDrawer onClose={() => {}} />
@@ -158,8 +158,11 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       expect(toggleBtn).toBeDefined();
       expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Pending");
 
-      // Click to toggle to cleared
+      // The summary opens Documentation; a draft does not alter the live movement.
       fireEvent.click(toggleBtn);
+      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Pending");
+      const clearance = screen.getByRole("group", { name: "Has the patient been medically cleared?" });
+      fireEvent.click(within(clearance).getByLabelText("Yes"));
       expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Cleared");
       expect(screen.getByText(/Fit for Admission & Travel/i)).toBeDefined();
     });

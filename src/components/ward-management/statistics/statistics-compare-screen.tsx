@@ -325,8 +325,9 @@ export function StatisticsCompareScreen({
                 optional unit id covers only the records where it happens to be present, not the whole population.
               </p>
               <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                accepts. An acceptance is attributable to a named ward and a decline is not.
+                <strong>Declines show the attribution limit.</strong> Named ward referrals preserve their recipient
+                before acceptance. Older network-wide referrals may lack a ward identifier when declined. Accepted
+                referrals name the ward that accepted.
               </p>
               <p data-testid="ward-statistics-compare-double-count-example">
                 <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single

@@ -214,7 +214,21 @@ baseline.
   `toggleRelease`/`submitRelease`. The remainder is the render body: bed grid, drawers and forms
   for every one of the 20 dispatched event types.
 
-## `referrals/` — 15 files, 19,776 lines
+## `referrals/` — baseline inventory plus approved drawer additions
+
+7 October 2026, approved drawer implementation: `ward-referral-drawer.tsx` keeps the four-tab shell,
+with Patient/catchment → Referral/story → Documentation/charts → Locations/arrival. `referral-flow-panels.tsx`
+owns documentation and contact controls; `referral-submission.ts` validates the submitted dossier.
+Send first opens contact confirmation, then dispatches `RECEIVE_REFERRAL` once and shows a receipt.
+Named ward recipients are explicit destination arms; `referral-inbox.ts` projects only the receiving
+ward's own arm and dossier. `ward-referral-inbox.tsx` is mounted in `ward/ward-screen.tsx`, supports
+normal gated acceptance, waitlisting and reasoned decline. ED/community screens expose the same
+submitted dossier in their existing scoped inboxes. The board adds stream/status filters.
+Chart bytes and entered contact data are session-only under the existing typed-data recovery lock;
+this work does not connect a hosted backend. Proof: `ward-referral-drawer-flow.dom.test.tsx` and
+`ward-referral-drawer-submission.test.ts` cover real uploads, contact confirmation, own-recipient
+scoping, independent decisions, waitlisting and receipt deduplication.
+
 
 - **Routes:** `/referrals` (`referral-board.tsx` → `ReferralBoard`) and `/referrals/new`
   (`referral-intake.tsx` → `ReferralIntakeForm`).

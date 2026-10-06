@@ -56,6 +56,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "auditCaptureStartedAt",
   "acceptedAt",
+  "waitlistedAt",
   "referredAt",
   "arrivedAt",
   "at",

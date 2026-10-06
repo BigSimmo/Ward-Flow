@@ -1,5 +1,7 @@
 "use client";
 
+import { ReferralIntakeSummary } from "./referral-intake-summary";
+
 import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -17,7 +19,7 @@ import { formatInstant, formatInstantWithDay, type Instant } from "@/components/
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { wardAddressing, type EligibilityGate } from "@/components/ward-management/ward-eligibility";
+import { wardAddressing, wardAddressings, type EligibilityGate } from "@/components/ward-management/ward-eligibility";
 import {
   COMMUNITY_DECLINE_REASONS,
   ED_DECLINE_REASONS,
@@ -452,7 +454,15 @@ export function ReferralMatchView({
    * identically and mean opposite things: an empty list here reads as "the network has no bed for
    * this person", which for a community referral is not a shortage, it is a category error.
    */
-  const ward = wardAddressing(referral);
+  const [reviewUnitId, setReviewUnitId] = useState("");
+  const wardArms = wardAddressings(referral);
+  const selectedWard = wardArms.find(
+    (arm) => arm.destination.kind === "psychiatric_ward" && arm.destination.unitId === reviewUnitId,
+  );
+  const ward =
+    selectedWard?.destination.kind === "psychiatric_ward"
+      ? (selectedWard as import("../ward-model").WardAddressing)
+      : wardAddressing(referral);
   /**
    * Owner answer 25, 2026-09-17: *"GP referrals: the GP is told by phone or letter for now; add
    * 'GP' as a referral source."* `referralReferrer` (`ward-flow-reducer.ts`) resolves no addressee
@@ -900,6 +910,7 @@ export function ReferralMatchView({
       now,
       referralId: referral.id,
       destinationKind,
+      unitId: destinationKind === "psychiatric_ward" ? ward?.destination.unitId : undefined,
       reason: declineReason,
     });
     setCheckToken((token) => token + 1);
@@ -1006,6 +1017,27 @@ export function ReferralMatchView({
     const communityArmLive = communityAddressing?.state === "queued" && communityAddressing.withdrawnAt === undefined;
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
+        <ReferralIntakeSummary intake={referral.intake} />
+        {wardArms.length > 1 && (
+          <label className={styles.fieldLabel}>
+            Review recipient ward
+            <select
+              className={styles.select}
+              value={ward?.destination.unitId ?? ""}
+              onChange={(event) => setReviewUnitId(event.target.value)}
+            >
+              {wardArms.map(
+                (arm) =>
+                  arm.destination.kind === "psychiatric_ward" && (
+                    <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                      {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                      {arm.state}
+                    </option>
+                  ),
+              )}
+            </select>
+          </label>
+        )}
         {/*
          * ⚠️ **THE HEADING CARRIES NO STATE WORD, AND THAT IS DELIBERATE.** It used to render
          * `{referral.id} — {ward.state}`, which put the RAW UNION MEMBER on screen, lowercase and
@@ -1105,6 +1137,27 @@ export function ReferralMatchView({
 
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
+      <ReferralIntakeSummary intake={referral.intake} />
+      {wardArms.length > 1 && (
+        <label className={styles.fieldLabel}>
+          Review recipient ward
+          <select
+            className={styles.select}
+            value={ward?.destination.unitId ?? ""}
+            onChange={(event) => setReviewUnitId(event.target.value)}
+          >
+            {wardArms.map(
+              (arm) =>
+                arm.destination.kind === "psychiatric_ward" && (
+                  <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                    {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                    {arm.state}
+                  </option>
+                ),
+            )}
+          </select>
+        </label>
+      )}
       {!hideDossierHeader ? (
         <div className={styles.matchDossierHeader}>
           <div className={styles.matchDossierTop}>

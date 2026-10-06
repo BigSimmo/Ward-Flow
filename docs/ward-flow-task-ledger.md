@@ -8408,3 +8408,9 @@ Automated verification summary:
   - `tests/ward-capacity-network-fold.dom.test.tsx` (7/7 passed)
   - Full TypeScript typecheck: 0 errors
   - ESLint & Prettier: 100% clean
+
+
+## WF-REFERRAL-DRAWER-2026-10-07 — four-tab referral flow
+
+Status: In progress. Owner: Codex interactive session. Base: `20105cf` (`origin/main`), branch `codex/referral-drawer`, isolated worktree `/workspace/ward-referral-drawer`.
+Scope: approved Patient → Referral → Documentation → Locations drawer, contact confirmation, shared-engine submission and recipient routing. Preserve existing shell and clinical placement gates. Synthetic data only; no hosted service calls or deployment. Implementation complete. Verification in progress: focused engine/DOM tests, changed-file ESLint, source typecheck, diff integrity, color-token/privacy/override/re-anchor guards and actual desktop/mobile browser send journey passed. Full offline unit population is being rechecked after integration repairs. Named recipients preserve existing placement gates; ward inbox has normal acceptance only, coordinator review retains exceptional-placement reason controls. No publication or deployment. The isolated single-session cloud worktree has no shared Windows sign-out log; local commit uses the documented explicit single-session sign-out exception, retaining lint/typecheck/content hooks.

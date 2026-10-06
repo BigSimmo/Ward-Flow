@@ -57,7 +57,7 @@ describe("the referral drawer shows only what the record holds", () => {
   it("lists only wards that exist in the network, under their own names", () => {
     const { container } = renderDrawer();
     const rows = [...container.querySelectorAll('[role="listitem"]')].filter((row) =>
-      row.textContent?.includes("Select"),
+      row.querySelector('input[type="checkbox"]'),
     );
     expect(rows.length).toBeGreaterThan(0);
     const units = new Map(allUnits().map((unit) => [unit.id, unit.name]));
@@ -97,13 +97,14 @@ describe("the referral drawer shows only what the record holds", () => {
   it("retains the clinical draft and placement choice when switching sections", () => {
     renderDrawer();
     const sections = within(screen.getByRole("group", { name: "Referral sections" }));
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    const clinician = screen.getByLabelText(/Referring Clinician & Origin Unit/);
-    fireEvent.change(clinician, { target: { value: "Synthetic clinician draft" } });
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    const clinician = screen.getByLabelText(/Reason for referral/);
+    fireEvent.change(clinician, { target: { value: "Synthetic reason for referral" } });
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Placement Destination Tier/), { target: { value: "community" } });
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    expect(clinician).toHaveValue("Synthetic clinician draft");
+    fireEvent.click(sections.getByRole("button", { name: "Documentation" }));
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    expect(clinician).toHaveValue("Synthetic reason for referral");
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
     expect(screen.getByLabelText(/Placement Destination Tier/)).toHaveValue("community");
   });
@@ -112,7 +113,7 @@ describe("the referral drawer shows only what the record holds", () => {
     renderDrawer();
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
-        name: "Clinical",
+        name: "Referral",
       }),
     );
     expect(screen.getByLabelText(/Provisional Psychiatric Diagnosis/)).toHaveValue("");

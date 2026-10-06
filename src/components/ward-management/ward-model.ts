@@ -2182,6 +2182,8 @@ export type ReferralDestinationKind = (typeof REFERRAL_DESTINATION_KINDS)[number
 export type ReferralDestination =
   | {
       kind: "psychiatric_ward";
+      /** Selected recipient. Absent on legacy network-wide requests. */
+      unitId?: string;
       /**
        * Compared to a unit's `sexMix` and `sexDesignation` by equality. A fact about the person,
        * and the ONLY one that sits on an arm rather than on the referral itself — it is here
@@ -2338,6 +2340,8 @@ export const REFERRAL_ADDRESSING_STATES = ["queued", "accepted", "declined", "ca
 export type ReferralAddressingState = (typeof REFERRAL_ADDRESSING_STATES)[number];
 
 export type ReferralAddressing = {
+  /** Explicitly placed on a recipient waitlist; still awaiting an answer. */
+  waitlistedAt?: Instant;
   destination: ReferralDestination;
   state: ReferralAddressingState;
   /** When this destination answered, or when acceptance elsewhere cancelled it. */
@@ -2570,6 +2574,8 @@ export type ReferralCorrection = {
 };
 
 export type Referral = {
+  /** Confirmed drawer submission; typed text and chart bytes stay in memory under D-18. */
+  intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
   id: string;
   /**
    * Everywhere this referral was sent, and what each of them answered. One to

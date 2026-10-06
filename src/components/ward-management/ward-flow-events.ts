@@ -1123,6 +1123,7 @@ export type WardFlowEvent =
     }
   | {
       type: "RECEIVE_REFERRAL";
+      intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
       role: WardFlowRole;
       now: Instant;
       /**
@@ -1294,6 +1295,10 @@ export type WardFlowEvent =
     }
   | {
       type: "DECLINE_REFERRAL";
+      /** Keep a targeted ward request live when explicitly waitlisting for a bed. */
+      waitlist?: boolean;
+      /** Required to answer one of several explicitly addressed wards. */
+      unitId?: string;
       role: WardFlowRole;
       now: Instant;
       /** The referral being decided. */
