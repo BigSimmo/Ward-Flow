@@ -25,6 +25,18 @@
    * `ward-flow-shell-tokens.module.css` (out of this task's scope). Aliased to the next darkest
    * declared surface tone rather than left unresolved. */
   --surface-3: var(--sunk);
+
+  /* Liquid-glass elevation for this screen only. Radii nest: outer sheet, inner card, tight control. */
+  --glass-r: 1rem;
+  --glass-r-in: 0.75rem;
+  --glass-r-tight: 0.5rem;
+  --glass-fill: color-mix(in srgb, var(--surface) 78%, transparent);
+  --glass-fill-strong: color-mix(in srgb, var(--surface) 90%, transparent);
+  --glass-shade:
+    0 1px 1px color-mix(in srgb, var(--ink) 5%, transparent),
+    0 22px 44px -30px color-mix(in srgb, var(--ink) 46%, transparent);
+  --glass-edge: inset 0 1px 0 var(--hl);
+  --glass-line: color-mix(in srgb, var(--line) 75%, var(--hl));
 }
 
 .srOnly {
@@ -44,10 +56,10 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--ward-space-12, 0.75rem);
+  gap: 0.625rem;
   overflow-x: clip;
   overflow-y: visible;
-  padding: 0.875rem 1.5rem 2rem;
+  padding: 0.75rem 1.25rem 1.5rem;
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
@@ -187,8 +199,14 @@
   font-size: var(--t-0);
   font-weight: 650;
   cursor: pointer;
-  box-shadow: var(--lift);
-  transition: all 0.15s ease;
+  box-shadow:
+    inset 0 1px 0 var(--hl-on-accent),
+    0 10px 22px -14px color-mix(in srgb, var(--ink) 62%, transparent);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
   white-space: nowrap;
 }
 
@@ -548,23 +566,24 @@
 }
 
 .authorityCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r);
+  box-shadow: var(--glass-shade), var(--glass-edge);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .authorityHead {
-  padding: 0.75rem 0.875rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--glass-line);
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
 }
 
 .authorityHead h3 {
@@ -600,8 +619,8 @@
 }
 
 .catalogItemActive {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 82%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .catalogMain {
@@ -690,6 +709,30 @@
 
 .deadlineContextCard {
   min-width: 0;
+  container-type: inline-size;
+  container-name: legal-context;
+}
+
+.hud {
+  width: 100%;
+}
+
+@media (max-width: 68rem) {
+  .hud > * {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    border-radius: var(--glass-r);
+    row-gap: 0.25rem;
+  }
+
+  .hud > * ul {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
 }
 
 @media (min-width: 68.0625rem) {
@@ -763,20 +806,17 @@
     overflow-y: visible;
     gap: 0;
     padding: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-bottom-color: var(--line-strong);
-    border-radius: var(--r1);
-    box-shadow: var(--lift);
+    background: var(--glass-fill-strong);
+    border: 1px solid var(--glass-line);
+    border-radius: var(--glass-r);
+    box-shadow: var(--glass-shade), var(--glass-edge);
   }
 
   .authorityHead {
     display: flex;
-    padding: 0.75rem 1rem;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--line);
-    border-top-left-radius: var(--r1i, 9px);
-    border-top-right-radius: var(--r1i, 9px);
+    padding: 0.625rem 0.875rem;
+    background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+    border-bottom: 1px solid var(--glass-line);
     align-items: center;
     justify-content: space-between;
   }
@@ -803,12 +843,12 @@
   }
 
   .catalogItem:hover {
-    background: var(--surface-2);
+    background: color-mix(in srgb, var(--surface-2) 80%, transparent);
   }
 
   .catalogItemActive {
-    background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1.5px var(--accent);
+    background: color-mix(in srgb, var(--accent-soft) 82%, var(--surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
   }
 }
 
@@ -827,16 +867,27 @@
   gap: 0.375rem;
 }
 
+@container legal-context (min-width: 40rem) {
+  .breakdownGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .breakdownRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
+  padding: 0.4375rem 0.625rem;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-tight);
+  box-shadow: var(--glass-edge);
   gap: 0.5rem;
-  transition: all 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   cursor: pointer;
 }
 
@@ -914,9 +965,9 @@
 
 /* ── Shortened Scope Summary (Image 5) ── */
 .scopeSummaryBanner {
-  padding: 0.625rem 1rem;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0.875rem;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  border-bottom: 1px solid var(--glass-line);
 }
 
 /* Item 13 expiry reminder: synthetic demo, typed expiries only (owner ruling D5). */
@@ -924,14 +975,15 @@
   display: flex;
   gap: 0.5rem;
   align-items: flex-start;
-  margin: 0;
-  padding: 0.625rem 1rem;
+  margin: 0.5rem 0.625rem 0;
+  padding: 0.5rem 0.75rem;
   font-size: var(--t-0);
   line-height: 1.4;
   color: var(--ink);
-  background: var(--warn-soft);
-  border-bottom: 1px solid var(--line);
-  border-left: 3px solid var(--warn);
+  background: color-mix(in srgb, var(--warn-soft) 84%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+  border-radius: var(--glass-r-tight);
+  box-shadow: var(--glass-edge);
 }
 
 .actPeriodDemo {
@@ -979,6 +1031,26 @@
   gap: var(--ward-space-12, 0.75rem);
 }
 
+.screen :global([data-ward-primitive="panel"]) {
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--glass-shade), var(--glass-edge);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+}
+
+.screen :global([data-ward-primitive="panel-header"]) {
+  padding: 0.5625rem 0.875rem;
+  background: color-mix(in srgb, var(--surface-2) 64%, transparent);
+  border-bottom: 1px solid var(--glass-line);
+}
+
+.rightColumn :global([data-ward-primitive="panel"]) {
+  container-type: inline-size;
+  container-name: legal-orders;
+}
+
 .panelBody {
   min-width: 0;
 }
@@ -993,9 +1065,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  padding: 0.4375rem 0.75rem;
+  border-bottom: 1px solid var(--glass-line);
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -1011,8 +1083,13 @@
 .filterButtons {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.125rem;
   flex-wrap: wrap;
+  padding: 0.1875rem;
+  border-radius: var(--pill, 9999px);
+  background: color-mix(in srgb, var(--sunk) 88%, transparent);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge);
 }
 
 .filterBtn {
@@ -1025,8 +1102,8 @@
   min-width: 2.75rem; /* 44px */
   padding: 0.375rem 0.875rem;
   border-radius: var(--pill, 9999px);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
   touch-action: manipulation;
@@ -1037,19 +1114,28 @@
 }
 
 .filterBtn:hover {
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   color: var(--ink);
 }
 
+.filterBtn:focus-visible,
+.btn:focus-visible,
+.recordFormPrimaryBtn:focus-visible,
+.catalogItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .filterBtnActive {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
+  background: var(--glass-fill-strong);
+  color: var(--ink);
+  border-color: transparent;
+  box-shadow: var(--glass-shade), var(--glass-edge);
 }
 
 .filterBtnActive:hover {
-  background: var(--accent-ink);
-  color: var(--on-accent);
+  background: var(--surface);
+  color: var(--ink);
 }
 
 /* Population scope sentence */
@@ -1091,24 +1177,24 @@
 /* Third Edition Hairline Records & Zero Side-Stripes */
 .screen [data-ward-primitive="record-list"] {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.625rem;
 }
 
 .screen [data-ward-primitive="record-row"] {
-  border: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
-  padding: 0.75rem 1rem;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-in);
+  background: var(--glass-fill-strong);
+  padding: 0.6875rem 0.8125rem;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
     box-shadow 0.15s ease;
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-shade), var(--glass-edge);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.375rem 1rem;
+  gap: 0.3125rem 0.75rem;
   align-items: center;
 }
 
@@ -1179,37 +1265,90 @@
 
 /* Sovereign subtle tinting for toned rows with zero colored side-stripes */
 .screen [data-ward-primitive="record-row"][data-tone="danger"] {
-  border: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 95%, var(--danger) 5%);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--glass-line));
+  background: color-mix(in srgb, var(--glass-fill-strong) 92%, var(--danger) 8%);
 }
 
 .screen [data-ward-primitive="record-row"][data-tone="warning"] {
-  border: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 96%, var(--warn) 4%);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--glass-line));
+  background: color-mix(in srgb, var(--glass-fill-strong) 94%, var(--warn) 6%);
 }
 
 .screen [data-ward-primitive="record-row"][data-tone="good"] {
-  border: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 96%, var(--good) 4%);
+  border: 1px solid color-mix(in srgb, var(--good) 24%, var(--glass-line));
+  background: color-mix(in srgb, var(--glass-fill-strong) 94%, var(--good) 6%);
 }
 
 .screen [data-ward-primitive="record-row"][data-tone="neutral"] {
-  border: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  background: var(--surface);
+  border: 1px solid var(--glass-line);
+  background: var(--glass-fill-strong);
+}
+
+/* Pair stretched order rows only once the orders column itself is wide enough. */
+@container legal-orders (min-width: 40rem) {
+  .screen [data-ward-primitive="record-list"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .screen [data-ward-primitive="record-row"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    height: 100%;
+    gap: 0.375rem;
+  }
+
+  .screen [data-ward-primitive="record-row"] > span:last-child {
+    grid-column: auto;
+    grid-row: auto;
+    align-self: flex-end;
+    margin-top: auto;
+    padding-top: 0.25rem;
+  }
+}
+
+@container legal-orders (min-width: 64rem) {
+  .screen [data-ward-primitive="record-list"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .screen {
+    --glass-fill: var(--surface);
+    --glass-fill-strong: var(--surface);
+  }
+
+  .authorityCard,
+  .inspectorDrawer,
+  .modalDialog,
+  .screen :global([data-ward-primitive="panel"]) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspectorDrawer,
+  .drawerBackdrop,
+  .recordFormPrimaryBtn,
+  .catalogChevron,
+  .screen [data-ward-primitive="record-row"] {
+    animation: none;
+    transition: none;
+  }
 }
 
 .screen [data-ward-primitive="record-reason"] {
   max-width: 100%;
   justify-self: start;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.35rem 0.625rem;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-tight);
+  padding: 0.3125rem 0.5625rem;
   font-size: var(--t-0);
   font-variant-numeric: tabular-nums;
+  box-shadow: var(--glass-edge);
 }
 
 .screen [data-ward-primitive="record-reason"][data-level="danger"] {
@@ -1253,9 +1392,10 @@
   min-height: 2.75rem; /* 44px minimum tap target floor */
   min-width: 2.75rem; /* 44px */
   padding: 0.375rem 0.875rem;
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
+  border-radius: var(--glass-r-tight);
+  border: 1px solid var(--glass-line);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--glass-edge);
   color: var(--ink);
   font-family: inherit;
   font-size: var(--t-1);
@@ -1302,6 +1442,7 @@
   background: var(--accent);
   color: var(--on-accent);
   border-color: var(--accent);
+  box-shadow: inset 0 1px 0 var(--hl-on-accent);
 }
 
 .btnPrimary:hover {
@@ -1440,14 +1581,15 @@
 }
 
 .inspectorDrawer {
-  width: min(30rem, 94vw);
-  height: 100%;
+  width: min(32rem, calc(100vw - 1rem));
+  height: calc(100% - 1rem);
+  margin: 0.5rem 0.5rem 0.5rem 0;
   background: var(--surface);
-  border-left: 1px solid var(--line-strong);
-  /* `--lift` is always declared here — `.screen` composes `wardShellTokens` on this same page,
-   * and this drawer is a plain inline child (no portal), so the fallback below could never
-   * actually be used. Removed rather than kept as dead raw-colour cover. */
-  box-shadow: var(--lift);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r);
+  box-shadow:
+    var(--glass-edge),
+    -24px 12px 48px -28px color-mix(in srgb, var(--ink) 42%, transparent);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1468,9 +1610,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--glass-line);
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+  border-top-left-radius: var(--glass-r);
+  border-top-right-radius: var(--glass-r);
   gap: 0.75rem;
   flex-shrink: 0;
 }
@@ -1498,8 +1642,9 @@
   min-width: var(--ward-tap, 48px);
   padding: 0 0.5rem;
   border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
+  border-radius: var(--glass-r-tight);
+  background: var(--glass-fill);
+  box-shadow: var(--glass-edge);
   color: var(--ink-soft);
   cursor: pointer;
   transition:
@@ -1523,10 +1668,10 @@
 }
 
 .drawerBody {
-  padding: 1.25rem;
+  padding: 0.875rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.75rem;
   overflow-y: auto;
   flex: 1 1 auto;
 }
@@ -1535,12 +1680,12 @@
 .dossierPatientHero {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-in);
+  box-shadow: var(--glass-edge);
 }
 
 .dossierAvatar {
@@ -1626,13 +1771,13 @@
 
 /* Dossier Card Inside Drawer */
 .dossierCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 1.125rem;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-in);
+  padding: 0.875rem;
   display: grid;
-  gap: 1rem;
-  box-shadow: var(--lift);
+  gap: 0.75rem;
+  box-shadow: var(--glass-edge);
 }
 
 .dossierCardHead {
@@ -1719,11 +1864,12 @@
 .actionGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.875rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r-in);
+  background: var(--glass-fill);
+  box-shadow: var(--glass-edge);
 }
 
 .unavailableActionGroup {
@@ -1780,9 +1926,9 @@ form.actionItem {
 
 .modalDialog {
   background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--glass-r);
+  box-shadow: var(--glass-shade), var(--glass-edge);
   width: min(100%, 34rem);
   max-height: 90vh;
   overflow: hidden;
@@ -1791,12 +1937,12 @@ form.actionItem {
 }
 
 .modalHead {
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--glass-line);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 62%, transparent);
   gap: 0.5rem;
 }
 
@@ -1833,12 +1979,12 @@ form.actionItem {
 }
 
 .modalFoot {
-  padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--line);
+  padding: 0.625rem 1rem;
+  border-top: 1px solid var(--glass-line);
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 62%, transparent);
   flex-wrap: wrap;
 }
 
@@ -1860,9 +2006,10 @@ form.actionItem {
 .formTextarea {
   min-height: 2.25rem;
   padding: 0 0.625rem;
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
+  border-radius: var(--glass-r-tight);
+  border: 1px solid var(--glass-line);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--glass-edge);
   color: var(--ink);
   font-family: inherit;
   font-size: var(--t-1);
