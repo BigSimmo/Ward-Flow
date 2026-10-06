@@ -2,13 +2,15 @@
 .matrixWrap {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .matrixHead {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 4px;
 }
 
@@ -83,19 +85,28 @@
 }
 
 .positionCaption {
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
-  margin: 2px 0 10px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ─────────────────────────────────────────────────────────────
    COMPACT "NEEDS YOU THIS SHIFT" (IMAGE 4 COMPACTED)
    ───────────────────────────────────────────────────────────── */
 .shiftBanner {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  border-radius: 28px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
+  backdrop-filter: blur(18px);
   overflow: hidden;
   margin-bottom: 6px;
 }
@@ -104,24 +115,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+  background: color-mix(in oklab, var(--surface-2) 48%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--ink) 6%, transparent);
   flex-wrap: wrap;
   gap: 8px;
 }
 
 .shiftTitleGroup {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
 }
 
 .shiftTitle {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -179,19 +191,20 @@
 
 .shiftDenseGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 8px;
-  padding: 10px 14px;
+  padding: 8px;
 }
 
 .shiftTileCompact {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
+  border-radius: 18px;
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
+  box-shadow: 0 10px 24px -18px rgb(var(--ward-shadow-rgb) / 0.5);
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
@@ -203,19 +216,23 @@
 }
 
 .shiftTileCompact[data-tone="warn"] {
-  border-left: 3px solid var(--warn);
+  border-color: color-mix(in oklab, var(--warn) 34%, transparent);
+  background: color-mix(in oklab, var(--warn) 10%, var(--surface));
 }
 
 .shiftTileCompact[data-tone="danger"] {
-  border-left: 3px solid var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 36%, transparent);
+  background: color-mix(in oklab, var(--danger) 9%, var(--surface));
 }
 
 .shiftTileCompact[data-tone="info"] {
-  border-left: 3px solid var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 32%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
 }
 
 .shiftTileCompact[data-tone="purple"] {
-  border-left: 3px solid var(--ward-domain-coordinator);
+  border-color: color-mix(in oklab, var(--ward-domain-coordinator) 34%, transparent);
+  background: color-mix(in oklab, var(--ward-domain-coordinator) 9%, var(--surface));
 }
 
 .shiftTileTop {
@@ -278,7 +295,17 @@
 .shiftTextLine {
   font-size: 12px;
   color: var(--ink-soft);
-  line-height: 1.35;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 8rem;
+}
+
+.shiftTileBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .shiftTextLine strong {
@@ -290,7 +317,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .btnShiftAction {
@@ -298,7 +325,7 @@
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 500;
-  border-radius: var(--r2, 4px);
+  border-radius: var(--pill, 999px);
   border: 1px solid var(--line-strong, var(--line));
   background: var(--surface);
   color: var(--ink);
@@ -336,15 +363,9 @@
 }
 
 .shiftEmptyNotice {
-  padding: 16px;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--good);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--good-soft);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -353,11 +374,8 @@
 .bedsControlsBar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
 }
 
 .filterPillsGroup {
@@ -449,14 +467,100 @@
    BAY GROUPINGS & 20-BED GRID (IMAGE 1 ENHANCED)
    ───────────────────────────────────────────────────────────── */
 .bedsSection {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 8px);
-  box-shadow: var(--lift-sm);
-  padding: 16px;
+  position: relative;
+  background: color-mix(in oklab, var(--surface) 74%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  border-radius: 28px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
+    0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
+  backdrop-filter: blur(18px);
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px;
+  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  border-radius: var(--pill, 999px);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 65%, transparent);
+}
+
+.segmentLabel {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.segmentBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--pill, 999px);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--body);
+  cursor: pointer;
+}
+
+.segmentBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.segmentBtn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.segmentBtn[aria-pressed="true"]:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.segmentCount {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 6px;
+  border-radius: var(--pill, 999px);
+  background: color-mix(in oklab, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.segmentBtn[aria-pressed="true"] .segmentCount {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.segmentBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .bayContainer {
@@ -497,17 +601,11 @@
 
 .bayBedsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 8px;
 }
 
-@media (max-width: 1024px) {
-  .bayBedsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .bayBedsGrid {
     grid-template-columns: 1fr;
   }
@@ -515,26 +613,32 @@
 
 /* ─── ENHANCED BED CARD ─── */
 .bedCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r2, 8px);
-  padding: 11px 13px;
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  border-radius: 22px;
+  padding: 12px 12px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 108px;
+  gap: 4px;
+  min-height: 0;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
   position: relative;
-  box-shadow: var(--lift-sm);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 75%, transparent),
+    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
+  backdrop-filter: blur(14px);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .bedCard:hover {
-  background: var(--surface);
-  border-color: var(--ink);
   transform: translateY(-2px);
-  box-shadow: var(--lift);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 75%, transparent),
+    0 18px 36px -18px rgb(var(--ward-shadow-rgb) / 0.6);
 }
 
 .bedCard:focus-visible {
@@ -571,76 +675,68 @@
 
 /* Past Date Marker: heavy red border */
 .bedCard.pastDate {
-  border: 2px solid var(--danger);
-  box-shadow: 0 0 0 1px var(--danger);
-}
-
-/* Selected Bed: distinct focus border */
-.bedCard.selected {
-  border: 2px solid var(--accent);
+  border-color: color-mix(in oklab, var(--danger) 42%, transparent);
   box-shadow:
-    0 0 0 2px var(--accent-soft),
-    var(--lift);
+    inset 0 0 0 1px color-mix(in oklab, var(--danger) 28%, transparent),
+    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
 }
 
-/* Pulled Bed */
+.bedCard.selected {
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
+}
+
 .bedCard.pulled {
-  background: var(--surface);
-  border: 1px solid var(--line-strong, var(--line));
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
 }
 
-/* Closed Bed: dashed border */
 .bedCard.closed {
-  background: var(--surface);
-  border: 2px dashed var(--warn);
+  background: color-mix(in oklab, var(--warn) 8%, var(--surface));
+  border-color: color-mix(in oklab, var(--warn) 40%, transparent);
 }
 
-/* Ready Bed: solid green border */
 .bedCard.ready {
-  background: var(--surface);
-  border: 2px solid var(--good);
+  background: color-mix(in oklab, var(--good) 10%, var(--surface));
+  border-color: color-mix(in oklab, var(--good) 38%, transparent);
 }
 
-/* Card Internal Layout */
 .bedTopRow {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.bedTopRow .bedPatientName {
+  flex: 1;
+  min-width: 0;
 }
 
 .bedStatePill {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: var(--ink);
-  font-family: var(--mono);
+  padding: 2px 8px;
+  border-radius: var(--pill, 999px);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
 }
 
 .bedCard.ready .bedStatePill {
   color: var(--good);
   background: var(--good-soft);
-  padding: 1px 5px;
-  border-radius: var(--pill, 999px);
-  border: 1px solid var(--good-border);
 }
 
 .bedCard.closed .bedStatePill {
   color: var(--warn);
   background: var(--warn-soft);
-  padding: 1px 5px;
-  border-radius: var(--pill, 999px);
-  border: 1px solid var(--warn-border);
 }
 
 .bedCard.pulled .bedStatePill {
   color: var(--accent);
   background: var(--accent-soft);
-  padding: 1px 5px;
-  border-radius: var(--pill, 999px);
-  border: 1px solid var(--line-strong, var(--line));
 }
 
 .bedDaysVal {
@@ -651,15 +747,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.bedPatientInfo {
-  font-size: 12.5px;
+.bedCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bedExpected {
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.3;
-  margin-bottom: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .bedStayBandLabel {
@@ -765,8 +864,6 @@
    FOOTER NOTES & LEGEND
    ───────────────────────────────────────────────────────────── */
 .bedsFooterNotes {
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -787,14 +884,26 @@
 .bedKeyLegend {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px 10px;
   flex-wrap: wrap;
-  padding: 8px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  font-size: 11.5px;
+  padding: 8px 10px;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
+  border-radius: 18px;
+  font-size: 11px;
   color: var(--ink-soft);
+}
+
+.legendSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pill, 999px);
+  background: var(--line-strong);
+}
+
+.legendSwatch[data-kind="unoffered"] {
+  background: transparent;
+  border: 1px solid var(--warn);
 }
 
 .legendItem {
@@ -840,20 +949,19 @@
 }
 
 .bedCardChip {
-  font-size: var(--t-0, 12px);
+  font-size: 10px;
   font-family: var(--mono);
-  font-weight: 600;
-  padding: 1px 6px;
+  font-weight: 700;
+  padding: 2px 8px;
   border-radius: var(--pill, 999px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .bedPatientName {
-  font-size: var(--t-0, 12.5px);
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
