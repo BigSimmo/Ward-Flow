@@ -1321,3 +1321,6 @@
   font-size: 17px;
   margin-top: 4px;
 }
+.figureGroup .metricGrid:has(> .metric:nth-child(4):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
