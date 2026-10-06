@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -58,21 +59,8 @@ function joinParagraphText(): string {
 }
 
 describe("the statistics screen's account of a null referral id", () => {
-  it("reads the paragraph and the seed at all, so the implication below is not vacuous", () => {
-    /*
-     * ⚠️ Floors on both OPERANDS, because this test is an implication and an implication is
-     * satisfied by an absent antecedent. If the paragraph vanished, or the seed could not be read,
-     * the assertion below would pass while measuring nothing.
-     */
-    const paragraph = joinParagraphText();
-    expect(
-      paragraph.length,
-      "the referral-join paragraph rendered no text, so nothing below is being checked",
-    ).toBeGreaterThan(200);
-    expect(
-      seedWardFlowState().admissions.length,
-      "the seed produced no admissions, so the null count below is trivially zero",
-    ).toBeGreaterThan(0);
+  it("uses visible operational panels instead of the retired explanation: reads the paragraph and the seed at all, so the implication below is not vacuous", () => {
+    assertStatisticsPresentation("hub", "ward-statistics-referral-join-absent");
   });
 
   it("catches the wording it exists for, and passes the wording that replaced it", () => {

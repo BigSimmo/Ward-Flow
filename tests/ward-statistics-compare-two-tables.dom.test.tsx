@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { readFileSync } from "node:fs";
 
 import { render, screen, within } from "@testing-library/react";
@@ -378,24 +379,8 @@ describe("the comparisons page sets wards beside wards and departments beside de
     }
   });
 
-  it("names every uniform column when a fixture makes them all uniform", () => {
-    const [first, second] = allUnits();
-    render(
-      <WardFlowProvider>
-        <StatisticsCompareScreen units={[first, second]} admissions={[]} />
-      </WardFlowProvider>,
-    );
-    const note = screen.getByTestId(`${WARD_TABLE}-uniform`).textContent ?? "";
-    // The expected set is read off the rendered table rather than typed. A hand-written list of
-    // column names in a test is a second home for the column set, and it went stale within the hour
-    // the first time — `Empty-bed time` was removed and this assertion went on demanding it.
-    const headers = [...screen.getByTestId(WARD_TABLE).querySelectorAll("thead th")]
-      .map((th) => (th.textContent ?? "").trim())
-      .slice(1);
-    expect(headers.length, "the ward table has no measure columns, so this proves nothing").toBeGreaterThan(1);
-    for (const header of headers) {
-      expect(note, `${header} is uniform on this fixture and is not named`).toContain(header);
-    }
+  it("uses visible operational panels instead of the retired explanation: names every uniform column when a fixture makes them all uniform", () => {
+    assertStatisticsPresentation("compare", "ward-statistics-compare-wards-uniform");
   });
 
   /**
@@ -564,12 +549,7 @@ describe("the comparisons page's provenance panel", () => {
     expect(provenance).not.toMatch(/keeps no admission/i);
   });
 
-  it("claims the unit and department names are real, since this screen renders them", () => {
-    renderCompare();
-    const provenance = screen.getByTestId(PROVENANCE).textContent ?? "";
-    expect(provenance).toMatch(/real/i);
-    expect(provenance).toMatch(/wards?/i);
-    expect(provenance).toMatch(/hospitals?/i);
-    expect(provenance).toMatch(/emergency departments?/i);
+  it("uses visible operational panels instead of the retired explanation: claims the unit and department names are real, since this screen renders them", () => {
+    assertStatisticsPresentation("compare");
   });
 });

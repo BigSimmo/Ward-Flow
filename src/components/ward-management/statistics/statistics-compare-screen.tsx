@@ -182,9 +182,6 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      <p className={family.note}>
-        Ready beds and people waiting are separate counts. This page does not match which bed suits which person.
-      </p>
       <label className={family.viewControl}>
         Compare
         <select
@@ -310,37 +307,12 @@ export function StatisticsCompareScreen({
         count={`${units.length} wards · ${emergencyDepartments.length} departments`}
         testId="ward-statistics-compare-scope"
       >
-        <div className={styles.panelBody}>
-          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-          </p>
-          <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
-            <summary>Method and attribution limits</summary>
-            <div className={styles.revealBody}>
-              <p data-testid="ward-statistics-compare-attributability-rule">
-                <strong>
-                  A measure belongs to a named ward only when its source record carries a required unit id.
-                </strong>{" "}
-                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                optional unit id covers only the records where it happens to be present, not the whole population.
-              </p>
-              <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                accepts. An acceptance is attributable to a named ward and a decline is not.
-              </p>
-              <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                than the number of referrals that exist.
-              </p>
-            </div>
-          </details>
-        </div>
+        <div className={styles.panelBody}></div>
       </WardPanel>
 
       <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
-        <details className={`${family.disclosure} source-print`}>
-          <summary>Ward chart and recorded table</summary>
+        <section className={styles.panelBody}>
+          <h3 className={styles.figureHeading}>Ward chart and recorded table</h3>
           <WardPanel title="Wards" count={`${units.length} wards`}>
             <div className={styles.panelBody}>
               <div className={styles.chartCard}>
@@ -369,12 +341,12 @@ export function StatisticsCompareScreen({
               />
             </div>
           </WardPanel>
-        </details>
+        </section>
       </div>
 
       <div id="compare-ed-measures" className={styles.compareRegion} tabIndex={-1}>
-        <details className={`${family.disclosure} source-print`}>
-          <summary>ED chart and recorded table</summary>
+        <section className={styles.panelBody}>
+          <h3 className={styles.figureHeading}>ED chart and recorded table</h3>
           <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
             <div className={styles.panelBody}>
               <div className={styles.chartCard}>
@@ -412,7 +384,7 @@ export function StatisticsCompareScreen({
               />
             </div>
           </WardPanel>
-        </details>
+        </section>
       </div>
 
       <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
@@ -522,12 +494,6 @@ export function StatisticsCompareScreen({
             Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
             for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
             this screen is a real person, a real bed or a real referral.
-          </p>
-          <p className={styles.note}>
-            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
-            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
-            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
-            names is invented.
           </p>
         </div>
       </WardPanel>
@@ -693,16 +659,6 @@ const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
  *
  * A single row cannot be uniform in any useful sense, so a one-row table reports nothing.
  */
-function columnsThatSeparateNothing<Row>(
-  columns: readonly CompareColumn<Row>[],
-  rows: readonly CompareRow<Row>[],
-): readonly string[] {
-  if (rows.length < 2) return [];
-  return columns
-    .filter((column) => new Set(rows.map(({ row }) => column.cell(row).text)).size === 1)
-    .map((column) => column.header);
-}
-
 /** English for a list of column names, so the note reads as a sentence rather than as output. */
 function joinNames(names: readonly string[]): string {
   if (names.length <= 1) return names.join("");
@@ -729,8 +685,6 @@ function CompareTable<Row>({
   columns: readonly CompareColumn<Row>[];
   rows: readonly CompareRow<Row>[];
 }) {
-  const uniform = columnsThatSeparateNothing(columns, rows);
-  const unit = rowHeader.toLowerCase();
   return (
     <>
       {/*
@@ -774,17 +728,6 @@ function CompareTable<Row>({
           })}
         </tbody>
       </WardTable>
-      {uniform.length > 0 && (
-        <p className={styles.note} data-testid={`${testId}-uniform`}>
-          <strong>
-            {joinNames(uniform)} {uniform.length === 1 ? "gives" : "give"} every {unit} the same answer here, so{" "}
-            {uniform.length === 1 ? "it separates" : "they separate"} nothing.
-          </strong>{" "}
-          That is a property of this prototype&apos;s own data rather than a finding about the {unit}s. It is not
-          evidence that they are alike, and the figure is not varied to make the column look useful — an invented spread
-          on a comparison screen would be a ranking nobody measured.
-        </p>
-      )}
     </>
   );
 }

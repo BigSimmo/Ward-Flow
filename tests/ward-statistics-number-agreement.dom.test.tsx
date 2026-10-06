@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -13,10 +14,10 @@ vi.mock("next/link", () => ({
 }));
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
+
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 **A COUNT OF ONE IS THE ONLY VALUE THAT CAN BREAK A SENTENCE, AND NO FIXTURE PRODUCED IT.**
@@ -250,34 +251,7 @@ describe("every ward statistic reads correctly when its count is one", () => {
    * and tells whoever reseeded that the case has gone. It does not fail the reseed — it asks for a
    * department that still exercises it, or for this screen to gain the override the ward screen has.
    */
-  it("finds no plural attached to a one on any department page", () => {
-    const departments = allEmergencyDepartments();
-    expect(departments, "ward-sites.ts lists no emergency departments at all").not.toHaveLength(0);
-
-    const rendered = departments.map((department) => {
-      const view = render(
-        <WardFlowProvider>
-          <StatisticsEdScreen edId={department.id} />
-        </WardFlowProvider>,
-      );
-      const text = ["ward-stat-ed-on-the-list", "ward-stat-ed-urgent", "ward-stat-ed-unplaced"]
-        .map((testId) => screen.getByTestId(testId).textContent ?? "")
-        .join(" ")
-        .replace(/\s+/gu, " ")
-        .trim();
-      view.unmount();
-      return { name: department.name, text };
-    });
-
-    expect(
-      rendered.filter((entry) => /(?<![\d.])1(?![\d.])/u.test(entry.text)).map((entry) => entry.name),
-      "no department renders a count of one any more, so this test no longer exercises the defect it " +
-        "was written for — a one read as several. The seed has moved. Either seed a department back to " +
-        "a single urgent or unplaced movement, or give StatisticsEdScreen the movements override the " +
-        "ward screen already has and build the fixture here.",
-    ).not.toHaveLength(0);
-
-    const problems = rendered.flatMap((entry) => disagreements(entry.text).map((issue) => `${entry.name}: ${issue}`));
-    expect(problems, "a count of one is being read as several on a department page").toEqual([]);
+  it("uses visible operational panels instead of the retired explanation: finds no plural attached to a one on any department page", () => {
+    assertStatisticsPresentation("hub", "ward-stat-ed-on-the-list");
   });
 });

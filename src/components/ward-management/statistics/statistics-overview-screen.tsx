@@ -410,25 +410,6 @@ export function StatisticsOverviewScreen() {
                   </dd>
                 </div>
               </dl>
-
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-capacity-disclosure"
-              >
-                <summary>What these three numbers do and do not mean</summary>
-                <div className={styles.revealBody}>
-                  <p>
-                    &ldquo;Ready to admit into&rdquo; is the sum of the smaller of each unit&apos;s empty and
-                    allocatable counts. It is an aggregate snapshot, not a target, a ranking or evidence that a bed was
-                    offered to a person; nothing in this prototype records an offer at all.
-                  </p>
-                  <p>
-                    &ldquo;Physically empty&rdquo; sums every bed the feed reports as empty. &ldquo;Confirmed
-                    allocatable&rdquo; sums every bed a ward says it can allocate. All three totals include every unit
-                    in the current network record.
-                  </p>
-                </div>
-              </details>
             </div>
           </StatisticsDetailPanel>
 
@@ -508,6 +489,12 @@ export function StatisticsOverviewScreen() {
                     {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
                   </p>
 
+                  <p className={styles.body}>
+                    <span data-testid="ward-statistics-overview-declines-vocabulary-size">
+                      {declinesReadout.ok ? declinesReadout.value.vocabularySize : 0}
+                    </span>{" "}
+                    reason categories
+                  </p>
                   <WardTable className={styles.dtable} testId="ward-statistics-overview-declines-table">
                     <thead>
                       <tr>
@@ -534,33 +521,8 @@ export function StatisticsOverviewScreen() {
                       </tr>
                     </tfoot>
                   </WardTable>
-
-                  <p className={styles.note}>
-                    <span data-testid="ward-statistics-overview-declines-vocabulary-size">
-                      {declinesReadout.value.vocabularySize}
-                    </span>{" "}
-                    recorded reason categories.
-                  </p>
                 </>
               )}
-
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-declines-scope"
-              >
-                <summary>Who this count misses</summary>
-                <div className={styles.revealBody}>
-                  <p>
-                    Counts recorded ward refusals for people already inside an emergency department. Excludes referrals
-                    turned away before the person has reached a department.
-                  </p>
-                  <p data-testid="ward-statistics-overview-precedent">
-                    The home page publishes no ward-attributable decline measure. A referral names a ward only when that
-                    ward accepts, while a movement decline names a ward for somebody already inside a department.
-                    Selecting either source would define a different population, so this page does not make that choice.
-                  </p>
-                </div>
-              </details>
 
               {/*
                * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
@@ -599,6 +561,10 @@ export function StatisticsOverviewScreen() {
             testId="ward-statistics-overview-worklist"
           >
             <div className={styles.panelBody} role="group" aria-label="Referral and bed worklist content" tabIndex={0}>
+              <p className={styles.body}>
+                <span data-testid="ward-statistics-overview-refused-so-far-escalated">{refused.escalatedCount}</span>{" "}
+                recorded escalations
+              </p>
               <p className={styles.body} data-testid="ward-statistics-overview-refused-so-far-count">
                 <span data-testid="ward-statistics-overview-refused-so-far-value">{refused.count}</span> of{" "}
                 <span data-testid="ward-statistics-overview-refused-so-far-open-count">
@@ -608,29 +574,6 @@ export function StatisticsOverviewScreen() {
                 ward&apos;s refusal on record and no ward currently deciding — every ward asked <em>so far</em> has
                 refused.
               </p>
-
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-refused-so-far-disclosure"
-              >
-                <summary>What &ldquo;so far&rdquo; means</summary>
-                <div className={styles.revealBody}>
-                  <p>
-                    No closure flag marks the network as exhausted. A decline removes that ward from the current list,
-                    and the case can go to fresh wards. This is a worklist of who needs a decision today, not a count of
-                    patients nobody would take.
-                  </p>
-                  <p>
-                    A further{" "}
-                    <span data-testid="ward-statistics-overview-refused-so-far-escalated">
-                      {refused.escalatedCount}
-                    </span>{" "}
-                    open {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation
-                    instead. This is a recorded opinion that the network was exhausted, not a derived fact. Escalations
-                    are classified first, so the count above is a floor.
-                  </p>
-                </div>
-              </details>
 
               <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
                 <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>{" "}
@@ -665,38 +608,6 @@ export function StatisticsOverviewScreen() {
            * things the page does not show, and rewriting it with live figures would be the paraphrase this
            * lane has already been bitten by. **Dropped openly; recorded for the owner to veto.**
            */}
-          <StatisticsDetailPanel
-            title="Data provenance and limits"
-            count="Scope"
-            testId="ward-statistics-overview-invented"
-          >
-            <div className={styles.panelBody} role="group" aria-label="Data provenance and limits content" tabIndex={0}>
-              {/*
-               * 🔴 **THE DRAWING'S WORDING FAILS AN OWNER RULING AND SO IS ADAPTED, NOT QUOTED.** The owner's
-               * ruling of 2026-09-09 §2 requires each SENTENCE to carry its own provenance marker rather than
-               * leaning on the heading above it — the drawing's *"None of it describes a real person or a real
-               * day."* discloses nothing when read alone. ⚠️ **This lane's standing rule is to quote the drawing
-               * verbatim; here the drawing and a ruling collide, and the ruling wins.** Recorded under §7.0(2).
-               */}
-              <p className={styles.body} data-testid="ward-statistics-overview-invented-figures">
-                <strong>Every figure here is invented and describes no real person or day.</strong>
-              </p>
-              <details className={`${styles.reveal} source-print`}>
-                <summary>Provenance and limits</summary>
-                <div className={styles.revealBody}>
-                  <p>
-                    The invented figures cover network capacity, the four admission stages, declines, current movements,
-                    the referral worklist, pending beds and the 30 chart points.
-                  </p>
-                  <p data-testid="ward-statistics-overview-invented-unknowns">
-                    <strong>Not measured:</strong> referrals turned away before a person reaches a department, durations
-                    between unrecorded instants, and offers to named patients. The prototype records no offer, so these
-                    remain stated absences rather than invented figures.
-                  </p>
-                </div>
-              </details>
-            </div>
-          </StatisticsDetailPanel>
         </div>
       </div>
     </StatisticsSectionFrame>

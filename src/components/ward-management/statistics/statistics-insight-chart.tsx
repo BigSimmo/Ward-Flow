@@ -274,7 +274,6 @@ export function StatisticsInsightChart({
           )}
         </div>
       )}
-      <p className={styles.note}>{metric.note}</p>
       <div className={styles.workspace}>
         {view === "chart" ? (
           <div

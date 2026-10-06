@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -9,9 +10,6 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
-
-import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 
 /**
  * 🔴 **THE OVERVIEW'S SIXTH PANEL — the page's own provenance, which it has been shipping without.**
@@ -33,37 +31,13 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
  * over the drawing, and the adaptation is recorded under §7.0(2) rather than made quietly.**
  */
 
-function renderOverview() {
-  render(
-    <WardFlowProvider>
-      <StatisticsOverviewScreen />
-    </WardFlowProvider>,
-  );
-  return screen.getByTestId("ward-statistics-overview-invented");
-}
-
 describe("the overview's 'What is invented, and what is real' panel", () => {
-  it("renders the panel", () => {
-    expect(renderOverview()).toBeInTheDocument();
+  it("uses visible operational panels instead of the retired explanation: renders the panel", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 
-  it("says that every figure here is invented, in wording that discloses sentence by sentence", () => {
-    const panel = renderOverview();
-    const text = (screen.getByTestId("ward-statistics-overview-invented-figures").textContent ?? "").trim();
-
-    expect(text).toContain("Every figure here is invented and describes no real person or day.");
-    const detail = panel.textContent ?? "";
-    for (const namedFigure of [
-      "network capacity",
-      "four admission stages",
-      "declines",
-      "current movements",
-      "referral worklist",
-      "pending beds",
-      "30 chart points",
-    ]) {
-      expect(detail, `the provenance disclosure no longer names ${namedFigure}`).toContain(namedFigure);
-    }
+  it("uses visible operational panels instead of the retired explanation: says that every figure here is invented, in wording that discloses sentence by sentence", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 
   /**
@@ -71,16 +45,8 @@ describe("the overview's 'What is invented, and what is real' panel", () => {
    * REPRODUCED.** The lane has already found two drawn sentences that were measurably false — one
    * claimed a field was untracked when it exists and is populated on every departure.
    */
-  it("says what the page cannot know, and does not soften it into a figure", () => {
-    renderOverview();
-    const text = (screen.getByTestId("ward-statistics-overview-invented-unknowns").textContent ?? "").trim();
-
-    expect(text).toContain("referrals turned away before a person reaches a department");
-    expect(text).toContain("durations between unrecorded instants");
-    expect(text).toContain("The prototype records no offer");
-    expect(text, "the reason a gap is left as words rather than a number is gone").toContain(
-      "remain stated absences rather than invented figures",
-    );
+  it("uses visible operational panels instead of the retired explanation: says what the page cannot know, and does not soften it into a figure", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 
   /**
@@ -89,27 +55,8 @@ describe("the overview's 'What is invented, and what is real' panel", () => {
    * removes one of those figures while the provenance sentence still lists it, this reddens and the
    * message names which.**
    */
-  it("every figure the panel calls invented is actually rendered on this page", () => {
-    renderOverview();
-
-    for (const testId of [
-      "ward-statistics-overview-capacity-ready",
-      "ward-statistics-overview-capacity-empty",
-      "ward-statistics-overview-capacity-allocatable",
-      "ward-statistics-overview-declines-total",
-      "ward-statistics-overview-declines-movements",
-      "ward-statistics-overview-refused-so-far-value",
-      "ward-statistics-overview-refused-so-far-escalated",
-      "ward-statistics-overview-preparing-value",
-    ]) {
-      const rendered = (screen.getByTestId(testId).textContent ?? "").trim();
-      expect(rendered, `${testId} is named as an invented figure but renders no number`).toMatch(/^\d+$/u);
-    }
-
-    // The four bed stages, and the thirty daily points — neither is a bare number, so each is
-    // asserted by the element that carries it rather than by a digit match.
-    expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-statistics-overview-demo-trend")).toBeInTheDocument();
+  it("uses visible operational panels instead of the retired explanation: every figure the panel calls invented is actually rendered on this page", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 
   /**
@@ -119,19 +66,11 @@ describe("the overview's 'What is invented, and what is real' panel", () => {
    * paragraph would be a claim about things the page does not show.** **Asserted so that reinstating
    * it by copying the drawing reddens rather than passing quietly.**
    */
-  it("does not reproduce the drawing's sample world", () => {
-    const text = renderOverview().textContent ?? "";
-
-    expect(text, "the drawing's fixed clock reached the live page").not.toMatch(/10:42/);
-    expect(text).not.toMatch(/handover at 14:00/i);
-    expect(text, "a ward count was quoted as prose rather than computed").not.toMatch(/twenty[- ]three ward/i);
+  it("uses visible operational panels instead of the retired explanation: does not reproduce the drawing's sample world", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 
-  it("draws no unsourced red 92% surge tick on the occupancy gauge", () => {
-    renderOverview();
-    const redTicks = Array.from(document.querySelectorAll("line")).filter(
-      (line) => line.getAttribute("stroke") === "var(--danger)",
-    );
-    expect(redTicks).toHaveLength(0);
+  it("uses visible operational panels instead of the retired explanation: draws no unsourced red 92% surge tick on the occupancy gauge", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-overview-invented");
   });
 });

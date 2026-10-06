@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_UNIT_CHOOSER_HREF,
@@ -20,6 +21,19 @@ interface StatisticsNavProps {
 export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps) {
   const pathname = usePathname() || "";
   const router = useRouter();
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = document.querySelector<HTMLElement>('[data-testid="ward-bar"]');
+    if (!bar || !navRef.current) return;
+    const nav = navRef.current;
+    const updateOffset = () =>
+      nav.style.setProperty("--statistics-header-offset", `${bar.getBoundingClientRect().height}px`);
+    updateOffset();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, []);
 
   // Auto-detect section if not provided explicitly
   const activeSection =
@@ -206,7 +220,12 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
   ];
 
   return (
-    <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+    <nav
+      ref={navRef}
+      className={styles.navBar}
+      aria-label="Ward Flow statistics sections"
+      data-testid="ward-statistics-nav"
+    >
       <label className={styles.mobileSelect}>
         <span>Statistics</span>
         <select

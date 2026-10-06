@@ -1,11 +1,40 @@
-/*
- * Statistics polish (5 October 2026). A finishing layer over the statistics screens:
- * same sections, panels, tabs and order. It only refines spacing, numbers, focus and tap targets.
- * Tokens only, no hex.
- */
+/* Shared finishing layer: preserve every screen's grid, with compact glass surfaces. */
 
 .root {
   display: contents;
+}
+
+.root :global([data-ward-primitive="panel"]) {
+  border-radius: 0.875rem;
+  border-color: color-mix(in srgb, var(--line) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 95%, transparent),
+    0 8px 28px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.root :global([data-ward-primitive="panel-header"]) {
+  padding: 0.875rem 1rem;
+  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+}
+.root :global(section[id]),
+.root :global(div[id]),
+.root :global(dl[id]) {
+  scroll-margin-top: 8rem;
+}
+.root :global(dl[aria-label]) {
+  border-radius: 0.625rem;
+}
+.root :global(dl[aria-label] > div) {
+  padding: 0.875rem 1rem;
+}
+.root :global(thead th) {
+  font-weight: 600;
+  background: var(--surface-2);
+}
+.root :global(tbody td),
+.root :global(tbody th) {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 /* Numbers line up in every table and figure band. */
