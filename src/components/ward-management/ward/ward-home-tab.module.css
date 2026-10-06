@@ -10,21 +10,32 @@
 }
 
 .alertStrip {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-soft);
-  border-left: 4px solid var(--danger);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
   border-radius: var(--r2);
-  padding: 12px 14px;
-  display: flex;
+  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+}
+
+.alertStrip[data-tone="critical"] {
+  border-left-color: var(--danger);
+}
+
+.alertStrip[data-tone="warning"] {
+  border-left-color: var(--warn);
+}
+
+.alertStrip[data-tone="info"] {
+  border-left-color: var(--accent);
 }
 
 @media (max-width: 768px) {
   .alertStrip {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -43,18 +54,23 @@
 
 .alertClock {
   font-family: var(--mono);
-  font-size: 12px; /* 12px floor */
+  font-size: 12px;
   font-weight: 700;
-  background: var(--danger);
-  color: var(--surface);
-  padding: 2px 7px;
-  border-radius: var(--pill, 999px);
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.alertMain strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .alertText {
-  font-size: 12.5px;
+  margin: 0;
+  font-size: 12px;
   color: var(--ink-soft);
+  line-height: 1.35;
 }
 
 .alertActions {
@@ -84,13 +100,25 @@
 /* Home 2-column Grid */
 .homeGrid {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
+  grid-template-areas:
+    "checks log"
+    "awaiting log";
+  gap: 12px;
+  align-items: stretch;
+}
+
+.homeGrid > div:first-child {
+  grid-area: checks;
 }
 
 @media (max-width: 1024px) {
   .homeGrid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "checks"
+      "awaiting"
+      "log";
   }
 }
 
@@ -127,58 +155,59 @@
   padding: 14px;
 }
 
-/* 4-Metric Census Quad */
-.censusQuadGrid {
+.censusRow {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 @media (max-width: 600px) {
-  .censusQuadGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .censusRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 0;
   }
 }
 
-.censusBox {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 10px 12px;
+.censusMetric {
+  min-width: 0;
+  padding: 0 12px;
+  border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 1px;
+}
+
+.censusMetric:first-child {
+  padding-left: 0;
+  border-left: none;
 }
 
 .censusBoxLabel {
-  font-size: 12px; /* 12px floor */
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .censusBoxVal {
-  font-size: 24px;
+  font-size: 1.25rem;
   font-weight: 700;
-  font-family: var(--mono);
-  margin: 4px 0;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.censusBoxVal[data-tone="good"] {
+  color: var(--good);
+}
+
+.censusBoxVal[data-tone="warn"] {
+  color: var(--warn);
 }
 
 .censusBoxFoot {
-  font-size: 12px; /* 12px floor */
+  font-size: 12px;
   color: var(--muted);
-}
-
-.operationalRule {
-  font-size: 12px; /* 12px floor */
-  color: var(--ink-soft);
-  line-height: 1.5;
-  padding: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
 }
 
 /* Shift Handshake Checklist */
@@ -212,67 +241,207 @@
   gap: 8px;
 }
 
-/* Timeline Feed */
-.timelineStream {
+.logColumn {
+  grid-area: log;
+  min-width: 0;
+  min-height: 0;
+}
+
+.logCard {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 100%;
+  min-height: 16rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift-sm);
+  overflow: hidden;
+}
+
+.logBody {
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 4px 12px 12px;
+}
+
+.timelineStream {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0;
+}
+
+.timelineStream::before {
+  content: "";
+  position: absolute;
+  left: calc(3.25rem + 10px);
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: var(--line);
 }
 
 .timelineEntry {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 12.5px;
-}
-
-.timelineEntry:last-child {
-  border-bottom: none;
+  display: grid;
+  grid-template-columns: 3.25rem 12px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: start;
+  padding: 7px 0;
+  font-size: 13px;
 }
 
 .timelineTime {
-  font-size: 12px; /* 12px floor */
+  font-size: 12px;
   font-family: var(--mono);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
-  flex-shrink: 0;
-  padding-top: 2px;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.timelineDot {
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  position: relative;
+  z-index: 1;
+  justify-self: center;
 }
 
 .timelineBody {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
+  min-width: 0;
   color: var(--ink);
+  line-height: 1.35;
 }
 
-.timelineRole {
-  font-size: 12px; /* 12px floor */
-  font-family: var(--mono);
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+.timelineBody strong {
+  font-weight: 700;
+}
+
+.timelineDetail {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.timelineNested {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
   color: var(--muted);
-  width: fit-content;
-}
-
-.timelineMetaRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 3px;
-  flex-wrap: wrap;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .timelineEmpty {
+  margin: 0;
   padding: 16px 0;
   text-align: center;
   font-size: 12px;
   color: var(--muted);
+}
+
+.statusWord {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.statusWord[data-tone="good"] {
+  color: var(--good);
+}
+
+.statusWord[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.checkMark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong, var(--line));
+  flex: none;
+}
+
+.checkMark[data-done="true"] {
+  border-color: var(--good);
+  background: var(--good);
+}
+
+.awaitingCard {
+  grid-area: awaiting;
+  margin-bottom: 0;
+  scroll-margin-top: 12rem;
+}
+
+.awaitingHeading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.awaitingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.awaitingRow {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.awaitingRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.awaitingIdentity {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.awaitingName {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.awaitingMeta {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.awaitingActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btnAccept {
+  background: var(--good);
+  color: var(--text-inverse);
+  border-color: var(--good);
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .pillBadge {

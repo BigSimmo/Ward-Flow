@@ -80,8 +80,16 @@ interface WardHomeTabProps {
     countdown: string;
     text: string;
     tone: "critical" | "warning" | "info";
+    actionLabel?: string;
+    actionTarget?: "answer" | "arrival" | "discharges";
+    movementId?: string;
   }>;
   onOpenDecisions?: () => void;
+  morningRollupConfirmed?: boolean;
+  onConfirmMorningRollup?: () => void;
+  onOpenConfirmNumbers?: () => void;
+  onOpenArrival?: (movementId: string) => void;
+  onOpenDischarges?: () => void;
 }
 
 export function WardHomeTab({
@@ -112,10 +120,19 @@ export function WardHomeTab({
   overrideReasonForm,
   onAcceptInPrinciple,
   liveFormAlerts,
+  morningRollupConfirmed = false,
+  onConfirmMorningRollup,
+  onOpenConfirmNumbers,
+  onOpenArrival,
+  onOpenDischarges,
 }: WardHomeTabProps) {
   const { bedReleases, leaveBeds = [] } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  const [affirmationChecked, setAffirmationChecked] = useState(false);
+  const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
+    drugs: null,
+    seclusion: null,
+    afternoon: null,
+  });
 
   // Derived real ward activity events for overhauled Shift Coordinator Log
   const pendingBedReleases = bedReleases.filter(
@@ -125,6 +142,119 @@ export function WardHomeTab({
     (release) => release.unitId === unit.id && release.state === "discharged",
   );
   const unitLeaveBeds = (leaveBeds ?? []).filter((bed) => bed.unitId === unit.id);
+  const soonestLeaveReturn = unitLeaveBeds.reduce<Instant | null>((soonest, bed) => {
+    if (soonest === null || bed.expectedReturn < soonest) return bed.expectedReturn;
+    return soonest;
+  }, null);
+
+  function toggleLocalCheck(id: string) {
+    setLocalChecks((current) => ({ ...current, [id]: current[id] === null ? now : null }));
+  }
+
+  function focusAwaiting() {
+    const target = document.getElementById("ward-awaiting-answer");
+    target?.scrollIntoView({ block: "nearest" });
+    target?.focus();
+  }
+
+  function runAlert(alert: (typeof liveFormAlerts)[number]) {
+    if (alert.actionTarget === "answer") {
+      focusAwaiting();
+      return;
+    }
+    if (alert.actionTarget === "arrival" && alert.movementId) onOpenArrival?.(alert.movementId);
+    if (alert.actionTarget === "discharges") onOpenDischarges?.();
+  }
+
+  const capacityConfirmed = unit.allocatable.confirmedAt !== undefined;
+  const referralsClear = incoming.length === 0;
+  const shiftChecks = [
+    capacityConfirmed,
+    morningRollupConfirmed,
+    referralsClear,
+    localChecks.drugs !== null,
+    localChecks.seclusion !== null,
+    localChecks.afternoon !== null,
+  ];
+  const checksDone = shiftChecks.filter(Boolean).length;
+
+  type LogRow = {
+    key: string;
+    at: number;
+    timeLabel: string;
+    title: string;
+    detail: string;
+    status: string;
+    nested?: Array<{ key: string; detail: string }>;
+  };
+  const logRows: LogRow[] = [];
+  if (capacityConfirmed && unit.allocatable.confirmedAt !== undefined) {
+    logRows.push({
+      key: "capacity",
+      at: unit.allocatable.confirmedAt,
+      timeLabel: formatInstant(unit.allocatable.confirmedAt),
+      title: "Capacity confirmed",
+      detail: `${unit.allocatable.value} beds allocatable`,
+      status: "Verified",
+    });
+  }
+  if (pendingBedReleases.length === 1) {
+    const release = pendingBedReleases[0];
+    logRows.push({
+      key: release.id,
+      at: release.confirmedAt,
+      timeLabel: formatInstant(release.confirmedAt),
+      title: "Bed expected out",
+      detail: `Departure ${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+      status: release.state === "confirmed" ? "Confirmed" : "Expected",
+    });
+  } else if (pendingBedReleases.length > 1) {
+    const ordered = [...pendingBedReleases].sort((left, right) => left.expectedAt - right.expectedAt);
+    const next = ordered[0];
+    logRows.push({
+      key: "releases",
+      at: Math.max(...pendingBedReleases.map((release) => release.confirmedAt)),
+      timeLabel: formatInstant(Math.max(...pendingBedReleases.map((release) => release.confirmedAt))),
+      title: `${pendingBedReleases.length} beds expected out`,
+      detail: `Next at ${formatInstant(next.expectedAt)}`,
+      status: "Expected",
+      nested: ordered.map((release) => ({
+        key: release.id,
+        detail: `${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+      })),
+    });
+  }
+  for (const release of dischargedBedReleases) {
+    logRows.push({
+      key: `clean-${release.id}`,
+      at: release.confirmedAt,
+      timeLabel: formatInstant(release.confirmedAt),
+      title: "Departure completed",
+      detail: release.preparationNote ?? (release.preparing ? "Being made ready" : "Clean not recorded"),
+      status: "Clean",
+    });
+  }
+  for (const leaveBed of unitLeaveBeds) {
+    logRows.push({
+      key: `leave-${leaveBed.id}`,
+      at: leaveBed.confirmedAt,
+      timeLabel: formatInstant(leaveBed.confirmedAt),
+      title: "Approved leave",
+      detail: `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
+      status: "Leave",
+    });
+  }
+  if (accepted.length > 0) {
+    logRows.push({
+      key: "inbound",
+      at: now,
+      timeLabel: "Now",
+      title: "Inbound accepted",
+      detail: `${resolvePatientIdentity(accepted[0]).displayName}${accepted.length > 1 ? ` and ${accepted.length - 1} more` : ""}`,
+      status: "En route",
+    });
+  }
+  logRows.sort((left, right) => right.at - left.at);
 
   return (
     <div className={styles.homeWrap}>
@@ -136,13 +266,16 @@ export function WardHomeTab({
       ) : null}
       {liveFormAlerts.map((alert) => (
         <div className={styles.alertStrip} key={alert.key} data-tone={alert.tone}>
+          <span className={styles.alertClock}>{alert.countdown}</span>
           <div className={styles.alertMain}>
-            <div className={styles.alertTitleRow}>
-              <span className={styles.alertClock}>{alert.countdown}</span>
-              <strong>{alert.title}</strong>
-            </div>
+            <strong>{alert.title}</strong>
             <p className={styles.alertText}>{alert.text}</p>
           </div>
+          {alert.actionLabel ? (
+            <button type="button" className={styles.btnAlertAct} onClick={() => runAlert(alert)}>
+              {alert.actionLabel}
+            </button>
+          ) : null}
         </div>
       ))}
 
@@ -154,418 +287,333 @@ export function WardHomeTab({
           <div className={styles.card}>
             <div className={styles.cardHead}>
               <div className={styles.cardTitle}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="2" width="12" height="12" rx="2" />
-                  <path d="M2 8h12M8 2v12" />
-                </svg>
-                <span>Ward Census &amp; Turnover</span>
+                <span>Beds now</span>
               </div>
-              <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--muted)" }}>
-                Current ward record
-              </span>
             </div>
             <div className={styles.cardBody}>
-              <div className={styles.censusQuadGrid}>
-                <div className={styles.censusBox}>
-                  <span className={styles.censusBoxLabel}>Empty Beds</span>
-                  <span className={styles.censusBoxVal} style={{ color: "var(--good)" }}>
+              <div className={styles.censusRow}>
+                <div className={styles.censusMetric}>
+                  <span className={styles.censusBoxLabel}>Empty</span>
+                  <span className={styles.censusBoxVal} data-tone="good">
                     {capacity.available}
                   </span>
-                  <span className={styles.censusBoxFoot}>Ready count; preparation shown above</span>
+                  <span className={styles.censusBoxFoot}>Ready</span>
                 </div>
-                <div className={styles.censusBox}>
-                  <span className={styles.censusBoxLabel}>Inbound Pulled</span>
-                  <span className={styles.censusBoxVal} style={{ color: "var(--accent)" }}>
-                    {accepted.length}
-                  </span>
-                  <span className={styles.censusBoxFoot}>Accepted from ED</span>
+                <div className={styles.censusMetric}>
+                  <span className={styles.censusBoxLabel}>Inbound</span>
+                  <span className={styles.censusBoxVal}>{accepted.length}</span>
+                  <span className={styles.censusBoxFoot}>Accepted</span>
                 </div>
-                <div className={styles.censusBox}>
-                  <span className={styles.censusBoxLabel}>Discharges Expected</span>
-                  <span className={styles.censusBoxVal} style={{ color: "var(--ink)" }}>
-                    {pendingBedReleasesCount}
-                  </span>
-                  <span className={styles.censusBoxFoot}>{breakdown.confirmedToday} confirmed ready</span>
+                <div className={styles.censusMetric}>
+                  <span className={styles.censusBoxLabel}>Leaving today</span>
+                  <span className={styles.censusBoxVal}>{pendingBedReleasesCount}</span>
+                  <span className={styles.censusBoxFoot}>{breakdown.confirmedToday} confirmed</span>
                 </div>
-                <div className={styles.censusBox}>
-                  <span className={styles.censusBoxLabel}>On Section 17 Leave</span>
-                  <span className={styles.censusBoxVal} style={{ color: "var(--warn)" }}>
+                <div className={styles.censusMetric}>
+                  <span className={styles.censusBoxLabel}>On leave</span>
+                  <span className={styles.censusBoxVal} data-tone={unitLeaveBedsCount > 0 ? "warn" : undefined}>
                     {unitLeaveBedsCount}
                   </span>
-                  <span className={styles.censusBoxFoot}>Due back 16:00</span>
+                  <span className={styles.censusBoxFoot}>
+                    {soonestLeaveReturn === null ? "None due" : `Back ${formatInstant(soonestLeaveReturn)}`}
+                  </span>
                 </div>
-              </div>
-
-              <div className={styles.operationalRule}>
-                <strong>Operational Rule:</strong> Ready, held, blocked, and occupied total {unit.beds}. Beds on
-                authorized psychiatric leave remain reserved and are <strong>never</strong> added to allocatable
-                capacity.
               </div>
             </div>
           </div>
 
-          {/* Shift Handshake & Safety Checklist */}
           <div className={styles.card}>
             <div className={styles.cardHead}>
               <div className={styles.cardTitle}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 8 7 12 13 4" />
-                </svg>
-                <span>Shift Handshake &amp; Safety Checks (07:00 &ndash; 15:30)</span>
+                <span>Shift checks</span>
               </div>
-              <span className={styles.checkBadge}>{affirmationChecked ? "4 of 4 Complete" : "3 of 4 Complete"}</span>
-            </div>
-            <div className={styles.cardBody}>
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <input type="checkbox" checked readOnly aria-label="Controlled Drug Count Verified" />
-                  <span>
-                    <strong>Controlled Drug Count:</strong> Dual-signature register verified by Shift Coordinator and
-                    NUM.
-                  </span>
-                </div>
-                <span className={styles.pillBadge} data-tone="good">
-                  Verified 07:12
-                </span>
-              </div>
-
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <input type="checkbox" checked readOnly aria-label="Seclusion Suite Inspection Verified" />
-                  <span>
-                    <strong>Seclusion Suite Inspection:</strong> Safety inspection &amp; CCTV duress check complete in
-                    HDU bay.
-                  </span>
-                </div>
-                <span className={styles.pillBadge} data-tone="good">
-                  Verified 07:25
-                </span>
-              </div>
-
-              <div className={styles.checkItem}>
-                <div className={styles.checkLeft}>
-                  <input type="checkbox" checked readOnly aria-label="Morning Medical Bed Review Verified" />
-                  <span>
-                    <strong>Morning Medical Bed Review:</strong> Consultant ward round rostered for Bay 1 &amp; 2.
-                  </span>
-                </div>
-                <span className={styles.pillBadge} data-tone="good">
-                  Verified 08:30
-                </span>
-              </div>
-
-              <div
-                className={styles.checkItem}
-                style={{ borderLeft: affirmationChecked ? "3px solid var(--good)" : "3px solid var(--warn)" }}
-              >
-                <div className={styles.checkLeft}>
-                  <input
-                    type="checkbox"
-                    checked={affirmationChecked}
-                    onChange={(e) => setAffirmationChecked(e.target.checked)}
-                    aria-label="Afternoon Bed Rollup Affirmation"
-                  />
-                  <span>
-                    <strong>Afternoon Bed Rollup Affirmation:</strong> Midday census sign-off pending NUM sign-off.
-                  </span>
-                </div>
-                <span className={styles.pillBadge} data-tone={affirmationChecked ? "good" : "warn"}>
-                  {affirmationChecked ? "Affirmed" : "Action Due 12:30"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Shift Coordinator Log (Overhauled Ward Activity Feed) */}
-        <div>
-          <div className={styles.card} style={{ height: "100%" }}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="8" cy="8" r="6" />
-                  <path d="M8 5v3.5l2 1" />
-                </svg>
-                <span>Shift Coordinator Log</span>
-              </div>
-              <span className={styles.pillBadge} data-tone="good">
-                Active shift
+              <span className={styles.checkBadge}>
+                {checksDone} of {shiftChecks.length} done
               </span>
             </div>
             <div className={styles.cardBody}>
-              <div className={styles.timelineStream}>
-                {unit.allocatable.confirmedAt ? (
-                  <div className={styles.timelineEntry}>
-                    <span className={styles.timelineTime}>{formatInstant(unit.allocatable.confirmedAt)}</span>
-                    <div className={styles.timelineBody}>
-                      <span>
-                        <strong>Capacity Confirmed:</strong> Allocatable capacity confirmed at {unit.allocatable.value}{" "}
-                        beds.
-                      </span>
-                      <div className={styles.timelineMetaRow}>
-                        <span className={styles.timelineRole}>NUM {unit.name}</span>
-                        <span className={`${styles.pillBadge} ${styles.pillBadgeGood}`}>Verified</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {pendingBedReleases.map((release) => (
-                  <div key={`feed-${release.id}`} className={styles.timelineEntry}>
-                    <span className={styles.timelineTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
-                    <div className={styles.timelineBody}>
-                      <span>
-                        <strong>Bed Release Flagged:</strong> Expected departure at {formatInstant(release.expectedAt)}
-                        {release.waitingOn ? ` waiting on ${release.waitingOn}` : ""}.
-                      </span>
-                      <div className={styles.timelineMetaRow}>
-                        <span className={styles.timelineRole}>NUM {unit.name}</span>
-                        <span className={`${styles.pillBadge} ${styles.pillBadgeWarn}`}>
-                          {release.state === "confirmed" ? "Confirmed" : "Expected"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {dischargedBedReleases.map((release) => (
-                  <div key={`feed-clean-${release.id}`} className={styles.timelineEntry}>
-                    <span className={styles.timelineTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
-                    <div className={styles.timelineBody}>
-                      <span>
-                        <strong>Departure Completed:</strong> Bed vacated and released. Clean status:{" "}
-                        {release.preparationNote ?? (release.preparing ? "being made ready" : "clean not recorded")}.
-                      </span>
-                      <div className={styles.timelineMetaRow}>
-                        <span className={styles.timelineRole}>Discharge Lead</span>
-                        <span className={`${styles.pillBadge} ${styles.pillBadgeAccent}`}>Clean Queue</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {unitLeaveBeds.map((leaveBed) => (
-                  <div key={`feed-leave-${leaveBed.id}`} className={styles.timelineEntry}>
-                    <span className={styles.timelineTime}>{formatInstantWithDay(leaveBed.confirmedAt, now)}</span>
-                    <div className={styles.timelineBody}>
-                      <span>
-                        <strong>Section 17 Leave:</strong> Patient on approved leave (Expected return{" "}
-                        {formatInstant(leaveBed.expectedReturn)}).
-                      </span>
-                      <div className={styles.timelineMetaRow}>
-                        <span className={styles.timelineRole}>{leaveBed.confirmedBy}</span>
-                        <span className={`${styles.pillBadge} ${styles.pillBadgePurple}`}>Leave Active</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {accepted.length > 0 ? (
-                  <div className={styles.timelineEntry}>
-                    <span className={styles.timelineTime}>Recent</span>
-                    <div className={styles.timelineBody}>
-                      <span>
-                        <strong>Inbound Transfer Accepted:</strong> {resolvePatientIdentity(accepted[0]).displayName}{" "}
-                        accepted from ED.
-                      </span>
-                      <div className={styles.timelineMetaRow}>
-                        <span className={styles.timelineRole}>Bed Coordinator</span>
-                        <span className={`${styles.pillBadge} ${styles.pillBadgeGood}`}>En Route</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!unit.allocatable.confirmedAt &&
-                pendingBedReleases.length === 0 &&
-                dischargedBedReleases.length === 0 &&
-                unitLeaveBeds.length === 0 &&
-                accepted.length === 0 ? (
-                  <div className={styles.timelineEmpty}>
-                    <span>No shift activity entries recorded yet for this session.</span>
-                  </div>
-                ) : null}
+              <div className={styles.checkItem}>
+                <div className={styles.checkLeft}>
+                  <span className={styles.checkMark} data-done={capacityConfirmed} aria-hidden="true" />
+                  <span>
+                    <strong>Capacity numbers.</strong>{" "}
+                    {capacityConfirmed && unit.allocatable.confirmedAt !== undefined
+                      ? `Confirmed ${formatInstant(unit.allocatable.confirmedAt)}.`
+                      : "Not confirmed this shift."}
+                  </span>
+                </div>
+                {capacityConfirmed ? (
+                  <span className={styles.statusWord} data-tone="good">
+                    Verified
+                  </span>
+                ) : (
+                  <button type="button" className={styles.btnAlertAct} onClick={() => onOpenConfirmNumbers?.()}>
+                    Confirm
+                  </button>
+                )}
               </div>
+              <div className={styles.checkItem}>
+                <div className={styles.checkLeft}>
+                  <span className={styles.checkMark} data-done={morningRollupConfirmed} aria-hidden="true" />
+                  <span>
+                    <strong>Morning rollup.</strong> {morningRollupConfirmed ? "Confirmed today." : "Still due."}
+                  </span>
+                </div>
+                {morningRollupConfirmed ? (
+                  <span className={styles.statusWord} data-tone="good">
+                    Verified
+                  </span>
+                ) : (
+                  <button type="button" className={styles.btnAlertAct} onClick={() => onConfirmMorningRollup?.()}>
+                    Confirm
+                  </button>
+                )}
+              </div>
+              <div className={styles.checkItem}>
+                <div className={styles.checkLeft}>
+                  <span className={styles.checkMark} data-done={referralsClear} aria-hidden="true" />
+                  <span>
+                    <strong>Unanswered referrals.</strong>{" "}
+                    {referralsClear ? "None waiting." : `${incoming.length} waiting.`}
+                  </span>
+                </div>
+                {referralsClear ? (
+                  <span className={styles.statusWord} data-tone="good">
+                    Clear
+                  </span>
+                ) : (
+                  <button type="button" className={styles.btnAlertAct} onClick={focusAwaiting}>
+                    Answer
+                  </button>
+                )}
+              </div>
+              {(
+                [
+                  ["drugs", "Controlled drug count", "Tick when the register has been checked."],
+                  ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked."],
+                  ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed."],
+                ] as const
+              ).map(([id, label, hint]) => (
+                <div className={styles.checkItem} key={id}>
+                  <label className={styles.checkLeft}>
+                    <input
+                      type="checkbox"
+                      checked={localChecks[id] !== null}
+                      onChange={() => toggleLocalCheck(id)}
+                      aria-label={label}
+                    />
+                    <span>
+                      <strong>{label}.</strong> {hint} On this screen only. Not sent.
+                    </span>
+                  </label>
+                  <span className={styles.statusWord} data-tone={localChecks[id] !== null ? "good" : "warn"}>
+                    {localChecks[id] !== null ? formatInstant(localChecks[id]) : "Due"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 3. Incoming Referrals Awaiting Answer (Preserves all accessibility and test contracts) */}
-      <section aria-label="Awaiting your answer" className={styles.card} style={{ marginTop: "1rem" }} tabIndex={0}>
-        <div className={styles.cardHead}>
-          <div className={styles.cardTitle}>
-            <h2 style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}>
-              {presentation === "answer" ? "Bed request" : "Awaiting your answer"}
-            </h2>
+        <div className={styles.logColumn}>
+          <div className={styles.logCard}>
+            <div className={styles.cardHead}>
+              <div className={styles.cardTitle}>
+                <span>Shift log</span>
+              </div>
+              <span className={styles.statusWord} data-tone="good">
+                Active
+              </span>
+            </div>
+            <div className={styles.logBody}>
+              {logRows.length === 0 ? (
+                <p className={styles.timelineEmpty}>No shift activity recorded yet.</p>
+              ) : (
+                <ol className={styles.timelineStream}>
+                  {logRows.map((row) => (
+                    <li key={row.key} className={styles.timelineEntry}>
+                      <span className={styles.timelineTime}>{row.timeLabel}</span>
+                      <span className={styles.timelineDot} aria-hidden="true" />
+                      <span className={styles.timelineBody}>
+                        <strong>{row.title}</strong>
+                        <span className={styles.timelineDetail}>{row.detail}</span>
+                        {row.nested ? (
+                          <ul className={styles.timelineNested}>
+                            {row.nested.map((item) => (
+                              <li key={item.key}>{item.detail}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </span>
+                      <span className={styles.statusWord}>{row.status}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
           </div>
-          <span className={styles.pillBadge}>{incoming.length} Waiting</span>
         </div>
-        <div className={styles.cardBody}>
-          {incoming.length === 0 ? (
-            <p className={styles.placeholder} style={{ padding: "12px", color: "var(--muted)", fontSize: "12.5px" }}>
-              No referral is currently awaiting an answer from {unit.name}.
-            </p>
-          ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {visibleIncoming.map((movement) => {
-                const blocked = referralAnswerBlocked(movement, unit);
-                const notice = restrictionNotice(movement, unit);
-                const eligibilityIssue = eligibilityWarning(movement, unit, now);
-                const declineOpen = declineOpenFor === movement.id;
 
-                return (
-                  <li
-                    key={movement.id}
-                    data-testid={`ward-incoming-${movement.id}`}
-                    style={{
-                      padding: "12px",
-                      border: "1px solid var(--line)",
-                      borderRadius: "var(--r1)",
-                      marginBottom: "10px",
-                      background: "var(--surface-2)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      <span style={{ fontWeight: 700, fontSize: "13px" }}>Incoming patient</span>
-                      <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
-                        {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                        {movement.legalStatus}
-                      </span>
-                    </div>
+        <section
+          id="ward-awaiting-answer"
+          aria-label="Awaiting your answer"
+          className={`${styles.card} ${styles.awaitingCard}`}
+          tabIndex={0}
+        >
+          <div className={styles.cardHead}>
+            <div className={styles.cardTitle}>
+              <h2 className={styles.awaitingHeading}>
+                {presentation === "answer" ? "Bed request" : "Awaiting your answer"}
+              </h2>
+            </div>
+            <span className={styles.statusWord}>{incoming.length} waiting</span>
+          </div>
+          <div className={styles.cardBody}>
+            {incoming.length === 0 ? (
+              <p className={styles.placeholder}>No referral is currently awaiting an answer from {unit.name}.</p>
+            ) : (
+              <ul className={styles.awaitingList}>
+                {visibleIncoming.map((movement) => {
+                  const blocked = referralAnswerBlocked(movement, unit);
+                  const notice = restrictionNotice(movement, unit);
+                  const eligibilityIssue = eligibilityWarning(movement, unit, now);
+                  const declineOpen = declineOpenFor === movement.id;
 
-                    {notice ? (
-                      <span
-                        className={notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice}
-                        data-testid={`ward-restriction-notice-${movement.id}`}
-                        data-level={notice.level}
-                        style={{ display: "inline-block", margin: "4px 0" }}
-                      >
-                        {notice.text}
-                      </span>
-                    ) : null}
+                  return (
+                    <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
+                      <div className={styles.awaitingIdentity}>
+                        <span className={styles.awaitingName}>Incoming patient</span>
+                        <span className={styles.awaitingMeta}>
+                          {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
+                          {movement.legalStatus}
+                        </span>
+                      </div>
 
-                    {eligibilityIssue ? (
-                      <span
-                        className={styles.noticeProminent}
-                        data-testid={`ward-eligibility-warning-${movement.id}`}
-                        data-level={eligibilityIssue.level}
-                        style={{ display: "inline-block", margin: "4px 0" }}
-                      >
-                        {eligibilityIssue.text}
-                      </span>
-                    ) : null}
+                      {notice ? (
+                        <span
+                          className={notice.level === "voluntary_on_locked" ? styles.noticeProminent : styles.notice}
+                          data-testid={`ward-restriction-notice-${movement.id}`}
+                          data-level={notice.level}
+                          style={{ display: "inline-block", margin: "4px 0" }}
+                        >
+                          {notice.text}
+                        </span>
+                      ) : null}
 
-                    <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                      <button
-                        type="button"
-                        data-testid={`ward-accept-${movement.id}`}
-                        aria-disabled={blocked ? "true" : undefined}
-                        aria-describedby={blocked ? `ward-accept-unavailable-${movement.id}` : undefined}
-                        title={blocked ?? undefined}
-                        className={styles.btnAlertAct}
-                        style={{ background: "var(--good)", color: "#fff", border: "none" }}
-                        onClick={
-                          blocked
-                            ? ignoreUnavailableActivation
-                            : () => {
-                                if (onAcceptInPrinciple) {
-                                  onAcceptInPrinciple(movement.id, unit.id);
-                                } else {
-                                  priorRejectionCountRef.current = rejections.length;
-                                  setCheckToken((token) => token + 1);
+                      {eligibilityIssue ? (
+                        <span
+                          className={styles.noticeProminent}
+                          data-testid={`ward-eligibility-warning-${movement.id}`}
+                          data-level={eligibilityIssue.level}
+                          style={{ display: "inline-block", margin: "4px 0" }}
+                        >
+                          {eligibilityIssue.text}
+                        </span>
+                      ) : null}
+
+                      <div className={styles.awaitingActions}>
+                        <button
+                          type="button"
+                          data-testid={`ward-accept-${movement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-accept-unavailable-${movement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          className={`${styles.btnAlertAct} ${styles.btnAccept}`}
+                          onClick={
+                            blocked
+                              ? ignoreUnavailableActivation
+                              : () => {
+                                  if (onAcceptInPrinciple) {
+                                    onAcceptInPrinciple(movement.id, unit.id);
+                                  } else {
+                                    priorRejectionCountRef.current = rejections.length;
+                                    setCheckToken((token) => token + 1);
+                                  }
                                 }
-                              }
-                        }
-                      >
-                        Accept in principle
-                      </button>
-                      <button
-                        type="button"
-                        data-testid={`ward-decline-toggle-${movement.id}`}
-                        aria-disabled={blocked ? "true" : undefined}
-                        aria-describedby={blocked ? `ward-decline-unavailable-${movement.id}` : undefined}
-                        title={blocked ?? undefined}
-                        aria-expanded={declineOpen}
-                        className={styles.btnAlertAct}
-                        onClick={blocked ? ignoreUnavailableActivation : () => toggleDecline(movement.id)}
-                      >
-                        Decline
-                      </button>
-                    </div>
-
-                    {blocked ? (
-                      <>
-                        <span id={`ward-accept-unavailable-${movement.id}`} className="sr-only">
-                          {blocked}
-                        </span>
-                        <span id={`ward-decline-unavailable-${movement.id}`} className="sr-only">
-                          {blocked}
-                        </span>
-                      </>
-                    ) : null}
-
-                    {lastActionRejection?.movementId === movement.id ? (
-                      <p
-                        className={styles.noticeProminent}
-                        role="alert"
-                        data-testid={`ward-action-rejection-${movement.id}`}
-                        style={{ marginTop: "6px" }}
-                      >
-                        {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted}{" "}
-                        not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
-                      </p>
-                    ) : null}
-
-                    {overrideReasonForm(movement.id)}
-
-                    {declineOpen && !blocked ? (
-                      <form
-                        onSubmit={(event) => submitDecline(event, movement.id)}
-                        data-testid={`ward-decline-form-${movement.id}`}
-                        style={{
-                          marginTop: "10px",
-                          padding: "10px",
-                          background: "var(--surface)",
-                          borderRadius: "var(--r1)",
-                        }}
-                      >
-                        <fieldset style={{ border: "none", padding: 0, margin: "0 0 8px 0" }}>
-                          <legend style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
-                            Decline reason for this patient
-                          </legend>
-                          {DECLINE_REASONS.map((reason) => (
-                            <label key={reason} style={{ display: "block", fontSize: "12px", margin: "4px 0" }}>
-                              <input
-                                type="radio"
-                                name={`decline-reason-${movement.id}`}
-                                value={reason}
-                                checked={declineReason === reason}
-                                onChange={() => setDeclineReason(reason)}
-                              />{" "}
-                              {reason.replace(/_/g, " ")}
-                            </label>
-                          ))}
-                        </fieldset>
-                        <button type="submit" disabled={!declineReason} className={styles.btnAlertAct}>
-                          Confirm decline
+                          }
+                        >
+                          Accept in principle
                         </button>
-                      </form>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
+                        <button
+                          type="button"
+                          data-testid={`ward-decline-toggle-${movement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-decline-unavailable-${movement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          aria-expanded={declineOpen}
+                          className={styles.btnAlertAct}
+                          onClick={blocked ? ignoreUnavailableActivation : () => toggleDecline(movement.id)}
+                        >
+                          Decline
+                        </button>
+                      </div>
+
+                      {blocked ? (
+                        <>
+                          <span id={`ward-accept-unavailable-${movement.id}`} className="sr-only">
+                            {blocked}
+                          </span>
+                          <span id={`ward-decline-unavailable-${movement.id}`} className="sr-only">
+                            {blocked}
+                          </span>
+                        </>
+                      ) : null}
+
+                      {lastActionRejection?.movementId === movement.id ? (
+                        <p
+                          className={styles.noticeProminent}
+                          role="alert"
+                          data-testid={`ward-action-rejection-${movement.id}`}
+                          style={{ marginTop: "6px" }}
+                        >
+                          {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted}{" "}
+                          not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
+                        </p>
+                      ) : null}
+
+                      {overrideReasonForm(movement.id)}
+
+                      {declineOpen && !blocked ? (
+                        <form
+                          onSubmit={(event) => submitDecline(event, movement.id)}
+                          data-testid={`ward-decline-form-${movement.id}`}
+                          style={{
+                            marginTop: "10px",
+                            padding: "10px",
+                            background: "var(--surface)",
+                            borderRadius: "var(--r1)",
+                          }}
+                        >
+                          <fieldset style={{ border: "none", padding: 0, margin: "0 0 8px 0" }}>
+                            <legend style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
+                              Decline reason for this patient
+                            </legend>
+                            {DECLINE_REASONS.map((reason) => (
+                              <label key={reason} style={{ display: "block", fontSize: "12px", margin: "4px 0" }}>
+                                <input
+                                  type="radio"
+                                  name={`decline-reason-${movement.id}`}
+                                  value={reason}
+                                  checked={declineReason === reason}
+                                  onChange={() => setDeclineReason(reason)}
+                                />{" "}
+                                {reason.replace(/_/g, " ")}
+                              </label>
+                            ))}
+                          </fieldset>
+                          <button type="submit" disabled={!declineReason} className={styles.btnAlertAct}>
+                            Confirm decline
+                          </button>
+                        </form>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
 
       {/* 4. Preserved Test Contracts for Withdrawn and Overrides (Hidden from visual clutter) */}
       <div className={styles.visuallyHidden}>

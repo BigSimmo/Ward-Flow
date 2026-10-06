@@ -203,7 +203,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     );
 
     // Top Action Bar & Live Capacity Glance Strip
-    expect(screen.getByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
 
     // Operational Tabs exist
@@ -211,9 +212,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(bedBoardTab).toBeInTheDocument();
     expect(bedBoardTab).toHaveAttribute("aria-selected", "false");
 
-    // Click "Enter Ward / Open Bed Board" button
-    const enterWardBtn = screen.getByRole("button", { name: /Enter Ward \/ Open Bed Board/i });
-    fireEvent.click(enterWardBtn);
+    fireEvent.click(bedBoardTab);
 
     // Bed Board tab is now active
     expect(bedBoardTab).toHaveAttribute("aria-selected", "true");

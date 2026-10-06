@@ -43,7 +43,6 @@ import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 /**
  * ⚠️ **OWNER RULING, CLINICIAN CHECK R7 (2026-09-06), AND THE SCREEN IS OBLIGED TO SAY IT.**
  * He confirmed a ward is routinely waiting on more than one thing, and chose to keep recording
@@ -870,6 +869,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       countdown: stageCopy[movement.stage].label,
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
       text: `${resolvePatientIdentity(movement).displayName} from ${originPlaceLabel(movement.originEdId)}.`,
+      actionLabel: "Answer",
+      actionTarget: "answer" as const,
     })),
     ...accepted.flatMap((movement) => {
       const alerts: Array<{
@@ -878,6 +879,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         title: string;
         countdown: string;
         text: string;
+        actionLabel: string;
+        actionTarget: "arrival";
+        movementId: string;
       }> = [];
       const patientName = resolvePatientIdentity(movement).displayName;
       const dueAt = movement.legalForm?.dueAt;
@@ -890,6 +894,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           text: `${patientName}: recorded due ${formatInstantWithDay(dueAt, now)}.`,
+          actionLabel: "Open arrival",
+          actionTarget: "arrival",
+          movementId: movement.id,
         });
       }
       if (arrivalIsLate(movement, now) && movement.arrivalDetails?.estimatedArrivalAt !== undefined) {
@@ -898,8 +905,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           tone: "warning",
           title: "Estimated arrival time has passed",
           countdown: "Still inbound",
-          // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           text: `${patientName} was expected at ${formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} and has not arrived.`,
+          actionLabel: "Open arrival",
+          actionTarget: "arrival",
+          movementId: movement.id,
         });
       }
       return alerts;
@@ -909,7 +918,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       tone: "info" as const,
       title: `Leave bed open more than ${LEAVE_BED_OPEN_WARNING_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`,
       countdown: formatRemaining(now - leaveBed.confirmedAt),
-      text: `A bed on leave at ${unit.name} is still recorded. Consider opening it. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
+      text: `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
+      actionLabel: "Open discharges",
+      actionTarget: "discharges" as const,
     })),
   ];
 
@@ -1647,6 +1658,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setReleaseReason(undefined);
   }
 
+  function openArrival(movementId: string) {
+    setActiveTab("coming");
+    window.requestAnimationFrame(() => {
+      document.getElementById(`ward-arrival-${movementId}`)?.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function openDischargesTab() {
+    setActiveTab("out");
+  }
+
   return (
     <div
       className={styles.screen}
@@ -1668,75 +1690,46 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </p>
         ) : null}
 
-        {/* Prominent Top Action Bar & Capacity Glance */}
-        {/* Prominent Top Action Bar & Capacity Glance */}
         <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
-          <div className={styles.actionBar}>
-            <header className={styles.topIdentityBanner}>
-              <div className={styles.topIdentityLeft}>
-                <h2 className={styles.sectionHeading}>This ward</h2>
-                <h3
-                  className={styles.unitName}
-                  style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, display: "inline-block" }}
-                >
-                  {unit.name}
-                </h3>
-                <span className={styles.unitMeta} style={{ fontSize: "0.85rem" }}>
-                  {site ? `${site.name} (${site.code})` : unit.siteCode} &middot; {unit.cohort} &middot;{" "}
-                  {designationSummary(unit)}
-                  {unit.authorised ? "" : " · Not set up for involuntary admissions (demo)"}
-                </span>
-              </div>
-              <WardFreshness
-                confirmedAt={unit.allocatable.confirmedAt}
-                confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                now={now}
-                derived={unit.allocatable.source !== "ward"}
-              />
-            </header>
-            <div className={styles.actionBtnsLeft}>
-              <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`} data-testid="ward-screen-nav">
-                <span aria-current="page">Ward home</span>
-                <Link href={wardBoardHref(unit.id)}>Bed board</Link>
-              </nav>
-
-              <div className={styles.actionDivider} aria-hidden="true" />
-
-              <button
-                type="button"
-                className={styles.btnEnterWard}
-                id="btnMainEnterWard"
-                onClick={() => setActiveTab("beds")}
-                title="Open Interactive Bed Matrix and Patient Roster"
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  width="17"
-                  height="17"
-                  fill="none"
-                  strokeWidth="1.8"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 3h12v10H2z" />
-                  <path d="M6 3v10M2 8h4" />
-                </svg>
-                <span>Enter Ward / Open Bed Board</span>
-              </button>
-
+          <header className={styles.commandIdentity}>
+            <div className={styles.commandIdentityCopy}>
+              <h2 className={styles.commandKicker}>This ward</h2>
+              <h3 className={styles.commandName}>{unit.name}</h3>
+              <p className={styles.commandMeta}>
+                {site ? `${site.name} (${site.code})` : unit.siteCode} · {unit.cohort} · {designationSummary(unit)}
+                {unit.authorised ? "" : " · Not set up for involuntary admissions (demo)"}
+              </p>
+            </div>
+            <WardFreshness
+              confirmedAt={unit.allocatable.confirmedAt}
+              confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+              now={now}
+              derived={unit.allocatable.source !== "ward"}
+            />
+          </header>
+          <div className={styles.commandActions} role="toolbar" aria-label="Ward actions">
+            <div className={styles.actionCluster}>
+              <span className={styles.actionClusterLabel}>This shift</span>
               <button
                 ref={confirmTriggerRef}
                 type="button"
                 className={styles.btnActionSec}
                 onClick={() => setConfirmNumbersOpen(true)}
               >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 8l3 3 7-7" />
-                </svg>
                 <span>Confirm today&rsquo;s numbers</span>
               </button>
-
+              <button
+                type="button"
+                className={styles.btnDailySheet}
+                onClick={() => setDailySheetOpen(true)}
+                title="Open this shift's brief."
+                data-testid="ward-open-daily-sheet-btn"
+              >
+                <span>Shift brief</span>
+              </button>
+            </div>
+            <div className={styles.actionCluster}>
+              <span className={styles.actionClusterLabel}>Requests</span>
               <div className={styles.notificationTriggerWrap}>
                 <button
                   ref={notificationTriggerRef}
@@ -1745,20 +1738,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onClick={() => setNotificationCenterOpen((prev) => !prev)}
                   aria-expanded={notificationCenterOpen}
                   data-testid="ward-notifications-toggle-btn"
-                  title="View Ward Tasks, Coordinator Buzzes & Census Alerts"
+                  title="View ward tasks, coordinator buzzes and census alerts"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
                   <span>Tasks &amp; Buzzes</span>
                   {unreadAlertsCount > 0 ? (
                     <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
@@ -1766,7 +1747,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     </span>
                   ) : null}
                 </button>
-
                 {notificationCenterOpen ? (
                   <div
                     ref={notificationCenterRef}
@@ -1791,47 +1771,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   </div>
                 ) : null}
               </div>
-
-              <button
-                type="button"
-                className={styles.btnDailySheet}
-                onClick={() => setDailySheetOpen(true)}
-                title="Open the ward's daily sheet and morning handoff."
-                data-testid="ward-open-daily-sheet-btn"
-              >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 2h10v12H3zM5 5h6M5 8h6M5 11h4" />
-                </svg>
-                <span>Ward Daily Sheet</span>
-              </button>
-
               <Link className={styles.btnActionSec} href={`/mockups/ward-flow/ward/${unit.id}/answer`}>
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 8l3 3 7-7" />
-                </svg>
                 <span>Answer requests</span>
               </Link>
-
+            </div>
+            <div className={styles.actionCluster}>
+              <span className={styles.actionClusterLabel}>Other</span>
               <button
                 type="button"
                 className={styles.btnActionSec}
                 onClick={handleRaiseWardReferral}
                 title="Record a ward-to-ward referral with this ward as the sending ward."
               >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M8 3v10M3 8h10" />
-                </svg>
-                <span>Raise Referral</span>
+                <span>Raise referral</span>
               </button>
-
               <Link
                 className={styles.btnActionSec}
                 href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
               >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
-                </svg>
-                <span>Print Handover</span>
+                <span>Print handover</span>
               </Link>
             </div>
           </div>
@@ -1946,60 +1904,37 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {/* 09:30 Morning Bed Rollup Deadline Banner */}
         {!isRollupConfirmedToday && morningRollupDeadlinePassed ? (
           <aside
-            className={styles.morningRollupOverdueBanner}
+            className={styles.noticeRow}
+            data-tone="warning"
             role="alert"
             aria-atomic="true"
             data-testid="ward-morning-rollup-overdue-banner"
           >
-            {/* The planned-discharges count below is announced; this sentence travels with it
-                (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
             <span className="sr-only">These counts are invented figures.</span>
-            <div className={styles.morningRollupBannerContent}>
-              <span className={styles.morningRollupBannerIcon} aria-hidden="true">
-                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10 2L1 18h18L10 2z" />
-                  <path d="M10 8v5M10 15h.01" />
-                </svg>
-              </span>
-              <div className={styles.morningRollupBannerText}>
-                <span className={styles.morningRollupPill}>Action Required</span>
-                <strong>{morningRollupTimeLabel} Morning Bed Rollup Overdue</strong>
-                <span className={styles.morningRollupDesc}>
-                  Today&rsquo;s planned discharge numbers and allocatable beds have not yet been confirmed for{" "}
-                  {unit.name}. State Bed Flow Coordination is awaiting morning census.
-                </span>
-              </div>
-            </div>
-            <div className={styles.morningRollupBannerActions}>
-              <button
-                type="button"
-                className={styles.btnConfirmMorningRollup}
-                data-testid="ward-confirm-morning-rollup-btn"
-                onClick={handleConfirmMorningRollup}
-              >
-                Confirm Morning Rollup ({releasesCountedToday.length} Planned Discharges)
-              </button>
-            </div>
-          </aside>
-        ) : isRollupConfirmedToday ? (
-          <div className={styles.morningRollupConfirmedBanner} data-testid="ward-morning-rollup-confirmed-banner">
-            <div className={styles.morningRollupConfirmedText}>
-              <span className={styles.morningRollupCheckIcon} aria-hidden="true">
-                ✓
-              </span>
-              <span>
-                <strong>{morningRollupTimeLabel} Morning Bed Rollup Confirmed</strong> at{" "}
-                {formatInstantWithDay(rollupConfirmation!.confirmedAt, now)} by {rollupConfirmation!.confirmedByRole}{" "}
-                &middot; {rollupConfirmation!.expectedDischarges} discharges scheduled today
-              </span>
-            </div>
+            <span className={styles.noticeClock}>{morningRollupTimeLabel}</span>
+            <p className={styles.noticeCopy}>
+              <strong>{morningRollupTimeLabel} Morning Bed Rollup Overdue.</strong> Planned discharges and allocatable
+              beds are not confirmed for {unit.name}.
+            </p>
             <button
               type="button"
-              className={styles.btnActionSec}
-              onClick={() => setConfirmNumbersOpen(true)}
-              style={{ minHeight: "36px", fontSize: "0.85rem" }}
+              className={styles.btnConfirmMorningRollup}
+              data-testid="ward-confirm-morning-rollup-btn"
+              onClick={handleConfirmMorningRollup}
             >
-              Update Census
+              Confirm rollup ({releasesCountedToday.length})
+            </button>
+          </aside>
+        ) : isRollupConfirmedToday ? (
+          <div className={styles.noticeRow} data-tone="good" data-testid="ward-morning-rollup-confirmed-banner">
+            <span className={styles.noticeClock}>{formatInstant(rollupConfirmation!.confirmedAt)}</span>
+            <p className={styles.noticeCopy}>
+              <strong>{morningRollupTimeLabel} Morning Bed Rollup Confirmed</strong> by{" "}
+              {rollupConfirmation!.confirmedByRole}. {rollupConfirmation!.expectedDischarges} discharges scheduled
+              today.
+            </p>
+            <button type="button" className={styles.btnActionSec} onClick={() => setConfirmNumbersOpen(true)}>
+              Update numbers
             </button>
           </div>
         ) : null}
@@ -2045,6 +1980,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             overrideReasonForm={overrideReasonForm}
             liveFormAlerts={liveFormAlerts}
             onOpenDecisions={() => setActiveTab("return")}
+            morningRollupConfirmed={isRollupConfirmedToday}
+            onConfirmMorningRollup={handleConfirmMorningRollup}
+            onOpenConfirmNumbers={() => setConfirmNumbersOpen(true)}
+            onOpenArrival={openArrival}
+            onOpenDischarges={openDischargesTab}
           />
         </section>
 
@@ -3834,18 +3774,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <header className={styles.dailySheetModalHeader}>
                 <div>
                   <h2 id="modal-daily-sheet-title" className={styles.dailySheetModalTitle}>
-                    {unit.name} &middot; Ward Daily Sheet &amp; Morning Handoff
+                    {unit.name} · Shift brief
                   </h2>
-                  <p className={styles.dailySheetModalSub}>
-                    Executive clinical census &middot; day patient movement ledger
-                  </p>
+                  <p className={styles.dailySheetModalSub}>As at {formatInstant(now)}</p>
                 </div>
                 <div className={styles.dailySheetModalActions}>
                   <button
                     type="button"
                     className={styles.btnActionSec}
                     onClick={() => window.print()}
-                    aria-label="Print daily sheet"
+                    aria-label="Print shift brief"
                   >
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
@@ -3856,7 +3794,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     type="button"
                     className={styles.btnActionSec}
                     onClick={() => setDailySheetOpen(false)}
-                    aria-label="Close daily sheet"
+                    aria-label="Close shift brief"
                   >
                     &times; Close
                   </button>

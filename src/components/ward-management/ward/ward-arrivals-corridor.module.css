@@ -2,7 +2,7 @@
 .corridorWrap {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .panelHead {
@@ -19,10 +19,11 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
@@ -34,21 +35,20 @@
 .inboundStream {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
 .inboundCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
+  border-left: 3px solid var(--accent);
   border-radius: var(--r2);
-  padding: 14px 16px;
+  padding: 8px 12px;
   display: grid;
-  grid-template-columns: 280px 1fr 240px;
-  gap: 20px;
+  grid-template-columns: minmax(12rem, 1.15fr) minmax(10rem, 1fr) auto;
+  gap: 8px 12px;
   align-items: center;
-  box-shadow: var(--lift-sm);
-  transition: all 0.15s ease;
+  scroll-margin-top: 12rem;
 }
 
 @media (max-width: 1024px) {
@@ -70,7 +70,8 @@
 .patientMeta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .patientHeaderRow {
@@ -81,9 +82,10 @@
 }
 
 .patientName {
-  font-size: 14.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 .patientUmrn {
@@ -143,7 +145,8 @@
 .stepperWrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .stepperLabelRow {
@@ -156,14 +159,13 @@
 .corridorTrack {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  height: 8px;
+  gap: 4px;
+  height: 3px;
 }
 
 .trackStep {
   background: var(--line);
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: 2px;
 }
 
 .trackStep[data-filled="true"] {
@@ -187,8 +189,10 @@
 .corridorActions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
+  justify-self: end;
+  min-width: 9.5rem;
 }
 
 .btnCorridorPull {
