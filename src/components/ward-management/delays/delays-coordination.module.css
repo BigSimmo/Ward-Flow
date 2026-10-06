@@ -1717,6 +1717,29 @@
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: 0 4px 14px color-mix(in srgb, var(--dc-ink) 5%, transparent);
 }
+.ownerCard > div {
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.ownerCard .ownerMark {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ownerMark strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queueLink {
+  margin-left: 0;
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+.distributionLegend {
+  font-size: 12px;
+}
 .graphTabs,
 .ownerCard,
 .urgentChip > button,

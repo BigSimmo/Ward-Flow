@@ -520,246 +520,248 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             )
           }
         />
-        <WardPanel title="Escalations and resolved">
-          <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
-            {(
-              [
-                { id: "escalations", label: "Escalations", count: escalatedRows.length },
-                { id: "attention", label: "Attention", count: attentionRows.length },
-                { id: "resolved", label: "Resolved today", count: closedToday.length },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                id={`delays-tab-${tab.id}`}
-                aria-controls={`delays-pane-${tab.id}`}
-                aria-selected={registerTab === tab.id}
-                tabIndex={registerTab === tab.id ? 0 : -1}
-                className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
-                onClick={() => setRegisterTab(tab.id)}
-              >
-                {tab.label}{" "}
-                <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
-                  {tab.count === 0 ? "none" : tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-escalations"
-              aria-labelledby="delays-tab-escalations"
-              hidden={registerTab !== "escalations"}
-            >
-              {escalatedRows.length === 0 ? (
-                <p className={styles.absent}>Nobody has been escalated today.</p>
-              ) : (
-                <ul className={styles.rows}>
-                  {escalatedRows.map((movement) => (
-                    <li key={movement.id} className={styles.row}>
-                      <span className={styles.rowTop}>
-                        {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                        <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
-                        <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
-                      </span>
-                      <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
-                      {/* D-b: this register is whole-network, so a row outside the chosen
-                                  service is never dropped — only marked. */}
-                      {isOutsideChosenService(movement) ? (
-                        <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
-                          {`Outside ${service}`}
-                        </span>
-                      ) : null}
-                      <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-attention"
-              aria-labelledby="delays-tab-attention"
-              hidden={registerTab !== "attention"}
-            >
-              {attentionRows.length === 0 ? (
-                <p className={styles.absent}>No movements requiring urgent attention right now.</p>
-              ) : (
-                <ul className={styles.attentionTabList}>
-                  {attentionRows.map(({ group, movement }) => (
-                    <li key={movement.id}>
-                      <button
-                        type="button"
-                        className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
-                        onClick={() => selectMovement(movement.id)}
-                        data-testid={`delays-attention-item-${movement.id}`}
-                      >
-                        <div className={styles.attentionCardTop}>
-                          {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                          <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
-                          <span className={styles.attentionWhen}>
-                            {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
-                          </span>
-                        </div>
-                        <div className={styles.attentionCardBottom}>
-                          {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
-                          {isOutsideChosenService(movement) ? (
-                            <span
-                              className={styles.attentionOutside}
-                              data-testid={`delays-attention-outside-${movement.id}`}
-                            >
-                              {` · Outside ${service}`}
-                            </span>
-                          ) : null}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-resolved"
-              aria-labelledby="delays-tab-resolved"
-              hidden={registerTab !== "resolved"}
-            >
-              <p className={styles.absent}>
-                {closedToday.length === 0
-                  ? service === null
-                    ? "Nobody who was on this screen this morning has left it yet."
-                    : `Nobody who was on this screen this morning has left it yet, in ${service}.`
-                  : [
-                      placedToday.length > 0
-                        ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
-                        : null,
-                      didNotProceedToday.length > 0
-                        ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
-                        : null,
-                    ]
-                      .filter((sentence) => sentence !== null)
-                      .join(" ")}{" "}
-                Kept until midnight for handover.
-              </p>
-            </div>
-          </div>
-        </WardPanel>
-        {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-        <WardPanel title="Delays with no named person">
-          <div className={styles.systemicPanel}>
-            <div className={styles.systemicHeader}>
-              <span className="sr-only">
-                This model records delays only against a movement. Ward-wide closures and transport outages are not
-                represented as individual patient movements; systemic and facility holds active across the Western
-                Australian network are tracked below.
-              </span>
-              <div className={styles.systemicTitleBlock}>
-                <span className={styles.systemicSubtitle}>
-                  Statewide events with no named person — emergency, ward shutdown, traffic
-                </span>
-              </div>
-              <div className={styles.systemicActions}>
-                <button
-                  type="button"
-                  className={styles.logHoldButton}
-                  onClick={() => handleProtoAction("Record a service-wide delay")}
-                  aria-label="Record a service-wide or facility delay"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  <span>Record Hold</span>
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.systemicFilterBar} role="group" aria-label="Filter systemic delays by category">
+        <div className={styles.lowerBand}>
+          <WardPanel title="Escalations and resolved">
+            <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
               {(
                 [
-                  { id: "all", label: "All", count: SYSTEMIC_HOLDS.length },
-                  { id: "emergency", label: "Emergency", count: 0 },
-                  {
-                    id: "ward",
-                    label: "Ward shutdown",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
-                  },
-                  {
-                    id: "transport",
-                    label: "Traffic",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
-                  },
-                  {
-                    id: "staffing",
-                    label: "Staffing",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
-                  },
+                  { id: "escalations", label: "Escalations", count: escalatedRows.length },
+                  { id: "attention", label: "Attention", count: attentionRows.length },
+                  { id: "resolved", label: "Resolved today", count: closedToday.length },
                 ] as const
-              ).map((chip) => (
+              ).map((tab) => (
                 <button
-                  key={chip.id}
+                  key={tab.id}
                   type="button"
-                  className={`${styles.systemicChip} ${systemicFilter === chip.id ? styles.systemicChipActive : ""}`}
-                  aria-pressed={systemicFilter === chip.id}
-                  aria-label={`Filter by ${chip.label}, ${chip.count} active`}
-                  onClick={() => setSystemicFilter(chip.id)}
+                  role="tab"
+                  id={`delays-tab-${tab.id}`}
+                  aria-controls={`delays-pane-${tab.id}`}
+                  aria-selected={registerTab === tab.id}
+                  tabIndex={registerTab === tab.id ? 0 : -1}
+                  className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
+                  onClick={() => setRegisterTab(tab.id)}
                 >
-                  {chip.label} <span className={styles.systemicChipBadge}>{chip.count}</span>
+                  {tab.label}{" "}
+                  <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
+                    {tab.count === 0 ? "none" : tab.count}
+                  </span>
                 </button>
               ))}
             </div>
+            <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-escalations"
+                aria-labelledby="delays-tab-escalations"
+                hidden={registerTab !== "escalations"}
+              >
+                {escalatedRows.length === 0 ? (
+                  <p className={styles.absent}>Nobody has been escalated today.</p>
+                ) : (
+                  <ul className={styles.rows}>
+                    {escalatedRows.map((movement) => (
+                      <li key={movement.id} className={styles.row}>
+                        <span className={styles.rowTop}>
+                          {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                          <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
+                          <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
+                        </span>
+                        <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
+                        {/* D-b: this register is whole-network, so a row outside the chosen
+                                  service is never dropped — only marked. */}
+                        {isOutsideChosenService(movement) ? (
+                          <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
+                            {`Outside ${service}`}
+                          </span>
+                        ) : null}
+                        <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            {filteredHolds.length === 0 ? (
-              <p className={styles.systemicEmptyLine}>No statewide hold is recorded.</p>
-            ) : null}
-            <div className={styles.systemicGrid}>
-              {filteredHolds.map((hold) => (
-                <div
-                  key={hold.id}
-                  className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
-                  role="article"
-                  aria-label={`${hold.facility}: ${hold.categoryLabel}`}
-                >
-                  <div className={styles.systemicCardHeader}>
-                    <div className={styles.systemicCardTitleCluster}>
-                      <span className={styles.systemicFacility}>{hold.facility}</span>
-                      <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
-                    </div>
-                    <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
-                  </div>
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-attention"
+                aria-labelledby="delays-tab-attention"
+                hidden={registerTab !== "attention"}
+              >
+                {attentionRows.length === 0 ? (
+                  <p className={styles.absent}>No movements requiring urgent attention right now.</p>
+                ) : (
+                  <ul className={styles.attentionTabList}>
+                    {attentionRows.map(({ group, movement }) => (
+                      <li key={movement.id}>
+                        <button
+                          type="button"
+                          className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
+                          onClick={() => selectMovement(movement.id)}
+                          data-testid={`delays-attention-item-${movement.id}`}
+                        >
+                          <div className={styles.attentionCardTop}>
+                            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                            <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
+                            <span className={styles.attentionWhen}>
+                              {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
+                            </span>
+                          </div>
+                          <div className={styles.attentionCardBottom}>
+                            {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
+                            {isOutsideChosenService(movement) ? (
+                              <span
+                                className={styles.attentionOutside}
+                                data-testid={`delays-attention-outside-${movement.id}`}
+                              >
+                                {` · Outside ${service}`}
+                              </span>
+                            ) : null}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-                  <p className={styles.systemicReason}>{hold.reason}</p>
-
-                  <div className={styles.systemicImpactStrip}>
-                    <span className={styles.systemicImpactLabel}>Impact:</span>
-                    <span className={styles.systemicImpactValue}>{hold.impact}</span>
-                  </div>
-
-                  <div className={styles.systemicCardFooter}>
-                    <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
-                    <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
-                  </div>
-                </div>
-              ))}
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-resolved"
+                aria-labelledby="delays-tab-resolved"
+                hidden={registerTab !== "resolved"}
+              >
+                <p className={styles.absent}>
+                  {closedToday.length === 0
+                    ? service === null
+                      ? "Nobody who was on this screen this morning has left it yet."
+                      : `Nobody who was on this screen this morning has left it yet, in ${service}.`
+                    : [
+                        placedToday.length > 0
+                          ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
+                          : null,
+                        didNotProceedToday.length > 0
+                          ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
+                          : null,
+                      ]
+                        .filter((sentence) => sentence !== null)
+                        .join(" ")}{" "}
+                  Kept until midnight for handover.
+                </p>
+              </div>
             </div>
-          </div>
-        </WardPanel>
+          </WardPanel>
+          {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
+          <WardPanel title="Delays with no named person">
+            <div className={styles.systemicPanel}>
+              <div className={styles.systemicHeader}>
+                <span className="sr-only">
+                  This model records delays only against a movement. Ward-wide closures and transport outages are not
+                  represented as individual patient movements; systemic and facility holds active across the Western
+                  Australian network are tracked below.
+                </span>
+                <div className={styles.systemicTitleBlock}>
+                  <span className={styles.systemicSubtitle}>
+                    Statewide events with no named person — emergency, ward shutdown, traffic
+                  </span>
+                </div>
+                <div className={styles.systemicActions}>
+                  <button
+                    type="button"
+                    className={styles.logHoldButton}
+                    onClick={() => handleProtoAction("Record a service-wide delay")}
+                    aria-label="Record a service-wide or facility delay"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Record Hold</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.systemicFilterBar} role="group" aria-label="Filter systemic delays by category">
+                {(
+                  [
+                    { id: "all", label: "All", count: SYSTEMIC_HOLDS.length },
+                    { id: "emergency", label: "Emergency", count: 0 },
+                    {
+                      id: "ward",
+                      label: "Ward shutdown",
+                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
+                    },
+                    {
+                      id: "transport",
+                      label: "Traffic",
+                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
+                    },
+                    {
+                      id: "staffing",
+                      label: "Staffing",
+                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
+                    },
+                  ] as const
+                ).map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    className={`${styles.systemicChip} ${systemicFilter === chip.id ? styles.systemicChipActive : ""}`}
+                    aria-pressed={systemicFilter === chip.id}
+                    aria-label={`Filter by ${chip.label}, ${chip.count} active`}
+                    onClick={() => setSystemicFilter(chip.id)}
+                  >
+                    {chip.label} <span className={styles.systemicChipBadge}>{chip.count}</span>
+                  </button>
+                ))}
+              </div>
+
+              {filteredHolds.length === 0 ? (
+                <p className={styles.systemicEmptyLine}>No statewide hold is recorded.</p>
+              ) : null}
+              <div className={styles.systemicGrid}>
+                {filteredHolds.map((hold) => (
+                  <div
+                    key={hold.id}
+                    className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
+                    role="article"
+                    aria-label={`${hold.facility}: ${hold.categoryLabel}`}
+                  >
+                    <div className={styles.systemicCardHeader}>
+                      <div className={styles.systemicCardTitleCluster}>
+                        <span className={styles.systemicFacility}>{hold.facility}</span>
+                        <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
+                      </div>
+                      <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
+                    </div>
+
+                    <p className={styles.systemicReason}>{hold.reason}</p>
+
+                    <div className={styles.systemicImpactStrip}>
+                      <span className={styles.systemicImpactLabel}>Impact:</span>
+                      <span className={styles.systemicImpactValue}>{hold.impact}</span>
+                    </div>
+
+                    <div className={styles.systemicCardFooter}>
+                      <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
+                      <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </WardPanel>
+        </div>
 
         <WardPrototypeFooter testId="ward-delays-governance" />
       </main>
