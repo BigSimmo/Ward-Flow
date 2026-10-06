@@ -2543,7 +2543,7 @@
 
 @media (max-width: 48rem) {
   .railSearchInput {
-    font-size: 16px !important;
+    font-size: var(--t-4) !important;
   }
 }
 
