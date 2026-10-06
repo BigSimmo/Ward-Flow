@@ -2741,10 +2741,13 @@
   gap: 0.25rem;
   margin: 0.5rem 0.75rem 0;
   padding: 0.25rem;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
   border-radius: 1.25rem;
-  background: var(--surface);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--ink) 4%, transparent);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 10px 28px color-mix(in srgb, var(--ink) 6%, transparent);
+  backdrop-filter: blur(16px);
 }
 .toolsNav button {
   display: flex;
@@ -3252,5 +3255,231 @@
   }
   .figuresLaunch::after {
     display: none;
+  }
+}
+
+.utilityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.utilityLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-height: 3.25rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 8px 18px color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.utilityLink strong {
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.utilityLink span {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.35;
+}
+
+.utilityLink:hover {
+  background: var(--accent-soft);
+}
+
+.directoryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.directorySearch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 8px 20px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.directorySearch svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--muted);
+}
+
+.directorySearch input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-1);
+}
+
+.directorySearch:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.directoryCaveat {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.45;
+}
+
+.directoryKinds {
+  position: sticky;
+  top: 4.25rem;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.directoryKinds a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: none;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.625rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.directoryKinds a span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.directoryKinds a:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.directorySection {
+  scroll-margin-top: 8rem;
+}
+
+.directoryRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.directoryIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.directoryIdentity a,
+.directoryIdentity strong {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.directoryIdentity small {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.directoryChannels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.directoryChannels span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.directoryChannels svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+  color: var(--muted);
+}
+
+.onCallPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.onCallList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onCallList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+}
+
+.onCallList span {
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-align: right;
+}
+
+@media (max-width: 40rem) {
+  .utilityGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .directoryRow {
+    flex-direction: column;
+  }
+  .directoryChannels {
+    align-items: flex-start;
+    text-align: left;
   }
 }

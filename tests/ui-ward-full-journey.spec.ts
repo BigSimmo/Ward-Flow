@@ -116,7 +116,7 @@ async function ensureToolsOpen(page: Page) {
   await page
     .getByRole("dialog", { name: "Tools" })
     .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Demo", exact: true })
+    .getByRole("button", { name: "Overview", exact: true })
     .click();
 }
 

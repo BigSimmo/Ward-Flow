@@ -68,7 +68,7 @@ describe("Figures in the Tools workspace", () => {
 
   it("keeps deadline status reactive when the demonstration clock advances", () => {
     const tools = openTools();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
+    fireEvent.click(within(tools).getByRole("button", { name: "Overview", exact: true }));
     fireEvent.click(within(tools).getByTestId("ward-demo-controls-trigger"));
     fireEvent.click(within(tools).getByTestId("ward-demo-advance-60"));
     fireEvent.click(within(tools).getByRole("button", { name: "Overview" }));
@@ -94,7 +94,7 @@ describe("Figures in the Tools workspace", () => {
     fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
     expect(within(tools).getByText("Catchment resolver")).toBeVisible();
     expect(within(tools).getByText("Form date review")).toBeVisible();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
+    fireEvent.click(within(tools).getByRole("button", { name: "Overview", exact: true }));
     expect(within(tools).getByRole("button", { name: /change view/i })).toBeVisible();
   });
 

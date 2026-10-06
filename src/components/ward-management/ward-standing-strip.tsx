@@ -73,6 +73,14 @@ type FigureInput = {
   placeId?: string;
 };
 
+function occupancyOf(units: { beds: number; empty: { value: number } }[]) {
+  const beds = units.reduce((total, unit) => total + unit.beds, 0);
+  const empty = units.reduce((total, unit) => total + unit.empty.value, 0);
+  const occupied = Math.max(0, beds - empty);
+  const percent = beds === 0 ? 0 : Math.round((occupied / beds) * 100);
+  return { beds, occupied, empty, percent };
+}
+
 function legalCounts(movements: Movement[], now: Instant) {
   let passed = 0;
   let withinHour = 0;
@@ -194,6 +202,12 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
         value: String(rollup.service.availableNow),
         sub: withSub("not all eligible", preparationNote(pendingEverywhere)),
       },
+      {
+        key: "occupancy",
+        label: "Network occupancy",
+        value: `${occupancyOf(units).percent}%`,
+        sub: `${occupancyOf(units).occupied} of ${occupancyOf(units).beds} beds`,
+      },
       ...legalFigures,
     ];
   }
@@ -216,6 +230,18 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
           label: "Ready here",
           value: String(breakdown.availableNow),
           sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))),
+        },
+        {
+          key: "occupancy",
+          label: "Occupancy",
+          value: `${occupancyOf([unit]).percent}%`,
+          sub: `${occupancyOf([unit]).occupied} of ${unit.beds} beds`,
+        },
+        {
+          key: "pending",
+          label: "Pending",
+          value: String(pendingAt(unit.id)),
+          sub: "Empty, not ready to pull",
         },
         { key: "out-today", label: "Out today", value: String(breakdown.expectedToday) },
         /*
@@ -268,6 +294,20 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
       value: String(rollup.service.availableNow),
       sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)),
     },
+    {
+      key: "occupancy",
+      label: "Occupancy",
+      value: `${occupancyOf(units).percent}%`,
+      sub: `${occupancyOf(units).occupied} of ${occupancyOf(units).beds} beds`,
+    },
+    {
+      key: "pending",
+      label: "Pending",
+      value: String(pendingEverywhere),
+      sub: "Empty beds not ready to pull",
+    },
+    { key: "blocked-today", label: "Blocked today", value: String(rollup.service.blockedToday) },
+    { key: "on-leave", label: "On leave", value: String(rollup.service.onLeave) },
     { key: "out-today", label: "Out today", value: String(rollup.service.expectedToday) },
     { key: "waiting", label: "Waiting", value: String(open.length) },
     /*
@@ -353,6 +393,8 @@ export function WardStatsDrawerContent({
       f.key === "ready" ||
       f.key === "ready-here" ||
       f.key === "ready-statewide" ||
+      f.key === "occupancy" ||
+      f.key === "pending" ||
       f.key === "out-today" ||
       f.key === "one-to-one",
   );
@@ -365,6 +407,13 @@ export function WardStatsDrawerContent({
       f.key === "longest-here",
   );
   const riskFigures = figures.filter((f) => f.key === "passed" || f.key === "within-hour");
+  const todayFigures = figures.filter((f) => f.key === "blocked-today" || f.key === "on-leave");
+  const groups = [
+    { id: "clocks", title: "Risk & Statutory Clocks", tag: "Due", figures: riskFigures },
+    { id: "supply", title: "Supply & Capacity", tag: "Beds", figures: supplyFigures },
+    { id: "demand", title: "Demand & Flow", tag: "Waiting", figures: demandFigures },
+    { id: "today", title: "Today", tag: "Flow", figures: todayFigures },
+  ].filter((group) => group.figures.length > 0);
 
   return (
     <div className={styles.drawerContainer} data-testid="ward-stats-drawer-content">
@@ -392,64 +441,45 @@ export function WardStatsDrawerContent({
         </div>
       )}
 
-      <div className={styles.drawerSection}>
-        <div className={styles.drawerSectionHeader}>
-          <h3 className={styles.drawerSectionTitle}>Risk & Statutory Clocks</h3>
-          <span className={styles.drawerSectionTag}>Legal Timelines</span>
-        </div>
-        <div className={styles.drawerCardsGrid}>
-          {riskFigures.map((fig) => (
-            <div
-              key={fig.key}
-              className={fig.flagged ? `${styles.telemetryCard} ${styles.telemetryCardFlagged}` : styles.telemetryCard}
-              data-flagged={fig.flagged}
-            >
-              <div className={styles.telemetryCardHeader}>
-                <span className={styles.telemetryCardLabel}>{fig.label}</span>
-                {fig.flagged && <span className={styles.telemetryFlagPip} aria-hidden="true" />}
-              </div>
-              <div className={styles.telemetryCardValue}>{fig.value}</div>
-              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
+      <nav className={styles.figureAnchorNav} aria-label="Figure groups">
+        {groups.map((group) => (
+          <a key={group.id} href={`#ward-figures-${group.id}`}>
+            {group.tag}
+          </a>
+        ))}
+      </nav>
 
-      <div className={styles.drawerSection}>
-        <div className={styles.drawerSectionHeader}>
-          <h3 className={styles.drawerSectionTitle}>Supply & Capacity</h3>
-          <span className={styles.drawerSectionTag}>Bed Availability</span>
-        </div>
-        <div className={styles.drawerCardsGrid}>
-          {supplyFigures.map((fig) => (
-            <div key={fig.key} className={styles.telemetryCard} data-flagged={fig.flagged}>
-              <div className={styles.telemetryCardHeader}>
-                <span className={styles.telemetryCardLabel}>{fig.label}</span>
+      {groups.map((group) => (
+        <div key={group.id} id={`ward-figures-${group.id}`} className={styles.drawerSection}>
+          <div className={styles.drawerSectionHeader}>
+            <h3 className={styles.drawerSectionTitle}>{group.title}</h3>
+            <span className={styles.drawerSectionTag}>{group.tag}</span>
+          </div>
+          <div className={styles.drawerCardsGrid}>
+            {group.figures.map((fig) => (
+              <div
+                key={fig.key}
+                className={
+                  fig.flagged ? `${styles.telemetryCard} ${styles.telemetryCardFlagged}` : styles.telemetryCard
+                }
+                data-flagged={fig.flagged}
+              >
+                <div className={styles.telemetryCardHeader}>
+                  <span className={styles.telemetryCardLabel}>{fig.label}</span>
+                  {fig.flagged ? <span className={styles.telemetryFlagPip} aria-hidden="true" /> : null}
+                </div>
+                <div className={styles.telemetryCardValue}>{fig.value}</div>
+                {fig.value.endsWith("%") ? (
+                  <span className={styles.telemetryMeter} aria-hidden="true">
+                    <span style={{ width: fig.value }} />
+                  </span>
+                ) : null}
+                {fig.sub ? <div className={styles.telemetryCardSub}>{fig.sub}</div> : null}
               </div>
-              <div className={styles.telemetryCardValue}>{fig.value}</div>
-              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className={styles.drawerSection}>
-        <div className={styles.drawerSectionHeader}>
-          <h3 className={styles.drawerSectionTitle}>Demand & Flow</h3>
-          <span className={styles.drawerSectionTag}>Referrals & Transfers</span>
-        </div>
-        <div className={styles.drawerCardsGrid}>
-          {demandFigures.map((fig) => (
-            <div key={fig.key} className={styles.telemetryCard} data-flagged={fig.flagged}>
-              <div className={styles.telemetryCardHeader}>
-                <span className={styles.telemetryCardLabel}>{fig.label}</span>
-              </div>
-              <div className={styles.telemetryCardValue}>{fig.value}</div>
-              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
 
       <div className={styles.drawerFooterNotice}>
         <LegalLimitsNotChecked variant="tag" />
