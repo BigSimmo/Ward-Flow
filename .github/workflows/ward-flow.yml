@@ -178,8 +178,12 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx playwright install --with-deps chromium
       - name: Restore Next build cache
+        id: next-cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        # Restore on every event; save (below) only on main. Per-SHA PR entries were
+        # ~8 GB of the 10 GB Actions cache and nothing reused them. PRs still get main's entry
+        # through the restore-keys prefix, since a PR can read its base branch's cache.
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/ward-next-cache
           key: ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-${{ github.sha }}
@@ -200,6 +204,12 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
         run: npm run test:e2e:ward-journeys
+      - name: Save Next build cache (main only)
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.next-cache.outcome == 'success' && steps.next-cache.outputs.cache-hit != 'true' && steps.journeys.outcome != 'skipped' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ward-next-cache
+          key: ${{ steps.next-cache.outputs.cache-primary-key }}
       - name: Upload failed Ward browser evidence
         if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
