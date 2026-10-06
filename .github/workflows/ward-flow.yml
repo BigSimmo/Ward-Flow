@@ -82,11 +82,12 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/changed-checks.mjs
-      # Whole-tree ESLint (errors only) on pushes to main and other non-PR runs, which have no PR
-      # diff for the changed-file check above. Enforcing since 4 October 2026, when the 15
-      # pre-existing errors were fixed.
+      # Whole-tree ESLint (errors only) on every run, pull requests included. Enforcing since
+      # 4 October 2026, when the 15 pre-existing errors were fixed. On a PR it catches what the
+      # changed-file check above cannot: an ESLint config, rule or plugin change that breaks a file
+      # the PR did not touch, which used to go red only on main. About a minute, off the critical path.
       - name: Lint the whole tree
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'pull_request' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --quiet --no-error-on-unmatched-pattern
       # Fast signal: only the tests that import the files this PR changed. --root makes it judge reds
       # against the expected-reds manifest exactly as the unit shards do, so it can only fail where a
@@ -173,10 +174,39 @@ jobs:
         id: install
         if: ${{ !cancelled() && steps.plan.outputs.browser == 'true' }}
         run: npm ci --ignore-scripts
+      # Browser binaries are cached per Playwright version (the binary revision is pinned to it).
+      # Only runs on main save the entry, so pull requests restore main's copy and never add their
+      # own to the repository's cache storage. The system libraries still install every run.
+      - name: Resolve the Playwright version
+        id: playwright-version
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Restore Playwright browsers
+        id: playwright-cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ward-playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: Install Chromium
         id: chromium
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_CACHE_HIT: ${{ steps.playwright-cache.outputs.cache-hit }}
+        run: |
+          if [ "$PLAYWRIGHT_CACHE_HIT" = "true" ]; then
+            npx playwright install-deps chromium
+            # A no-op when the cached revision is complete; repairs a partial entry otherwise.
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Save Playwright browsers
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' && steps.playwright-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ward-playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: Restore Next build cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
