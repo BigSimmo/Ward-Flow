@@ -126,7 +126,7 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       const panel = screen.getByTestId("ward-bar-primary-panel");
       expect(panel).toBeInTheDocument();
 
-      expect(screen.getByTestId("ward-bar-primary-menu-community")).toHaveTextContent("Community Referral");
+      expect(screen.getByTestId("ward-bar-primary-menu-community")).toHaveTextContent("From community");
       expect(screen.getByTestId("ward-bar-primary-menu-ed_medical")).toHaveTextContent("ED Referral");
       expect(screen.getByTestId("ward-bar-primary-menu-inter_hospital")).toHaveTextContent("Ward Referral");
 

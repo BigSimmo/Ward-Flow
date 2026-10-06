@@ -288,7 +288,7 @@ describe("Ward Flow sidebar, by role", () => {
     renderRail();
     fireEvent.click(screen.getByRole("button", { name: "Open Ward Flow menu" }));
     const drawer = screen.getByRole("dialog");
-    for (const label of ["Command", "Network", "Governance", "Handover", "Patient search"]) {
+    for (const label of ["Home", "Network", "Governance", "Handover", "Patients"]) {
       expect(
         within(drawer).getByRole("link", { name: new RegExp(`^${label}$`) }),
         `${label} has grown a count with no derivation behind it`,

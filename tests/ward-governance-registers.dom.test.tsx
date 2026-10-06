@@ -128,11 +128,11 @@ describe("GovernanceAccessRecordPanel", () => {
   });
 });
 
-describe("the Session Access Record tab", () => {
+describe("the Session activity tab", () => {
   it("says in plain view that it is this session only and not saved, and lists no invented access", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
-    fireEvent.click(screen.getByRole("tab", { name: "Session Access Record" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Session activity" }));
     expect(screen.getByTestId("ward-governance-access-session-only").textContent).toBe("This session only, not saved");
     const table = screen.getByRole("table", { name: /kept for this session only/ });
     expect(within(table).getAllByRole("row")).toHaveLength(2);
@@ -156,7 +156,7 @@ describe("the override and decision registers hold only what this session record
   it("opens the endorse form empty, so nobody records a review they did not write", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
-    fireEvent.click(screen.getByRole("button", { name: "Endorse current audit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
     expect((document.getElementById("endorseVerdict") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseRole") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseNotes") as HTMLTextAreaElement).value).toBe("");

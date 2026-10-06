@@ -122,7 +122,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // assertion scoped to the outer "Statewide flow" section it always meant to prove exists,
     // without weakening it — the inner diagram landmark is a real, deliberate addition, not a
     // duplicate to collapse away.
-    await expect(page.getByRole("region", { name: "Statewide flow", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeVisible();
     // ⚠️ **THE SHORTLIST NO LONGER MOUNTS UNCONDITIONALLY.** `coordinator-screen.tsx` now wraps
     // the whole `<aside aria-label="Explainable shortlist">` in `{hasPanelSubject ? ... : null}` —
     // with nothing selected, "Statewide flow"'s own header shows "Select a patient or referral to
@@ -140,7 +140,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
     await registers.scrollIntoViewIfNeeded();
     await expect(registers).toBeVisible();
-    await expect(page.getByRole("tablist", { name: "Registers" })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Today’s answers" })).toBeVisible();
 
     await expectNoRegionGridOverflow(page);
   });
@@ -166,7 +166,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(shortlist).toHaveCount(0);
     await expect(
       page
-        .getByRole("region", { name: "Statewide flow", exact: true })
+        .getByRole("region", { name: "State Bedflow", exact: true })
         .getByText(`${allUnits().length} inpatient wards`, { exact: true }),
     ).toBeVisible();
 
@@ -265,10 +265,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
     // disappears (`@media (max-width: 48rem)`, the same query in both places).
-    const toggle = page.getByRole("button", { name: /Registers/ });
+    const toggle = page.getByRole("button", { name: /Today’s answers/ });
     await expect(toggle).toBeVisible();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByRole("region", { name: "Statewide flow", exact: true })).toBeHidden();
+    await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeHidden();
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeHidden();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -451,7 +451,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
 
     // Connector paths are drawn by a client layout effect — this is the hydration signal.
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
@@ -515,7 +515,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     const movement = requireMovement("WF-009");
@@ -568,7 +568,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
     const queue = page.getByRole("region", { name: "Priority queue" });
 
@@ -625,7 +625,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
     const queue = page.getByRole("region", { name: "Priority queue" });
 
@@ -685,7 +685,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     // WF-001 is an OPEN-status movement whose top candidate is a locked ward that passes every
@@ -767,7 +767,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     const wf301 = requireMovement("WF-301");
@@ -1090,7 +1090,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
 
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await diagram.locator('[data-testid="ward-diagram-unit-bty-adult-secure"]').click();
     const btyGates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(btyGates).toHaveCount(11);
@@ -1294,10 +1294,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // see `exception-drawer.tsx`'s own file comment on why the two were split. Task A: the panel
     // is unconditionally visible at this width now (no toggle to click at 1600px — see
     // `.exceptionsToggle`'s own comment), so this test scrolls to it directly instead.
-    const refusedTab = page.getByRole("tab", { name: /Refused actions/ });
+    const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
     await refusedTab.click();
-    const refused = page.getByRole("tabpanel", { name: "Refused actions" });
+    const refused = page.getByRole("tabpanel", { name: "Refused" });
     await expect(refused).toContainText(/refus/i);
     await expect(refused).toContainText("REFER_TO_UNITS");
     // ⚠️ O-16.8: the refusal now names the stage by its coordinator-facing label rather than

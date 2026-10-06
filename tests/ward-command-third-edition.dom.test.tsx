@@ -65,7 +65,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
       "Emergency department pressure",
       "Priority queue",
-      "Statewide flow",
+      "State Bedflow",
     ]);
     expect(screen.queryByLabelText("Explainable shortlist")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
@@ -80,18 +80,18 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(headings.map((heading) => heading.textContent)).toEqual([
       "Emergency department pressure",
       "Priority queue",
-      "Statewide flow",
+      "State Bedflow",
       "Explainable shortlist",
     ]);
   });
 
-  it("places the exceptions drawer between Statewide flow and the shortlist panel, matching the drawing", () => {
+  it("places the exceptions drawer between State Bedflow and the shortlist panel, matching the drawing", () => {
     // The drawer has no heading of its own (see the file comment above), so its position can only
     // be proven by real DOM order, not by extending the heading-text list above.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
-    const statewideFlow = within(body).getByLabelText("Statewide flow");
+    const statewideFlow = within(body).getByLabelText("State Bedflow");
     const registers = within(body).getByTestId("ward-coordinator-registers");
     const shortlist = within(body).getByLabelText("Explainable shortlist");
 
@@ -99,7 +99,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // node follows this one" — asserted both ways so a reversed pair cannot pass by accident.
     expect(
       statewideFlow.compareDocumentPosition(registers) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the exceptions drawer must follow Statewide flow",
+      "the exceptions drawer must follow State Bedflow",
     ).toBeTruthy();
     expect(
       registers.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -170,7 +170,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     }
   });
 
-  it("draws every live inpatient unit on Statewide flow (Wave 4 item 32 / R2-16)", async () => {
+  it("draws every live inpatient unit on State Bedflow (Wave 4 item 32 / R2-16)", async () => {
     const { allUnits } = await import("@/components/ward-management/ward-sites");
     renderCoordinator();
     const unitNodes = screen.getAllByTestId(/^ward-diagram-unit-/);

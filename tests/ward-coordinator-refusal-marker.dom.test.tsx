@@ -58,8 +58,8 @@ function RefusalHarness({ children }: { children: React.ReactNode }) {
 /** Opens the registers panel and switches to Refused actions — same helper shape as
  *  `ward-override-register-render.dom.test.tsx`'s own `openOverridesTab`. */
 function openRefusedTab() {
-  fireEvent.click(screen.getByRole("button", { name: /Registers/ }));
-  fireEvent.click(screen.getByRole("tab", { name: /Refused actions/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Today’s answers/ }));
+  fireEvent.click(screen.getByRole("tab", { name: /Refused/ }));
 }
 
 describe("the persistent refusal marker", () => {
@@ -121,7 +121,7 @@ describe("the persistent refusal marker", () => {
 
     // And the tab strip's own count badge, the third place this same number is shown (Ruling 3,
     // carried across three render sites — see `exception-drawer.tsx`'s own file comment).
-    const refusedTab = screen.getByRole("tab", { name: /Refused actions/ });
+    const refusedTab = screen.getByRole("tab", { name: /Refused/ });
     expect(refusedTab).toHaveTextContent("2");
   });
 

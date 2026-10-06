@@ -1115,7 +1115,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
     const board = WARD_NAV.find((item) => item.href === "/mockups/ward-flow/referrals");
     expect(board, "the referral board must be a WARD_NAV destination, not an unlisted exemption").toBeDefined();
     expect(board?.group).toBe("board");
-    expect(board?.label).toBe("Referral board");
+    expect(board?.label).toBe("Referrals");
 
     /*
      * ⚠️ INVERTED 2026-09-03 BY OWNER RULING — "I would like the referral form/hub in the sidebar

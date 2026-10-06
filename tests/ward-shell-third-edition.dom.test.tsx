@@ -118,15 +118,15 @@ afterEach(() => {
 /* ── 1. rail link count equals WARD_VIEWS plus the rail entries of WARD_NAV ──────────────────── */
 
 describe("assertion 1 — owner-selected rail destinations", () => {
-  it("renders the owner-selected groups in order, with Patients only in Care Coordination", () => {
+  it("renders the owner-selected groups in order, with Patients only in Work", () => {
     renderShell();
     const links = screen.getAllByTestId("ward-rail-link");
     expect(links).toHaveLength(21);
     const groups = [
-      ["Operations", ["Command", "Movement", "Capacity", "Delays", "Network"]],
-      ["Service Hubs", ["Search Hub", "ED Hub", "Ward Hub", "Community Hub", "Transport Hub"]],
-      ["Care Coordination", ["Patients", "Make Referrals", "Referral Board", "Handover", "Discharges"]],
-      ["Oversight", ["Governance", "Statistics", "Legal", "Out of area", "Alerts", "On-call"]],
+      ["Today", ["Home", "Movements", "Capacity", "Delays", "Network"]],
+      ["Where", ["Places", "Emergency", "Wards", "Community", "Transport"]],
+      ["Work", ["Patients", "New referral", "Referrals", "Handover", "Discharges"]],
+      ["Checks", ["Governance", "Statistics", "Legal", "Out of area", "Alerts", "On-call"]],
     ] as const;
     for (const [name, labels] of groups) {
       const groupLinks = within(screen.getByRole("region", { name })).getAllByRole("link");
@@ -139,7 +139,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     expect(destinations).toContain("/mockups/ward-flow/on-call");
   });
 
-  it("keeps Ward Hub active for a ward answer without restoring the removed example link", () => {
+  it("keeps Wards active for a ward answer without restoring the removed example link", () => {
     route.pathname = "/mockups/ward-flow/ward/rph-adult-secure/answer";
     renderShell();
     const links = screen.getAllByTestId("ward-rail-link");
