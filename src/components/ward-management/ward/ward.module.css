@@ -2369,17 +2369,20 @@
   position: sticky;
   top: var(--ward-sticky-top, 4.5rem);
   z-index: var(--ward-z-sticky, 3);
-  background: color-mix(in oklab, var(--surface) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--line) 42%, transparent);
-  padding: 14px 14px 12px;
+  background: color-mix(in oklab, var(--surface) 64%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   border-radius: 0.75rem;
   box-shadow:
-    0 18px 40px -26px color-mix(in srgb, var(--ink) 48%, transparent),
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 75%, transparent);
-  backdrop-filter: blur(18px);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 92%, transparent),
+    inset 0 0 0 0.5px color-mix(in oklab, var(--ink) 5%, transparent),
+    0 1px 1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 22px 48px -30px color-mix(in srgb, var(--ink) 42%, transparent);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
 }
 
 @media (max-width: 40rem) {
@@ -2406,8 +2409,8 @@
 .commandKicker {
   margin: 0;
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -2415,10 +2418,11 @@
 .commandName {
   margin: 0;
   font-size: var(--t-4, 1.25rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   color: var(--ink);
+  text-wrap: balance;
 }
 
 .commandMeta {
@@ -2432,7 +2436,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
+  gap: 8px;
 }
 
 .actionCluster {
@@ -2440,12 +2444,17 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  max-width: 100%;
+  padding: 4px 5px 4px 10px;
+  border-radius: 0.55rem;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 62%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 36%, transparent);
 }
 
 .actionClusterLabel {
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
   margin-right: 2px;
@@ -2456,32 +2465,37 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  padding: 8px 14px;
-  background: color-mix(in oklab, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in oklab, var(--line) 40%, transparent);
+  padding: 8px 12px;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 24%, transparent);
   border-radius: 0.75rem;
   box-shadow:
-    0 10px 28px -20px color-mix(in srgb, var(--ink) 40%, transparent),
-    inset 3px 0 0 var(--warn);
-  backdrop-filter: blur(14px);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--warn),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .noticeRow[data-tone="warning"] {
   box-shadow:
-    0 10px 28px -20px color-mix(in srgb, var(--ink) 40%, transparent),
-    inset 3px 0 0 var(--warn);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--warn),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
 .noticeRow[data-tone="good"] {
   box-shadow:
-    0 10px 28px -20px color-mix(in srgb, var(--ink) 40%, transparent),
-    inset 3px 0 0 var(--good);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--good),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
 .noticeRow[data-tone="critical"] {
   box-shadow:
-    0 10px 28px -20px color-mix(in srgb, var(--ink) 40%, transparent),
-    inset 3px 0 0 var(--danger);
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--danger),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
 .noticeClock {
@@ -2684,28 +2698,33 @@
 .btnActionSec {
   min-height: 2.125rem;
   padding: 5px 12px;
-  border-radius: 0.5rem;
-  background: color-mix(in oklab, var(--surface) 82%, transparent);
-  border: 1px solid color-mix(in oklab, var(--line) 50%, transparent);
+  border-radius: 0.4rem;
+  background: color-mix(in oklab, var(--surface) 86%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 32%, transparent);
   font-size: var(--t-1, 13px);
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   text-decoration: none;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent);
   transition:
-    background 0.12s,
-    border-color 0.12s,
-    transform 0.1s;
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   white-space: nowrap;
 }
 
 .btnActionSec:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--surface) 96%, transparent);
+  border-color: color-mix(in oklab, var(--line) 70%, transparent);
+}
+
+.btnActionSec:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .wardSelectContainer {
@@ -2894,10 +2913,12 @@
   width: max-content;
   max-width: 100%;
   margin: 0;
-  padding: 4px;
-  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 72%, transparent);
-  border-radius: 0.75rem;
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 55%, transparent);
+  padding: 3px;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 58%, transparent);
+  border-radius: 0.65rem;
+  box-shadow:
+    inset 0 1px 1px color-mix(in oklab, var(--ink) 7%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--line) 28%, transparent);
 }
 
 .tabList {
@@ -2919,31 +2940,43 @@
   background: transparent;
   border: 1px solid transparent;
   min-height: 2.25rem;
-  padding: 6px 14px;
+  padding: 6px 12px;
   font-size: var(--t-1, 13px);
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--ink-soft);
-  border-radius: 0.5rem;
+  border-radius: 0.45rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   position: relative;
   white-space: nowrap;
-  transition: all 0.12s ease;
+  transition:
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    color 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .tabBtn:hover {
   color: var(--ink);
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  background: color-mix(in oklab, var(--surface) 48%, transparent);
+}
+
+.tabBtn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .tabBtn[aria-selected="true"] {
   color: var(--ink);
   font-weight: 600;
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  background: color-mix(in oklab, var(--surface) 94%, transparent);
   border-color: transparent;
-  box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--ink) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 95%, transparent),
+    0 1px 1px color-mix(in srgb, var(--ink) 6%, transparent),
+    0 8px 16px -12px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 .tabBadge {
@@ -2967,7 +3000,7 @@
 .tabPanel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .tabPanel > * {
@@ -4529,22 +4562,26 @@
   min-height: 34px;
   padding: 0 14px;
   font-weight: 600;
-  font-size: 12.5px;
-  border-radius: 0.5rem;
+  font-size: 12px;
+  border-radius: 0.4rem;
   border: 1px solid var(--warn-border);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.15);
-  transition: all 0.12s ease;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 35%, transparent);
+  transition: filter 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   white-space: nowrap;
 }
 
 .btnConfirmMorningRollup:hover {
-  filter: brightness(0.92);
-  transform: translateY(-1px);
+  filter: brightness(0.94);
+}
+
+.btnConfirmMorningRollup:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .morningRollupConfirmedBanner {
@@ -5513,27 +5550,33 @@
 .btnDailySheet {
   min-height: 2.125rem;
   padding: 5px 14px;
-  border-radius: 0.5rem;
+  border-radius: 0.4rem;
   background: var(--ink);
   color: var(--text-inverse);
   border: 1px solid var(--ink);
   font-size: var(--t-1, 13px);
   font-weight: 600;
+  letter-spacing: -0.01em;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
+  transition:
+    opacity 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 28%, transparent);
   white-space: nowrap;
 }
 
 .btnDailySheet:hover {
   background: var(--ink);
-  opacity: 0.92;
+  opacity: 0.9;
   color: var(--text-inverse);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.3);
+}
+
+.btnDailySheet:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 :global([data-theme="dark"]) .btnDailySheet {
