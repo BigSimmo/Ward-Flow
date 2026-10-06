@@ -140,7 +140,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   // Tabs & Tooltips
   const [registerTab, setRegisterTab] = useState<"escalations" | "attention" | "resolved">("escalations");
-  const [systemicFilter, setSystemicFilter] = useState<SystemicHoldCategory>("all");
 
   // Prototype Actions & Notices (Owner Rule D4)
   const [protoActionNotice, setProtoActionNotice] = useState<string | null>(null);
@@ -323,9 +322,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     const l = legalDeadlineMinutes(m, now);
     return l !== undefined && l < 0;
   }).length;
-
-  const filteredHolds =
-    systemicFilter === "all" ? SYSTEMIC_HOLDS : SYSTEMIC_HOLDS.filter((h) => h.category === systemicFilter);
 
   const queueMatches = (movement: Movement, cause: DelayCause) =>
     queueScope === null ||
@@ -654,83 +650,37 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           </WardPanel>
           {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-          <WardPanel title="Delays with no named person">
+          <WardPanel title="Delays" accessibleName="Delays with no named person">
             <div className={styles.systemicPanel}>
+              <span className="sr-only">
+                This model records delays only against a movement. Ward-wide closures and transport outages are not
+                represented as individual patient movements; state and system delays across the Western Australian
+                network are tracked in this box.
+              </span>
               <div className={styles.systemicHeader}>
-                <span className="sr-only">
-                  This model records delays only against a movement. Ward-wide closures and transport outages are not
-                  represented as individual patient movements; systemic and facility holds active across the Western
-                  Australian network are tracked below.
-                </span>
-                <div className={styles.systemicTitleBlock}>
-                  <span className={styles.systemicSubtitle}>
-                    Statewide events with no named person — emergency, ward shutdown, traffic
-                  </span>
-                </div>
-                <div className={styles.systemicActions}>
-                  <button
-                    type="button"
-                    className={styles.logHoldButton}
-                    onClick={() => handleProtoAction("Record a service-wide delay")}
-                    aria-label="Record a service-wide or facility delay"
+                <button
+                  type="button"
+                  className={styles.logHoldButton}
+                  onClick={() => handleProtoAction("Record a service-wide delay")}
+                  aria-label="Record a service-wide or facility delay"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    <span>Record Hold</span>
-                  </button>
-                </div>
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Record Hold</span>
+                </button>
               </div>
-
-              <div className={styles.systemicFilterBar} role="group" aria-label="Filter systemic delays by category">
-                {(
-                  [
-                    { id: "all", label: "All", count: SYSTEMIC_HOLDS.length },
-                    { id: "emergency", label: "Emergency", count: 0 },
-                    {
-                      id: "ward",
-                      label: "Ward shutdown",
-                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
-                    },
-                    {
-                      id: "transport",
-                      label: "Traffic",
-                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
-                    },
-                    {
-                      id: "staffing",
-                      label: "Staffing",
-                      count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
-                    },
-                  ] as const
-                ).map((chip) => (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    className={`${styles.systemicChip} ${systemicFilter === chip.id ? styles.systemicChipActive : ""}`}
-                    aria-pressed={systemicFilter === chip.id}
-                    aria-label={`Filter by ${chip.label}, ${chip.count} active`}
-                    onClick={() => setSystemicFilter(chip.id)}
-                  >
-                    {chip.label} <span className={styles.systemicChipBadge}>{chip.count}</span>
-                  </button>
-                ))}
-              </div>
-
-              {filteredHolds.length === 0 ? (
-                <p className={styles.systemicEmptyLine}>No statewide hold is recorded.</p>
-              ) : null}
               <div className={styles.systemicGrid}>
-                {filteredHolds.map((hold) => (
+                {SYSTEMIC_HOLDS.map((hold) => (
                   <div
                     key={hold.id}
                     className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
