@@ -96,4 +96,10 @@ const config = {
   },
 };
 
+// CI unit shards record coverage for their own slice only (WARD_COVERAGE_BLOB_DIR, see
+// scripts/check-ward-expected-reds.mjs gateBatchArgs), which can never meet whole-suite floors. The
+// coverage job merges every shard's blob report and applies the thresholds above, unchanged, to the
+// whole suite. Every other run, including `npm run test:coverage`, applies them as before.
+if (process.env.WARD_COVERAGE_BLOB_DIR) delete (config.test.coverage as { thresholds?: unknown }).thresholds;
+
 export default config;
