@@ -10,6 +10,11 @@ on:
     branches: [main]
   merge_group:
   workflow_dispatch:
+  # Nightly full run of main (02:00 AWST). Pushes to main can reuse their PR's verdict on an identical
+  # tree (the reuse job below), so this keeps a regular full run of main on a fresh runner, which
+  # also catches anything that drifts with time rather than with code.
+  schedule:
+    - cron: "0 18 * * *"
 
 permissions:
   contents: read
@@ -24,6 +29,36 @@ concurrency:
 # split into disjoint shards that together run every file, and the browser journey specs are split
 # into disjoint groups, each on its own runner.
 jobs:
+  # Pushes to main only. Railway deploys a main commit once this workflow succeeds on it. When the
+  # pushed tree is byte-for-byte a PR head whose own run already passed every unit shard, browser
+  # group, the coverage thresholds and the production build (and that head contained the previous
+  # main), those four jobs are skipped on main and the run still concludes success, so the deploy
+  # proceeds. Anything short of that proof, including any error, reports verified=false and the full
+  # suite runs. Static checks and the secret scan run on every main commit regardless.
+  reuse:
+    name: Ward Flow main reuse check
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    outputs:
+      verified: ${{ steps.check.outputs.verified }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The runner image's Node is enough for this dependency-free script; no install step that could
+      # fail this job (a failed job would fail the run and Railway would skip the deploy).
+      - name: Check for an identical tree already verified on its pull request
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WARD_BEFORE_SHA: ${{ github.event.before }}
+        run: node scripts/ward-ci-public/main-reuse.mjs
+
   static:
     name: Ward Flow static checks
     runs-on: ubuntu-24.04
@@ -117,6 +152,8 @@ jobs:
 
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
+    needs: reuse
+    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
@@ -142,14 +179,31 @@ jobs:
         id: install
         if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
         run: npm ci --ignore-scripts
+      # Each shard also records V8 coverage for its own files into a Vitest blob report. The coverage
+      # job merges the five blobs and applies the vitest.config.mts thresholds to the whole suite, so
+      # the unit suite runs once instead of a second time in a single coverage job.
       - name: Run reconciled unit suite shard
+        id: shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           WARD_GATE_SHARD: ${{ matrix.shard }}/5
+          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs
         run: npm run check:ward-expected-reds -- --print-signatures
+      - name: Upload shard coverage blob
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          # One name per shard, replaced on a re-run, so a re-run shard's stale blob is never merged.
+          name: ward-coverage-blob-${{ matrix.shard }}
+          path: ${{ runner.temp }}/ward-coverage-blobs/blob-*.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
 
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
+    needs: reuse
+    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -208,8 +262,12 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ward-playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: Restore Next build cache
+        id: next-cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        # Restore on every event; save (below) only on main. Per-SHA PR entries were
+        # ~8 GB of the 10 GB Actions cache and nothing reused them. PRs still get main's entry
+        # through the restore-keys prefix, since a PR can read its base branch's cache.
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/ward-next-cache
           key: ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-${{ github.sha }}
@@ -230,6 +288,12 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
         run: npm run test:e2e:ward-journeys
+      - name: Save Next build cache (main only)
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.next-cache.outcome == 'success' && steps.next-cache.outputs.cache-hit != 'true' && steps.journeys.outcome != 'skipped' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ward-next-cache
+          key: ${{ steps.next-cache.outputs.cache-primary-key }}
       - name: Upload failed Ward browser evidence
         if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -269,6 +333,8 @@ jobs:
     # The deploy build: Railway's exact build command, without WARD_GATE_BUILD, so Next.js runs its
     # own type and build checks. The browser jobs' WARD_GATE_BUILD builds ignore build errors.
     name: Ward Flow production build
+    needs: reuse
+    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -297,11 +363,15 @@ jobs:
   coverage:
     # Enforces the vitest.config.mts coverage thresholds over the whole unit suite. On 4 October 2026
     # a local run met them (all files 61.59% statements, 62.64% branches, 67.14% functions, 62.62%
-    # lines, plus the scoped core thresholds). One job, because per-shard coverage cannot be judged
-    # against a whole-suite threshold.
+    # lines, plus the scoped core thresholds). The unit shards record coverage for their own files;
+    # this job merges all five blob reports and judges the merged result against the same thresholds
+    # (this job never sets the shard coverage directory, so the config keeps them). A missing shard blob
+    # fails the job rather than quietly lowering the percentage.
     name: Ward Flow coverage
+    needs: [reuse, unit]
+    if: ${{ !cancelled() && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -320,23 +390,47 @@ jobs:
         id: install
         if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
         run: npm ci --ignore-scripts
-      - name: Run unit suite with coverage thresholds
+      - name: Download shard coverage blobs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: npm run test:coverage
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: ward-coverage-blob-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/ward-shard-blobs
+      - name: Merge shard coverage and enforce thresholds
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
+          # Must equal the count in the unit job's WARD_GATE_SHARD (checked by check-contracts.mjs).
+          WARD_SHARD_COUNT: "5"
+        run: |
+          for shard in $(seq 1 "$WARD_SHARD_COUNT"); do
+            ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
+          done
+          node node_modules/vitest/vitest.mjs run --merge-reports="$WARD_SHARD_BLOBS" --coverage
 
   required:
     name: Ward Flow required
     if: always()
-    needs: [static, unit, browser, secret-scan, build, coverage]
+    needs: [reuse, static, unit, browser, secret-scan, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      # The second branch is main only: the reuse job proved this exact tree passed those four jobs on
+      # its pull request, so they must be skipped here (not failed or cancelled), and static checks and
+      # the secret scan must still have passed on this commit.
       - name: Require every Ward Flow job to succeed
         env:
+          REUSE_VERIFIED: ${{ needs.reuse.outputs.verified }}
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
           SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
           BUILD_RESULT: ${{ needs.build.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
-        run: test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success
+        run: |
+          if [ "$REUSE_VERIFIED" != true ]; then
+            test "$STATIC_RESULT" = success && test "$UNIT_RESULT" = success && test "$BROWSER_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$BUILD_RESULT" = success && test "$COVERAGE_RESULT" = success
+          else
+            test "$STATIC_RESULT" = success && test "$SECRET_SCAN_RESULT" = success && test "$UNIT_RESULT" = skipped && test "$BROWSER_RESULT" = skipped && test "$BUILD_RESULT" = skipped && test "$COVERAGE_RESULT" = skipped
+          fi
