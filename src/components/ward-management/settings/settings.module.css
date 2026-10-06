@@ -4720,6 +4720,7 @@
 }
 
 .stepperBtn {
+  position: relative;
   width: 1.75rem;
   height: 1.5rem;
   border: none;
@@ -4733,6 +4734,18 @@
   font-size: var(--t-2);
   font-weight: 600;
   transition: all 0.1s ease;
+}
+
+.stepperBtn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .stepperBtn:hover {

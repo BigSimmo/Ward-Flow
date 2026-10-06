@@ -1194,6 +1194,10 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                   placeholder="Provide clinical rationale for senior bed manager review..."
                   value={declineNotes}
                   onChange={(e) => setDeclineNotes(e.target.value)}
+                  data-gramm="false"
+                  data-enable-grammarly="false"
+                  spellCheck={false}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -1264,6 +1268,10 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                   placeholder="Detail specific housing or legal roadblock..."
                   value={barrierNotes}
                   onChange={(e) => setBarrierNotes(e.target.value)}
+                  data-gramm="false"
+                  data-enable-grammarly="false"
+                  spellCheck={false}
+                  autoComplete="off"
                 />
               </div>
             </div>

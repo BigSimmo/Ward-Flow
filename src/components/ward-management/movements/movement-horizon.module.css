@@ -959,6 +959,12 @@
     width: 100%;
     flex-wrap: wrap;
   }
+
+  .zmBtn,
+  .phBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

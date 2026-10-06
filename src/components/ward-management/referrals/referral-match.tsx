@@ -294,6 +294,10 @@ export function ReferralHistoryAndCorrections({
             placeholder="Document clinical addendum or update..."
             onChange={(event) => setNote(event.target.value)}
             rows={2}
+            data-gramm="false"
+            data-enable-grammarly="false"
+            spellCheck={false}
+            autoComplete="off"
           />
           <div className={styles.correctionActionRow}>
             <button
