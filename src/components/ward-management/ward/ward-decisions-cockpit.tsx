@@ -40,18 +40,21 @@ export interface WardDecisionsCockpitProps {
 
 type QueueFilter = "all" | "due" | "barriers" | "leave";
 
-function Stroke({ d }: { d: string }) {
+function Stroke({ d, size = 14 }: { d: string | readonly string[]; size?: number }) {
+  const paths = Array.isArray(d) ? d : [d];
   return (
     <svg
       viewBox="0 0 16 16"
-      width="14"
-      height="14"
+      width={size}
+      height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.5"
       aria-hidden="true"
     >
-      <path d={d} strokeLinecap="round" strokeLinejoin="round" />
+      {paths.map((path) => (
+        <path key={path} d={path} strokeLinecap="round" strokeLinejoin="round" />
+      ))}
     </svg>
   );
 }
@@ -168,7 +171,7 @@ function Queue({
       <div className={styles.summaryGrid}>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneStaffing}`}
+          className={styles.summary}
           aria-label="Staffing, 07:00–09:30"
           onClick={() => jumpTo("gate-staffing")}
           onKeyDown={(event) => onSummaryKey(event, "gate-staffing")}
@@ -183,7 +186,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneIntake}`}
+          className={styles.summary}
           aria-label="Intake, 09:30–13:00"
           onClick={() => jumpTo("gate-intake")}
           onKeyDown={(event) => onSummaryKey(event, "gate-intake")}
@@ -198,7 +201,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneDepartures}`}
+          className={styles.summary}
           aria-label="Departures, 11:00–14:00"
           onClick={() => jumpTo("gate-departures")}
           onKeyDown={(event) => onSummaryKey(event, "gate-departures")}
@@ -213,7 +216,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneLeave}`}
+          className={styles.summary}
           aria-label="Leave, 14:00–18:00"
           onClick={() => jumpTo("gate-leave")}
           onKeyDown={(event) => onSummaryKey(event, "gate-leave")}
@@ -236,12 +239,12 @@ function Queue({
         <div className={styles.filters} role="toolbar" aria-label="Decision filters">
           {(
             [
-              ["all", "All"],
-              ["due", "Due now"],
-              ["barriers", "Barriers"],
-              ["leave", "Leave"],
+              ["all", "All", "M3 3h4.2v4.2H3zM8.8 3H13v4.2H8.8zM3 8.8h4.2V13H3zM8.8 8.8H13V13H8.8z"],
+              ["due", "Due now", "M8 2.4a5.6 5.6 0 1 0 0 11.2 5.6 5.6 0 0 0 0-11.2zM8 4.6V8l2.3 1.4"],
+              ["barriers", "Barriers", "M3.5 4.5h9M3.5 8h9M3.5 11.5h5.5"],
+              ["leave", "Leave", "M8 3v10M3 8h10"],
             ] as const
-          ).map(([key, label]) => (
+          ).map(([key, label, icon]) => (
             <button
               key={key}
               type="button"
@@ -250,6 +253,7 @@ function Queue({
               aria-pressed={filter === key}
               onClick={() => setFilter(key)}
             >
+              <Stroke d={icon} size={12} />
               {label}
             </button>
           ))}
@@ -260,7 +264,7 @@ function Queue({
         {showStaffing || showIntake || showLeave ? (
           <div className={styles.stack}>
             {showStaffing ? (
-              <section className={`${styles.panel} ${styles.toneStaffing}`} id="gate-staffing" aria-label="Staffing">
+              <section className={styles.panel} id="gate-staffing" aria-label="Staffing">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Staffing</h3>
                   <span className={styles.panelWindow}>07:00–09:30</span>
@@ -295,7 +299,7 @@ function Queue({
             ) : null}
 
             {showIntake ? (
-              <section className={`${styles.panel} ${styles.toneIntake}`} id="gate-intake" aria-label="Intake">
+              <section className={styles.panel} id="gate-intake" aria-label="Intake">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Intake</h3>
                   <span className={styles.panelWindow}>09:30–13:00</span>
@@ -324,7 +328,7 @@ function Queue({
             ) : null}
 
             {showLeave ? (
-              <section className={`${styles.panel} ${styles.toneLeave}`} id="gate-leave" aria-label="Leave">
+              <section className={styles.panel} id="gate-leave" aria-label="Leave">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Leave</h3>
                   <span className={styles.panelWindow}>14:00–18:00</span>
@@ -349,11 +353,7 @@ function Queue({
 
         {showDepartures ? (
           <div className={styles.stack}>
-            <section
-              className={`${styles.panel} ${styles.toneDepartures}`}
-              id="gate-departures"
-              aria-label="Departures"
-            >
+            <section className={styles.panel} id="gate-departures" aria-label="Departures">
               <header className={styles.panelHead}>
                 <h3 className={styles.panelTitle}>Departures</h3>
                 <span className={styles.panelWindow}>11:00–14:00</span>
