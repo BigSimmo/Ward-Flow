@@ -1700,13 +1700,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <header className={styles.topIdentityBanner}>
               <div className={styles.topIdentityLeft}>
                 <h2 className={styles.sectionHeading}>This ward</h2>
-                <h3
-                  className={styles.unitName}
-                  style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, display: "inline-block" }}
-                >
-                  {unit.name}
-                </h3>
-                <span className={styles.unitMeta} style={{ fontSize: "0.85rem" }}>
+                <h3 className={styles.unitName}>{unit.name}</h3>
+                <span className={styles.unitMeta}>
                   {site ? `${site.name} (${site.code})` : unit.siteCode} &middot; {unit.cohort} &middot;{" "}
                   {designationSummary(unit)}
                   {unit.authorised ? "" : " · Not set up for involuntary admissions (demo)"}
@@ -1984,7 +1979,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             id="bed-capacity"
             className={`${styles.bedSection} ${styles.censusCommandCard}`}
             tabIndex={0}
-            style={{ marginTop: "1.5rem" }}
           >
             <div className={styles.commandHeader}>
               <div className={styles.commandTitleGroup}>
@@ -2019,7 +2013,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <div className={styles.capacitySection}>
               <div className={styles.capacityTrackTitleRow}>
                 <span className={styles.capacityTrackLabel}>Capacity distribution</span>
-                <span style={{ fontSize: "11.5px", color: "var(--muted)", fontFamily: "var(--mono)" }}>
+                <span className={styles.capacityTrackMeta}>
                   {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} · {states.closed}{" "}
                   {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
                 </span>

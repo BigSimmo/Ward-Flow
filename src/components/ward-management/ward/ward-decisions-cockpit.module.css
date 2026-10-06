@@ -26,15 +26,18 @@
   column-gap: 0.5rem;
   row-gap: 0.125rem;
   padding: 0.7rem 0.85rem;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 0.875rem;
   color: var(--ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  background: var(--surface);
-  box-shadow: var(--lift);
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(16px) saturate(1.15);
 }
 
 .summary:hover {
@@ -113,12 +116,14 @@
   width: 100%;
   min-height: 3rem;
   padding: 0.35rem 0.5rem 0.35rem 1rem;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface-2);
+  border-radius: 0.875rem;
+  background: var(--glass-band, var(--surface-2));
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
 }
 
 .queueTitle {
@@ -140,9 +145,10 @@
   grid-template-columns: repeat(4, minmax(4.5rem, 1fr));
   min-width: min(100%, 22rem);
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 75%, var(--hl));
   border-radius: var(--r2);
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
+  box-shadow: inset 0 1px 0 var(--hl);
 }
 
 .filter {
@@ -206,11 +212,14 @@
 .panel {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  border-radius: 0.875rem;
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(16px) saturate(1.15);
 }
 
 .panelHead {
@@ -220,7 +229,8 @@
   min-height: 2.5rem;
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  background: var(--glass-band, var(--surface-2));
+  box-shadow: inset 0 1px 0 var(--hl);
 }
 
 .panelTitle {
@@ -273,26 +283,29 @@
 
 .summary.signalDanger,
 .summary.signalWarn {
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
 }
 
 .summary.signalDanger,
+.row.signalDanger {
+  border-bottom-color: var(--danger);
+}
+
 .summary.signalWarn,
-.row.signalDanger,
 .row.signalWarn {
-  border-bottom-color: inherit;
+  border-bottom-color: var(--warn);
 }
 
 .summary.signalDanger:hover,
 .summary.signalDanger:active {
   border-color: var(--danger);
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
 }
 
 .summary.signalWarn:hover,
 .summary.signalWarn:active {
   border-color: var(--warn);
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
 }
 
 .row.signalDanger:hover {
@@ -386,6 +399,7 @@
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--on-accent);
+  box-shadow: inset 0 1px 0 var(--hl-on-accent);
 }
 
 .action:hover {
@@ -399,8 +413,9 @@
 
 .actionQuiet {
   border: 1px solid var(--line-strong);
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
   color: var(--ink);
+  box-shadow: inset 0 1px 0 var(--hl);
 }
 
 .actionQuiet:hover {
