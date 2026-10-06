@@ -1666,3 +1666,55 @@
   min-height: 36px;
   padding: 6px 12px;
 }
+
+.workspace,
+.panel,
+.teamRail,
+.dossier,
+.timelinePanel {
+  border: 0;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    0 16px 40px color-mix(in srgb, var(--dv-ink) 8%, transparent);
+}
+.workspace {
+  padding: 14px;
+}
+.teamRail,
+.dossier,
+.blockerPanel {
+  border-radius: 22px;
+}
+.tabs,
+.tabs button,
+.selectLabel select,
+.search {
+  border-radius: 999px;
+}
+.tabs {
+  padding: 3px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .workspace,
+  .panel,
+  .teamRail,
+  .dossier {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+}
+@media (forced-colors: active) {
+  .workspace,
+  .panel,
+  .teamRail,
+  .dossier {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+}
