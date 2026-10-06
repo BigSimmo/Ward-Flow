@@ -1927,7 +1927,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </aside>
         ) : isRollupConfirmedToday ? (
           <div className={styles.noticeRow} data-tone="good" data-testid="ward-morning-rollup-confirmed-banner">
-            <span className={styles.noticeClock}>{formatInstant(rollupConfirmation!.confirmedAt)}</span>
+            <span className={styles.noticeClock}>{formatInstantWithDay(rollupConfirmation!.confirmedAt, now)}</span>
             <p className={styles.noticeCopy}>
               <strong>{morningRollupTimeLabel} Morning Bed Rollup Confirmed</strong> by{" "}
               {rollupConfirmation!.confirmedByRole}. {rollupConfirmation!.expectedDischarges} discharges scheduled

@@ -107,6 +107,7 @@ test.describe("@mockup Ward screen", () => {
     // Unconditional: bty-adult-secure holds a live referral at seed (WF-017, verified against
     // the real fixture — see the task report), so this must not hide behind an `if (count())`
     // that can silently never run.
+    await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
     const incoming = wardScreen.locator('[data-testid^="ward-incoming-"]');
     await expect(incoming).not.toHaveCount(0);
     await incoming
@@ -1058,6 +1059,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
+    await page.getByRole("tab", { name: /Awaiting your answer/ }).click();
     const incoming = page.getByTestId("ward-incoming-WF-315");
     await expect(incoming).toBeVisible();
     await incoming.getByRole("button", { name: "Accept in principle" }).click();

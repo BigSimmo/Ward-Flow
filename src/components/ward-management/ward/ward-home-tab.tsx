@@ -199,7 +199,7 @@ export function WardHomeTab({
     logRows.push({
       key: release.id,
       at: release.confirmedAt,
-      timeLabel: formatInstant(release.confirmedAt),
+      timeLabel: formatInstantWithDay(release.confirmedAt, now),
       title: "Bed expected out",
       detail: `Departure ${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       status: release.state === "confirmed" ? "Confirmed" : "Expected",
@@ -210,9 +210,9 @@ export function WardHomeTab({
     logRows.push({
       key: "releases",
       at: Math.max(...pendingBedReleases.map((release) => release.confirmedAt)),
-      timeLabel: formatInstant(Math.max(...pendingBedReleases.map((release) => release.confirmedAt))),
+      timeLabel: formatInstantWithDay(Math.max(...pendingBedReleases.map((release) => release.confirmedAt)), now),
       title: `${pendingBedReleases.length} beds expected out`,
-      detail: `Next at ${formatInstant(next.expectedAt)}`,
+      detail: `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
       status: "Expected",
       nested: ordered.map((release) => ({
         key: release.id,
@@ -224,7 +224,7 @@ export function WardHomeTab({
     logRows.push({
       key: `clean-${release.id}`,
       at: release.confirmedAt,
-      timeLabel: formatInstant(release.confirmedAt),
+      timeLabel: formatInstantWithDay(release.confirmedAt, now),
       title: "Departure completed",
       detail: release.preparationNote ?? (release.preparing ? "Being made ready" : "Clean not recorded"),
       status: "Clean",
@@ -234,7 +234,7 @@ export function WardHomeTab({
     logRows.push({
       key: `leave-${leaveBed.id}`,
       at: leaveBed.confirmedAt,
-      timeLabel: formatInstant(leaveBed.confirmedAt),
+      timeLabel: formatInstantWithDay(leaveBed.confirmedAt, now),
       title: "Approved leave",
       detail: `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
       status: "Leave",
@@ -361,7 +361,7 @@ export function WardHomeTab({
                   </span>
                 </label>
                 <span className={styles.statusWord} data-tone={localChecks[id] !== null ? "good" : "warn"}>
-                  {localChecks[id] !== null ? formatInstant(localChecks[id]) : "Due"}
+                  {localChecks[id] !== null ? formatInstantWithDay(localChecks[id], now) : "Due"}
                 </span>
               </div>
             ))}
