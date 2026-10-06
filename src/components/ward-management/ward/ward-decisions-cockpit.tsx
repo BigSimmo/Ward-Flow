@@ -171,7 +171,7 @@ function Queue({
       <div className={styles.summaryGrid}>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneStaffing}`}
+          className={`${styles.summary} ${rollupOverdue ? styles.signalDanger : ""}`}
           aria-label="Staffing, 07:00–09:30"
           onClick={() => jumpTo("gate-staffing")}
           onKeyDown={(event) => onSummaryKey(event, "gate-staffing")}
@@ -186,7 +186,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneIntake}`}
+          className={`${styles.summary} ${intakes.length > 0 ? styles.signalDanger : ""}`}
           aria-label="Intake, 09:30–13:00"
           onClick={() => jumpTo("gate-intake")}
           onKeyDown={(event) => onSummaryKey(event, "gate-intake")}
@@ -201,7 +201,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneDepartures}`}
+          className={`${styles.summary} ${blockedCount > 0 ? styles.signalWarn : ""}`}
           aria-label="Departures, 11:00–14:00"
           onClick={() => jumpTo("gate-departures")}
           onKeyDown={(event) => onSummaryKey(event, "gate-departures")}
@@ -216,7 +216,7 @@ function Queue({
         </button>
         <button
           type="button"
-          className={`${styles.summary} ${styles.toneLeave}`}
+          className={styles.summary}
           aria-label="Leave, 14:00–18:00"
           onClick={() => jumpTo("gate-leave")}
           onKeyDown={(event) => onSummaryKey(event, "gate-leave")}
@@ -264,7 +264,11 @@ function Queue({
         {showStaffing || showIntake || showLeave ? (
           <div className={styles.stack}>
             {showStaffing ? (
-              <section className={`${styles.panel} ${styles.toneStaffing}`} id="gate-staffing" aria-label="Staffing">
+              <section
+                className={`${styles.panel} ${rollupOverdue ? styles.signalDanger : ""}`}
+                id="gate-staffing"
+                aria-label="Staffing"
+              >
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Staffing</h3>
                   <span className={styles.panelWindow}>07:00–09:30</span>
@@ -272,7 +276,10 @@ function Queue({
                 </header>
                 <div className={styles.panelBody}>
                   {rollupOverdue ? (
-                    <div className={styles.row} data-testid="ward-morning-rollup-overdue-banner">
+                    <div
+                      className={`${styles.row} ${styles.signalDanger}`}
+                      data-testid="ward-morning-rollup-overdue-banner"
+                    >
                       <span className={styles.rowTitle}>{rollupTimeLabel} Morning Bed Rollup Overdue</span>
                       <button
                         type="button"
@@ -299,7 +306,11 @@ function Queue({
             ) : null}
 
             {showIntake ? (
-              <section className={`${styles.panel} ${styles.toneIntake}`} id="gate-intake" aria-label="Intake">
+              <section
+                className={`${styles.panel} ${intakes.length > 0 ? styles.signalDanger : ""}`}
+                id="gate-intake"
+                aria-label="Intake"
+              >
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Intake</h3>
                   <span className={styles.panelWindow}>09:30–13:00</span>
@@ -310,7 +321,7 @@ function Queue({
                     <p className={styles.empty}>None waiting</p>
                   ) : (
                     intakes.map((row) => (
-                      <div className={styles.row} key={row.id}>
+                      <div className={`${styles.row} ${styles.signalDanger}`} key={row.id}>
                         <span className={styles.rowTitle}>{row.title}</span>
                         <Chip tone="danger">Due</Chip>
                         {row.onAccept ? (
@@ -328,7 +339,7 @@ function Queue({
             ) : null}
 
             {showLeave ? (
-              <section className={`${styles.panel} ${styles.toneLeave}`} id="gate-leave" aria-label="Leave">
+              <section className={styles.panel} id="gate-leave" aria-label="Leave">
                 <header className={styles.panelHead}>
                   <h3 className={styles.panelTitle}>Leave</h3>
                   <span className={styles.panelWindow}>14:00–18:00</span>
@@ -354,7 +365,7 @@ function Queue({
         {showDepartures ? (
           <div className={styles.stack}>
             <section
-              className={`${styles.panel} ${styles.toneDepartures}`}
+              className={`${styles.panel} ${blockedCount > 0 ? styles.signalWarn : ""}`}
               id="gate-departures"
               aria-label="Departures"
             >
@@ -368,7 +379,7 @@ function Queue({
                   <p className={styles.empty}>None waiting</p>
                 ) : (
                   visibleDepartures.map((row) => (
-                    <div className={styles.row} key={row.id}>
+                    <div className={`${styles.row} ${row.badge === "Blocked" ? styles.signalWarn : ""}`} key={row.id}>
                       <span className={styles.rowTitle}>{row.title}</span>
                       <Chip tone={row.badge === "Blocked" ? "warn" : row.badge === "Ready" ? "good" : "neutral"}>
                         {row.badge}

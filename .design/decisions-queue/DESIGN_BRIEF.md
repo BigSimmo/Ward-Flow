@@ -10,7 +10,7 @@ The Ward page Decisions tab is a compact queue for synthetic bed-flow decisions:
 
 Apple-like precision. Frosted, nested modules. Moderate curves, not pills on rows. Dense, not sparse. No full-width empty rows.
 
-Colour is a crisp signal: a thin group rail, a coloured icon, a small status chip, and a slate action button. Panel fills stay neutral. Titles stay ink. No red wash across a card, and no near-black toolbar.
+Colour goes around a card or row only when that item is a warning. Due uses the danger border. Blocked uses the warn border. Done, Ready and Leave stay on the neutral line. Titles stay ink. No side stripe, no red wash, and no near-black toolbar.
 
 ## Type and controls
 
