@@ -277,8 +277,6 @@ jobs:
         id: journeys
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-ci-anon-key
           # One duration-balanced third of the journey specs per runner, one worker each, so no
           # runner shares its CPU with another browser. The three groups cover every spec once.
           WARD_JOURNEY_GROUP: ${{ matrix.group }}/3

@@ -70,7 +70,7 @@
     "verify:pr-local": "node scripts/verify-pr-local.mjs",
     "audit:final-merge": "node scripts/final-merge-audit.mjs",
     "audit:merge-loss": "node scripts/audit-merge-loss.mjs --self-test && node scripts/audit-merge-loss.mjs",
-    "verify:ui": "npm run check:installed-lock-parity && npm run test:e2e:pr",
+    "verify:ui": "npm run check:installed-lock-parity && npm run test:e2e:ward-journeys",
     "verify:release": "npm run check:installed-lock-parity && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e",
     "check:knip": "knip --no-progress --include dependencies,unlisted,unresolved,duplicates",
     "check:knip:exports": "knip --no-progress --exports --no-exit-code",

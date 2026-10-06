@@ -1183,4 +1183,31 @@ describe("provider-safe test environment", () => {
       expect(processResult.stderr).toContain("Unrecognized Vitest reporter(s): basic");
     });
   });
+
+  describe("vitest test file naming safety", () => {
+    it("enforces that all .tsx test files end in .dom.test.tsx or .contract.test.tsx", () => {
+      const testsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
+      const findTsxTests = (dir: string): string[] => {
+        return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) return findTsxTests(fullPath);
+          return entry.name.endsWith(".test.tsx") ? [fullPath] : [];
+        });
+      };
+
+      const tsxTestFiles = findTsxTests(testsDir);
+      expect(tsxTestFiles.length).toBeGreaterThan(0);
+
+      const invalidNaming = tsxTestFiles.filter((filePath) => {
+        const basename = path.basename(filePath);
+        return !basename.endsWith(".dom.test.tsx") && !basename.endsWith(".contract.test.tsx");
+      });
+
+      expect(
+        invalidNaming,
+        "Every .tsx test under tests/ must end in .dom.test.tsx or .contract.test.tsx, " +
+          "otherwise Vitest's jsdom project will silently skip it without error.",
+      ).toEqual([]);
+    });
+  });
 });

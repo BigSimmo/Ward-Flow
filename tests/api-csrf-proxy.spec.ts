@@ -16,7 +16,7 @@ function resolveOriginAndHost(baseURL?: string) {
 test.describe("API CSRF proxy integration (#72282V)", () => {
   test("matching Origin & Host -> allowed (or executes route handler)", async ({ request, baseURL }) => {
     const { origin, host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin,
         host,
@@ -33,7 +33,7 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
 
   test("Sec-Fetch-Site: cross-site -> 403 Forbidden", async ({ request, baseURL }) => {
     const { origin, host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin,
         host,
@@ -50,7 +50,7 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
 
   test("Mismatched Origin vs Host -> 403 Forbidden", async ({ request, baseURL }) => {
     const { host } = resolveOriginAndHost(baseURL);
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin: "https://evil-attacker.example.com",
         host,
@@ -69,10 +69,10 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
     baseURL,
   }) => {
     const { host } = resolveOriginAndHost(baseURL);
-    const externalDomain = "clinical-kb.up.railway.app";
+    const externalDomain = "ward-flow.up.railway.app";
     const externalOrigin = `https://${externalDomain}`;
 
-    const response = await request.post("/api/answer-feedback", {
+    const response = await request.post("/api/health", {
       headers: {
         origin: externalOrigin,
         host, // Internal host differs from external Origin
@@ -90,15 +90,15 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
 
 test.describe("apiMutationCsrfVerdict pure contract under simulated proxy headers", () => {
   const internalHost = "localhost:3000";
-  const externalHost = "clinical-kb.up.railway.app";
+  const externalHost = "ward-flow.up.railway.app";
   const externalOrigin = `https://${externalHost}`;
 
   test("isCsrfGuardedApiRequest guards state-changing API endpoints and excludes webhooks", () => {
-    expect(isCsrfGuardedApiRequest("POST", "/api/answer-feedback")).toBe(true);
-    expect(isCsrfGuardedApiRequest("PUT", "/api/account/preferences")).toBe(true);
-    expect(isCsrfGuardedApiRequest("PATCH", "/api/clinical-quality")).toBe(true);
-    expect(isCsrfGuardedApiRequest("DELETE", "/api/documents/123")).toBe(true);
-    expect(isCsrfGuardedApiRequest("GET", "/api/documents")).toBe(false);
+    expect(isCsrfGuardedApiRequest("POST", "/api/health")).toBe(true);
+    expect(isCsrfGuardedApiRequest("POST", "/api/local-project-id")).toBe(true);
+    expect(isCsrfGuardedApiRequest("PUT", "/api/ward-state")).toBe(true);
+    expect(isCsrfGuardedApiRequest("DELETE", "/api/admissions/123")).toBe(true);
+    expect(isCsrfGuardedApiRequest("GET", "/api/health")).toBe(false);
     expect(isCsrfGuardedApiRequest("POST", "/api/webhooks/incoming")).toBe(false);
   });
 
