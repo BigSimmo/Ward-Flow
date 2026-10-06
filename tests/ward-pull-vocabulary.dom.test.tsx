@@ -455,16 +455,13 @@ describe("the coordinator's mode workspaces say pull", () => {
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: "Legacy facts" }));
-    const before = screen.getByTestId("ward-governance-change-audit");
-    expect(before.textContent ?? "").not.toContain("Pull released");
+    expect(screen.queryByRole("tab", { name: "Legacy facts" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-governance-change-audit")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
 
-    const after = screen.getByTestId("ward-governance-change-audit");
-    expect(after.textContent ?? "").toContain("Pull released");
-    expect(after.textContent ?? "").toContain("Pull made in error");
-    expect(after.textContent ?? "").not.toContain("Hold released");
+    expect(screen.queryByTestId("ward-governance-change-audit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hold released")).not.toBeInTheDocument();
   });
 
   /*
