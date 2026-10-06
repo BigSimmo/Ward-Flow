@@ -1752,3 +1752,226 @@
   flex-shrink: 0;
   margin-top: 2px;
 }
+
+/* Liquid-glass elevation for the governance workbench. Tokens only. */
+.governanceWorkspace {
+  gap: 0.75rem;
+  container-type: inline-size;
+  container-name: governance;
+}
+
+.workspaceBar {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.85fr) minmax(0, 1.7fr) auto;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 0;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  backdrop-filter: blur(22px) saturate(1.45);
+  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  box-shadow:
+    inset 0 1px 0 var(--hl),
+    0 18px 40px -28px color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.sessionCard,
+.summaryPill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--ward-tap, 44px);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: inset 0 1px 0 var(--hl);
+}
+
+.sessionCard {
+  min-width: 0;
+}
+
+.workspaceNote {
+  min-width: 0;
+}
+
+.workspaceMeta {
+  display: contents;
+}
+
+.summary {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.summaryPill {
+  justify-content: center;
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+}
+
+.reviewEntry {
+  align-items: stretch;
+}
+
+.reviewEntry .btn {
+  height: 100%;
+}
+
+.tabbar {
+  width: max-content;
+  max-width: 100%;
+  align-self: start;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow: inset 0 1px 0 var(--hl);
+}
+
+.tabBtn {
+  border-bottom: 0;
+  border-radius: 0.625rem;
+  min-height: var(--ward-tap, 44px);
+  padding: 0.4rem 0.8rem;
+}
+
+.tabBtn[aria-selected="true"] {
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--hl),
+    0 8px 18px -14px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.tabsPanel,
+.registerPanel,
+.detailPanel,
+.recordPanel,
+.cardPanel,
+.modalDialog {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--line) 58%, transparent);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow:
+    inset 0 1px 0 var(--hl),
+    0 16px 36px -24px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.tabsPanel .registerPanel {
+  margin: 0.75rem;
+  border-radius: 0.75rem;
+}
+
+.ph,
+.panelHeader {
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+}
+
+.ph h2,
+.panelHeader h2 {
+  font-size: var(--t-3, 15px);
+  letter-spacing: -0.01em;
+}
+
+.govTable {
+  min-width: 0;
+}
+
+.govTable th {
+  padding: 0.55rem 0.75rem;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+.govTable td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+}
+
+.govTable td:first-child {
+  white-space: nowrap;
+}
+
+@container governance (max-width: 62rem) {
+  .govLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.emptyCell {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  color: var(--muted);
+}
+
+.inspectorCard,
+.inspectorText,
+.eventRow,
+.filters select {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  box-shadow: inset 0 1px 0 var(--hl);
+}
+
+.inspectorCard,
+.inspectorText {
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+}
+
+.inspectorActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.inspectorActions .btn {
+  flex: 1 1 0;
+}
+
+.btn {
+  border-radius: 0.625rem;
+  box-shadow: inset 0 1px 0 var(--hl);
+}
+
+.btn.primary {
+  box-shadow: inset 0 1px 0 var(--hl-on-accent);
+}
+
+.modalDialog {
+  border-radius: 1.125rem;
+}
+
+.modalHead,
+.modalFoot {
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+@media (max-width: 64rem) {
+  .workspaceBar,
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reviewEntry .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 48rem) {
+  .govTable {
+    min-width: 28rem;
+  }
+}
