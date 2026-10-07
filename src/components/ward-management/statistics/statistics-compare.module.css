@@ -1,0 +1,204 @@
+/* Ward and ED comparisons: the ward chart beside the department chart and pinned wards. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.headControls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.toolbarTight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+
+.chartBody {
+  border-top: 1px solid var(--wf-line);
+}
+
+.chart {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.rowName {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.rowNameText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unrecorded {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+}
+
+.wardSearch {
+  flex: 0 1 150px;
+  min-width: 120px;
+}
+
+.pinSelect {
+  width: 150px;
+}
+
+/*
+ * Below these widths the Data tables scroll sideways and hold their row headers in place.
+ * Measured at 1440px on 7 October 2026: wards 581px and departments 511px max-content, so each
+ * pin sits just above its table's own content (592px and 520px) and is never inert.
+ */
+.wardTable {
+  min-width: 37rem;
+}
+
+.edTable {
+  min-width: 32.5rem;
+}
+
+.stickyCell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--wf-surface);
+}
+
+/* Pinned wards share the width after the measure column, so three always fit. */
+table.pinTable {
+  table-layout: fixed;
+}
+
+.measureCol {
+  width: 26%;
+}
+
+/* A pinned ward's name is its own unpin control. */
+.unpin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unpin:hover {
+  color: var(--wf-accent-ink);
+}
+
+.unpin:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.footNote {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.pinName {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  font-family: var(--wf-font);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pinName > :first-child {
+  max-width: 100%;
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.pinName > :last-child {
+  margin-left: 0;
+}
+
+/* "Open a unit": every unit as a link, four to a row on desktop. */
+.chooserAnchor {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+.chooserAnchor:focus {
+  outline: none;
+}
+
+.chooserSearch {
+  flex: 0 1 220px;
+  min-width: 160px;
+}
+
+.chooserGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+
+.chooserGrid li {
+  min-width: 0;
+  border-right: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.chooserLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 36px;
+  padding: 0 var(--wf-s-3) 0 var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.chooserLink:hover {
+  background: var(--wf-hover);
+}
+
+.chooserLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.noSite {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .chooserLink {
+    min-height: var(--ward-tap, 48px);
+  }
+}

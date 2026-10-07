@@ -127,6 +127,7 @@ export function StatisticsPage({
   now,
   paused,
   onTogglePause,
+  eyebrowLabel,
   children,
 }: {
   section: StatisticsSection;
@@ -139,6 +140,8 @@ export function StatisticsPage({
   now: Instant;
   paused: boolean;
   onTogglePause: () => void;
+  /** The eyebrow's lead word when the title already names the section. Defaults to the section label. */
+  eyebrowLabel?: string;
   children: ReactNode;
 }) {
   return (
@@ -149,7 +152,7 @@ export function StatisticsPage({
           slug={slug}
           eyebrow={
             <>
-              <span data-testid="ward-statistics-section-eyebrow">{section.label}</span>
+              <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
               {` · as at ${formatInstant(now)}`}
             </>
           }
