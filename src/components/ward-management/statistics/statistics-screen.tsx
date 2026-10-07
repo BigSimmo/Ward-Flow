@@ -947,9 +947,9 @@ export function StatisticsScreen({
                   different populations, so no per-ward number is shown.
                 </p>
                 <p className={styles.figureNote} data-testid="ward-statistics-declines-reason">
-                  A referral names a ward only when that ward accepts; referral declines do not name a ward. Movement
-                  declines name a ward for people already inside an emergency department. Choosing either source would
-                  define a different measure.
+                  Named ward referrals preserve their recipient before acceptance. Older network-wide referrals may lack
+                  a ward identifier when declined. Movement declines name a ward for people already inside an emergency
+                  department. Combining these populations would define a different measure.
                 </p>
               </article>
 

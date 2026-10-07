@@ -363,19 +363,9 @@ describe("what the pages say about the model is true of the model", () => {
     const scope = claim.closest("article") ?? claim.closest('[data-ward-primitive="panel"]') ?? claim;
     const text = normalise(scope.textContent);
 
-    // The mechanism: the ward-naming place exists and is written only on acceptance.
-    expect(text, "the page no longer says the ward is named only when a ward accepts").toMatch(
-      /only when (?:that |a )?ward accepts/i,
-    );
-    // Half one: an acceptance CAN be attributed to a named ward.
-    expect(text, "the page no longer says an acceptance names a ward").toMatch(
-      /acceptance (?:is attributable to|names) a(?: named)? ward|names? (?:its |a )?ward only when (?:that |a )?ward accepts/i,
-    );
-    // Half two: a decline CANNOT. A page that kept the premise and dropped this would pass the
-    // negative above and say nothing useful — the failure the original guard was written against.
-    expect(text, "the page no longer says a decline cannot name a ward").toMatch(
-      /decline (?:is not|cannot|and a decline)|declines? do not name a ward|names? (?:its |a )?ward only when (?:that |a )?ward accepts/i,
-    );
+    // Named recipients are attributable before an answer; legacy network-wide requests can lack a ward.
+    expect(text).toMatch(/named ward referrals preserve their recipient before acceptance/i);
+    expect(text).toMatch(/older network-wide referrals may lack a ward identifier when declined/i);
   });
 
   it.each(claims)(

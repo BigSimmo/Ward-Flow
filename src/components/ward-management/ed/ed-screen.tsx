@@ -1,5 +1,7 @@
 "use client";
 
+import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
@@ -3293,6 +3295,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             View referral <span aria-hidden="true">›</span>
                           </button>
                           <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
+                            <ReferralIntakeSummary intake={referral.intake} />
                             <div className={styles.inboxActionRow}>
                               <button
                                 type="button"

@@ -394,7 +394,8 @@ describe("the withheld statistic says so on the page", () => {
         // fire. Each group read as three ways to pass and had two — the same shape found at five
         // other sites in this file, and the reason it matters is that redundancy which is not there
         // is what stops the next reader checking the spellings that are.
-        ["referral decline", "referral names"],
+        // Named recipients are now recorded before acceptance; legacy coverage remains qualified.
+        ["referral decline", "referral names", "ward referrals"],
         ["movement decline", "Movement declines"],
         // The block must identify why neither record can supply one ward-attributable measure.
         "decline",
