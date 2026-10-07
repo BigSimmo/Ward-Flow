@@ -113,6 +113,9 @@ afterEach(() => {
     document.documentElement.removeAttribute("data-theme");
     document.documentElement.removeAttribute("data-rail");
   }
+  if (typeof window !== "undefined" && window.history) {
+    window.history.replaceState({}, "", "/");
+  }
 });
 
 /* ── 1. rail link count equals WARD_VIEWS plus the rail entries of WARD_NAV ──────────────────── */
@@ -1037,5 +1040,21 @@ describe("computeShiftProgress", () => {
     const fromUndefined = computeShiftProgress(undefined);
     expect(typeof fromUndefined.percent).toBe("number");
     expect(typeof fromUndefined.countdownStr).toBe("string");
+  });
+});
+
+describe("drawer URL search parameter synchronization", () => {
+  it("syncs ?drawer=<id> into window.location on opening and removes it on closing", async () => {
+    const user = userEvent.setup();
+    renderShell();
+
+    expect(window.location.search).not.toContain("drawer=");
+
+    const activityTrigger = screen.getByTestId("ward-bar-activity-trigger");
+    await user.click(activityTrigger);
+    expect(window.location.search).toContain("drawer=activity");
+
+    await user.keyboard("{Escape}");
+    expect(window.location.search).not.toContain("drawer=activity");
   });
 });

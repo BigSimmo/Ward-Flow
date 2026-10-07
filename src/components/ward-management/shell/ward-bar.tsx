@@ -219,6 +219,21 @@ function activityChangeCategory(change: { category?: WardActivityCategory }): Wa
 const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
   id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service";
 
+function drawerSearchParamUrl(drawerId: string | null): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const url = new URL(window.location.href);
+    if (drawerId && drawerId !== "service") {
+      url.searchParams.set("drawer", drawerId);
+    } else {
+      url.searchParams.delete("drawer");
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "";
+  }
+}
+
 const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
   "North Metro": "north",
   "South Metro": "south",
@@ -664,7 +679,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     } else if (step === "clear") {
       const nextState = { ...window.history.state };
       delete nextState.wardDrawer;
-      window.history.replaceState(nextState, "");
+      window.history.replaceState(nextState, "", drawerSearchParamUrl(null));
     }
     // Used once: a link whose own handler stopped the page change (a menu that opens a drawer
     // instead) must not keep later closes from stepping back.
@@ -675,10 +690,11 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     (id: WardBarPopoverId) => {
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
+        const nextUrl = drawerSearchParamUrl(id);
         if (window.history.state?.wardDrawer) {
-          window.history.replaceState({ ...window.history.state, wardDrawer: id }, "");
+          window.history.replaceState({ ...window.history.state, wardDrawer: id }, "", nextUrl);
         } else {
-          window.history.pushState({ ...window.history.state, wardDrawer: id }, "");
+          window.history.pushState({ ...window.history.state, wardDrawer: id }, "", nextUrl);
         }
       }
       if (id === "activity") {
@@ -700,14 +716,19 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   );
 
   useEffect(() => {
-    function onPopState() {
-      setOpenPanel((current) => {
-        if (current !== null) {
-          announceToWardShell("Closed.");
-          return null;
-        }
-        return current;
-      });
+    function onPopState(event: PopStateEvent) {
+      const targetDrawer = event.state?.wardDrawer;
+      if (isDrawerPanel(targetDrawer) && targetDrawer !== "service") {
+        setOpenPanel(targetDrawer);
+      } else {
+        setOpenPanel((current) => {
+          if (current !== null) {
+            announceToWardShell("Closed.");
+            return null;
+          }
+          return current;
+        });
+      }
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);

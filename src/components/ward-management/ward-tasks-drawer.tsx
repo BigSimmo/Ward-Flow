@@ -91,7 +91,13 @@ export function WardTasksDrawer({
           data-testid="ward-tasks-drawer-backdrop"
         />
       ) : null}
-      <aside ref={drawerRef} className={styles.drawer} role="complementary" aria-label="Tasks">
+      <aside
+        ref={drawerRef}
+        className={styles.drawer}
+        role={withBackdrop ? "dialog" : "complementary"}
+        aria-modal={withBackdrop ? "true" : undefined}
+        aria-label="Tasks"
+      >
         <div className={styles.header}>
           <div>
             <p className={styles.eyebrow}>Task inbox</p>
