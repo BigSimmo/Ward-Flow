@@ -547,9 +547,10 @@ export function StatisticsOverviewScreen() {
                     turned away before the person has reached a department.
                   </p>
                   <p data-testid="ward-statistics-overview-precedent">
-                    The home page publishes no ward-attributable decline measure. A referral names a ward only when that
-                    ward accepts, while a movement decline names a ward for somebody already inside a department.
-                    Selecting either source would define a different population, so this page does not make that choice.
+                    The home page publishes no ward-attributable decline measure. A referral records the accepting ward
+                    only when that ward accepts. An acceptance is attributable to a named ward, and a referral decline
+                    is not, while a movement decline names a ward for somebody already inside a department. Selecting
+                    either source would define a different population, so this page does not make that choice.
                   </p>
                 </div>
               </div>

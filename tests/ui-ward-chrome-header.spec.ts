@@ -679,13 +679,17 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
-  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
-  await referral.locator("#refDocInput").fill("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Placement", exact: true }).click();
-  await expect(referral.locator("#refTransportSelect")).toBeVisible();
-  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
-  await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Placement", exact: true }).click();
+  await sections.getByRole("button", { name: "Documentation", exact: true }).click();
+  await referral
+    .getByRole("group", { name: "Medical clearance" })
+    .getByRole("button", { name: "No", exact: true })
+    .click();
+  await referral.locator("#refClearanceName").fill("Synthetic draft clinician");
+  await sections.getByRole("button", { name: "Locations", exact: true }).click();
+  await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await sections.getByRole("button", { name: "Documentation", exact: true }).click();
+  await expect(referral.locator("#refClearanceName")).toHaveValue("Synthetic draft clinician");
+  await sections.getByRole("button", { name: "Locations", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(referral.getByRole("searchbox", { name: "Search sample patients" })).toBeFocused();

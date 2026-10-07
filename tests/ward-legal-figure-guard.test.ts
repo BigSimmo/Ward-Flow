@@ -209,6 +209,16 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS:
     "this session's own unmeasured placeholder, 2026-09-17 — a character cap on a correction " +
     "note text field, not a Mental Health Act figure; see ward-model.ts's own doc comment",
+  // Referral drawer, October 2026. Same shape as the two caps above: a character limit on text
+  // the referrer types (callback contact, and a short documentation note). Not a Mental Health
+  // Act figure, not a duration, and not a clinician-measured threshold. The reducer refuses a
+  // longer value rather than shortening it.
+  REFERRER_CONTACT_MAX_CHARACTERS:
+    "unmeasured prototype character cap, October 2026 — phone, email, location and clearance " +
+    "contact on a referral; not a Mental Health Act figure; refused past the cap, never shortened",
+  REFERRAL_SHORT_NOTE_MAX_CHARACTERS:
+    "unmeasured prototype character cap, October 2026 — a short documentation note on a referral; " +
+    "not a Mental Health Act figure; refused past the cap, never shortened",
   // 🔴 DELETED 2026-09-17, T2: `FORM_1A_VALIDITY_HOURS`, `FORM_1A_EXAMINATION_WINDOW_HOURS` and
   // `FORM_3D_DETENTION_WINDOW_HOURS` stood here from Ruling 1 (2026-09-16) until this date. Owner
   // answer 1, 2026-09-17, is narrower than the figure Ruling 1 approved: this prototype works out

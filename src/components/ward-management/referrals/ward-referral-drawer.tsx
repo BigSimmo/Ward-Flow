@@ -661,8 +661,9 @@ function WardReferralDrawerContent({
     if (sendBaseline.current === null) return;
     const before = sendBaseline.current;
     sendBaseline.current = null;
+    const latestRejection = rejections[rejections.length - 1];
     if (rejections.length > before) {
-      announceToWardShell(rejections[rejections.length - 1]?.reason ?? "The referral was not accepted.");
+      announceToWardShell(latestRejection?.reason ?? "The referral was not accepted.");
       return;
     }
     announceToWardShell("Referral sent.");

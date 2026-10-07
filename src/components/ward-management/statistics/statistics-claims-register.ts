@@ -314,8 +314,8 @@ const REFERRAL_ADDRESSING_BODY =
 
 /**
  * The `psychiatric_ward` destination arm, cited whole — from its `kind` discriminant to the brace
- * that closes it. Two screens say this arm records the bed's criteria "and never a unit"; only the
- * whole arm can witness the "never".
+ * that closes it. The claim is that this arm records bed criteria and the wards asked for, and does
+ * not record which unit accepted. Only the whole arm can witness that last denial.
  *
  * ⚠️ **THIS CONSTANT PREVIOUSLY SAID "cited whole" AND WAS NOT.** Until 2026-09-01 the string ran
  * from `sex: Sex;` to `secureBedNeeded: boolean;` — omitting `kind` at one end and
@@ -325,6 +325,10 @@ const REFERRAL_ADDRESSING_BODY =
  * the claim NAMES as one of the three criteria, likewise broke nothing. The register asserting a
  * property of its own evidence that its own evidence did not have is this module's defect one level
  * up, and it is the reason `falsifiedBy` exists.
+ *
+ * ⚠️ **RE-READ 2026-10-07.** `requestedUnitIds` was added to this arm. The old claim, "carries no
+ * unit id of its own", is false: the arm may name the wards the referrer asked for. The citation
+ * now includes that field. What remains true is that the accepting unit is not on this arm.
  */
 const WARD_DESTINATION_ARM =
   'kind: "psychiatric_ward"; /** * Compared to a unit\'s `sexMix` and `sexDesignation` by equality. A ' +
@@ -353,18 +357,22 @@ const WARD_DESTINATION_ARM =
   " risk or * assessment. **The referring clinician marks it at referral** — owner ruling 2026-09-10, *" +
   " chosen over the system working it out. Read only to ask whether a ward is staffed for a * high-" +
   "acuity place; see the `acuity` gate in `ward-eligibility.ts` for why nothing here * may be turned " +
-  "into a remaining count. */ highAcuityNursingNeeded: boolean; }";
+  "into a remaining count. */ highAcuityNursingNeeded: boolean; /** * Wards the referrer asked, by " +
+  "unit id. One ward destination can name several wards; the * engine still refuses a second ward " +
+  "destination. Absent means the referrer asked for a * ward bed without naming which ward. Each id " +
+  "is a real unit. The total number of places * on the referral, counting each named ward, stays " +
+  "within `PARALLEL_REFERRAL_CAP`. */ requestedUnitIds?: readonly string[]; }";
 
 /** Shared by both screens that make the ward-destination claim, so both go red together. */
 const WARD_DESTINATION_ARM_GAINS_A_UNIT_ID: FalsifyingEdit = {
   change:
-    "The ward arm starts naming a unit — a `preferredUnitId` is added to it, so the arm no longer " +
-    "carries only the bed's criteria and the two screens' 'no unit id of its own' becomes false.",
-  // RE-ANCHORED 2026-09-10: `involuntaryBedNeeded` stopped being the arm's last field when
-  // `highAcuityNursingNeeded` landed, so the old anchor matched nothing and this edit would have
-  // passed by doing nothing. The register caught that itself, which is what `falsifiedBy` is for.
-  find: "highAcuityNursingNeeded: boolean; }",
-  replaceWith: "highAcuityNursingNeeded: boolean; preferredUnitId?: string; }",
+    "The ward arm starts recording the unit that accepted — an `acceptedUnitId` is added beside " +
+    "`requestedUnitIds` — so acceptance is no longer only on `ReferralAddressing` and the claim " +
+    "that this arm does not record which unit accepted becomes false.",
+  // RE-ANCHORED 2026-10-07: `requestedUnitIds` landed after `highAcuityNursingNeeded`, so the old
+  // anchor `highAcuityNursingNeeded: boolean; }` matched nothing. The register caught that itself.
+  find: "requestedUnitIds?: readonly string[]; }",
+  replaceWith: "requestedUnitIds?: readonly string[]; acceptedUnitId?: string; }",
 };
 
 /**
@@ -867,7 +875,8 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: "the sex it must suit, whether it must be secure, whether it must be able",
     claim:
       "The ward destination arm records the bed's criteria — sex, secure, able to hold somebody " +
-      "involuntarily, high-acuity nursing — and carries no unit id of its own.",
+      "involuntarily, high-acuity nursing — and may name the wards asked for in `requestedUnitIds`. " +
+      "It does not record which unit accepted.",
     sourceFile: WARD_MODEL,
     evidence: WARD_DESTINATION_ARM,
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
@@ -875,7 +884,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   {
     id: "statistics-screen/declines/accepted-unit-id-is-written-on-acceptance",
     renderedIn: STATISTICS_SCREEN,
-    rendered: "A referral names a ward only when that ward accepts",
+    rendered: "A referral records the accepting ward only when that ward accepts",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
     sourceFile: WARD_REDUCER,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
@@ -1397,7 +1406,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     // Locator moved 2026-09-06 with the field-name removal. The claim is unchanged and the page
     // still makes it — in words rather than identifiers. Evidence and falsifier below still name
     // `acceptedUnitId` exactly, which is what keeps this checkable.
-    rendered: "A referral names a ward only when that ward accepts",
+    rendered: "A referral records the accepting ward only when that ward accepts",
     claim: "`ReferralAddressing` carries exactly one field that can name a unit: `acceptedUnitId`.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_ADDRESSING_BODY,
@@ -1444,7 +1453,8 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: 'data-testid="ward-statistics-compare-declines-example"',
     claim:
       "The ward destination arm records the bed's criteria — sex, secure, able to hold somebody " +
-      "involuntarily, high-acuity nursing — and carries no unit id of its own.",
+      "involuntarily, high-acuity nursing — and may name the wards asked for in `requestedUnitIds`. " +
+      "It does not record which unit accepted.",
     sourceFile: WARD_MODEL,
     evidence: WARD_DESTINATION_ARM,
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
@@ -1452,7 +1462,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   {
     id: "statistics-compare-screen/declines/addressing-has-one-unit-field",
     renderedIn: COMPARE_SCREEN,
-    rendered: "A referral names its ward only when a ward accepts.",
+    rendered: "A referral records its accepting ward only when a ward accepts.",
     claim: "`ReferralAddressing` carries exactly one field that can name a unit: `acceptedUnitId`.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_ADDRESSING_BODY,
@@ -1465,7 +1475,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     // now carried by the SAME sentence on the page, which is why they share a locator: the reword
     // merged two clauses that had been separate. The claims stay distinct here, with distinct
     // evidence and distinct falsifiers, so they still fail independently.
-    rendered: "A referral names its ward only when a ward accepts.",
+    rendered: "A referral records its accepting ward only when a ward accepts.",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
     sourceFile: WARD_REDUCER,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
