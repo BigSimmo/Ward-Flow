@@ -34,7 +34,6 @@ import { WardModeWorkspace } from "@/components/ward-management/ward-management-
 import { HOME_REGIONS, type HomeRegion, type Referral } from "@/components/ward-management/ward-model";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { allUnits, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 import { parseModuleSource } from "./helpers/module-graph";
