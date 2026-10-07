@@ -665,3 +665,19 @@
   align-items: center;
   gap: var(--wf-s-3);
 }
+
+/* Route loading placeholders (loading.tsx): the hero and the two top cards. */
+.loadingHero,
+.loadingCard {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.loadingHero {
+  min-height: 8.5rem;
+}
+
+.loadingCard {
+  min-height: 22rem;
+}
