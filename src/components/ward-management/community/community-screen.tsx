@@ -109,14 +109,7 @@ const SEARCH_RESULT_LIMIT = 8;
  */
 const TEAM_TABS = [
   { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
-  // The list and its count hold everyone in a bed or holding one; the hero's "In a bed" counts
-  // only those in the bed, so the tab names the wider group it counts.
-  {
-    id: "tab-inpatients",
-    buttonId: "tabBtn-inpatients",
-    label: "In a bed or holding one",
-    section: "ward-community-admitted",
-  },
+  { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
   { id: "tab-egress", buttonId: "tabBtn-egress", label: "Expected back", section: "ward-community-expected-back" },
   { id: "tab-caseload", buttonId: "tabBtn-caseload", label: "Caseload and CTOs", section: "section-caseload" },
 ] as const;
@@ -1092,8 +1085,16 @@ export function CommunityScreen({
                   label="Waiting answer"
                 />
                 <HeroStat
-                  value={isDemoMode ? teamConfig.inpatients : inBedCount}
-                  trend={`of ${isDemoMode ? teamConfig.inpatientsTotal : lists.currentlyAdmitted.length}`}
+                  // One figure with the tab: everyone in a bed or holding one, and how many of
+                  // those hold a pulled bed they have not yet reached.
+                  value={isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
+                  trend={
+                    isDemoMode
+                      ? `of ${teamConfig.inpatientsTotal}`
+                      : bedPulledCount > 0
+                        ? `${bedPulledCount} bed pulled`
+                        : undefined
+                  }
                   label="In a bed"
                 />
                 <HeroStat value={isDemoMode ? teamConfig.egress : lists.expectedBack.length} label="Expected back" />
