@@ -14,9 +14,10 @@ import { edShortName, siteByCode } from "@/components/ward-management/ward-sites
 
 import styles from "./pressure-strip.module.css";
 
-type Order = "most" | "longest";
+type Order = "worst" | "most" | "longest";
 
 const ORDER_ITEMS: { id: Order; label: string }[] = [
+  { id: "worst", label: "Worst first" },
   { id: "most", label: "Most waiting" },
   { id: "longest", label: "Longest wait" },
 ];
@@ -55,7 +56,7 @@ const TONE_GLYPH: Record<string, WfTone> = {
  * `ward-ed-<id>`). Every visible figure is `aria-hidden` and restated in the tile's accessible name.
  */
 export function PressureStrip({ now, selectedEdId, onSelectEd, movements, service = null, foot }: PressureStripProps) {
-  const [order, setOrder] = useState<Order>("most");
+  const [order, setOrder] = useState<Order>("worst");
   const pressure = edPressure(now, movements);
   const summaries = edOpenSummaries(movements, now);
 
@@ -67,11 +68,15 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
     : pressure;
   const hiddenByService = pressure.length - scopedPressure.length;
   const longestWait = Math.max(1, ...scopedPressure.map((row) => row.longestWaitMinutes));
-  const rows = [...scopedPressure].sort((a, b) =>
-    order === "most"
-      ? b.waiting - a.waiting || b.longestWaitMinutes - a.longestWaitMinutes
-      : b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting,
-  );
+  // "Worst first" keeps `edPressure`'s own ranking: overdue, then longest wait, then waiting.
+  const rows =
+    order === "worst"
+      ? scopedPressure
+      : [...scopedPressure].sort((a, b) =>
+          order === "most"
+            ? b.waiting - a.waiting || b.longestWaitMinutes - a.longestWaitMinutes
+            : b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting,
+        );
 
   return (
     <Card as="section" className={styles.strip} aria-label="Emergency department pressure">
@@ -180,6 +185,7 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                     </span>
                     <span className={styles.longest} aria-hidden="true">
                       <StatusGlyph tone={TONE_GLYPH[pressureTone] ?? "neutral"} size={8} />
+                      <span className={styles.longestLabel}>Longest</span>
                       {splitDuration(row.longestWaitMinutes)}
                     </span>
                     <span className={styles.deadline} aria-hidden="true">

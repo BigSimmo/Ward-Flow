@@ -159,6 +159,20 @@
   color: var(--wf-ink-2);
 }
 
+/* Phone: the queue comes first and the strip steps aside, at the same 48rem width where the
+   coordinator's diagram hides and its registers toggle appears (`coordinator.module.css`). */
+@media (max-width: 48rem) {
+  .strip {
+    display: none;
+  }
+}
+
+.longestLabel {
+  font-family: var(--wf-font);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
 @media (max-width: 40rem) {
   .tile,
   .tileSelected {
