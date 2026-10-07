@@ -4925,3 +4925,169 @@
   color: var(--ink) !important;
   box-shadow: 0 1px 3px var(--ward-shadow-black-06);
 }
+
+/* ---------- v6 Settings (7 Oct 2026): operator hero and one toolbar row ---------- */
+
+.operatorHero {
+  min-width: 0;
+}
+
+.operatorName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.operatorAvatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: 50%;
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  font-family: var(--wf-font);
+}
+
+.toolbar .categoryRail {
+  position: static;
+  display: flex;
+  flex: 0 0 auto;
+  width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.toolbar .categoryRail:hover {
+  box-shadow: none;
+}
+
+.toolbar .sidebarSearchWrap {
+  flex: 0 0 14rem;
+  padding: 0;
+}
+
+.toolbar .catListScroll {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  overflow-x: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.toolbar .catItem {
+  width: auto;
+  min-height: var(--wf-h-sm);
+  gap: var(--wf-s-1);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+  transform: none;
+}
+
+.toolbar .catItem:hover:not([aria-current="true"]) {
+  border-color: transparent;
+  background: var(--wf-hover);
+  transform: none;
+}
+
+.toolbar .catItem[aria-current="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  transform: none;
+}
+
+.toolbar .catTitle,
+.toolbar .catItem[aria-current="true"] .catTitle {
+  color: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+}
+
+.toolbar .catCount,
+.toolbar .catItem[aria-current="true"] .catCount {
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+.toolbarStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.settingsBody {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pageHeader:has(.toolbar) {
+  border-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .toolbar .categoryRail {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar .sidebarSearchWrap {
+    flex-basis: auto;
+  }
+
+  .toolbar .catItem {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

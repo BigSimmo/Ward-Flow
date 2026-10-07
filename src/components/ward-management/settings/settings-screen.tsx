@@ -3,18 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity,
   AlertTriangle,
-  Bell,
   Check,
   ChevronDown,
   Database,
   Download,
-  Layers,
   Minus,
   Monitor,
   Moon,
-  Palette,
   Plus,
   RotateCcw,
   Search,
@@ -36,7 +32,7 @@ import {
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
+import { Hero, HeroStat, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import {
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
@@ -50,12 +46,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { publishedThresholds, type ThresholdState } from "./settings-thresholds";
-import {
-  countMatchesByDomain,
-  filterSettingEntries,
-  SETTINGS_DOMAINS,
-  type SettingsDomainId,
-} from "./settings-search-index";
+import { countMatchesByDomain, filterSettingEntries, SETTINGS_DOMAINS } from "./settings-search-index";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
   MORNING_ROLLUP_TIME_MINUTES,
@@ -72,6 +63,22 @@ import { ResetBaselineModal } from "./reset-baseline-modal";
 import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
 
 import styles from "./settings.module.css";
+
+/** Short toolbar chip names (v6 Settings mockup); the full name stays as the chip's title. */
+const DOMAIN_CHIP_LABEL: Record<string, string> = {
+  "cat-appearance": "Look",
+  "cat-thresholds": "Thresholds",
+  "cat-allocation": "Beds",
+  "cat-notifications": "Alerts",
+  "cat-reset": "Storage",
+};
+
+/** 24-hour clock time, `HH:MM`, for the hero's morning count. */
+function clock24(minutesFromMidnight: number): string {
+  const hours = Math.floor(minutesFromMidnight / 60);
+  const mins = minutesFromMidnight % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
 
 function formatMinutesToTime(minutesFromMidnight: number): string {
   const hours24 = Math.floor(minutesFromMidnight / 60);
@@ -209,21 +216,6 @@ const ROLE_PERMISSIONS: readonly RolePermission[] = [
     handoverTone: "accent",
   },
 ];
-
-function getDomainIcon(domainId: SettingsDomainId) {
-  switch (domainId) {
-    case "cat-appearance":
-      return <Palette size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-thresholds":
-      return <Sliders size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-allocation":
-      return <Layers size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-notifications":
-      return <Bell size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-reset":
-      return <Database size={16} className={styles.catIcon} aria-hidden="true" />;
-  }
-}
 
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
@@ -750,279 +742,137 @@ export function SettingsScreen() {
             Settings
           </h1>
 
-          {/* Top Clinical Operator Profile Card */}
-          <div className={styles.profileHeaderCard}>
-            <div className={styles.profileHeaderMain}>
-              <div className={styles.profileAvatarWrap}>
-                <div className={styles.profileAvatar}>SC</div>
-                <span className={styles.profileStatusDot} title="On Duty" />
-              </div>
-              <div className={styles.profileMeta}>
-                <div className={styles.profileNameRow}>
-                  <h2 className={styles.profileName}>Dr S. Chen</h2>
-                  <span className={styles.profileCreds}>(MBBS, FRANZCP)</span>
-                  <span className={styles.profileBadgePrimary}>Duty Coordinator</span>
-                </div>
-                <p className={styles.profileSub}>
-                  <span>Perth Central Desk</span>
-                  <span className={styles.profileDotSep}>·</span>
-                  <span className={styles.profileLiveStatus}>On Duty</span>
-                </p>
-              </div>
-            </div>
+          {/* v6 Settings (7 Oct 2026): the operator and the SAVED rules on one hero band. The draft below
+              never feeds these figures. */}
+          <Hero
+            className={styles.operatorHero}
+            eyebrow="Duty coordinator"
+            title={
+              <span className={styles.operatorName}>
+                <span className={styles.operatorAvatar} aria-hidden="true">
+                  SC
+                </span>
+                Dr S. Chen
+              </span>
+            }
+            titleMeta="Perth Central Desk"
+            stats={
+              <>
+                <HeroStat value={`${configuration.edAccessTargetMinutes / 60}h`} label="ED target" />
+                <HeroStat value={configuration.parallelReferralCap} label="Wards asked" />
+                <HeroStat value={durMinutes(configuration.pullHoldMinutes)} label="Pull hold" />
+                <HeroStat
+                  value={clock24(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)}
+                  label="Morning count"
+                />
+                <HeroStat
+                  value={savedSurge ? "Surge" : "Standard"}
+                  label="Mode"
+                  tone={savedSurge ? "warning" : undefined}
+                />
+              </>
+            }
+            aside={
+              <>
+                <div className={styles.userProfileWrap} ref={profileRef}>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm" })}
+                    id="userProfileBtn"
+                    data-testid="clinical-operator-profile"
+                    aria-haspopup="dialog"
+                    aria-expanded={isProfileOpen}
+                    aria-controls="profilePopover"
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    title="Clinical Operator Profile · Dr S. Chen"
+                  >
+                    <span>Delegation</span>
+                    <ChevronDown size={13} className={styles.userChevron} aria-hidden="true" />
+                  </button>
 
-            <div className={styles.profileActions}>
-              <button
-                type="button"
-                className={styles.profileBtnSecondary}
-                onClick={() => setIsOperatorModalOpen(true)}
-                title="Switch active operator"
-              >
-                Switch Operator
-              </button>
-              <div className={styles.userProfileWrap} ref={profileRef}>
+                  {isProfileOpen && (
+                    <div
+                      className={styles.profilePopover}
+                      id="profilePopover"
+                      data-testid="profile-popover"
+                      role="dialog"
+                      aria-label="Operator Profile Details"
+                    >
+                      <div className={styles.popoverHdr}>
+                        <div className={styles.popoverAvatar}>SC</div>
+                        <div className={styles.popoverIdentity}>
+                          <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
+                          <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
+                          <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
+                        </div>
+                      </div>
+                      <div className={styles.popoverBody}>
+                        <div className={styles.popoverSection}>
+                          <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
+                          <div className={styles.popoverRow}>
+                            <span>Where they work:</span>
+                            <span>Statewide Bed Desk</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Clinical Governance:</span>
+                            <span>SMHS &amp; WACHS Liaison</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Legal Forms:</span>
+                            <span className="mono">Forms 1A, 4A, 6A</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>AHPRA Number:</span>
+                            <span className="mono">MED0001892041</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Shift Schedule:</span>
+                            <span className="mono">08:00–16:30 AWST</span>
+                          </div>
+                        </div>
+                        <div className={styles.popoverActions}>
+                          <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            style={{ flex: 1 }}
+                            onClick={() => showToast("Verify authority is not wired in this prototype.")}
+                          >
+                            Verify Authority
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            style={{ flex: 1 }}
+                            onClick={() => {
+                              setIsOperatorModalOpen(true);
+                              setIsProfileOpen(false);
+                            }}
+                          >
+                            Switch Operator
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
-                  className={styles.profileBtnGhost}
-                  id="userProfileBtn"
-                  data-testid="clinical-operator-profile"
-                  aria-haspopup="dialog"
-                  aria-expanded={isProfileOpen}
-                  aria-controls="profilePopover"
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  title="Clinical Operator Profile · Dr S. Chen"
+                  className={buttonClass({ variant: "light", size: "sm" })}
+                  onClick={() => setIsOperatorModalOpen(true)}
                 >
-                  <span>Delegation</span>
-                  <ChevronDown size={13} className={styles.userChevron} aria-hidden="true" />
+                  Switch operator
                 </button>
+              </>
+            }
+          />
 
-                {isProfileOpen && (
-                  <div
-                    className={styles.profilePopover}
-                    id="profilePopover"
-                    data-testid="profile-popover"
-                    role="dialog"
-                    aria-label="Operator Profile Details"
-                  >
-                    <div className={styles.popoverHdr}>
-                      <div className={styles.popoverAvatar}>SC</div>
-                      <div className={styles.popoverIdentity}>
-                        <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
-                        <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
-                        <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
-                      </div>
-                    </div>
-                    <div className={styles.popoverBody}>
-                      <div className={styles.popoverSection}>
-                        <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
-                        <div className={styles.popoverRow}>
-                          <span>Where they work:</span>
-                          <span>Statewide Bed Desk</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Clinical Governance:</span>
-                          <span>SMHS &amp; WACHS Liaison</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Legal Forms:</span>
-                          <span className="mono">Forms 1A, 4A, 6A</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>AHPRA Number:</span>
-                          <span className="mono">MED0001892041</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Shift Schedule:</span>
-                          <span className="mono">08:00–16:30 AWST</span>
-                        </div>
-                      </div>
-                      <div className={styles.popoverActions}>
-                        <button
-                          type="button"
-                          className={styles.btnSecondary}
-                          style={{ flex: 1 }}
-                          onClick={() => showToast("Verify authority is not wired in this prototype.")}
-                        >
-                          Verify Authority
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnPrimary}
-                          style={{ flex: 1 }}
-                          onClick={() => {
-                            setIsOperatorModalOpen(true);
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Switch Operator
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Executive Live Telemetry & Quick Action Command Ribbon */}
-          <div className={styles.telemetryRibbon} data-testid="settings-telemetry-ribbon">
-            <div className={styles.telemetryLeftGroup}>
-              <div className={styles.telemetryTag}>
-                <Activity size={12} className={styles.telemetryPulseIcon} aria-hidden="true" />
-                <span>Telemetry</span>
-              </div>
-              <div className={styles.telemetryValuesRow}>
-                <span>
-                  ED: <b>{draft.edAccessTargetMinutes / 60}h</b>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  Cap: <b>{draft.parallelReferralCap}u</b>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  Hold: <b>{draft.pullHoldMinutes}m</b>
-                </span>
-              </div>
-            </div>
-
-            <div className={styles.telemetryActionsGroup}>
-              {hasUnsavedRules ? (
-                <div className={styles.statusPillDirty} role="status">
-                  <span className={styles.unsavedDot} aria-hidden="true" />
-                  <span>Unsaved changes — Save coordination rules to apply.</span>
-                </div>
-              ) : savedSurge ? (
-                <span className={styles.statusPillSurge}>
-                  <span className={styles.statusDotSurge} aria-hidden="true" /> SURGE VALUES SAVED
-                </span>
-              ) : (
-                <span className={styles.statusPillClean}>
-                  <span className={styles.statusDotClean} aria-hidden="true" /> CURRENT SAVED RULES
-                </span>
-              )}
-
-              <button
-                type="button"
-                className={`${styles.btnSurgeRibbon} ${isSurge ? styles.btnSurgeRibbonActive : ""}`}
-                onClick={handleToggleSurge}
-                aria-pressed={isSurge}
-                title="Select surge values in the unsaved draft"
-              >
-                <Plus size={13} aria-hidden="true" />
-                <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.btnRestoreRibbon}
-                onClick={() => setIsResetModalOpen(true)}
-                aria-haspopup="dialog"
-                title="Restore all defaults"
-              >
-                <RotateCcw size={13} aria-hidden="true" />
-                <span>Restore all defaults</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.btnSaveRibbon}
-                onClick={handleSave}
-                title="Save coordination rules"
-              >
-                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-                <span>Save coordination rules</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {configurationRejection && (
-          <div
-            className={styles.calloutCard}
-            data-tone="warn"
-            role="alert"
-            data-testid="ward-settings-configuration-refused"
-          >
-            <strong className={styles.calloutTitle}>Configuration change refused</strong>
-            <p className={styles.calloutText}>{configurationRejection.reason}</p>
-          </div>
-        )}
-
-        {/* Dynamic Island micro-HUD — reads the SAVED configuration, never the draft below */}
-        <WardDynamicIsland
-          testId="ward-settings-hud-island"
-          title="Now"
-          status={hasUnsavedRules ? "warning" : "nominal"}
-          statusText={
-            hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized"
-          }
-          ariaLabel="System operations status summary"
-          className={styles.hudWrapper}
-          metrics={[
-            {
-              id: "kpi-sync-status",
-              label: "Sync",
-              value: hasUnsavedRules ? "Draft (Unsaved)" : "Synced",
-              subtext: hasUnsavedRules ? "Pending Changes" : undefined,
-              tone: hasUnsavedRules ? "warn" : "good",
-              ariaLabel: hasUnsavedRules ? "Sync Status: Draft (Unsaved) Pending Changes" : "Sync Status: Synced",
-            },
-            {
-              id: "kpi-mode",
-              label: "Mode",
-              value: savedSurge ? "Surge Mode" : "Standard",
-              tone: savedSurge ? "danger" : "normal",
-            },
-            {
-              id: "kpi-morning-rollup",
-              label: "Rollup",
-              value: formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES),
-              subtext: `${configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES}m`,
-              tone: "accent",
-            },
-            {
-              id: "kpi-ed-target",
-              label: "ED Target",
-              value: `${configuration.edAccessTargetMinutes / 60}h`,
-              subtext: `${configuration.edAccessTargetMinutes}m`,
-              tone: "normal",
-            },
-            {
-              id: "kpi-pull-hold",
-              label: "Pull Hold",
-              value: `${configuration.pullHoldMinutes}m`,
-              tone: "normal",
-            },
-            {
-              id: "kpi-parallel-cap",
-              label: "Cap",
-              value: `${configuration.parallelReferralCap} Wards`,
-              tone: "normal",
-              ariaLabel: `Parallel Referral Cap: ${configuration.parallelReferralCap} Wards`,
-            },
-          ]}
-        />
-
-        {/* Settings Master Surface */}
-        <div className={styles.settingsSurface}>
-          {/* Master-Detail Body */}
-          <div className={styles.settingsBody}>
-            {/* Left Category Navigation Rail with Integrated Search */}
+          <div className={styles.toolbar} data-testid="settings-telemetry-ribbon">
+            {/* v6 Settings (7 Oct 2026): filter and domain choice sit in one toolbar row. */}
             <nav
               className={styles.categoryRail}
               data-testid="ward-settings-category-rail"
               aria-label="Settings Categories"
             >
-              {/* Floating Rail Executive Header */}
-              <div className={styles.railHeader}>
-                <div className={styles.railHeaderTitleRow}>
-                  <Sliders size={13} className={styles.railHeaderIcon} aria-hidden="true" />
-                  <span className={styles.railHeaderTitle}>Navigation</span>
-                </div>
-                <span className={styles.railHeaderBadge}>{SETTINGS_DOMAINS.length} Domains</span>
-              </div>
-
               {/* Integrated Sidebar Search */}
               <div className={styles.sidebarSearchWrap}>
                 <div className={styles.searchInputWrap}>
@@ -1034,7 +884,7 @@ export function SettingsScreen() {
                     data-testid="sidebar-search-input"
                     type="text"
                     className={styles.sidebarSearchInput}
-                    placeholder="Filter levers... (/)"
+                    placeholder="Filter settings"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoComplete="off"
@@ -1112,8 +962,6 @@ export function SettingsScreen() {
                 )}
               </div>
 
-              <div className={styles.domainNavDivider} aria-hidden="true" />
-
               <div className={styles.catListScroll}>
                 <button
                   type="button"
@@ -1121,15 +969,8 @@ export function SettingsScreen() {
                   aria-current={activeDomain === "all"}
                   onClick={() => handleDomainClick("all")}
                 >
-                  <div className={styles.catIconBox} aria-hidden="true">
-                    <Sliders size={14} className={styles.catIcon} aria-hidden="true" />
-                  </div>
-                  <div className={styles.catItemContent}>
-                    <div className={styles.catTitleRow}>
-                      <span className={styles.catTitle}>All Settings</span>
-                      <span className={styles.catCount}>{totalMatches}</span>
-                    </div>
-                  </div>
+                  <span className={styles.catTitle}>All</span>
+                  <span className={styles.catCount}>{totalMatches}</span>
                 </button>
 
                 {SETTINGS_DOMAINS.map((domain) => {
@@ -1142,21 +983,84 @@ export function SettingsScreen() {
                       aria-current={activeDomain === domain.id}
                       onClick={() => handleDomainClick(domain.id)}
                     >
-                      <div className={styles.catIconBox} aria-hidden="true">
-                        {getDomainIcon(domain.id)}
-                      </div>
-                      <div className={styles.catItemContent}>
-                        <div className={styles.catTitleRow}>
-                          <span className={styles.catTitle}>{domain.navLabel}</span>
-                          <span className={styles.catCount}>{count}</span>
-                        </div>
-                      </div>
+                      <span className={styles.catTitle} title={domain.navLabel}>
+                        {DOMAIN_CHIP_LABEL[domain.id] ?? domain.navLabel}
+                      </span>
+                      <span className={styles.catCount}>{count}</span>
                     </button>
                   );
                 })}
               </div>
             </nav>
+            <div className={styles.toolbarActions}>
+              {hasUnsavedRules ? (
+                <div className={styles.toolbarStatus} role="status">
+                  <StatusGlyph tone="warning" size={9} />
+                  <span>Unsaved changes — Save coordination rules to apply.</span>
+                </div>
+              ) : savedSurge ? (
+                <span className={styles.toolbarStatus}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Surge values saved
+                </span>
+              ) : (
+                <span className={styles.toolbarStatus}>
+                  <StatusGlyph tone="success" size={9} />
+                  Current saved rules
+                </span>
+              )}
 
+              <button
+                type="button"
+                className={buttonClass({ variant: isSurge ? "tint" : "ghost", size: "sm" })}
+                onClick={handleToggleSurge}
+                aria-pressed={isSurge}
+                title="Select surge values in the unsaved draft"
+              >
+                <Plus size={13} aria-hidden="true" />
+                <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
+              </button>
+
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                onClick={() => setIsResetModalOpen(true)}
+                aria-haspopup="dialog"
+                title="Restore all defaults"
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                <span>Restore all defaults</span>
+              </button>
+
+              <button
+                type="button"
+                className={buttonClass({ variant: "pri", size: "sm" })}
+                onClick={handleSave}
+                title="Save coordination rules"
+              >
+                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+                <span>Save coordination rules</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {configurationRejection && (
+          <div
+            className={styles.calloutCard}
+            data-tone="warn"
+            role="alert"
+            data-testid="ward-settings-configuration-refused"
+          >
+            <strong className={styles.calloutTitle}>Configuration change refused</strong>
+            <p className={styles.calloutText}>{configurationRejection.reason}</p>
+          </div>
+        )}
+
+        {/* Settings Master Surface */}
+        <div className={styles.settingsSurface}>
+          {/* Master-Detail Body */}
+          <div className={styles.settingsBody}>
             {/* Right Content Pane */}
             <div className={styles.contentPane}>
               {totalMatches === 0 ? (

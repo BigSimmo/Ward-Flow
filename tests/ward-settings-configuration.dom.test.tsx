@@ -62,10 +62,11 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select surge values" }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(beforeTarget);
     expect(screen.getByText("Unsaved changes — Save coordination rules to apply.")).toBeVisible();
-    expect(screen.queryByText("SURGE VALUES SAVED")).not.toBeInTheDocument();
+    // v6 Settings (7 Oct 2026): the toolbar status reads in sentence case.
+    expect(screen.queryByText("Surge values saved")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
-    expect(screen.getByText("SURGE VALUES SAVED")).toBeVisible();
+    expect(screen.getByText("Surge values saved")).toBeVisible();
     expect(screen.queryByText("Unsaved changes — Save coordination rules to apply.")).not.toBeInTheDocument();
   });
 
@@ -149,7 +150,9 @@ describe("settings screen configuration draft", () => {
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(String(defaults.edAccessTargetMinutes));
     expect(screen.getByTestId("probe-pull-hold").textContent).toBe(String(defaults.pullHoldMinutes));
     expect(screen.getByTestId("probe-parallel-cap").textContent).toBe(String(defaults.parallelReferralCap));
-    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(String(defaults.morningRollupDeadlineMinutes ?? 570));
+    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(
+      String(defaults.morningRollupDeadlineMinutes ?? 570),
+    );
     // Save (accepted) + Reset (accepted) = two recorded configuration audit events.
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 2);
   });
