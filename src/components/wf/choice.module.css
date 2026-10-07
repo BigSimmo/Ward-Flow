@@ -117,7 +117,7 @@
   font-size: var(--wf-fs-13);
 }
 
-.trk .segItem:hover {
+.trk .segItem:not(.segOn):hover {
   color: var(--wf-hero-ink);
 }
 
