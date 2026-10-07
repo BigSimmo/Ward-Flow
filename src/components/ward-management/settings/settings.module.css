@@ -5810,9 +5810,10 @@
   table-layout: fixed;
 }
 
+/* Cell padding, dividers, top alignment and the last-row rule all come from the canonical
+   `.table th`/`.table td` rule that `.table` composes (ward-table.module.css); only the card's
+   type and colours are set here. */
 .table.cardTable th {
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   color: var(--wf-ink-3);
   font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
@@ -5823,16 +5824,9 @@
 }
 
 .table.cardTable td {
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
   background: transparent;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  vertical-align: top;
-}
-
-.table.cardTable tr:last-child td {
-  border-bottom: 0;
 }
 
 .table.cardTable .cellStrong {
