@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { ShieldCheck, UsersRound } from "lucide-react";
 
 import { useTheme } from "@/components/clinical-dashboard/use-theme";
+import { Badge, Button, Icon, IconTile, Kbd, Segmented, StatusGlyph, TabPanel, Tabs, ToastView } from "@/components/wf";
 import type { ThemePreference } from "@/lib/theme";
 
 import {
@@ -16,8 +17,11 @@ import {
   type ShiftRosterId,
   SIGN_IN_ACTIONS,
   SIGN_IN_ACTION_NAMED,
+  SIGN_IN_ACTION_NAMED_SHORT,
+  SIGN_IN_READ_FIRST,
   SIGN_IN_REFUSED,
   SIGN_IN_ROLES,
+  type SignInAction,
   type SignInRefused,
   type SignInRoleId,
 } from "./ward-flow-sign-in-data";
@@ -25,6 +29,11 @@ import styles from "./ward-flow-sign-in-screen.module.css";
 
 /**
  * WARD FLOW — SIGN IN AND ROLE.
+ *
+ * v6 (7 October 2026): rebuilt to `design/pages-v6/SignIn.png` from the `@/components/wf` kit. One
+ * sheet in two halves: the chooser (catchment, shift, role, Preview) and the chosen role's reach
+ * (Actions, and Limits and safety). The mockup's "Waiting for you" figures and AWST clock are left
+ * out on purpose: this screen reads no live Ward Flow state (see below), so it has none to show.
  *
  * Drawing: `docs/ward-flow/mockups/sign-in-third-edition.html`. Contract:
  * `docs/ward-flow/build-contracts-2026-09-12/contract-sign-in.md`. **No route existed for this
@@ -95,7 +104,9 @@ export function WardFlowSignInScreen() {
   const [chosen, setChosen] = useState<SignInRoleId>(SIGN_IN_ROLES[0].id);
   const [selectedCatchment, setSelectedCatchment] = useState<CatchmentId>("Statewide");
   const [selectedShift, setSelectedShift] = useState<ShiftRosterId>("Morning");
+  const [tab, setTab] = useState<"actions" | "limits">("actions");
   const [announcement, setAnnouncement] = useState("");
+  const [toastOpen, setToastOpen] = useState(false);
   const { theme, preference, setPreference } = useTheme();
   const roleGroupId = useId();
 
@@ -113,6 +124,9 @@ export function WardFlowSignInScreen() {
   const role = roleById(chosen);
   const canDo = useMemo(() => actionsForRole(chosen), [chosen]);
   const cannotDo = useMemo(() => actionsNotForRole(chosen), [chosen]);
+  const catchment = CATCHMENT_OPTIONS.find((c) => c.id === selectedCatchment) ?? CATCHMENT_OPTIONS[0];
+  const shift = SHIFT_ROSTER_OPTIONS.find((s) => s.id === selectedShift) ?? SHIFT_ROSTER_OPTIONS[0];
+  const limitCount = SIGN_IN_REFUSED.length + SIGN_IN_READ_FIRST.length;
 
   // The reconciliation check the drawing itself runs on every render (script lines 4991-5045):
   // every role's two lists must add to the full action count, and every action must name at
@@ -134,8 +148,9 @@ export function WardFlowSignInScreen() {
     return problems;
   }, []);
 
-  function chooseRole(id: SignInRoleId) {
+  const chooseRole = useCallback((id: SignInRoleId) => {
     setChosen(id);
+    setToastOpen(false);
     const next = roleById(id);
     const can = actionsForRole(id).length;
     const cannot = actionsNotForRole(id).length;
@@ -144,396 +159,382 @@ export function WardFlowSignInScreen() {
         cannot ? `${cannot} are named for another.` : "none are named for another."
       }`,
     );
-  }
+  }, []);
 
-  function pressSignIn() {
+  const pressSignIn = useCallback(() => {
     // Deliberately no navigation, no dispatch, no network call — see this component's own
     // header comment. The drawing's own handler is the same one line: announce what would open.
     setAnnouncement(
       `Sign in as ${role.as} would open ${role.opens}. Not wired in this prototype, so nothing has opened.`,
     );
-  }
+    setToastOpen(true);
+  }, [role]);
+
+  // v6 (7 Oct 2026): the role list's number keys and the Preview button's Enter hint are real.
+  // Digits pick a role unless the reader is typing; Enter previews only when no control has focus,
+  // so it never steals a focused button's own Enter.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      const index = Number(event.key) - 1;
+      if (/^[1-9]$/.test(event.key) && SIGN_IN_ROLES[index]) {
+        event.preventDefault();
+        chooseRole(SIGN_IN_ROLES[index].id);
+        return;
+      }
+      if (event.key === "Enter" && !target?.closest("button, a, summary, [role='tab'], [role='radio']")) {
+        event.preventDefault();
+        pressSignIn();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [chooseRole, pressSignIn]);
 
   return (
-    <main className={styles.wrap}>
-      <header className={styles.portalMasthead}>
-        <div className={styles.brandBlock}>
-          <div className={styles.brandGov}>
-            <span>Government of Western Australia</span>
-            <span>·</span>
-            <span>Department of Health</span>
-            <span className={styles.waBadge}>WA</span>
-          </div>
-          <div className={styles.brandTitleRow}>
-            <p className={styles.brand}>
-              <b>Ward Flow</b>
-              <span aria-hidden="true">WF</span>
-            </p>
-            <h1 id="sign-in-title" className={styles.title}>
-              Sign in
-            </h1>
-            <span className={styles.brandSub}>Bed coordination (demo)</span>
-          </div>
-        </div>
-
-        <div className={styles.mastheadControls}>
-          <span className={styles.statusPill}>
-            <span>Prototype role preview</span>
-          </span>
-          <span className={styles.statusPill}>
-            <span>Synthetic service data · No live connection</span>
-          </span>
-          <div className={styles.themeGroup} role="group" aria-label="Look">
-            <AppearanceGroup preference={preference} onChange={setPreference} />
-          </div>
+    <main className={styles.page}>
+      <header className={styles.masthead}>
+        <p className={styles.brand}>
+          <span className={styles.wordmark}>Ward Flow</span>
+          <Badge size="sm">WA</Badge>
+          <span className={styles.gov}>Government of Western Australia · Department of Health</span>
+        </p>
+        <div className={styles.look}>
+          <h2 id="appearance-label" className="sr-only">
+            Appearance
+          </h2>
+          <Segmented
+            label="Appearance"
+            items={APPEARANCE_OPTIONS}
+            value={preference}
+            onChange={(next) => setPreference(next)}
+          />
         </div>
       </header>
 
-      <section className={styles.card} aria-labelledby="sign-in-title">
-        {/* Operational Context Setup: Catchment & Shift */}
-        <div className={styles.contextStrip} aria-label="Operational Shift Context">
-          <div className={styles.contextCol}>
-            <span className={styles.contextColLabel}>Catchment</span>
-            <div className={styles.pillGroup} role="group" aria-label="Catchment">
-              {CATCHMENT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`${styles.contextBtn} ${opt.svcClass ? styles[opt.svcClass] : ""}`}
-                  aria-pressed={selectedCatchment === opt.id}
-                  onClick={() => {
-                    setSelectedCatchment(opt.id);
-                    setAnnouncement(`Catchment set to: ${opt.name}`);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.contextCol}>
-            <span className={styles.contextColLabel}>Active Shift Roster</span>
-            <div className={styles.pillGroup} role="group" aria-label="Active Shift Roster">
-              {SHIFT_ROSTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={styles.contextBtn}
-                  aria-pressed={selectedShift === opt.id}
-                  onClick={() => {
-                    setSelectedShift(opt.id);
-                    setAnnouncement(`Shift set to: ${opt.name}`);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.body}>
-          <section className={styles.safety} aria-labelledby="sec-disc">
-            <div>
-              <h2 id="sec-disc" className={styles.sectionHeading}>
-                Read this before you go in
-              </h2>
-              <p className={styles.lead}>Prototype data only. Confirm every figure against the ward record.</p>
-            </div>
-            <details className={styles.safetyDisclosure}>
-              <summary>Safety and access details</summary>
-              <div className={styles.disclaimer}>
-                <p>Ward Flow is a prototype, not a medical device and not clinical decision support.</p>
-                <p>
-                  Every ward state, movement, referral, clock, count and figure on these screens is invented. The
-                  hospital sites and health services are real WA names.
-                </p>
-                <p>
-                  Ward Flow places nobody. A coordinator decides every placement and records it, and every figure here
-                  is to be checked against the ward&apos;s own record before anyone acts on it.
-                </p>
-                <p>
-                  The reach each role is given below is read from the screens index of the Ward Flow design system,
-                  which is a drawing of a tool. The live product&apos;s permissions are set outside Ward Flow.
-                </p>
-                <section aria-labelledby="sec-who">
-                  <h2 id="sec-who" className={styles.sectionHeading}>
-                    Who you are, and what you may do
-                  </h2>
-                  <p>
-                    Who you are is settled by the hospital&apos;s own sign on, which sits outside Ward Flow and is drawn
-                    nowhere in this prototype. This screen holds no password field, because a drawing of a tool must
-                    never be somewhere a real password is typed.
-                  </p>
-                  <p>
-                    Role selection previews the drawing&apos;s workspace and actions. It does not sign anyone in or
-                    grant permissions.
-                  </p>
-                </section>
-              </div>
-            </details>
-          </section>
-
-          {/* Third Edition Role Selection Section */}
-          <section className={styles.sectionHeader} aria-labelledby="sec-role">
-            <div>
-              <h2 id="sec-role" className={styles.sectionTitle}>
-                <span>Your role</span>
-              </h2>
-              <div className={styles.sectionSub}>
-                Choose a role to preview its workspace. This does not verify identity or grant access.
-              </div>
-            </div>
-            <span className={styles.sectionMeta} id="roleGridTally">
-              {SIGN_IN_ROLES.length} role previews · 1 selected
+      <div className={styles.sheet}>
+        <section className={styles.chooser} aria-labelledby="sign-in-title">
+          <div className={styles.titleRow}>
+            <span className={styles.mark} aria-hidden="true">
+              WF
             </span>
-          </section>
+            <div className={styles.titleText}>
+              <h1 id="sign-in-title" className={styles.title}>
+                Sign in
+              </h1>
+              <p className={styles.subtitle}>Choose a role to preview</p>
+            </div>
+            <Badge tone="neutral">Role preview</Badge>
+          </div>
 
-          {/* Third Edition Role Grid */}
-          <div className={styles.roleGrid} id={roleGroupId} role="group" aria-labelledby="sec-role">
-            {SIGN_IN_ROLES.map((candidate) => {
-              const n = actionsForRole(candidate.id).length;
-              const isSelected = candidate.id === chosen;
-              return (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  className={styles.roleCard}
-                  aria-pressed={isSelected}
-                  onClick={() => chooseRole(candidate.id)}
-                >
-                  <div className={styles.roleBadgeRow}>
-                    <span className={styles.roleScopeBadge}>{candidate.scopeBadge}</span>
-                    <span className={styles.roleActiveIndicator} aria-hidden="true" />
-                  </div>
-                  <div className={styles.roleTitle}>{candidate.name}</div>
-                  <div className={styles.roleDesc}>{candidate.sub}</div>
-                  <div className={styles.roleMetaRow}>
+          <details className={styles.notice}>
+            <summary className={styles.noticeSummary}>
+              <Icon icon={ShieldCheck} size={14} className={styles.noticeIcon} />
+              <span className={styles.noticeText}>
+                <strong>Synthetic data.</strong> No live link. No password field.
+              </span>
+              <span className={styles.noticeMore}>Details</span>
+            </summary>
+            <div className={styles.noticeBody}>
+              <p>Ward Flow is a prototype, not a medical device and not clinical decision support.</p>
+              <p>
+                Every ward state, movement, referral, clock, count and figure on these screens is invented. The hospital
+                sites and health services are real WA names.
+              </p>
+              <p>
+                Ward Flow places nobody. A coordinator decides every placement and records it, and every figure here is
+                to be checked against the ward&apos;s own record before anyone acts on it.
+              </p>
+              <p>
+                The reach each role is given below is read from the screens index of the Ward Flow design system, which
+                is a drawing of a tool. The live product&apos;s permissions are set outside Ward Flow.
+              </p>
+              <section aria-labelledby="sec-who">
+                <h2 id="sec-who" className={styles.noticeHeading}>
+                  Who you are, and what you may do
+                </h2>
+                <p>
+                  Who you are is settled by the hospital&apos;s own sign on, which sits outside Ward Flow and is drawn
+                  nowhere in this prototype. This screen holds no password field, because a drawing of a tool must never
+                  be somewhere a real password is typed.
+                </p>
+                <p>
+                  Role selection previews the drawing&apos;s workspace and actions. It does not sign anyone in or grant
+                  permissions.
+                </p>
+              </section>
+            </div>
+          </details>
+
+          <div className={styles.group}>
+            <div className={styles.labelRow}>
+              <span className={styles.label}>Catchment</span>
+              <span className={styles.labelMeta}>{catchment.name}</span>
+            </div>
+            <Segmented
+              label="Catchment"
+              size="md"
+              className={styles.fullSegmented}
+              items={CATCHMENT_OPTIONS.map((option) => ({ id: option.id, label: option.id }))}
+              value={selectedCatchment}
+              onChange={(id) => {
+                setSelectedCatchment(id);
+                setAnnouncement(`Catchment set to ${CATCHMENT_OPTIONS.find((c) => c.id === id)?.name ?? id}.`);
+              }}
+            />
+          </div>
+
+          <div className={styles.group}>
+            <div className={styles.labelRow}>
+              <span className={styles.label}>Shift</span>
+              <span className={styles.labelMeta}>{shift.hours}</span>
+            </div>
+            <Segmented
+              label="Shift"
+              size="md"
+              className={styles.fullSegmented}
+              items={SHIFT_ROSTER_OPTIONS.map((option) => ({ id: option.id, label: option.id }))}
+              value={selectedShift}
+              onChange={(id) => {
+                setSelectedShift(id);
+                setAnnouncement(`Shift set to ${SHIFT_ROSTER_OPTIONS.find((s) => s.id === id)?.name ?? id}.`);
+              }}
+            />
+          </div>
+
+          <section className={styles.group} aria-labelledby="sec-role">
+            <div className={styles.labelRow}>
+              <h2 id="sec-role" className={styles.label}>
+                Your role
+              </h2>
+              <span className={styles.labelMeta}>Actions named, of {SIGN_IN_ACTIONS.length}</span>
+            </div>
+            <div className={styles.roleList} id={roleGroupId} role="group" aria-labelledby="sec-role">
+              {SIGN_IN_ROLES.map((candidate, index) => {
+                const n = actionsForRole(candidate.id).length;
+                const isSelected = candidate.id === chosen;
+                return (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    className={styles.roleRow}
+                    aria-pressed={isSelected}
+                    onClick={() => chooseRole(candidate.id)}
+                    title={candidate.sub}
+                  >
+                    <span className={styles.radio} aria-hidden="true" />
+                    <span className={styles.roleText}>
+                      <span className={styles.roleName}>{candidate.name}</span>
+                      <span className={styles.roleBrief}>{candidate.brief}</span>
+                    </span>
+                    <span className={styles.roleScope}>{candidate.scopeBadge}</span>
                     <span
-                      className={styles.roleTag}
+                      className={styles.roleCount}
                       title={`Actions on this screen this role is named for, of ${SIGN_IN_ACTIONS.length} in all`}
                     >
                       {n} of {SIGN_IN_ACTIONS.length}
                     </span>
-                    <span className={styles.roleTargetChip}>{candidate.opens}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Third Edition Interactive Permissions Inspector */}
-          <section className={styles.permInspector} id="permInspector" aria-label="Operational Authority Scope">
-            <div className={styles.permHeader}>
-              <div className={styles.permHeaderTitle}>
-                <span>Operational Authority Scope</span>
-                <span>·</span>
-                <span style={{ color: "var(--accent-ink)", fontWeight: 700 }}>{role.name}</span>
-              </div>
-              <span className={styles.permHeaderTarget} id="permTargetBadge">
-                Workspace: {role.targetChip}
-              </span>
-            </div>
-
-            <div className={styles.permGrid}>
-              {/* What this role can do */}
-              <div className={styles.permCol}>
-                <div className={styles.permColHead}>
-                  <h2 id="sec-can" className={`${styles.permColLabel} ${styles.good}`}>
-                    <span>What {role.the} can do</span>
-                  </h2>
-                  <span className={`${styles.permBadge} ${styles.good}`} id="canBadge">
-                    {canDo.length} of {SIGN_IN_ACTIONS.length}
-                  </span>
-                </div>
-                <ul className={styles.permItems} id="canList">
-                  {canDo.length === 0 ? (
-                    <li className={styles.noneRow}>No action on this screen is named for this role.</li>
-                  ) : (
-                    canDo.map((action) => (
-                      <li className={styles.permItem} key={action.words}>
-                        <span className={`${styles.permIcon} ${styles.good}`} aria-hidden="true">
-                          <Check aria-hidden="true" size={14} />
-                        </span>
-                        <div className={styles.permItemContent}>
-                          <strong className={styles.permItemWords}>{action.words}</strong>
-                          <span className={styles.permItemDesc}>{action.where}</span>
-                        </div>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-
-              {/* What this role cannot do */}
-              <div className={styles.permCol}>
-                <div className={styles.permColHead}>
-                  <h2 id="sec-cant" className={`${styles.permColLabel} ${styles.boundary}`}>
-                    <span>What {role.the} cannot do</span>
-                  </h2>
-                  <span className={`${styles.permBadge} ${styles.boundary}`} id="cannotBadge">
-                    {cannotDo.length} of {SIGN_IN_ACTIONS.length}
-                  </span>
-                </div>
-                <details className={styles.permissionDisclosure}>
-                  <summary>Review restrictions ({cannotDo.length})</summary>
-                  <ul className={styles.permItems} id="cannotList">
-                    {cannotDo.length === 0 ? (
-                      <li className={styles.noneRow}>Every action on this screen is named for this role.</li>
-                    ) : (
-                      cannotDo.map((action) => (
-                        <li className={styles.permItem} key={action.words}>
-                          <span className={`${styles.permIcon} ${styles.boundary}`} aria-hidden="true">
-                            <X aria-hidden="true" size={14} />
-                          </span>
-                          <div className={styles.permItemContent}>
-                            <strong className={styles.permItemWords}>{action.words}</strong>
-                            <span className={styles.permItemDesc}>
-                              The screens index names {SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.
-                            </span>
-                          </div>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                  <p className={styles.note}>
-                    Each row names the role the screens index gives that action to. The index also names triage, the
-                    incoming coordinator and a community team.
-                  </p>
-                </details>
-              </div>
+                    <Kbd className={styles.roleKey}>{index + 1}</Kbd>
+                  </button>
+                );
+              })}
             </div>
           </section>
 
-          {/* Lower Governance and Action Sections */}
-          <div className={styles.lowerSections}>
-            <section className={styles.permissionPanel} aria-labelledby="sec-all">
-              <h2 id="sec-all" className={styles.sectionHeading}>
-                <span>Refused to every role</span>
-                <span className={styles.count}>{SIGN_IN_REFUSED.length} in all</span>
-              </h2>
-              <details className={styles.permissionDisclosure}>
-                <summary>Review universal limits</summary>
-                <RefusedList list={SIGN_IN_REFUSED} />
-              </details>
-            </section>
-
-            <p className={styles.checkLine} data-ok={reconciliation.length === 0}>
-              {reconciliation.length === 0 ? (
-                <span>Role descriptions are examples; access is not enforced by this preview.</span>
-              ) : (
-                <span>{reconciliation.length} figures on this page disagree with each other.</span>
-              )}
-            </p>
-
-            <section className={styles.selectedRole} aria-labelledby="sec-go">
-              <div>
-                <p className={styles.eyebrow}>Selected role</p>
-                <h2 id="sec-go">Go in</h2>
-                <p className={styles.selectedName}>{role.name}</p>
-                <p className={styles.selectedNote}>Role preview only. No account or session is created.</p>
-              </div>
-              <button type="button" className={styles.primaryButton} onClick={pressSignIn}>
-                Preview as {role.as}
-              </button>
-              <p className={announcement === "" ? styles.srOnly : styles.actionStatus} role="status" aria-live="polite">
-                {announcement}
-              </p>
-            </section>
-          </div>
-        </div>
-
-        <footer className={styles.cardFooter}>
-          <div className={styles.footerSessionInfo}>
-            <div className={styles.sessionMetaLine}>
-              <span>Selected preview context</span>
-              <span>·</span>
-              <span>No directory connection</span>
-            </div>
-            <div className={styles.sessionDetailLine}>
-              <span>{CATCHMENT_OPTIONS.find((c) => c.id === selectedCatchment)?.name}</span>
-              <span> · </span>
-              <span>{SHIFT_ROSTER_OPTIONS.find((s) => s.id === selectedShift)?.name}</span>
-            </div>
-          </div>
-        </footer>
-
-        <div className={styles.foot}>
-          <div className={styles.footRow}>
-            <h2 id="appearance-label" className={styles.footHeading}>
-              Appearance
+          <section className={styles.go} aria-labelledby="sec-go">
+            <h2 id="sec-go" className="sr-only">
+              Go in
             </h2>
-            <AppearanceGroup preference={preference} onChange={setPreference} />
-          </div>
-          <p className={styles.note}>Light, dark or automatic, remembered for this browser only.</p>
-        </div>
-      </section>
+            <span className={styles.goContext}>
+              {catchment.id} · {shift.id} · {role.name}
+            </span>
+            <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
+              Preview as {role.as}
+            </Button>
+          </section>
+        </section>
 
-      {/* Mandatory Prototype Disclosure */}
+        <section className={styles.reach} aria-labelledby="sec-chosen">
+          <div className={styles.reachHead}>
+            <IconTile icon={UsersRound} />
+            <div className={styles.titleText}>
+              <h2 id="sec-chosen" className={styles.reachTitle}>
+                {role.name}
+              </h2>
+              <p className={styles.subtitle}>Opens {role.opens}</p>
+            </div>
+            <span className={styles.labelMeta}>
+              {catchment.id} · {shift.id} shift
+            </span>
+          </div>
+
+          <Tabs
+            label={`What ${role.the} is named for`}
+            idPrefix="sign-in"
+            className={styles.tabs}
+            value={tab}
+            onChange={setTab}
+            items={[
+              { id: "actions", label: "Actions", count: `${canDo.length} of ${SIGN_IN_ACTIONS.length}` },
+              { id: "limits", label: "Limits and safety", count: limitCount },
+            ]}
+          />
+
+          {/* Both panels stay mounted and only `hidden` changes, so each tab's aria-controls
+              always points at an element that exists. */}
+          <TabPanel idPrefix="sign-in" id="actions" className={styles.panel} hidden={tab !== "actions"}>
+            <h3 id="sec-can" className="sr-only">
+              What {role.the} can do, {canDo.length} of {SIGN_IN_ACTIONS.length}
+            </h3>
+            <ul className={styles.list} id="canList" aria-labelledby="sec-can">
+              {canDo.length === 0 ? (
+                <li className={styles.none}>No action on this screen is named for this role.</li>
+              ) : (
+                canDo.map((action) => (
+                  <li className={styles.item} key={action.words} title={action.where}>
+                    <StatusGlyph tone="success" size={10} />
+                    <strong className={styles.itemWords}>
+                      <ActionWords action={action} />
+                    </strong>
+                    <span className={styles.itemNote}>{action.place}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+            <h3 id="sec-cant" className="sr-only">
+              What {role.the} cannot do, {cannotDo.length} of {SIGN_IN_ACTIONS.length}
+            </h3>
+            <ul className={styles.list} id="cannotList" aria-labelledby="sec-cant">
+              {cannotDo.length === 0 ? (
+                <li className={styles.none}>Every action on this screen is named for this role.</li>
+              ) : (
+                cannotDo.map((action) => (
+                  <li
+                    className={`${styles.item} ${styles.itemOff}`}
+                    key={action.words}
+                    title={`The screens index names ${SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.`}
+                  >
+                    <StatusGlyph tone="closed" size={10} />
+                    <span className={styles.itemWords}>
+                      <ActionWords action={action} />
+                    </span>
+                    <span className={`${styles.itemNote} ${styles.itemNoteLine}`} aria-hidden="true">
+                      Named for{" "}
+                      {SIGN_IN_ACTION_NAMED_SHORT[action.words] ?? SIGN_IN_ACTION_NAMED[action.words] ?? "another role"}
+                    </span>
+                    <span className="sr-only">
+                      . The screens index names {SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </TabPanel>
+          <TabPanel idPrefix="sign-in" id="limits" className={styles.panel} hidden={tab !== "limits"}>
+            <h3 id="sec-all" className={styles.panelHeading}>
+              Refused to every role
+              <span className="sr-only">, {SIGN_IN_REFUSED.length} in all</span>
+            </h3>
+            <LimitList list={SIGN_IN_REFUSED} tone="closed" labelledBy="sec-all" />
+            <h3 id="sec-disc" className={styles.panelHeading}>
+              Read this before you go in
+            </h3>
+            <LimitList list={SIGN_IN_READ_FIRST} tone="neutral" labelledBy="sec-disc" />
+          </TabPanel>
+
+          <p className={styles.check} data-ok={reconciliation.length === 0}>
+            {reconciliation.length === 0 ? (
+              <>
+                <span className={styles.checkLead}>
+                  <StatusGlyph tone="success" size={10} />
+                  {SIGN_IN_ACTIONS.length} actions reconcile across {SIGN_IN_ROLES.length} roles
+                </span>
+                <span>Preview only, access is not enforced</span>
+              </>
+            ) : (
+              <span className={styles.checkLead}>
+                <StatusGlyph tone="warning" size={10} />
+                {reconciliation.length} figures on this page disagree with each other.
+              </span>
+            )}
+          </p>
+
+          <div className={styles.toastDock} role="status" aria-live="polite">
+            {toastOpen ? (
+              <ToastView
+                tone="info"
+                title={`${role.name} would open ${role.opens}`}
+                body="Not wired in this prototype, so nothing has opened."
+                onClose={() => setToastOpen(false)}
+                closeLabel="Dismiss preview note"
+              />
+            ) : (
+              <span className="sr-only">{announcement}</span>
+            )}
+          </div>
+        </section>
+      </div>
+
       {/*
         Kept local rather than reusing WardPrototypeFooter: this screen sits outside
         src/components/ward-management on purpose and must import none of it (tests/ward-flow-seam.test.ts).
       */}
-      <aside className={styles.prototypeNotice} aria-label="Prototype disclosure" data-testid="ward-sign-in-governance">
-        <span className={styles.prototypeBadge} data-ward-type-floor="badge">
-          <span className={styles.pulseDot} aria-hidden="true" />
+      <aside className={styles.footer} aria-label="Prototype disclosure" data-testid="ward-sign-in-governance">
+        <span className={styles.footerBadge} data-ward-type-floor="badge">
+          <StatusGlyph tone="neutral" size={10} />
           Synthetic prototype
         </span>
-        <p className={styles.prototypeNote} data-ward-type-floor="banner">
+        <p className={styles.footerNote} data-ward-type-floor="banner">
           Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
           not clinical decision support.
         </p>
-        <p className={styles.authorityPill}>Synthetic data only</p>
+        <p className={styles.footerMeta}>No account or session is created</p>
       </aside>
     </main>
   );
 }
 
-function RefusedList({ list }: { list: readonly SignInRefused[] }) {
+/** The action's words, or its short form on screen with the full words for screen readers. */
+function ActionWords({ action }: { action: SignInAction }) {
+  if (!action.short) return <>{action.words}</>;
+  return (
+    <>
+      <span aria-hidden="true">{action.short}</span>
+      <span className="sr-only">{action.words}</span>
+    </>
+  );
+}
+
+function LimitList({
+  list,
+  tone,
+  labelledBy,
+}: {
+  list: readonly SignInRefused[];
+  tone: "closed" | "neutral";
+  labelledBy: string;
+}) {
   if (list.length === 0) {
-    return <p className={styles.noneRow}>Nothing on this screen is refused to every role.</p>;
+    return <p className={styles.none}>Nothing on this screen is refused to every role.</p>;
   }
   return (
-    <div className={styles.rows}>
+    <ul className={styles.list} aria-labelledby={labelledBy}>
       {list.map((item) => (
-        <div className={styles.row} key={item.words}>
-          <p className={styles.rowTop}>
-            <strong>{item.words}</strong>
-          </p>
-          <p className={styles.rowSub}>{item.where}</p>
-        </div>
+        <li className={styles.item} key={item.words} title={item.where}>
+          <StatusGlyph tone={tone} size={10} />
+          <span className={styles.itemWords}>{item.words}</span>
+          <span className={styles.itemNote}>{item.brief}</span>
+          <span className="sr-only">. {item.where}</span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
-const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "Auto" },
+const APPEARANCE_OPTIONS: { id: ThemePreference; label: string }[] = [
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+  { id: "system", label: "Auto" },
 ];
-
-function AppearanceGroup({
-  preference,
-  onChange,
-}: {
-  preference: ThemePreference;
-  onChange: (next: ThemePreference) => void;
-}) {
-  return (
-    <div className={styles.appearance} role="group" aria-labelledby="appearance-label">
-      {APPEARANCE_OPTIONS.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          className={styles.appearanceButton}
-          aria-pressed={preference === option.value}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}

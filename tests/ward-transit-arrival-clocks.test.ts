@@ -150,7 +150,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementEta.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("⏱ ETA in 45m · St John Ambulance");
+      expect(pill).toHaveTextContent("ETA in 45m · St John Ambulance");
     });
 
     it("renders overdue warning pill when now > estimatedArrivalAt + 60", () => {
@@ -167,7 +167,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-overdue-${movementOverdue.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("⚠ Overdue ETA (+2h) · RFDS");
+      expect(pill).toHaveTextContent("ETA passed 2h 05m · RFDS");
     });
 
     it("renders transit hold pill when arrivalDetails has no estimatedArrivalAt", () => {
@@ -184,7 +184,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementHoldArrival.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("⏱ Transit: 4h hold (Self Arrival)");
+      expect(pill).toHaveTextContent("In transit, 4h hold · Self Arrival");
     });
 
     it("renders default 4h hold pill when movement.stage is pulled without arrivalDetails", () => {
@@ -201,7 +201,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-hold-${movementPulled.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("⏱ Pulled · 4h hold clock active");
+      expect(pill).toHaveTextContent("Pulled, 4h hold");
     });
   });
 

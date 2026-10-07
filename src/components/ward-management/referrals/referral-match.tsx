@@ -876,6 +876,20 @@ export function ReferralMatchView({
     setCheckToken((token) => token + 1);
   }
 
+  /**
+   * The tier-1 card's own route into the same gender-placement form: a plain accept there would
+   * only meet `GENDER_PLACEMENT_REFUSAL` in the reducer. Opens the unit's travel-band group and
+   * moves focus to the form's reason, so the one form (and the one dispatch) stays in `MatchRow`.
+   */
+  function revealGenderPlacementForm(unitId: string) {
+    const reason = document.getElementById(`ward-referral-match-gender-placement-reason-${unitId}`);
+    if (!reason) return;
+    const group = reason.closest("details");
+    if (group && !group.open) group.open = true;
+    reason.scrollIntoView?.({ block: "center" });
+    reason.focus();
+  }
+
   /*
    * The optional local-bed step (spec D8-6). One control, on this screen, creating a record only
    * when it is taken — never a field on the intake form, because a form field is the one shape
@@ -1376,9 +1390,20 @@ export function ReferralMatchView({
                             {hospitalName} · {c.unit.cohort} · Contact not recorded
                           </div>
                         </div>
-                        <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
-                          Accept at {c.unit.name}
-                        </button>
+                        {needsGenderPlacement(c.unit.id) ? (
+                          <button
+                            type="button"
+                            className={styles.btnGood}
+                            data-testid={`ward-referral-match-tier-1-gender-placement-${c.unit.id}`}
+                            onClick={() => revealGenderPlacementForm(c.unit.id)}
+                          >
+                            Check placement at {c.unit.name}
+                          </button>
+                        ) : (
+                          <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
+                            Accept at {c.unit.name}
+                          </button>
+                        )}
                       </div>
 
                       <div className={styles.unitIntelRow}>

@@ -5,6 +5,8 @@ import type { DeclineEntry } from "@/components/ward-management/ward-derivations
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { Unit } from "@/components/ward-management/ward-model";
 
+import { StatusGlyph } from "@/components/wf";
+
 import styles from "./decline-register.module.css";
 
 /**
@@ -60,23 +62,27 @@ export function DeclineRegister({ entries, units, now }: DeclineRegisterProps) {
             className={styles.entry}
             data-testid={`ward-decline-entry-${entry.movement.id}-${index}`}
           >
-            <div className={styles.entryHeader}>
-              {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-              <strong>{patientOf(entry.movement).formalName}</strong>
-              <span className={styles.entryMeta}>{formatInstantWithDay(entry.decline.at, now)}</span>
-            </div>
-            <span className={styles.entryMeta}>
-              {/* An id the live unit list cannot name still says the id rather than being
-                  dropped — the same conservative-failure choice `OverrideRegister` makes. */}
-              Declined by {unit ? unit.name : entry.decline.unitId}
+            {/* v6 Home mockup: the declining ward leads, then patient and reason, then the time. */}
+            <span className={styles.entryMain}>
+              <strong className={styles.entryUnit}>
+                {/* An id the live unit list cannot name still says the id rather than being
+                    dropped — the same conservative-failure choice `OverrideRegister` makes. */}
+                <span className="sr-only">Declined by </span>
+                {unit ? unit.name : entry.decline.unitId}
+              </strong>
+              <span className={styles.entryMeta}>
+                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                {patientOf(entry.movement).formalName} ·{" "}
+                {/* `DeclineReason` is a controlled-vocabulary identifier (`DECLINE_REASONS`), never
+                    free text. The same `replace(/_/g, " ")` rendering the shortlist panel uses. */}
+                <span className={styles.entryReason} data-testid={`ward-decline-reason-${entry.movement.id}-${index}`}>
+                  {entry.decline.reason.replace(/_/g, " ")}
+                </span>
+              </span>
             </span>
-            {/* `DeclineReason` is a controlled-vocabulary identifier (`DECLINE_REASONS`), never
-                free text (see `Decline`'s own doc comment on why there is no `note` field). The
-                same `replace(/_/g, " ")` rendering the shortlist panel's own per-movement declines
-                section already uses (`shortlist-panel.tsx`), so one decline reads the same way
-                whether it is seen against a single patient or in this whole-network register. */}
-            <span className={styles.entryReason} data-testid={`ward-decline-reason-${entry.movement.id}-${index}`}>
-              {entry.decline.reason.replace(/_/g, " ")}
+            <span className={styles.entryTime}>
+              <StatusGlyph tone="closed" size={9} />
+              {formatInstantWithDay(entry.decline.at, now)}
             </span>
           </li>
         );

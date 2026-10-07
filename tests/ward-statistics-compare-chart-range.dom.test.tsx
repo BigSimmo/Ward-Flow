@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect, it, vi } from "vitest";
 
@@ -15,43 +15,56 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { allUnits } from "@/components/ward-management/ward-sites";
 import * as statistics from "@/components/ward-management/ward-statistics";
 
+/*
+ * v6 (components.md BarList): the ward chart is the shared bar list, not a hand-drawn SVG. Its
+ * screen-reader list carries one item per charted ward, its bars are widths inside their track,
+ * and an unrecorded average is left out of the bars and named in words beneath them.
+ */
+function chartFigure(): HTMLElement {
+  // The bar list names itself in a visually hidden figcaption.
+  return screen.getByText("Ward average length of stay bar chart").closest("figure")!;
+}
+
+function chartItems(chart: HTMLElement): string[] {
+  return within(chart)
+    .getAllByRole("listitem", { hidden: true })
+    .map((item) => item.textContent ?? "")
+    .filter((text) => !text.startsWith("Mean"));
+}
+
 it("keeps recorded ward stays and their printed values inside the chart without a target", () => {
   render(
     <WardFlowProvider>
       <StatisticsCompareScreen />
     </WardFlowProvider>,
   );
-  const chart = screen.getByLabelText("Ward average length of stay bar chart");
-  const box = chart.getAttribute("viewBox")!.split(" ").map(Number);
-  const bars = within(chart).getAllByRole("graphics-symbol");
-  expect(bars).toHaveLength(allUnits().length);
+  const chart = chartFigure();
+  const items = chartItems(chart);
+  expect(items).toHaveLength(allUnits().length);
   expect(chart.textContent).not.toMatch(/target/i);
-  const printedValues = [...chart.querySelectorAll("text")].filter((text) => /^\d+\.\d+$/.test(text.textContent ?? ""));
-  expect(printedValues.length).toBeGreaterThan(0);
+  const bars = [...chart.querySelectorAll<HTMLElement>('[aria-hidden="true"] span[style*="width"]')];
+  expect(bars.length).toBeGreaterThan(0);
   for (const bar of bars) {
-    const x = Number(bar.getAttribute("x"));
-    const y = Number(bar.getAttribute("y"));
-    expect(x).toBeGreaterThanOrEqual(0);
-    expect(y).toBeGreaterThanOrEqual(0);
-    expect(x + Number(bar.getAttribute("width"))).toBeLessThanOrEqual(box[2]!);
-    expect(y + Number(bar.getAttribute("height"))).toBeLessThanOrEqual(box[3]!);
-    expect(bar.getAttribute("fill")).not.toMatch(/warn|good|gilt/);
+    const width = Number.parseFloat(bar.style.width);
+    expect(width).toBeGreaterThanOrEqual(0);
+    expect(width).toBeLessThanOrEqual(100);
   }
-  for (const text of printedValues) {
-    expect(Number(text.getAttribute("y"))).toBeGreaterThanOrEqual(0);
-    expect(Number(text.getAttribute("y"))).toBeLessThan(box[3]!);
-  }
+  const printedValues = [...chart.querySelectorAll('[aria-hidden="true"] span')].filter((span) =>
+    /^\d+\.\d$/.test(span.textContent ?? ""),
+  );
+  expect(printedValues.length).toBeGreaterThan(0);
   for (const unit of allUnits()) {
-    expect(bars.some((bar) => bar.getAttribute("aria-label")?.startsWith(`${unit.name}: `))).toBe(true);
+    expect(items.some((item) => item.startsWith(`${unit.name}: `))).toBe(true);
   }
-  const ticks = [...chart.querySelectorAll("text")]
-    .map((text) => text.textContent ?? "")
-    .filter((text) => /^\d+d$/.test(text));
-  const recorded = bars.map((bar) => Number(bar.getAttribute("aria-label")?.match(/: ([\d.]+) days/)?.[1] ?? 0));
-  expect(Math.max(...ticks.map((tick) => Number(tick.slice(0, -1))))).toBeGreaterThanOrEqual(Math.max(...recorded));
+  const recorded = items.map((item) => Number(item.match(/: ([\d.]+)$/)?.[1] ?? 0));
+  const ticks = [...chart.querySelectorAll('[aria-hidden="true"] span')]
+    .map((span) => span.textContent ?? "")
+    .filter((text) => /^\d+$/.test(text))
+    .map(Number);
+  expect(Math.max(...ticks)).toBeGreaterThanOrEqual(Math.max(...recorded));
 });
 
-it("keeps an unavailable average distinct from zero when a bar receives keyboard focus", () => {
+it("keeps an unavailable average distinct from zero in the ward chart", () => {
   const derive = statistics.allWardStatistics;
   const spy = vi
     .spyOn(statistics, "allWardStatistics")
@@ -66,14 +79,16 @@ it("keeps an unavailable average distinct from zero when a bar receives keyboard
         <StatisticsCompareScreen />
       </WardFlowProvider>,
     );
-    const chart = screen.getByLabelText("Ward average length of stay bar chart");
-    const bar = within(chart).getAllByRole("graphics-symbol")[0]!;
-    expect(bar.getAttribute("aria-label")).toBe(`${allUnits()[0]!.name}: Not recorded`);
-    expect(bar.getAttribute("fill")).toBe("transparent");
-    fireEvent.focus(bar);
-    expect(screen.getByText("Not recorded", { selector: "b", exact: true })).toBeTruthy();
-    fireEvent.blur(bar);
-    expect(screen.queryByText("Not recorded", { selector: "b", exact: true })).toBeNull();
+    const name = allUnits()[0]!.name;
+    const items = chartItems(chartFigure());
+    expect(
+      items.some((item) => item.startsWith(`${name}: `)),
+      "an unrecorded average was drawn as a bar",
+    ).toBe(false);
+    expect(screen.getByTestId("ward-statistics-compare-ward-chart-unrecorded").textContent).toBe(
+      `Average stay not recorded for ${name}`,
+    );
+    expect(screen.queryByText(`${name}: 0`)).toBeNull();
   } finally {
     spy.mockRestore();
   }

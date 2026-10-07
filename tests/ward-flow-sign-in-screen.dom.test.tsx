@@ -66,12 +66,25 @@ describe("Ward Flow sign-in screen renders", () => {
     render(<WardFlowSignInScreen />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Read this before you go in" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Who you are, and what you may do" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^Your role/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^What the bed coordinator can do/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^What the bed coordinator cannot do/ })).toBeInTheDocument();
+    // v6 (7 Oct 2026): the universal limits and the read-first list sit on the "Limits and safety"
+    // tab; the Actions tab is shown again before the role checks. Both panels stay mounted and only
+    // `hidden` changes, so each tab's aria-controls always names an element that exists (#113
+    // review: the inactive tab used to point at a missing panel).
+    for (const tab of screen.getAllByRole("tab")) {
+      const panelId = tab.getAttribute("aria-controls");
+      expect(panelId, "every tab names its panel").toBeTruthy();
+      const panel = document.getElementById(String(panelId));
+      expect(panel, `${String(panelId)} is mounted`).not.toBeNull();
+      expect(panel?.hidden).toBe(tab.getAttribute("aria-selected") !== "true");
+    }
+    fireEvent.click(screen.getByRole("tab", { name: /^Limits and safety/ }));
+    expect(screen.getByRole("heading", { name: "Read this before you go in" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^Refused to every role/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Actions/ }));
     expect(screen.getByRole("heading", { name: "Go in" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Appearance" })).toBeInTheDocument();
 

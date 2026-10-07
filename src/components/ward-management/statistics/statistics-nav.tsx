@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+
+import { HeroTrack, Switch } from "@/components/wf";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
+import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_UNIT_CHOOSER_HREF,
@@ -17,276 +20,139 @@ export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
   activeSlug?: string;
+  /** Leave the Samples switch out, when the hero places it on its own. */
+  withSamples?: boolean;
+  /** How many wards the network has, from the page's own state. Left off, Wards shows no count. */
+  wardCount?: number;
 }
 
-export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps) {
-  const samples = useStatisticsSamples();
-  const pathname = usePathname() || "";
-  const router = useRouter();
-  const navRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const bar = document.querySelector<HTMLElement>('[data-testid="ward-bar"]');
-    if (!bar || !navRef.current) return;
-    const nav = navRef.current;
-    const updateOffset = () => {
-      const barHeight = bar.getBoundingClientRect().height;
-      nav.style.setProperty("--statistics-header-offset", `${barHeight}px`);
-      // Account for both rows when links wrap, and avoid counting the shell's scroll padding twice.
-      const shell = nav.closest<HTMLElement>('[class*="shellContent"]');
-      const scroller = shell && getComputedStyle(shell).overflowY === "auto" ? shell : document.scrollingElement;
-      const shellScrollPadding = scroller ? parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0 : 0;
-      nav.parentElement?.style.setProperty(
-        "--statistics-anchor-offset",
-        `${barHeight + nav.getBoundingClientRect().height - shellScrollPadding + 12}px`,
-      );
-    };
-    updateOffset();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(updateOffset);
-    observer.observe(bar);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, []);
+function sectionOf(pathname: string): StatisticsNavSection {
+  if (pathname.includes("/statistics/overview")) return "overview";
+  if (pathname.includes("/statistics/compare")) return "compare";
+  if (pathname.includes("/statistics/service")) return "service";
+  if (pathname.includes("/statistics/ward")) return "ward";
+  if (pathname.includes("/statistics/ed")) return "ed";
+  if (pathname.includes("/statistics/community")) return "community";
+  return "hub";
+}
 
-  // Auto-detect section if not provided explicitly
-  const activeSection =
-    currentSection ||
-    (pathname.includes("/statistics/overview")
-      ? "overview"
-      : pathname.includes("/statistics/compare")
-        ? "compare"
-        : pathname.includes("/statistics/service")
-          ? "service"
-          : pathname.includes("/statistics/ward")
-            ? "ward"
-            : pathname.includes("/statistics/ed")
-              ? "ed"
-              : pathname.includes("/statistics/community")
-                ? "community"
-                : "hub");
-
-  // Extract active slug from pathname if present
-  let extractedSlug = activeSlug;
-  if (!extractedSlug) {
-    if (pathname.includes("/statistics/service/")) {
-      extractedSlug = pathname.split("/statistics/service/")[1]?.split("/")[0]?.split("?")[0];
-    } else if (pathname.includes("/statistics/ward/")) {
-      extractedSlug = pathname.split("/statistics/ward/")[1]?.split("/")[0]?.split("?")[0];
-    } else if (pathname.includes("/statistics/ed/")) {
-      extractedSlug = pathname.split("/statistics/ed/")[1]?.split("/")[0]?.split("?")[0];
-    } else if (pathname.includes("/statistics/community/")) {
-      extractedSlug = pathname.split("/statistics/community/")[1]?.split("/")[0]?.split("?")[0];
-    }
+function slugOf(pathname: string): string | undefined {
+  for (const part of ["service", "ward", "ed", "community"]) {
+    const marker = `/statistics/${part}/`;
+    if (pathname.includes(marker)) return pathname.split(marker)[1]?.split("/")[0]?.split("?")[0];
   }
+  return undefined;
+}
 
-  const serviceHref =
-    activeSection === "service" && extractedSlug
-      ? `/mockups/ward-flow/statistics/service/${extractedSlug}`
-      : STATISTICS_SERVICE_CHOOSER_HREF;
+/**
+ * The router, or null when the nav renders outside the app router (a screen rendered on its own in
+ * a test or preview). Links still work there; only the phone select falls back to a plain load.
+ */
+export function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
 
-  const wardHref =
-    activeSection === "ward" && extractedSlug
-      ? `/mockups/ward-flow/statistics/ward/${extractedSlug}`
-      : STATISTICS_UNIT_CHOOSER_HREF;
+/**
+ * The current path, or an empty string where no app router is mounted (a page rendered on its own,
+ * as unit tests do). A page that names its own section never needs it.
+ */
+function useOptionalPathname(): string {
+  try {
+    return usePathname() || "";
+  } catch {
+    return "";
+  }
+}
 
-  const edHref =
-    activeSection === "ed" && extractedSlug
-      ? `/mockups/ward-flow/statistics/ed/${extractedSlug}`
-      : STATISTICS_COMPARE_HREF;
+/** The Samples switch. Invented 30-day charts appear at the foot of the page while it is on. */
+export function StatisticsSamplesSwitch() {
+  const samples = useStatisticsSamples();
+  return (
+    <span className={styles.samples}>
+      <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Samples" onHero />
+    </span>
+  );
+}
 
-  const communityHref =
-    activeSection === "community" && extractedSlug
-      ? `/mockups/ward-flow/statistics/community/${extractedSlug}`
-      : STATISTICS_COMMUNITY_CHOOSER_HREF;
+/**
+ * The statistics section track. It sits on each page's hero band: Summary, Overview and Compare,
+ * then the four unit kinds with their counts. On a phone it becomes one native select.
+ */
+export function StatisticsNav({ currentSection, activeSlug, withSamples = true, wardCount }: StatisticsNavProps) {
+  const pathname = useOptionalPathname();
+  const router = useOptionalRouter();
 
-  const NAV_ITEMS = [
-    {
-      id: "hub",
-      label: "Summary",
-      href: "/mockups/ward-flow/statistics",
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <rect x="2" y="2" width="5" height="5" rx="1" />
-          <rect x="9" y="2" width="5" height="5" rx="1" />
-          <rect x="2" y="9" width="5" height="5" rx="1" />
-          <rect x="9" y="9" width="5" height="5" rx="1" />
-        </svg>
-      ),
-    },
-    {
-      id: "overview",
-      label: "Network overview",
-      href: "/mockups/ward-flow/statistics/overview",
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <circle cx="8" cy="8" r="6" />
-          <path d="M2 8h12M8 2a10 10 0 0 1 0 12 10 10 0 0 1 0-12" />
-        </svg>
-      ),
-    },
-    {
-      id: "compare",
-      label: "Compare",
-      href: "/mockups/ward-flow/statistics/compare",
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M3 13V9M8 13V4M13 13V7" />
-        </svg>
-      ),
-    },
+  const activeSection = currentSection || sectionOf(pathname);
+  const slug = activeSlug ?? slugOf(pathname);
+  const detail = (section: StatisticsNavSection, base: string, fallback: string) =>
+    activeSection === section && slug ? `/mockups/ward-flow/statistics/${base}/${slug}` : fallback;
+
+  const items = [
+    { id: "hub", label: "Summary", href: "/mockups/ward-flow/statistics" },
+    { id: "overview", label: "Overview", href: "/mockups/ward-flow/statistics/overview" },
+    { id: "compare", label: "Compare", href: "/mockups/ward-flow/statistics/compare" },
     {
       id: "service",
-      label: "Health services",
-      href: serviceHref,
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M2 14V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v11M6 6h4M8 4v4" />
-        </svg>
-      ),
+      label: "Services",
+      count: HEALTH_SERVICES.length,
+      href: detail("service", "service", STATISTICS_SERVICE_CHOOSER_HREF),
     },
     {
       id: "ward",
       label: "Wards",
-      href: wardHref,
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M2 13V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6M1 13h14M3 9h10" />
-        </svg>
-      ),
+      count: wardCount,
+      href: detail("ward", "ward", STATISTICS_UNIT_CHOOSER_HREF),
     },
     {
       id: "ed",
-      label: "Emergency departments",
-      href: edHref,
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M8 2v12M2 8h12" />
-        </svg>
-      ),
+      label: "EDs",
+      count: allEmergencyDepartments().length,
+      href: detail("ed", "ed", STATISTICS_COMPARE_HREF),
     },
     {
       id: "community",
-      label: "Community teams",
-      href: communityHref,
-      icon: (
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M3 13V7l5-4 5 4v6H3zM6 13V9h4v4" />
-        </svg>
-      ),
+      label: "Teams",
+      count: COMMUNITY_TEAM_PAGES.length,
+      href: detail("community", "community", STATISTICS_COMMUNITY_CHOOSER_HREF),
     },
-  ];
+  ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
 
   return (
-    <nav
-      ref={navRef}
-      className={styles.navBar}
-      aria-label="Ward Flow statistics sections"
-      data-testid="ward-statistics-nav"
-    >
+    // The landmark wraps both forms of the section list, so it is there at every width: the track
+    // on a desktop and the select on a phone.
+    <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
       <label className={styles.mobileSelect}>
         <span>Statistics</span>
         <select
           aria-label="Statistics section"
           value={activeSection}
           onChange={(event) => {
-            const item = NAV_ITEMS.find((item) => item.id === event.target.value);
-            if (item) router.push(item.href);
+            const item = items.find((entry) => entry.id === event.target.value);
+            if (!item) return;
+            // A chooser on this same page is reached by its fragment alone. Setting the hash fires
+            // `hashchange`, which opens the chooser's tab; a router push of the same path would not.
+            const target = new URL(item.href, window.location.href);
+            if (target.pathname === window.location.pathname && target.hash) {
+              window.location.hash = target.hash;
+              return;
+            }
+            if (router) router.push(item.href);
+            else window.location.assign(item.href);
           }}
         >
-          {NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <option key={item.id} value={item.id}>
               {item.label}
             </option>
           ))}
         </select>
       </label>
-      <div className={styles.scrollTrack}>
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeSection === item.id;
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              <span className={styles.navLabel}>{item.label}</span>
-              {isActive && <span className={styles.activePillIndicator} aria-hidden="true" />}
-            </Link>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={samples}
-        aria-label="Sample statistics"
-        className={styles.sampleSwitch}
-        onClick={() => setStatisticsSamples(!samples)}
-      >
-        <span>Samples</span>
-        <span className={styles.switchTrack} aria-hidden="true">
-          <span />
-        </span>
-        <span className={styles.switchState}>{samples ? "On" : "Off"}</span>
-      </button>
+      <HeroTrack className={styles.track} label="Statistics sections" value={activeSection} items={items} />
+      {withSamples ? <StatisticsSamplesSwitch /> : null}
     </nav>
   );
 }

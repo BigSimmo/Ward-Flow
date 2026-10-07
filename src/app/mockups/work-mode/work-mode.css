@@ -1,23 +1,35 @@
-/* Scoped from the PsychSift Work Mode HTML. Synthetic demonstration only. */
-.wm-stage /* Light app mockups, single theme by design. */ {
-  color-scheme: light;
-  --ink: #101a29;
-  --ink2: #465269;
-  --ink3: #7a8599;
-  --ink4: #a3acbb;
-  --line: #e6eaf0;
-  --line2: #d8dee7;
-  --wash: #f3f5f8;
-  --green: #1d6e44;
-  --green-s: #e8f3ec;
-  --green-l: #cde3d6;
-  --amber: #9f5f0b;
-  --amber-s: #faf1e2;
-  --amber-l: #ecd8b3;
-  --red: #b3362c;
-  --red-s: #faebe9;
-  --red-l: #efd0cb;
-  --sh: 0 1px 2px rgba(16, 26, 41, 0.04), 0 1px 3px rgba(16, 26, 41, 0.05);
+/* Scoped from the PsychSift Work Mode HTML. Synthetic demonstration only.
+ * v6 (7 October 2026): every colour below reads the global v6 tokens (`--wf-*`), so the phones follow
+ * the Appearance setting and the OS in day and night. Areas share one slate accent; colour marks
+ * state as a glyph or text, never as a tinted fill. */
+.wm-stage {
+  --ink: var(--wf-ink-1);
+  --ink2: var(--wf-ink-2);
+  --ink3: var(--wf-ink-3);
+  --ink4: var(--wf-ink-off);
+  --line: var(--wf-line);
+  --line2: var(--wf-line-2);
+  --wash: var(--wf-surface-2);
+  --green: var(--wf-success-ink);
+  --green-s: var(--wf-surface);
+  --green-l: var(--wf-line-2);
+  --amber: var(--wf-warning-ink);
+  --amber-s: var(--wf-surface);
+  --amber-l: var(--wf-line-2);
+  --red: var(--wf-danger-ink);
+  --red-s: var(--wf-surface);
+  --red-l: var(--wf-line-2);
+  --sh: var(--wf-e1);
+  /* Accent as text and line (--m), and as a fill behind on-accent text (--mf). */
+  --m: var(--wf-accent);
+  --m2: var(--wf-accent-ink);
+  --mf: var(--wf-pri-2);
+  --mf2: var(--wf-pri-1);
+  --deep: var(--wf-hero-1);
+  --s: var(--wf-accent-tint);
+  --s2: var(--wf-selected);
+  --l: var(--wf-line-2);
+  --hb: var(--wf-surface-2);
 }
 .wm-stage,
 .wm-stage * {
@@ -25,9 +37,9 @@
 }
 .wm-stage {
   margin: 0;
-  background: #fff;
+  background: var(--wf-canvas);
   color: var(--ink);
-  font-family: "Figtree", system-ui, sans-serif;
+  font-family: var(--wf-font);
   font-size: 14px;
   line-height: 1.4;
   padding-inline: 16px;
@@ -47,86 +59,6 @@
 }
 .wm-stage .num {
   font-variant-numeric: tabular-nums;
-}
-.wm-stage .day /* Mode tokens */ {
-  --m: #1c5f9f;
-  --m2: #3a7fc0;
-  --deep: #154a7c;
-  --s: #ecf2f9;
-  --s2: #d9e6f4;
-  --l: #c8d9ec;
-  --hb: #e9f0f8;
-  --rgb: 28, 95, 159;
-}
-.wm-stage .call {
-  --m: #11695e;
-  --m2: #258a7c;
-  --deep: #0c4f46;
-  --s: #e8f3f1;
-  --s2: #d3e9e4;
-  --l: #c2dfd8;
-  --hb: #e5f1ee;
-  --rgb: 17, 105, 94;
-}
-.wm-stage .shift {
-  --m: #3c47a3;
-  --m2: #5763bf;
-  --deep: #2e3784;
-  --s: #eef0fa;
-  --s2: #dde0f4;
-  --l: #cdd1ee;
-  --hb: #eceef8;
-  --rgb: 60, 71, 163;
-}
-.wm-stage .rost {
-  --m: #5a45a6;
-  --m2: #7560c0;
-  --deep: #463587;
-  --s: #f1eef9;
-  --s2: #e3ddf3;
-  --l: #d4cbee;
-  --hb: #efecf8;
-  --rgb: 90, 69, 166;
-}
-.wm-stage .teach {
-  --m: #2f6e4a;
-  --m2: #448a62;
-  --deep: #235538;
-  --s: #ebf4ee;
-  --s2: #d6e9dd;
-  --l: #c5dfcf;
-  --hb: #e8f2ec;
-  --rgb: 47, 110, 74;
-}
-.wm-stage .cpd {
-  --m: #9a5418;
-  --m2: #b56d2c;
-  --deep: #7a3f0e;
-  --s: #f9f0e7;
-  --s2: #f1e0cd;
-  --l: #e8cfb5;
-  --hb: #f8efe5;
-  --rgb: 154, 84, 24;
-}
-.wm-stage .admin {
-  --m: #44566e;
-  --m2: #5d7089;
-  --deep: #333f52;
-  --s: #eef1f5;
-  --s2: #dde3eb;
-  --l: #cfd7e1;
-  --hb: #ecf0f4;
-  --rgb: 68, 86, 110;
-}
-.wm-stage .ai {
-  --m: #7d3c78;
-  --m2: #9a5594;
-  --deep: #612c5d;
-  --s: #f7eef6;
-  --s2: #eedcec;
-  --l: #e3c9e0;
-  --hb: #f6edf5;
-  --rgb: 125, 60, 120;
 }
 .wm-stage .wrap /* Gallery */ {
   max-width: 1680px;
@@ -218,17 +150,17 @@
   color: var(--ink2);
 }
 .wm-stage .phone {
-  background: linear-gradient(160deg, #eef1f5, #dfe4eb);
+  background: linear-gradient(160deg, var(--wf-canvas), var(--wf-track));
   border-radius: 44px;
   padding: 8px;
   width: 100%;
   max-width: 372px;
   box-shadow:
-    inset 0 1px 0 #fff,
+    inset 0 1px 0 var(--wf-surface),
     0 12px 30px -20px rgba(16, 26, 41, 0.35);
 }
 .wm-stage .app /* App shell */ {
-  background: #fff;
+  background: var(--wf-surface);
   border-radius: 36px;
   overflow: hidden;
   position: relative;
@@ -246,17 +178,21 @@
   height: 5px;
   margin-left: -61px;
   border-radius: 3px;
-  background: rgba(16, 26, 41, 0.82);
+  background: color-mix(in srgb, var(--wf-ink-1) 82%, transparent);
   z-index: 20;
 }
 .wm-stage .glass /* Liquid glass, used only for the floating control layer */ {
   position: relative;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.56));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-surface) 80%, transparent),
+    color-mix(in srgb, var(--wf-surface) 56%, transparent)
+  );
   -webkit-backdrop-filter: blur(18px) saturate(180%);
   backdrop-filter: blur(18px) saturate(180%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
-    inset 0 1px 0 #fff,
+    inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 70%, transparent),
+    inset 0 1px 0 var(--wf-surface),
     0 0 0 0.5px rgba(16, 26, 41, 0.08),
     0 1px 2px rgba(16, 26, 41, 0.05),
     0 6px 16px -8px rgba(16, 26, 41, 0.18);
@@ -266,7 +202,11 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 52%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-surface) 60%, transparent),
+    color-mix(in srgb, var(--wf-surface) 0%, transparent) 52%
+  );
   pointer-events: none;
 }
 .wm-stage .glass > * {
@@ -347,8 +287,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #e0912a;
-  box-shadow: 0 0 0 2px #fff;
+  background: var(--wf-warning);
+  box-shadow: 0 0 0 2px var(--wf-surface);
 }
 .wm-stage .mode {
   justify-self: center;
@@ -365,17 +305,21 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--wf-on-accent);
   flex: none;
   position: relative;
   background:
-    radial-gradient(110% 75% at 30% 12%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 58%),
-    linear-gradient(160deg, var(--m2), var(--m) 70%);
+    radial-gradient(
+      110% 75% at 30% 12%,
+      color-mix(in srgb, var(--wf-surface) 34%, transparent),
+      color-mix(in srgb, var(--wf-surface) 0%, transparent) 58%
+    ),
+    linear-gradient(160deg, var(--mf2), var(--mf) 70%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 1px 0 color-mix(in srgb, var(--wf-surface) 42%, transparent),
     inset 0 -1px 2px rgba(0, 0, 0, 0.1),
-    0 1px 2px rgba(var(--rgb), 0.3),
-    0 3px 8px -3px rgba(var(--rgb), 0.5);
+    0 1px 2px color-mix(in srgb, var(--m) 30%, transparent),
+    0 3px 8px -3px color-mix(in srgb, var(--m) 50%, transparent);
 }
 .wm-stage .badge svg.i {
   width: 16px;
@@ -465,7 +409,7 @@
   bottom: -1px;
   height: 2.5px;
   border-radius: 2px 2px 0 0;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cnt {
   display: inline-block;
@@ -473,8 +417,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   font-size: 10.5px;
   font-weight: 700;
   line-height: 18px;
@@ -516,7 +460,7 @@
   color: var(--m);
 }
 .wm-stage .card {
-  background: #fff;
+  background: var(--wf-surface);
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: var(--sh);
@@ -525,11 +469,11 @@
   padding: 11px 12px;
 }
 .wm-stage .tile {
-  background: linear-gradient(180deg, #fff, #fafbfc);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 #fff,
+    inset 0 1px 0 var(--wf-surface),
     0 1px 2px rgba(16, 26, 41, 0.04),
     0 3px 8px -4px rgba(16, 26, 41, 0.08);
 }
@@ -582,15 +526,15 @@
   stroke-width: 2;
 }
 .wm-stage .btn.p {
-  color: #fff;
-  background: linear-gradient(180deg, var(--m2), var(--m) 85%);
+  color: var(--wf-on-accent);
+  background: linear-gradient(180deg, var(--mf2), var(--mf) 85%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 1px 2px rgba(var(--rgb), 0.3),
-    0 4px 10px -5px rgba(var(--rgb), 0.55);
+    inset 0 1px 0 color-mix(in srgb, var(--wf-surface) 24%, transparent),
+    0 1px 2px color-mix(in srgb, var(--m) 30%, transparent),
+    0 4px 10px -5px color-mix(in srgb, var(--m) 55%, transparent);
 }
 .wm-stage .btn.s {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--ink);
   box-shadow:
     0 0 0 1px var(--line2),
@@ -707,7 +651,7 @@
   font-weight: 750;
   color: var(--m);
   background: var(--s);
-  box-shadow: inset 0 0 0 1px rgba(var(--rgb), 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m) 14%, transparent);
   flex: none;
   position: relative;
 }
@@ -719,8 +663,8 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--pres, #2fa36b);
-  box-shadow: 0 0 0 2px #fff;
+  background: var(--pres, var(--wf-success));
+  box-shadow: 0 0 0 2px var(--wf-surface);
 }
 .wm-stage .avs {
   display: flex;
@@ -729,7 +673,7 @@
   width: 30px;
   height: 30px;
   font-size: 10px;
-  box-shadow: 0 0 0 2px #fff;
+  box-shadow: 0 0 0 2px var(--wf-surface);
 }
 .wm-stage .avs .av + .av {
   margin-left: -5px;
@@ -737,14 +681,18 @@
 .wm-stage .hero /* Hero */ {
   border-radius: 18px;
   padding: 13px 14px;
-  color: #fff;
+  color: var(--wf-on-accent);
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(90% 80% at 100% 0%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 60%),
-    linear-gradient(150deg, var(--m2), var(--m) 48%, var(--deep));
+    radial-gradient(
+      90% 80% at 100% 0%,
+      color-mix(in srgb, var(--wf-surface) 12%, transparent),
+      color-mix(in srgb, var(--wf-surface) 0%, transparent) 60%
+    ),
+    linear-gradient(150deg, var(--mf2), var(--mf) 48%, var(--wf-hero-1));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 color-mix(in srgb, var(--wf-surface) 20%, transparent),
     0 1px 2px rgba(16, 26, 41, 0.08),
     0 10px 20px -12px var(--deep);
 }
@@ -756,10 +704,10 @@
   font-weight: 750;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: color-mix(in srgb, var(--wf-hero-ink) 72%, transparent);
 }
 .wm-stage .hsub {
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--wf-hero-ink) 80%, transparent);
 }
 .wm-stage .hrow {
   display: flex;
@@ -776,7 +724,7 @@
 .wm-stage .hrow p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--wf-hero-ink) 80%, transparent);
 }
 .wm-stage .ring {
   width: 64px;
@@ -804,7 +752,7 @@
   display: block;
   font-size: 9.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
   margin-top: 2px;
   line-height: 1;
 }
@@ -813,7 +761,7 @@
   height: 18px;
   margin-top: 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--wf-surface) 14%, transparent);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 .wm-stage .track .blk {
@@ -821,7 +769,7 @@
   top: 2px;
   bottom: 2px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   font-size: 9.5px;
   font-weight: 750;
@@ -834,7 +782,7 @@
   top: 2px;
   bottom: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
 }
 .wm-stage .track .now {
   position: absolute;
@@ -843,20 +791,20 @@
   width: 2px;
   margin-left: -1px;
   border-radius: 2px;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-surface) 22%, transparent);
 }
 .wm-stage .ticks {
   display: flex;
   justify-content: space-between;
   font-size: 9.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--wf-hero-ink) 70%, transparent);
   margin-top: 5px;
 }
 .wm-stage .hpanel {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13);
+  background: color-mix(in srgb, var(--wf-surface) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 13%, transparent);
   border-radius: 12px;
 }
 .wm-stage .hbtns {
@@ -881,13 +829,13 @@
   stroke-width: 2;
 }
 .wm-stage .hbtns .hw {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.25);
 }
 .wm-stage .hbtns .hg {
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--wf-surface) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 20%, transparent);
 }
 .wm-stage .fade /* Floating dock */ {
   position: absolute;
@@ -895,7 +843,11 @@
   right: 0;
   bottom: 0;
   height: 96px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.92) 62%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-surface) 0%, transparent),
+    color-mix(in srgb, var(--wf-surface) 92%, transparent) 62%
+  );
   z-index: 9;
   pointer-events: none;
 }
@@ -967,11 +919,11 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: linear-gradient(180deg, var(--m2), var(--m));
+  color: var(--wf-on-accent);
+  background: linear-gradient(180deg, var(--mf2), var(--mf));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 3px 8px -3px rgba(var(--rgb), 0.6);
+    inset 0 1px 0 color-mix(in srgb, var(--wf-surface) 30%, transparent),
+    0 3px 8px -3px color-mix(in srgb, var(--m) 60%, transparent);
 }
 .wm-stage .compose .go svg.i {
   stroke-width: 2.2;
@@ -980,7 +932,7 @@
   position: absolute;
   inset: 0;
   z-index: 12;
-  background: rgba(16, 26, 41, 0.22);
+  background: color-mix(in srgb, var(--wf-ink-1) 22%, transparent);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
@@ -992,7 +944,11 @@
   z-index: 14;
   border-radius: 32px;
   padding: 8px 16px 30px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.97));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-surface) 95%, transparent),
+    color-mix(in srgb, var(--wf-surface) 97%, transparent)
+  );
 }
 .wm-stage .pillcopy {
   position: absolute;
@@ -1014,7 +970,7 @@
   width: 40px;
   height: 5px;
   border-radius: 999px;
-  background: rgba(16, 26, 41, 0.18);
+  background: color-mix(in srgb, var(--wf-ink-1) 18%, transparent);
   margin: 2px auto 12px;
 }
 .wm-stage .shd {
@@ -1042,7 +998,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(16, 26, 41, 0.06);
+  background: color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
   color: var(--ink2);
 }
 .wm-stage .xb svg.i {
@@ -1059,7 +1015,7 @@
   display: flex;
   padding: 3px;
   border-radius: 999px;
-  background: rgba(16, 26, 41, 0.06);
+  background: color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
 }
 .wm-stage .seg span {
   flex: 1;
@@ -1072,7 +1028,7 @@
   color: var(--ink2);
 }
 .wm-stage .seg span.on {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--ink);
   font-weight: 750;
   box-shadow:
@@ -1089,7 +1045,7 @@
   min-height: 44px;
   padding: 0 13px;
   border-radius: 13px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 13.5px;
 }
@@ -1106,7 +1062,7 @@
   display: inline-block;
   width: 1.5px;
   height: 16px;
-  background: var(--m);
+  background: var(--mf);
   vertical-align: -3px;
   margin-left: 1px;
 }
@@ -1125,7 +1081,7 @@
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 12.5px;
   font-weight: 650;
@@ -1159,7 +1115,7 @@
   width: 42px;
   height: 26px;
   border-radius: 999px;
-  background: rgba(16, 26, 41, 0.12);
+  background: color-mix(in srgb, var(--wf-ink-1) 12%, transparent);
   position: relative;
   flex: none;
 }
@@ -1171,11 +1127,11 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .wm-stage .sw.on {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .sw.on::after {
   left: 18px;
@@ -1249,13 +1205,13 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 2px var(--line2);
   z-index: 1;
 }
 .wm-stage .tl .dt.now {
-  background: var(--m);
-  box-shadow: 0 0 0 4px rgba(var(--rgb), 0.16);
+  background: var(--mf);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--m) 16%, transparent);
 }
 .wm-stage .tl b {
   display: block;
@@ -1278,7 +1234,7 @@
   gap: 4px;
   padding: 7px 0 7px;
   border-radius: 13px;
-  background: #fff;
+  background: var(--wf-surface);
   border: 1px solid var(--line);
   font-size: 9.5px;
   font-weight: 750;
@@ -1298,34 +1254,34 @@
   background: transparent;
 }
 .wm-stage .wd.on {
-  background: linear-gradient(180deg, var(--m2), var(--m));
+  background: linear-gradient(180deg, var(--mf2), var(--mf));
   border-color: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 10px -4px rgba(var(--rgb), 0.6);
+  color: color-mix(in srgb, var(--wf-hero-ink) 80%, transparent);
+  box-shadow: 0 4px 10px -4px color-mix(in srgb, var(--m) 60%, transparent);
 }
 .wm-stage .wd.on b {
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .sD {
-  background: #1c5f9f !important;
+  background: var(--wf-data-1) !important;
 }
 .wm-stage .sL {
-  background: #5a45a6 !important;
+  background: var(--wf-data-2) !important;
 }
 .wm-stage .sN {
-  background: #2b2f6b !important;
+  background: var(--wf-hero-1) !important;
 }
 .wm-stage .sOC {
-  background: #11695e !important;
+  background: var(--wf-info) !important;
 }
 .wm-stage .sAL {
-  background: #1d6e44 !important;
+  background: var(--wf-success) !important;
 }
 .wm-stage .sT {
-  background: #2f6e4a !important;
+  background: var(--wf-data-ready) !important;
 }
 .wm-stage .wd.on i {
-  background: #fff !important;
+  background: var(--wf-surface) !important;
 }
 .wm-stage .stat .v /* Stats */ {
   display: flex;
@@ -1396,7 +1352,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   box-shadow:
     0 6px 14px -5px rgba(0, 0, 0, 0.4),
@@ -1416,14 +1372,14 @@
 .wm-stage .exts span {
   padding: 6px 9px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--wf-hero-ink) 75%, transparent);
   font-weight: 600;
 }
 .wm-stage .exts b {
   display: block;
   font-size: 12.5px;
   font-weight: 700;
-  color: #fff;
+  color: var(--wf-on-accent);
   margin-top: 1px;
 }
 .wm-stage .crisis {
@@ -1504,10 +1460,10 @@
   background: var(--wash);
 }
 .wm-stage .steps i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .steps i.c {
-  background: repeating-linear-gradient(90deg, var(--m) 0 5px, transparent 5px 8px);
+  background: repeating-linear-gradient(90deg, var(--mf) 0 5px, transparent 5px 8px);
 }
 .wm-stage .steps span {
   font-size: 10px;
@@ -1531,7 +1487,7 @@
   background: var(--s2);
 }
 .wm-stage .bars i.h {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .bars i.now {
   background: var(--ink);
@@ -1648,13 +1604,13 @@
   width: 100%;
 }
 .wm-stage .chart .o {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .chart .x {
-  background: #d9933a;
+  background: var(--wf-warning);
 }
 .wm-stage .chart .p {
-  background: repeating-linear-gradient(135deg, var(--m) 0 3px, var(--m2) 3px 6px);
+  background: repeating-linear-gradient(135deg, var(--mf) 0 3px, var(--mf2) 3px 6px);
 }
 .wm-stage .chart .f {
   background: var(--wash);
@@ -1718,7 +1674,7 @@
   right: 12.5%;
   top: 10px;
   height: 2px;
-  background: linear-gradient(90deg, var(--m) 0 var(--done, 0%), var(--line2) var(--done, 0%));
+  background: linear-gradient(90deg, var(--mf) 0 var(--done, 0%), var(--line2) var(--done, 0%));
 }
 .wm-stage .stp div {
   display: grid;
@@ -1735,13 +1691,13 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 2px var(--line2);
 }
 .wm-stage .stp i.d {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .stp i.d svg.i {
   width: 12px;
@@ -1751,8 +1707,8 @@
 .wm-stage .stp i.c {
   box-shadow:
     inset 0 0 0 2px var(--m),
-    0 0 0 4px rgba(var(--rgb), 0.14);
-  background: #fff;
+    0 0 0 4px color-mix(in srgb, var(--m) 14%, transparent);
+  background: var(--wf-surface);
 }
 .wm-stage .stp .on {
   color: var(--m);
@@ -1871,10 +1827,10 @@
   color: var(--ink3);
 }
 .wm-stage .cal .cd.today b {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   font-weight: 750;
-  box-shadow: 0 3px 8px -3px rgba(var(--rgb), 0.7);
+  box-shadow: 0 3px 8px -3px color-mix(in srgb, var(--m) 70%, transparent);
 }
 .wm-stage .cal .cd i {
   width: 16px;
@@ -1916,24 +1872,24 @@
   letter-spacing: 0.02em;
 }
 .wm-stage .c-D {
-  background: #ecf2f9;
-  color: #1c5f9f;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
 }
 .wm-stage .c-L {
-  background: #f1eef9;
-  color: #5a45a6;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
 }
 .wm-stage .c-N {
-  background: #e6e7f2;
-  color: #2b2f6b;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
 }
 .wm-stage .c-OC {
-  background: #e8f3f1;
-  color: #11695e;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
 }
 .wm-stage .c-AL {
-  background: #e8f3ec;
-  color: #1d6e44;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
 }
 .wm-stage .c-x {
   background: transparent;
@@ -1958,7 +1914,7 @@
   display: grid;
   place-items: center;
   margin: -4px auto;
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   box-shadow:
     0 0 0 1px var(--line2),
@@ -1991,7 +1947,7 @@
 }
 .wm-stage .pick .on .av {
   box-shadow:
-    0 0 0 2px #fff,
+    0 0 0 2px var(--wf-surface),
     0 0 0 4px var(--m);
 }
 .wm-stage .pick .off {
@@ -2018,10 +1974,10 @@
   display: grid;
   place-items: center;
   flex: none;
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-surface) 60%, transparent);
 }
 .wm-stage .prep i.d {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   box-shadow: none;
 }
@@ -2033,7 +1989,7 @@
 .wm-stage .stars {
   display: flex;
   gap: 2px;
-  color: #d9933a;
+  color: var(--wf-warning);
 }
 .wm-stage .stars svg {
   width: 13px;
@@ -2070,7 +2026,7 @@
   top: 20px;
   bottom: 20px;
   width: 2px;
-  background: linear-gradient(var(--m) 0 26%, var(--line) 26%);
+  background: linear-gradient(var(--mf) 0 26%, var(--line) 26%);
 }
 .wm-stage .prg .pi {
   display: grid;
@@ -2087,7 +2043,7 @@
   place-items: center;
   text-align: center;
   line-height: 1;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1.5px var(--line2);
   z-index: 1;
 }
@@ -2103,17 +2059,17 @@
   font-weight: 750;
 }
 .wm-stage .wkn.d {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .wkn.d small {
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--wf-hero-ink) 75%, transparent);
 }
 .wm-stage .wkn.c {
   box-shadow:
     inset 0 0 0 2px var(--m),
-    0 0 0 4px rgba(var(--rgb), 0.14);
+    0 0 0 4px color-mix(in srgb, var(--m) 14%, transparent);
 }
 .wm-stage .qr {
   width: 180px;
@@ -2128,7 +2084,7 @@
   gap: 10px;
   padding: 16px;
   border-radius: 22px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 1px var(--line),
     0 8px 24px -14px rgba(16, 26, 41, 0.3);
@@ -2162,7 +2118,7 @@
   display: block;
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
   margin-top: 3px;
 }
 .wm-stage .cleg {
@@ -2176,7 +2132,7 @@
   gap: 8px;
   align-items: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--wf-hero-ink) 85%, transparent);
 }
 .wm-stage .cleg i {
   width: 8px;
@@ -2184,7 +2140,7 @@
   border-radius: 50%;
 }
 .wm-stage .cleg b {
-  color: #fff;
+  color: var(--wf-on-accent);
   font-weight: 750;
 }
 .wm-stage .sug {
@@ -2193,7 +2149,7 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--s), #fff 80%);
+  background: linear-gradient(90deg, var(--s), var(--wf-surface) 80%);
   border: 1px solid var(--l);
 }
 .wm-stage .stepper {
@@ -2203,7 +2159,7 @@
   height: 46px;
   padding: 0 6px;
   border-radius: 13px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 .wm-stage .stepper i {
@@ -2226,7 +2182,7 @@
   height: 34px;
   padding: 0 12px 0 6px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 12.5px;
   font-weight: 650;
@@ -2238,7 +2194,7 @@
   padding: 0 5px;
   border-radius: 5px;
   background: var(--red);
-  color: #fff;
+  color: var(--wf-on-accent);
   font-size: 8.5px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -2257,7 +2213,7 @@
   background: var(--s2);
 }
 .wm-stage .mbars i.h {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .mbars .tgt {
   position: absolute;
@@ -2307,10 +2263,10 @@
   background: var(--line2);
 }
 .wm-stage .ministp i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .ministp i.c {
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: 0 0 0 2px var(--m);
 }
 .wm-stage .ministp s {
@@ -2320,7 +2276,7 @@
   text-decoration: none;
 }
 .wm-stage .ministp s.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .ministp em {
   font-style: normal;
@@ -2410,8 +2366,8 @@
   border-radius: 18px 18px 5px 18px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #fff;
-  background: linear-gradient(160deg, var(--m2), var(--m));
+  color: var(--wf-on-accent);
+  background: linear-gradient(160deg, var(--mf2), var(--mf));
   box-shadow: 0 4px 10px -6px var(--deep);
 }
 .wm-stage .ans {
@@ -2472,7 +2428,7 @@
   align-items: flex-start;
   padding: 10px 12px;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--red-s), #fff 85%);
+  background: linear-gradient(90deg, var(--red-s), var(--wf-surface) 85%);
   border: 1px solid var(--red-l);
 }
 .wm-stage .alert b {
@@ -2513,7 +2469,7 @@
   height: 58px;
   border-radius: 6px;
   flex: none;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 1px var(--line2),
     0 2px 5px -2px rgba(16, 26, 41, 0.15);
@@ -2537,7 +2493,7 @@
   top: var(--hl, 24px);
   height: 10px;
   border-radius: 2px;
-  background: rgba(var(--rgb), 0.22);
+  background: color-mix(in srgb, var(--mf) 22%, transparent);
 }
 .wm-stage .quote {
   margin-top: 8px;
@@ -2549,7 +2505,7 @@
   color: var(--ink2);
 }
 .wm-stage .quote mark {
-  background: rgba(var(--rgb), 0.16);
+  background: color-mix(in srgb, var(--mf) 16%, transparent);
   color: var(--ink);
   border-radius: 3px;
   padding: 0 2px;
@@ -2782,10 +2738,14 @@
   padding: 0 8px 0 14px;
   border-radius: 999px;
   font-size: 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-surface) 96%, transparent),
+    color-mix(in srgb, var(--wf-surface) 86%, transparent)
+  );
   box-shadow:
-    inset 0 0 0 1.5px rgba(var(--rgb), 0.55),
-    0 0 0 4px rgba(var(--rgb), 0.1),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--m) 55%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--m) 10%, transparent),
     0 6px 16px -8px rgba(16, 26, 41, 0.25);
 }
 .wm-stage .sf > svg.i {
@@ -2812,7 +2772,7 @@
   display: inline-block;
   width: 1.5px;
   height: 16px;
-  background: var(--m);
+  background: var(--mf);
   vertical-align: -3px;
   margin-left: 1px;
 }
@@ -2822,8 +2782,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(16, 26, 41, 0.12);
-  color: #fff;
+  background: color-mix(in srgb, var(--wf-ink-1) 12%, transparent);
+  color: var(--wf-on-accent);
   flex: none;
 }
 .wm-stage .sf .clr svg.i {
@@ -2860,7 +2820,7 @@
   height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--wf-surface) 85%, transparent);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 12px;
   font-weight: 650;
@@ -2872,7 +2832,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .ach em {
   font-style: normal;
@@ -2883,11 +2843,11 @@
 }
 .wm-stage .ach.on {
   background: var(--ink);
-  color: #fff;
+  color: var(--wf-on-accent);
   box-shadow: 0 2px 6px -2px rgba(16, 26, 41, 0.4);
 }
 .wm-stage .ach.on em {
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--wf-hero-ink) 70%, transparent);
 }
 .wm-stage .srb {
   flex: 1;
@@ -2943,7 +2903,7 @@
 .wm-stage .row.ask .ic {
   width: 26px;
   height: 26px;
-  background: rgba(var(--rgb), 0.1);
+  background: color-mix(in srgb, var(--mf) 10%, transparent);
 }
 .wm-stage .row.ask .ic svg.i {
   width: 13px;
@@ -2980,7 +2940,7 @@
   text-decoration: none;
   font-weight: 800;
   color: var(--ink);
-  background: rgba(var(--rgb), 0.12);
+  background: color-mix(in srgb, var(--mf) 12%, transparent);
   border-radius: 3px;
   padding: 0 1px;
 }
@@ -2998,8 +2958,8 @@
   display: grid;
   place-content: center;
   justify-items: center;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  background: color-mix(in srgb, var(--wf-surface) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 22%, transparent);
   font-size: 24px;
   font-weight: 750;
   line-height: 1;
@@ -3021,17 +2981,17 @@
 .wm-stage .ans2 p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
+  color: color-mix(in srgb, var(--wf-hero-ink) 82%, transparent);
 }
 .wm-stage .ans2 p.in {
   display: inline-block;
   margin-top: 6px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--wf-surface) 18%, transparent);
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .due {
   padding: 2px 0 0;
@@ -3102,8 +3062,8 @@
   flex: 1;
 }
 .wm-stage .wd.off {
-  background: rgba(var(--rgb), 0.09);
-  border-color: rgba(var(--rgb), 0.28);
+  background: color-mix(in srgb, var(--mf) 9%, transparent);
+  border-color: color-mix(in srgb, var(--m) 28%, transparent);
   color: var(--m);
 }
 .wm-stage .wd.off b {
@@ -3121,7 +3081,7 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--m2), var(--m));
+  background: linear-gradient(90deg, var(--mf2), var(--mf));
 }
 .wm-stage .hand {
   padding: 18px 16px 16px;
@@ -3163,7 +3123,7 @@
   gap: 11px;
   align-items: flex-start;
   padding: 12px;
-  background: linear-gradient(90deg, var(--amber-s), #fff 90%);
+  background: linear-gradient(90deg, var(--amber-s), var(--wf-surface) 90%);
   border-color: var(--amber-l);
 }
 .wm-stage .pv .tx b {
@@ -3223,7 +3183,7 @@
   margin-left: -136px;
   border-radius: 24px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.93);
+  background: color-mix(in srgb, var(--wf-surface) 93%, transparent);
 }
 .wm-stage .menu .mi {
   display: flex;
@@ -3233,7 +3193,7 @@
   border-radius: 16px;
 }
 .wm-stage .menu .mi.cur {
-  background: rgba(var(--rgb), 0.1);
+  background: color-mix(in srgb, var(--mf) 10%, transparent);
 }
 .wm-stage .menu .mi .badge {
   width: 30px;
@@ -3259,7 +3219,7 @@
 }
 .wm-stage .menu hr {
   border: 0;
-  border-top: 1px solid rgba(16, 26, 41, 0.08);
+  border-top: 1px solid color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
   margin: 4px 8px;
 }
 .wm-stage .menu .ft {
@@ -3310,7 +3270,7 @@
 }
 .wm-stage .mstrip .so.cur .badge {
   box-shadow:
-    0 0 0 2px #fff,
+    0 0 0 2px var(--wf-surface),
     0 0 0 4px var(--m);
 }
 .wm-stage .mstrip::after {
@@ -3320,7 +3280,11 @@
   top: 0;
   bottom: 0;
   width: 40px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wf-surface) 0%, transparent),
+    color-mix(in srgb, var(--wf-surface) 90%, transparent)
+  );
   border-radius: 0 26px 26px 0;
 }
 .wm-stage .mstrip .hint {
@@ -3333,12 +3297,12 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(16, 26, 41, 0.16);
+  background: color-mix(in srgb, var(--wf-ink-1) 16%, transparent);
 }
 .wm-stage .mstrip .hint i.on {
   width: 14px;
   border-radius: 999px;
-  background: rgba(16, 26, 41, 0.5);
+  background: color-mix(in srgb, var(--wf-ink-1) 50%, transparent);
 }
 .wm-stage .jump /* ---------- Kit additions (full mockup) ---------- */ {
   display: flex;
@@ -3353,7 +3317,7 @@
   height: 34px;
   padding: 0 12px 0 6px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 13px;
   font-weight: 700;
@@ -3394,7 +3358,7 @@
   gap: 9px;
   padding: 9px 10px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 1px var(--line),
     0 1px 2px rgba(16, 26, 41, 0.04);
@@ -3438,8 +3402,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   flex: none;
 }
 .wm-stage .more-i .ck svg.i {
@@ -3472,8 +3436,8 @@
   gap: 9px;
   padding: 11px 14px;
   border-radius: 14px;
-  background: rgba(16, 26, 41, 0.92);
-  color: #fff;
+  background: color-mix(in srgb, var(--wf-ink-1) 92%, transparent);
+  color: var(--wf-on-accent);
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 10px 24px -10px rgba(16, 26, 41, 0.6);
@@ -3481,14 +3445,14 @@
 .wm-stage .toast svg.i {
   width: 15px;
   height: 15px;
-  color: #7fd3a6;
+  color: var(--wf-hero-success);
 }
 .wm-stage .toast span {
   flex: 1;
 }
 .wm-stage .toast a {
   font-weight: 750;
-  color: #9cc7ff;
+  color: var(--wf-hero-ink-2);
 }
 .wm-stage .empty {
   display: grid;
@@ -3524,7 +3488,7 @@
   border-radius: 36px;
   height: 790px;
   scrollbar-width: none;
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .proto .swp::-webkit-scrollbar {
   display: none;
@@ -3589,7 +3553,7 @@
 }
 .wm-stage .pdots i.on {
   width: 18px;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .tryit {
   display: flex;
@@ -3629,7 +3593,7 @@
   margin-top: 5px;
   font-size: 9.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.72);
+  color: color-mix(in srgb, var(--wf-hero-ink) 72%, transparent);
 }
 .wm-stage .day-tks span {
   position: absolute;
@@ -3644,7 +3608,7 @@
   transform: translateX(-100%);
 }
 .wm-stage .day-tks span.n {
-  color: #fff;
+  color: var(--wf-on-accent);
   font-weight: 750;
 }
 .wm-stage .day-hp {
@@ -3671,7 +3635,7 @@
 .wm-stage .day-hp small {
   display: block;
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
   margin-top: 1px;
 }
 .wm-stage .day-hb {
@@ -3679,7 +3643,7 @@
   height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   font-size: 12px;
   font-weight: 750;
@@ -3693,10 +3657,10 @@
   gap: 6px;
   margin-top: 7px;
   padding-top: 7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1px solid color-mix(in srgb, var(--wf-surface) 16%, transparent);
   font-size: 11.5px;
   font-weight: 650;
-  color: #ffe1ad;
+  color: var(--wf-hero-warning);
 }
 .wm-stage .day-clash svg.i {
   width: 13px;
@@ -3748,7 +3712,7 @@
   align-items: center;
   padding: 10px 12px;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--amber-s), #fff 88%);
+  background: linear-gradient(90deg, var(--amber-s), var(--wf-surface) 88%);
   border: 1px solid var(--amber-l);
 }
 .wm-stage .day-warn .tx b {
@@ -3766,7 +3730,7 @@
   background: var(--wash);
 }
 .wm-stage .day-note .ic {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .day-note .tx small {
   color: var(--ink2);
@@ -3805,7 +3769,7 @@
   color: var(--ink3);
 }
 .wm-stage .day-mseg span.on {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--ink);
   font-weight: 750;
   box-shadow: 0 1px 2px rgba(16, 26, 41, 0.14);
@@ -3839,10 +3803,10 @@
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--wf-surface);
   display: grid;
   place-items: center;
-  color: #d9933a;
+  color: var(--wf-warning);
   box-shadow: 0 1px 3px rgba(16, 26, 41, 0.22);
 }
 .wm-stage .day-st svg.i {
@@ -3945,13 +3909,13 @@
   height: 11px;
   margin-left: -5.5px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 2.5px var(--ink4);
 }
 .wm-stage .day-run i.day-nx {
   box-shadow:
     inset 0 0 0 2.5px var(--m),
-    0 0 0 3px rgba(var(--rgb), 0.14);
+    0 0 0 3px color-mix(in srgb, var(--m) 14%, transparent);
 }
 .wm-stage .day-run i.day-now {
   width: 2px;
@@ -4033,7 +3997,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--m);
+  background: var(--mf);
   flex: none;
 }
 .wm-stage .day-it.past {
@@ -4055,7 +4019,7 @@
   flex: 1;
   height: 1.5px;
   border-radius: 2px;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .day-quiet {
   font-size: 12px;
@@ -4095,7 +4059,7 @@
   place-content: center;
   justify-items: center;
   gap: 4px;
-  color: #fff;
+  color: var(--wf-on-accent);
   font-size: 11px;
   font-weight: 750;
 }
@@ -4104,13 +4068,13 @@
   height: 17px;
 }
 .wm-stage .day-bk .l {
-  background: #8a94a6;
+  background: var(--wf-ink-off);
 }
 .wm-stage .day-bk .d {
   background: var(--green);
 }
 .wm-stage .day-swp .row {
-  background: #fff;
+  background: var(--wf-surface);
   transform: translateX(-136px);
   box-shadow: 6px 0 12px -6px rgba(16, 26, 41, 0.25);
 }
@@ -4138,7 +4102,7 @@
   flex: none;
   color: var(--m);
   box-shadow: inset 0 0 0 1.5px var(--l);
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .day-cb svg.i {
   width: 14px;
@@ -4206,7 +4170,7 @@
   border-radius: 50%;
   flex: none;
   box-shadow: inset 0 0 0 2px var(--line2);
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .day-rad.on {
   box-shadow: inset 0 0 0 6.5px var(--m);
@@ -4294,9 +4258,9 @@
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--wf-surface) 18%, transparent);
+  color: var(--wf-on-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 25%, transparent);
 }
 .wm-stage .day-stamp {
   display: flex;
@@ -4352,10 +4316,10 @@
   color: var(--ink3);
 }
 .wm-stage .rost-mc .d.td b {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   font-weight: 750;
-  box-shadow: 0 3px 8px -3px rgba(var(--rgb), 0.7);
+  box-shadow: 0 3px 8px -3px color-mix(in srgb, var(--m) 70%, transparent);
 }
 .wm-stage .rost-mc .d.sel {
   background: var(--s);
@@ -4381,12 +4345,12 @@
   background: transparent;
 }
 .wm-stage .rost-k.pd {
-  background: #fff;
+  background: var(--wf-surface);
   outline: 1.3px dashed currentColor;
   outline-offset: -1.3px;
 }
 .wm-stage .rost-k.gh {
-  background: #fff;
+  background: var(--wf-surface);
   outline: 1.3px dashed currentColor;
   outline-offset: -1.3px;
   opacity: 0.85;
@@ -4462,7 +4426,7 @@
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--m2), var(--m));
+  background: linear-gradient(90deg, var(--mf2), var(--mf));
 }
 .wm-stage .rost-g .tr s {
   position: absolute;
@@ -4544,13 +4508,13 @@
   display: grid;
   place-items: center;
   flex: none;
-  background: #fff;
+  background: var(--wf-surface);
   margin-top: 1px;
 }
 .wm-stage .rost-cb.on {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .rost-cb svg.i {
   width: 12px;
@@ -4561,7 +4525,7 @@
   border-radius: 50%;
 }
 .wm-stage .rost-cb.rd.on {
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 6px var(--m);
 }
 .wm-stage .rost-ck .tag {
@@ -4599,8 +4563,8 @@
   box-shadow: inset 0 0 0 1.5px var(--l);
 }
 .wm-stage .rost-oc .d.sel b {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   box-shadow: none;
 }
 .wm-stage .rost-oc .d.sel {
@@ -4733,11 +4697,11 @@
 .wm-stage .rost-bd .c.o {
   box-shadow: inset 0 0 0 1.3px var(--line2);
   color: var(--ink2);
-  background: repeating-linear-gradient(135deg, #fff 0 4px, var(--wash) 4px 8px);
+  background: repeating-linear-gradient(135deg, var(--wf-surface) 0 4px, var(--wash) 4px 8px);
 }
 .wm-stage .rost-bd .c.q {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
 }
 .wm-stage .rost-bd .c.g {
   background: var(--red-s);
@@ -4753,7 +4717,7 @@
 .wm-stage .rost-swp .fr {
   position: relative;
   z-index: 1;
-  background: #fff;
+  background: var(--wf-surface);
   transform: translateX(-162px);
   box-shadow: 4px 0 12px -6px rgba(16, 26, 41, 0.25);
 }
@@ -4770,7 +4734,7 @@
   place-items: center;
   align-content: center;
   gap: 3px;
-  color: #fff;
+  color: var(--wf-on-accent);
   font-size: 10px;
   font-weight: 700;
 }
@@ -4811,11 +4775,11 @@
   margin-right: 5px;
 }
 .wm-stage .rost-st {
-  background: repeating-linear-gradient(135deg, var(--m) 0 3px, var(--l) 3px 6px);
+  background: repeating-linear-gradient(135deg, var(--mf) 0 3px, var(--l) 3px 6px);
 }
 .wm-stage .rost-sk /* Skeleton */ {
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--wash), #eceff3 50%, var(--wash));
+  background: linear-gradient(90deg, var(--wash), var(--wf-track) 50%, var(--wash));
 }
 .wm-stage .rost-btns /* Small helpers */ {
   display: grid;
@@ -4870,10 +4834,10 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--wf-surface);
   margin-right: 6px;
   vertical-align: 1px;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-surface) 25%, transparent);
 }
 .wm-stage .teach-hnote {
   display: flex;
@@ -4883,7 +4847,7 @@
   padding: 7px 10px;
   font-size: 11.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--wf-hero-ink) 90%, transparent);
 }
 .wm-stage .teach-hnote svg.i {
   width: 13px;
@@ -4902,13 +4866,13 @@
   background: var(--line2);
 }
 .wm-stage .teach-r4 i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .hero .teach-r4 i {
-  background: rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--wf-surface) 25%, transparent);
 }
 .wm-stage .hero .teach-r4 i.d {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .teach-prep4 {
   display: grid;
@@ -4931,13 +4895,13 @@
   display: grid;
   place-items: center;
   flex: none;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1.5px var(--line2);
 }
 .wm-stage .teach-cb.on {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .teach-cb svg.i {
   width: 12px;
@@ -4988,9 +4952,9 @@
   color: var(--m);
 }
 .wm-stage .teach-rail .on b {
-  background: linear-gradient(180deg, var(--m2), var(--m));
-  color: #fff;
-  box-shadow: 0 3px 8px -3px rgba(var(--rgb), 0.7);
+  background: linear-gradient(180deg, var(--mf2), var(--mf));
+  color: var(--wf-on-accent);
+  box-shadow: 0 3px 8px -3px color-mix(in srgb, var(--m) 70%, transparent);
 }
 .wm-stage .teach-rail s {
   display: flex;
@@ -5002,7 +4966,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--m);
+  background: var(--mf);
   opacity: 0.55;
 }
 .wm-stage .teach-rail .past s i {
@@ -5024,15 +4988,15 @@
   height: 7px;
   border-radius: 50%;
   display: inline-block;
-  background: var(--m);
+  background: var(--mf);
   margin-right: 5px;
   vertical-align: 0;
 }
 .wm-stage .teach-cd.oc {
-  background: #11695e;
+  background: var(--wf-info);
 }
 .wm-stage .row.teach-now {
-  background: linear-gradient(90deg, var(--s), #fff 75%);
+  background: linear-gradient(90deg, var(--s), var(--wf-surface) 75%);
 }
 .wm-stage .teach-chart {
   position: relative;
@@ -5055,7 +5019,7 @@
   height: 3px;
 }
 .wm-stage .teach-chart i.h {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .teach-chart .avg {
   position: absolute;
@@ -5070,7 +5034,7 @@
   font-size: 10px;
   font-weight: 700;
   color: var(--ink3);
-  background: #fff;
+  background: var(--wf-surface);
   padding-left: 4px;
 }
 .wm-stage .teach-pace {
@@ -5084,7 +5048,7 @@
   background: var(--s2);
 }
 .wm-stage .teach-pace i.h {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .teach-code {
   font-size: 38px;
@@ -5104,13 +5068,13 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .teach-cam {
   position: relative;
   height: 178px;
   border-radius: 20px;
-  background: linear-gradient(160deg, #2a3344, #151c28);
+  background: linear-gradient(160deg, var(--wf-hero-1), var(--wf-hero-2));
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -5121,14 +5085,14 @@
   inset: 34px 70px;
   border-radius: 14px;
   background:
-    linear-gradient(#fff, #fff) 0 0/22px 3px no-repeat,
-    linear-gradient(#fff, #fff) 0 0/3px 22px no-repeat,
-    linear-gradient(#fff, #fff) 100% 0/22px 3px no-repeat,
-    linear-gradient(#fff, #fff) 100% 0/3px 22px no-repeat,
-    linear-gradient(#fff, #fff) 0 100%/22px 3px no-repeat,
-    linear-gradient(#fff, #fff) 0 100%/3px 22px no-repeat,
-    linear-gradient(#fff, #fff) 100% 100%/22px 3px no-repeat,
-    linear-gradient(#fff, #fff) 100% 100%/3px 22px no-repeat;
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 0 0/22px 3px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 0 0/3px 22px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 100% 0/22px 3px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 100% 0/3px 22px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 0 100%/22px 3px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 0 100%/3px 22px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 100% 100%/22px 3px no-repeat,
+    linear-gradient(var(--wf-surface), var(--wf-surface)) 100% 100%/3px 22px no-repeat;
 }
 .wm-stage .teach-cam span {
   position: absolute;
@@ -5138,7 +5102,7 @@
   text-align: center;
   font-size: 11.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.82);
+  color: color-mix(in srgb, var(--wf-hero-ink) 82%, transparent);
 }
 .wm-stage .teach-otp {
   display: grid;
@@ -5153,13 +5117,13 @@
   place-items: center;
   font-size: 20px;
   font-weight: 750;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 .wm-stage .teach-otp b.c {
   box-shadow:
     inset 0 0 0 1.5px var(--m),
-    0 0 0 4px rgba(var(--rgb), 0.12);
+    0 0 0 4px color-mix(in srgb, var(--m) 12%, transparent);
 }
 .wm-stage .teach-otp i {
   height: 2px;
@@ -5184,22 +5148,22 @@
   background: var(--wash);
 }
 .wm-stage .teach-heat i.l1 {
-  background: rgba(var(--rgb), 0.22);
+  background: color-mix(in srgb, var(--mf) 22%, transparent);
 }
 .wm-stage .teach-heat i.l2 {
-  background: rgba(var(--rgb), 0.45);
+  background: color-mix(in srgb, var(--mf) 45%, transparent);
 }
 .wm-stage .teach-heat i.l3 {
-  background: rgba(var(--rgb), 0.7);
+  background: color-mix(in srgb, var(--mf) 70%, transparent);
 }
 .wm-stage .teach-heat i.l4 {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .teach-heat i.td {
   box-shadow: 0 0 0 1.5px var(--ink);
 }
 .wm-stage .teach-heat i.fu {
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .wm-stage .teach-hk {
@@ -5256,7 +5220,7 @@
   place-items: center;
   font-size: 13.5px;
   font-weight: 750;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 1px var(--line2),
     0 1px 2px rgba(16, 26, 41, 0.05);
@@ -5294,21 +5258,21 @@
 .wm-stage .teach-wl i {
   height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
+  background: color-mix(in srgb, var(--wf-surface) 25%, transparent);
 }
 .wm-stage .teach-wl i.d {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .teach-wl i.c {
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-surface) 35%, transparent);
 }
 .wm-stage .teach-wla {
   display: flex;
   justify-content: space-between;
   font-size: 9.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.72);
+  color: color-mix(in srgb, var(--wf-hero-ink) 72%, transparent);
   margin-top: 5px;
 }
 .wm-stage .teach-banner {
@@ -5331,7 +5295,7 @@
   gap: 14px;
   padding: 30px 26px;
   text-align: center;
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .teach-disp h1 {
   margin: 0;
@@ -5411,8 +5375,8 @@
   box-shadow: inset 0 0 0 1.5px var(--l);
 }
 .wm-stage .teach-add.on {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   box-shadow: none;
 }
 .wm-stage .teach-add svg.i {
@@ -5457,7 +5421,7 @@
   color: var(--ink3);
 }
 .wm-stage .teach-msg.a {
-  background: linear-gradient(90deg, var(--amber-s), #fff 90%);
+  background: linear-gradient(90deg, var(--amber-s), var(--wf-surface) 90%);
   border: 1px solid var(--amber-l);
 }
 .wm-stage .teach-msg.a svg.i {
@@ -5493,10 +5457,10 @@
   background: var(--wash);
 }
 .wm-stage .assess-seg i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .assess-seg i.c {
-  background: repeating-linear-gradient(90deg, var(--m) 0 5px, var(--s2) 5px 8px);
+  background: repeating-linear-gradient(90deg, var(--mf) 0 5px, var(--s2) 5px 8px);
 }
 .wm-stage .assess-sh {
   display: flex;
@@ -5565,12 +5529,12 @@
   display: grid;
   place-items: center;
   box-shadow: inset 0 0 0 1.5px var(--line2);
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .assess-cb.on {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .assess-cb svg.i {
   width: 12px;
@@ -5588,7 +5552,7 @@
   gap: 3px;
   padding: 8px 2px 7px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   text-align: center;
 }
@@ -5621,7 +5585,7 @@
 .wm-stage .assess-txt {
   padding: 10px 12px;
   border-radius: 13px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   font-size: 12.5px;
   line-height: 1.45;
@@ -5655,7 +5619,7 @@
   flex: none;
   margin-top: 1px;
   box-shadow: inset 0 0 0 1.5px var(--line2);
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .assess-rd.on {
   box-shadow: inset 0 0 0 6px var(--m);
@@ -5718,14 +5682,14 @@
   border-radius: 50%;
 }
 .wm-stage .assess-sc i.y {
-  background: var(--m);
-  box-shadow: 0 0 0 2px #fff;
+  background: var(--mf);
+  box-shadow: 0 0 0 2px var(--wf-surface);
 }
 .wm-stage .assess-sc i.t {
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 2.5px var(--ink3),
-    0 0 0 2px #fff;
+    0 0 0 2px var(--wf-surface);
 }
 .wm-stage .assess-sc s {
   position: absolute;
@@ -5760,7 +5724,7 @@
 .wm-stage .assess-sig {
   height: 92px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
   position: relative;
   overflow: hidden;
@@ -5815,7 +5779,7 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--ink2);
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 .wm-stage .assess-slot span.on {
@@ -5824,8 +5788,8 @@
   box-shadow: inset 0 0 0 1.5px var(--m);
 }
 .wm-stage .assess-slot span.bk {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
   box-shadow: none;
 }
 .wm-stage .assess-slot span.x {
@@ -5855,7 +5819,7 @@
   color: var(--ink3);
 }
 .wm-stage .assess-paper {
-  background: #fff;
+  background: var(--wf-surface);
   border-radius: 6px;
   box-shadow:
     0 0 0 1px var(--line2),
@@ -5947,7 +5911,7 @@
   display: block;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--wash), #eef1f5 50%, var(--wash));
+  background: linear-gradient(90deg, var(--wash), var(--wf-canvas) 50%, var(--wash));
 }
 .wm-stage .assess-skel .r {
   display: flex;
@@ -5996,14 +5960,14 @@
   bottom: 5px;
   height: 2px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--wf-surface) 18%, transparent);
   overflow: hidden;
 }
 .wm-stage .assess-drain i {
   display: block;
   height: 100%;
   width: 62%;
-  background: #9cc7ff;
+  background: var(--wf-hero-ink-2);
   border-radius: 2px;
 }
 .wm-stage .assess-kinds {
@@ -6017,7 +5981,7 @@
   gap: 3px;
   padding: 9px 2px 8px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--wf-surface);
   border: 1px solid var(--line);
   text-align: center;
 }
@@ -6039,15 +6003,15 @@
   line-height: 1.2;
 }
 .wm-stage .assess-kinds div.d b {
-  background: var(--m);
-  color: #fff;
+  background: var(--mf);
+  color: var(--wf-on-accent);
 }
 .wm-stage .assess-kinds div.c {
   border-color: var(--l);
   background: var(--s);
 }
 .wm-stage .assess-kinds div.c b {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--m);
   box-shadow: inset 0 0 0 2px var(--m);
 }
@@ -6137,7 +6101,7 @@
   gap: 10px;
   padding: 11px 12px;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--red-s), #fff 85%);
+  background: linear-gradient(90deg, var(--red-s), var(--wf-surface) 85%);
   border: 1px solid var(--red-l);
 }
 .wm-stage .assess-call .tx b {
@@ -6146,16 +6110,16 @@
 }
 .wm-stage .assess-call .btn {
   background: var(--red);
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .assess-off {
   opacity: 0.42;
   filter: saturate(0.6);
 }
 .wm-stage .ic.assess-now {
-  background: var(--m);
-  color: #fff;
-  box-shadow: 0 0 0 4px rgba(var(--rgb), 0.13);
+  background: var(--mf);
+  color: var(--wf-on-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--m) 13%, transparent);
 }
 .wm-stage .row.assess-lock .tx {
   opacity: 0.55;
@@ -6195,15 +6159,15 @@
 .wm-stage .cpd-big small {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--wf-hero-ink) 80%, transparent);
 }
 .wm-stage .cpd-pct {
   font-size: 12px;
   font-weight: 750;
   padding: 4px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--wf-surface) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 20%, transparent);
 }
 .wm-stage .cpd-bar {
   display: flex;
@@ -6212,7 +6176,7 @@
   margin-top: 12px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--wf-surface) 14%, transparent);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 .wm-stage .cpd-bar i {
@@ -6220,16 +6184,20 @@
   height: 100%;
 }
 .wm-stage .cpd-bar .e {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .cpd-bar .r {
-  background: #f6cfa1;
+  background: var(--wf-data-3);
 }
 .wm-stage .cpd-bar .o {
-  background: #e39a55;
+  background: var(--wf-data-1);
 }
 .wm-stage .cpd-bar .rt {
-  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0 3px, rgba(255, 255, 255, 0.12) 3px 6px);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-surface) 50%, transparent) 0 3px,
+    color-mix(in srgb, var(--wf-surface) 12%, transparent) 3px 6px
+  );
 }
 .wm-stage .cpd-leg {
   display: grid;
@@ -6242,11 +6210,11 @@
   align-items: center;
   gap: 7px;
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--wf-hero-ink) 85%, transparent);
 }
 .wm-stage .cpd-leg div b {
   margin-left: auto;
-  color: #fff;
+  color: var(--wf-on-accent);
   font-weight: 750;
 }
 .wm-stage .cpd-leg i {
@@ -6256,16 +6224,20 @@
   flex: none;
 }
 .wm-stage .cpd-leg i.e {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .cpd-leg i.r {
-  background: #f6cfa1;
+  background: var(--wf-data-3);
 }
 .wm-stage .cpd-leg i.o {
-  background: #e39a55;
+  background: var(--wf-data-1);
 }
 .wm-stage .cpd-leg i.rt {
-  background: repeating-linear-gradient(135deg, #fff 0 2px, rgba(255, 255, 255, 0.3) 2px 4px);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--wf-surface) 0 2px,
+    color-mix(in srgb, var(--wf-surface) 30%, transparent) 2px 4px
+  );
 }
 .wm-stage .cpd-pace {
   display: flex;
@@ -6277,17 +6249,17 @@
 .wm-stage .cpd-pace .tx b {
   font-size: 13px;
   font-weight: 750;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .cpd-pace .tx small {
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
   margin-top: 1px;
 }
 .wm-stage .cpd-pace svg.i {
   width: 16px;
   height: 16px;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .cpd-d {
   display: inline-block;
@@ -6299,19 +6271,19 @@
   vertical-align: 0;
 }
 .wm-stage .cpd-d.e {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cpd-d.r {
-  background: #cf8a47;
+  background: var(--wf-data-1);
 }
 .wm-stage .cpd-d.o {
-  background: #e7bd8b;
+  background: var(--wf-data-2);
 }
 .wm-stage .cpd-d.u {
   background: var(--line2);
 }
 .wm-stage .cpd-d.g4 {
-  background: #f3dcc2;
+  background: var(--wf-data-3);
 }
 .wm-stage .cpd-split {
   display: flex;
@@ -6326,19 +6298,19 @@
   height: 100%;
 }
 .wm-stage .cpd-split .e {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cpd-split .r {
-  background: #cf8a47;
+  background: var(--wf-data-1);
 }
 .wm-stage .cpd-split .o {
-  background: #e7bd8b;
+  background: var(--wf-data-2);
 }
 .wm-stage .cpd-split .u {
   background: var(--line2);
 }
 .wm-stage .cpd-split .g4 {
-  background: #f3dcc2;
+  background: var(--wf-data-3);
 }
 .wm-stage .cpd-h {
   font-size: 13px;
@@ -6353,7 +6325,7 @@
   margin-left: 1px;
 }
 .wm-stage .cpd-next {
-  background: linear-gradient(90deg, var(--s), #fff 88%);
+  background: linear-gradient(90deg, var(--s), var(--wf-surface) 88%);
 }
 .wm-stage .cpd-mini {
   width: 48px;
@@ -6367,7 +6339,7 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cpd-mb {
   display: grid;
@@ -6384,7 +6356,7 @@
   min-height: 2px;
 }
 .wm-stage .cpd-mb i.cur {
-  background: linear-gradient(180deg, var(--m2), var(--m));
+  background: linear-gradient(180deg, var(--mf2), var(--mf));
 }
 .wm-stage .cpd-mb i.fut {
   background: transparent;
@@ -6411,7 +6383,7 @@
   border-top: 1px solid var(--line);
 }
 .wm-stage .cpd-swp .row {
-  background: #fff;
+  background: var(--wf-surface);
   transform: translateX(-140px);
   position: relative;
   z-index: 1;
@@ -6430,7 +6402,7 @@
   place-content: center;
   justify-items: center;
   gap: 4px;
-  color: #fff;
+  color: var(--wf-on-accent);
   font-size: 11px;
   font-weight: 700;
 }
@@ -6439,7 +6411,7 @@
   height: 16px;
 }
 .wm-stage .cpd-acts .cp {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cpd-acts .ar {
   background: var(--ink2);
@@ -6497,11 +6469,11 @@
   position: relative;
   z-index: 2;
   border-radius: 14px;
-  background: #fff;
+  background: var(--wf-surface);
   transform: scale(1.025);
   box-shadow:
     0 0 0 1px var(--l),
-    0 14px 28px -12px rgba(var(--rgb), 0.45);
+    0 14px 28px -12px color-mix(in srgb, var(--m) 45%, transparent);
 }
 .wm-stage .cpd-lift + .row,
 .wm-stage .row + .cpd-lift {
@@ -6510,7 +6482,7 @@
 .wm-stage .cpd-sk {
   display: block;
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--wash), #f8f9fb 50%, var(--wash));
+  background: linear-gradient(90deg, var(--wash), var(--wf-surface-2) 50%, var(--wash));
 }
 .wm-stage .cpd-ten {
   display: grid;
@@ -6521,10 +6493,10 @@
 .wm-stage .cpd-ten i {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: color-mix(in srgb, var(--wf-surface) 22%, transparent);
 }
 .wm-stage .cpd-ten i.d {
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .cpd-dom {
   display: grid;
@@ -6567,7 +6539,7 @@
   height: 8px;
   margin-top: 13px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--wf-surface) 18%, transparent);
 }
 .wm-stage .cpd-trk .f {
   position: absolute;
@@ -6575,7 +6547,7 @@
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .cpd-trk .n {
   position: absolute;
@@ -6584,9 +6556,9 @@
   height: 18px;
   margin-left: -9px;
   border-radius: 50%;
-  background: var(--m);
+  background: var(--mf);
   box-shadow:
-    0 0 0 3px #fff,
+    0 0 0 3px var(--wf-surface),
     0 2px 6px rgba(0, 0, 0, 0.25);
 }
 .wm-stage .cpd-trk .ms {
@@ -6597,14 +6569,14 @@
   margin-left: -7px;
   border-radius: 50%;
   background: transparent;
-  box-shadow: inset 0 0 0 2px #fff;
+  box-shadow: inset 0 0 0 2px var(--wf-surface);
 }
 .wm-stage .cpd-tl {
   display: flex;
   justify-content: space-between;
   font-size: 10px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--wf-hero-ink) 75%, transparent);
   margin-top: 7px;
 }
 .wm-stage .cpd-two2 {
@@ -6669,7 +6641,7 @@
   background: var(--wash);
 }
 .wm-stage .cpd-epa i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .cpd-fold {
   display: flex;
@@ -6764,18 +6736,18 @@
   justify-content: space-between;
   font-size: 10.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
   margin-top: 6px;
 }
 .wm-stage .admin-hl b {
-  color: #fff;
+  color: var(--wf-on-accent);
   font-weight: 750;
 }
 .wm-stage .admin-hp {
   margin-top: 10px;
   padding: 8px 10px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--wf-hero-ink) 90%, transparent);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -6849,7 +6821,7 @@
   bottom: 16px;
   left: calc(126px + (100% - 126px) * 0.014);
   width: 1.5px;
-  background: var(--m);
+  background: var(--mf);
   opacity: 0.55;
   border-radius: 2px;
 }
@@ -6953,7 +6925,7 @@
   border: 1.5px solid var(--line2);
   display: grid;
   gap: 7px;
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .admin-wcard .k2 {
   font-size: 9.5px;
@@ -7042,15 +7014,15 @@
   flex: none;
   color: var(--m);
   box-shadow: inset 0 0 0 1.5px var(--l);
-  background: #fff;
+  background: var(--wf-surface);
 }
 .wm-stage .admin-call svg.i {
   width: 15px;
   height: 15px;
 }
 .wm-stage .admin-call.em {
-  background: linear-gradient(180deg, #c9473c, var(--red));
-  color: #fff;
+  background: var(--wf-danger);
+  color: var(--wf-on-accent);
   box-shadow: 0 4px 10px -4px rgba(179, 54, 44, 0.6);
 }
 .wm-stage .admin-crow {
@@ -7162,7 +7134,7 @@
 .wm-stage .admin-paper {
   padding: 14px 14px 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow:
     inset 0 0 0 1px var(--line2),
     0 8px 20px -14px rgba(16, 26, 41, 0.35);
@@ -7212,7 +7184,7 @@
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
-  background: #fff;
+  background: var(--wf-surface);
   transform: translateX(-148px);
   position: relative;
   z-index: 1;
@@ -7231,7 +7203,7 @@
   place-items: center;
   align-content: center;
   gap: 3px;
-  color: #fff;
+  color: var(--wf-on-accent);
   font-size: 11px;
   font-weight: 700;
 }
@@ -7272,7 +7244,7 @@
   font-size: 11.5px;
   font-weight: 700;
   border-radius: 13px;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 .wm-stage .admin-src div.on {
@@ -7351,7 +7323,7 @@
   display: block;
 }
 .wm-stage .admin-bn div.t i {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .admin-bn b {
   font-size: 10px;
@@ -7387,7 +7359,7 @@
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .admin-hb s {
   position: absolute;
@@ -7472,9 +7444,9 @@
   box-shadow: inset 0 0 0 1.5px var(--line2);
 }
 .wm-stage .admin-tick.d {
-  background: var(--m);
+  background: var(--mf);
   box-shadow: none;
-  color: #fff;
+  color: var(--wf-on-accent);
 }
 .wm-stage .admin-tick svg.i {
   width: 12px;
@@ -7514,7 +7486,7 @@
   flex: none;
 }
 .wm-stage .admin-ministp i.d {
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .admin-ministp span.d {
   color: var(--m);
@@ -7524,16 +7496,7 @@
   padding-right: 6px;
   gap: 7px;
 }
-.wm-stage .srch /* ===== AI Search (work search overlay), ID srch ===== */ {
-  --m: #1c5f9f;
-  --m2: #3a7fc0;
-  --deep: #154a7c;
-  --s: #ecf2f9;
-  --s2: #d9e6f4;
-  --l: #c8d9ec;
-  --hb: #e9f0f8;
-  --rgb: 28, 95, 159;
-}
+/* AI Search (work search overlay), ID srch: uses the stage accent. */
 .wm-stage .srch-p .srb {
   padding-top: 12px;
 }
@@ -7591,7 +7554,7 @@
   padding: 7px 10px;
   font-size: 11.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--wf-hero-ink) 90%, transparent);
 }
 .wm-stage .srch-also svg.i {
   width: 13px;
@@ -7614,7 +7577,7 @@
   font-weight: 700;
   color: var(--m);
   text-decoration: underline;
-  text-decoration-color: rgba(var(--rgb), 0.35);
+  text-decoration-color: color-mix(in srgb, var(--m) 35%, transparent);
   text-underline-offset: 3px;
 }
 .wm-stage .srch-tg {
@@ -7647,7 +7610,7 @@
   color: var(--ink3);
 }
 .wm-stage .srch-tg .meter i {
-  background: linear-gradient(90deg, var(--m2), var(--m));
+  background: linear-gradient(90deg, var(--mf2), var(--mf));
 }
 .wm-stage .srch-more {
   display: flex;
@@ -7663,7 +7626,7 @@
   height: 16px;
   border-radius: 50%;
   flex: none;
-  border: 2px solid rgba(var(--rgb), 0.18);
+  border: 2px solid color-mix(in srgb, var(--m) 18%, transparent);
   border-top-color: var(--m);
   animation: srchSpin 0.9s linear infinite;
 }
@@ -7690,7 +7653,7 @@
   display: block;
   height: 9px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--wash), #e9edf2, var(--wash));
+  background: linear-gradient(90deg, var(--wash), var(--wf-track), var(--wash));
   background-size: 200% 100%;
   animation: srchShim 1.4s ease-in-out infinite;
 }
@@ -7722,8 +7685,8 @@
   height: 46px;
   border-radius: 50%;
   box-shadow:
-    0 0 0 4px rgba(var(--rgb), 0.2),
-    0 0 0 9px rgba(var(--rgb), 0.08);
+    0 0 0 4px color-mix(in srgb, var(--m) 20%, transparent),
+    0 0 0 9px color-mix(in srgb, var(--m) 8%, transparent);
   pointer-events: none;
 }
 .wm-stage .srch-tip {
@@ -7745,7 +7708,7 @@
   width: 12px;
   height: 12px;
   transform: rotate(45deg);
-  background: rgba(255, 255, 255, 0.92);
+  background: color-mix(in srgb, var(--wf-surface) 92%, transparent);
   box-shadow: -1px -1px 0 rgba(16, 26, 41, 0.06);
 }
 .wm-stage .srch-tip .srch-k3 {
@@ -7794,7 +7757,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(var(--rgb), 0.25);
+  background: color-mix(in srgb, var(--mf) 25%, transparent);
   animation: srchTap 7s ease-out -2.2s infinite;
   pointer-events: none;
 }
@@ -7924,11 +7887,11 @@
   border-radius: 6px;
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--wf-surface);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
   font-size: 20px;
   font-weight: 450;
-  color: #111;
+  color: var(--wf-ink-1);
   max-width: 34px;
 }
 .wm-stage .srch-k.f {
@@ -7946,13 +7909,13 @@
   max-width: none;
   flex: 1;
   font-size: 14px;
-  color: #222;
+  color: var(--wf-ink-1);
 }
 .wm-stage .srch-k.go {
   max-width: none;
   flex: 0 0 88px;
-  background: linear-gradient(180deg, var(--m2), var(--m));
-  color: #fff;
+  background: linear-gradient(180deg, var(--mf2), var(--mf));
+  color: var(--wf-on-accent);
   font-size: 14px;
   font-weight: 650;
 }
@@ -7961,7 +7924,7 @@
   justify-content: space-between;
   padding: 0 22px;
   margin-top: -2px;
-  color: #4a4f57;
+  color: var(--wf-ink-2);
 }
 .wm-stage .srch-kbb svg.i {
   width: 22px;
@@ -8001,7 +7964,7 @@
   bottom: -1px;
   height: 2.5px;
   border-radius: 2px 2px 0 0;
-  background: var(--m);
+  background: var(--mf);
 }
 .wm-stage .seg button {
   flex: 1;
@@ -8014,7 +7977,7 @@
   color: var(--ink2);
 }
 .wm-stage .seg button.on {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--ink);
   font-weight: 750;
   box-shadow:
@@ -8044,7 +8007,7 @@
 @media (max-width: 420px) {
   .wm-stage {
     padding: 0;
-    background: #eef1f5;
+    background: var(--wf-canvas);
   }
   .wm-stage .intro {
     display: none;
@@ -8085,7 +8048,7 @@
   color: var(--ink3);
 }
 .wm-stage .day-mseg button.on {
-  background: #fff;
+  background: var(--wf-surface);
   color: var(--ink);
   font-weight: 750;
   box-shadow: 0 1px 2px rgba(16, 26, 41, 0.14);
@@ -8116,7 +8079,7 @@
 }
 .wm-stage .toast button {
   font-weight: 750;
-  color: #9cc7ff;
+  color: var(--wf-hero-ink-2);
 }
 .wm-stage .rb {
   position: relative;
@@ -8125,5 +8088,110 @@
   overflow: auto;
 }
 .wm-stage {
-  font-family: var(--font-figtree), "Figtree", system-ui, sans-serif;
+  font-family: var(--wf-font);
+}
+
+/* v6 stage (7 October 2026): one bar, then three phones on one shared record. */
+.wm-stage .wrap {
+  max-width: 1280px;
+  gap: var(--wf-s-3);
+}
+.wm-stage .wm-v6 {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+.wm-stage .wm-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.wm-stage .wm-bar-text {
+  display: grid;
+  min-width: 0;
+  margin-right: auto;
+}
+.wm-stage .wm-bar h1 {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  white-space: nowrap;
+}
+.wm-stage .wm-bar p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wm-stage .wm-phones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+.wm-stage .wm-col {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+.wm-stage .wm-cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.wm-stage .wm-cap h2 {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.wm-stage .wm-cap span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The scrolling body never squeezes a card (the on-call card used to collapse to a strip). */
+.wm-stage .app.fixed > .body {
+  grid-auto-rows: max-content;
+}
+.wm-stage .wm-col .phone {
+  max-width: 410px;
+  background: linear-gradient(160deg, var(--wf-hero-1), var(--wf-hero-edge));
+  box-shadow: var(--wf-e2);
+}
+@media (max-width: 1100px) {
+  .wm-stage .wm-phones {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  .wm-stage .wm-col {
+    width: 100%;
+    max-width: 410px;
+  }
+}
+@media (max-width: 420px) {
+  .wm-stage .wm-bar {
+    margin: var(--wf-s-2) var(--wf-s-4) 0;
+  }
+  .wm-stage .wm-cap {
+    padding: 0 var(--wf-s-4);
+  }
+  .wm-stage .wm-col .phone {
+    max-width: none;
+    background: transparent;
+    box-shadow: none;
+  }
 }

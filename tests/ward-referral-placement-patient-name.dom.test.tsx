@@ -21,7 +21,7 @@ function openReferral(referralId: string) {
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("tab", { name: /Referrals/ }));
+  fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
   fireEvent.click(screen.getByTestId(`ward-referral-row-${referralId}`));
   return within(screen.getByLabelText("Referral placement")).getByTestId("ward-referral-placement-patient");
 }

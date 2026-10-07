@@ -1,7 +1,7 @@
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { readFileSync } from "node:fs";
 
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -47,12 +47,19 @@ import { allEmergencyDepartments, allUnits } from "@/components/ward-management/
  * different hat. A reader cannot tell "not measured here" from "measured, and it was none".
  */
 
+/** v6: each comparison card opens on its chart; its Data view is the exact table these tests read. */
+function showData() {
+  for (const radio of screen.getAllByRole("radio", { name: "Data" })) fireEvent.click(radio);
+}
+
 function renderCompare() {
-  return render(
+  const view = render(
     <WardFlowProvider>
       <StatisticsCompareScreen />
     </WardFlowProvider>,
   );
+  showData();
+  return view;
 }
 
 const STATISTICS_CSS = "src/components/ward-management/statistics/statistics-third-edition.module.css";
@@ -233,7 +240,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * facts about those units, and they were rendering as "we have nothing for you".
    */
   it.each([
-    { table: WARD_TABLE, name: "Blocker recorded" },
+    { table: WARD_TABLE, name: "Blockers" },
     { table: WARD_TABLE, name: "Long stays" },
     { table: ED_TABLE, name: "On the list" },
     { table: ED_TABLE, name: "Marked urgent" },
@@ -253,7 +260,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * the reader is handed a figure inside a statement that there is none. `Discharge dates` is a
    * third thing again: a ratio that cannot be formed, since 0 of 0 is undefined rather than zero.
    */
-  it.each([{ name: "Average stay" }, { name: "Discharge dates" }])(
+  it.each([{ name: "Average stay" }, { name: "Dates met" }])(
     "lets $name state its absence in words, and never with a numeral in them",
     ({ name }) => {
       renderCompare();
@@ -285,11 +292,13 @@ describe("the comparisons page sets wards beside wards and departments beside de
     const UNIT = allUnits()[0];
 
     function renderEmpty() {
-      return render(
+      const view = render(
         <WardFlowProvider>
           <StatisticsCompareScreen units={[UNIT]} admissions={[]} />
         </WardFlowProvider>,
       );
+      showData();
+      return view;
     }
 
     /** The premise, pinned rather than assumed: this fixture really does produce both kinds at once. */
@@ -301,7 +310,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
       expect(stats.longStays, "longStays is not a true nought here").toBe(0);
     });
 
-    it.each([{ name: "Average stay" }, { name: "Discharge dates" }])(
+    it.each([{ name: "Average stay" }, { name: "Dates met" }])(
       "renders $name in words, with no digit anywhere in it",
       ({ name }) => {
         renderEmpty();
@@ -324,8 +333,8 @@ describe("the comparisons page sets wards beside wards and departments beside de
     it("does not render an unmeasurable average the same way as a true nought", () => {
       renderEmpty();
       const cell = (header: string) => cellsUnder(WARD_TABLE, header)[0].toLowerCase();
-      const unmeasurable = [cell("Average stay"), cell("Discharge dates")];
-      const noughts = [cell("Blocker recorded"), cell("Long stays")];
+      const unmeasurable = [cell("Average stay"), cell("Dates met")];
+      const noughts = [cell("Blockers"), cell("Long stays")];
       for (const absent of unmeasurable) {
         for (const nought of noughts) {
           expect(absent, `an unmeasurable average and a true nought render identically: "${absent}"`).not.toBe(nought);

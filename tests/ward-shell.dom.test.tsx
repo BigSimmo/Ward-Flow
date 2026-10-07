@@ -71,20 +71,22 @@ describe("Task 1 — the shell owns the ground", () => {
      */
     const painters = files.filter((file) => {
       const rules = readFileSync(file, "utf8").split("}");
-      return rules.some((rule) => /background:\s*var\(--ward-ground\)/.test(rule) && !/position:\s*sticky/.test(rule));
+      // v6 (7 Oct 2026): the sticky exemption's only user, the old community index bar, is gone, so
+      // a sticky rule painting the ground is now a second owner like any other.
+      return rules.some((rule) => /background:\s*var\(--ward-ground\)/.test(rule));
     });
     // Pinned as a sorted list, not a count: a count survives the declaration moving to
     // another file, which is the failure this guard exists to catch.
     expect(painters).toEqual([join(WARD_DIR, "ward-shell.module.css")]);
 
-    // ⚠️ Non-vacuity for the exemption itself: if nothing anywhere paints the ground on a sticky
-    // rule, the branch above is dead code and this test has quietly become the old one.
+    // The retired exemption stays retired: no sticky rule paints the ground either. If one is
+    // needed again, restore the exemption above with its reason rather than widening this list.
     const stickyPainters = files.filter((file) =>
       readFileSync(file, "utf8")
         .split("}")
         .some((rule) => /background:\s*var\(--ward-ground\)/.test(rule) && /position:\s*sticky/.test(rule)),
     );
-    expect(stickyPainters.length, "the sticky exemption above matches nothing and can be deleted").toBeGreaterThan(0);
+    expect(stickyPainters, "a sticky rule paints --ward-ground; the shell owns the ground").toEqual([]);
   });
 
   it("declares the token exactly once, so the shell is painting a real value", () => {

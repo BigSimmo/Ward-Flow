@@ -75,6 +75,8 @@
 
 /* Timer. The value stays ink-1; the threshold word and glyph carry the state. */
 .timer {
+  /* Anchors the absolutely positioned screen-reader words inside the timer. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);

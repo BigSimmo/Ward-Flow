@@ -1,9 +1,11 @@
 "use client";
 
 import { useId, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { ChartNoAxesGantt, ChevronLeft, ChevronRight } from "lucide-react";
+import { IconTile, buttonClass } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -29,6 +31,9 @@ export interface MovementHorizonGanttProps {
 
 type ZoomHours = 12 | 24 | 48;
 type CorridorTab = "accepted" | "refused";
+
+/** v6: six time columns across the window (every 8 hours at 48h, every 2 at 12h). */
+const TICK_COUNT = 6;
 
 /**
  * 🔴 **WHY EVENTS IN ONE LANE NEED THEIR OWN ROW.** `movements-derivations.ts`'s
@@ -61,16 +66,16 @@ export interface DensitySettings {
 
 export const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
   compact: {
-    barHeight: 24,
-    barGap: 4,
-    barTop: 5,
+    barHeight: 22,
+    barGap: 2,
+    barTop: 6,
     fontSize: "var(--text-xs)",
     labelPadding: "4px 14px",
   },
   expanded: {
-    barHeight: 36,
+    barHeight: 28,
     barGap: 8,
-    barTop: 8,
+    barTop: 10,
     fontSize: "var(--text-xs)",
     labelPadding: "0 14px",
   },
@@ -146,23 +151,27 @@ export function MovementHorizonGantt({
     setIsEnlarged(!isEnlarged);
   };
 
-  // Generate tick markers
+  // Generate tick markers: the offset over the clock time it lands on.
   const ticks = [];
-  const step = zoom / 8;
-  for (let i = 0; i < 8; i++) {
+  const step = zoom / TICK_COUNT;
+  for (let i = 0; i < TICK_COUNT; i++) {
     const h = i * step;
     const tickInstant = now + Math.round(h * 60);
     const isNow = i === 0;
-    const label = isNow
-      ? `NOW (${formatInstant(now)})`
-      : `+${Math.round(h)}h (${formatInstantWithDay(tickInstant, now)})`;
-    ticks.push({ h, label, isNow });
+    ticks.push({
+      h,
+      isNow,
+      offset: isNow ? "Now" : `+${Math.round(h)}h`,
+      time: formatInstantWithDay(tickInstant, now),
+    });
   }
+  const scrubStep = Math.round(step);
 
   // Scrubber cursor calculation (strictly 0% to 100% of track)
   const cursorFraction = scrub / zoom;
   const scrubInstant = now + Math.round(scrub * 60);
-  const scrubBadgeText = scrub === 0 ? "NOW (+0h)" : `+${scrub}h (${formatInstantWithDay(scrubInstant, now)})`;
+  const scrubBadgeText =
+    scrub === 0 ? `Now, ${formatInstantWithDay(now, now)}` : `+${scrub}h, ${formatInstantWithDay(scrubInstant, now)}`;
 
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
@@ -191,6 +200,10 @@ export function MovementHorizonGantt({
     setIsEnlarged(false);
     onSelectMovement?.(id);
   };
+  const selectedEvent =
+    selectedMovementId == null
+      ? undefined
+      : lanes.flatMap((lane) => lane.events).find((event) => event.id === selectedMovementId);
 
   return (
     <div
@@ -202,10 +215,11 @@ export function MovementHorizonGantt({
       aria-label={isEnlarged ? "Full screen movement timeline" : undefined}
       tabIndex={isEnlarged ? -1 : undefined}
     >
-      {/* Panel SubHeader / Toolbar */}
+      {/* v6 card head: tile, title and lane count, then the chart's own controls. */}
       <div className={styles.panelSubHeader}>
         <div className={styles.phScopeInfo}>
-          <span className={styles.phTitle}>48-Hour Movement Timeline</span>
+          <IconTile icon={ChartNoAxesGantt} />
+          <h2 className={styles.phTitle}>{zoom} hour timeline</h2>
           <span className={styles.phLaneCount}>
             {visibleLanes.length === lanes.length
               ? `${lanes.length} receiving wards`
@@ -216,7 +230,7 @@ export function MovementHorizonGantt({
         <div className={styles.phControls}>
           <div className={styles.serviceFilterWrap}>
             <label htmlFor={serviceFilterId} className={styles.serviceFilterLabel}>
-              Service:
+              Service
             </label>
             <select
               id={serviceFilterId}
@@ -274,7 +288,7 @@ export function MovementHorizonGantt({
           </div>
           <button
             type="button"
-            className={styles.phBtn}
+            className={buttonClass({ variant: "sec", size: "sm", className: styles.phBtn })}
             id="enlargeHorizonGantt"
             aria-pressed={isEnlarged}
             onClick={handleToggleEnlarge}
@@ -284,7 +298,7 @@ export function MovementHorizonGantt({
           </button>
           <button
             type="button"
-            className={styles.phBtn}
+            className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
             id="toggleHorizonDiagram"
             aria-controls="horizonDiagramArea"
             aria-expanded={!isCollapsed}
@@ -298,12 +312,21 @@ export function MovementHorizonGantt({
 
       {!isCollapsed && (
         <div id="horizonDiagramArea" className={styles.diagramArea}>
-          {/* Controls Bar (Scrubber) */}
+          {/* Scrub row: step back, the slider, step forward, the time it points at, then Reset. */}
           <div className={styles.ganttControlsBar}>
             <div className={styles.ganttScrubberWrap}>
               <label htmlFor={scrubberId} className={styles.ganttScrubLabel}>
-                Scrubber:
+                Scrub
               </label>
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
+                aria-label={`Back ${scrubStep} hours`}
+                disabled={scrub === 0}
+                onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </button>
               <input
                 type="range"
                 id={scrubberId}
@@ -319,39 +342,40 @@ export function MovementHorizonGantt({
                 aria-valuetext={scrubBadgeText}
                 onChange={(e) => handleScrubberChange(parseInt(e.target.value, 10))}
               />
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
+                aria-label={`Forward ${scrubStep} hours`}
+                disabled={scrub >= zoom}
+                onClick={() => handleScrubberChange(Math.min(zoom, scrub + scrubStep))}
+              >
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
               <span className={styles.ganttScrubBadge} id="ganttScrubBadgeText">
                 {scrubBadgeText}
               </span>
-              <button type="button" className={styles.ganttResetBtn} onClick={handleResetScrubber}>
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm", className: styles.ganttResetBtn })}
+                onClick={handleResetScrubber}
+              >
                 Reset
               </button>
             </div>
-            <div className={styles.ganttLegend} role="note" aria-label="Movement horizon legend">
-              <span className={styles.ganttLegendItem}>
+            <ul className={styles.ganttLegend} aria-label="Movement horizon legend">
+              <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true" />
-                <span>Inbound Admit</span>
-              </span>
-              <span className={styles.ganttLegendItem}>
+                Inbound admit
+              </li>
+              <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true" />
-                <span>In Transit</span>
-              </span>
-              <span className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchLeave}`} aria-hidden="true" />
-                <span>Leave Return</span>
-              </span>
-              <span className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchDisch}`} aria-hidden="true" />
-                <span>Discharge</span>
-              </span>
-              <span className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchPred}`} aria-hidden="true" />
-                <span>Predicted</span>
-              </span>
-              <span className={styles.ganttLegendItem}>
+                In transit
+              </li>
+              <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true" />
-                <span>Delay / Hold</span>
-              </span>
-            </div>
+                Bed hold passed
+              </li>
+            </ul>
           </div>
 
           {/* Split Container: Gantt Grid + Side Corridor Register */}
@@ -391,11 +415,16 @@ export function MovementHorizonGantt({
 
                   {/* Header Row */}
                   <div className={styles.ganttHeaderRow}>
-                    <div className={styles.ganttColWard}>Ward / Receiving Unit</div>
+                    <div className={styles.ganttColWard}>Receiving ward</div>
                     <div className={styles.ganttColTicks}>
                       {ticks.map((t) => (
-                        <div key={t.h} className={`${styles.ganttTick}${t.isNow ? ` ${styles.nowTick}` : ""}`}>
-                          {t.label}
+                        <div
+                          key={t.h}
+                          className={`${styles.ganttTick}${t.isNow ? ` ${styles.nowTick}` : ""}`}
+                          title={`${t.offset} ${t.time}`}
+                        >
+                          <span className={styles.tickOffset}>{t.offset}</span>
+                          <span className={styles.tickTime}>{t.time}</span>
                         </div>
                       ))}
                     </div>
@@ -430,17 +459,12 @@ export function MovementHorizonGantt({
                           className={styles.ganttLaneRow}
                           style={{ height: `${trackHeight}px` } as CSSProperties}
                         >
-                          <div
-                            className={styles.ganttLaneLabel}
-                            title={lane.name}
-                            style={{ padding: cfg.labelPadding }}
-                          >
-                            <span>{lane.name}</span>
+                          <div className={styles.ganttLaneLabel} title={lane.name}>
+                            <span className={styles.ganttLaneName}>{lane.name}</span>
                             <span className={styles.ganttSvcTag}>{lane.service}</span>
                           </div>
                           <div className={styles.ganttLaneTrack}>
-                            {/* 8 Track Background Columns */}
-                            {Array.from({ length: 8 }).map((_, c) => (
+                            {Array.from({ length: TICK_COUNT }).map((_, c) => (
                               <div key={c} className={styles.ganttLaneCol} aria-hidden="true" />
                             ))}
 
@@ -477,11 +501,11 @@ export function MovementHorizonGantt({
                                   className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}`}
                                   style={
                                     {
-                                      left: `${leftPct.toFixed(2)}%`,
+                                      // A bar near the far edge keeps its short name inside the track.
+                                      left: `min(${leftPct.toFixed(2)}%, calc(100% - 104px))`,
                                       width: `${actualW.toFixed(2)}%`,
                                       top: `${cfg.barTop + row * rowStep}px`,
                                       height: `${cfg.barHeight}px`,
-                                      fontSize: cfg.fontSize,
                                     } as CSSProperties
                                   }
                                   data-mid={ev.id}
@@ -511,7 +535,7 @@ export function MovementHorizonGantt({
                   <div className={styles.ganttFillerRow} aria-hidden="true">
                     <div className={styles.ganttFillerWard} />
                     <div className={styles.ganttFillerTrack}>
-                      {Array.from({ length: 8 }).map((_, c) => (
+                      {Array.from({ length: TICK_COUNT }).map((_, c) => (
                         <div key={c} className={styles.ganttFillerCol} />
                       ))}
                     </div>
@@ -521,83 +545,93 @@ export function MovementHorizonGantt({
 
               {/* Diagram Footer */}
               <div className={styles.diagFoot}>
-                <span className={styles.diagScope}>Select a movement to open its record.</span>
+                <span className={styles.diagScope}>
+                  {selectedEvent
+                    ? `Selected ${formalName(barPatientName(selectedEvent))}.`
+                    : "Select a movement to open its record."}
+                </span>
               </div>
             </div>
 
             {/* Side Corridor Rail */}
-            {
-              <aside className={styles.corridorRail} aria-label="Ranked corridors">
-                <div className={styles.corridorRailHeader}>
-                  <h3>Corridors</h3>
-                  <div className={styles.corridorTabs} role="group" aria-label="Corridor kind">
-                    <button
-                      type="button"
-                      aria-pressed={activeCorridorTab === "accepted"}
-                      onClick={() => setActiveCorridorTab("accepted")}
-                    >
-                      Accepted <span>{acceptedPairs.size}</span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={activeCorridorTab === "refused"}
-                      onClick={() => setActiveCorridorTab("refused")}
-                    >
-                      Declined <span>{refusedCorridors.length}</span>
-                    </button>
-                  </div>
+            <aside className={styles.corridorRail} aria-label="Ranked corridors">
+              <div className={styles.corridorRailHeader}>
+                <h3>Corridors</h3>
+                <div className={styles.corridorTabs} role="group" aria-label="Corridor kind">
+                  <button
+                    type="button"
+                    aria-pressed={activeCorridorTab === "accepted"}
+                    onClick={() => setActiveCorridorTab("accepted")}
+                  >
+                    Accepted <span>{acceptedPairs.size}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={activeCorridorTab === "refused"}
+                    onClick={() => setActiveCorridorTab("refused")}
+                  >
+                    Declined <span>{refusedCorridors.length}</span>
+                  </button>
                 </div>
-                {activeCorridorTab === "accepted" ? (
-                  corridors.length === 0 ? (
-                    <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
-                  ) : (
-                    <ol className={styles.corridorRanks}>
-                      {rankedPairs.map((corridor) => {
-                        const ed = edById(corridor.originEdId);
-                        const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);
-                        return (
-                          <li key={`${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage} rank`}>
-                            <span>
-                              {ed ? `${ed.siteCode} ED` : corridor.originEdId} to{" "}
-                              {wardLabel(corridor.acceptedUnitId, unit?.name)}
-                              <small>
-                                {ed?.name ? `${ed.name} · ` : ""}
-                                {corridor.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(" · ")}
-                              </small>
-                            </span>
-                            <strong>{corridor.count}</strong>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  )
-                ) : refusedCorridors.length === 0 ? (
-                  <p className={styles.railEmpty}>No ward refusal is recorded today.</p>
+              </div>
+              {activeCorridorTab === "accepted" ? (
+                corridors.length === 0 ? (
+                  <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
                 ) : (
                   <ol className={styles.corridorRanks}>
-                    {refusedCorridors.map((corridor) => {
+                    {rankedPairs.map((corridor) => {
                       const ed = edById(corridor.originEdId);
-                      const unit = units.find((candidate) => candidate.id === corridor.unitId);
+                      const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);
+                      const route = `${ed ? `${ed.siteCode} ED` : corridor.originEdId} to ${wardLabel(corridor.acceptedUnitId, unit?.name)}`;
+                      const detail = corridor.stages
+                        .map((row) => `${stageCopy[row.stage].label} ${row.count}`)
+                        .join(" · ");
                       return (
-                        <li key={`${corridor.originEdId} ${corridor.unitId} refused rank`}>
+                        <li
+                          key={`${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage} rank`}
+                          title={`${ed?.name ? `${ed.name} to ` : ""}${wardLabel(corridor.acceptedUnitId, unit?.name)}`}
+                        >
                           <span>
-                            {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
-                            <small>
-                              {ed?.name ? `${ed.name} · ` : ""}
-                              {corridor.reasons.map((r) => r.replaceAll("_", " ")).join(", ")}
-                            </small>
+                            <span className={styles.corridorRoute}>{route}</span>
+                            {/* The department's full name stays for screen readers; sighted readers
+                                have it in the row's title. */}
+                            {ed?.name ? <span className="sr-only">From {ed.name}.</span> : null}
+                            <small>{detail}</small>
                           </span>
                           <strong>{corridor.count}</strong>
                         </li>
                       );
                     })}
                   </ol>
-                )}
-                {activeCorridorTab === "refused" && (
-                  <p className={styles.stripNote}>Declines have no journey stage of their own.</p>
-                )}
-              </aside>
-            }
+                )
+              ) : refusedCorridors.length === 0 ? (
+                <p className={styles.railEmpty}>No ward refusal is recorded today.</p>
+              ) : (
+                <ol className={styles.corridorRanks}>
+                  {refusedCorridors.map((corridor) => {
+                    const ed = edById(corridor.originEdId);
+                    const unit = units.find((candidate) => candidate.id === corridor.unitId);
+                    return (
+                      <li
+                        key={`${corridor.originEdId} ${corridor.unitId} refused rank`}
+                        title={`${ed?.name ? `${ed.name} to ` : ""}${wardLabel(corridor.unitId, unit?.name)}`}
+                      >
+                        <span>
+                          <span className={styles.corridorRoute}>
+                            {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
+                          </span>
+                          <small>{corridor.reasons.map((r) => r.replaceAll("_", " ")).join(", ")}</small>
+                        </span>
+                        <strong>{corridor.count}</strong>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {activeCorridorTab === "refused" && (
+                <p className={styles.stripNote}>Declines have no journey stage of their own.</p>
+              )}
+            </aside>
           </div>
         </div>
       )}
@@ -621,7 +655,8 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
               : "Admit";
 
   // Owner, 26 Sept 2026: the bar names the patient; the WF journey number is not shown.
-  const name = barPatientName(ev);
+  // v6 (7 Oct 2026): the bar reads "Surname, I"; the full name stays in the accessible name.
+  const name = shortName(barPatientName(ev));
   if (pct < 12) return name;
   if (pct < 22) return `${name} · ${sub}`;
   return `${name} · ${ev.title}`;
@@ -630,4 +665,21 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
 /** The patient's name for a bar, or the resolver's own "Unknown Patient" when none is linked. */
 function barPatientName(ev: MovementHorizonEvent): string {
   return ev.patientName ?? "Unknown Patient";
+}
+
+/** "Noor Tremalow" to "Tremalow, Noor". A name already in that order, or one word, is kept. */
+function formalName(name: string): string {
+  if (name === "Unknown Patient" || name.includes(",")) return name;
+  const parts = name.trim().split(/\s+/u);
+  if (parts.length < 2) return name;
+  const surname = parts[parts.length - 1];
+  return `${surname}, ${parts.slice(0, -1).join(" ")}`;
+}
+
+/** "Noor Tremalow" to "Tremalow, N", the bar's short label. */
+function shortName(name: string): string {
+  const formal = formalName(name);
+  const [surname, given] = formal.split(", ");
+  if (given === undefined || formal === "Unknown Patient") return formal;
+  return `${surname}, ${given.charAt(0)}`;
 }

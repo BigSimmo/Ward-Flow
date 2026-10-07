@@ -18,21 +18,27 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 THE COMMUNITY SCREEN'S V2 SOVEREIGN OPERATIONAL TABS AND CHROME.
- * Modernized from third-edition headings to assert the 5 Sovereign operational tabs,
- * 4 Sovereign action buttons, 6 telemetry capsules, and coordinator subtitle.
+ * Modernized from third-edition headings to assert the operational tabs, the 4 action buttons,
+ * 6 counts and the coordinator subtitle.
+ *
+ * v6 (7 October 2026, `design/pages-v6/CommunityTeam.png`): the tabs, actions and counts now sit
+ * in the hero band under the mockup's wording. The four list tabs keep their panels; the team's own
+ * facts are shown under every list rather than as a fifth tab. The counts read the same expressions
+ * the telemetry ribbon read.
  */
 
-const SOVEREIGN_TABS = [
-  "Waiting for the team's answer",
-  "In a bed or holding one",
+const SOVEREIGN_TABS = ["Waiting answer", "In a bed", "Expected back", "Caseload and CTOs"] as const;
+
+const SOVEREIGN_ACTIONS = ["Intake referral", "Record contact", "CTO register", "Catchment MDT"] as const;
+
+const SOVEREIGN_TELEMETRY = [
+  "Caseload",
+  "Waiting answer",
+  "In a bed",
   "Expected back",
-  "Active Caseload & CTOs",
-  "This team",
+  "On a CTO",
+  "Crisis open",
 ] as const;
-
-const SOVEREIGN_ACTIONS = ["Intake New Referral", "Record Contact", "CTO Register", "Catchment MDT"] as const;
-
-const SOVEREIGN_TELEMETRY = ["Caseload", "Triage", "Inpatients", "Egress", "CTOs", "Crisis"] as const;
 
 /** The wordings the third edition and sovereign console replaced. */
 const RETIRED_HEADINGS = [

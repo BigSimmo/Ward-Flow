@@ -1,0 +1,986 @@
+/*
+ * Home (v6 Home mockup, 7 Oct 2026). One hero band, the ED pressure card, then three columns:
+ * priority queue, State bedflow, and the registers with "Since you looked". The explainable
+ * shortlist opens over the right column. v6 tokens only; colour is a glyph or a dot, never a fill.
+ *
+ * `.screen` composes the older ward token layers because the shortlist panel inside it still
+ * reads them (`coordinator.module.css`, `shortlist-panel.module.css`).
+ */
+
+.screen {
+  composes: descendantKillWithScroll from "../ward-reduced-motion.module.css";
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  --co-shortlist-bar-pad-y: var(--ward-space-8);
+  --co-shortlist-bar-safe-bottom: max(var(--ward-space-8), var(--safe-area-bottom));
+  --co-shortlist-bar-reserve: calc(
+    var(--ward-tap) + var(--co-shortlist-bar-pad-y) + var(--co-shortlist-bar-safe-bottom) + 0.0625rem
+  );
+  --co-z-connectors: 1;
+  --co-z-nodes: 2;
+  --co-z-banner: 3;
+  --co-leading-tight: 1.2;
+  display: block;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.eyebrow {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cardNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-h-lg);
+  margin-top: auto;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  box-sizing: border-box;
+}
+
+.footMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.footMeta .eyebrow {
+  margin-right: var(--wf-s-1);
+}
+
+.footMeta svg {
+  margin-left: var(--wf-s-2);
+}
+
+.footLink {
+  flex: 0 0 auto;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.footLink:hover {
+  text-decoration: underline;
+}
+
+.headCount {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.emptyLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- ED pressure ---------- */
+
+.edCard {
+  overflow: hidden;
+}
+
+.edGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edCell {
+  display: flex;
+  min-width: 0;
+  border-right: 1px solid var(--wf-line);
+}
+
+.edButton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-1) var(--wf-s-3) var(--wf-s-2);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.edButton:hover {
+  background: var(--wf-hover);
+}
+
+.edButton[data-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-3);
+}
+
+.edTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.edCode {
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+}
+
+.edService {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.edWaiting {
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.edWaitingValue {
+  margin-right: 2px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+}
+
+.edTrack {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.edTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-1);
+}
+
+.edLine {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.edMono {
+  color: var(--wf-ink-1);
+  letter-spacing: -0.02em;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.edWord {
+  font-size: var(--wf-fs-11);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- three columns ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .grid {
+    grid-template-columns: minmax(0, 314fr) minmax(0, 454fr) minmax(0, 346fr);
+  }
+}
+
+.side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: 100%;
+}
+
+/* ---------- priority queue ---------- */
+
+.queueCard {
+  min-width: 0;
+}
+
+.queueTools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.queueFilter {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.queueList {
+  max-height: 39rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.queueList[hidden] {
+  display: none;
+}
+
+.queueRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.queueRow:hover {
+  background: var(--wf-hover);
+}
+
+/* The selected row is the one stripe allowed (3px slate). */
+.queueRowSelected {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-pri-1);
+}
+
+.queueTier {
+  flex: 0 0 auto;
+}
+
+/* Carries `data-tier` and the 12px type-floor hook; adds no box of its own. */
+.queueTierCell {
+  display: contents;
+  font-size: var(--wf-fs-12);
+}
+
+.queueChip {
+  flex: 0 0 auto;
+}
+
+.noShrink {
+  flex: 0 0 auto;
+}
+
+.queueMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.queueName {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.queueName strong {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.queueFlag {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-danger-ink);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.queueSub {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.queueSubText {
+  flex: 0 1 auto;
+  min-width: 2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queueScore {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.queueMarks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--wf-s-2);
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.queueMarks:empty {
+  display: none;
+}
+
+.queueMark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.queueWait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.queueTimer {
+  font-weight: 600;
+}
+
+.queueWord {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.queueWordStrong {
+  color: var(--wf-ink-2);
+}
+
+/* ---------- State bedflow ---------- */
+
+.flowCard {
+  min-width: 0;
+}
+
+.flowHead {
+  gap: var(--wf-s-2);
+  padding-inline: var(--wf-s-3);
+}
+
+.flowLegend {
+  flex-wrap: nowrap;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  font-size: var(--wf-fs-11);
+  white-space: nowrap;
+}
+
+.flowLegend > li {
+  gap: var(--wf-s-1);
+}
+
+.forStrip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.forLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.forLabel {
+  color: var(--wf-ink-3);
+}
+
+.forName {
+  font-weight: 600;
+}
+
+.forMeta {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+}
+
+.forFits {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.forBest {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.forStatus {
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+.flowBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.group {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-md);
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.groupHead:hover {
+  background: var(--wf-hover);
+}
+
+.groupName {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.groupCount {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.groupFigures {
+  margin-left: auto;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.unitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unitList[hidden] {
+  display: none;
+}
+
+.unitRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-lg);
+  padding-right: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.unitRowSelected {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-pri-1);
+}
+
+.unitRowDim .unitNameText,
+.unitRowDim .unitSub,
+.unitRowDim .unitReady,
+.unitRowDim .unitExpected,
+.unitRowDim .unitPending {
+  color: var(--wf-ink-off);
+}
+
+.unitMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(3rem, 6rem) 3.5rem;
+  align-items: center;
+  gap: var(--wf-s-3);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-1) 0 var(--wf-s-1) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.unitMain:hover {
+  background: var(--wf-hover);
+}
+
+.unitName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.unitNameText {
+  overflow: hidden;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.unitSub {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.unitPending {
+  color: var(--wf-warning-ink);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.unitBar {
+  min-width: 0;
+}
+
+.unitReady {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  line-height: var(--wf-lh-12);
+}
+
+.unitReadyValue {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.unitReadyWord {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  text-transform: lowercase;
+}
+
+.unitStatus {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  /* A notice can wrap to two lines; the glyph stays beside its first line. */
+  align-items: first baseline;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.unitAction {
+  display: flex;
+  flex: 0 0 5.5rem;
+  justify-content: flex-end;
+}
+
+.unitExpected {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+/* ---------- registers ---------- */
+
+.registersCard {
+  min-width: 0;
+}
+
+.registersToggle {
+  display: none;
+}
+
+.registersToggleCounts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.registersToggleCounts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.registersPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.registersTabs {
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.registerPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.registerPanel[hidden] {
+  display: none;
+}
+
+.registerList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.registerList > li[hidden] {
+  display: none;
+}
+
+.registerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+button.registerRow {
+  cursor: pointer;
+}
+
+button.registerRow:hover {
+  background: var(--wf-hover);
+}
+
+.registerMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.registerTitle {
+  font-weight: 600;
+}
+
+.registerSub,
+.registerNote {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.registerNote {
+  color: var(--wf-ink-2);
+}
+
+.registerLead {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* ---------- since you looked ---------- */
+
+.sinceCard {
+  min-width: 0;
+}
+
+.sinceQuiet {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+}
+
+.sinceStats {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.sinceLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  list-style: none;
+}
+
+.sinceLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  color: var(--wf-ink-1);
+}
+
+.sinceLine > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- shortlist over the right column ---------- */
+
+.shortlistBackdrop {
+  display: none;
+}
+
+.shortlistColumn {
+  display: flex;
+  min-width: 0;
+}
+
+.shortlistRegion {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  box-sizing: border-box;
+}
+
+.sheetHandle {
+  display: none;
+}
+
+.shortlistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.shortlistHeader h2 {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* ---------- footer marker ---------- */
+
+.refusalMarker {
+  margin-left: var(--wf-s-2);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+}
+
+.refusalMarker[data-alert="true"] {
+  color: var(--wf-danger-ink);
+}
+
+/* ---------- phone ---------- */
+
+@media (max-width: 48rem) {
+  /* Phone form (Task 8): queue first. The ED card and State bedflow leave the page; the queue and
+     the registers stay, and the registers collapse behind "Today's answers". */
+  .edCard,
+  .flowCard {
+    display: none;
+  }
+
+  .body {
+    padding: var(--wf-s-2);
+  }
+
+  .registersToggle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    width: 100%;
+    min-height: var(--wf-h-lg);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    text-align: left;
+  }
+
+  .registersToggle svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .registersPanel[data-open="false"] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queueRow,
+  .unitMain,
+  .edButton {
+    transition: none;
+  }
+}
+
+/* ---------- since you looked: activity timeline ---------- */
+
+.sinceTimeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  list-style: none;
+}
+
+.sinceEvent {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding-block: var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.sinceTime {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.sinceText {
+  min-width: 0;
+}

@@ -237,13 +237,15 @@ describe("the coordinator's registers drawer", () => {
     const declinesTab = screen.getByRole("tab", { name: /Declines/ });
     expect(declinesTab).toHaveAttribute("aria-selected", "false");
 
-    // The tab strip's own arrow-key handling: Declines is first, so Right from Exceptions (the
-    // default active tab) moves through Refused actions and wraps back to Declines.
+    // The tab strip's own arrow-key handling. v6 Home (7 Oct 2026) puts Exceptions first, so Left
+    // from Exceptions (the default active tab) wraps to Refused, and Right from there wraps back
+    // round to Exceptions and on to Declines.
     const exceptionsTab = screen.getByRole("tab", { name: /Exceptions/ });
     expect(exceptionsTab).toHaveAttribute("aria-selected", "true");
     exceptionsTab.focus();
-    fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowRight" });
+    fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowLeft" });
     expect(screen.getByRole("tab", { name: /Refused/ })).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowRight" });
     fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: /Declines/ })).toHaveAttribute("aria-selected", "true");
 

@@ -1,73 +1,64 @@
 "use client";
 
-import { StatisticsInsightChart } from "./statistics-insight-chart";
-import family from "./statistics-family.module.css";
-
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { BedDouble, ChevronRight, Clock, Download, MapPin, Pin, Search, X } from "lucide-react";
 
-import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
+import {
+  BarList,
+  Button,
+  CardBody,
+  CardFoot,
+  HeroStat,
+  Icon,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  durMinutes,
+  tableClasses,
+  type BarListRow,
+} from "@/components/wf";
 import {
   statisticsSectionById,
   STATISTICS_UNIT_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
+import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { allWardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
-import styles from "./statistics-third-edition.module.css";
-
-function focusComparisonSection(id: string) {
-  const region = document.getElementById(id);
-  const detail = region?.querySelector("details");
-  if (detail) detail.open = true;
-  queueMicrotask(() => region?.focus({ preventScroll: true }));
-}
+import { axisMax } from "./statistics-axis";
+import { csvCell } from "./statistics-csv";
+import { edWaitFigures } from "./statistics-ed-waits";
+import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { wardReferralTally } from "./statistics-ward-referrals";
+import compare from "./statistics-compare.module.css";
+import styles from "./statistics-v6.module.css";
 
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
  *
- * ⚠️ **NO COMPARISON IS SHOWN, AND THE LIST BELOW IS NOT ONE.** The list is navigation: every ward
- * and every emergency department, each a link to its own detail page. It is not a ranking, not a
- * shortlist and not an ordering by anything — the units keep the order the fixture records them in,
- * and the page says so, because a list of units on a page headed "comparisons" is read as a league
- * table unless it denies being one.
+ * **Two comparisons, never one.** Wards are set beside wards and departments beside departments:
+ * a ward measure is about beds, and an emergency department in this model has no beds, so one
+ * table would claim a shared measure set that does not exist. Each card draws its figures as a
+ * bar list and keeps the exact table behind its Data view.
  *
- * ⚠️ **THE COMPARISON IS BUILT — TWO TABLES, SINCE 2026-09-05 — AND THIS PARAGRAPH SAID IT WAS NOT
- * UNTIL THE SAME DAY.** It read "the comparison itself is the hard part and it is not built", which
- * was true when written and false from the moment the tables landed a few hundred lines below it.
- * **A "not built yet" note is a claim with an expiry date and nothing connects it to the work that
- * expires it** — the shape this file's sibling `statistics-overview-screen.tsx` warns about in its
- * own words, found here by the owner asking a plain question about which pages were finished.
- *
- * **The reasoning it carried is not stale and is kept, because it still governs every column.**
- * Choosing which measure to set beside every unit decides what the page claims, and a figure shown
- * side by side carries a verdict whether or not one was intended — a ward at the bottom of a column
- * looks like a ward doing badly, when it may simply be the ward taking the people nobody else can.
- * That question is answered per measure, and it is why `Empty-bed time` was removed rather than
- * annotated and why the sixth ward measure is stated in a note rather than given a column.
+ * **The Data tables keep the recorded order.** The chart sorts (Highest, Lowest, A to Z); the
+ * table is the record, in the order the prototype records units, and never ranks them.
  *
  * **Why the chooser lives here.** The per-unit detail routes are dynamic — one route serving every
- * ward, one serving every emergency department — so the section has no index page of its own, and
- * a dynamic route with no concrete link anywhere is a page only reachable by typing an address.
- * This is the one page whose subject is the whole set of units, so this is where the way in
- * belongs. `STATISTICS_UNIT_CHOOSER_ID` is the anchor the hub's third section links to.
+ * ward, one serving every emergency department — so this is the one page whose subject is the
+ * whole set of units, and `STATISTICS_UNIT_CHOOSER_ID` is the anchor the hub links to.
  *
  * **Wards come from the provider's live `units`**, never from the frozen fixture, which is what
- * `tests/ward-flow-single-source.test.ts` requires of every screen: a surface reading `allUnits()`
- * instead of live state is how a ward that has changed can still be described by its seeded values.
- * This page renders no unit state at all, so it could not show that staleness today — but the rule
- * is structural on purpose, and "this screen's fields never change" is exactly the exemption that
- * would stop it meaning anything. Emergency departments are not in provider state at all (they are
- * identity, not capacity), so they come from `allEmergencyDepartments()`, the same source
- * `ed-screen.tsx` resolves a department from.
+ * `tests/ward-flow-single-source.test.ts` requires. Emergency departments are identity, not
+ * capacity, so they come from `allEmergencyDepartments()`.
  */
 export function StatisticsCompareScreen({
   units: unitsOverride,
@@ -75,409 +66,759 @@ export function StatisticsCompareScreen({
   admissions: admissionsOverride,
 }: {
   /** A testing seam only — nothing in the app passes any of them. The route renders this screen with
-   *  no props, exactly as `WardIndex` documents on its own override: it exists so a test can render
-   *  states the seeded network cannot produce, such as a unit whose site code resolves to nothing. */
+   *  no props: it exists so a test can render states the seeded network cannot produce, such as a
+   *  unit whose site code resolves to nothing. */
   units?: Unit[];
   emergencyDepartments?: EmergencyDepartment[];
   /**
-   * ⚠️ **ADDED 2026-09-05 TO CLOSE A COVERAGE GAP A SECOND READER FOUND BY LOOKING AT THE PAGE.**
-   * Ward Lead's own ruling names a null average rendered as a number the single most likely way
-   * these screens could lie — and **not one ward in the seeded fixture has a null average**, so on
-   * the compare screen that branch was rendered by nothing and asserted by nothing. An empty
-   * admission list is the state that produces it, and the seed cannot produce that state.
-   *
-   * The route must never pass this, for the reason `community/[teamId]/page.tsx` records at length:
-   * a route that pins a screen to a fixture silently overrides live state, and a duration computed
-   * against a frozen seed inflated every wait on two screens in this project.
+   * An empty admission list is the state that produces a null average, and the seed cannot
+   * produce it. The route must never pass this: a route that pins a screen to a fixture silently
+   * overrides live state.
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases = [] } = useWardFlow();
-  const now = useWardFlowClock();
+  const live = useStatisticsLive();
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
+  const now = live.now;
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
 
-  // 1. Inpatient Network KPI figures
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const readyBeds = units.reduce((sum, u) => sum + unitCapacity(u, bedReleases).available, 0);
   const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
-  // 2. Average Length of Stay KPI figures
   const wardStats = allWardStatistics(units, admissions, now);
-  const validStays = wardStats.filter(({ statistics }) => statistics.averageLengthOfStayDays !== null);
-  const networkAvgStay =
-    validStays.length > 0
-      ? (
-          validStays.reduce((s, { statistics }) => s + (statistics.averageLengthOfStayDays ?? 0), 0) / validStays.length
-        ).toFixed(1)
-      : "—";
+  const recordedStays = wardStats.flatMap(({ statistics }) =>
+    statistics.averageLengthOfStayDays === null ? [] : [statistics.averageLengthOfStayDays],
+  );
+  const networkAvgStay = recordedStays.length > 0 ? mean(recordedStays) : null;
   const totalBlockers = wardStats.reduce((s, { statistics }) => s + statistics.readyToLeaveCannot, 0);
   const totalLongStays = wardStats.reduce((s, { statistics }) => s + statistics.longStays, 0);
 
-  // 3. ED Placement Demand figures
   const openMovements = movements.filter(isOpen);
   const edWaitingCount = openMovements.length;
   const urgentCount = openMovements.filter((m) => m.flaggedUrgent).length;
   const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
 
+  const wardRows: WardRow[] = wardStats.map(({ unit, statistics }) => {
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    return {
+      unit,
+      statistics,
+      site: siteByCode(unit.siteCode),
+      group: wardGroup(unit),
+      occupancy: unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0,
+      readyNow: unitCapacity(unit, bedReleases).available,
+      awaitingAnswer: wardReferralTally(openMovements, unit.id).askedAndWaiting,
+    };
+  });
+
+  const edRows: EdCompareRow[] = emergencyDepartments.map((department) => {
+    const figures = edWaitFigures(movements, department.id, now);
+    return {
+      department,
+      row: { onTheList: figures.onTheList, urgent: figures.urgent, unplaced: figures.unplaced },
+      longestMinutes: figures.longestWait?.waitMinutes ?? 0,
+    };
+  });
+
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
 
   return (
-    <StatisticsSectionFrame
+    <StatisticsPage
       section={section}
-      title="Ward and ED comparisons"
-      subtitle=""
+      navSection="compare"
       testId="ward-statistics-compare-screen"
-      design="third-edition"
+      title="Ward and ED comparisons"
+      eyebrowLabel="Statistics"
+      now={now}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+      stats={
+        <>
+          <HeroStat value={units.length} label="Wards" />
+          <HeroStat value={readyBeds} label={`${readyPct}% of ${totalBeds} beds ready`} />
+          {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
+          <HeroStat
+            value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
+            label="Mean stay"
+          />
+          <HeroStat value={totalBlockers} label="Blockers" />
+          <HeroStat value={totalLongStays} label="Over 3 months" />
+          <HeroStat
+            value={edWaitingCount}
+            label={
+              <>
+                <SrOnly>Waiting for a bed</SrOnly> {`${urgentCount} urgent, ${unplacedCount} no ward`}
+              </>
+            }
+          />
+        </>
+      }
     >
-      {/* ══════════ KPI SUMMARY CARDS ══════════ */}
-      <div className={`${styles.kpiGrid} ${family.summary}`} id="compareKpiGrid">
-        <div className={styles.kpiCard} data-tone="accent">
-          <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Inpatient network</span>
-            <span className={styles.monoBadge}>All services</span>
-          </div>
-          <div className={styles.kpiValRow}>
-            <span className={styles.kpiVal}>{units.length}</span>
-            <span className={styles.kpiSub}>wards / {totalBeds} beds</span>
-          </div>
-          <span className={styles.kpiSub}>
-            <strong>{readyBeds}</strong> beds available ({readyPct}%)
-          </span>
-          {pendingPreparationBeds > 0 ? (
-            <span className={styles.kpiSub}>{pendingPreparationBeds} of them being made ready</span>
-          ) : null}
-        </div>
-
-        <div className={styles.kpiCard} data-tone="warn">
-          <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Average length of stay</span>
-            <span className={styles.monoBadge}>Recorded wards</span>
-          </div>
-          <div className={styles.kpiValRow}>
-            <span className={styles.kpiVal}>{networkAvgStay === "—" ? "Not recorded" : `${networkAvgStay}d`}</span>
-            <span className={styles.kpiSub}>Mean of recorded ward averages</span>
-          </div>
-          <span className={styles.kpiSub}>
-            <strong>{totalBlockers}</strong> blockers &middot; <strong>{totalLongStays}</strong> &gt;3mo
-          </span>
-        </div>
-
-        <div className={styles.kpiCard} data-tone="danger">
-          <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Waiting for a bed</span>
-            <span className={styles.monoBadge}>Recorded states</span>
-          </div>
-          <div className={styles.kpiValRow}>
-            <span className={styles.kpiVal}>{edWaitingCount}</span>
-            <span className={styles.kpiSub}>open requests from emergency departments</span>
-          </div>
-          <span className={styles.kpiSub}>
-            <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> no ward yet
-          </span>
+      <div className={compare.grid}>
+        <WardComparison rows={wardRows} />
+        <div className={styles.stack}>
+          <EdComparison rows={edRows} />
+          <PinnedWards rows={wardRows} />
         </div>
       </div>
+      <UnitChooser units={units} emergencyDepartments={emergencyDepartments} />
+    </StatisticsPage>
+  );
+}
 
-      <StatisticsInsightChart
-        key="wards"
-        defaultSort="value"
-        title="Ward comparison"
-        testId="statistics-compare-ward-chart"
-        metrics={[
-          {
-            id: "stay",
-            label: "Average length of stay",
-            unit: "days",
-            note: "Recorded stays for each ward. Missing averages remain unavailable; case mix differs between wards.",
-          },
-          {
-            id: "blocked",
-            label: "Discharge blockers",
-            unit: "people",
-            note: "Current admissions carrying a recorded discharge blocker.",
-          },
-          {
-            id: "long",
-            label: "Long stays",
-            unit: "people",
-            note: "Current admissions in the established over-three-month stay band.",
-          },
-        ]}
-        rows={wardStats.map(({ unit, statistics }) => ({
-          id: unit.id,
-          name: unit.name,
-          context: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
-          values: {
-            stay: statistics.averageLengthOfStayDays,
-            blocked: statistics.readyToLeaveCannot,
-            long: statistics.longStays,
-          },
-          href: wardStatisticsHref(unit.id),
-        }))}
-      />
-      <StatisticsInsightChart
-        key="eds"
-        defaultSort="value"
-        title="ED comparison"
-        testId="statistics-compare-ed-chart"
-        metrics={[
-          {
-            id: "open",
-            label: "Open placements",
-            unit: "people",
-            note: "Open movements from each department. These are placement records, not total ED attendance.",
-          },
-          {
-            id: "urgent",
-            label: "Marked urgent",
-            unit: "people",
-            note: "Urgent open placements, a subset of each department's open movements.",
-          },
-          {
-            id: "unplaced",
-            label: "No accepting ward",
-            unit: "people",
-            note: "Open placements without a recorded ward acceptance.",
-          },
-        ]}
-        rows={emergencyDepartments.map((department) => {
-          const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
-          return {
-            id: department.id,
-            name: department.name,
-            values: {
-              open: mine.length,
-              urgent: mine.filter((movement) => movement.flaggedUrgent).length,
-              unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
-            },
-            href: edStatisticsHref(department.id),
-          };
-        })}
-      />
-      <nav className={styles.sovereignTabs} aria-label="Comparison sections">
-        <a
-          className={styles.sovereignTab}
-          href="#compare-ward-measures"
-          onClick={() => focusComparisonSection("compare-ward-measures")}
-          style={{ textDecoration: "none" }}
-        >
-          Ward measures
-          <span className={styles.tabBadge}>{units.length}</span>
-        </a>
-        <a
-          className={styles.sovereignTab}
-          href="#compare-ed-measures"
-          onClick={() => focusComparisonSection("compare-ed-measures")}
-          style={{ textDecoration: "none" }}
-        >
-          ED measures
-          <span className={styles.tabBadge}>{emergencyDepartments.length}</span>
-        </a>
-        <a
-          className={styles.sovereignTab}
-          href={`#${STATISTICS_UNIT_CHOOSER_ID}`}
-          onClick={() => focusComparisonSection(STATISTICS_UNIT_CHOOSER_ID)}
-          style={{ textDecoration: "none" }}
-        >
-          Unit Directory
-        </a>
-      </nav>
+type WardGroup = "secure" | "open" | "older" | "youth";
 
-      {/* ══════════ SCOPE & ATTRIBUTION LIMITS PANEL ══════════ */}
+/** Older adult and youth wards are their own groups; adult wards split on whether any bed locks. */
+function wardGroup(unit: Unit): WardGroup {
+  if (unit.cohort === "Youth") return "youth";
+  if (unit.cohort === "Older adult") return "older";
+  return unit.lockedBeds > 0 ? "secure" : "open";
+}
 
-      <div
-        id="compare-ward-measures"
-        className={styles.compareRegion}
-        tabIndex={-1}
-        role="region"
-        aria-labelledby="compare-ward-chart-heading"
+const GROUP_LABELS: Record<WardGroup, string> = { secure: "Secure", open: "Open", older: "Older", youth: "Youth" };
+
+type WardRow = {
+  unit: Unit;
+  statistics: WardStatistics;
+  site: ReturnType<typeof siteByCode>;
+  group: WardGroup;
+  occupancy: number;
+  readyNow: number;
+  awaitingAnswer: number;
+};
+
+type SortOrder = "high" | "low" | "name";
+
+const SORT_ITEMS: { id: SortOrder; label: string }[] = [
+  { id: "high", label: "Highest" },
+  { id: "low", label: "Lowest" },
+  { id: "name", label: "A to Z" },
+];
+
+function mean(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function standardDeviation(values: readonly number[]): number {
+  if (values.length < 2) return 0;
+  const m = mean(values);
+  return Math.sqrt(mean(values.map((value) => (value - m) ** 2)));
+}
+
+/** A row label: the unit's name, then its site code in the muted mono style. */
+function unitLabel(name: string, code: string | undefined) {
+  return (
+    <span className={compare.rowName}>
+      <span className={compare.rowNameText}>{name}</span>
+      {code ? <span className={styles.code}>{code}</span> : null}
+    </span>
+  );
+}
+
+function sortRows<T extends { name: string; value: number | null }>(rows: T[], order: SortOrder): T[] {
+  return [...rows].sort((a, b) => {
+    if (order === "name") return a.name.localeCompare(b.name);
+    const av = a.value ?? -Infinity;
+    const bv = b.value ?? -Infinity;
+    return order === "high" ? bv - av : av - bv;
+  });
+}
+
+function downloadCsv(filename: string, lines: (string | number)[][]) {
+  const url = URL.createObjectURL(
+    new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+  );
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+type View = "chart" | "data";
+
+const VIEW_ITEMS: { id: View; label: string }[] = [
+  { id: "chart", label: "Chart" },
+  { id: "data", label: "Data" },
+];
+
+type WardMetric = "stay" | "blocked" | "long";
+
+const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: string }> = {
+  stay: { label: "Stay", chart: "Ward average length of stay bar chart", unit: "days" },
+  blocked: { label: "Blockers", chart: "Ward discharge blockers bar chart", unit: "people" },
+  long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
+};
+
+function wardMetricValue(statistics: WardStatistics, metric: WardMetric): number | null {
+  if (metric === "stay") return statistics.averageLengthOfStayDays;
+  if (metric === "blocked") return statistics.readyToLeaveCannot;
+  return statistics.longStays;
+}
+
+function WardComparison({ rows }: { rows: WardRow[] }) {
+  const [view, setView] = useState<View>("chart");
+  const [metric, setMetric] = useState<WardMetric>("stay");
+  const [order, setOrder] = useState<SortOrder>("high");
+  const [group, setGroup] = useState<WardGroup | "all">("all");
+  const [query, setQuery] = useState("");
+
+  const needle = query.trim().toLowerCase();
+  const shown = rows.filter(
+    (row) =>
+      (group === "all" || row.group === group) &&
+      (!needle || `${row.unit.name} ${row.site?.name ?? ""} ${row.unit.siteCode}`.toLowerCase().includes(needle)),
+  );
+
+  // The mean and spread are the whole network's, so a filter never moves the line it is read against.
+  const networkValues = rows.flatMap((row) => {
+    const value = wardMetricValue(row.statistics, metric);
+    return value === null ? [] : [value];
+  });
+  const networkMean = networkValues.length > 0 ? mean(networkValues) : null;
+  const flagAbove = networkMean === null ? null : networkMean + standardDeviation(networkValues);
+
+  const sorted = sortRows(
+    shown.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, metric) })),
+    order,
+  );
+  const charted = sorted.filter((entry) => entry.value !== null);
+  const unrecorded = sorted.filter((entry) => entry.value === null);
+  const barRows: BarListRow[] = charted.map(({ row, value }) => ({
+    id: row.unit.id,
+    label: unitLabel(row.unit.name, row.unit.siteCode),
+    labelText: row.unit.name,
+    value: value!,
+    display: metric === "stay" ? value!.toFixed(1) : undefined,
+    flag: flagAbove !== null && value! > flagAbove ? "warning" : undefined,
+  }));
+
+  const counts = { all: rows.length } as Record<WardGroup | "all", number>;
+  for (const key of Object.keys(GROUP_LABELS) as WardGroup[]) counts[key] = rows.filter((r) => r.group === key).length;
+
+  function exportCsv() {
+    downloadCsv("ward-flow-synthetic-ward-comparison.csv", [
+      ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
+      ...shown.map((row) => [
+        row.unit.name,
+        row.unit.siteCode,
+        ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
+      ]),
+    ]);
+  }
+
+  return (
+    <StatCard
+      icon={BedDouble}
+      title="Ward comparison"
+      data-testid="statistics-compare-ward-chart"
+      action={
+        <span className={compare.headControls}>
+          <Segmented label="Ward comparison view" value={view} onChange={setView} items={VIEW_ITEMS} />
+          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
+            CSV
+          </Button>
+        </span>
+      }
+    >
+      <div className={styles.toolbar}>
+        <Segmented
+          label="Ward measure"
+          value={metric}
+          onChange={setMetric}
+          items={(Object.keys(WARD_METRICS) as WardMetric[]).map((id) => ({ id, label: WARD_METRICS[id].label }))}
+        />
+        <span className={styles.toolbarEnd}>
+          <b>{shown.length}</b> of {rows.length}
+        </span>
+        <Segmented label="Sort wards" value={order} onChange={setOrder} items={SORT_ITEMS} />
+      </div>
+      <div className={compare.toolbarTight}>
+        <TextInput
+          type="search"
+          icon={Search}
+          boxClassName={compare.wardSearch}
+          aria-label="Filter wards by name or hospital"
+          placeholder="Name or site"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <Segmented
+          label="Ward group"
+          value={group}
+          onChange={setGroup}
+          items={[
+            { id: "all", label: "All", count: counts.all },
+            ...(Object.keys(GROUP_LABELS) as WardGroup[]).map((id) => ({
+              id,
+              label: GROUP_LABELS[id],
+              count: counts[id],
+            })),
+          ]}
+        />
+      </div>
+      <CardBody flush className={compare.chartBody}>
+        {rows.length === 0 ? (
+          <p className={styles.empty} data-testid="ward-statistics-compare-ward-chart-empty">
+            No wards recorded.
+          </p>
+        ) : shown.length === 0 ? (
+          <p className={styles.empty}>No wards match</p>
+        ) : view === "chart" ? (
+          <div className={compare.chart}>
+            <BarList
+              rows={barRows}
+              mean={networkMean ?? undefined}
+              meanLabel="Mean"
+              axis
+              max={axisMax(networkValues)}
+              label={WARD_METRICS[metric].chart}
+              labelWidth="14rem"
+            />
+            {unrecorded.length > 0 ? (
+              <p className={compare.unrecorded} data-testid="ward-statistics-compare-ward-chart-unrecorded">
+                {`Average stay not recorded for ${unrecorded.map((entry) => entry.name).join(", ")}`}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <CompareTable
+            testId="ward-statistics-compare-wards"
+            minWidthClass={compare.wardTable}
+            caption="Ward measures, synthetic"
+            rowHeader="Ward"
+            columns={WARD_COLUMNS}
+            rows={shown.map((row) => ({
+              id: row.unit.id,
+              name: row.unit.name,
+              code: row.unit.siteCode,
+              row: row.statistics,
+            }))}
+          />
+        )}
+      </CardBody>
+      <CardFoot
+        meta={
+          <span className={styles.flagged}>
+            <StatusGlyph tone="warning" size={9} />
+            Over 1 SD above the mean
+          </span>
+        }
       >
-        <h2 id="compare-ward-chart-heading" className={styles.chartTitle}>
-          Ward chart and recorded table
-        </h2>
-        <WardPanel title="Wards" count={`${units.length} wards`}>
-          <div className={styles.panelBody}>
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
-                <span className={styles.chartCount}>{units.length} Wards</span>
-              </div>
-              {units.length === 0 ? (
-                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
-                  No wards recorded.
-                </p>
-              ) : (
-                <WardAlosBarChart units={units} admissions={admissions} now={now} />
-              )}
-            </div>
-            <CompareTable
-              className={styles.compareWardTable}
-              testId="ward-statistics-compare-wards"
-              rowHeader="Ward"
-              columns={WARD_COLUMNS}
-              rows={allWardStatistics(units, admissions, now).map(({ unit, statistics }) => ({
-                id: unit.id,
-                name: unit.name,
-                row: statistics,
-              }))}
+        <span className={compare.footNote}>Case mix differs</span>
+      </CardFoot>
+    </StatCard>
+  );
+}
+
+type EdMetric = "open" | "urgent" | "unplaced" | "longest";
+
+const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
+  open: { label: "Waiting", chart: "Emergency department open placements bar chart" },
+  urgent: { label: "Urgent", chart: "Emergency department urgent placements bar chart" },
+  unplaced: { label: "No ward", chart: "Emergency department placements with no ward bar chart" },
+  longest: { label: "Longest", chart: "Emergency department longest wait bar chart, in hours" },
+};
+
+type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
+
+/** "Armadale Hospital Emergency Department" reads "Armadale ED" on the chart; the full name stays in the accessible list. */
+const shortDepartmentName = (name: string) =>
+  name
+    .replace(/ Emergency Department$/, " ED")
+    .replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service) ED$/, " ED");
+
+function edMetricValue(entry: EdCompareRow, metric: EdMetric): number {
+  if (metric === "open") return entry.row.onTheList;
+  if (metric === "urgent") return entry.row.urgent;
+  if (metric === "unplaced") return entry.row.unplaced;
+  return Math.round((entry.longestMinutes / 60) * 10) / 10;
+}
+
+function EdComparison({ rows }: { rows: EdCompareRow[] }) {
+  const [view, setView] = useState<View>("chart");
+  const [metric, setMetric] = useState<EdMetric>("open");
+  const [order, setOrder] = useState<SortOrder>("high");
+
+  const sorted = sortRows(
+    rows.map((entry) => ({ entry, name: entry.department.name, value: edMetricValue(entry, metric) })),
+    order,
+  );
+  const values = rows.map((entry) => edMetricValue(entry, metric));
+  const barRows: BarListRow[] = sorted.map(({ entry, value }) => ({
+    id: entry.department.id,
+    label: unitLabel(shortDepartmentName(entry.department.name), entry.department.siteCode),
+    labelText: entry.department.name,
+    value: value ?? 0,
+    display: metric === "longest" && entry.longestMinutes > 0 ? durMinutes(entry.longestMinutes) : undefined,
+  }));
+
+  function exportCsv() {
+    downloadCsv("ward-flow-synthetic-ed-comparison.csv", [
+      ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
+      ...rows.map((entry) => [
+        entry.department.name,
+        entry.department.siteCode,
+        ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
+        entry.longestMinutes,
+      ]),
+    ]);
+  }
+
+  return (
+    <StatCard
+      icon={Clock}
+      title="ED comparison"
+      data-testid="statistics-compare-ed-chart"
+      action={
+        <span className={compare.headControls}>
+          <Segmented label="ED comparison view" value={view} onChange={setView} items={VIEW_ITEMS} />
+          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={rows.length === 0}>
+            CSV
+          </Button>
+        </span>
+      }
+    >
+      <div className={styles.toolbar}>
+        <Segmented
+          label="Department measure"
+          value={metric}
+          onChange={setMetric}
+          items={(Object.keys(ED_METRICS) as EdMetric[]).map((id) => ({ id, label: ED_METRICS[id].label }))}
+        />
+        <Segmented label="Sort departments" value={order} onChange={setOrder} items={SORT_ITEMS} />
+      </div>
+      <CardBody flush className={compare.chartBody}>
+        {rows.length === 0 ? (
+          <p className={styles.empty} data-testid="ward-statistics-compare-ed-chart-empty">
+            No emergency departments recorded.
+          </p>
+        ) : view === "chart" ? (
+          <div className={compare.chart}>
+            <BarList
+              rows={barRows}
+              mean={mean(values)}
+              meanLabel="Mean"
+              axis
+              max={axisMax(values)}
+              label={ED_METRICS[metric].chart}
+              labelWidth="12rem"
             />
           </div>
-        </WardPanel>
-      </div>
+        ) : (
+          <CompareTable
+            testId="ward-statistics-compare-eds"
+            minWidthClass={compare.edTable}
+            caption="Emergency department measures, synthetic"
+            rowHeader="Department"
+            columns={ED_COLUMNS}
+            rows={rows.map((entry) => ({
+              id: entry.department.id,
+              name: shortDepartmentName(entry.department.name),
+              code: entry.department.siteCode,
+              row: entry.row,
+            }))}
+          />
+        )}
+      </CardBody>
+    </StatCard>
+  );
+}
 
-      <div
-        id="compare-ed-measures"
-        className={styles.compareRegion}
-        tabIndex={-1}
-        role="region"
-        aria-labelledby="compare-ed-chart-heading"
-      >
-        <h2 id="compare-ed-chart-heading" className={styles.chartTitle}>
-          ED chart and recorded table
-        </h2>
-        <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
-          <div className={styles.panelBody}>
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Emergency Department Placement Requests &amp; Urgent Priority</h3>
-                <span className={styles.chartCount}>{emergencyDepartments.length} Departments</span>
-              </div>
-              {emergencyDepartments.length === 0 ? (
-                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
-                  No emergency departments recorded.
-                </p>
-              ) : (
-                <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
-              )}
-            </div>
-            <CompareTable
-              className={styles.compareEdTable}
-              testId="ward-statistics-compare-eds"
-              rowHeader="Department"
-              columns={ED_COLUMNS}
-              rows={emergencyDepartments.map((department) => {
-                const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
-                return {
-                  id: department.id,
-                  name: department.name,
-                  row: {
-                    onTheList: mine.length,
-                    urgent: mine.filter((movement) => movement.flaggedUrgent).length,
-                    unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
-                  },
-                };
+const PIN_LIMIT = 3;
+
+type PinnedMeasure = {
+  id: string;
+  label: string;
+  value: (row: WardRow) => number | null;
+  text: (value: number) => string;
+  /** Mark a ward whose value sits above the network's per-ward figure. */
+  markAbove: boolean;
+};
+
+const PINNED_MEASURES: PinnedMeasure[] = [
+  {
+    id: "stay",
+    label: "Average stay",
+    value: (row) => row.statistics.averageLengthOfStayDays,
+    text: (v) => `${v.toFixed(1)}d`,
+    markAbove: true,
+  },
+  {
+    id: "blocked",
+    label: "Blockers",
+    value: (row) => row.statistics.readyToLeaveCannot,
+    text: String,
+    markAbove: true,
+  },
+  { id: "long", label: "Over 3 months", value: (row) => row.statistics.longStays, text: String, markAbove: true },
+  {
+    id: "occupancy",
+    label: "Occupancy",
+    value: (row) => row.occupancy,
+    text: (v) => `${Math.round(v)}%`,
+    markAbove: true,
+  },
+  { id: "ready", label: "Ready now", value: (row) => row.readyNow, text: String, markAbove: false },
+  { id: "awaiting", label: "Awaiting answer", value: (row) => row.awaitingAnswer, text: String, markAbove: false },
+];
+
+const oneDecimal = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
+
+/** Up to three wards set beside the network's per-ward figure. Opens on the three longest stays. */
+function PinnedWards({ rows }: { rows: WardRow[] }) {
+  const longest = useMemo(
+    () =>
+      [...rows]
+        .filter((row) => row.statistics.averageLengthOfStayDays !== null)
+        .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
+        .slice(0, PIN_LIMIT)
+        .map((row) => row.unit.id),
+    [rows],
+  );
+  const [chosen, setChosen] = useState<string[] | null>(null);
+  const pinnedIds = chosen ?? longest;
+  const pinned = pinnedIds.flatMap((id) => rows.find((row) => row.unit.id === id) ?? []);
+  const unpinned = rows.filter((row) => !pinnedIds.includes(row.unit.id));
+
+  const network = (measure: PinnedMeasure) => {
+    const values = rows.flatMap((row) => {
+      const value = measure.value(row);
+      return value === null ? [] : [value];
+    });
+    return values.length > 0 ? mean(values) : null;
+  };
+
+  return (
+    <StatCard
+      icon={MapPin}
+      title="Pinned wards"
+      data-testid="ward-statistics-compare-pinned"
+      action={
+        <span className={compare.headControls}>
+          <Select
+            aria-label="Pin a ward"
+            boxClassName={compare.pinSelect}
+            value=""
+            disabled={pinned.length >= PIN_LIMIT || unpinned.length === 0}
+            onChange={(event) => {
+              if (event.target.value) setChosen([...pinnedIds, event.target.value]);
+            }}
+          >
+            <option value="">{pinned.length >= PIN_LIMIT ? "Three pinned" : "Pin a ward"}</option>
+            {unpinned.map((row) => (
+              <option key={row.unit.id} value={row.unit.id}>
+                {row.unit.name}
+              </option>
+            ))}
+          </Select>
+          <Button size="sm" variant="ghost" onClick={() => setChosen([])} disabled={pinned.length === 0}>
+            Clear
+          </Button>
+        </span>
+      }
+    >
+      {pinned.length === 0 ? (
+        <p className={styles.empty}>No ward pinned</p>
+      ) : (
+        <div className={styles.tableWrap}>
+          <table className={`${tableClasses.table} ${styles.table} ${compare.pinTable}`}>
+            <caption className={styles.srOnly}>Pinned wards beside the network per ward, synthetic</caption>
+            <colgroup>
+              <col className={compare.measureCol} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Measure</th>
+                {pinned.map((row) => (
+                  <th key={row.unit.id} scope="col" className={styles.num}>
+                    <span className={compare.pinName}>
+                      <button
+                        type="button"
+                        className={compare.unpin}
+                        title={row.unit.name}
+                        aria-label={`Unpin ${row.unit.name}`}
+                        onClick={() => setChosen(pinnedIds.filter((id) => id !== row.unit.id))}
+                      >
+                        <span className={compare.rowNameText}>{row.unit.name}</span>
+                        <Icon icon={X} size={14} />
+                      </button>
+                      <span className={styles.code}>{row.unit.siteCode}</span>
+                    </span>
+                  </th>
+                ))}
+                <th scope="col" className={styles.num}>
+                  <span className={compare.pinName}>
+                    <span>Network</span>
+                    <span className={styles.code}>per ward</span>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {PINNED_MEASURES.map((measure) => {
+                const reference = network(measure);
+                return (
+                  <tr key={measure.id}>
+                    <th scope="row">{measure.label}</th>
+                    {pinned.map((row) => {
+                      const value = measure.value(row);
+                      const above = measure.markAbove && value !== null && reference !== null && value > reference;
+                      return (
+                        <td key={row.unit.id} className={styles.num}>
+                          {value === null ? (
+                            <span className={styles.muted}>none arrived</span>
+                          ) : (
+                            <span className={styles.flagged}>
+                              {above ? (
+                                <>
+                                  <StatusGlyph tone="warning" size={9} />
+                                  <SrOnly>above network, </SrOnly>
+                                </>
+                              ) : null}
+                              {measure.text(value)}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className={styles.num}>
+                      {reference === null ? (
+                        <span className={styles.muted}>none arrived</span>
+                      ) : measure.id === "stay" ? (
+                        `${reference.toFixed(1)}d`
+                      ) : measure.id === "occupancy" ? (
+                        `${Math.round(reference)}%`
+                      ) : (
+                        oneDecimal(Math.round(reference * 10) / 10)
+                      )}
+                    </td>
+                  </tr>
+                );
               })}
-            />
-          </div>
-        </WardPanel>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
+      <CardFoot
+        meta={
+          <span className={styles.flagged}>
+            <Icon icon={Pin} size={14} />
+            Pin up to three
+          </span>
+        }
+      >
+        {pinned.length > 0 ? (
+          <span className={styles.flagged}>
+            <StatusGlyph tone="warning" size={9} />
+            <span className={compare.footNote}>Above network</span>
+          </span>
+        ) : null}
+      </CardFoot>
+    </StatCard>
+  );
+}
 
-      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
-        <WardPanel
-          title="Choose a ward or emergency department"
-          count={`${units.length + emergencyDepartments.length} units`}
-          testId="ward-statistics-compare-chooser"
-        >
-          <div className={styles.panelBody}>
-            <h3 className={styles.subHeading}>Wards</h3>
-            {units.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
-                No ward is recorded in this prototype, so there is none to choose.
-              </p>
-            ) : (
-              <ul className={styles.unitList} data-testid="ward-statistics-compare-ward-list">
-                {units.map((unit) => {
-                  const site = siteByCode(unit.siteCode);
-                  return (
-                    <li key={unit.id} className={styles.unitItem}>
-                      <Link href={wardStatisticsHref(unit.id)} className={styles.unitLink}>
-                        <span className={styles.unitName}>{unit.name}</span>
-                        <span className={styles.unitKind}>
-                          {site ? site.name : "Its site code matches no site in this prototype."}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+type ChooserKind = "ward" | "ed";
 
-            <h3 className={styles.subHeading}>Emergency departments</h3>
-            {emergencyDepartments.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-eds">
-                No emergency department is recorded in this prototype, so there is none to choose.
-              </p>
-            ) : (
-              <ul className={styles.unitList} data-testid="ward-statistics-compare-ed-list">
-                {emergencyDepartments.map((department) => {
-                  const site = siteByCode(department.siteCode);
-                  return (
-                    <li key={department.id} className={styles.unitItem}>
-                      <Link href={edStatisticsHref(department.id)} className={styles.unitLink}>
-                        <span className={styles.unitName}>{department.name}</span>
-                        <span className={styles.unitKind}>
-                          {site ? site.name : "Its site code matches no site in this prototype."}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </WardPanel>
-      </div>
+/** "Open a unit": every ward and every department, each a link to its own detail page. */
+function UnitChooser({ units, emergencyDepartments }: { units: Unit[]; emergencyDepartments: EmergencyDepartment[] }) {
+  const [kind, setKind] = useState<ChooserKind>("ward");
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const matches = (name: string, code: string) => !needle || `${name} ${code}`.toLowerCase().includes(needle);
 
-      {/*
-       * 🔴 **THE PROVENANCE PANEL — DRAWING ONLY UNTIL NOW, AND THE LABEL LIST IS DERIVED, NEVER
-       * TYPED.** The drawing carries "What is invented, and what is real" (drawing line 4811) and
-       * this screen has never had it — the same gap `statistics-community-screen.tsx:283-284`
-       * names on its own siblings. Reading the labels from `WARD_COLUMNS`/`ED_COLUMNS` — the same
-       * arrays the two tables above render from — rather than typing them a second time here is
-       * the same discipline that file explains: a typed list goes stale the moment a column
-       * changes, and one already has, on this exact page (`Empty-bed time`, removed 2026-09-05,
-       * see this file's own history above).
-       *
-       * 🔴 **THE DRAWING'S OWN THIRD PARAGRAPH IS NOT CARRIED OVER, BECAUSE IT IS WRONG ABOUT THIS
-       * SCREEN'S OWN CODE.** It claims the department counts are "read from the network's own open
-       * movements … so they change with that data" while "the four ward measures cannot be derived
-       * the same way: this prototype keeps no admission history, so they are invented figures
-       * rather than counts of anything on the page." That is true of the DRAWING's own mock data —
-       * its `WARDS` array is a hand-typed literal (`avgStay: 6.4`, and so on) — and false of this
-       * screen: `allWardStatistics()` computes every one of the four ward figures live, from real
-       * `Admission` fields (`arrivedAt`, `leftAt`, `blockReason`, `stayBand`,
-       * `expectedDischargeAt`), by the same KIND of derivation the department counts use, not a
-       * typed literal. Asserting the drawing's distinction here would put a false claim about this
-       * screen's own code on the screen itself, which the honesty rule forbids regardless of which
-       * document the false claim originated in. So this panel makes only the two claims that are
-       * true of the running code: every figure is invented (none describes a real person, bed, or
-       * referral — the underlying admissions and movements are all synthetic), and the ward,
-       * hospital, and department NAMES are real, read from the network's own tables rather than
-       * typed here.
-       */}
-      {/* ══════════ DATA PROVENANCE PANEL ══════════ */}
-    </StatisticsSectionFrame>
+  const unitLink = (id: string, name: string, siteCode: string, href: string) => {
+    const site = siteByCode(siteCode);
+    return (
+      <li key={id} hidden={!matches(name, siteCode) || undefined}>
+        <Link href={href} className={compare.chooserLink}>
+          <span className={compare.rowNameText}>{name}</span>
+          <span className={site ? styles.code : compare.noSite}>{site ? siteCode : "matches no site"}</span>
+          <Icon icon={ChevronRight} size={14} />
+        </Link>
+      </li>
+    );
+  };
+
+  return (
+    <div id={STATISTICS_UNIT_CHOOSER_ID} className={compare.chooserAnchor} tabIndex={-1}>
+      <StatCard
+        icon={Search}
+        title="Open a unit"
+        data-testid="ward-statistics-compare-chooser"
+        aside={<span className={compare.footNote}>{units.length + emergencyDepartments.length} units</span>}
+      >
+        <div className={styles.toolbar}>
+          <Segmented
+            label="Unit kind"
+            value={kind}
+            onChange={setKind}
+            items={[
+              { id: "ward", label: "Wards", count: units.length },
+              { id: "ed", label: "EDs", count: emergencyDepartments.length },
+            ]}
+          />
+          <TextInput
+            type="search"
+            icon={Search}
+            boxClassName={compare.chooserSearch}
+            aria-label="Find a ward or ED"
+            placeholder="Find a ward or ED"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <div hidden={kind !== "ward"}>
+          {units.length === 0 ? (
+            <p className={styles.empty} data-testid="ward-statistics-compare-no-wards">
+              No ward is recorded in this prototype, so there is none to choose.
+            </p>
+          ) : (
+            <ul className={compare.chooserGrid} aria-label="Wards" data-testid="ward-statistics-compare-ward-list">
+              {units.map((unit) => unitLink(unit.id, unit.name, unit.siteCode, wardStatisticsHref(unit.id)))}
+            </ul>
+          )}
+        </div>
+        <div hidden={kind !== "ed"}>
+          {emergencyDepartments.length === 0 ? (
+            <p className={styles.empty} data-testid="ward-statistics-compare-no-eds">
+              No emergency department is recorded in this prototype, so there is none to choose.
+            </p>
+          ) : (
+            <ul
+              className={compare.chooserGrid}
+              aria-label="Emergency departments"
+              data-testid="ward-statistics-compare-ed-list"
+            >
+              {emergencyDepartments.map((department) =>
+                unitLink(department.id, department.name, department.siteCode, edStatisticsHref(department.id)),
+              )}
+            </ul>
+          )}
+        </div>
+      </StatCard>
+    </div>
   );
 }
 
 /**
  * One cell, as the page will actually read it.
  *
- * ⚠️ **`text` IS THE CELL, NOT A LABEL BESIDE IT — AND THAT IS THE WHOLE DESIGN.** The sameness
- * note below asks whether a column separates any two units, and it can only honestly ask that of
- * the thing the reader sees. A column definition carrying a rendered node AND a separate
- * comparison key would be two surfaces answering one question in wording that can drift, which is
- * the defect this repository names as its most reliable. So every cell on both tables is text,
- * and the only decoration is whether that text is an absence.
+ * ⚠️ **`text` IS THE CELL, NOT A LABEL BESIDE IT.** Every cell on both tables is text, and the only
+ * decoration is whether that text is an absence, so the uniform-column check below asks its
+ * question of the thing the reader sees.
  */
 type CompareCell = { readonly text: string; readonly unmeasured?: boolean };
 
 type CompareColumn<Row> = { readonly header: string; readonly cell: (row: Row) => CompareCell };
 
-type CompareRow<Row> = { readonly id: string; readonly name: string; readonly row: Row };
+type CompareRow<Row> = { readonly id: string; readonly name: string; readonly code: string; readonly row: Row };
 
 /** A measured count. Nought is a true and correct answer and renders as one — see `ward-statistics.ts`. */
 function count(value: number): CompareCell {
@@ -489,99 +830,32 @@ function cannotBeFormed(words: string): CompareCell {
   return { text: words, unmeasured: true };
 }
 
+/*
+ * 🔴 `Empty-bed time` IS NOT A COLUMN HERE: the seed sets every pull-to-arrival gap to
+ * `PULL_TO_ARRIVAL_MINUTES`, so the average is that constant for every ward, and on a comparison
+ * screen a constant reads as a measured sameness. It comes back when the seed varies
+ * pull-to-arrival per admission; it stays on the per-ward screen, where one figure invites no
+ * cross-ward inference. `ward-statistics-compare-two-tables.dom.test.tsx` fails on any column
+ * that gives every unit the same answer.
+ */
 const WARD_COLUMNS: readonly CompareColumn<WardStatistics>[] = [
   {
     header: "Average stay",
-    /*
-     * ⚠️ THIS CELL APPLIED `.toFixed(1)` UNTIL 2026-09-06 AND IT WAS THE THIRD TREATMENT OF ONE
-     * FIGURE. The field's own comment said "whole days", nothing rounded, this screen showed one
-     * decimal, and the per-ward screen showed all fourteen — so the same average appeared three
-     * ways depending on where you read it, and only this screen looked right.
-     *
-     * 🔴 **THIS SCREEN WAS NOT THE BUG AND REMOVING ITS ROUNDING IS STILL THE FIX.** A correct
-     * local repair is what let the defect survive: it made the compare table honest and left the
-     * ward pages publishing fourteen decimals, with nothing to notice the disagreement because
-     * each screen was self-consistent. Rounding now happens once, at the derivation, so both
-     * screens inherit it and a third caller cannot invent a fourth treatment.
-     */
-    /*
-     * ⚠️ **"none completed" WAS WRONG IN THE SAME WAY THE WARD SCREEN'S SENTENCE WAS, AND THIS
-     * SCREEN WAS NOT IN THE REVIEW THAT FOUND IT.** `lengthOfStayMinutes` (`ward-statistics.ts:152`)
-     * measures from `arrivedAt` to `leftAt ?? now`, and returns `null` only when nobody has
-     * **arrived**. So the empty cell never meant "none completed" — completion is not what makes it
-     * empty — and the figure itself is not a completed-stay average.
-     *
-     * Found by grepping every consumer of `averageLengthOfStayDays` rather than fixing only the file
-     * that was reported. **A wording defect in a derivation's meaning is never confined to one
-     * screen**, and the review covered three of the five.
-     */
+    // `lengthOfStayMinutes` returns null only when nobody has ARRIVED, so the absence says that.
     cell: (statistics) =>
       statistics.averageLengthOfStayDays === null
         ? cannotBeFormed("none arrived")
-        : { text: `${statistics.averageLengthOfStayDays} days` },
+        : { text: `${statistics.averageLengthOfStayDays}d` },
   },
-  /*
-   * 🔴 **`Empty-bed time` IS NOT A COLUMN HERE, AND IT IS NOT BECAUSE THE SEED HAPPENS NOT TO VARY
-   * IT. IT IS ARITHMETICALLY INCAPABLE OF VARYING.** Ward Lead's ruling, 2026-09-05, on a stronger
-   * diagnosis than the one I brought — I read `300 min` on all twenty-three wards as a fixture with
-   * no spread, and it is an identity. Verified in `ward-admissions-seed.ts` rather than inferred:
-   *
-   *   PULL_TO_ARRIVAL_MINUTES = 5 * 60                      (`:71`)
-   *   state "occupied"   pulledAt = arrivedAt - that        (`:278`)  gap === 300, by construction
-   *   state "departed"   pulledAt = arrivedAt - that        (`:346`)  gap === 300, by construction
-   *   state "pulled"     pulledAt varies, arrivedAt is null (`:245`)  excluded — no gap at all
-   *                      pulledAt null                      (`:383`)  excluded
-   *
-   * `emptyBedMinutes` averages `arrivedAt - pulledAt` over the admissions that have both. **Every
-   * member of that set is 300, so the average is 300 for any ward, any subset and any regrowth of
-   * this fixture.** There is no arrangement of the seed that makes this column vary.
-   *
-   * ⚠️ **SO TWENTY-THREE ROWS OF "300 min" WERE NOT A MEASUREMENT WITHOUT SPREAD. THEY WERE THE
-   * CONSTANT `PULL_TO_ARRIVAL_MINUTES` PRINTED TWENTY-THREE TIMES WITH WARD NAMES BESIDE IT** — on
-   * the one screen whose entire purpose is setting wards against each other, and indistinguishable
-   * to a reader from twenty-three wards that genuinely perform alike.
-   *
-   * ⚠️ **AND A NOTE WAS THE WRONG REMEDY, WHICH IS THE PART I HAD WRONG.** I built one and it read
-   * correctly; it still asks a reader to discount a figure the page is presenting at heading weight
-   * in a table built for comparison. **This page's own governance sentence forbids that trade in
-   * the other direction** — it refuses a blank cell because a blank reads as a measured nothing. A
-   * constant reads as a measured sameness. Same distinction, same screen, and a footnote repairs
-   * neither.
-   *
-   * **PARKED, NOT ABANDONED, WITH A NAMED TRIGGER: when the seed varies pull-to-arrival per
-   * admission, this column comes back.** Nothing else has to change for that.
-   *
-   * **It stays on the per-ward screen and that is deliberate.** One figure on one ward's page
-   * invites no cross-ward inference, and the registered claim
-   * `statistics-ward-screen/computed/average-empty-bed-minutes-is-derived` is about the derivation
-   * being real — which it is, and which removing a compare column does not touch.
-   */
-  /*
-   * 🔴 **A NOUGHT IN THESE TWO IS A MEASUREMENT AND MUST LOOK LIKE ONE.** Both are `number`, never
-   * `number | null`, and `ward-statistics.ts` says why in its own words: "the count-based figures …
-   * are genuine counts, so `0` is a true and correct answer for them when there is no data."
-   *
-   * ⚠️ They rendered as a muted "none" until 2026-09-05, which is **this page's own governance
-   * sentence run backwards.** The page refuses a blank cell because a blank reads as a measured
-   * nought; wording a measured nought as an absence destroys the same distinction from the other
-   * side. Twelve of the twenty-three wards have nobody ready-to-leave-but-blocked, which is good
-   * news about those wards, and it read as "we have nothing for you".
-   */
-  { header: "Blocker recorded", cell: (statistics) => count(statistics.readyToLeaveCannot) },
+  // Both are genuine counts, so a nought is a measurement and renders as one.
+  { header: "Blockers", cell: (statistics) => count(statistics.readyToLeaveCannot) },
   { header: "Long stays", cell: (statistics) => count(statistics.longStays) },
   {
-    /*
-     * ⚠️ **NEITHER OF THE ABOVE, AND ITS OLD WORDING WAS FALSE.** It said "none written down", and
-     * `consideredCount` is `met + missed` — an outcome counts only where the admission has BOTH a
-     * date AND has left. **A ward could have twenty written-down discharge dates and nobody yet
-     * departed, and this cell said none had been written.** It is not a measured nought either:
-     * 0 of 0 is undefined, not zero. So it keeps the absence styling, with wording saying which
-     * absence it is.
-     */
-    header: "Discharge dates",
+    // `consideredCount` is met + missed: 0 of 0 is undefined, not zero, so it keeps the absence wording.
+    header: "Dates met",
     cell: ({ dischargeDateOutcomes }) =>
       dischargeDateOutcomes.consideredCount === 0
-        ? cannotBeFormed("no outcomes yet")
+        ? cannotBeFormed("none yet")
         : { text: `${dischargeDateOutcomes.met} of ${dischargeDateOutcomes.consideredCount} met` },
   },
 ];
@@ -595,585 +869,57 @@ const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
   { header: "No ward yet", cell: (row) => count(row.unplaced) },
 ];
 
-/**
- * Which columns give every unit the same answer, and therefore separate nothing.
- *
- * ⚠️ **THIS IS A BACKSTOP, NOT THE REMEDY, AND THE DISTINCTION IS THE RULING.** The remedy for a
- * column that separates nothing is to REMOVE it — `Empty-bed time` was removed above rather than
- * annotated, because a note asks a reader to discount a figure the page is presenting at heading
- * weight in a table built for comparison, and this page's own governance sentence forbids that
- * trade in the other direction. **No column that is uniform on the seeded fixture may ship**, and
- * `ward-statistics-compare-two-tables.dom.test.tsx` fails if one does.
- *
- * What this is for is the case no test can foresee: real data, later, making some column degenerate
- * at runtime where the fixture did not. **A sentence typed into the page cannot cover that** — it is
- * true today and goes false in silence, because nobody re-derives a note when the data changes.
- * Computed, it appears exactly when the condition holds and removes itself when it stops, and it is
- * falsifiable in both directions, which no prose note can be.
- *
- * ⚠️ **AND THE FIX THAT MUST NOT BE MADE, RECORDED HERE BECAUSE IT IS THE FIRST THING ANYONE WILL
- * SUGGEST: DO NOT VARY THE SEED TO MAKE A COLUMN "WORK".** Manufacturing variance on a comparison
- * screen manufactures a ranking out of nothing, and ward A would look better than ward B on a
- * number nobody measured. This product has refused that shape repeatedly — no tier colours, no
- * occupancy ceiling, no sorting by worst. A constant is honest and inert; an invented spread would
- * be dishonest and active. **Varying pull-to-arrival because the model should vary it is a
- * different act with a different reason, and that is the trigger for the column's return.**
- *
- * A single row cannot be uniform in any useful sense, so a one-row table reports nothing.
- */
-
-/**
- * One comparison table, plus the note about its own uniform columns.
- *
- * The note is quiet and sits under the table on purpose. A degeneracy made the loudest thing on a
- * clinical screen invents a finding of its own; this is a footnote about the prototype, not a
- * headline about the wards.
- */
+/** One comparison table: the record, in the recorded order, with no sorting, totals or row markers. */
 function CompareTable<Row>({
-  className,
   testId,
+  minWidthClass,
+  caption,
   rowHeader,
   columns,
   rows,
 }: {
-  className: string;
   testId: string;
+  /** The width below which the table scrolls sideways, with its row headers held in place. */
+  minWidthClass: string;
+  caption: string;
   rowHeader: string;
   columns: readonly CompareColumn<Row>[];
   rows: readonly CompareRow<Row>[];
 }) {
   return (
-    <>
-      {/*
-       * ⚠️ **THE OPT-IN IS THE POINT, AND IT IS WHY THE PROP IS NOT DERIVED.** Whether a table is
-       * currently overflowing is a runtime measurement of `scrollWidth` against `clientWidth`, and
-       * asking for it would make `WardTable` a client component — a boundary change across eleven
-       * tables, on a primitive whose two previous Server/Client defects passed typecheck and 7,500
-       * tests and were catchable only by a build or a live request. So the caller that DECLARES a
-       * threshold is the caller that asserts the table can be too wide, and it says so here.
-       *
-       * Both these tables declare one (`--ward-table-min-width`, 35rem and 27.5rem), so both are
-       * true. The sentence it renders is about narrow screens generally, not about this render —
-       * which is what lets it be honest without measuring anything.
-       */}
-      <WardTable className={className} testId={testId} hasScrollThreshold>
+    <div className={styles.tableWrap} data-testid={testId} data-ward-primitive="table">
+      <table className={`${tableClasses.table} ${styles.table} ${minWidthClass}`}>
+        <caption className={styles.srOnly}>{caption}</caption>
         <thead>
           <tr>
-            <th scope="col">{rowHeader}</th>
+            <th scope="col" className={compare.stickyCell}>
+              {rowHeader}
+            </th>
             {columns.map((column) => (
-              <th key={column.header} scope="col">
+              <th key={column.header} scope="col" className={styles.num}>
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ id, name, row }) => {
-            return (
-              <tr key={id}>
-                <th scope="row">{name}</th>
-                {columns.map((column) => {
-                  const cell = column.cell(row);
-                  return (
-                    <td key={column.header} className={styles.num}>
-                      {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+          {rows.map(({ id, name, code, row }) => (
+            <tr key={id}>
+              <th scope="row" className={`${styles.wardCell} ${compare.stickyCell}`}>
+                {unitLabel(name, code)}
+              </th>
+              {columns.map((column) => {
+                const cell = column.cell(row);
+                return (
+                  <td key={column.header} className={styles.num}>
+                    {cell.unmeasured ? <span className={styles.muted}>{cell.text}</span> : cell.text}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
-      </WardTable>
-    </>
-  );
-}
-
-interface HoveredWardState {
-  idx: number;
-  bx: number;
-  by: number;
-  stay: number | null;
-  unit: Unit;
-  tooltipLeft: number;
-}
-
-function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
-  const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  if (units.length === 0) return null;
-
-  const stats = allWardStatistics(units, admissions, now);
-  const W = 1120;
-  const H = 360;
-  const padLeft = 100;
-  const padRight = 25;
-  const padTop = 32;
-  const padBottom = 108;
-  const plotW = W - padLeft - padRight;
-  const plotH = H - padTop - padBottom;
-  const maximum = Math.max(0, ...stats.map(({ statistics }) => statistics.averageLengthOfStayDays ?? 0));
-  const tickStep = Math.max(1, Math.ceil(maximum / 5));
-  const maxStay = tickStep * 5;
-
-  const py = (v: number) => padTop + plotH * (1 - v / maxStay);
-
-  const n = Math.max(stats.length, 1);
-  const colW = plotW / n;
-  const barW = Math.max(Math.min(colW - 6, 26), 12);
-
-  return (
-    <div ref={containerRef} className={styles.barChartBox}>
-      <svg
-        width="100%"
-        height={H}
-        viewBox={`0 0 ${W} ${H}`}
-        aria-label="Ward average length of stay bar chart"
-        style={{ display: "block", width: "100%", maxWidth: `${W}px`, height: "auto" }}
-      >
-        {/* Scale from recorded stays, with a12px label floor. */}
-        {Array.from({ length: 6 }, (_, i) => i * tickStep).map((v) => {
-          const y = py(v);
-          return (
-            <g key={v}>
-              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
-              <text
-                x={padLeft - 10}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="12"
-                fontFamily="var(--mono)"
-                fill="var(--muted)"
-              >
-                {v}d
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Base axis line */}
-        <line
-          x1={padLeft}
-          y1={padTop + plotH}
-          x2={W - padRight}
-          y2={padTop + plotH}
-          stroke="var(--line-strong)"
-          strokeWidth="1.2"
-        />
-
-        {/* Wards Bars */}
-        {stats.map(({ unit, statistics }, i) => {
-          const bx = padLeft + i * colW + (colW - barW) / 2;
-          const stay = statistics.averageLengthOfStayDays;
-          const by = py(stay ?? 0);
-          const bh = padTop + plotH - by;
-          const color = stay === null ? "transparent" : "var(--accent)";
-
-          const shortName = unit.name.length > 14 ? `${unit.name.slice(0, 13)}…` : unit.name;
-          const lx = (bx + barW / 2).toFixed(1);
-          const ly = (padTop + plotH + 14).toFixed(1);
-
-          const numW = 42;
-          const numH = 16;
-          const numX = bx + barW / 2;
-          const numY = by - 5;
-
-          return (
-            <g key={unit.id}>
-              {/* Rounded bar tops (rx="3") */}
-              <rect
-                className={styles.chartBarInteractive}
-                x={bx}
-                y={by}
-                width={barW}
-                height={stay === null ? 1 : bh}
-                fill={color}
-                rx={3}
-                onMouseEnter={() => {
-                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
-                  setHoveredWard({
-                    idx: i,
-                    bx,
-                    by,
-                    stay,
-                    unit,
-                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
-                  });
-                }}
-                onMouseLeave={() => setHoveredWard(null)}
-                tabIndex={0}
-                role="graphics-symbol"
-                aria-label={`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
-                onFocus={() => {
-                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
-                  setHoveredWard({
-                    idx: i,
-                    bx,
-                    by,
-                    stay,
-                    unit,
-                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
-                  });
-                }}
-                onBlur={() => setHoveredWard(null)}
-              >
-                <title>
-                  {`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
-                </title>
-              </rect>
-
-              {/* Printed values stay visible; missing averages are not zero. */}
-              {
-                <g>
-                  <rect
-                    x={numX - numW / 2}
-                    y={numY - 12}
-                    width={numW}
-                    height={numH}
-                    rx={3}
-                    fill="var(--surface)"
-                    stroke="var(--line)"
-                    strokeWidth="0.8"
-                  />
-                  <text
-                    x={numX}
-                    y={numY}
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontFamily="var(--mono)"
-                    fontWeight="600"
-                    fill="var(--ink)"
-                  >
-                    {stay === null ? "—" : stay.toFixed(1)}
-                  </text>
-                </g>
-              }
-
-              {/* Rotated X-axis label with 12px font floor */}
-              <text
-                x={lx}
-                y={ly}
-                textAnchor="end"
-                transform={`rotate(-40 ${lx} ${ly})`}
-                fontSize="12"
-                fontFamily="var(--body)"
-                fill="var(--ink-soft)"
-              >
-                {shortName}
-                <title>{unit.name}</title>
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Interactive hover tooltip card */}
-      {hoveredWard && (
-        <div
-          className={styles.compareTooltip}
-          style={{
-            left: `${hoveredWard.tooltipLeft}px`,
-            top: "20px",
-            display: "block",
-          }}
-          role="tooltip"
-        >
-          <div
-            style={{
-              fontWeight: 600,
-              color: "var(--ink)",
-              marginBottom: "4px",
-              borderBottom: "1px solid var(--line)",
-              paddingBottom: "2px",
-            }}
-          >
-            {hoveredWard.unit.name}
-          </div>
-          <div style={{ fontSize: "12px", color: "var(--muted)" }}>
-            {siteByCode(hoveredWard.unit.siteCode)?.name ?? ""}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "10px",
-              marginTop: "4px",
-              fontFamily: "var(--mono)",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            <span>ALOS:</span>
-            <b>{hoveredWard.stay === null ? "Not recorded" : `${hoveredWard.stay.toFixed(1)} days`}</b>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface HoveredEdState {
-  idx: number;
-  bx: number;
-  byTotal: number;
-  total: number;
-  urgent: number;
-  routine: number;
-  ed: EmergencyDepartment;
-}
-
-function EdWaitingBarChart({
-  emergencyDepartments,
-  movements,
-}: {
-  emergencyDepartments: EmergencyDepartment[];
-  movements: Movement[];
-}) {
-  const [hoveredEd, setHoveredEd] = useState<HoveredEdState | null>(null);
-
-  if (emergencyDepartments.length === 0) return null;
-
-  const W = 920;
-  const H = 240;
-  const padLeft = 45;
-  const padRight = 30;
-  const padTop = 30;
-  const padBottom = 50;
-  const plotW = W - padLeft - padRight;
-  const plotH = H - padTop - padBottom;
-
-  const counts = emergencyDepartments.map((department) => {
-    const mine = movements.filter((m) => m.originEdId === department.id && isOpen(m));
-    const total = mine.length;
-    const urgent = mine.filter((m) => m.flaggedUrgent).length;
-    const routine = total - urgent;
-    return { department, total, urgent, routine };
-  });
-
-  const maxFound = counts.reduce((max, c) => (c.total > max ? c.total : max), 0);
-  const maxVal = Math.max(4, maxFound + 1);
-  const py = (v: number) => padTop + plotH * (1 - v / maxVal);
-
-  const n = Math.max(emergencyDepartments.length, 1);
-  const colW = plotW / n;
-  const barW = Math.min(colW - 24, 52);
-
-  return (
-    <div className={styles.barChartBox}>
-      <svg
-        width="100%"
-        height="240"
-        viewBox={`0 0 ${W} ${H}`}
-        aria-label="ED placement requests stacked bar chart"
-        style={{ display: "block", width: "100%", height: "auto" }}
-      >
-        {/* Dynamic scale grid lines (12px floor) */}
-        {Array.from({ length: maxVal }, (_, i) => i + 1).map((v) => {
-          const y = py(v);
-          return (
-            <g key={v}>
-              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
-              <text
-                x={padLeft - 10}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="12"
-                fontFamily="var(--mono)"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-                fill="var(--muted)"
-              >
-                {v}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Base axis line */}
-        <line
-          x1={padLeft}
-          y1={padTop + plotH}
-          x2={W - padRight}
-          y2={padTop + plotH}
-          stroke="var(--line-strong)"
-          strokeWidth="1.2"
-        />
-
-        {/* Stacked bars */}
-        {counts.map(({ department, total, urgent, routine }, i) => {
-          const bx = padLeft + i * colW + (colW - barW) / 2;
-          const byTotal = py(total);
-          const bhTotal = padTop + plotH - byTotal;
-
-          const site = siteByCode(department.siteCode);
-          const shortName = site
-            ? site.name.replace(
-                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
-                "",
-              )
-            : department.name;
-
-          const urgentH = (urgent / maxVal) * plotH;
-          const routineH = (routine / maxVal) * plotH;
-          const routineY = padTop + plotH - routineH;
-          const urgentY = padTop + plotH - bhTotal;
-
-          const badgeText = `${total}${urgent > 0 ? ` (${urgent} urgent)` : ""}`;
-          const badgeW = urgent > 0 ? 84 : 40;
-
-          return (
-            <g
-              key={department.id}
-              tabIndex={0}
-              role="graphics-symbol"
-              aria-label={`${department.name}: ${total} waiting (${urgent} urgent)`}
-              onMouseEnter={() => setHoveredEd({ idx: i, bx, byTotal, total, urgent, routine, ed: department })}
-              onMouseLeave={() => setHoveredEd(null)}
-              onFocus={() => setHoveredEd({ idx: i, bx, byTotal, total, urgent, routine, ed: department })}
-              onBlur={() => setHoveredEd(null)}
-            >
-              {total > 0 ? (
-                <>
-                  {/* Routine segment in slate var(--accent) */}
-                  {routine > 0 && (
-                    <rect
-                      className={styles.chartBarInteractive}
-                      x={bx}
-                      y={routineY}
-                      width={barW}
-                      height={routineH}
-                      fill="var(--accent)"
-                      rx={3}
-                    />
-                  )}
-
-                  {/* Urgent segment in danger red var(--danger) */}
-                  {urgent > 0 && (
-                    <rect
-                      className={styles.chartBarInteractive}
-                      x={bx}
-                      y={urgentY}
-                      width={barW}
-                      height={urgentH}
-                      fill="var(--danger)"
-                      rx={3}
-                    />
-                  )}
-
-                  {/* High-contrast top badge */}
-                  <rect
-                    x={bx + barW / 2 - badgeW / 2}
-                    y={byTotal - 22}
-                    width={badgeW}
-                    height={18}
-                    rx={3}
-                    fill="var(--surface)"
-                    stroke="var(--line-strong)"
-                    strokeWidth="0.8"
-                  />
-                  <text
-                    x={bx + barW / 2}
-                    y={byTotal - 9}
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontFamily="var(--mono)"
-                    style={{ fontVariantNumeric: "tabular-nums" }}
-                    fontWeight="600"
-                    fill={urgent > 0 ? "var(--danger)" : "var(--ink)"}
-                  >
-                    {badgeText}
-                  </text>
-                </>
-              ) : (
-                <text
-                  x={bx + barW / 2}
-                  y={padTop + plotH - 8}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fontFamily="var(--mono)"
-                  fill="var(--muted)"
-                >
-                  0
-                </text>
-              )}
-
-              {/* Site label below (12px font floor) */}
-              <text
-                x={bx + barW / 2}
-                y={padTop + plotH + 22}
-                textAnchor="middle"
-                fontSize="12"
-                fontWeight="600"
-                fill="var(--ink)"
-              >
-                {shortName}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Hover inspection card */}
-      {hoveredEd && (
-        <div
-          className={styles.compareTooltip}
-          style={{
-            left: `clamp(10px, ${(hoveredEd.bx / W) * 100}%, max(10px, calc(100% - 170px)))`,
-            top: "20px",
-            display: "block",
-          }}
-          role="tooltip"
-        >
-          <div
-            style={{
-              fontWeight: 600,
-              color: "var(--ink)",
-              marginBottom: "4px",
-              borderBottom: "1px solid var(--line)",
-              paddingBottom: "2px",
-            }}
-          >
-            {hoveredEd.ed.name}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "10px",
-              fontFamily: "var(--mono)",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            <span>Total Waiting:</span>
-            <b>{hoveredEd.total}</b>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "10px",
-              fontFamily: "var(--mono)",
-              fontVariantNumeric: "tabular-nums",
-              color: "var(--danger)",
-            }}
-          >
-            <span>Urgent Priority:</span>
-            <b>{hoveredEd.urgent}</b>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "10px",
-              fontFamily: "var(--mono)",
-              fontVariantNumeric: "tabular-nums",
-              color: "var(--muted)",
-            }}
-          >
-            <span>Routine Queue:</span>
-            <b>{hoveredEd.routine}</b>
-          </div>
-        </div>
-      )}
+      </table>
     </div>
   );
 }

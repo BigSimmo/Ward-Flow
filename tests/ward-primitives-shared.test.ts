@@ -246,6 +246,9 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/ward/ward.module.css: 62.5625",
     "src/components/ward-management/wards/ward-index.module.css: 62.5625",
     "src/components/ward-management/coordinator/coordinator.module.css: 64",
+    // v6 Home (7 Oct 2026): Home's own stylesheet keeps Command's existing 64rem three-column
+    // boundary; it introduces no new number.
+    "src/components/ward-management/coordinator/home.module.css: 64",
     // The same drawing introduces the full three-column, viewport-bounded Command surface at
     // 1400px. This app rule carries that exact 87.5rem design boundary; the older 90rem rules in
     // the module remain separately pinned because they govern legacy layout.

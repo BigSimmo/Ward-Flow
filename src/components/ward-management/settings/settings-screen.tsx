@@ -1,26 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  Activity,
-  AlertTriangle,
-  Bell,
   Check,
   ChevronDown,
+  Clock,
   Database,
   Download,
-  Layers,
+  Gauge,
+  Gavel,
+  History,
+  Keyboard,
+  ListChecks,
   Minus,
-  Monitor,
-  Moon,
   Palette,
   Plus,
   RotateCcw,
   Search,
+  ShieldCheck,
   Sliders,
-  Sun,
-  Trash2,
+  SlidersHorizontal,
   Upload,
   X,
 } from "lucide-react";
@@ -34,15 +34,30 @@ import {
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
+import {
+  Card,
+  CardHead,
+  Hero,
+  HeroStat,
+  Kbd,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  Switch,
+  buttonClass,
+  durMinutes,
+  type WfTone,
+} from "@/components/wf";
+import type { AuditEvent } from "@/components/ward-management/ward-audit";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
   OPERATIONAL_DEFAULTS,
   loadCustomOperationalDefaults,
   saveCustomOperationalDefaults,
@@ -50,12 +65,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { publishedThresholds, type ThresholdState } from "./settings-thresholds";
-import {
-  countMatchesByDomain,
-  filterSettingEntries,
-  SETTINGS_DOMAINS,
-  type SettingsDomainId,
-} from "./settings-search-index";
+import { countMatchesByDomain, filterSettingEntries, SETTINGS_DOMAINS } from "./settings-search-index";
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
   MORNING_ROLLUP_TIME_MINUTES,
@@ -66,6 +76,7 @@ import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/war
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
+  type WallboardRefreshInterval,
 } from "@/components/ward-management/shell/ward-wallboard-store";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
@@ -73,14 +84,20 @@ import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
 
 import styles from "./settings.module.css";
 
-function formatMinutesToTime(minutesFromMidnight: number): string {
-  const hours24 = Math.floor(minutesFromMidnight / 60);
+/** Short toolbar chip names (v6 Settings mockup); the full name stays as the chip's title. */
+const DOMAIN_CHIP_LABEL: Record<string, string> = {
+  "cat-appearance": "Look",
+  "cat-thresholds": "Thresholds",
+  "cat-allocation": "Beds",
+  "cat-notifications": "Alerts",
+  "cat-reset": "Storage",
+};
+
+/** 24-hour clock time, `HH:MM`, for the hero's morning count. */
+function clock24(minutesFromMidnight: number): string {
+  const hours = Math.floor(minutesFromMidnight / 60);
   const mins = minutesFromMidnight % 60;
-  const period = hours24 >= 12 ? "PM" : "AM";
-  const hours12 = hours24 % 12 || 12;
-  const formattedHours = hours12 < 10 ? `0${hours12}` : `${hours12}`;
-  const formattedMins = mins < 10 ? `0${mins}` : `${mins}`;
-  return `${formattedHours}:${formattedMins} ${period}`;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
 /** Minutes under an hour show as minutes; an hour or more shows as hours and any minutes left,
@@ -140,95 +157,269 @@ interface RolePermission {
   readonly role: string;
   readonly scope: string;
   readonly forms: string;
-  readonly formsTone: "good" | "accent" | "warn";
   readonly override: string;
-  readonly overrideTone: "good" | "accent" | "warn";
   readonly handover: string;
-  readonly handoverTone: "good" | "accent";
+  readonly handoverTone: WfTone;
 }
 
 const ROLE_PERMISSIONS: readonly RolePermission[] = [
   {
-    role: "State Bed Coordinator",
-    scope: "Statewide System Flow Desk",
-    forms: "Full Authority",
-    formsTone: "good",
-    override: "Catchment & Acuity",
-    overrideTone: "good",
-    handover: "Authorised",
-    handoverTone: "good",
+    role: "State bed coordinator",
+    scope: "Statewide flow desk",
+    forms: "Full",
+    override: "Catchment and acuity",
+    handover: "Signs",
+    handoverTone: "success",
   },
   {
-    role: "Duty Consultant Psychiatrist",
-    scope: "Specialist Health Service Cluster",
-    forms: "Examination & Detention Forms",
-    formsTone: "good",
-    override: "Clinical Exceptions",
-    overrideTone: "good",
-    handover: "Authorised",
-    handoverTone: "good",
+    role: "Duty consultant psychiatrist",
+    scope: "Health service cluster",
+    forms: "Examination, detention",
+    override: "Clinical exceptions",
+    handover: "Signs",
+    handoverTone: "success",
   },
   {
-    role: "Ward NUM / Shift Coordinator",
-    scope: "Single Inpatient Unit / Facility",
-    forms: "Form 4A Receive",
-    formsTone: "accent",
-    override: "Ward Bed Allocation",
-    overrideTone: "warn",
-    handover: "Authorised",
-    handoverTone: "good",
+    role: "Ward NUM, shift coordinator",
+    scope: "One inpatient unit",
+    forms: "Receive Form 4A",
+    override: "Ward bed allocation",
+    handover: "Signs",
+    handoverTone: "success",
   },
   {
-    role: "ED Mental Health Liaison",
-    scope: "Emergency Department Pod",
-    forms: "Form 1A recorded (demo)",
-    formsTone: "accent",
-    override: "Escalation Request",
-    overrideTone: "warn",
-    handover: "Authorised",
-    handoverTone: "good",
+    role: "ED mental health liaison",
+    scope: "ED pod",
+    forms: "Record Form 1A",
+    override: "Escalation request",
+    handover: "Signs",
+    handoverTone: "success",
   },
   {
-    role: "Custodial Transport Officer",
-    scope: "Mobile transport / secure vehicle (demo)",
-    forms: "Form 4A recorded (demo)",
-    formsTone: "accent",
-    override: "Route Alteration",
-    overrideTone: "accent",
-    handover: "Transport handover only (demo)",
-    handoverTone: "good",
+    role: "Custodial transport officer",
+    scope: "Secure vehicle",
+    forms: "Record Form 4A",
+    override: "Route change",
+    handover: "Transport only",
+    handoverTone: "info",
   },
   {
-    role: "Clinical Governance Lead",
-    scope: "Statewide Directorate",
-    forms: "Audit & Review",
-    formsTone: "good",
-    override: "Formal Review Verdict",
-    overrideTone: "good",
-    handover: "Audit Only",
-    handoverTone: "accent",
+    role: "Clinical governance lead",
+    scope: "Statewide directorate",
+    forms: "Audit and review",
+    override: "Review verdict",
+    handover: "Audit only",
+    handoverTone: "neutral",
   },
 ];
 
-function getDomainIcon(domainId: SettingsDomainId) {
-  switch (domainId) {
-    case "cat-appearance":
-      return <Palette size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-thresholds":
-      return <Sliders size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-allocation":
-      return <Layers size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-notifications":
-      return <Bell size={16} className={styles.catIcon} aria-hidden="true" />;
-    case "cat-reset":
-      return <Database size={16} className={styles.catIcon} aria-hidden="true" />;
+const NOT_WIRED = "Not wired in this prototype.";
+
+/** The morning count stepper and slider: 08:00 to 11:00 in quarter hours. */
+const MORNING_COUNT_RANGE = { min: 480, max: 660, step: 15 } as const;
+
+/** The sections the printed handover sheet carries, as the Handover screen names them. */
+const HANDOVER_SHEET_SECTIONS =
+  "Longest waits, Beds pulled, In transit, Placement gone wrong, Outside this filter, Still open at 15:00, Shift and sign off, and Handover details";
+
+const BOARD_REFRESH_CHOICES: readonly { readonly value: WallboardRefreshInterval; readonly label: string }[] = [
+  { value: "off", label: "Off" },
+  { value: 15, label: "15s" },
+  { value: 30, label: "30s" },
+  { value: 60, label: "60s" },
+];
+
+/** Only shortcuts something on this page or in the shell actually answers. */
+const KEYBOARD_SHORTCUTS: readonly { readonly label: string; readonly keys: readonly string[] }[] = [
+  { label: "Focus settings filter", keys: ["/"] },
+  { label: "Close, dismiss", keys: ["Esc"] },
+  { label: "Toggle the rail", keys: ["["] },
+  { label: "Find a patient", keys: ["Ctrl", "K"] },
+];
+
+type ConfigurationAuditEvent = Extract<AuditEvent, { category: "configuration" }>;
+
+function isConfigurationEvent(event: AuditEvent): event is ConfigurationAuditEvent {
+  return event.category === "configuration";
+}
+
+const CHANGE_OUTCOME_TONE: Record<ConfigurationAuditEvent["outcome"], WfTone> = {
+  accepted: "success",
+  partial: "warning",
+  denied: "closed",
+  stale: "closed",
+};
+
+const CHANGE_OUTCOME_PREFIX: Record<ConfigurationAuditEvent["outcome"], string> = {
+  accepted: "",
+  partial: "Partly applied: ",
+  denied: "Refused: ",
+  stale: "Refused: ",
+};
+
+/** One line for a recorded rule save: the first figure that moved, and how many more did. */
+function configurationChangeText(before: WardConfiguration | null, after: WardConfiguration | null): string {
+  if (!before || !after) return "Coordination rules";
+  const parts: string[] = [];
+  if (before.edAccessTargetMinutes !== after.edAccessTargetMinutes) {
+    parts.push(`ED target ${before.edAccessTargetMinutes / 60}h to ${after.edAccessTargetMinutes / 60}h`);
   }
+  if (before.parallelReferralCap !== after.parallelReferralCap) {
+    parts.push(`Wards asked ${before.parallelReferralCap} to ${after.parallelReferralCap}`);
+  }
+  if (before.pullHoldMinutes !== after.pullHoldMinutes) {
+    parts.push(`Pull hold ${durMinutes(before.pullHoldMinutes)} to ${durMinutes(after.pullHoldMinutes)}`);
+  }
+  const rollupBefore = before.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES;
+  const rollupAfter = after.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES;
+  if (rollupBefore !== rollupAfter) parts.push(`Morning count ${clock24(rollupBefore)} to ${clock24(rollupAfter)}`);
+  const urgentBefore = before.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+  const urgentAfter = after.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+  if (urgentBefore !== urgentAfter) {
+    parts.push(`First warning ${formatDueSoonDuration(urgentBefore)} to ${formatDueSoonDuration(urgentAfter)}`);
+  }
+  const soonBefore = before.dueSoonMinutes ?? DUE_SOON_MINUTES;
+  const soonAfter = after.dueSoonMinutes ?? DUE_SOON_MINUTES;
+  if (soonBefore !== soonAfter) {
+    parts.push(`Second warning ${formatDueSoonDuration(soonBefore)} to ${formatDueSoonDuration(soonAfter)}`);
+  }
+  if (parts.length === 0) return "Rules saved unchanged";
+  return parts.length === 1 ? parts[0] : `${parts[0]}, ${parts.length - 1} more`;
+}
+
+/** "Saved" when the draft matches the saved rule, otherwise the saved value beside it. */
+function savedText(unchanged: boolean, savedValue: string): string {
+  return unchanged ? "Saved" : `Saved ${savedValue}`;
+}
+
+function wardsText(count: number): string {
+  return `${count} ${count === 1 ? "ward" : "wards"}`;
+}
+
+/** The nine controls the engine cannot back (owner decision D4): visible, keyboard-reachable, and
+ *  each one saying it is not wired. They read across the card in rows. */
+const PREVIEWS: readonly { readonly id: string; readonly title: string; readonly sub: string }[] = [
+  { id: "setting-form1a-strict", title: "Form 1A before involuntary", sub: "Admission check" },
+  { id: "setting-cp-audit", title: "Chief Psychiatrist audit", sub: "Governance trail" },
+  { id: "setting-acuity-ceiling", title: "Specialling limit", sub: "Specialling per ward" },
+  { id: "setting-form4a-escort", title: "Escort before transport", sub: "Escort assignment" },
+  { id: "setting-gender-mix", title: "Bay and gender rules", sub: "Bay integrity" },
+  { id: "setting-medical-release", title: "Clearance bed buffer", sub: "Medical clearance" },
+  { id: "setting-auth-hospital", title: "Authorised bed check", sub: "Involuntary destination" },
+  { id: "setting-auto-escalate", title: "Text all services", sub: "Multi-service broadcast" },
+  { id: "setting-form4a-warn", title: "Form 4A expiry warning", sub: "Transport order" },
+];
+
+type RuleStepper = {
+  readonly decreaseLabel: string;
+  readonly increaseLabel: string;
+  readonly display: string;
+  readonly displayTestId?: string;
+  readonly atMin: boolean;
+  readonly atMax: boolean;
+  readonly onDecrease: () => void;
+  readonly onIncrease: () => void;
+};
+
+type RuleRange = {
+  readonly id: string;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+  readonly value: number;
+  readonly ariaLabel: string;
+  readonly minLabel: string;
+  readonly maxLabel: string;
+  readonly onChange: (value: number) => void;
+};
+
+/** One rule on a timings card: words, a stepper, a slim range and, on the timings table, its effect. */
+function RuleRow({
+  title,
+  sub,
+  subTestId,
+  testId,
+  stepper,
+  range,
+  effect,
+}: {
+  title: string;
+  sub: string;
+  subTestId?: string;
+  testId?: string;
+  stepper: RuleStepper;
+  range: RuleRange;
+  effect?: ReactNode;
+}) {
+  return (
+    <div className={effect ? styles.ruleRow : `${styles.ruleRow} ${styles.ruleRowWarning}`} data-testid={testId}>
+      <span className={`${styles.ruleText} ${styles.ruleTextCell}`}>
+        <span className={styles.ruleTitle}>{title}</span>
+        <span className={styles.ruleSub} data-testid={subTestId}>
+          {sub}
+        </span>
+      </span>
+      <span className={styles.stepBox}>
+        <button
+          type="button"
+          className={styles.stepButton}
+          aria-label={stepper.decreaseLabel}
+          aria-disabled={stepper.atMin || undefined}
+          onClick={stepper.onDecrease}
+        >
+          <Minus size={14} aria-hidden="true" />
+        </button>
+        <span className={styles.stepValue} data-testid={stepper.displayTestId}>
+          {stepper.display}
+        </span>
+        <button
+          type="button"
+          className={styles.stepButton}
+          aria-label={stepper.increaseLabel}
+          aria-disabled={stepper.atMax || undefined}
+          onClick={stepper.onIncrease}
+        >
+          <Plus size={14} aria-hidden="true" />
+        </button>
+      </span>
+      <span className={styles.rangeCell}>
+        <input
+          id={range.id}
+          type="range"
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          value={range.value}
+          onChange={(e) => range.onChange(Number(e.target.value))}
+          className={styles.rangeInput}
+          aria-label={range.ariaLabel}
+        />
+        <span className={styles.rangeEnds} aria-hidden="true">
+          <span>{range.minLabel}</span>
+          <span>{range.maxLabel}</span>
+        </span>
+      </span>
+      {effect ? <span className={styles.effectCell}>{effect}</span> : null}
+    </div>
+  );
+}
+
+/** A switch row's words: the name, and a short line under it. */
+function SwitchText({ title, sub, subTestId }: { title: string; sub: string; subTestId?: string }) {
+  return (
+    <span className={styles.ruleText}>
+      <span className={styles.ruleTitle}>{title}</span>
+      <span className={styles.ruleSub} data-testid={subTestId}>
+        {sub}
+      </span>
+    </span>
+  );
 }
 
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration, eventLog = [] } = useWardFlow();
+  const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 
@@ -257,11 +448,11 @@ export function SettingsScreen() {
   const [medicalReleaseMinutes, setMedicalReleaseMinutes] = useState(120);
   const [acuityCeiling, setAcuityCeiling] = useState(3);
   const [statutoryWarningHours, setStatutoryWarningHours] = useState(4);
-  const [autoEscalationAlerts, setAutoEscalationAlerts] = useState(true);
-  const [autoCapacityRefresh, setAutoCapacityRefresh] = useState(true);
-  const [multiCatchmentSearch, setMultiCatchmentSearch] = useState(true);
-  const [statutoryExpiryAlerts, setStatutoryExpiryAlerts] = useState(true);
-  const [genderMixProtection, setGenderMixProtection] = useState(true);
+  const [autoEscalationAlerts, setAutoEscalationAlerts] = useState(false);
+  const [autoCapacityRefresh, setAutoCapacityRefresh] = useState(false);
+  const [multiCatchmentSearch, setMultiCatchmentSearch] = useState(false);
+  const [statutoryExpiryAlerts, setStatutoryExpiryAlerts] = useState(false);
+  const [genderMixProtection, setGenderMixProtection] = useState(false);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
   // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
@@ -401,7 +592,7 @@ export function SettingsScreen() {
     percent: number;
   }>({
     usedFormatted: "48 KB",
-    quotaFormatted: "5 MB",
+    quotaFormatted: "5.0 MB",
     percent: 1,
   });
 
@@ -416,7 +607,7 @@ export function SettingsScreen() {
             const quotaMB = Math.round(estimate.quota / (1024 * 1024));
             const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
             setStorageEstimate({
-              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1).replace(/\.0$/, "")} MB`,
+              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
               quotaFormatted: `${quotaMB} MB`,
               percent: Math.max(1, pct),
             });
@@ -444,7 +635,7 @@ export function SettingsScreen() {
         if (mounted) {
           setStorageEstimate({
             usedFormatted: `${kb} KB`,
-            quotaFormatted: "5 MB",
+            quotaFormatted: "5.0 MB",
             percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
           });
         }
@@ -485,8 +676,8 @@ export function SettingsScreen() {
     if (draftRollup !== curRollup) {
       diffs.push({
         label: "Rollup",
-        from: formatMinutesToTime(curRollup),
-        to: formatMinutesToTime(draftRollup),
+        from: clock24(curRollup),
+        to: clock24(draftRollup),
       });
     }
     const curUrgent = configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
@@ -705,7 +896,7 @@ export function SettingsScreen() {
   const handleSave = () => {
     dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: draft });
     showToast(
-      `Configuration save requested: ED access target ${draft.edAccessTargetMinutes / 60}h, parallel cap ${draft.parallelReferralCap} units, pull hold ${draft.pullHoldMinutes}m, rollup ${formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}, due-time warnings ${formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}/${formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}.`,
+      `Configuration save requested: ED access target ${draft.edAccessTargetMinutes / 60}h, parallel cap ${draft.parallelReferralCap} units, pull hold ${draft.pullHoldMinutes}m, rollup ${clock24(draft.morningRollupDeadlineMinutes ?? 570)}, due-time warnings ${formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}/${formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}.`,
     );
   };
 
@@ -718,11 +909,11 @@ export function SettingsScreen() {
     setWallboardRefresh("off");
     setWallboardRefreshPreference("off");
     setStatutoryWarningHours(4);
-    setAutoEscalationAlerts(true);
-    setAutoCapacityRefresh(true);
-    setMultiCatchmentSearch(true);
-    setStatutoryExpiryAlerts(true);
-    setGenderMixProtection(true);
+    setAutoEscalationAlerts(false);
+    setAutoCapacityRefresh(false);
+    setMultiCatchmentSearch(false);
+    setStatutoryExpiryAlerts(false);
+    setGenderMixProtection(false);
     setAudioBreachChimes(false);
     setMedicalReleaseMinutes(120);
     setAcuityCeiling(3);
@@ -740,6 +931,144 @@ export function SettingsScreen() {
   // Helper to check if a specific row should be rendered
   const isRowVisible = (id: string) => matchedEntryIds.has(id);
 
+  const filtering = searchQuery.trim().length > 0;
+  const draftRollup = draft.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES;
+  const savedRollup = configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES;
+  const draftUrgent = draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+  const draftSoon = draft.dueSoonMinutes ?? DUE_SOON_MINUTES;
+  // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
+  const savedEdOver = thresholds.find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
+  const draftEdOver =
+    publishedThresholds(movements, now, draft).find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
+
+  // Recent rule saves, newest first, from the audit trail every save writes to.
+  const auditRead = readAuditEvents({ role: "coordinator" });
+  const ruleChanges =
+    auditRead.status === "allowed" ? auditRead.value.filter(isConfigurationEvent).slice(-5).reverse() : [];
+
+  const timingsVisible = [
+    "setting-ed-threshold",
+    "setting-parallel-cap",
+    "setting-hold-duration",
+    "setting-morning-rollup",
+  ].some(isRowVisible);
+  const warningsVisible = isRowVisible("setting-due-soon-urgent") || isRowVisible("setting-due-soon");
+  const browserVisible = ["setting-default-service", "setting-handover-sheet", "setting-demonstration-data"].some(
+    isRowVisible,
+  );
+  const lookVisible = isRowVisible("setting-appearance-theme") || isRowVisible("setting-rail-density");
+  const alertsVisible = isRowVisible("setting-buzz-alert") || isRowVisible("setting-wallboard-refresh");
+  const displayVisible = lookVisible || alertsVisible;
+  const shortcutsVisible = isRowVisible("setting-keyboard-shortcuts") || isRowVisible("setting-search-ledger");
+  const visiblePreviews = PREVIEWS.filter((preview) => isRowVisible(preview.id));
+
+  /**
+   * Each domain's scroll anchor (`cat-*`, read by the category chips and the scrollspy) sits on the
+   * first visible card or row of that domain in page order, so a filtered page still has one.
+   */
+  const domainOf = (entryId: string) => SETTINGS_SEARCH_ENTRIES.find((entry) => entry.id === entryId)?.domainId;
+  const anchorCandidates: readonly (readonly [string, string | undefined, boolean])[] = [
+    ["timings", "cat-thresholds", timingsVisible],
+    ["warnings", "cat-thresholds", warningsVisible],
+    ["browser", "cat-reset", browserVisible],
+    ["display", "cat-appearance", lookVisible],
+    ["alerts", "cat-notifications", alertsVisible],
+    ["shortcuts", "cat-notifications", shortcutsVisible],
+    ...visiblePreviews.map((preview) => [preview.id, domainOf(preview.id), true] as const),
+    ["defaults", "cat-thresholds", isRowVisible("setting-operational-defaults")],
+    ["thresholds", "cat-thresholds", isRowVisible("setting-published-thresholds")],
+    ["roles", "cat-notifications", isRowVisible("setting-roles-matrix")],
+  ];
+  const anchorOwners = new Map<string, string>();
+  const claimedDomains = new Set<string>();
+  for (const [key, domain, visible] of anchorCandidates) {
+    if (!visible || !domain || claimedDomains.has(domain)) continue;
+    claimedDomains.add(domain);
+    anchorOwners.set(key, domain);
+  }
+  const anchorId = (key: string) => anchorOwners.get(key);
+
+  const previewChecked: Partial<Record<string, boolean>> = {
+    "setting-form1a-strict": statutoryExpiryAlerts,
+    "setting-form4a-escort": autoCapacityRefresh,
+    "setting-auth-hospital": multiCatchmentSearch,
+    "setting-cp-audit": audioBreachChimes,
+    "setting-gender-mix": genderMixProtection,
+    "setting-auto-escalate": autoEscalationAlerts,
+  };
+
+  /** A not-wired preview's control: aria-disabled, never natively disabled, and it says why. */
+  const previewControl = (preview: (typeof PREVIEWS)[number]) => {
+    const notWired = () => showToast(`${preview.title} is not wired in this prototype.`);
+    const name = `${preview.title} — not wired in this prototype`;
+    if (preview.id === "setting-acuity-ceiling") {
+      return (
+        <Select
+          boxClassName={styles.previewSelect}
+          value={acuityCeiling}
+          aria-disabled="true"
+          onChange={notWired}
+          aria-label={name}
+        >
+          {[2, 3, 4].map((count) => (
+            <option key={count} value={count}>
+              {count} patients
+            </option>
+          ))}
+        </Select>
+      );
+    }
+    if (preview.id === "setting-medical-release") {
+      return (
+        <Select
+          boxClassName={styles.previewSelect}
+          value={medicalReleaseMinutes}
+          aria-disabled="true"
+          onChange={notWired}
+          aria-label={name}
+        >
+          {[60, 120, 180].map((minutes) => (
+            <option key={minutes} value={minutes}>
+              {durMinutes(minutes)}
+            </option>
+          ))}
+        </Select>
+      );
+    }
+    if (preview.id === "setting-form4a-warn") {
+      return (
+        <span className={styles.previewRange}>
+          <input
+            id="setting-form4a-warn"
+            type="range"
+            min={1}
+            max={12}
+            step={1}
+            value={statutoryWarningHours}
+            aria-disabled="true"
+            aria-describedby="setting-form4a-warn-desc"
+            onChange={notWired}
+            className={styles.rangeInput}
+            aria-label={name}
+          />
+          <span className={styles.previewValue}>{`${statutoryWarningHours}h`}</span>
+        </span>
+      );
+    }
+    return (
+      <label className={styles.switchToggle}>
+        <input
+          type="checkbox"
+          checked={previewChecked[preview.id] ?? false}
+          aria-disabled="true"
+          onChange={notWired}
+          aria-label={name}
+        />
+        <span className={styles.switchSlider} />
+      </label>
+    );
+  };
+
   return (
     <div className={styles.screen} data-testid="ward-settings-screen" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
@@ -750,279 +1079,137 @@ export function SettingsScreen() {
             Settings
           </h1>
 
-          {/* Top Clinical Operator Profile Card */}
-          <div className={styles.profileHeaderCard}>
-            <div className={styles.profileHeaderMain}>
-              <div className={styles.profileAvatarWrap}>
-                <div className={styles.profileAvatar}>SC</div>
-                <span className={styles.profileStatusDot} title="On Duty" />
-              </div>
-              <div className={styles.profileMeta}>
-                <div className={styles.profileNameRow}>
-                  <h2 className={styles.profileName}>Dr S. Chen</h2>
-                  <span className={styles.profileCreds}>(MBBS, FRANZCP)</span>
-                  <span className={styles.profileBadgePrimary}>Duty Coordinator</span>
-                </div>
-                <p className={styles.profileSub}>
-                  <span>Perth Central Desk</span>
-                  <span className={styles.profileDotSep}>·</span>
-                  <span className={styles.profileLiveStatus}>On Duty</span>
-                </p>
-              </div>
-            </div>
+          {/* v6 Settings (7 Oct 2026): the operator and the SAVED rules on one hero band. The draft below
+              never feeds these figures. */}
+          <Hero
+            className={styles.operatorHero}
+            eyebrow="Duty coordinator"
+            title={
+              <span className={styles.operatorName}>
+                <span className={styles.operatorAvatar} aria-hidden="true">
+                  SC
+                </span>
+                Dr S. Chen
+              </span>
+            }
+            titleMeta="Perth Central Desk"
+            stats={
+              <>
+                <HeroStat value={`${configuration.edAccessTargetMinutes / 60}h`} label="ED target" />
+                <HeroStat value={configuration.parallelReferralCap} label="Wards asked" />
+                <HeroStat value={durMinutes(configuration.pullHoldMinutes)} label="Pull hold" />
+                <HeroStat
+                  value={clock24(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)}
+                  label="Morning count"
+                />
+                <HeroStat
+                  value={savedSurge ? "Surge" : "Standard"}
+                  label="Mode"
+                  tone={savedSurge ? "warning" : undefined}
+                />
+              </>
+            }
+            aside={
+              <>
+                <div className={styles.userProfileWrap} ref={profileRef}>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm" })}
+                    id="userProfileBtn"
+                    data-testid="clinical-operator-profile"
+                    aria-haspopup="dialog"
+                    aria-expanded={isProfileOpen}
+                    aria-controls="profilePopover"
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    title="Clinical Operator Profile · Dr S. Chen"
+                  >
+                    <span>Delegation</span>
+                    <ChevronDown size={13} className={styles.userChevron} aria-hidden="true" />
+                  </button>
 
-            <div className={styles.profileActions}>
-              <button
-                type="button"
-                className={styles.profileBtnSecondary}
-                onClick={() => setIsOperatorModalOpen(true)}
-                title="Switch active operator"
-              >
-                Switch Operator
-              </button>
-              <div className={styles.userProfileWrap} ref={profileRef}>
+                  {isProfileOpen && (
+                    <div
+                      className={styles.profilePopover}
+                      id="profilePopover"
+                      data-testid="profile-popover"
+                      role="dialog"
+                      aria-label="Operator Profile Details"
+                    >
+                      <div className={styles.popoverHdr}>
+                        <div className={styles.popoverAvatar}>SC</div>
+                        <div className={styles.popoverIdentity}>
+                          <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
+                          <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
+                          <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
+                        </div>
+                      </div>
+                      <div className={styles.popoverBody}>
+                        <div className={styles.popoverSection}>
+                          <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
+                          <div className={styles.popoverRow}>
+                            <span>Where they work:</span>
+                            <span>Statewide Bed Desk</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Clinical Governance:</span>
+                            <span>SMHS &amp; WACHS Liaison</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Legal Forms:</span>
+                            <span className="mono">Forms 1A, 4A, 6A</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>AHPRA Number:</span>
+                            <span className="mono">MED0001892041</span>
+                          </div>
+                          <div className={styles.popoverRow}>
+                            <span>Shift Schedule:</span>
+                            <span className="mono">08:00–16:30 AWST</span>
+                          </div>
+                        </div>
+                        <div className={styles.popoverActions}>
+                          <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            style={{ flex: 1 }}
+                            onClick={() => showToast("Verify authority is not wired in this prototype.")}
+                          >
+                            Verify Authority
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            style={{ flex: 1 }}
+                            onClick={() => {
+                              setIsOperatorModalOpen(true);
+                              setIsProfileOpen(false);
+                            }}
+                          >
+                            Switch Operator
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
-                  className={styles.profileBtnGhost}
-                  id="userProfileBtn"
-                  data-testid="clinical-operator-profile"
-                  aria-haspopup="dialog"
-                  aria-expanded={isProfileOpen}
-                  aria-controls="profilePopover"
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  title="Clinical Operator Profile · Dr S. Chen"
+                  className={buttonClass({ variant: "light", size: "sm" })}
+                  onClick={() => setIsOperatorModalOpen(true)}
                 >
-                  <span>Delegation</span>
-                  <ChevronDown size={13} className={styles.userChevron} aria-hidden="true" />
+                  Switch operator
                 </button>
+              </>
+            }
+          />
 
-                {isProfileOpen && (
-                  <div
-                    className={styles.profilePopover}
-                    id="profilePopover"
-                    data-testid="profile-popover"
-                    role="dialog"
-                    aria-label="Operator Profile Details"
-                  >
-                    <div className={styles.popoverHdr}>
-                      <div className={styles.popoverAvatar}>SC</div>
-                      <div className={styles.popoverIdentity}>
-                        <span className={styles.popoverName}>Dr S. Chen (MBBS, FRANZCP)</span>
-                        <span className={styles.popoverSub}>Consultant Psychiatrist · State Bed Desk</span>
-                        <span className={styles.popoverBadgeGood}>Active Session · On Duty</span>
-                      </div>
-                    </div>
-                    <div className={styles.popoverBody}>
-                      <div className={styles.popoverSection}>
-                        <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
-                        <div className={styles.popoverRow}>
-                          <span>Where they work:</span>
-                          <span>Statewide Bed Desk</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Clinical Governance:</span>
-                          <span>SMHS &amp; WACHS Liaison</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Legal Forms:</span>
-                          <span className="mono">Forms 1A, 4A, 6A</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>AHPRA Number:</span>
-                          <span className="mono">MED0001892041</span>
-                        </div>
-                        <div className={styles.popoverRow}>
-                          <span>Shift Schedule:</span>
-                          <span className="mono">08:00–16:30 AWST</span>
-                        </div>
-                      </div>
-                      <div className={styles.popoverActions}>
-                        <button
-                          type="button"
-                          className={styles.btnSecondary}
-                          style={{ flex: 1 }}
-                          onClick={() => showToast("Verify authority is not wired in this prototype.")}
-                        >
-                          Verify Authority
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnPrimary}
-                          style={{ flex: 1 }}
-                          onClick={() => {
-                            setIsOperatorModalOpen(true);
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Switch Operator
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Executive Live Telemetry & Quick Action Command Ribbon */}
-          <div className={styles.telemetryRibbon} data-testid="settings-telemetry-ribbon">
-            <div className={styles.telemetryLeftGroup}>
-              <div className={styles.telemetryTag}>
-                <Activity size={12} className={styles.telemetryPulseIcon} aria-hidden="true" />
-                <span>Telemetry</span>
-              </div>
-              <div className={styles.telemetryValuesRow}>
-                <span>
-                  ED: <b>{draft.edAccessTargetMinutes / 60}h</b>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  Cap: <b>{draft.parallelReferralCap}u</b>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  Hold: <b>{draft.pullHoldMinutes}m</b>
-                </span>
-              </div>
-            </div>
-
-            <div className={styles.telemetryActionsGroup}>
-              {hasUnsavedRules ? (
-                <div className={styles.statusPillDirty} role="status">
-                  <span className={styles.unsavedDot} aria-hidden="true" />
-                  <span>Unsaved changes — Save coordination rules to apply.</span>
-                </div>
-              ) : savedSurge ? (
-                <span className={styles.statusPillSurge}>
-                  <span className={styles.statusDotSurge} aria-hidden="true" /> SURGE VALUES SAVED
-                </span>
-              ) : (
-                <span className={styles.statusPillClean}>
-                  <span className={styles.statusDotClean} aria-hidden="true" /> CURRENT SAVED RULES
-                </span>
-              )}
-
-              <button
-                type="button"
-                className={`${styles.btnSurgeRibbon} ${isSurge ? styles.btnSurgeRibbonActive : ""}`}
-                onClick={handleToggleSurge}
-                aria-pressed={isSurge}
-                title="Select surge values in the unsaved draft"
-              >
-                <Plus size={13} aria-hidden="true" />
-                <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.btnRestoreRibbon}
-                onClick={() => setIsResetModalOpen(true)}
-                aria-haspopup="dialog"
-                title="Restore all defaults"
-              >
-                <RotateCcw size={13} aria-hidden="true" />
-                <span>Restore all defaults</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.btnSaveRibbon}
-                onClick={handleSave}
-                title="Save coordination rules"
-              >
-                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-                <span>Save coordination rules</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {configurationRejection && (
-          <div
-            className={styles.calloutCard}
-            data-tone="warn"
-            role="alert"
-            data-testid="ward-settings-configuration-refused"
-          >
-            <strong className={styles.calloutTitle}>Configuration change refused</strong>
-            <p className={styles.calloutText}>{configurationRejection.reason}</p>
-          </div>
-        )}
-
-        {/* Dynamic Island micro-HUD — reads the SAVED configuration, never the draft below */}
-        <WardDynamicIsland
-          testId="ward-settings-hud-island"
-          title="Now"
-          status={hasUnsavedRules ? "warning" : "nominal"}
-          statusText={
-            hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized"
-          }
-          ariaLabel="System operations status summary"
-          className={styles.hudWrapper}
-          metrics={[
-            {
-              id: "kpi-sync-status",
-              label: "Sync",
-              value: hasUnsavedRules ? "Draft (Unsaved)" : "Synced",
-              subtext: hasUnsavedRules ? "Pending Changes" : undefined,
-              tone: hasUnsavedRules ? "warn" : "good",
-              ariaLabel: hasUnsavedRules ? "Sync Status: Draft (Unsaved) Pending Changes" : "Sync Status: Synced",
-            },
-            {
-              id: "kpi-mode",
-              label: "Mode",
-              value: savedSurge ? "Surge Mode" : "Standard",
-              tone: savedSurge ? "danger" : "normal",
-            },
-            {
-              id: "kpi-morning-rollup",
-              label: "Rollup",
-              value: formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES),
-              subtext: `${configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES}m`,
-              tone: "accent",
-            },
-            {
-              id: "kpi-ed-target",
-              label: "ED Target",
-              value: `${configuration.edAccessTargetMinutes / 60}h`,
-              subtext: `${configuration.edAccessTargetMinutes}m`,
-              tone: "normal",
-            },
-            {
-              id: "kpi-pull-hold",
-              label: "Pull Hold",
-              value: `${configuration.pullHoldMinutes}m`,
-              tone: "normal",
-            },
-            {
-              id: "kpi-parallel-cap",
-              label: "Cap",
-              value: `${configuration.parallelReferralCap} Wards`,
-              tone: "normal",
-              ariaLabel: `Parallel Referral Cap: ${configuration.parallelReferralCap} Wards`,
-            },
-          ]}
-        />
-
-        {/* Settings Master Surface */}
-        <div className={styles.settingsSurface}>
-          {/* Master-Detail Body */}
-          <div className={styles.settingsBody}>
-            {/* Left Category Navigation Rail with Integrated Search */}
+          <div className={styles.toolbar} data-testid="settings-telemetry-ribbon">
+            {/* v6 Settings (7 Oct 2026): filter and domain choice sit in one toolbar row. */}
             <nav
               className={styles.categoryRail}
               data-testid="ward-settings-category-rail"
               aria-label="Settings Categories"
             >
-              {/* Floating Rail Executive Header */}
-              <div className={styles.railHeader}>
-                <div className={styles.railHeaderTitleRow}>
-                  <Sliders size={13} className={styles.railHeaderIcon} aria-hidden="true" />
-                  <span className={styles.railHeaderTitle}>Navigation</span>
-                </div>
-                <span className={styles.railHeaderBadge}>{SETTINGS_DOMAINS.length} Domains</span>
-              </div>
-
               {/* Integrated Sidebar Search */}
               <div className={styles.sidebarSearchWrap}>
                 <div className={styles.searchInputWrap}>
@@ -1034,7 +1221,7 @@ export function SettingsScreen() {
                     data-testid="sidebar-search-input"
                     type="text"
                     className={styles.sidebarSearchInput}
-                    placeholder="Filter levers... (/)"
+                    placeholder="Filter settings"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoComplete="off"
@@ -1112,8 +1299,6 @@ export function SettingsScreen() {
                 )}
               </div>
 
-              <div className={styles.domainNavDivider} aria-hidden="true" />
-
               <div className={styles.catListScroll}>
                 <button
                   type="button"
@@ -1121,15 +1306,8 @@ export function SettingsScreen() {
                   aria-current={activeDomain === "all"}
                   onClick={() => handleDomainClick("all")}
                 >
-                  <div className={styles.catIconBox} aria-hidden="true">
-                    <Sliders size={14} className={styles.catIcon} aria-hidden="true" />
-                  </div>
-                  <div className={styles.catItemContent}>
-                    <div className={styles.catTitleRow}>
-                      <span className={styles.catTitle}>All Settings</span>
-                      <span className={styles.catCount}>{totalMatches}</span>
-                    </div>
-                  </div>
+                  <span className={styles.catTitle}>All</span>
+                  <span className={styles.catCount}>{totalMatches}</span>
                 </button>
 
                 {SETTINGS_DOMAINS.map((domain) => {
@@ -1142,22 +1320,85 @@ export function SettingsScreen() {
                       aria-current={activeDomain === domain.id}
                       onClick={() => handleDomainClick(domain.id)}
                     >
-                      <div className={styles.catIconBox} aria-hidden="true">
-                        {getDomainIcon(domain.id)}
-                      </div>
-                      <div className={styles.catItemContent}>
-                        <div className={styles.catTitleRow}>
-                          <span className={styles.catTitle}>{domain.navLabel}</span>
-                          <span className={styles.catCount}>{count}</span>
-                        </div>
-                      </div>
+                      <span className={styles.catTitle} title={domain.navLabel}>
+                        {DOMAIN_CHIP_LABEL[domain.id] ?? domain.navLabel}
+                      </span>
+                      <span className={styles.catCount}>{count}</span>
                     </button>
                   );
                 })}
               </div>
             </nav>
+            <div className={styles.toolbarActions}>
+              {hasUnsavedRules ? (
+                <div className={styles.toolbarStatus} role="status">
+                  <StatusGlyph tone="warning" size={9} />
+                  <span>Unsaved changes — Save coordination rules to apply.</span>
+                </div>
+              ) : savedSurge ? (
+                <span className={styles.toolbarStatus}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Surge values saved
+                </span>
+              ) : (
+                <span className={styles.toolbarStatus}>
+                  <StatusGlyph tone="success" size={9} />
+                  Current saved rules
+                </span>
+              )}
 
-            {/* Right Content Pane */}
+              <button
+                type="button"
+                className={buttonClass({ variant: isSurge ? "tint" : "ghost", size: "sm" })}
+                onClick={handleToggleSurge}
+                aria-pressed={isSurge}
+                title="Select surge values in the unsaved draft"
+              >
+                <Plus size={13} aria-hidden="true" />
+                <span>{isSurge ? "Surge values selected" : "Select surge values"}</span>
+              </button>
+
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                onClick={() => setIsResetModalOpen(true)}
+                aria-haspopup="dialog"
+                title="Restore all defaults"
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                <span>Restore all defaults</span>
+              </button>
+
+              <button
+                type="button"
+                className={buttonClass({ variant: "pri", size: "sm" })}
+                onClick={handleSave}
+                title="Save coordination rules"
+              >
+                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+                <span>Save coordination rules</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {configurationRejection && (
+          <div
+            className={styles.calloutCard}
+            data-tone="warn"
+            role="alert"
+            data-testid="ward-settings-configuration-refused"
+          >
+            <strong className={styles.calloutTitle}>Configuration change refused</strong>
+            <p className={styles.calloutText}>{configurationRejection.reason}</p>
+          </div>
+        )}
+
+        {/* v6 Settings (7 Oct 2026): the section bodies are cards on a two-column grid, then the
+            full-width previews, defaults, thresholds and roles. Each domain's scroll anchor sits on its
+            first visible card or row, so the category chips and the scrollspy still find it. */}
+        <div className={styles.settingsSurface}>
+          <div className={styles.settingsBody}>
             <div className={styles.contentPane}>
               {totalMatches === 0 ? (
                 <div className={styles.emptySearchState} role="status">
@@ -1172,1748 +1413,467 @@ export function SettingsScreen() {
                 </div>
               ) : (
                 <>
-                  {/* DOMAIN 1: APPEARANCE & THEME */}
-                  {(isRowVisible("setting-appearance-theme") || isRowVisible("setting-rail-density")) && (
-                    <section id="cat-appearance" className={styles.settingsSection} aria-labelledby="appearance-title">
-                      <header className={styles.sectionHeader}>
-                        <div>
-                          <h2 id="appearance-title" className={styles.secTitle}>
-                            Look
-                          </h2>
-                        </div>
-                      </header>
-
-                      <div className={styles.rowsContainer}>
-                        {isRowVisible("setting-appearance-theme") && (
-                          <div className={styles.settingRow} data-testid="ward-settings-appearance">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Theme</span>
-                              <span className={styles.rowDesc}>Light, Dark, or System mode.</span>
-                              <div className={styles.rowSubtext}>
-                                <span>Current:</span>
-                                <strong data-testid="ward-settings-appearance-now">
-                                  {APPEARANCE_CHOICES.find((choice) => choice.value === appearance)?.label ??
-                                    appearance}
-                                </strong>
-                              </div>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <div className={styles.segmentedTrack} role="group" aria-label="Appearance">
-                                {APPEARANCE_CHOICES.map((choice) => {
-                                  const isSelected = appearance === choice.value;
-                                  return (
-                                    <button
-                                      key={choice.value}
-                                      type="button"
-                                      className={`${styles.segmentedBtn} ${isSelected ? styles.segmentedBtnActive : ""}`}
-                                      aria-pressed={isSelected}
-                                      aria-label={choice.label}
-                                      data-testid={`ward-settings-appearance-${choice.value}`}
-                                      onClick={() => {
-                                        applyAppearance(choice.value);
-                                        showToast(`Theme set to ${choice.label}.`);
-                                      }}
-                                    >
-                                      {choice.value === "light" ? (
-                                        <Sun size={12} aria-hidden="true" />
-                                      ) : choice.value === "dark" ? (
-                                        <Moon size={12} aria-hidden="true" />
-                                      ) : (
-                                        <Monitor size={12} aria-hidden="true" />
-                                      )}
-                                      <span>{choice.label}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {isRowVisible("setting-rail-density") && (
-                          <div className={styles.settingRow} data-testid="ward-settings-rail">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Sidebar Rail</span>
-                              <span className={styles.rowDesc}>Full sidebar or compact icons.</span>
-                              <div className={styles.rowSubtext}>
-                                <span>Current:</span>
-                                <strong data-testid="ward-settings-rail-now">{railOpen ? "Open" : "Closed"}</strong>
-                              </div>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <button
-                                type="button"
-                                className={`${styles.choice} ${styles.railChoice} ${styles.railToggleBtn}`}
-                                data-testid="ward-settings-rail-toggle"
-                                onClick={() => {
-                                  const next = !railOpen;
-                                  setRailOpenPreference(next);
-                                  showToast(`Navigation rail set to ${next ? "Open" : "Closed"}.`);
+                  <div className={styles.cardGrid}>
+                    <div className={styles.cardColumn}>
+                      {timingsVisible && (
+                        <Card id={anchorId("timings")} aria-labelledby="timings-title">
+                          <CardHead
+                            id="timings-title"
+                            icon={Clock}
+                            title="Busy-day timings"
+                            action={
+                              <Segmented
+                                label="Timing set"
+                                items={[
+                                  { id: "standard", label: "Standard" },
+                                  { id: "surge", label: "Surge" },
+                                ]}
+                                value={isSurge ? "surge" : "standard"}
+                                onChange={(choice) => {
+                                  if ((choice === "surge") !== isSurge) handleToggleSurge();
                                 }}
-                              >
-                                {railOpen ? "Close the rail" : "Open the rail"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Functional Ergonomic & Accessibility Toggles (Replacing Vanity Badges) */}
-                        <div className={styles.settingRow}>
-                          <div className={styles.rowMeta}>
-                            <span className={styles.rowTitle}>Reduce Motion</span>
-                            <span className={styles.rowDesc}>Disable interface animations.</span>
-                          </div>
-                          <div className={styles.rowControl}>
-                            <label className={styles.switchToggle}>
-                              <input
-                                type="checkbox"
-                                checked={reducedMotion}
-                                onChange={(e) => handleToggleReducedMotion(e.target.checked)}
-                                aria-label="Reduce Motion"
                               />
-                              <span className={styles.switchSlider} />
-                            </label>
+                            }
+                          />
+                          <div className={styles.ruleColumns} aria-hidden="true">
+                            <span>Rule</span>
+                            <span>Value</span>
+                            <span>Range</span>
+                            <span className={styles.ruleColumnEnd}>Effect now</span>
                           </div>
-                        </div>
-
-                        <div className={styles.settingRow}>
-                          <div className={styles.rowMeta}>
-                            <span className={styles.rowTitle}>High Contrast Mode</span>
-                            <span className={styles.rowDesc}>Enhanced border and text contrast.</span>
-                          </div>
-                          <div className={styles.rowControl}>
-                            <label className={styles.switchToggle}>
-                              <input
-                                type="checkbox"
-                                checked={highContrast}
-                                onChange={(e) => handleToggleHighContrast(e.target.checked)}
-                                aria-label="High Contrast Mode"
-                              />
-                              <span className={styles.switchSlider} />
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className={styles.settingRow}>
-                          <div className={styles.rowMeta}>
-                            <span className={styles.rowTitle}>Tabular Figures</span>
-                            <span className={styles.rowDesc}>Fixed-width numerals for timers.</span>
-                          </div>
-                          <div className={styles.rowControl}>
-                            <label className={styles.switchToggle}>
-                              <input
-                                type="checkbox"
-                                checked
-                                disabled
-                                title="Mandatory design system invariant"
-                                aria-label="Monospace Tabular Figure Alignment"
-                              />
-                              <span className={styles.switchSlider} />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* DOMAIN 2: CLINICAL THRESHOLDS */}
-                  {(isRowVisible("setting-ed-threshold") ||
-                    isRowVisible("setting-parallel-cap") ||
-                    isRowVisible("setting-hold-duration") ||
-                    isRowVisible("setting-due-soon-urgent") ||
-                    isRowVisible("setting-due-soon") ||
-                    isRowVisible("setting-morning-rollup") ||
-                    isRowVisible("setting-form4a-warn") ||
-                    isRowVisible("setting-auto-escalate") ||
-                    isRowVisible("setting-medical-release") ||
-                    isRowVisible("setting-published-thresholds") ||
-                    isRowVisible("setting-operational-defaults")) && (
-                    <section id="cat-thresholds" className={styles.settingsSection} aria-labelledby="thresholds-title">
-                      <header className={styles.sectionHeader}>
-                        <div>
-                          <h2 id="thresholds-title" className={styles.secTitle}>
-                            Timings
-                          </h2>
-                        </div>
-                      </header>
-
-                      {/* Surge Mode Banner */}
-                      <div className={`${styles.surgeBanner} ${isSurge ? styles.surgeBannerActive : ""}`}>
-                        <div className={styles.surgeBannerHeader}>
-                          <div className={styles.surgeBannerTitleGroup}>
-                            <div className={styles.surgeBannerTitleRow}>
-                              <span className={styles.surgeBannerTitle}>Surge Mode</span>
-                              {isSurge ? (
-                                <span className={styles.statusPillSurge}>
-                                  <span className={styles.statusDotSurge} /> ACTIVE IN DRAFT
-                                </span>
-                              ) : (
-                                <span className={styles.statusPillStandard}>
-                                  <span className={styles.statusDotStandard} /> STANDARD
-                                </span>
-                              )}
-                            </div>
-                            <p className={styles.surgeBannerDesc}>
-                              Accelerates flow across ED targets, referral caps, and hold windows.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            className={styles.bannerPresetBtn}
-                            aria-label={isSurge ? "Restore standard preset" : "Apply emergency surge preset"}
-                            onClick={handleToggleSurge}
-                          >
-                            {isSurge ? "Restore usual" : "Busy-day timings"}
-                          </button>
-                        </div>
-
-                        <div className={styles.surgeDiffGrid}>
-                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>ED Target</span>
-                            <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>
-                                {defaultWardConfiguration().edAccessTargetMinutes / 60}h standard
-                              </span>
-                              <span className={styles.surgeDiffSurge}>
-                                {ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h surge
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>Parallel Cap</span>
-                            <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>3 units</span>
-                              <span className={styles.surgeDiffSurge}>5 units</span>
-                            </div>
-                          </div>
-
-                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
-                            <span className={styles.surgeDiffLabel}>Hold Buffer</span>
-                            <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>90m standard</span>
-                              <span className={styles.surgeDiffSurge}>45m surge</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 5 Clinical Parameter Cards */}
-                      <div className={styles.parameterCardsGrid}>
-                        {/* Parameter Card 1: ED Access Target */}
-                        {isRowVisible("setting-ed-threshold") && (
-                          <div className={styles.paramCard}>
-                            <div className={styles.paramCardHeader}>
-                              <div className={styles.paramCardTitleCol}>
-                                <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>ED wait target</span>
-                                  <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60}h</span>
-                                  {draft.edAccessTargetMinutes <= 120 ? (
-                                    <span className={styles.badge} data-tone="danger">
-                                      Surge ({draft.edAccessTargetMinutes / 60}h)
-                                    </span>
-                                  ) : draft.edAccessTargetMinutes <= 240 ? (
-                                    <span className={styles.badge} data-tone="good">
-                                      Standard ({draft.edAccessTargetMinutes / 60}h)
-                                    </span>
-                                  ) : (
-                                    <span className={styles.badge} data-tone="warn">
-                                      Extended ({draft.edAccessTargetMinutes / 60}h)
-                                    </span>
+                          {isRowVisible("setting-ed-threshold") && (
+                            <RuleRow
+                              title="ED wait target"
+                              sub="Access measure only"
+                              stepper={{
+                                decreaseLabel: "Decrease ED access target",
+                                increaseLabel: "Increase ED access target",
+                                display: `${draft.edAccessTargetMinutes / 60}h`,
+                                atMin: draft.edAccessTargetMinutes <= ED_ACCESS_TARGET_RANGE_MINUTES.min,
+                                atMax: draft.edAccessTargetMinutes >= ED_ACCESS_TARGET_RANGE_MINUTES.max,
+                                onDecrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    edAccessTargetMinutes: Math.max(
+                                      ED_ACCESS_TARGET_RANGE_MINUTES.min,
+                                      curr.edAccessTargetMinutes - ED_ACCESS_TARGET_RANGE_MINUTES.step,
+                                    ),
+                                  })),
+                                onIncrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    edAccessTargetMinutes: Math.min(
+                                      ED_ACCESS_TARGET_RANGE_MINUTES.max,
+                                      curr.edAccessTargetMinutes + ED_ACCESS_TARGET_RANGE_MINUTES.step,
+                                    ),
+                                  })),
+                              }}
+                              range={{
+                                id: "setting-ed-threshold",
+                                min: ED_ACCESS_TARGET_RANGE_MINUTES.min,
+                                max: ED_ACCESS_TARGET_RANGE_MINUTES.max,
+                                step: ED_ACCESS_TARGET_RANGE_MINUTES.step,
+                                value: draft.edAccessTargetMinutes,
+                                ariaLabel: "ED access target in hours",
+                                minLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h`,
+                                maxLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h`,
+                                onChange: (minutes) =>
+                                  setDraft((current) => ({ ...current, edAccessTargetMinutes: minutes })),
+                              }}
+                              effect={
+                                <>
+                                  <span className={styles.effectLine}>
+                                    <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
+                                    {draftEdOver > 0 ? `${draftEdOver} over` : "None over"}
+                                    {draftEdOver !== savedEdOver
+                                      ? `, ${draftEdOver > savedEdOver ? "+" : ""}${draftEdOver - savedEdOver}`
+                                      : null}
+                                  </span>
+                                  <span className={styles.savedLine}>
+                                    {savedText(
+                                      draft.edAccessTargetMinutes === configuration.edAccessTargetMinutes,
+                                      `${configuration.edAccessTargetMinutes / 60}h`,
+                                    )}
+                                  </span>
+                                </>
+                              }
+                            />
+                          )}
+                          {isRowVisible("setting-parallel-cap") && (
+                            <RuleRow
+                              title="Wards asked at once"
+                              sub="Parallel referral cap"
+                              stepper={{
+                                decreaseLabel: "Decrease parallel referral enquiry limit",
+                                increaseLabel: "Increase parallel referral enquiry limit",
+                                display: wardsText(draft.parallelReferralCap),
+                                atMin: draft.parallelReferralCap <= PARALLEL_REFERRAL_CAP_RANGE.min,
+                                atMax: draft.parallelReferralCap >= PARALLEL_REFERRAL_CAP_RANGE.max,
+                                onDecrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    parallelReferralCap: Math.max(
+                                      PARALLEL_REFERRAL_CAP_RANGE.min,
+                                      curr.parallelReferralCap - PARALLEL_REFERRAL_CAP_RANGE.step,
+                                    ),
+                                  })),
+                                onIncrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    parallelReferralCap: Math.min(
+                                      PARALLEL_REFERRAL_CAP_RANGE.max,
+                                      curr.parallelReferralCap + PARALLEL_REFERRAL_CAP_RANGE.step,
+                                    ),
+                                  })),
+                              }}
+                              range={{
+                                id: "setting-parallel-cap",
+                                min: PARALLEL_REFERRAL_CAP_RANGE.min,
+                                max: PARALLEL_REFERRAL_CAP_RANGE.max,
+                                step: PARALLEL_REFERRAL_CAP_RANGE.step,
+                                value: draft.parallelReferralCap,
+                                ariaLabel: "Parallel referral cap in units",
+                                minLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.min),
+                                maxLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.max),
+                                onChange: (units) =>
+                                  setDraft((current) => ({ ...current, parallelReferralCap: units })),
+                              }}
+                              effect={
+                                <span className={styles.savedLine}>
+                                  {savedText(
+                                    draft.parallelReferralCap === configuration.parallelReferralCap,
+                                    wardsText(configuration.parallelReferralCap),
                                   )}
-                                  <span className={styles.paramSavedComparison}>
-                                    Saved: {configuration.edAccessTargetMinutes / 60}h
-                                  </span>
-                                </div>
-                                <p className={styles.paramCardRationale}>Mental health clearance dwell ceiling.</p>
-                              </div>
-                            </div>
-                            <div className={styles.paramCardBody}>
-                              <div className={styles.paramControlsCol}>
-                                <div className={styles.stepperCluster}>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Decrease ED access target"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        edAccessTargetMinutes: Math.max(
-                                          ED_ACCESS_TARGET_RANGE_MINUTES.min,
-                                          curr.edAccessTargetMinutes - ED_ACCESS_TARGET_RANGE_MINUTES.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Minus size={13} aria-hidden="true" />
-                                  </button>
-                                  <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}h</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Increase ED access target"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        edAccessTargetMinutes: Math.min(
-                                          ED_ACCESS_TARGET_RANGE_MINUTES.max,
-                                          curr.edAccessTargetMinutes + ED_ACCESS_TARGET_RANGE_MINUTES.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Plus size={13} aria-hidden="true" />
-                                  </button>
-                                </div>
-                                <div className={styles.sliderTickTrack}>
-                                  <div className={styles.sliderLine}>
-                                    <input
-                                      id="setting-ed-threshold"
-                                      type="range"
-                                      min={ED_ACCESS_TARGET_RANGE_MINUTES.min}
-                                      max={ED_ACCESS_TARGET_RANGE_MINUTES.max}
-                                      step={ED_ACCESS_TARGET_RANGE_MINUTES.step}
-                                      value={draft.edAccessTargetMinutes}
-                                      onChange={(e) => {
-                                        const minutes = Number(e.target.value);
-                                        setDraft((current) => ({ ...current, edAccessTargetMinutes: minutes }));
-                                      }}
-                                      className={styles.rangeSlider}
-                                      aria-label="ED access target in hours"
-                                    />
-                                    <span className={styles.sliderVal}>{draft.edAccessTargetMinutes / 60}h</span>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h</span>
-                                    <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
-                                    <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Parameter Card 2: Parallel Referral Cap */}
-                        {isRowVisible("setting-parallel-cap") && (
-                          <div className={styles.paramCard}>
-                            <div className={styles.paramCardHeader}>
-                              <div className={styles.paramCardTitleCol}>
-                                <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>How many wards to ask</span>
-                                  <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
-                                  {draft.parallelReferralCap >= 5 ? (
-                                    <span className={styles.badge} data-tone="warn">
-                                      Surge (5 units)
-                                    </span>
-                                  ) : (
-                                    <span className={styles.badge} data-tone="good">
-                                      Standard ({draft.parallelReferralCap} units)
-                                    </span>
-                                  )}
-                                  <span className={styles.paramSavedComparison}>
-                                    Saved: {configuration.parallelReferralCap} units
-                                  </span>
-                                </div>
-                                <p className={styles.paramCardRationale}>
-                                  Maximum simultaneous inpatient unit referrals.
-                                </p>
-                              </div>
-                            </div>
-                            <div className={styles.paramCardBody}>
-                              <div className={styles.paramControlsCol}>
-                                <div className={styles.stepperCluster}>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Decrease parallel referral enquiry limit"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        parallelReferralCap: Math.max(
-                                          PARALLEL_REFERRAL_CAP_RANGE.min,
-                                          curr.parallelReferralCap - PARALLEL_REFERRAL_CAP_RANGE.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Minus size={13} aria-hidden="true" />
-                                  </button>
-                                  <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.parallelReferralCap} units</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Increase parallel referral enquiry limit"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        parallelReferralCap: Math.min(
-                                          PARALLEL_REFERRAL_CAP_RANGE.max,
-                                          curr.parallelReferralCap + PARALLEL_REFERRAL_CAP_RANGE.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Plus size={13} aria-hidden="true" />
-                                  </button>
-                                </div>
-                                <div className={styles.sliderTickTrack}>
-                                  <div className={styles.sliderLine}>
-                                    <input
-                                      id="setting-parallel-cap"
-                                      type="range"
-                                      min={PARALLEL_REFERRAL_CAP_RANGE.min}
-                                      max={PARALLEL_REFERRAL_CAP_RANGE.max}
-                                      step={PARALLEL_REFERRAL_CAP_RANGE.step}
-                                      value={draft.parallelReferralCap}
-                                      onChange={(e) => {
-                                        const units = Number(e.target.value);
-                                        setDraft((current) => ({ ...current, parallelReferralCap: units }));
-                                      }}
-                                      className={styles.rangeSlider}
-                                      aria-label="Parallel referral cap in units"
-                                    />
-                                    <span className={styles.sliderVal}>{draft.parallelReferralCap} units</span>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit</span>
-                                    <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
-                                    <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Parameter Card 3: Pulled Bed Reservation Hold Duration */}
-                        {isRowVisible("setting-hold-duration") && (
-                          <div className={styles.paramCard}>
-                            <div className={styles.paramCardHeader}>
-                              <div className={styles.paramCardTitleCol}>
-                                <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>How long a pull is held</span>
-                                  <span className={styles.rowTag}>{draft.pullHoldMinutes}m</span>
-                                  {draft.pullHoldMinutes <= 45 ? (
-                                    <span className={styles.badge} data-tone="danger">
-                                      Surge (45m)
-                                    </span>
-                                  ) : draft.pullHoldMinutes <= 90 ? (
-                                    <span className={styles.badge} data-tone="good">
-                                      Standard (90m)
-                                    </span>
-                                  ) : (
-                                    <span className={styles.badge} data-tone="warn">
-                                      Extended ({draft.pullHoldMinutes}m)
-                                    </span>
-                                  )}
-                                  <span className={styles.paramSavedComparison}>
-                                    Saved: {configuration.pullHoldMinutes}m
-                                  </span>
-                                </div>
-                                <p className={styles.paramCardRationale}>
-                                  Buffer window before bed reservation expires.
-                                </p>
-                              </div>
-                            </div>
-                            <div className={styles.paramCardBody}>
-                              <div className={styles.paramControlsCol}>
-                                <div className={styles.stepperCluster}>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Decrease pulled bed hold duration"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        pullHoldMinutes: Math.max(
-                                          PULL_HOLD_RANGE_MINUTES.min,
-                                          curr.pullHoldMinutes - PULL_HOLD_RANGE_MINUTES.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Minus size={13} aria-hidden="true" />
-                                  </button>
-                                  <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal}>{draft.pullHoldMinutes}m</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Increase pulled bed hold duration"
-                                    onClick={() => {
-                                      setDraft((curr) => ({
-                                        ...curr,
-                                        pullHoldMinutes: Math.min(
-                                          PULL_HOLD_RANGE_MINUTES.max,
-                                          curr.pullHoldMinutes + PULL_HOLD_RANGE_MINUTES.step,
-                                        ),
-                                      }));
-                                    }}
-                                  >
-                                    <Plus size={13} aria-hidden="true" />
-                                  </button>
-                                </div>
-                                <div className={styles.sliderTickTrack}>
-                                  <div className={styles.sliderLine}>
-                                    <input
-                                      id="setting-hold-duration"
-                                      type="range"
-                                      min={PULL_HOLD_RANGE_MINUTES.min}
-                                      max={PULL_HOLD_RANGE_MINUTES.max}
-                                      step={PULL_HOLD_RANGE_MINUTES.step}
-                                      value={draft.pullHoldMinutes}
-                                      onChange={(e) => {
-                                        const minutes = Number(e.target.value);
-                                        setDraft((current) => ({ ...current, pullHoldMinutes: minutes }));
-                                      }}
-                                      className={styles.rangeSlider}
-                                      aria-label="Pulled bed reservation hold duration in minutes"
-                                    />
-                                    <span className={styles.sliderVal}>{draft.pullHoldMinutes}m</span>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>{PULL_HOLD_RANGE_MINUTES.min}m</span>
-                                    <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
-                                    <span>{PULL_HOLD_RANGE_MINUTES.max}m</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Parameter Card 4: Morning Rollup Deadline */}
-                        {isRowVisible("setting-morning-rollup") && (
-                          <div className={styles.paramCard} data-testid="setting-morning-rollup-row">
-                            <div className={styles.paramCardHeader}>
-                              <div className={styles.paramCardTitleCol}>
-                                <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Morning count time</span>
-                                  <span className={styles.rowTag}>
-                                    {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
-                                  </span>
-                                  <span className={styles.badge} data-tone="good">
-                                    {OPERATIONAL_DEFAULT_LABEL}
-                                  </span>
-                                  <span className={styles.paramSavedComparison}>
-                                    Saved: {formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? 570)}
-                                  </span>
-                                </div>
-                                <p className={styles.paramCardRationale} data-testid="setting-morning-rollup-desc">
-                                  Inpatient census confirmation deadline ({OPERATIONAL_DEFAULT_LABEL}).
-                                </p>
-                              </div>
-                            </div>
-                            <div className={styles.paramCardBody}>
-                              <div className={styles.paramControlsCol}>
-                                <div className={styles.stepperCluster}>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Decrease morning rollup deadline"
-                                    onClick={() => {
-                                      const current = draft.morningRollupDeadlineMinutes ?? 570;
-                                      const next = Math.max(480, current - 15);
-                                      setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
-                                    }}
-                                  >
-                                    <Minus size={13} aria-hidden="true" />
-                                  </button>
-                                  <div className={styles.stepperDisplay}>
-                                    <span className={styles.stepperVal} data-testid="morning-rollup-display">
-                                      {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
-                                    </span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className={styles.stepperBtn}
-                                    aria-label="Increase morning rollup deadline"
-                                    onClick={() => {
-                                      const current = draft.morningRollupDeadlineMinutes ?? 570;
-                                      const next = Math.min(660, current + 15);
-                                      setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
-                                    }}
-                                  >
-                                    <Plus size={13} aria-hidden="true" />
-                                  </button>
-                                </div>
-                                <div className={styles.sliderTickTrack}>
-                                  <div className={styles.sliderLine}>
-                                    <input
-                                      id="setting-morning-rollup-slider"
-                                      type="range"
-                                      min={480}
-                                      max={660}
-                                      step={15}
-                                      value={draft.morningRollupDeadlineMinutes ?? 570}
-                                      onChange={(e) => {
-                                        const minutes = Number(e.target.value);
-                                        setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: minutes }));
-                                      }}
-                                      className={styles.rangeSlider}
-                                      aria-label="Morning rollup deadline in minutes from midnight"
-                                    />
-                                    <span className={styles.sliderVal}>
-                                      {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
-                                    </span>
-                                  </div>
-                                  <div className={styles.sliderFoot}>
-                                    <span>08:00 AM</span>
-                                    <span>09:30 AM (default)</span>
-                                    <span>11:00 AM</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Parameter Card 5: Due-Time Warning Thresholds */}
-                        {(isRowVisible("setting-due-soon-urgent") || isRowVisible("setting-due-soon")) && (
-                          <div className={styles.paramCard}>
-                            <div className={styles.paramCardHeader}>
-                              <div className={styles.paramCardTitleCol}>
-                                <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Form warning times</span>
-                                  <span className={styles.badge} data-tone="accent">
-                                    Auto-Clamped
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Sub-Card 1: First warning (urgent) */}
-                            {isRowVisible("setting-due-soon-urgent") && (
-                              <div
-                                className={`${styles.settingRow} ${styles.vertical}`}
-                                data-testid="setting-due-soon-urgent-row"
-                                style={{ borderBottom: "1px solid var(--line)", padding: "1rem" }}
-                              >
-                                <div className={styles.rowMeta}>
-                                  <span className={styles.rowTitle}>
-                                    First warning before a legal due time
-                                    <span className={styles.rowTag}>
-                                      {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                    </span>
-                                  </span>
-                                  <span className={styles.rowDesc} data-testid="setting-due-soon-urgent-desc">
-                                    Shows a recorded legal due time as due within this time. Your default, not a legal
-                                    limit.
-                                  </span>
-                                </div>
-                                <div className={styles.sliderBox}>
-                                  <div className={styles.stepperCluster}>
-                                    <button
-                                      type="button"
-                                      className={styles.stepperBtn}
-                                      aria-label="Decrease first warning before a legal due time"
-                                      onClick={() => {
-                                        setDraft((curr) => {
-                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                          return {
-                                            ...curr,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                              urgent - DUE_SOON_URGENT_RANGE_MINUTES.step,
-                                              soon,
-                                            ),
-                                          };
-                                        });
-                                      }}
-                                    >
-                                      <Minus size={13} aria-hidden="true" />
-                                    </button>
-                                    <div className={styles.stepperDisplay}>
-                                      <span className={styles.stepperVal} data-testid="due-soon-urgent-display">
-                                        {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                      </span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      className={styles.stepperBtn}
-                                      aria-label="Increase first warning before a legal due time"
-                                      onClick={() => {
-                                        setDraft((curr) => {
-                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                          return {
-                                            ...curr,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                              urgent + DUE_SOON_URGENT_RANGE_MINUTES.step,
-                                              soon,
-                                            ),
-                                          };
-                                        });
-                                      }}
-                                    >
-                                      <Plus size={13} aria-hidden="true" />
-                                    </button>
-                                  </div>
-                                  <div className={styles.sliderTickTrack}>
-                                    <div className={styles.sliderLine}>
-                                      <input
-                                        id="setting-due-soon-urgent"
-                                        type="range"
-                                        min={DUE_SOON_URGENT_RANGE_MINUTES.min}
-                                        max={DUE_SOON_URGENT_RANGE_MINUTES.max}
-                                        step={DUE_SOON_URGENT_RANGE_MINUTES.step}
-                                        value={draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES}
-                                        onChange={(e) => {
-                                          const minutes = Number(e.target.value);
-                                          setDraft((current) => ({
-                                            ...current,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                              minutes,
-                                              current.dueSoonMinutes ?? DUE_SOON_MINUTES,
-                                            ),
-                                          }));
-                                        }}
-                                        className={styles.rangeSlider}
-                                        aria-label="First warning before a legal due time"
-                                      />
-                                      <span className={styles.sliderVal}>
-                                        {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                      </span>
-                                    </div>
-                                    <div className={styles.sliderFoot}>
-                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)}</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Sub-Card 2: Second warning (soon) */}
-                            {isRowVisible("setting-due-soon") && (
-                              <div
-                                className={`${styles.settingRow} ${styles.vertical}`}
-                                data-testid="setting-due-soon-row"
-                                style={{ padding: "1rem" }}
-                              >
-                                <div className={styles.rowMeta}>
-                                  <span className={styles.rowTitle}>
-                                    Second warning before a legal due time
-                                    <span className={styles.rowTag}>
-                                      {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                    </span>
-                                  </span>
-                                  <span className={styles.rowDesc} data-testid="setting-due-soon-desc">
-                                    Shows a recorded legal due time as due soon from this time. Your default, not a
-                                    legal limit.
-                                  </span>
-                                </div>
-                                <div className={styles.sliderBox}>
-                                  <div className={styles.stepperCluster}>
-                                    <button
-                                      type="button"
-                                      className={styles.stepperBtn}
-                                      aria-label="Decrease second warning before a legal due time"
-                                      onClick={() => {
-                                        setDraft((curr) => {
-                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                          const nextSoon = Math.max(
-                                            DUE_SOON_RANGE_MINUTES.min,
-                                            soon - DUE_SOON_RANGE_MINUTES.step,
-                                          );
-                                          return {
-                                            ...curr,
-                                            dueSoonMinutes: nextSoon,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
-                                          };
-                                        });
-                                      }}
-                                    >
-                                      <Minus size={13} aria-hidden="true" />
-                                    </button>
-                                    <div className={styles.stepperDisplay}>
-                                      <span className={styles.stepperVal} data-testid="due-soon-display">
-                                        {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                      </span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      className={styles.stepperBtn}
-                                      aria-label="Increase second warning before a legal due time"
-                                      onClick={() => {
-                                        setDraft((curr) => {
-                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                          const nextSoon = Math.min(
-                                            DUE_SOON_RANGE_MINUTES.max,
-                                            soon + DUE_SOON_RANGE_MINUTES.step,
-                                          );
-                                          return {
-                                            ...curr,
-                                            dueSoonMinutes: nextSoon,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
-                                          };
-                                        });
-                                      }}
-                                    >
-                                      <Plus size={13} aria-hidden="true" />
-                                    </button>
-                                  </div>
-                                  <div className={styles.sliderTickTrack}>
-                                    <div className={styles.sliderLine}>
-                                      <input
-                                        id="setting-due-soon"
-                                        type="range"
-                                        min={DUE_SOON_RANGE_MINUTES.min}
-                                        max={DUE_SOON_RANGE_MINUTES.max}
-                                        step={DUE_SOON_RANGE_MINUTES.step}
-                                        value={draft.dueSoonMinutes ?? DUE_SOON_MINUTES}
-                                        onChange={(e) => {
-                                          const minutes = Number(e.target.value);
-                                          setDraft((current) => ({
-                                            ...current,
-                                            dueSoonMinutes: minutes,
-                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                              current.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-                                              minutes,
-                                            ),
-                                          }));
-                                        }}
-                                        className={styles.rangeSlider}
-                                        aria-label="Second warning before a legal due time"
-                                      />
-                                      <span className={styles.sliderVal}>
-                                        {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                      </span>
-                                    </div>
-                                    <div className={styles.sliderFoot}>
-                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)}</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
-                                      <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Visual Timeline Countdown Simulation (0 buttons) */}
-                            <div className={styles.timelineGraphContainer} aria-hidden="true">
-                              <div className={styles.timelineGraphHeader}>
-                                <span className={styles.timelineGraphTitle}>Warning Cascade</span>
-                              </div>
-                              <div className={styles.timelineTrack}>
-                                <div className={styles.timelineSegmentCalm}>
-                                  Normal ({">"} {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
-                                </div>
-                                <div className={styles.timelineSegmentSoon}>
-                                  Due Soon ({formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
-                                </div>
-                                <div className={styles.timelineSegmentUrgent}>
-                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                  )
-                                </div>
-                              </div>
-                              <div className={styles.timelineMilestonesRow}>
-                                <span>T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}</span>
-                                <span>
-                                  T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
                                 </span>
-                                <span>T - 0</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                              }
+                            />
+                          )}
+                          {isRowVisible("setting-hold-duration") && (
+                            <RuleRow
+                              title="Pull hold"
+                              sub="Before a held bed returns"
+                              stepper={{
+                                decreaseLabel: "Decrease pulled bed hold duration",
+                                increaseLabel: "Increase pulled bed hold duration",
+                                display: durMinutes(draft.pullHoldMinutes),
+                                atMin: draft.pullHoldMinutes <= PULL_HOLD_RANGE_MINUTES.min,
+                                atMax: draft.pullHoldMinutes >= PULL_HOLD_RANGE_MINUTES.max,
+                                onDecrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    pullHoldMinutes: Math.max(
+                                      PULL_HOLD_RANGE_MINUTES.min,
+                                      curr.pullHoldMinutes - PULL_HOLD_RANGE_MINUTES.step,
+                                    ),
+                                  })),
+                                onIncrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    pullHoldMinutes: Math.min(
+                                      PULL_HOLD_RANGE_MINUTES.max,
+                                      curr.pullHoldMinutes + PULL_HOLD_RANGE_MINUTES.step,
+                                    ),
+                                  })),
+                              }}
+                              range={{
+                                id: "setting-hold-duration",
+                                min: PULL_HOLD_RANGE_MINUTES.min,
+                                max: PULL_HOLD_RANGE_MINUTES.max,
+                                step: PULL_HOLD_RANGE_MINUTES.step,
+                                value: draft.pullHoldMinutes,
+                                ariaLabel: "Pulled bed reservation hold duration in minutes",
+                                minLabel: durMinutes(PULL_HOLD_RANGE_MINUTES.min),
+                                maxLabel: durMinutes(PULL_HOLD_RANGE_MINUTES.max),
+                                onChange: (minutes) =>
+                                  setDraft((current) => ({ ...current, pullHoldMinutes: minutes })),
+                              }}
+                              effect={
+                                <span className={styles.savedLine}>
+                                  {savedText(
+                                    draft.pullHoldMinutes === configuration.pullHoldMinutes,
+                                    durMinutes(configuration.pullHoldMinutes),
+                                  )}
+                                </span>
+                              }
+                            />
+                          )}
+                          {isRowVisible("setting-morning-rollup") && (
+                            <RuleRow
+                              testId="setting-morning-rollup-row"
+                              title="Morning count"
+                              sub="Your default, not a legal limit"
+                              subTestId="setting-morning-rollup-desc"
+                              stepper={{
+                                decreaseLabel: "Decrease morning rollup deadline",
+                                increaseLabel: "Increase morning rollup deadline",
+                                display: clock24(draftRollup),
+                                displayTestId: "morning-rollup-display",
+                                atMin: draftRollup <= MORNING_COUNT_RANGE.min,
+                                atMax: draftRollup >= MORNING_COUNT_RANGE.max,
+                                onDecrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    morningRollupDeadlineMinutes: Math.max(
+                                      MORNING_COUNT_RANGE.min,
+                                      (curr.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES) -
+                                        MORNING_COUNT_RANGE.step,
+                                    ),
+                                  })),
+                                onIncrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    morningRollupDeadlineMinutes: Math.min(
+                                      MORNING_COUNT_RANGE.max,
+                                      (curr.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES) +
+                                        MORNING_COUNT_RANGE.step,
+                                    ),
+                                  })),
+                              }}
+                              range={{
+                                id: "setting-morning-rollup-slider",
+                                min: MORNING_COUNT_RANGE.min,
+                                max: MORNING_COUNT_RANGE.max,
+                                step: MORNING_COUNT_RANGE.step,
+                                value: draftRollup,
+                                ariaLabel: "Morning rollup deadline in minutes from midnight",
+                                minLabel: clock24(MORNING_COUNT_RANGE.min),
+                                maxLabel: clock24(MORNING_COUNT_RANGE.max),
+                                onChange: (minutes) =>
+                                  setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: minutes })),
+                              }}
+                              effect={
+                                <span className={styles.savedLine}>
+                                  {savedText(draftRollup === savedRollup, clock24(savedRollup))}
+                                </span>
+                              }
+                            />
+                          )}
+                        </Card>
+                      )}
 
-                      {/* Unwired Demonstration Controls Container */}
-                      <div className={styles.rowsContainer}>
-                        {/* Form 4A Warning Stepper & Slider */}
-                        {isRowVisible("setting-form4a-warn") && (
-                          <div
-                            className={`${styles.settingRow} ${styles.vertical}`}
-                            data-testid="setting-form4a-warn-row"
-                          >
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Recorded Form 4A expiry warning (demo)
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                                <span className={styles.rowTag}>{statutoryWarningHours}h</span>
-                              </span>
+                      {warningsVisible && (
+                        <Card id={anchorId("warnings")} aria-labelledby="warnings-title">
+                          <CardHead id="warnings-title" icon={Gavel} title="Form warning times" />
+                          {isRowVisible("setting-due-soon-urgent") && (
+                            <RuleRow
+                              testId="setting-due-soon-urgent-row"
+                              title="First warning before a legal due time"
+                              sub="Shows a recorded legal due time as due within this time. Your default, not a legal limit."
+                              subTestId="setting-due-soon-urgent-desc"
+                              stepper={{
+                                decreaseLabel: "Decrease first warning before a legal due time",
+                                increaseLabel: "Increase first warning before a legal due time",
+                                display: formatDueSoonDuration(draftUrgent),
+                                displayTestId: "due-soon-urgent-display",
+                                atMin: draftUrgent <= DUE_SOON_URGENT_RANGE_MINUTES.min,
+                                atMax: draftUrgent >= clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, draftSoon),
+                                onDecrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                      (curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES) -
+                                        DUE_SOON_URGENT_RANGE_MINUTES.step,
+                                      curr.dueSoonMinutes ?? DUE_SOON_MINUTES,
+                                    ),
+                                  })),
+                                onIncrease: () =>
+                                  setDraft((curr) => ({
+                                    ...curr,
+                                    dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                      (curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES) +
+                                        DUE_SOON_URGENT_RANGE_MINUTES.step,
+                                      curr.dueSoonMinutes ?? DUE_SOON_MINUTES,
+                                    ),
+                                  })),
+                              }}
+                              range={{
+                                id: "setting-due-soon-urgent",
+                                min: DUE_SOON_URGENT_RANGE_MINUTES.min,
+                                max: DUE_SOON_URGENT_RANGE_MINUTES.max,
+                                step: DUE_SOON_URGENT_RANGE_MINUTES.step,
+                                value: draftUrgent,
+                                ariaLabel: "First warning before a legal due time",
+                                minLabel: formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
+                                maxLabel: formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
+                                onChange: (minutes) =>
+                                  setDraft((current) => ({
+                                    ...current,
+                                    dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                      minutes,
+                                      current.dueSoonMinutes ?? DUE_SOON_MINUTES,
+                                    ),
+                                  })),
+                              }}
+                            />
+                          )}
+                          {isRowVisible("setting-due-soon") && (
+                            <RuleRow
+                              testId="setting-due-soon-row"
+                              title="Second warning before a legal due time"
+                              sub="Shows a recorded legal due time as due soon from this time. Your default, not a legal limit."
+                              subTestId="setting-due-soon-desc"
+                              stepper={{
+                                decreaseLabel: "Decrease second warning before a legal due time",
+                                increaseLabel: "Increase second warning before a legal due time",
+                                display: formatDueSoonDuration(draftSoon),
+                                displayTestId: "due-soon-display",
+                                atMin: draftSoon <= DUE_SOON_RANGE_MINUTES.min,
+                                atMax: draftSoon >= DUE_SOON_RANGE_MINUTES.max,
+                                onDecrease: () =>
+                                  setDraft((curr) => {
+                                    const nextSoon = Math.max(
+                                      DUE_SOON_RANGE_MINUTES.min,
+                                      (curr.dueSoonMinutes ?? DUE_SOON_MINUTES) - DUE_SOON_RANGE_MINUTES.step,
+                                    );
+                                    return {
+                                      ...curr,
+                                      dueSoonMinutes: nextSoon,
+                                      dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                        curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
+                                        nextSoon,
+                                      ),
+                                    };
+                                  }),
+                                onIncrease: () =>
+                                  setDraft((curr) => {
+                                    const nextSoon = Math.min(
+                                      DUE_SOON_RANGE_MINUTES.max,
+                                      (curr.dueSoonMinutes ?? DUE_SOON_MINUTES) + DUE_SOON_RANGE_MINUTES.step,
+                                    );
+                                    return {
+                                      ...curr,
+                                      dueSoonMinutes: nextSoon,
+                                      dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                        curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
+                                        nextSoon,
+                                      ),
+                                    };
+                                  }),
+                              }}
+                              range={{
+                                id: "setting-due-soon",
+                                min: DUE_SOON_RANGE_MINUTES.min,
+                                max: DUE_SOON_RANGE_MINUTES.max,
+                                step: DUE_SOON_RANGE_MINUTES.step,
+                                value: draftSoon,
+                                ariaLabel: "Second warning before a legal due time",
+                                minLabel: formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min),
+                                maxLabel: formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max),
+                                onChange: (minutes) =>
+                                  setDraft((current) => ({
+                                    ...current,
+                                    dueSoonMinutes: minutes,
+                                    dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                      current.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
+                                      minutes,
+                                    ),
+                                  })),
+                              }}
+                            />
+                          )}
+                          {/* The two warnings on one window, read from the draft: calm, then due soon,
+                              then the first warning, up to the due time. */}
+                          <div className={styles.cascade} aria-hidden="true">
+                            <div className={styles.cascadeTrack}>
                               <span
-                                id="setting-form4a-warn-desc"
-                                className={styles.rowDesc}
-                                data-testid="setting-form4a-warn-desc"
-                              >
-                                Form 4A transport expiry warning window. Not wired in this prototype.
-                              </span>
+                                className={styles.cascadeCalm}
+                                style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - draftSoon) }}
+                              />
+                              <span
+                                className={styles.cascadeSoon}
+                                style={{ flexGrow: Math.max(0, draftSoon - draftUrgent) }}
+                              />
+                              <span className={styles.cascadeUrgent} style={{ flexGrow: draftUrgent }} />
                             </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-disabled="true"
-                                  aria-describedby="setting-form4a-warn-desc"
-                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
-                                  aria-label="Decrease recorded Form 4A expiry warning"
-                                  onClick={() => {
-                                    showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
-                                  }}
-                                >
-                                  <Minus size={13} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal}>{statutoryWarningHours}h</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-disabled="true"
-                                  aria-describedby="setting-form4a-warn-desc"
-                                  title="Recorded Form 4A expiry warning is not wired in this prototype."
-                                  aria-label="Increase recorded Form 4A expiry warning"
-                                  onClick={() => {
-                                    showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
-                                  }}
-                                >
-                                  <Plus size={13} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-form4a-warn"
-                                  type="range"
-                                  min={1}
-                                  max={12}
-                                  step={1}
-                                  value={statutoryWarningHours}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast("Recorded Form 4A expiry warning is not wired in this prototype.");
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="Recorded Form 4A expiry warning in hours — not wired in this prototype"
-                                />
-                                <span className={styles.sliderVal}>{statutoryWarningHours}h prior</span>
-                              </div>
+                            <div className={styles.cascadeEnds}>
+                              <span className={styles.cascadeStart}>
+                                T - {formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)}
+                              </span>
+                              <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - draftSoon) }}>
+                                {formatDueSoonDuration(draftSoon)}
+                              </span>
+                              <span style={{ flexGrow: Math.max(0, draftSoon - draftUrgent) }}>
+                                {formatDueSoonDuration(draftUrgent)}
+                              </span>
+                              <span style={{ flexGrow: draftUrgent }}>0</span>
                             </div>
                           </div>
-                        )}
-
-                        {/* Auto-escalation Broadcast Toggle */}
-                        {isRowVisible("setting-auto-escalate") && (
-                          <div className={styles.settingRow} data-testid="setting-auto-escalate-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Text all services
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-auto-escalate-desc">
-                                Automated multi-service broadcast. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={autoEscalationAlerts}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast(
-                                      "Automated Multi-Service Escalation Broadcast is not wired in this prototype.",
-                                    );
-                                  }}
-                                  aria-label="Automated Multi-Service Escalation Broadcast — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Medical Clearance Buffer Select */}
-                        {isRowVisible("setting-medical-release") && (
-                          <div className={styles.settingRow} data-testid="setting-medical-release-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Medical Clearance Bed Release Buffer
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-medical-release-desc">
-                                Medical clearance bed release buffer. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <select
-                                className={styles.selectBox}
-                                value={medicalReleaseMinutes}
-                                aria-disabled="true"
-                                onChange={() => {
-                                  showToast("Medical Clearance Bed Release Buffer is not wired in this prototype.");
-                                }}
-                                aria-label="Medical Clearance Bed Release Buffer — not wired in this prototype"
-                              >
-                                <option value={60}>60m</option>
-                                <option value={120}>120m</option>
-                                <option value={180}>180m</option>
-                              </select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Published Thresholds Table */}
-                      {isRowVisible("setting-published-thresholds") && (
-                        <WardPanel title="Thresholds" testId="ward-settings-thresholds">
-                          <div className={styles.referenceBody}>
-                            <div className={styles.calloutCard} data-tone="accent">
-                              <p className={styles.calloutText}>
-                                Figures here change only through the controls above, and every change is recorded.
-                              </p>
-                            </div>
-                            <div
-                              className={styles.tableWrap}
-                              role="region"
-                              aria-label="Published thresholds"
-                              tabIndex={0}
-                            >
-                              <table className={styles.table}>
-                                <thead>
-                                  <tr>
-                                    <th scope="col">Figure</th>
-                                    <th scope="col">Triggers</th>
-                                    <th scope="col">Right now</th>
-                                    <th scope="col">Lives in</th>
-                                    <th scope="col">Set by</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {thresholds.map((threshold) => (
-                                    <tr key={threshold.id} data-testid={`ward-settings-threshold-${threshold.id}`}>
-                                      <td>
-                                        <strong>{threshold.figure}</strong>
-                                      </td>
-                                      <td>{threshold.triggers}</td>
-                                      <td data-threshold-state={threshold.state}>
-                                        <span
-                                          className={styles.badge}
-                                          data-tone={threshold.state === "fires-now" ? "warn" : "accent"}
-                                        >
-                                          {THRESHOLD_STATE_WORDS[threshold.state]}
-                                          {threshold.state === "fires-now" ? ` — ${threshold.reached}` : null}
-                                        </span>
-                                      </td>
-                                      <td>
-                                        <code>{threshold.livesIn}</code>
-                                      </td>
-                                      <td>{threshold.setBy}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </WardPanel>
+                        </Card>
                       )}
 
-                      {/* Operational Defaults List (Interactive & Full-Width Apple Card) */}
-                      {isRowVisible("setting-operational-defaults") && (
-                        <div className={styles.defaultsFullCard} role="region" aria-label="Operational defaults">
-                          <div className={styles.defaultsToolbarRow}>
-                            <div className={styles.defaultsTitleGroup}>
-                              <span className={styles.defaultsCardTitle}>Operational Defaults</span>
-                              <span className={styles.rowTag}>{OPERATIONAL_DEFAULTS.length} Parameters</span>
+                      {browserVisible && (
+                        <Card
+                          id={anchorId("browser")}
+                          aria-labelledby="browser-title"
+                          data-testid="ward-settings-storage-telemetry"
+                        >
+                          <CardHead id="browser-title" icon={Database} title="This browser" />
+                          <div className={styles.statRow}>
+                            <div className={styles.statItem}>
+                              <strong className={styles.statValue}>{storageEstimate.usedFormatted}</strong>
+                              <span className={styles.statLabel}>of {storageEstimate.quotaFormatted} used</span>
                             </div>
-                            <div className={styles.defaultsHeaderActions}>
-                              {isEditingDefaults ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    className={styles.btnSaveRibbon}
-                                    onClick={handleSaveCustomDefaults}
-                                    title="Save customized operational defaults"
-                                  >
-                                    <Check size={12} strokeWidth={2.5} aria-hidden="true" />
-                                    <span>Save Defaults</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.btnSecondary}
-                                    onClick={() => {
-                                      setCustomDefaults(loadCustomOperationalDefaults());
-                                      setIsEditingDefaults(false);
-                                    }}
-                                    title="Cancel editing"
-                                  >
-                                    <span>Cancel</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.btnRestoreRibbon}
-                                    onClick={handleResetAllDefaults}
-                                    title="Restore standard baseline defaults"
-                                  >
-                                    <RotateCcw size={12} aria-hidden="true" />
-                                    <span>Restore Baseline</span>
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    className={styles.btnPrimary}
-                                    onClick={() => setIsEditingDefaults(true)}
-                                    title="Customize operational defaults"
-                                  >
-                                    <Sliders size={12} aria-hidden="true" />
-                                    <span>Edit Defaults</span>
-                                  </button>
-                                  {Object.keys(customDefaults).length > 0 && (
-                                    <button
-                                      type="button"
-                                      className={styles.btnRestoreRibbon}
-                                      onClick={handleResetAllDefaults}
-                                      title="Restore all operational defaults to standard"
-                                    >
-                                      <RotateCcw size={12} aria-hidden="true" />
-                                      <span>Reset to Baseline</span>
-                                    </button>
-                                  )}
-                                </>
-                              )}
+                            <div className={styles.statItem}>
+                              <strong className={styles.statValue}>{movements.length}</strong>
+                              <span className={styles.statLabel}>Movements held</span>
+                            </div>
+                            <div className={styles.statItem}>
+                              <strong className={styles.statValue}>{eventLog.length}</strong>
+                              <span className={styles.statLabel}>Events recorded this session</span>
                             </div>
                           </div>
-
-                          <div
-                            className={styles.tableWrap}
-                            role="region"
-                            aria-label="Operational defaults table"
-                            tabIndex={0}
-                          >
-                            <table className={styles.table}>
-                              <thead>
-                                <tr>
-                                  <th scope="col" style={{ width: "55%" }}>
-                                    Default Setting
-                                  </th>
-                                  <th scope="col" style={{ width: "45%" }}>
-                                    Value
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {OPERATIONAL_DEFAULTS.map((item) => {
-                                  const customVal = customDefaults[item.name];
-                                  const isModified = Boolean(customVal && customVal !== item.display);
-                                  return (
-                                    <tr key={item.name} data-testid={`ward-settings-operational-default-${item.name}`}>
-                                      <td>
-                                        <div className={styles.defaultNameCell}>
-                                          <span>{item.name}</span>
-                                          {isModified && <span className={styles.modifiedBadge}>Customized</span>}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        {isEditingDefaults ? (
-                                          <div className={styles.defaultEditCell}>
-                                            <input
-                                              type="text"
-                                              className={styles.defaultInput}
-                                              value={customVal ?? item.display}
-                                              onChange={(e) => handleDefaultChange(item.name, e.target.value)}
-                                              aria-label={`Edit ${item.name}`}
-                                            />
-                                            {isModified && (
-                                              <button
-                                                type="button"
-                                                className={styles.defaultResetItemBtn}
-                                                title={`Reset "${item.name}" to standard default`}
-                                                aria-label={`Reset "${item.name}" to standard default`}
-                                                onClick={() => handleResetSingleDefault(item.name)}
-                                              >
-                                                <RotateCcw size={12} aria-hidden="true" />
-                                              </button>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <strong>{customVal ?? item.display}</strong>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-                    </section>
-                  )}
-                  {/* DOMAIN 3: BED ALLOCATION WEIGHTS */}
-                  {(isRowVisible("setting-gender-mix") || isRowVisible("setting-acuity-ceiling")) && (
-                    <section id="cat-allocation" className={styles.settingsSection} aria-labelledby="allocation-title">
-                      <header className={styles.sectionHeader}>
-                        <div>
-                          <span className={styles.secEyebrow}>Domain 3 · Capacity &amp; Surge</span>
-                          <h2 id="allocation-title" className={styles.secTitle}>
-                            Beds
-                          </h2>
-                          <p className={styles.secDesc}>Bay integrity and acuity limits.</p>
-                        </div>
-                        <span className={styles.rowTag}>2 Parameters</span>
-                      </header>
-
-                      <div className={styles.rowsContainer}>
-                        {/* Gender Bay Protection */}
-                        {isRowVisible("setting-gender-mix") && (
-                          <div className={styles.settingRow} data-testid="setting-gender-mix-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Bay and gender rules
-                                <span className={styles.unwiredPill}>Prototype preview</span>
+                          {isRowVisible("setting-default-service") && (
+                            <div className={styles.listRow} data-testid="ward-settings-default-service">
+                              <span className={styles.ruleText}>
+                                <span className={styles.ruleTitle}>Default service</span>
+                                <span className={styles.ruleSub}>Not saved, set from the bar</span>
                               </span>
-                              <span className={styles.rowDesc} data-testid="setting-gender-mix-desc">
-                                Gender and bay integrity rules. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={genderMixProtection}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast(
-                                      "Gender Designation & Bay Integrity Enforcement is not wired in this prototype.",
-                                    );
-                                  }}
-                                  aria-label="Gender Designation and Bay Integrity Enforcement — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Acuity Specialling Ceiling */}
-                        {isRowVisible("setting-acuity-ceiling") && (
-                          <div className={styles.settingRow} data-testid="setting-acuity-ceiling-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Specialling limit
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-acuity-ceiling-desc">
-                                Ward acuity and specialling limits. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <select
-                                className={styles.selectBox}
-                                value={acuityCeiling}
-                                aria-disabled="true"
-                                onChange={() => {
-                                  showToast("Ward Acuity & 1:1 Specialling Ceiling is not wired in this prototype.");
-                                }}
-                                aria-label="Ward Acuity and 1:1 Specialling Ceiling — not wired in this prototype"
-                              >
-                                <option value={2}>2 Patients</option>
-                                <option value={3}>3 Patients</option>
-                                <option value={4}>4 Patients</option>
-                              </select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* DOMAIN 4: NOTIFICATIONS & TELEMETRY */}
-                  {(isRowVisible("setting-buzz-alert") ||
-                    isRowVisible("setting-wallboard-refresh") ||
-                    isRowVisible("setting-form1a-strict") ||
-                    isRowVisible("setting-form4a-escort") ||
-                    isRowVisible("setting-auth-hospital") ||
-                    isRowVisible("setting-cp-audit") ||
-                    isRowVisible("setting-roles-matrix") ||
-                    isRowVisible("setting-keyboard-shortcuts") ||
-                    isRowVisible("setting-search-ledger")) && (
-                    <section
-                      id="cat-notifications"
-                      className={styles.settingsSection}
-                      aria-labelledby="notifications-title"
-                    >
-                      <header className={styles.sectionHeader}>
-                        <div>
-                          <span className={styles.secEyebrow}>Alerts &amp; access</span>
-                          <h2 id="notifications-title" className={styles.secTitle}>
-                            Alerts &amp; access
-                          </h2>
-                          <p className={styles.secDesc}>
-                            Urgent buzz alerts, wallboard timers, and clinical role scopes.
-                          </p>
-                        </div>
-                        <span className={styles.rowTag}>Clinical Governance</span>
-                      </header>
-
-                      <div className={styles.rowsContainer}>
-                        {/* Audio & Visual Urgent Buzz Alerts */}
-                        {isRowVisible("setting-buzz-alert") && (
-                          <div className={styles.settingRow} data-testid="setting-buzz-alert-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Buzz sound</span>
-                              <span className={styles.rowDesc} data-testid="setting-buzz-alert-desc">
-                                Sound an audible chime and display a visual flash when an urgent buzz is received.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={audioBuzzAlerts}
-                                  onChange={() => {
-                                    const next = !audioBuzzAlerts;
-                                    setAudioBuzzAlerts(next);
-                                    setAudioBuzzPreference(next);
-                                    showToast(
-                                      next
-                                        ? "Audio & visual urgent buzz alerts enabled."
-                                        : "Audio & visual urgent buzz alerts disabled.",
-                                    );
-                                  }}
-                                  aria-label="Buzz sound"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Wallboard Auto-Refresh Timer */}
-                        {isRowVisible("setting-wallboard-refresh") && (
-                          <div className={styles.settingRow} data-testid="setting-wallboard-refresh-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Board refresh</span>
-                              <span className={styles.rowDesc} data-testid="setting-wallboard-refresh-desc">
-                                Auto-refresh interval for unattended displays.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <div className={styles.segTrack} role="radiogroup" aria-label="Board refresh">
-                                {(
-                                  [
-                                    { value: "off", label: "Off" },
-                                    { value: 15, label: "15s" },
-                                    { value: 30, label: "30s" },
-                                    { value: 60, label: "60s" },
-                                  ] as const
-                                ).map((opt) => (
-                                  <button
-                                    key={String(opt.value)}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={wallboardRefresh === opt.value}
-                                    className={styles.segBtn}
-                                    onClick={() => {
-                                      setWallboardRefresh(opt.value);
-                                      setWallboardRefreshPreference(opt.value);
-                                      showToast(
-                                        opt.value === "off"
-                                          ? "Wallboard auto-refresh disabled."
-                                          : `Wallboard auto-refresh interval set to ${opt.label}.`,
-                                      );
-                                    }}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {isRowVisible("setting-form1a-strict") && (
-                          <div className={styles.settingRow} data-testid="setting-form1a-strict-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Require a Form 1A before an involuntary admission
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-form1a-strict-desc">
-                                Referral examination window check. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={statutoryExpiryAlerts}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast(
-                                      "Require a Form 1A before an involuntary admission is not wired in this prototype.",
-                                    );
-                                  }}
-                                  aria-label="Require a Form 1A before an involuntary admission — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {isRowVisible("setting-form4a-escort") && (
-                          <div className={styles.settingRow} data-testid="setting-form4a-escort-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Escort required before transport advances (demo)
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-form4a-escort-desc">
-                                Escort assignment before transport. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={autoCapacityRefresh}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast(
-                                      "Escort required before transport advances (demo) is not wired in this prototype.",
-                                    );
-                                  }}
-                                  aria-label="Escort required before transport advances (demo) — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {isRowVisible("setting-auth-hospital") && (
-                          <div className={styles.settingRow} data-testid="setting-auth-hospital-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Authorised Hospital Involuntary Bed Validation
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-auth-hospital-desc">
-                                Authorised facility destination check. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={multiCatchmentSearch}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast(
-                                      "Authorised Hospital Involuntary Bed Validation is not wired in this prototype.",
-                                    );
-                                  }}
-                                  aria-label="Authorised Hospital Involuntary Bed Validation — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-
-                        {isRowVisible("setting-cp-audit") && (
-                          <div className={styles.settingRow} data-testid="setting-cp-audit-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Audit Log for Chief Psychiatrist
-                                <span className={styles.unwiredPill}>Prototype preview</span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-cp-audit-desc">
-                                Chief Psychiatrist governance audit trail. Not wired in this prototype.
-                              </span>
-                            </div>
-                            <div className={styles.rowControl}>
-                              <label className={styles.switchToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={audioBreachChimes}
-                                  aria-disabled="true"
-                                  onChange={() => {
-                                    showToast("Audit Log for Chief Psychiatrist is not wired in this prototype.");
-                                  }}
-                                  aria-label="Audit Log for Chief Psychiatrist — not wired in this prototype"
-                                />
-                                <span className={styles.switchSlider} />
-                              </label>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* AHPRA Roles Matrix */}
-                      {isRowVisible("setting-roles-matrix") && (
-                        <div className={styles.tableCard}>
-                          <div
-                            className={styles.tableWrap}
-                            role="region"
-                            aria-label="Role permissions matrix"
-                            tabIndex={0}
-                          >
-                            <table className={styles.table}>
-                              <thead>
-                                <tr>
-                                  <th scope="col">Clinical Role</th>
-                                  <th scope="col">Where they work</th>
-                                  <th scope="col">Legal Form Sign-off</th>
-                                  <th scope="col">Can override</th>
-                                  <th scope="col">Handover Sign-Off</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {ROLE_PERMISSIONS.map((item) => (
-                                  <tr key={item.role}>
-                                    <td>
-                                      <strong>{item.role}</strong>
-                                    </td>
-                                    <td>{item.scope}</td>
-                                    <td>
-                                      <span className={styles.badge} data-tone={item.formsTone}>
-                                        {item.forms}
-                                      </span>
-                                    </td>
-                                    <td>
-                                      <span className={styles.badge} data-tone={item.overrideTone}>
-                                        {item.override}
-                                      </span>
-                                    </td>
-                                    <td>
-                                      <span className={styles.badge} data-tone={item.handoverTone}>
-                                        {item.handover}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tactical Shortcuts & Telemetry Ledger */}
-                      {(isRowVisible("setting-keyboard-shortcuts") || isRowVisible("setting-search-ledger")) && (
-                        <div className={styles.shortcutsGrid}>
-                          {isRowVisible("setting-keyboard-shortcuts") && (
-                            <div className={styles.shortcutCard}>
-                              <div className={styles.shortcutHeader}>
-                                <span>Keyboard Accelerators</span>
-                                <span className={styles.rowTag}>Cheatsheet</span>
-                              </div>
-                              <div className={styles.shortcutList}>
-                                <div className={styles.shortcutRow}>
-                                  <span>Focus search settings</span>
-                                  <kbd className={styles.kbdBadge}>/</kbd>
-                                </div>
-                                <div className={styles.shortcutRow}>
-                                  <span>Dismiss search / close modals</span>
-                                  <kbd className={styles.kbdBadge}>Esc</kbd>
-                                </div>
-                                <div className={styles.shortcutRow}>
-                                  <span>Toggle navigation rail</span>
-                                  <kbd className={styles.kbdBadge}>[</kbd>
-                                </div>
-                                <div className={styles.shortcutRow}>
-                                  <span>Global command palette</span>
-                                  <kbd className={styles.kbdBadge}>Cmd + K</kbd>
-                                </div>
-                              </div>
+                              <span className={styles.readout}>All services</span>
                             </div>
                           )}
-
-                          {isRowVisible("setting-search-ledger") && (
-                            <div className={styles.shortcutCard}>
-                              <div className={styles.shortcutHeader}>
-                                <span>Ephemeral Search Ledger</span>
-                                <button
-                                  type="button"
-                                  className={styles.btnSecondary}
-                                  onClick={handleClearLedger}
-                                  title="Clear search telemetry history"
-                                >
-                                  Clear History
-                                </button>
-                              </div>
-                              <div className={styles.ledgerBox}>
-                                <div className={styles.ledgerMeta}>
-                                  <strong>Recorded Queries ({searchHistory.length})</strong>
-                                  <span>
-                                    {searchHistory.length > 0
-                                      ? searchHistory.join(" · ")
-                                      : "No recent search queries stored in this session."}
-                                  </span>
-                                </div>
-                              </div>
-                              <p className={styles.note}>
-                                Local browser session memory only. Zero network persistence.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </section>
-                  )}
-
-                  {/* DOMAIN 5: LOCAL STORAGE & RESET */}
-                  {(isRowVisible("setting-default-service") ||
-                    isRowVisible("setting-handover-sheet") ||
-                    isRowVisible("setting-demonstration-data")) && (
-                    <section id="cat-reset" className={styles.settingsSection} aria-labelledby="reset-domain-title">
-                      <header className={styles.sectionHeader}>
-                        <div>
-                          <span className={styles.secEyebrow}>Domain 5 · Storage &amp; Defaults</span>
-                          <h2 id="reset-domain-title" className={styles.secTitle}>
-                            This browser
-                          </h2>
-                          <p className={styles.secDesc}>Session storage, handover export, and baseline reset.</p>
-                        </div>
-                        <span className={styles.rowTag}>Persistence &amp; Reset</span>
-                      </header>
-
-                      <div className={styles.workspaceGrid}>
-                        {isRowVisible("setting-default-service") && (
-                          <WardPanel title="Default service" testId="ward-settings-default-service">
-                            <div className={styles.compactBody}>
-                              <div className={styles.preferenceStatus}>
-                                <span>Starts on</span>
-                                <strong>All services</strong>
-                              </div>
-                              <div className={styles.calloutCard}>
-                                <p className={styles.calloutText}>
-                                  Not saved. Choose a service from the bar for this visit.
-                                </p>
-                              </div>
-                            </div>
-                          </WardPanel>
-                        )}
-
-                        {isRowVisible("setting-handover-sheet") && (
-                          <WardPanel title="Handover sheet" testId="ward-settings-handover">
-                            <div className={styles.compactBody}>
-                              <p className={styles.body}>
-                                Point-in-Time Shift Handover &amp; Bedflow Snapshot includes: Longest waits, Beds
-                                pulled, In transit, Placement gone wrong, Outside this filter, Still open at 15:00,
-                                Shift and sign off, and Handover details. Generated on demand.
-                              </p>
-                              <Link className={styles.inlineLink} href="/mockups/ward-flow/handover">
-                                Open Handover
+                          {isRowVisible("setting-handover-sheet") && (
+                            <div className={styles.listRow} data-testid="ward-settings-handover">
+                              <span className={styles.ruleText}>
+                                <span className={styles.ruleTitle}>Handover sheet</span>
+                                <span className={styles.ruleSub} title={HANDOVER_SHEET_SECTIONS}>
+                                  Built on demand: {HANDOVER_SHEET_SECTIONS}
+                                </span>
+                              </span>
+                              <Link
+                                className={buttonClass({ variant: "sec", size: "sm" })}
+                                href="/mockups/ward-flow/handover"
+                              >
+                                Open handover
                               </Link>
                             </div>
-                          </WardPanel>
-                        )}
-
-                        {isRowVisible("setting-demonstration-data") && (
-                          <WardPanel title="Demonstration data" testId="ward-settings-demonstration">
-                            <div className={styles.compactBody}>
-                              <div className={styles.calloutCard}>
-                                <p className={styles.calloutText}>
-                                  Clock, scenario and data reset controls are in <strong>Tools</strong> in the bar.
-                                </p>
-                              </div>
-                            </div>
-                          </WardPanel>
-                        )}
-
-                        {/* Storage Telemetry & Quota Diagnostics Card */}
-                        <div className={styles.storageTelemetryCard} data-testid="ward-settings-storage-telemetry">
-                          <div className={styles.telemetryHeader}>
-                            <div className={styles.telemetryTitleGroup}>
-                              <Database size={16} className={styles.telemetryIcon} aria-hidden="true" />
-                              <h3 className={styles.telemetryTitle}>Browser storage</h3>
-                            </div>
-                            <span className={styles.cacheHealthBadge}>
-                              <span className={styles.statusDotLive} aria-hidden="true" />
-                              Cache Healthy
-                            </span>
-                          </div>
-
-                          <p className={styles.telemetryDesc}>
-                            Browser cache usage, active bed state telemetry, and configuration exports.
-                          </p>
-
-                          {/* Visual Storage Quota Bar */}
-                          <div className={styles.quotaSection}>
-                            <div className={styles.quotaHeader}>
-                              <span className={styles.quotaLabel}>Browser Cache &amp; Storage Quota</span>
-                              <span className={styles.quotaValue}>
-                                {storageEstimate.usedFormatted} of {storageEstimate.quotaFormatted} (
-                                {storageEstimate.percent}%)
+                          )}
+                          {isRowVisible("setting-demonstration-data") && (
+                            <div className={styles.listRow} data-testid="ward-settings-demonstration">
+                              <span className={styles.ruleText}>
+                                <span className={styles.ruleTitle}>Demonstration data</span>
+                                <span className={styles.ruleSub}>
+                                  Clock, scenario and reset are in Tools in the bar
+                                </span>
                               </span>
                             </div>
-                            <div
-                              className={styles.quotaBarTrack}
-                              role="progressbar"
-                              aria-valuenow={storageEstimate.percent}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-label="Browser storage quota usage"
-                            >
-                              <div
-                                className={styles.quotaBarFill}
-                                style={{ width: `${Math.max(2, storageEstimate.percent)}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Cache Health Metrics Grid */}
-                          <div className={styles.cacheHealthGrid}>
-                            <div className={styles.cacheMetricItem}>
-                              <span className={styles.metricLabel}>Active Movements</span>
-                              <strong className={styles.metricVal}>{movements.length}</strong>
-                              <span className={styles.metricSub}>Inpatient bed tracking</span>
-                            </div>
-                            <div className={styles.cacheMetricItem}>
-                              <span className={styles.metricLabel}>Events recorded this session</span>
-                              <strong className={styles.metricVal}>{eventLog.length}</strong>
-                              <span className={styles.metricSub}>
-                                Accepted and rejected events; resets with the session
-                              </span>
-                            </div>
-                            <div className={styles.cacheMetricItem}>
-                              <span className={styles.metricLabel}>Last State Sync</span>
-                              <strong className={styles.metricVal}>Active</strong>
-                              <span className={styles.metricSub}>Local clock synchronized</span>
-                            </div>
-                            <div className={styles.cacheMetricItem}>
-                              <span className={styles.metricLabel}>Appearance &amp; Rail</span>
-                              <strong className={styles.metricVal}>
-                                {appearance} · {railOpen ? "Expanded" : "Collapsed"}
-                              </strong>
-                              <span className={styles.metricSub}>Client-persisted UI mode</span>
-                            </div>
-                          </div>
-
-                          {/* Storage Actions Bar */}
-                          <div className={styles.storageActionsBar}>
+                          )}
+                          <div className={styles.browserFoot}>
                             <button
                               type="button"
-                              className={styles.btnSecondary}
+                              className={buttonClass({ variant: "sec", size: "sm" })}
                               onClick={handleExportConfig}
-                              title="Download JSON configuration backup"
+                              title="Download the configuration as JSON"
                               data-testid="btn-export-config"
                             >
                               <Download size={14} aria-hidden="true" />
-                              <span>Export Configuration JSON</span>
+                              <span>Export</span>
                             </button>
-
                             <label
-                              className={styles.btnSecondaryLabel}
-                              title="Upload and restore a configuration JSON backup"
+                              className={buttonClass({ variant: "sec", size: "sm" })}
+                              title="Load a configuration JSON into the draft"
                             >
                               <Upload size={14} aria-hidden="true" />
-                              <span>Import Backup JSON</span>
+                              <span>Import</span>
                               <input
                                 type="file"
                                 accept=".json,application/json"
@@ -2922,53 +1882,501 @@ export function SettingsScreen() {
                                 data-testid="input-import-config"
                               />
                             </label>
-
                             <button
                               type="button"
-                              className={styles.btnSecondary}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
                               onClick={handleClearTransientCache}
-                              title="Purge ephemeral demo state and search ledger"
+                              title="Clear session drafts and the search history"
                               data-testid="btn-clear-cache"
                             >
-                              <Trash2 size={14} aria-hidden="true" />
-                              <span>Clear Transient Cache</span>
+                              Clear cache
                             </button>
-                          </div>
-                        </div>
-
-                        {/* Baseline Reset Danger Zone */}
-                        <div className={styles.dangerZoneCard} data-testid="ward-settings-danger-zone">
-                          <div className={styles.dangerZoneHeader}>
-                            <div className={styles.dangerIconBadge}>
-                              <AlertTriangle size={18} aria-hidden="true" />
-                            </div>
-                            <div className={styles.dangerZoneMeta}>
-                              <h3 className={styles.dangerZoneTitle}>Reset demo</h3>
-                              <p className={styles.dangerZoneDesc}>
-                                Restores all coordination thresholds, theme, and rail preferences to standard.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className={styles.dangerZoneActionRow}>
-                            <div className={styles.dangerZoneNote}>
-                              <span>Audited operation: Requires coordinator confirmation.</span>
-                            </div>
                             <button
                               type="button"
-                              className={styles.btnDanger}
+                              className={buttonClass({ variant: "danger", size: "sm", className: styles.footEnd })}
                               onClick={() => setIsResetModalOpen(true)}
                               aria-haspopup="dialog"
                               aria-label="Restore all defaults"
                               data-testid="btn-restore-baseline"
                             >
-                              <RotateCcw size={15} aria-hidden="true" />
-                              <span>Restore all defaults</span>
+                              Restore all defaults
                             </button>
                           </div>
-                        </div>
+                        </Card>
+                      )}
+                    </div>
+
+                    <div className={styles.cardColumn}>
+                      {displayVisible && (
+                        <Card id={anchorId("display")} aria-labelledby="display-title">
+                          <CardHead id="display-title" icon={Palette} title="Display and alerts" />
+                          {lookVisible && (
+                            <>
+                              {isRowVisible("setting-appearance-theme") && (
+                                <div className={styles.listRow} data-testid="ward-settings-appearance">
+                                  <span className={styles.ruleText}>
+                                    <span className={styles.ruleTitle}>Theme</span>
+                                  </span>
+                                  <div className={styles.segGroup} role="group" aria-label="Appearance">
+                                    {APPEARANCE_CHOICES.map((choice) => {
+                                      const isSelected = appearance === choice.value;
+                                      return (
+                                        <button
+                                          key={choice.value}
+                                          type="button"
+                                          className={styles.segOption}
+                                          aria-pressed={isSelected}
+                                          aria-label={choice.label}
+                                          data-testid={`ward-settings-appearance-${choice.value}`}
+                                          onClick={() => {
+                                            applyAppearance(choice.value);
+                                            showToast(`Theme set to ${choice.label}.`);
+                                          }}
+                                        >
+                                          {choice.label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              {isRowVisible("setting-rail-density") && (
+                                <div className={styles.listRow} data-testid="ward-settings-rail">
+                                  <span className={styles.ruleText}>
+                                    <span className={styles.ruleTitle}>Sidebar</span>
+                                    <span className={styles.ruleSub} data-testid="ward-settings-rail-now">
+                                      {railOpen ? "Open, full names" : "Closed, icons only"}
+                                    </span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className={buttonClass({ variant: "sec", size: "sm" })}
+                                    data-testid="ward-settings-rail-toggle"
+                                    onClick={() => {
+                                      const next = !railOpen;
+                                      setRailOpenPreference(next);
+                                      showToast(`Navigation rail set to ${next ? "Open" : "Closed"}.`);
+                                    }}
+                                  >
+                                    {railOpen ? "Close the rail" : "Open the rail"}
+                                  </button>
+                                </div>
+                              )}
+                              <div className={styles.listRow}>
+                                <Switch
+                                  block
+                                  checked={reducedMotion}
+                                  onCheckedChange={handleToggleReducedMotion}
+                                  label={<SwitchText title="Reduce motion" sub="Stops interface animation" />}
+                                />
+                              </div>
+                              <div className={styles.listRow}>
+                                <Switch
+                                  block
+                                  checked={highContrast}
+                                  onCheckedChange={handleToggleHighContrast}
+                                  label={<SwitchText title="High contrast" sub="Stronger edges and ink" />}
+                                />
+                              </div>
+                              <div className={styles.listRow}>
+                                <span className={styles.ruleText}>
+                                  <span className={styles.ruleTitle}>Tabular figures</span>
+                                  <span className={styles.ruleSub}>Timers keep their width</span>
+                                </span>
+                                <span className={styles.readout}>
+                                  <StatusGlyph tone="success" size={9} />
+                                  Always on
+                                </span>
+                              </div>
+                            </>
+                          )}
+                          {alertsVisible && (
+                            <div id={anchorId("alerts")}>
+                              {isRowVisible("setting-buzz-alert") && (
+                                <div className={styles.listRow} data-testid="setting-buzz-alert-row">
+                                  <Switch
+                                    block
+                                    checked={audioBuzzAlerts}
+                                    onCheckedChange={(next) => {
+                                      setAudioBuzzAlerts(next);
+                                      setAudioBuzzPreference(next);
+                                      showToast(next ? "Buzz sound on." : "Buzz sound off.");
+                                    }}
+                                    label={
+                                      <SwitchText
+                                        title="Buzz sound"
+                                        sub="Chime and flash on an urgent buzz"
+                                        subTestId="setting-buzz-alert-desc"
+                                      />
+                                    }
+                                  />
+                                </div>
+                              )}
+                              {isRowVisible("setting-wallboard-refresh") && (
+                                <div className={styles.listRow} data-testid="setting-wallboard-refresh-row">
+                                  <span className={styles.ruleText}>
+                                    <span className={styles.ruleTitle}>Board refresh</span>
+                                    <span className={styles.ruleSub} data-testid="setting-wallboard-refresh-desc">
+                                      Unattended displays
+                                    </span>
+                                  </span>
+                                  <Segmented
+                                    label="Board refresh"
+                                    items={BOARD_REFRESH_CHOICES.map((choice) => ({
+                                      id: String(choice.value),
+                                      label: choice.label,
+                                    }))}
+                                    value={String(wallboardRefresh)}
+                                    onChange={(id) => {
+                                      const choice = BOARD_REFRESH_CHOICES.find(
+                                        (option) => String(option.value) === id,
+                                      );
+                                      if (!choice) return;
+                                      setWallboardRefresh(choice.value);
+                                      setWallboardRefreshPreference(choice.value);
+                                      showToast(
+                                        choice.value === "off"
+                                          ? "Board refresh off."
+                                          : `Board refresh set to every ${choice.label}.`,
+                                      );
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Card>
+                      )}
+
+                      {!filtering && (
+                        <Card aria-labelledby="changes-title" data-testid="ward-settings-recent-changes">
+                          <CardHead
+                            id="changes-title"
+                            icon={History}
+                            title="Recent changes"
+                            action={
+                              <Link
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                href="/mockups/ward-flow/governance"
+                              >
+                                Full audit
+                              </Link>
+                            }
+                          />
+                          {ruleChanges.length === 0 ? (
+                            <p className={styles.cardEmpty}>No rule saves this session.</p>
+                          ) : (
+                            <ol className={styles.changeList}>
+                              {ruleChanges.map((change) => (
+                                <li key={change.id} className={styles.changeRow}>
+                                  <span className={styles.changeTime}>
+                                    {change.at === null ? "No time" : formatInstantWithDay(change.at, now)}
+                                  </span>
+                                  <StatusGlyph tone={CHANGE_OUTCOME_TONE[change.outcome]} size={9} />
+                                  <span className={styles.changeText}>
+                                    {CHANGE_OUTCOME_PREFIX[change.outcome]}
+                                    {configurationChangeText(
+                                      change.details.before,
+                                      change.outcome === "accepted" ? change.details.after : change.details.requested,
+                                    )}
+                                  </span>
+                                  <span className={styles.changeActor}>
+                                    {change.actor.role ? WARD_FLOW_ROLE_LABELS[change.actor.role] : "Role not recorded"}
+                                  </span>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </Card>
+                      )}
+
+                      {shortcutsVisible && (
+                        <Card id={anchorId("shortcuts")} aria-labelledby="shortcuts-title">
+                          <CardHead id="shortcuts-title" icon={Keyboard} title="Shortcuts and search" />
+                          {isRowVisible("setting-keyboard-shortcuts") && (
+                            <ul className={styles.kbdList} aria-label="Keyboard shortcuts">
+                              {KEYBOARD_SHORTCUTS.map((shortcut) => (
+                                <li key={shortcut.label} className={styles.kbdRow}>
+                                  <span>{shortcut.label}</span>
+                                  <span className={styles.kbdKeys}>
+                                    {shortcut.keys.map((key) => (
+                                      <Kbd key={key}>{key}</Kbd>
+                                    ))}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {isRowVisible("setting-search-ledger") && (
+                            <div className={styles.recentRow}>
+                              <span className={styles.recentLabel}>Recent</span>
+                              {searchHistory.length > 0 ? (
+                                <span className={styles.recentChips}>
+                                  {searchHistory.map((query) => (
+                                    <button
+                                      key={query}
+                                      type="button"
+                                      className={styles.recentChip}
+                                      onClick={() => {
+                                        setSearchQuery(query);
+                                        searchInputRef.current?.focus();
+                                      }}
+                                      title={`Filter settings by "${query}"`}
+                                    >
+                                      {query}
+                                    </button>
+                                  ))}
+                                </span>
+                              ) : (
+                                <span className={styles.recentEmpty}>No recent searches</span>
+                              )}
+                              {searchHistory.length > 0 && (
+                                <button
+                                  type="button"
+                                  className={buttonClass({ variant: "ghost", size: "sm", className: styles.footEnd })}
+                                  onClick={handleClearLedger}
+                                  title="Clear the recent searches"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+
+                  {visiblePreviews.length > 0 && (
+                    <Card aria-labelledby="previews-title">
+                      <CardHead
+                        id="previews-title"
+                        icon={ListChecks}
+                        title="Prototype previews"
+                        aside={<span className={styles.headMeta}>Not wired in this prototype</span>}
+                      />
+                      <div className={styles.previewGrid}>
+                        {visiblePreviews.map((preview) => (
+                          <div
+                            key={preview.id}
+                            id={anchorId(preview.id)}
+                            className={styles.previewItem}
+                            data-testid={`${preview.id}-row`}
+                          >
+                            <span className={styles.ruleText}>
+                              <span className={styles.ruleTitle}>{preview.title}</span>
+                              <span
+                                className={styles.ruleSub}
+                                id={`${preview.id}-desc`}
+                                data-testid={`${preview.id}-desc`}
+                              >
+                                {preview.sub}
+                                <SrOnly>. {NOT_WIRED}</SrOnly>
+                              </span>
+                            </span>
+                            <span className={styles.previewMark}>
+                              <StatusGlyph tone="neutral" size={9} />
+                              Preview
+                            </span>
+                            {previewControl(preview)}
+                          </div>
+                        ))}
                       </div>
-                    </section>
+                    </Card>
+                  )}
+
+                  {isRowVisible("setting-operational-defaults") && (
+                    <Card id={anchorId("defaults")} aria-labelledby="defaults-title">
+                      <CardHead
+                        id="defaults-title"
+                        icon={SlidersHorizontal}
+                        title="Operational defaults"
+                        meta={`${OPERATIONAL_DEFAULTS.length} fixed in code`}
+                        action={
+                          isEditingDefaults ? (
+                            <>
+                              <button
+                                type="button"
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                onClick={handleResetAllDefaults}
+                                title="Restore the standard defaults"
+                              >
+                                Restore baseline
+                              </button>
+                              <button
+                                type="button"
+                                className={buttonClass({ variant: "sec", size: "sm" })}
+                                onClick={() => {
+                                  setCustomDefaults(loadCustomOperationalDefaults());
+                                  setIsEditingDefaults(false);
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className={buttonClass({ variant: "pri", size: "sm" })}
+                                onClick={handleSaveCustomDefaults}
+                              >
+                                Save defaults
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {Object.keys(customDefaults).length > 0 && (
+                                <button
+                                  type="button"
+                                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                                  onClick={handleResetAllDefaults}
+                                  title="Restore every operational default to standard"
+                                >
+                                  Reset to baseline
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                onClick={() => setIsEditingDefaults(true)}
+                              >
+                                Edit defaults
+                              </button>
+                            </>
+                          )
+                        }
+                      />
+                      <dl className={styles.defaultsGrid} aria-label="Operational defaults table">
+                        {OPERATIONAL_DEFAULTS.map((item) => {
+                          const customValue = customDefaults[item.name];
+                          const isModified = Boolean(customValue && customValue !== item.display);
+                          return (
+                            <div
+                              key={item.name}
+                              className={styles.defaultsItem}
+                              data-testid={`ward-settings-operational-default-${item.name}`}
+                            >
+                              <dt className={styles.defaultsName}>
+                                {item.name}
+                                {isModified && <span className={styles.customMark}>Customised</span>}
+                              </dt>
+                              <dd className={styles.defaultsValue}>
+                                {isEditingDefaults ? (
+                                  <span className={styles.defaultsEdit}>
+                                    <input
+                                      type="text"
+                                      className={styles.defaultsInput}
+                                      value={customValue ?? item.display}
+                                      onChange={(e) => handleDefaultChange(item.name, e.target.value)}
+                                      aria-label={`Edit ${item.name}`}
+                                    />
+                                    {isModified && (
+                                      <button
+                                        type="button"
+                                        className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+                                        aria-label={`Reset "${item.name}" to its standard default`}
+                                        title={`Reset "${item.name}" to its standard default`}
+                                        onClick={() => handleResetSingleDefault(item.name)}
+                                      >
+                                        <RotateCcw size={14} aria-hidden="true" />
+                                      </button>
+                                    )}
+                                  </span>
+                                ) : (
+                                  (customValue ?? item.display)
+                                )}
+                              </dd>
+                            </div>
+                          );
+                        })}
+                      </dl>
+                    </Card>
+                  )}
+
+                  {isRowVisible("setting-published-thresholds") && (
+                    <Card
+                      id={anchorId("thresholds")}
+                      aria-labelledby="thresholds-title"
+                      data-testid="ward-settings-thresholds"
+                    >
+                      <CardHead id="thresholds-title" icon={Gauge} title="Thresholds" />
+                      <p className={styles.cardNote} data-tone="accent">
+                        Figures here change only through the controls above, and every change is recorded.
+                      </p>
+                      <div className={styles.tableWrap} role="region" aria-label="Published thresholds" tabIndex={0}>
+                        <table className={`${styles.table} ${styles.cardTable}`}>
+                          <thead>
+                            <tr>
+                              <th scope="col">Figure</th>
+                              <th scope="col">Triggers</th>
+                              <th scope="col">Right now</th>
+                              <th scope="col">Lives in</th>
+                              <th scope="col">Set by</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {thresholds.map((threshold) => (
+                              <tr key={threshold.id} data-testid={`ward-settings-threshold-${threshold.id}`}>
+                                <td className={styles.cellStrong}>{threshold.figure}</td>
+                                <td>{threshold.triggers}</td>
+                                <td data-threshold-state={threshold.state}>
+                                  <span className={styles.readout}>
+                                    <StatusGlyph
+                                      tone={threshold.state === "fires-now" ? "warning" : "neutral"}
+                                      size={9}
+                                    />
+                                    {THRESHOLD_STATE_WORDS[threshold.state]}
+                                    {threshold.state === "fires-now" ? `, ${threshold.reached}` : null}
+                                  </span>
+                                </td>
+                                <td>
+                                  <code className={styles.codeCell}>{threshold.livesIn}</code>
+                                </td>
+                                <td>{threshold.setBy}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  )}
+
+                  {isRowVisible("setting-roles-matrix") && (
+                    <Card id={anchorId("roles")} aria-labelledby="roles-title">
+                      <CardHead
+                        id="roles-title"
+                        icon={ShieldCheck}
+                        title="Roles and sign-off"
+                        aside={<span className={styles.headMeta}>Demo scopes</span>}
+                      />
+                      <div className={styles.tableWrap} role="region" aria-label="Role permissions matrix" tabIndex={0}>
+                        <table className={`${styles.table} ${styles.cardTable}`}>
+                          <thead>
+                            <tr>
+                              <th scope="col">Role</th>
+                              <th scope="col">Works in</th>
+                              <th scope="col">Legal forms</th>
+                              <th scope="col">Can override</th>
+                              <th scope="col">Handover</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ROLE_PERMISSIONS.map((item) => (
+                              <tr key={item.role}>
+                                <td className={styles.cellStrong}>{item.role}</td>
+                                <td>{item.scope}</td>
+                                <td>{item.forms}</td>
+                                <td>{item.override}</td>
+                                <td>
+                                  <span className={styles.readout}>
+                                    <StatusGlyph tone={item.handoverTone} size={9} />
+                                    {item.handover}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
                   )}
                 </>
               )}

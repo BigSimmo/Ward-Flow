@@ -23,6 +23,8 @@ export type HeroProps = {
   barAside?: ReactNode;
   /** Heading level of the title. Defaults to 2. */
   level?: 1 | 2;
+  /** `data-testid` on the hero section, so a page needs no wrapper element to find it. */
+  testId?: string;
   className?: string;
 };
 
@@ -40,12 +42,13 @@ export function Hero({
   bar,
   barAside,
   level = 2,
+  testId,
   className,
 }: HeroProps) {
   const titleId = useId();
   const Heading = `h${level}` as ElementType;
   return (
-    <section className={cx(styles.hero, className)} aria-labelledby={titleId}>
+    <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.row}>
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}

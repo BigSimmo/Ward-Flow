@@ -126,9 +126,13 @@ describe("every statistics section page carries the disclaimer", () => {
 
   it.each(pages)("$name offers a way back to the statistics hub", ({ node }) => {
     renderInProvider(node);
-    expect(screen.getByTestId("ward-statistics-section-back").getAttribute("href")).toBe(
-      "/mockups/ward-flow/statistics",
-    );
+    // v6: the hero's section track leads with Summary, the statistics hub.
+    const back =
+      screen.queryByTestId("ward-statistics-section-back") ??
+      within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" })).getByRole("link", {
+        name: "Summary",
+      });
+    expect(back.getAttribute("href")).toBe("/mockups/ward-flow/statistics");
   });
 
   /**
@@ -583,8 +587,10 @@ describe("StatisticsScreen interactive controls and table sorting accessibility"
 
     // Query all th elements with aria-sort
     const sortableThs = container.querySelectorAll("th[aria-sort]");
-    // 6 ward-pressure columns + 6 emergency-department columns (the community team table was retired upstream).
-    expect(sortableThs.length).toBe(12);
+    // 5 ward-pressure columns + 6 emergency-department columns. v6 (7 Oct 2026): the approved
+    // "Where the pressure is" table shows the hospital as a site code beside the ward name, so the
+    // separate Hospital column went; the test name keeps its original count wording.
+    expect(sortableThs.length).toBe(11);
 
     // Each sortable th must contain a <button type="button">
     for (const th of Array.from(sortableThs)) {
@@ -593,7 +599,7 @@ describe("StatisticsScreen interactive controls and table sorting accessibility"
       expect(btn).toHaveAttribute("type", "button");
     }
 
-    // Test sorting on the Hospital column in the Ward table
+    // Test sorting on the first (Ward) column in the pressure table
     const hospTh = container.querySelector("th[aria-sort]:has(button)") as HTMLElement;
     const hospBtn = hospTh.querySelector("button")!;
     const initialSort = hospTh.getAttribute("aria-sort");

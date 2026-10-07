@@ -229,7 +229,7 @@ function TeamBody() {
         {[
           ["NM", "Dr Moss", "Day · until 16:30", ""],
           ["AL", "Dr Lowe", "Day · until 16:30", ""],
-          ["TN", "Dr Nguyen", "Night registrar · finishing 08:30", "#e0912a"],
+          ["TN", "Dr Nguyen", "Night registrar · finishing 08:30", "var(--wf-warning)"],
         ].map((person) => (
           <div className="row" key={person[0]}>
             <span className="av pr" style={person[3] ? { ["--pres" as string]: person[3] } : undefined}>

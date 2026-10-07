@@ -219,9 +219,8 @@ describe("TrafficDiagram hover isolation and visual elevations", () => {
       /@media\s*\(max-width:\s*480px\)\s*\{\s*\.horizonContainer\s*\{[^}]*?--horizon-ward-width:\s*160px;[^}]*?--horizon-row-min:\s*80px;/u,
     );
 
-    // Check .ganttBar sheen box-shadow
-    expect(css).toMatch(
-      /\.ganttBar\s*\{[\s\S]*?box-shadow:\s*inset 0 1px 0 (?:rgba\(255,\s*255,\s*255,\s*0\.15\)|color-mix\(in srgb,\s*var\(--surface\)\s*20%,\s*transparent\)),\s*var\(--lift\);/u,
-    );
+    // Check .ganttBar sheen box-shadow. v6 (7 Oct 2026): the flat pill keeps only the inset
+    // highlight, on the v6 highlight token.
+    expect(css).toMatch(/\.ganttBar\s*\{[^}]*?box-shadow:\s*inset 0 1px 0 var\(--wf-hl\);/u);
   });
 });
