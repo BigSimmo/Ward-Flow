@@ -65,13 +65,20 @@ export function Ring({ value, caption, fraction }: { value: string; caption: str
   return (
     <div className="ring">
       <svg viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="4.5" />
         <circle
           cx="32"
           cy="32"
           r="28"
           fill="none"
-          stroke="#fff"
+          stroke="color-mix(in srgb, var(--wf-hero-ink) 20%, transparent)"
+          strokeWidth="4.5"
+        />
+        <circle
+          cx="32"
+          cy="32"
+          r="28"
+          fill="none"
+          stroke="var(--wf-hero-ink)"
           strokeWidth="4.5"
           strokeLinecap="round"
           strokeDasharray="175.9"

@@ -54,11 +54,17 @@ const openMovements = ALL_MOVEMENTS.filter(isOpen);
 const CHOSEN_SERVICE = "East Metro" as const;
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW}>
       <MovementsScreen />
     </WardFlowProvider>,
   );
+  // v6 (7 Oct 2026): the worklist shows the first rows of each group until Show all; these
+  // cases read every row, so they open the full list first.
+  // A scoped list short enough to show whole has no Show all button.
+  const showAll = screen.queryByRole("button", { name: /^Show all \d+$/u });
+  if (showAll) fireEvent.click(showAll);
+  return view;
 }
 
 function worklistPanel(): HTMLElement {

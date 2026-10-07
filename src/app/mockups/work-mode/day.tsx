@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { Chevron, DateTile, Foot, Icon, Ring } from "./ui";
 import { useWork } from "./context";
 
@@ -163,7 +161,7 @@ function NeedRow({
 }
 
 export function DayBody() {
-  const { state, dispatch } = useWork();
+  const { state } = useWork();
   if (state.view === "needs") return <NeedsYou />;
   if (state.tab === 1) return state.weekAsMonth ? <MonthBody /> : <WeekBody />;
   if (state.tab === 2) return <HoursBody />;
@@ -228,9 +226,13 @@ function TodayBody() {
           tone="rost"
           icon="swap"
           title="Swap from Dr Moss"
-          detail="Thu 8 Day for Sun 11 Late · by 17:00"
-          action="Answer"
-          onAction={() => dispatch({ type: "overlay", overlay: "swap" })}
+          detail={state.swapAccepted ? "Accepted · Dr Grant approves next" : "Thu 8 Day for Sun 11 Late · by 17:00"}
+          action={state.swapAccepted ? "Open" : "Answer"}
+          onAction={() =>
+            state.swapAccepted
+              ? dispatch({ type: "mode", mode: "rost", tab: 2 })
+              : dispatch({ type: "overlay", overlay: "swap" })
+          }
         />
         <NeedRow
           tone="admin"
@@ -360,7 +362,7 @@ function TodayBody() {
         <div className="meter" style={{ marginTop: 8, height: 8, gap: 2, background: "var(--wash)" }}>
           <i style={{ width: "32%", background: "var(--m)" }} />
           <i style={{ width: "13%", background: "var(--m2)", opacity: 0.75 }} />
-          <i style={{ width: "20%", background: "#e3b98d" }} />
+          <i style={{ width: "20%", background: "var(--wf-data-3)" }} />
         </div>
         <div className="day-kvs">
           <div className="day-kv">
@@ -370,12 +372,12 @@ function TodayBody() {
             <em>met</em>
           </div>
           <div className="day-kv">
-            <i style={{ background: "#c48650" }} />
+            <i style={{ background: "var(--wf-data-2)" }} />
             <span>Reviewing performance</span>
             <b className="num">6.5 h</b>
           </div>
           <div className="day-kv">
-            <i style={{ background: "#e3b98d" }} />
+            <i style={{ background: "var(--wf-data-3)" }} />
             <span>Measuring outcomes</span>
             <b className="num">10 h</b>
           </div>
@@ -1009,9 +1011,13 @@ function NeedsYou() {
           tone="rost"
           icon="swap"
           title="Swap from Dr Moss"
-          detail="Thu 8 Day for Sun 11 Late · by 17:00"
-          action="Answer"
-          onAction={() => dispatch({ type: "overlay", overlay: "swap" })}
+          detail={state.swapAccepted ? "Accepted · Dr Grant approves next" : "Thu 8 Day for Sun 11 Late · by 17:00"}
+          action={state.swapAccepted ? "Open" : "Answer"}
+          onAction={() =>
+            state.swapAccepted
+              ? dispatch({ type: "mode", mode: "rost", tab: 2 })
+              : dispatch({ type: "overlay", overlay: "swap" })
+          }
         />
         <NeedRow
           tone="admin"

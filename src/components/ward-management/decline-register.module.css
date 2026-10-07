@@ -1,100 +1,80 @@
 /*
- * The declines register's own module — self-contained tokens on each root class, the same
- * convention `override-register.module.css` documents: this component can be mounted anywhere
- * (Task 5 mounts it inside `coordinator.module.css`'s scope), so nothing may be borrowed from a
- * caller's local custom properties.
- *
- * Design tokens only — no literal colours. Deliberately the SAME palette entries
- * `override-register.module.css` uses (never copied by value, only by the token name), so a
- * decline row and an override row read as the same kind of accountability record.
+ * The declines register (v6 Home mockup): one row per decline. The declining ward leads, then the
+ * patient and the reason, then a mono time with the neutral cross (declined is never red).
+ * v6 tokens only.
  */
-.list,
-.placeholder {
-  --dr-space-4: 0.25rem;
-  --dr-space-6: 0.375rem;
-  --dr-space-8: 0.5rem;
-  --dr-space-10: 0.625rem;
-  --dr-leading-body: 1.4;
-}
-
 .placeholder {
   margin: 0;
-  color: var(--text-muted);
-  font-size: var(--text-2xs);
-  line-height: var(--dr-leading-body);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .list {
-  display: grid;
-  gap: var(--dr-space-10);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .entry {
-  /* Declared here, not on a root class — same reasoning as `override-register.module.css`'s
-     `.entry`: this module has no wrapper, so a token declared on `.list`/`.placeholder` never
-     reaches a sibling `<li>`. */
-  --wf-border: var(--neutral-500);
-  display: grid;
-  min-width: 0;
-  gap: var(--dr-space-6);
-  border: 0.0625rem solid var(--wf-border, var(--neutral-500));
-  border-radius: var(--radius-md);
-  background: var(--surface-subtle);
-  padding: var(--dr-space-10);
-}
-
-.entryHeader {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--dr-space-8);
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  box-sizing: border-box;
 }
 
-.entryHeader strong {
-  color: var(--text-heading);
-  font-size: var(--text-2xs);
+.entryMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
-.entryReason {
-  overflow-wrap: anywhere;
-  color: var(--text);
-  font-size: var(--text-2xs);
-  line-height: var(--dr-leading-body);
+.entryUnit {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .entryMeta {
-  overflow-wrap: anywhere;
-  color: var(--text-muted);
-  font-size: var(--text-3xs);
-  line-height: var(--dr-leading-body);
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/*
- * Forced colours puts the system border token back — same reasoning and same measured contrast
- * ratios as `override-register.module.css`'s identical rule: `--neutral-500` reads well against
- * `--surface-subtle` for everyone else, but a high-contrast user is owed the system border colour
- * (`ButtonBorder`/`CanvasText` under `forced-colors`), not this component's own palette choice.
- */
-@media (forced-colors: active) {
-  .entry {
-    --wf-border: var(--border);
-  }
+.entryReason {
+  color: var(--wf-ink-3);
 }
 
-/*
- * No `wardTokens` composition and no wrapping root class — same reasoning as
- * `override-register.module.css`'s identical comment: `.placeholder` and `.list` are alternate
- * top-level renders of this component, so every themed selector is enumerated by hand.
- */
+.entryTime {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}
+
 @media print {
   .placeholder,
   .entry,
-  .entryHeader strong,
+  .entryUnit,
   .entryReason,
-  .entryMeta {
+  .entryMeta,
+  .entryTime {
     color: CanvasText !important;
     background-color: Canvas !important;
   }

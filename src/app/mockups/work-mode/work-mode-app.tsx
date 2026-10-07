@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef } from "react";
+import { useRef } from "react";
 
 import { AdminBody, AssessBody, CpdBody, TeachBody } from "./areas";
 import { WorkContext } from "./context";
@@ -8,20 +8,23 @@ import { CustomiseSheet, DayBody, QuickAddSheet } from "./day";
 import { RosterBody, SwapSheet } from "./roster";
 import { SearchOverlay } from "./search";
 import { IconSprite } from "./sprite";
-import {
-  headerCopy,
-  initialWorkModeState,
-  MODES,
-  modeSpec,
-  reduceWorkMode,
-  type ModeId,
-  type WorkModeAction,
-  type WorkModeState,
-} from "./state";
+import { headerCopy, MODES, modeSpec, type ModeId, type WorkModeAction, type WorkModeState } from "./state";
 import { AppHeader, Icon, Sheet, Toast } from "./ui";
 
-export function WorkModeApp() {
-  const [state, dispatch] = useReducer(reduceWorkMode, initialWorkModeState);
+/**
+ * One work-mode phone. The stage (`work-mode-stage.tsx`) owns its state, so the three phones on the
+ * page share their records (a swap accepted on one shows on the others) while each keeps its own
+ * screen.
+ */
+export function WorkModeApp({
+  state,
+  dispatch,
+  label,
+}: {
+  state: WorkModeState;
+  dispatch: (action: WorkModeAction) => void;
+  label: string;
+}) {
   const drag = useRef<number | null>(null);
   const mode = modeSpec(state.mode);
   const copy = headerCopy(state);
@@ -54,9 +57,9 @@ export function WorkModeApp() {
 
   return (
     <WorkContext.Provider value={{ state, dispatch }}>
-      <div className="phone" data-testid="work-mode-phone">
+      <div className="phone" data-testid="work-mode-phone" role="region" aria-label={label}>
         <div
-          className={`app fixed ${mode.tone}`}
+          className={`app fixed ${toneClass(mode.tone)}`}
           onPointerDown={(event) => {
             if (event.target instanceof Element && event.target.closest("button, input, a")) return;
             drag.current = event.clientX;
@@ -126,6 +129,14 @@ export function WorkModeApp() {
   );
 }
 
+/**
+ * The v6 token sheet uses `.day` and `.night` to force a theme on a subtree, so the My Day area's
+ * tone class is renamed here; otherwise My Day would stay in day colours at night.
+ */
+function toneClass(tone: string): string {
+  return tone === "day" || tone === "night" ? `tone-${tone}` : tone;
+}
+
 function Screen({ state }: { state: WorkModeState }) {
   if (state.mode === "day") return <DayBody />;
   if (state.mode === "rost") return <RosterBody />;
@@ -148,7 +159,7 @@ function ModeSheet({ state, dispatch }: { state: WorkModeState; dispatch: (actio
               className={state.mode === mode.id ? "more-i cur" : "more-i"}
               onClick={() => dispatch({ type: "mode", mode: mode.id })}
             >
-              <span className={`ic ${mode.tone}`}>
+              <span className={`ic ${toneClass(mode.tone)}`}>
                 <Icon id={mode.icon} />
               </span>
               <span className="tx">

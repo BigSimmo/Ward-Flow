@@ -102,8 +102,8 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
     renderCoordinator();
-    const referralsTab = screen.getByRole("tab", { name: /Referrals/u });
-    const patientsTab = screen.getByRole("tab", { name: /Patients/u });
+    const referralsTab = screen.getByRole("radio", { name: /Referrals/u });
+    const patientsTab = screen.getByRole("radio", { name: /Patients/u });
 
     fireEvent.click(referralsTab);
     const referralRow = screen.getAllByTestId(/^ward-referral-row-/u)[0];

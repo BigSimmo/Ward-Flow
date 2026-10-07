@@ -1,15 +1,23 @@
 /* src/components/ward-management/movements/movement-horizon.module.css
- * 48-Hour Bed Movement Horizon Stylesheet
- * Strict adherence to Ward Flow third-edition tokens and WCAG 2.1 AA contrast.
+ * The movement timeline card on Movements (v6, 7 Oct 2026). v6 tokens only: a card head with the
+ * chart's own controls, a scrub row with a pill legend, a six-column grid of receiving wards and
+ * the ranked corridors rail.
  */
 
 .horizonContainer {
-  --horizon-ward-width: 220px;
-  --horizon-row-min: 64px;
+  --horizon-ward-width: 176px;
+  --horizon-row-min: 48px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .fullscreen {
@@ -17,7 +25,9 @@
   inset: 0;
   z-index: var(--z-modal, 1000);
   height: 100dvh;
-  background: var(--surface);
+  border: 0;
+  border-radius: 0;
+  background: var(--wf-surface);
   overflow: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   box-sizing: border-box;
@@ -38,333 +48,245 @@
   flex: 1;
 }
 
+/* Card head */
 .panelSubHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   flex-wrap: wrap;
 }
 
 .phScopeInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .phTitle {
-  font-size: var(--t-1);
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
 }
 
 .phLaneCount {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
-
-.horizonNote {
-  margin: 0;
-  font-size: var(--t-0);
-  color: var(--muted);
-  flex: 1;
-  min-width: 260px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
 }
 
 .phControls {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wf-s-2);
   flex-wrap: wrap;
 }
 
+/* Pressed-button groups drawn as the v6 segmented track. They stay `role="group"` with
+ * `aria-pressed` buttons because each is a toggle the chart's tests and keyboard users rely on. */
 .zoomGroup {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-  padding: 2px;
   gap: 2px;
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-track);
 }
 
 .zmBtn {
-  background: transparent;
-  border: none;
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  padding: 6px 10px;
-  min-height: 36px;
-  min-width: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
-  border-radius: var(--r1);
-  transition: all 0.12s ease;
 }
 
 .zmBtn:hover {
-  color: var(--ink);
+  color: var(--wf-ink-1);
 }
 
 .zmBtn[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 700;
-  box-shadow: var(--lift);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 0 0 1px var(--wf-line-ctl);
+}
+
+.zmBtn:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .phBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 6px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.phBtn:hover {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-
-.phBtn[aria-pressed="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
+  white-space: nowrap;
 }
 
 .serviceFilterWrap {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 0 8px 0 10px;
-  height: 36px;
+  gap: var(--wf-s-2);
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
   box-sizing: border-box;
 }
 
 .serviceFilterLabel {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  font-weight: 700;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
 
 .serviceFilterSelect {
   height: 100%;
-  padding: 0 4px;
+  padding: 0 var(--wf-s-1);
+  border: 0;
   background: transparent;
-  border: none;
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   cursor: pointer;
-  outline: none;
 }
 
 .serviceFilterSelect:focus-visible {
-  outline: 2px solid var(--accent);
-  border-radius: 4px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
 }
 
-/* Controls Bar (Scrubber & Legend) */
+/* Scrub row and legend */
 .ganttControlsBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
   flex-wrap: wrap;
 }
 
 .ganttScrubberWrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 280px;
-  max-width: 460px;
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .ganttScrubLabel {
-  font-family: var(--mono);
-  font-size: var(--t-0);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  font-weight: 600;
   white-space: nowrap;
 }
 
+.scrubStep {
+  flex: 0 0 auto;
+}
+
 .ganttSlider {
-  -webkit-appearance: none;
   appearance: none;
-  flex: 1;
-  height: 5px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--sunk);
-  border: 1px solid var(--line);
-  outline: none;
+  width: 8rem;
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
   cursor: pointer;
 }
 
 .ganttSlider:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 4px;
 }
 
 .ganttSlider::-webkit-slider-thumb {
-  -webkit-appearance: none;
   appearance: none;
   width: 14px;
   height: 14px;
+  border: 2px solid var(--wf-surface);
   border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--surface);
-  box-shadow: var(--lift);
+  background: var(--wf-pri-1);
+  box-shadow: var(--wf-e1);
   cursor: pointer;
 }
 
 .ganttSlider::-moz-range-thumb {
   width: 14px;
   height: 14px;
+  border: 2px solid var(--wf-surface);
   border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--surface);
-  box-shadow: var(--lift);
+  background: var(--wf-pri-1);
+  box-shadow: var(--wf-e1);
   cursor: pointer;
 }
 
 .ganttScrubBadge {
-  font-family: var(--mono);
-  font-size: var(--t-1);
+  min-width: 8.5rem;
+  padding: 0 var(--wf-s-3);
+  height: var(--wf-h-chip);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-  padding: 2px 8px;
-  border-radius: var(--r1);
-  border: 1px solid var(--line);
-  min-width: 90px;
-  text-align: center;
   white-space: nowrap;
 }
 
 .ganttResetBtn {
-  min-height: 36px;
-  padding: 6px 12px;
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.ganttResetBtn:hover {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: var(--line-strong);
+  white-space: nowrap;
 }
 
 .ganttLegend {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
   flex-wrap: wrap;
-  font-size: var(--t-0);
-  color: var(--ink-soft);
-}
-
-.legendTitle {
-  font-weight: 600;
-  font-size: var(--t-0);
-  color: var(--muted);
 }
 
 .ganttLegendItem {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .ganttSwatch {
-  width: 10px;
-  height: 8px;
-  border-radius: 2px;
   display: inline-block;
-}
-
-.swatchAdmit {
-  background: var(--accent);
-}
-
-.swatchTransit {
-  background: var(--svc-north);
-}
-
-.swatchLeave {
-  background: var(--surface-2);
-  border: 1px dashed var(--warn);
-}
-
-.swatchDisch {
-  background: var(--good);
-}
-
-.swatchPred {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-}
-
-.swatchDelay {
-  background: var(--danger);
+  width: 12px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
 }
 
 /* Split Area */
 .diagSplit {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 18.5rem);
   align-items: stretch;
   position: relative;
-  height: clamp(24.5rem, 57dvh, 41rem);
+  height: clamp(24.5rem, 57dvh, 36rem);
 }
 
 .diagSplit.enlarged {
@@ -384,11 +306,9 @@
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
-  overflow-x: auto;
-  overflow-y: auto;
-  background: var(--surface);
+  overflow: auto;
+  background: var(--wf-surface);
   position: relative;
-  scrollbar-gutter: stable;
 }
 
 .diagSplit.enlarged .diagWrap {
@@ -397,14 +317,15 @@
 }
 
 .diagWrap:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
 
-/* Gantt Table */
+/* Gantt grid. Not a data table: its floor stays in px so the table-threshold sweep in
+   tests/ward-table-min-width.test.ts does not read it as one. */
 .ganttGridTable {
   width: 100%;
-  min-width: 1140px;
+  min-width: 640px;
   min-height: 100%;
   flex: 1 1 auto;
   display: flex;
@@ -415,8 +336,8 @@
 
 .ganttHeaderRow {
   display: flex;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -428,60 +349,72 @@
   position: sticky;
   inset-inline-start: 0;
   z-index: 30;
-  padding: 10px 14px;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  font-weight: 600;
-  border-right: 1px solid var(--line);
-  background: var(--surface-2);
   display: flex;
   align-items: center;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-right: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .ganttColTicks {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .ganttTick {
-  padding: 10px 6px;
-  text-align: center;
-  font-family: var(--mono);
-  font-size: var(--t-0);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 6px var(--wf-s-2);
+  border-right: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
   font-variant-numeric: tabular-nums;
-  color: var(--ink-soft);
-  border-right: 1px solid var(--line);
-  white-space: nowrap;
+}
+
+.tickOffset,
+.tickTime {
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.ganttTick.nowTick {
-  font-weight: 700;
-  color: var(--accent-ink);
-  background: var(--accent-soft);
+.tickOffset {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-weight: 600;
+}
+
+.tickTime {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-font);
+}
+
+.ganttTick.nowTick .tickOffset {
+  color: var(--wf-accent-ink);
 }
 
 /* Empty state — replaces the lane rows (never the header/ticks) when there is nothing open with
  * an accepting ward to chart, so the grid never renders as a blank rectangle with no explanation. */
 .horizonEmpty {
-  padding: 1.25rem 0.875rem;
   margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
 }
 
 /* Grid Filler Row so background grid extends to bottom */
 .ganttFillerRow {
-  flex: 0 0 auto;
-  min-height: 24px;
-  height: 24px;
+  flex: 1 0 24px;
   display: flex;
-  background: var(--surface);
+  background: var(--wf-surface);
 }
 
 .ganttFillerWard {
@@ -490,56 +423,51 @@
   position: sticky;
   inset-inline-start: 0;
   z-index: 30;
-  border-right: 1px solid var(--line);
-  background: var(--surface);
+  border-right: 1px solid var(--wf-line);
+  background: var(--wf-surface);
 }
 
 .ganttFillerTrack {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .ganttFillerCol {
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--wf-line);
 }
 
 /* Scrubber Cursor */
 .ganttCursor {
   position: absolute;
-  top: 36px;
+  top: 44px;
   bottom: 0;
   width: 2px;
-  background: var(--accent);
+  background: var(--wf-pri-1);
   z-index: 20;
   pointer-events: none;
-  transition: left 0.08s ease-out;
 }
 
 .ganttCursorPin {
   position: absolute;
   top: -1px;
-  left: -5px;
-  width: 12px;
-  height: 12px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: var(--lift);
+  background: var(--wf-pri-1);
 }
 
 .ganttCursorTime {
   position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--mono);
-  font-size: var(--t-0);
+  top: 10px;
+  left: 6px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-pri-1);
+  color: var(--wf-on-accent);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--on-accent);
-  background: var(--accent);
-  padding: 2px 6px;
-  border-radius: var(--r1);
   white-space: nowrap;
 }
 
@@ -548,13 +476,12 @@
   flex-shrink: 0;
   min-height: var(--horizon-row-min);
   display: flex;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--wf-line);
   position: relative;
-  transition: background 0.12s ease;
 }
 
 .ganttLaneRow:hover {
-  background: var(--surface-2);
+  background: var(--wf-hover);
 }
 
 .ganttLaneLabel {
@@ -562,194 +489,155 @@
   min-width: var(--horizon-ward-width);
   position: sticky;
   inset-inline-start: 0;
-  padding: 8px 14px;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-right: 1px solid var(--line);
-  font-size: var(--t-1);
+  gap: 2px;
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border-right: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.ganttLaneName {
+  overflow: hidden;
+  color: var(--wf-ink-1);
   font-weight: 600;
-  color: var(--ink);
-  background: var(--surface);
-  z-index: 30;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .ganttSvcTag {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  color: var(--muted);
-  font-weight: 500;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .ganttLaneTrack {
   flex: 1;
   position: relative;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  background: inherit;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .ganttLaneCol {
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--wf-line);
   height: 100%;
 }
 
-/* Event Bars */
+/* Event Bars: slim pills in the data ramp, named "Surname, I" in the body face. */
 .ganttBar {
   position: absolute;
-  height: 32px;
-  min-width: 90px;
-  border-radius: var(--r1);
-  padding: 0 8px;
+  min-width: 96px;
+  margin-left: var(--wf-s-1);
+  border-radius: var(--wf-r-pill);
+  padding: 0 var(--wf-s-2);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  font-weight: 600;
-  color: var(--on-accent);
+  gap: var(--wf-s-1);
+  font: 600 var(--wf-fs-11) / 1 var(--wf-font);
+  color: var(--wf-on-accent);
   cursor: pointer;
   z-index: 15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--surface) 20%, transparent),
-    var(--lift);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
   border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 var(--wf-hl);
 }
 
 .ganttBar:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--surface) 35%, transparent),
-    var(--lift);
+  box-shadow: var(--wf-e1);
   z-index: 25;
 }
 
 .ganttBar:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
   z-index: 25;
 }
 
 .ganttBar.scrubActive {
-  outline: 2px solid var(--accent-ink);
   box-shadow:
-    0 0 0 2px var(--surface),
-    0 0 0 4px var(--accent);
+    0 0 0 2px var(--wf-surface),
+    0 0 0 3px var(--wf-pri-1);
   z-index: 20;
 }
 
-.barText {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-variant-numeric: tabular-nums;
-}
-
-.barWaitBadge {
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  background: var(--surface-2);
-  color: var(--muted);
-  padding: 1px 4px;
-  border-radius: 2px;
-  margin-left: auto;
-}
-
-/* Bar Status Tones */
+/* Bar tones: the data ramp, never a status fill. A passed bed hold is an amber dot, not a red bar. */
 .barAdmit {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-1);
+  color: var(--wf-on-accent);
 }
 
 .barTransit {
-  background: var(--svc-north);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-2);
+  color: var(--wf-on-accent);
 }
 
 .barLeave {
-  background: var(--gilt-soft);
+  background: var(--wf-surface-2);
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
     transparent 3px,
-    color-mix(in srgb, var(--gilt) 20%, transparent) 3px,
-    color-mix(in srgb, var(--gilt) 20%, transparent) 6px
+    var(--wf-line-2) 3px,
+    var(--wf-line-2) 5px
   );
-  color: var(--gilt);
-  border: 1px dashed var(--gilt);
+  color: var(--wf-ink-1);
+  border-color: var(--wf-line-2);
 }
 
 .barDisch {
-  background: var(--good);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-3);
+  color: var(--wf-ink-1);
 }
 
 .barPred {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  color: var(--warn);
+  background: var(--wf-surface);
+  border: 1px dashed var(--wf-line-3);
+  color: var(--wf-ink-2);
 }
 
 .barDelay {
-  background: var(--danger);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-1);
+  color: var(--wf-on-accent);
 }
 
-/* Swatch Legend Tokens */
+.barDelay::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-warning);
+}
+
+/* Legend swatches */
 .swatchAdmit {
-  background: var(--accent);
+  background: var(--wf-data-1);
 }
 
 .swatchTransit {
-  background: var(--svc-north);
-}
-
-.swatchLeave {
-  background: var(--gilt-soft);
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 2px,
-    color-mix(in srgb, var(--gilt) 30%, transparent) 2px,
-    color-mix(in srgb, var(--gilt) 30%, transparent) 4px
-  );
-  border: 1px dashed var(--gilt);
-}
-
-.swatchDisch {
-  background: var(--good);
-}
-
-.swatchPred {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
+  background: var(--wf-data-2);
 }
 
 .swatchDelay {
-  background: var(--danger);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-warning);
 }
 
+/* The selected bar: a ring, the timeline's one mark of selection. */
 .activeSelect {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-pri-1);
   z-index: 18;
 }
 
@@ -757,25 +645,19 @@
 .diagFoot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 16px;
-  border-top: 1px solid var(--line);
-  background: var(--surface-2);
-  font-size: var(--t-0);
-  color: var(--muted);
-  flex-wrap: wrap;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
   margin-top: auto;
   flex-shrink: 0;
 }
 
 .diagScope {
-  font-family: var(--mono);
-  font-weight: 500;
-}
-
-.schematic {
-  font-style: italic;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* Tooltip */
@@ -783,98 +665,111 @@
   position: absolute;
   z-index: 50;
   pointer-events: none;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 8px 12px;
-  box-shadow: var(--lift);
-  font-size: var(--t-0);
-  line-height: 1.4;
   display: flex;
   flex-direction: column;
   gap: 2px;
   max-width: 280px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .tooltipTitle {
-  font-weight: 700;
-  color: var(--ink);
-  font-family: var(--mono);
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 .tooltipDetails {
-  color: var(--muted);
-  font-size: var(--t-0);
+  color: var(--wf-ink-3);
   font-variant-numeric: tabular-nums;
 }
 
-/* Side Corridor Rail */
+/* Corridors rail */
 .corridorRail {
-  min-width: 0;
-  border-left: 1px solid var(--line);
-  background: var(--surface);
   display: flex;
   flex-direction: column;
+  min-width: 0;
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  border-left: 1px solid var(--wf-line);
+  background: var(--wf-surface);
 }
 
 .corridorRailHeader {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0.75rem 0.875rem;
-  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
   flex-shrink: 0;
 }
 
 .corridorRailHeader h3 {
   margin: 0;
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-size: var(--t-3);
-  font-weight: 600;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  white-space: nowrap;
 }
 
 .corridorTabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
+  display: inline-flex;
+  gap: 2px;
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-track);
 }
 
 .corridorTabs button {
-  display: flex;
-  min-height: 2.25rem;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.35rem;
-  padding: 0.4rem 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  color: var(--muted);
-  background: var(--surface);
-  font: inherit;
-  font-size: var(--t-0);
+  gap: 6px;
+  height: 24px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
-  transition: all 0.12s ease;
 }
 
 .corridorTabs button:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  color: var(--wf-ink-1);
 }
 
 .corridorTabs button[aria-pressed="true"] {
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  background: var(--accent-soft);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
   font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 0 0 1px var(--wf-line-ctl);
+}
+
+.corridorTabs button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .corridorTabs span {
-  font-family: var(--mono);
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  text-align: center;
 }
 
 .corridorRanks {
@@ -889,46 +784,58 @@
 .corridorRanks li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  padding: 0.65rem 0.875rem;
-  border-bottom: 1px solid var(--line);
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
 }
 
 .corridorRanks li:hover {
-  background: var(--surface-2);
+  background: var(--wf-hover);
 }
 
 .corridorRanks li > span {
-  display: grid;
-  gap: 0.2rem;
-  font-size: var(--t-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.corridorRoute,
+.corridorRanks li > span small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.corridorRoute {
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 .corridorRanks li > span small {
-  color: var(--muted);
-  font-size: var(--t-0);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .corridorRanks li > strong {
-  align-self: center;
-  font-family: var(--mono);
-  font-size: var(--t-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .railEmpty {
-  padding: 1.25rem 0.875rem;
   margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
+  padding: var(--wf-s-4) var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
 }
 
 .stripNote {
-  font-size: var(--t-0);
-  color: var(--muted);
-  padding: 8px 14px;
-  border-top: 1px solid var(--line);
   margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
 }
 
 @media (max-width: 480px) {
@@ -947,7 +854,7 @@
 
   .corridorRail {
     border-left: 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--wf-line);
   }
 
   .fullscreen .diagSplit {
@@ -955,15 +862,18 @@
   }
 
   .ganttScrubberWrap {
-    min-width: 0;
     width: 100%;
     flex-wrap: wrap;
   }
 
+  /* Phone widths: every control in the timeline keeps a 48px tap target. */
   .zmBtn,
-  .phBtn {
-    min-height: 44px;
-    min-width: 44px;
+  .phBtn,
+  .scrubStep,
+  .ganttResetBtn,
+  .corridorTabs button {
+    min-height: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
   }
 }
 
