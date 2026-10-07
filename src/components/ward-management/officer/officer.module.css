@@ -811,12 +811,38 @@
     display: none;
   }
 
+  /*
+   * The stage actions stay in reach on a phone: pinned to the screen's bottom edge, above the
+   * home indicator, as the officer page has always done. The page and the toast make room for it.
+   */
   .actionRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    position: fixed;
+    z-index: var(--z-overlay);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: var(--wf-s-2) var(--wf-s-3) max(var(--wf-s-2), var(--safe-area-bottom));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e2);
+    gap: var(--wf-s-1);
   }
 
   .actionButton {
     min-height: var(--spacing-tap, 3rem);
+  }
+
+  .actionRow .actionButton {
+    padding-inline: var(--wf-s-1);
+    font-size: var(--wf-fs-12);
+  }
+
+  .main:has(.actionRow) {
+    padding-bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom) + var(--wf-s-4));
+  }
+
+  .screen:has(.actionRow) .toast {
+    bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom) + var(--wf-s-3));
   }
 
   .facts,
