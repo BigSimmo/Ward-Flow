@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MoreHorizontal } from "lucide-react";
@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   Button,
+  Checkbox,
   LiveChip,
   Menu,
   Segmented,
@@ -241,5 +242,15 @@ describe("Menu", () => {
     expect(trigger).toHaveFocus();
     await act(async () => {});
     expect(onSelect).not.toHaveBeenCalled();
+  });
+});
+
+describe("Checkbox", () => {
+  it("forwards its ref and still sets the mixed state", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Checkbox ref={ref} label="Select all" indeterminate />);
+    const box = screen.getByRole("checkbox", { name: "Select all" });
+    expect(ref.current).toBe(box);
+    expect((box as HTMLInputElement).indeterminate).toBe(true);
   });
 });

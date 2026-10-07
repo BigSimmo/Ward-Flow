@@ -1,8 +1,9 @@
 /*
  * Ward Flow design system v6 tokens (approved 7 October 2026). Synthetic prototype.
  * Source: the v6 token sheet and spec, design/v6/ward-flow-v6.css and design-system-v6.md in the
- * project files. Day values sit on :root and .day. Night values sit on html.dark (the app's theme
- * class) and .night, so a subtree can force either theme. Components read these through CSS
+ * project files. Day values sit on :root and .day. Night values follow the Appearance control the same way the shell
+ * tokens do: :root[data-theme="dark"], or a dark OS unless data-theme="light". .night and .day
+ * force a theme on a subtree. Components read these through CSS
  * Modules in src/components/wf/. Never hard-code a colour, radius or shadow beside them.
  */
 :root,
@@ -98,7 +99,7 @@
   color-scheme: light;
 }
 
-html.dark,
+:root[data-theme="dark"],
 .night {
   --wf-canvas: #0d141b;
   --wf-surface: #141d26;
@@ -163,7 +164,73 @@ html.dark,
   color-scheme: dark;
 }
 
-html.dark .day {
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wf-canvas: #0d141b;
+    --wf-surface: #141d26;
+    --wf-surface-2: #18232e;
+    --wf-track: #223040;
+    --wf-hover: #1b2733;
+    --wf-selected: #1f2e3c;
+    --wf-line: rgba(255, 255, 255, 0.07);
+    --wf-line-2: rgba(255, 255, 255, 0.13);
+    --wf-line-3: rgba(255, 255, 255, 0.24);
+    --wf-hl: rgba(255, 255, 255, 0.06);
+    --wf-ink-1: #e9eef3;
+    --wf-ink-2: #bcc8d4;
+    --wf-ink-3: #93a4b5;
+    --wf-ink-off: #6e7d8d;
+    --wf-line-ctl: #6e7d8d;
+    --wf-accent: #8fb0d4;
+    --wf-accent-strong: #8fb0d4;
+    --wf-accent-tint: #1f3042;
+    --wf-accent-ink: #b9cfe6;
+    --wf-on-accent: #fff;
+    --wf-pri-1: #4b6f93;
+    --wf-pri-2: #3a5b7b;
+    --wf-pri-edge: #56799d;
+    --wf-hero-1: #22374d;
+    --wf-hero-2: #1c2e41;
+    --wf-hero-edge: rgba(143, 176, 212, 0.18);
+    --wf-hero-ink-2: #c3d1de;
+    --wf-hero-ink-3: #a3b8cc;
+    --wf-danger: #e27a68;
+    --wf-danger-ink: #f2a495;
+    --wf-warning: #d9a441;
+    --wf-warning-ink: #f0cc85;
+    --wf-success: #4cb383;
+    --wf-success-ink: #8fd6b3;
+    --wf-info: #7fa3c8;
+    --wf-info-ink: #b9cfe6;
+    --wf-neutral: #8fa0b1;
+    --wf-data-1: #8fb0d4;
+    --wf-data-2: #4f6d8c;
+    --wf-data-3: #2a3a4b;
+    --wf-data-ready: #4cb383;
+    --wf-data-closed: #a88f55;
+    --wf-glass-thin: rgba(20, 29, 38, 0.86);
+    --wf-glass: rgba(22, 32, 42, 0.88);
+    --wf-glass-thick: rgba(24, 34, 45, 0.92);
+    --wf-glass-rim: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.24),
+      rgba(255, 255, 255, 0.06) 45%,
+      rgba(255, 255, 255, 0.02)
+    );
+    --wf-scrim: rgba(0, 0, 0, 0.35);
+    --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%);
+    --wf-backdrop:
+      radial-gradient(1200px 520px at 8% -10%, rgba(79, 115, 152, 0.28), transparent 60%),
+      radial-gradient(900px 480px at 100% 0%, rgba(76, 179, 131, 0.08), transparent 55%), #0d141b;
+    --wf-e1: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+    --wf-e2: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
+    --wf-e3: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+    --wf-focus-ring: var(--wf-accent);
+    color-scheme: dark;
+  }
+}
+
+.day {
   color-scheme: light;
 }
 

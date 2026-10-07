@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useId,
@@ -201,14 +202,29 @@ export type CheckboxProps = Omit<ComponentPropsWithRef<"input">, "type" | "child
 };
 
 /** Real checkbox; the whole label row is the target. */
-export function Checkbox({ label, indeterminate = false, className, disabled, ...rest }: CheckboxProps) {
-  const ref = useRef<HTMLInputElement>(null);
+export function Checkbox({
+  label,
+  indeterminate = false,
+  className,
+  disabled,
+  ref: forwardedRef,
+  ...rest
+}: CheckboxProps) {
+  const ref = useRef<HTMLInputElement | null>(null);
+  const setRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      ref.current = node;
+      if (typeof forwardedRef === "function") forwardedRef(node);
+      else if (forwardedRef) forwardedRef.current = node;
+    },
+    [forwardedRef],
+  );
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = indeterminate;
   }, [indeterminate]);
   return (
     <label className={cx(styles.choice, disabled && styles.choiceDisabled, className)}>
-      <input ref={ref} type="checkbox" className={styles.native} disabled={disabled} {...rest} />
+      <input ref={setRef} type="checkbox" className={styles.native} disabled={disabled} {...rest} />
       <span className={styles.box} aria-hidden="true">
         <Check size={12} strokeWidth={3} className={cx(styles.mark, styles.tick)} aria-hidden="true" />
         <Minus size={12} strokeWidth={3} className={cx(styles.mark, styles.dash)} aria-hidden="true" />

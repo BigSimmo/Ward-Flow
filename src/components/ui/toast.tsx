@@ -69,6 +69,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
       const duplicate = toastsRef.current[duplicateIndex]!;
       const refreshed: Toast = {
         ...duplicate,
+        ...toast,
+        id: duplicate.id,
         duration: toast.duration ?? duplicate.duration,
         announceKey: (duplicate.announceKey ?? 0) + 1,
       };
