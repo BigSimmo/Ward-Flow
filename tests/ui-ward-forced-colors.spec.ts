@@ -452,8 +452,10 @@ test("@mockup printing the patient search keeps every caseload item on the sheet
     // Switch in screen media, then measure in print media.
     if (mode === "dense") {
       await page.emulateMedia({ media: "screen" });
-      await page.locator("#viewDenseBtn").click();
-      await expect(page.locator("#viewDenseBtn")).toHaveAttribute("aria-pressed", "true");
+      // v6 (7 Oct 2026): the view switch is the "Row density" segmented control, not #viewDenseBtn.
+      const dense = page.getByRole("radiogroup", { name: "Row density" }).getByRole("radio", { name: "Dense" });
+      await dense.click();
+      await expect(dense).toHaveAttribute("aria-checked", "true");
     }
     await page.emulateMedia({ media: "print" });
     await expect(page.locator('[data-testid^="ward-patient-search-case-"]').first()).toBeVisible({

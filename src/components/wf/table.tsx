@@ -6,13 +6,25 @@ import { Icon } from "./icon";
 import { SrOnly } from "./primitives";
 import styles from "./table.module.css";
 
-/** Class names for native `<table>` markup: `table`, `selected` (on a `tr`), `num` (mono cell). */
+/**
+ * Class names for native `<table>` markup: `table`, `selected` (on a `tr`), `num` (mono cell).
+ * Getters, so importing this module never reads the CSS module at load time (Playwright specs
+ * import page modules without CSS).
+ */
 export const tableClasses = {
-  table: styles.table,
-  selected: styles.selected,
-  num: styles.num,
-  th: styles.th,
-} as const;
+  get table() {
+    return styles.table;
+  },
+  get selected() {
+    return styles.selected;
+  },
+  get num() {
+    return styles.num;
+  },
+  get th() {
+    return styles.th;
+  },
+};
 
 export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   /** CSS grid-template-columns shared by the head and body rows. */
