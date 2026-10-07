@@ -132,7 +132,7 @@
 .avatar {
   width: 40px;
   height: 40px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent-soft);
   color: var(--accent-ink);
   display: flex;
@@ -1403,7 +1403,7 @@
 .meterBar {
   width: 100px;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   overflow: hidden;
   position: relative;

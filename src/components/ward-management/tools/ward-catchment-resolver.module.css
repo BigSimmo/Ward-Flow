@@ -108,7 +108,9 @@
   border: 1.5px solid var(--ward-border, var(--neutral-500));
   border-radius: 8px;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .searchInput:focus {
@@ -132,7 +134,9 @@
   border-radius: 6px;
   color: var(--ward-muted, var(--text-muted));
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .clearButton:hover,
@@ -178,7 +182,10 @@
   border-radius: 6px;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .quickPickButton:hover,
@@ -322,7 +329,7 @@
   padding: 0.3125rem 0.75rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border-width: 1px;
   border-style: solid;
 }
@@ -392,7 +399,7 @@
 .serviceDot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   flex-shrink: 0;
 }
 
@@ -493,7 +500,7 @@
   justify-content: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background-color: var(--ward-canvas, var(--surface));
   border: 1px solid var(--ward-border, var(--neutral-500));
   color: var(--ward-muted, var(--text-muted));

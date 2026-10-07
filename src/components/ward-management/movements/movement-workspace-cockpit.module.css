@@ -98,7 +98,7 @@
 .patientAvatar {
   width: 48px;
   height: 48px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-blue-soft, var(--clinical-accent-soft));
   color: var(--ward-blue, var(--clinical-accent));
   border: 1px solid var(--ward-blue-border, var(--clinical-accent-border));
@@ -295,7 +295,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 2px var(--space-2, 0.5rem);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-blue-soft, var(--surface-subtle));
   color: var(--ward-blue, var(--clinical-accent));
 }
@@ -521,7 +521,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 1px var(--space-2, 0.5rem);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface, var(--surface-raised));
   border: 1px solid var(--ward-border, var(--border));
   color: var(--ward-text, var(--text));
@@ -770,7 +770,7 @@
   top: 4px;
   width: 8px;
   height: 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-blue, var(--clinical-accent));
   border: 2px solid var(--surface-raised, var(--surface));
 }

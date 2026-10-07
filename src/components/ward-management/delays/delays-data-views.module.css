@@ -1643,14 +1643,14 @@
 .selectLabel select,
 .modeSwitch,
 .rowsPerPage select {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .modeSwitch {
   padding: 3px;
   background: var(--surface-2);
 }
 .modeSwitch button {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .dossier {
   border-radius: 16px;

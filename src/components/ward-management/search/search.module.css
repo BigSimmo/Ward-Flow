@@ -172,7 +172,7 @@
   color: var(--accent-ink);
   background: var(--accent-soft);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   box-shadow: inset 0 0 0 1px var(--accent);
   line-height: 1.2;
 }
@@ -370,7 +370,7 @@
   padding: var(--ward-space-4) var(--ward-space-10);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   color: var(--ink-soft);
   font-size: var(--t-1);
   font-weight: 500;
@@ -659,7 +659,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   white-space: nowrap;
   flex: none;
 }
@@ -1295,7 +1295,7 @@
   min-width: 1.25rem;
   justify-content: center;
   border: 0.0625rem solid var(--ward-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0 0.4em;
   color: var(--ward-muted);
   font-weight: 600;
@@ -2187,7 +2187,7 @@
   align-items: center;
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 2px 4px 2px 11px;
   gap: 6px;
   box-shadow: inset 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
@@ -2310,7 +2310,7 @@
   -webkit-appearance: none;
   border: 1px solid var(--line);
   background: var(--surface);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 3px 20px 3px 9px;
   font-family: var(--body);
   font-size: 11px;
@@ -2383,7 +2383,7 @@
   display: inline-flex;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 2px 3px;
   gap: 2px;
   height: 31px;
@@ -2397,7 +2397,7 @@
 
 .glassViewBtn {
   padding: 2px 9px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
@@ -2432,7 +2432,7 @@
   gap: 5px;
   padding: 0 13px;
   height: 31px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ink);
   color: var(--text-inverse);
   font-size: 11.5px;
@@ -2460,7 +2460,7 @@
   gap: 5px;
   padding: 0 10px;
   height: 31px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   color: var(--ink-soft);
   font-size: 11.5px;
@@ -2489,7 +2489,7 @@
   gap: 5px;
   padding: 0 10px;
   height: 31px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-danger-soft);
   color: var(--ward-danger);
   font-size: 11px;
@@ -2989,7 +2989,7 @@
   padding: 3px 9px;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   color: var(--ink-soft);
   font-size: 11px;
   font-weight: 500;
@@ -3069,7 +3069,7 @@
   background: var(--danger-soft);
   border: 1px solid var(--danger);
   padding: 4px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -3134,7 +3134,7 @@
   color: var(--accent-ink);
   background: var(--accent-soft);
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--line);
   font-variant-numeric: tabular-nums;
 }
@@ -3357,7 +3357,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   display: inline-flex;
   align-items: center;
 }
@@ -3647,7 +3647,7 @@
   font-size: var(--t-0);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent-soft);
   color: var(--accent-ink);
   border: 1px solid var(--accent);
@@ -4247,7 +4247,7 @@
   padding: 3px 8px;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   color: var(--ink-soft);
   font-size: var(--t-0);
   font-weight: 500;
@@ -4318,7 +4318,7 @@
   color: var(--accent);
   border: 1px solid var(--accent-soft);
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   font-size: var(--t-0);
   font-weight: 700;
   letter-spacing: 0.04em;

@@ -149,7 +149,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   border: 1px solid var(--line);
   color: var(--muted);

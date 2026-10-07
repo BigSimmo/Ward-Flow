@@ -220,7 +220,7 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   color: var(--muted);
 }

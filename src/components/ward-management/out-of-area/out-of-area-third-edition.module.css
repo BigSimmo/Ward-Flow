@@ -162,7 +162,7 @@
   gap: 0;
   padding: 4px;
   border: 1px solid color-mix(in srgb, var(--on-accent) 18%, var(--accent-ink));
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent-ink);
   box-shadow:
     0 4px 12px color-mix(in srgb, var(--ink) 12%, transparent),
@@ -176,7 +176,7 @@
   min-height: 36px;
   min-width: 0;
   border: 0;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: transparent;
   padding: 6px 18px;
   color: var(--on-accent);
