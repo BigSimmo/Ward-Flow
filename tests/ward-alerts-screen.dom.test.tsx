@@ -130,7 +130,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
    */
   it("says out loud that it cannot watch handover sheets", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("Monitoring scope & limitations", { selector: "summary" }));
+    fireEvent.click(screen.getByText("Monitoring scope", { selector: "summary span" }));
     const section = screen.getByRole("region", { name: "What this screen does not watch" });
 
     expect(section).toHaveTextContent(/handover/iu);
