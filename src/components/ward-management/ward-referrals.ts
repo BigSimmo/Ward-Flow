@@ -36,6 +36,23 @@ import type {
 } from "@/components/ward-management/ward-model";
 
 /**
+ * D-30 (owner, 6 October 2026): a transfer from a psychiatric ward at another hospital needs the
+ * central bed coordinator to accept it. The receiving ward can still decline, and a move between
+ * two wards on the same site is not an inter-hospital transfer. An origin or destination that
+ * cannot be placed on a site is treated as another hospital, so the gate fails closed.
+ */
+export function wardTransferNeedsCoordinator(
+  referral: Pick<Referral, "source" | "originUnitId">,
+  destinationUnitId: string,
+  units: readonly Pick<Unit, "id" | "siteCode">[],
+): boolean {
+  if (referral.source !== "psychiatric_ward") return false;
+  const originSite = units.find((unit) => unit.id === referral.originUnitId)?.siteCode;
+  const destinationSite = units.find((unit) => unit.id === destinationUnitId)?.siteCode;
+  return originSite === undefined || destinationSite === undefined || originSite !== destinationSite;
+}
+
+/**
  * Phase 7 (spec "The front door", D10): every unit in `units`, each paired with its eligibility
  * verdict against `referral` — NEVER a truncated list. The match view lists the beds that accept
  * this referral, and for every bed that does not, the single reason; a coordinator needs to see

@@ -64,6 +64,7 @@ import {
   referralSenderRole,
   referralState,
   referralSuburbIsAnswered,
+  wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
@@ -6253,6 +6254,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           state,
           event,
           `${event.type} was raised by role ${event.role}, which may only answer ${ownKind.replace(/_/g, " ")} destinations, not ${event.destinationKind.replace(/_/g, " ")}`,
+        );
+      }
+      if (
+        event.role === "ward" &&
+        event.destinationKind === "psychiatric_ward" &&
+        event.unitId !== undefined &&
+        wardTransferNeedsCoordinator(referral, event.unitId, state.units)
+      ) {
+        return reject(
+          state,
+          event,
+          `D-30: a transfer from a ward at another hospital is accepted by the central bed coordinator, not the receiving ward`,
         );
       }
       const eligibleAddressings = referral.destinations.filter(
