@@ -432,8 +432,16 @@ function renderHubWithWardAcceptanceHarness(edId: string) {
   );
 }
 
+// v6 (7 Oct 2026): Age band and Sex are segmented radio groups; the rest are still selects.
 function selectAnswer(field: string, value: string) {
-  fireEvent.change(screen.getByTestId(`ward-referral-intake-${field}`), { target: { value } });
+  const control = screen.getByTestId(`ward-referral-intake-${field}`);
+  if (control instanceof HTMLSelectElement) {
+    fireEvent.change(control, { target: { value } });
+    return;
+  }
+  const radio = control.querySelector<HTMLInputElement>(`input[type="radio"][value="${value}"]`);
+  expect(radio, `${field} offers no "${value}" answer`).not.toBeNull();
+  fireEvent.click(radio!);
 }
 
 function chooseNeed(field: string, answer: "yes" | "no") {

@@ -39,7 +39,7 @@ describe("Legal forms — unwired confirm controls (F2.1)", () => {
   it("both confirm buttons are aria-disabled, carry the exact D4 wording, and dispatch nothing", () => {
     renderScreen();
 
-    fireEvent.click(screen.getByText("+ Record a form"));
+    fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
     const registerConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(registerConfirm).toHaveAttribute("aria-disabled", "true");
     expect(registerConfirm).not.toBeDisabled();
@@ -53,7 +53,7 @@ describe("Legal forms — unwired confirm controls (F2.1)", () => {
     const rows = legalFormGroupRows(wardMovements, NOW, "with-deadline");
     const breached = rows.some((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW);
     if (breached) {
-      fireEvent.click(screen.getByText("Re-Authorise Order"));
+      fireEvent.click(screen.getAllByRole("button", { name: "Re-Authorise Order" })[0]);
       const renewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
       expect(renewConfirm).toHaveAttribute("aria-disabled", "true");
       expect(renewConfirm).not.toBeDisabled();
@@ -83,7 +83,7 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
 
   it("builds the 'Record a form' picker options from the register too", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("+ Record a form"));
+    fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
     const select = document.getElementById("legal-forms-new-instrument") as HTMLSelectElement;
     const optionText = Array.from(select.options).map((o) => o.textContent);
     expect(optionText.some((t) => t?.includes(formTitleForCode("3B") as string))).toBe(true);
@@ -95,7 +95,7 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
 describe("Legal forms — invented legal/governance text removed (F2.3)", () => {
   it("carries none of the removed governance claims or prefilled clinician names", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("+ Record a form"));
+    fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
     expect(screen.queryByText("Office of Chief Psychiatrist")).not.toBeInTheDocument();
     expect(screen.queryByText("WA Gazetted")).not.toBeInTheDocument();
     expect(screen.queryByText(/Re-authorisation required under MHA 2014 statutory governance/)).not.toBeInTheDocument();

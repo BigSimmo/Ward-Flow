@@ -171,8 +171,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await goViaRail(page, "/mockups/ward-flow/referrals/new", "ward-referral-intake-screen");
     await expectNoReloadSince(page, "community team -> new referral");
 
-    await page.getByTestId("ward-referral-intake-ageBand").selectOption("Adult");
-    await page.getByTestId("ward-referral-intake-sex").selectOption("Female");
+    // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
+    await page
+      .getByTestId("ward-referral-intake-ageBand")
+      .locator("label")
+      .filter({ has: page.getByRole("radio", { name: "Adult", exact: true }) })
+      .click();
+    await page
+      .getByTestId("ward-referral-intake-sex")
+      .locator("label")
+      .filter({ has: page.getByRole("radio", { name: "Female", exact: true }) })
+      .click();
     // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate required
     // question from Sex above it, added to REQUIRED_FIELDS after this spec was first written.
     await page.getByTestId("ward-referral-intake-gender").selectOption("Female");

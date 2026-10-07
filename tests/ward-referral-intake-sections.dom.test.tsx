@@ -177,7 +177,13 @@ describe("raise a referral — grouping, state and the rulings the drawing lost"
       ["Step 3", "The history"],
     ] as const) {
       const section = screen.getByRole("group", { name: new RegExp(`^${step}\\s*${heading}$`) });
-      expect(within(section).getByText(step)).toBeInTheDocument();
+      // v6 (7 Oct 2026): the step is a number tile whose "Step" is screen-reader text, so the
+      // words sit in two nodes; the tile as a whole still reads "Step n".
+      expect(
+        within(section).getByText((_, element) => element?.textContent?.replace(/\s+/g, " ").trim() === step, {
+          ignore: "legend, fieldset",
+        }),
+      ).toBeInTheDocument();
     }
   });
 
