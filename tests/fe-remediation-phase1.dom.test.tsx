@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 
 import { UNSAVED_HISTORY_WARNING } from "@/components/ward-management/referrals/referral-intake";
 
