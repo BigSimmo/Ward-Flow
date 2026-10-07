@@ -641,3 +641,38 @@
     background-color: Canvas !important;
   }
 }
+
+/* v6 (design/pages-v6/Ward.png): plain cards with a sentence-case head and a quiet count. */
+@media screen {
+  .card {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .cardHead {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+
+  .cardTitle {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-1);
+  }
+
+  .checkBadge {
+    padding: 1px 6px;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+}

@@ -40,6 +40,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { Hero, buttonClass } from "@/components/wf";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -1719,121 +1720,54 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
         <WardReferralInbox unitId={unit.id} />
         <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
-          <header className={styles.commandIdentity}>
-            <div className={styles.commandIdentityCopy}>
-              <h2 className={styles.commandKicker}>This ward</h2>
-              <h3 className={styles.commandName}>{unit.name}</h3>
-              <p className={styles.commandMeta}>
-                {site ? `${site.name} (${site.code})` : unit.siteCode} · {unit.cohort} · {designationSummary(unit)}
-                {unit.authorised ? "" : " · Not set up for involuntary admissions (demo)"}
-              </p>
-            </div>
-            <WardFreshness
-              confirmedAt={unit.allocatable.confirmedAt}
-              confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-              now={now}
-              derived={unit.allocatable.source !== "ward"}
-            />
-          </header>
-          <div className={styles.commandActions} role="toolbar" aria-label="Ward actions">
-            <div className={styles.actionCluster}>
-              <span className={styles.actionClusterLabel}>This shift</span>
+          <h2 className={styles.srOnlyHeading}>This ward</h2>
+          <Hero
+            className={styles.wardHero}
+            eyebrow={`Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
+            title={unit.name}
+            stats={
+              <WardTelemetryRibbon unit={unit} capacity={capacity} staffedSpecialling={staffedSpecialling} now={now} />
+            }
+            aside={
               <button
                 ref={confirmTriggerRef}
                 type="button"
-                className={styles.btnActionSec}
+                className={buttonClass({ variant: "light", size: "sm" })}
                 onClick={() => setConfirmNumbersOpen(true)}
               >
-                <span>Confirm today&rsquo;s numbers</span>
+                Confirm numbers
               </button>
-              <button
-                type="button"
-                className={styles.btnDailySheet}
-                onClick={() => setDailySheetOpen(true)}
-                title="Open this shift's brief."
-                data-testid="ward-open-daily-sheet-btn"
-              >
-                <span>Shift brief</span>
-              </button>
-            </div>
-            <div className={styles.actionCluster}>
-              <span className={styles.actionClusterLabel}>Requests</span>
-              <div className={styles.notificationTriggerWrap}>
-                <button
-                  ref={notificationTriggerRef}
-                  type="button"
-                  className={styles.btnActionSec}
-                  onClick={() => setNotificationCenterOpen((prev) => !prev)}
-                  aria-expanded={notificationCenterOpen}
-                  data-testid="ward-notifications-toggle-btn"
-                  title="Buzzes, urgent tasks and notices"
-                >
-                  <span>Tasks &amp; Buzzes</span>
-                  {unreadAlertsCount > 0 ? (
-                    <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
-                      {unreadAlertsCount}
-                    </span>
-                  ) : null}
-                </button>
-                {notificationCenterOpen ? (
-                  <div
-                    ref={notificationCenterRef}
-                    className={styles.notificationCenterContainer}
-                    data-testid="ward-notification-center-wrap"
-                  >
-                    <WardNotificationCenter
-                      unitId={unit.id}
-                      unitName={unit.name}
-                      now={now}
-                      movements={movements}
-                      notices={notices}
-                      refreshRequests={refreshRequests}
-                      morningRollupConfirmed={isRollupConfirmedToday}
-                      morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                      morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                      onConfirmMorningRollup={handleConfirmMorningRollup}
-                      onAcknowledgeNotice={handleAcknowledgeNotice}
-                      onDismissBuzz={handleDismissBuzz}
-                      onClose={() => setNotificationCenterOpen(false)}
-                    />
-                  </div>
-                ) : null}
-              </div>
-              <Link className={styles.btnActionSec} href={`/mockups/ward-flow/ward/${unit.id}/answer`}>
-                <span>Answer requests</span>
-              </Link>
-            </div>
-            <div className={styles.actionCluster}>
-              <span className={styles.actionClusterLabel}>Other</span>
-              <button
-                type="button"
-                className={styles.btnActionSec}
-                onClick={handleRaiseWardReferral}
-                title="Record a ward-to-ward referral with this ward as the sending ward."
-              >
-                <span>Raise referral</span>
-              </button>
+            }
+            bar={
+              <span className={styles.heroMeta}>
+                {unit.cohort} · {designationSummary(unit).toLowerCase()} · {unit.beds} beds ·{" "}
+                {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
+                <span>Roster not recorded</span> ·{" "}
+                {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+                {(unit.intakeConstraints ?? []).length > 0
+                  ? ` · ${(unit.intakeConstraints ?? [])
+                      .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
+                      .join(", ")}`
+                  : ""}
+              </span>
+            }
+            barAside={
               <Link
-                className={styles.btnActionSec}
-                href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+                className={styles.heroBedListLink}
+                href="#bed-capacity"
+                data-testid="ward-hero-open-bed-list"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setActiveTab("return");
+                }}
               >
-                <span>Print handover</span>
+                Open bed list · {unit.beds} beds · {capacity.available} ready
               </Link>
-            </div>
-          </div>
-
-          {/* Unified Flight Deck Telemetry Ribbon */}
-          <WardTelemetryRibbon
-            unit={unit}
-            capacity={capacity}
-            staffedSpecialling={staffedSpecialling}
-            acceptedCount={accepted.length}
-            onOpenBedList={() => setActiveTab("return")}
+            }
           />
 
-          {/* Operational Tab Navigation Bar Integrated at Bottom of Command Horizon */}
           <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
-            <ul className={styles.tabList} role="tablist" id="mainTabList">
+            <ul className={styles.tabList} role="tablist" id="mainTabList" aria-label="Ward views">
               <li role="presentation">
                 <button
                   type="button"
@@ -1926,6 +1860,78 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </button>
               </li>
             </ul>
+            <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
+              <Link
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                href={`/mockups/ward-flow/ward/${unit.id}/answer`}
+              >
+                Answer requests
+              </Link>
+              <div className={styles.notificationTriggerWrap}>
+                <button
+                  ref={notificationTriggerRef}
+                  type="button"
+                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  onClick={() => setNotificationCenterOpen((prev) => !prev)}
+                  aria-expanded={notificationCenterOpen}
+                  data-testid="ward-notifications-toggle-btn"
+                  title="Buzzes, urgent tasks and notices"
+                >
+                  <span>Tasks &amp; Buzzes</span>
+                  {unreadAlertsCount > 0 ? (
+                    <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
+                      {unreadAlertsCount}
+                    </span>
+                  ) : null}
+                </button>
+                {notificationCenterOpen ? (
+                  <div
+                    ref={notificationCenterRef}
+                    className={styles.notificationCenterContainer}
+                    data-testid="ward-notification-center-wrap"
+                  >
+                    <WardNotificationCenter
+                      unitId={unit.id}
+                      unitName={unit.name}
+                      now={now}
+                      movements={movements}
+                      notices={notices}
+                      refreshRequests={refreshRequests}
+                      morningRollupConfirmed={isRollupConfirmedToday}
+                      morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+                      morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+                      onConfirmMorningRollup={handleConfirmMorningRollup}
+                      onAcknowledgeNotice={handleAcknowledgeNotice}
+                      onDismissBuzz={handleDismissBuzz}
+                      onClose={() => setNotificationCenterOpen(false)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                onClick={() => setDailySheetOpen(true)}
+                title="Open this shift's brief."
+                data-testid="ward-open-daily-sheet-btn"
+              >
+                Shift brief
+              </button>
+              <Link
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
+              >
+                Print handover
+              </Link>
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                onClick={handleRaiseWardReferral}
+                title="Record a ward-to-ward referral with this ward as the sending ward."
+              >
+                Raise referral
+              </button>
+            </div>
           </nav>
         </section>
 
