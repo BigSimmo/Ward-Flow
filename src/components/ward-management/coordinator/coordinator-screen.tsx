@@ -19,6 +19,7 @@ import {
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
@@ -289,13 +290,39 @@ export function CoordinatorScreen() {
     ? referralQueue.find((referral) => referral.id === selectedReferralId)
     : undefined;
   const hasPanelSubject = Boolean(selectedReferral || selectedMovement);
+  const shortlistRegionRef = useRef<HTMLElement>(null);
 
   function closeShortlist() {
+    const priorMovementId = selectedMovementId;
+    const priorReferralId = selectedReferralId;
     selectMovement(undefined);
-    // Closing is a view-only operation. Return keyboard focus to the queue rather than
-    // leaving it on a control that has just unmounted with the shortlist.
-    queueFocusRef.current?.querySelector<HTMLButtonElement>('button[aria-selected="true"]')?.focus();
+    // Return keyboard focus to the queue rather than leaving it on an unmounted control.
+    requestAnimationFrame(() => {
+      if (document.activeElement === document.body || !document.activeElement) {
+        if (priorMovementId) {
+          const rowBtn = queueFocusRef.current?.querySelector<HTMLButtonElement>(
+            `button[data-movement-id="${priorMovementId}"]`,
+          );
+          if (rowBtn) {
+            rowBtn.focus();
+            return;
+          }
+        }
+        if (priorReferralId) {
+          const refBtn = queueFocusRef.current?.querySelector<HTMLButtonElement>(
+            `button[data-referral-id="${priorReferralId}"]`,
+          );
+          if (refBtn) {
+            refBtn.focus();
+            return;
+          }
+        }
+        queueFocusRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      }
+    });
   }
+
+  useWardModalFocus(hasPanelSubject, shortlistRegionRef, closeShortlist);
 
   // The exception inbox is the coordinator's global work list, not a view scoped to whatever ED
   // filter the queue happens to have selected — a breached legal deadline at a filtered-out
@@ -531,6 +558,8 @@ export function CoordinatorScreen() {
                   subject that no longer resolves.
                 */}
                   <aside
+                    ref={shortlistRegionRef}
+                    tabIndex={-1}
                     className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
                     aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
                     // Names sweep, 26 Sept 2026: the WF number left the visible text, so journeys

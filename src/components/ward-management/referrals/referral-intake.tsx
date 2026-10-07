@@ -1812,8 +1812,36 @@ export function ReferralIntakeForm() {
       // above is carried on the page itself rather than relied on to reach this dialog.
       event.returnValue = UNSAVED_HISTORY_WARNING;
     }
+
+    function handleAnchorClick(event: globalThis.MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+
+      const confirmed = window.confirm(UNSAVED_HISTORY_WARNING);
+      if (!confirmed) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    function handlePopState() {
+      const confirmed = window.confirm(UNSAVED_HISTORY_WARNING);
+      if (!confirmed) {
+        window.history.pushState(null, "", window.location.href);
+      }
+    }
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleAnchorClick, true);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleAnchorClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [hasUnsavedHistory]);
 
   /**
