@@ -320,24 +320,32 @@ export function resolvePatientNowRecord(
     const patient = patients.find((p) => p.id === id);
     if (!patient) return undefined;
 
-    // Scan movements, referrals, and admissions for this patient
-    const linkedMovement = movements.find(
+    // Collections retain history. Resolve the current stay first, then its movement;
+    // prefer an open presentation over the newest historical presentation when no stay exists.
+    const patientMovements = movements.filter(
       (m) =>
         m.patientId === patient.id ||
         (m.referralId && referrals.some((r) => r.id === m.referralId && r.patientId === patient.id)),
     );
-    const linkedReferral = referrals.find(
-      (r) => r.patientId === patient.id || (linkedMovement && r.id === linkedMovement.referralId),
-    );
-    const linkedAdmission = admissions.find(
+    const patientAdmissions = admissions.filter(
       (a) =>
         a.patientId === patient.id ||
         (a.referralId && referrals.some((r) => r.id === a.referralId && r.patientId === patient.id)) ||
-        (a.movementId && linkedMovement && a.movementId === linkedMovement.id),
+        patientMovements.some((m) => m.id === a.movementId),
     );
-
-    const activeMovement = linkedMovement;
-    const activeAdmission = linkedAdmission && linkedAdmission.state !== "departed" ? linkedAdmission : undefined;
+    const activeAdmission =
+      [...patientAdmissions].reverse().find((a) => a.state === "occupied") ??
+      [...patientAdmissions].reverse().find((a) => a.state !== "departed");
+    const newestMovement = [...patientMovements].reverse();
+    const activeMovement =
+      (activeAdmission && newestMovement.find((m) => m.id === activeAdmission.movementId)) ||
+      newestMovement.find((m) => !m.closure) ||
+      newestMovement[0];
+    const linkedReferral =
+      referrals.find((r) => r.id === (activeMovement?.referralId ?? activeAdmission?.referralId)) ??
+      [...referrals].reverse().find((r) => r.patientId === patient.id);
+    const latestDeparture =
+      !activeAdmission && patientAdmissions.some((a) => a.state === "departed" && a.movementId === activeMovement?.id);
 
     // A legal document only from the record: the active movement's own recorded form. PT-042 and
     // PT-043 used to get a Form 1A and a Form 3A "running to" three hours from whenever the page was
@@ -371,7 +379,10 @@ export function resolvePatientNowRecord(
       let verdictShort = "Seeking Bed";
       let verdictTitle = "Placement request active across network wards.";
 
-      if (activeMovement.stage === "arrived") {
+      if (latestDeparture) {
+        verdictShort = "Departed";
+        verdictTitle = "Departure recorded; no current ward stay.";
+      } else if (activeMovement.stage === "arrived") {
         verdictTone = "good";
         verdictShort = "Arrived";
         verdictTitle = `Arrival recorded at ${acceptedUnit?.name ?? "destination ward"}.`;

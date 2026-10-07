@@ -1601,6 +1601,8 @@ export type Movement = {
    * later stages were authored rather than reached by dispatching the event.
    */
   admissionId?: string;
+  /** Occupied sending stay for a repatriation; never a destination reservation. */
+  repatriationSourceAdmissionId?: string;
   /** The CURRENT psychiatric examination a Form 1A refers the person for. Until it happens you
    *  often do not know whether an authorised bed is needed at all. Superseded by a later
    *  examination only when this one's outcome is `"further_examination_ordered"` — see
