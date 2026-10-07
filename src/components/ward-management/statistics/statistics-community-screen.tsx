@@ -518,18 +518,29 @@ function TeamComparison({
               labelWidth="12rem"
               rows={shown.map((row) => ({
                 id: row.team.id,
-                label: (
-                  <Link href={communityStatisticsHref(row.team.id)} className={styles.rowLink}>
-                    {row.team.name}
-                  </Link>
-                ),
-                labelText: row.team.name,
+                label: row.team.name,
                 sub: row.team.id === current.id ? "this team" : undefined,
                 value: valueOf(row),
                 display: String(valueOf(row)),
               }))}
             />
           )}
+          {/*
+           * The bar labels sit inside the chart's drawing, which is hidden from assistive technology,
+           * so a link there could be tabbed to but never named. A search names the teams a reader
+           * is after, so their pages are offered here as real links; the Data view links every team.
+           */}
+          {needle && shown.length > 0 ? (
+            <ul className={detail.teamLinks} aria-label="Open a team's statistics">
+              {shown.map((row) => (
+                <li key={row.team.id}>
+                  <Link href={communityStatisticsHref(row.team.id)} className={styles.rowLink}>
+                    {row.team.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {unlinked > 0 ? (
             <p className={detail.note}>
               {unlinked} {unlinked === 1 ? "team is" : "teams are"} not linked, so left out of the bars

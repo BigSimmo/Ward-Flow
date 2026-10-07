@@ -122,7 +122,9 @@ export function StatisticsNav({ currentSection, activeSlug, withSamples = true, 
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
 
   return (
-    <div className={styles.navBar} data-testid="ward-statistics-nav">
+    // The landmark wraps both forms of the section list, so it is there at every width: the track
+    // on a desktop and the select on a phone.
+    <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
       <label className={styles.mobileSelect}>
         <span>Statistics</span>
         <select
@@ -131,6 +133,13 @@ export function StatisticsNav({ currentSection, activeSlug, withSamples = true, 
           onChange={(event) => {
             const item = items.find((entry) => entry.id === event.target.value);
             if (!item) return;
+            // A chooser on this same page is reached by its fragment alone. Setting the hash fires
+            // `hashchange`, which opens the chooser's tab; a router push of the same path would not.
+            const target = new URL(item.href, window.location.href);
+            if (target.pathname === window.location.pathname && target.hash) {
+              window.location.hash = target.hash;
+              return;
+            }
             if (router) router.push(item.href);
             else window.location.assign(item.href);
           }}
@@ -142,8 +151,8 @@ export function StatisticsNav({ currentSection, activeSlug, withSamples = true, 
           ))}
         </select>
       </label>
-      <HeroTrack className={styles.track} label="Ward Flow statistics sections" value={activeSection} items={items} />
+      <HeroTrack className={styles.track} label="Statistics sections" value={activeSection} items={items} />
       {withSamples ? <StatisticsSamplesSwitch /> : null}
-    </div>
+    </nav>
   );
 }

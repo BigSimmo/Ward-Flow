@@ -60,8 +60,20 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
       if (fromHash) setKind(fromHash);
     };
     sync();
+    // The section track's links reach a chooser on this page through the app router, which
+    // changes the fragment without a `hashchange`, so a click on such a link opens its tab too.
+    const onClick = (event: MouseEvent) => {
+      const link = event.target instanceof Element ? event.target.closest("a[href*='#']") : null;
+      if (!link) return;
+      const fromLink = kindFromHash(new URL(link.getAttribute("href") ?? "", window.location.href).hash);
+      if (fromLink) setKind(fromLink);
+    };
     window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    document.addEventListener("click", onClick);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      document.removeEventListener("click", onClick);
+    };
   }, []);
 
   const entries = lists[kind];
@@ -75,7 +87,17 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
     <StatCard icon={Search} title="Open a unit" data-testid="ward-statistics-unit-finder">
       <span id={STATISTICS_SERVICE_CHOOSER_ID} className={styles.anchor} />
       <span id={STATISTICS_COMMUNITY_CHOOSER_ID} className={styles.anchor} />
-      <div className={styles.toolbar}>
+      {/* The service and team choosers' own markers: present while their tab is open. */}
+      <div
+        className={styles.toolbar}
+        data-testid={
+          kind === "service"
+            ? "ward-statistics-service-chooser"
+            : kind === "team"
+              ? "ward-statistics-community-chooser"
+              : undefined
+        }
+      >
         <Segmented
           label="Unit kind"
           value={kind}

@@ -29,6 +29,32 @@ a.secondary:hover {
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* Team pages offered under a searched comparison chart. */
+.teamLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+@media (max-width: 40rem) {
+  .teamLinks a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* A short provenance note in its own card: heading over one paragraph. */
+.provenance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
 .pageFoot {
   margin: 0;
   color: var(--wf-ink-3);

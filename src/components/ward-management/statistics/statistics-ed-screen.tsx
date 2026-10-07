@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, Scale } from "lucide-react";
 
 import {
+  Card,
   CardBody,
   CardFoot,
   ColumnChart,
@@ -369,6 +370,25 @@ export function StatisticsEdScreen({
           </table>
         </div>
       </StatCard>
+      {/* The page's own provenance note: each sentence says the figures are invented by itself. */}
+      <Card as="div">
+        <CardBody>
+          <section
+            className={detail.provenance}
+            aria-labelledby="ward-statistics-ed-invented-heading"
+            data-testid="ward-statistics-ed-invented"
+          >
+            <h2 id="ward-statistics-ed-invented-heading" className={detail.subHead}>
+              Every figure here is invented
+            </h2>
+            <p className={detail.note}>
+              Every count and every wait above is invented. These invented figures are derived from this
+              prototype&apos;s own invented movement records and have never been measured against a real department or a
+              real patient. Nothing on this screen is a real clinical record.
+            </p>
+          </section>
+        </CardBody>
+      </Card>
       <SrOnly>
         Over {longHours}h and over {veryLongHours}h are operational defaults, not legal limits.
       </SrOnly>
@@ -536,6 +556,10 @@ function Waits({
                         : waitMinutes >= LONG_WAIT_MINUTES
                           ? "warning"
                           : undefined;
+                    // The bar draws the wait but prints no text (`valueText={null}`). Its own name
+                    // keeps `tests/ward-row-severity-not-colour-alone.test.ts` reading the printed
+                    // wait from the last column, the one cell that states the wait in words.
+                    const barMinutes = waitMinutes;
                     return (
                       <tr key={movement.id} data-level={level} data-testid={`ward-stat-ed-wait-row-${movement.id}`}>
                         <th scope="row">
@@ -557,7 +581,7 @@ function Waits({
                         <td className={detail.meterCell}>
                           <span data-testid={`ward-stat-ed-wait-dot-${movement.id}`} data-tone={tone}>
                             <Meter
-                              value={waitMinutes}
+                              value={barMinutes}
                               max={max}
                               threshold={LONG_WAIT_MINUTES}
                               fill="data-1"
