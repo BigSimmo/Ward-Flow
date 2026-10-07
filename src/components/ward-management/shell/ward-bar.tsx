@@ -10,7 +10,9 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
+  FlaskConical,
   FileText,
+  History,
   Plus,
   Settings,
   Search,
@@ -51,6 +53,8 @@ import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -366,9 +370,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const appearance = useAppearanceStore();
-  const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "operations">(
-    "overview",
-  );
+  const [toolsPart, setToolsPart] = useState<
+    "overview" | "figures" | "utilities" | "directory" | "operations" | "demo"
+  >("overview");
   const [activityQuery, setActivityQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
@@ -737,7 +741,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   );
 
   const openMovement = useCallback(
-    (movementId: string) => {
+    (movementId: string, action?: "refer" | "contact") => {
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -746,7 +750,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
-      router.push(movementHref(movementId));
+      router.push(
+        `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+      );
     },
     [router],
   );
@@ -1003,15 +1009,15 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           type="button"
           ref={activityTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="activity"
           data-testid="ward-bar-activity-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "activity"}
           aria-controls="ward-bar-activity-drawer"
           onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
         >
-          <Activity className={styles.triggerIcon} aria-hidden="true" />
+          <History className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Activity</span>
-          <span className={styles.dot} data-tone={activityTone} aria-hidden="true" />
           <span className="sr-only">
             {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
           </span>
@@ -1021,30 +1027,34 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           type="button"
           ref={tasksTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "tasks"}
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" />
+          <span className={styles.triggerIconWrap}>
+            <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+            <span className={styles.badge}>{tasksItems.length}</span>
+          </span>
           <span className={styles.triggerLabel}>Tasks</span>
-          <span className={styles.badge}>{tasksItems.length}</span>
         </button>
 
         <button
           type="button"
           ref={toolsTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="tools"
           data-testid="ward-bar-tools-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "tools"}
           aria-controls="ward-bar-tools-drawer"
           onClick={() => (openPanel === "tools" ? closePopover("tools", false) : openPopover("tools"))}
         >
-          <Wrench className={styles.triggerIcon} aria-hidden="true" />
+          <Wrench className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tools</span>
-          <ChevronDown className={styles.triggerIcon} aria-hidden="true" />
+          <ChevronDown className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
         </button>
       </div>
 
@@ -1485,6 +1495,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
+            records={{ movements, patients, referrals, units }}
           />
         </div>
       </Sheet>
@@ -1516,6 +1527,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               ["utilities", "Utilities", Calculator],
               ["directory", "Directory", BookOpen],
               ["operations", "Shift desk", ClipboardCheck],
+              ["demo", "Demo", FlaskConical],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -1660,6 +1672,12 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
           <ToolsContactDirectory onNavigate={() => closePopover("tools", false)} />
         </div>
+        <section className={styles.toolsSection} aria-label="Demonstration">
+          <h3 className={styles.toolsHeading}>Demonstration</h3>
+          <WardDemoControls />
+          <WardRoleSwitcher />
+        </section>
+        <div id="ward-tools-demo" className={styles.toolsPanel} hidden={toolsPart !== "demo"} />
       </Sheet>
 
       <Sheet

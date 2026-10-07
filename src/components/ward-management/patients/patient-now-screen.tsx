@@ -128,6 +128,7 @@ function formatTransportLegalStatus(status?: string): string {
 interface PatientNowScreenProps {
   patientId?: string;
   movementId?: string;
+  initialTaskAction?: "refer" | "contact";
   initialExampleId?: "WF-009" | "WF-004";
 }
 
@@ -142,7 +143,12 @@ function getJourneyLayout() {
 
 type TabKey = "now" | "history" | "community" | "details" | "documents";
 
-export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF-009" }: PatientNowScreenProps) {
+export function PatientNowScreen({
+  patientId,
+  movementId,
+  initialExampleId = "WF-009",
+  initialTaskAction,
+}: PatientNowScreenProps) {
   const { patients, movements, referrals, admissions, units, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
 
@@ -163,8 +169,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
     setSelectedId(routeId);
   }
 
-  const [activeTab, setActiveTab] = useState<TabKey>("now");
-  const [nowView, setNowView] = useState<"auto" | "clinical" | "operations">("auto");
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
+  const [nowView, setNowView] = useState<"auto" | "clinical" | "operations">(
+    initialTaskAction === "refer" ? "operations" : "auto",
+  );
   const operationsRef = useRef<HTMLDivElement | null>(null);
   function openOperations() {
     setActiveTab("now");
@@ -1080,6 +1088,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                       <span>One record · clinical context and bedflow</span>
                     </div>
                     <div
+                      id="patient-operations"
                       ref={operationsRef}
                       tabIndex={-1}
                       hidden={effectiveNowView !== "operations"}
