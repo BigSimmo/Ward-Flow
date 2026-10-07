@@ -587,7 +587,7 @@ export function WardRail({ asAt }: WardRailProps) {
           if (options.sheet) setMoreOpen(false);
         }}
       >
-        <Icon aria-hidden="true" className={styles.railGlyph} />
+        <Icon aria-hidden="true" className={styles.railGlyph} strokeWidth={1.75} />
         <span className={styles.railText}>
           <span>
             <span className={abbreviated ? styles.expandedLabel : undefined}>{entry.label}</span>
@@ -632,12 +632,10 @@ export function WardRail({ asAt }: WardRailProps) {
           aria-label="Ward Flow home"
           title="Ward Flow Western Australia"
         >
-          <div className={styles.brandEmblem} title={open ? "Ward Flow Western Australia" : "Open navigation rail ([)"}>
+          <div className={styles.brandEmblem} title="Ward Flow Western Australia">
             <svg viewBox="0 0 28 28" width="24" height="24" fill="none" aria-hidden="true">
               <rect width="28" height="28" rx="8" fill="var(--accent)" />
-              <rect width="28" height="28" rx="8" stroke="rgba(255, 255, 255, 0.14)" strokeWidth="1" />
-              <path d="M14 6.5v15M6.5 14h15" stroke="var(--on-accent)" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="14" cy="14" r="2.25" fill="var(--on-accent)" />
+              <path d="M14 8.25v11.5M8.25 14h11.5" stroke="var(--on-accent)" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
           <span className={styles.brandTitle}>
@@ -1055,7 +1053,7 @@ export function WardRail({ asAt }: WardRailProps) {
               onClick={() => setAppearanceOpen((prev) => !prev)}
               data-testid="ward-rail-appearance-toggle"
             >
-              <SunMoon aria-hidden="true" />
+              <SunMoon aria-hidden="true" strokeWidth={1.75} />
               <span>Appearance</span>
             </button>
           </div>
@@ -1067,7 +1065,7 @@ export function WardRail({ asAt }: WardRailProps) {
             title="Settings"
             data-testid="ward-rail-settings-link"
           >
-            <Settings aria-hidden="true" />
+            <Settings aria-hidden="true" strokeWidth={1.75} />
             <span>Settings</span>
           </Link>
         </div>
