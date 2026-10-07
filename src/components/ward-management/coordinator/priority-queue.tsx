@@ -396,7 +396,9 @@ export function PriorityQueue({
       </div>
 
       <div className={styles.cardFoot}>
-        <span className={styles.footMeta}>Tier first, then longest wait</span>
+        <span className={styles.footMeta}>
+          {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
+        </span>
         <Link href={delaysHref} className={styles.footLink}>
           Open in Delays
         </Link>

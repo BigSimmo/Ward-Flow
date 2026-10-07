@@ -293,11 +293,11 @@ function OutcomeDetail({
 
 /**
  * Task 5 (Phase 7, "The front door", spec D9/D10): the coordinator's referral board — the screen
- * the whole phase exists to produce. Queued referrals first, ordered by urgency tier then by how
- * long each has waited (`referralQueueOrder`, `ward-referrals.ts`); recently decided referrals
- * below that, most recent decision first (`recentlyDecidedReferrals`). The referral clock is
- * rendered prominently on every queued row — the queue ranks by urgency, which is right, but
- * length of wait carries the moral weight and is otherwise buried.
+ * the whole phase exists to produce. Queued referrals first, longest wait first, with urgency only
+ * breaking a tie (`referralQueueOrder`, `ward-referrals.ts`, Decision D-32); recently decided
+ * referrals below that, most recent decision first (`recentlyDecidedReferrals`). The referral
+ * clock is rendered prominently on every queued row, and each row keeps its urgency tier visible
+ * so the clinician can weigh it without the queue silently reordering anybody.
  *
  * ⚠️ **THAT CLOCK IS `referralWaitLine`, NEVER `referralWaitLabel`** (`./referral-wait.ts`, which
  * carries the reasoning). The label form counts from `raisedAt` to `now` and never stops, so it
@@ -669,7 +669,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             }
             barAside={
               <span className={styles.v6OrderNote} data-testid="ward-referral-board-order-note">
-                Most urgent first, then longest wait
+                Longest wait first
               </span>
             }
           />

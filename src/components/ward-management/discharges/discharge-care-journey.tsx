@@ -383,13 +383,11 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   </label>
                   <Choice
                     label="Transfer step"
-                    values={
-                      actor.role === "coordinator" ? ["accepted", "handover", "arrived"] : ["accepted", "handover"]
-                    }
+                    values={actor.role === "coordinator" ? ["accepted", "handover", "arrived"] : ["handover"]}
                   />
                   <p>
-                    Acceptance and handover precede arrival. The coordinator records arrival, checking suitability and
-                    moving both wards’ occupancy in one transaction.
+                    Acceptance and handover precede arrival. Only the central bed coordinator accepts a transfer and
+                    records arrival, checking suitability and moving both wards’ occupancy in one transaction.
                   </p>
                 </>,
                 (d) => save({ kind: "transfer", receivingUnitId: d.get("ward"), step: d.get("Transfer step") }),

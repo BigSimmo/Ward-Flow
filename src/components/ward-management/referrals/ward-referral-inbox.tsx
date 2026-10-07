@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "../ward-model";
-import { DECLINE_REASON_LABELS } from "../ward-referrals";
+import { DECLINE_REASON_LABELS, wardTransferNeedsCoordinator } from "../ward-referrals";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import styles from "./ward-referral-drawer.module.css";
 
 export function WardReferralInbox({ unitId }: { unitId: string }) {
-  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections } = useWardFlow();
+  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlow();
   const now = useWardFlowClock();
   const [attempt, setAttempt] = useState<{ id: string; count: number } | null>(null);
   const newestRejection = attempt && rejections.length > attempt.count ? rejections.at(-1) : undefined;
@@ -27,6 +27,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
       {entries.map((entry) => {
         const patient = resolvePatientIdentity({ patientId: entry.patientId });
         const live = entry.state === "queued" && entry.withdrawnAt === undefined;
+        const coordinatorAccepts = wardTransferNeedsCoordinator(entry, unitId, units);
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
@@ -49,23 +50,27 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             <ReferralIntakeSummary intake={entry.intake} />
             {live && (
               <div className={styles.answerOptions}>
-                <button
-                  type="button"
-                  className={styles.patientChipBtn}
-                  onClick={() => {
-                    setAttempt({ id: entry.id, count: rejections.length });
-                    dispatch({
-                      type: "ACCEPT_REFERRAL",
-                      role: "ward",
-                      now,
-                      referralId: entry.id,
-                      destinationKind: "psychiatric_ward",
-                      unitId,
-                    });
-                  }}
-                >
-                  Accept referral
-                </button>
+                {coordinatorAccepts ? (
+                  <p className={styles.refCardSubtitle}>Coordinator accepts transfers from another hospital</p>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.patientChipBtn}
+                    onClick={() => {
+                      setAttempt({ id: entry.id, count: rejections.length });
+                      dispatch({
+                        type: "ACCEPT_REFERRAL",
+                        role: "ward",
+                        now,
+                        referralId: entry.id,
+                        destinationKind: "psychiatric_ward",
+                        unitId,
+                      });
+                    }}
+                  >
+                    Accept referral
+                  </button>
+                )}
                 <button
                   type="button"
                   className={styles.patientChipBtn}

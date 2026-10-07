@@ -164,6 +164,7 @@ export function currentDueSoonThresholds(): { urgentMinutes: number; soonMinutes
 
 export function clockState(due: Instant, now: Instant): ClockState {
   const remaining = minutesUntil(due, now);
+  if (!Number.isFinite(remaining)) return "due";
   if (remaining < 0) return "breached";
   // The 1-hour and 3-hour warnings are Josh's defaults, not legal limits (26 Sept 2026 card).
   if (remaining < dueSoonThresholds.urgentMinutes) return "critical";

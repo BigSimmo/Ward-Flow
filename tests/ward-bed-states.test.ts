@@ -53,6 +53,26 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
     expect(after.occupied).toBe(before.occupied);
   });
 
+  it("still counts a live pull when the ward offers more beds than it has empty", () => {
+    const unit = allUnits().find((candidate) => candidate.empty.value > 1)!;
+    // Allocatable above empty leaves nothing in Closed, so the pull has to come out of Ready.
+    const pulledUnit: Unit = {
+      ...unit,
+      allocatable: { ...unit.allocatable, value: unit.empty.value + 1 },
+    };
+    const admission = {
+      id: "AD-ARR-98",
+      unitId: unit.id,
+      state: "pulled",
+      movementId: "WF-098",
+    } as unknown as Admission;
+    const before = bedStates(pulledUnit, [], [], []);
+    const after = bedStates(pulledUnit, [admission], [], []);
+    expect(after.pulled).toBe(before.pulled + 1);
+    expect(after.ready).toBe(before.ready - 1);
+    expect(after.ready + after.pulled + after.closed + after.occupied).toBe(unit.beds);
+  });
+
   it("keeps the two markers inside the boxes they belong to", () => {
     for (const unit of allUnits()) {
       const s = bedStates(unit, wardAdmissions, [], leaveBeds);

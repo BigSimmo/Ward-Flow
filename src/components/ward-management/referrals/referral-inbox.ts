@@ -14,6 +14,8 @@ export type WardReferralInboxEntry = {
   waitlistedAt?: number;
   destination: WardReferralDestination;
   declineReason?: ReferralAddressing["declineReason"];
+  source: Referral["source"];
+  originUnitId?: Referral["originUnitId"];
 };
 
 export function wardReferralInboxEntries(referrals: readonly Referral[], unitId: string): WardReferralInboxEntry[] {
@@ -34,6 +36,8 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         withdrawnAt: arm.withdrawnAt,
         waitlistedAt: arm.waitlistedAt,
         declineReason: arm.declineReason,
+        source: referral.source,
+        originUnitId: referral.originUnitId,
         destination: {
           kind: "psychiatric_ward",
           unitId,

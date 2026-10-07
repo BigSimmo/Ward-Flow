@@ -274,9 +274,14 @@ export function delayGroups(movements: Movement[], units: Unit[], now: Instant):
   };
 
   const open = movements.filter(isOpen);
+  const causeByMovementId = new Map<string, DelayCause>();
+  for (const movement of open) {
+    causeByMovementId.set(movement.id, causeOf(movement));
+  }
+
   return ORDER.map((entry) => ({
     ...entry,
-    movements: open.filter((movement) => causeOf(movement) === entry.cause),
+    movements: open.filter((movement) => causeByMovementId.get(movement.id) === entry.cause),
   })).filter((group) => group.movements.length > 0);
 }
 

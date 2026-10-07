@@ -1345,42 +1345,29 @@ function renderBoard() {
 }
 
 describe("ReferralBoard", () => {
-  it("renders exactly the real fixture's two queued referrals, in urgency-then-longest-wait order", () => {
+  it("renders the real fixture's queued referrals longest wait first (Decision D-32)", () => {
     renderBoard();
-    // RF-001 (raised 40 min ago) and RF-005 (raised 20 min ago) are both tier 2 in the real
-    // fixture — RF-001 goes first because it has waited longer. See
-    // tests/ward-referral-model.test.ts for the pure-function proof this table order is built on.
-    // RF-011 (added 2026-09-02, FD-23's multi-destination demonstration fixture) is tier 3 and so
-    // sorts last, after every tier-2 referral above.
+    // Raised before the anchor: RF-015 4,500 min, RF-014 150, RF-RD06 55 (rulings demo overlay),
+    // RF-011 50, RF-001 40, RF-009 35, RF-005 20. See tests/ward-referral-model.test.ts for the
+    // pure-function proof this table order is built on, including the urgency tie-break.
     const table = screen.getByTestId("ward-referral-board-queued-table");
     const ids = within(table)
       .getAllByRole("row")
       .slice(1) // drop the header row
       .map((row) => row.querySelector("td button")?.textContent);
-    // RF-014 and RF-015 joined 2026-09-07 as the seed's two EXPECTS — referred to an emergency
-    // department and not yet arrived. Both took urgency 3, the lowest tier, following RF-011's
-    // recorded precedent so the tier-2 order above is untouched; within that tier they sort by
-    // wait, so RF-015 (4,500 minutes) precedes RF-014 (150), and both precede RF-011.
-    expect(ids).toEqual(["RF-RD06", "RF-001", "RF-009", "RF-005", "RF-015", "RF-014", "RF-011"]);
+    expect(ids).toEqual(["RF-015", "RF-014", "RF-RD06", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   /**
-   * 🔴 **THE ORDERING IS CORRECT AND LOOKS BROKEN, SO THE BOARD HAS TO SAY WHY.** Every queued row
-   * carries a prominent wait clock, and the queue sorts urgency FIRST — so the longest wait on the
-   * whole board can render at the very bottom. A coordinator finding the biggest number last has
-   * every reason to conclude the sort is broken and to work around it. Owner ruling, 2026-09-06:
-   * explain it; do not reorder.
+   * Decision D-32 (6 October 2026) supersedes the 2026-09-06 ruling that kept urgency first and
+   * explained the inversion. The queue now runs longest wait first, so no row may wait longer than
+   * one above it, and the order note must say so without claiming urgency leads.
    *
-   * ⚠️ **THE FIRST ASSERTION IS AN ANTI-VACUITY FLOOR ON THE CLAIM ITSELF, not on the wording.**
-   * A sentence explaining an inversion is only honest if the fixture actually produces one, and a
-   * fixture where urgency and wait happen to agree would make this whole guard — and the sentence
-   * on the screen — describe nothing. So the inversion is measured from the rendered order before
-   * the wording is checked at all.
-   *
-   * The wording itself goes through `expectSays`, so a redesign may rephrase freely; what it may
-   * not do is stop naming both halves of the rule.
+   * ⚠️ **THE FIRST ASSERTION IS AN ANTI-VACUITY FLOOR.** The fixture must still mix urgency tiers
+   * against wait, otherwise an urgency-first sort would render the same order and this guard
+   * would prove nothing about which key drives the board.
    */
-  it("says why the longest wait can sit at the bottom, and only because it genuinely can", () => {
+  it("never renders a shorter wait above a longer one, and says the order is longest wait first", () => {
     renderBoard();
     const table = screen.getByTestId("ward-referral-board-queued-table");
     const rendered = within(table)
@@ -1389,29 +1376,31 @@ describe("ReferralBoard", () => {
       .map((row) => row.querySelector("td button")?.textContent ?? "");
 
     const allReferrals = [...referrals, ...rulingsDemoOverlay(NOW_ANCHOR).referrals];
-    const raisedAtOf = (id: string) => allReferrals.find((referral) => referral.id === id)?.raisedAt;
-    const waits = rendered.map((id) => raisedAtOf(id));
+    const referralOf = (id: string) => allReferrals.find((referral) => referral.id === id);
+    const rows = rendered.map((id) => referralOf(id));
     expect(
-      waits.every((at) => at !== undefined),
+      rows.every((row) => row !== undefined),
       `a rendered row is not in the fixture: ${rendered.join(", ")}`,
     ).toBe(true);
 
-    // An inversion: a row BELOW another one was raised EARLIER, i.e. has waited longer.
-    const inverted = waits.some((at, index) => waits.slice(0, index).some((above) => above! > at!));
+    const urgencyDisagrees = rows.some((row, index) =>
+      rows.slice(0, index).some((above) => above!.urgency > row!.urgency),
+    );
     expect(
-      inverted,
-      "no queued row waits longer than one above it, so the board's explanation of that case describes " +
-        "nothing and this guard proves nothing. Restore a fixture where urgency and wait disagree.",
+      urgencyDisagrees,
+      "no queued row is more urgent than one above it, so urgency-first and wait-first render the same " +
+        "order and this guard proves nothing. Restore a fixture where urgency and wait disagree.",
     ).toBe(true);
 
+    const waits = rows.map((row) => row!.raisedAt);
+    const inverted = waits.some((at, index) => waits.slice(0, index).some((above) => above > at));
+    expect(inverted, `a shorter wait renders above a longer one: ${rendered.join(", ")}`).toBe(false);
+
     const note = screen.getByTestId("ward-referral-board-order-note").textContent ?? "";
-    // 🔴 WIDENED FROM ["urgent", "urgency"] 2026-09-09 — those were satisfied by a DIFFERENT CLAUSE.
-    // The same paragraph ends "...so somebody who has waited longer can sit below somebody more
-    // urgent." So the bare word survived removing the tier-ordering claim this site guards, and the
-    // guard stayed silent. Proved by rewriting "the most urgent tier comes first" to "tier order is
-    // applied first": no failure. The spellings now name the ORDERING RULE, not the topic.
-    expectSays(note, "the queue-ordering note", ["urgent tier", "urgency tier", "most urgent", "highest urgency"]);
-    expectSays(note, "the queue-ordering note", ["waited longer", "longest wait", "longer"]);
+    expectSays(note, "the queue-ordering note", ["longest wait", "waited longest"]);
+    expect(note.toLowerCase(), "the order note still claims urgency leads the queue").not.toMatch(
+      /most urgent|urgency tier|urgent tier|highest urgency/,
+    );
   });
 
   /**
@@ -1543,14 +1532,13 @@ describe("ReferralBoard", () => {
     const { container } = renderBoard();
     const cards = Array.from(container.querySelectorAll("[data-testid^='ward-referral-board-card-select-']"));
     expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual([
+      "ward-referral-board-card-select-RF-015",
+      "ward-referral-board-card-select-RF-014",
       "ward-referral-board-card-select-RF-RD06",
+      "ward-referral-board-card-select-RF-011",
       "ward-referral-board-card-select-RF-001",
       "ward-referral-board-card-select-RF-009",
       "ward-referral-board-card-select-RF-005",
-      // The two seeded expects, 2026-09-07 — tier 3, ordered by wait between themselves.
-      "ward-referral-board-card-select-RF-015",
-      "ward-referral-board-card-select-RF-014",
-      "ward-referral-board-card-select-RF-011",
     ]);
   });
 
