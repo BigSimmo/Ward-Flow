@@ -3,22 +3,24 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  Activity,
   BarChart3,
   BookOpen,
+  CalendarClock,
   Check,
   ChevronDown,
   ChevronRight,
-  ClipboardCheck,
   FileText,
-  History,
+  FlaskConical,
+  Hospital,
+  ListChecks,
+  MapIcon,
   Plus,
+  RotateCcwClock,
   Settings,
   Search,
-  Moon,
+  Siren,
   Sun,
-  Monitor,
-  Calculator,
+  Users,
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -27,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
+import { StatusGlyph, type WfTone } from "@/components/wf/status-glyph";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -35,7 +38,6 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
-  WARD_HOME_HREF,
   WARD_NAV,
   WARD_VIEWS,
   resolveWardPrimaryAction,
@@ -202,6 +204,19 @@ const ACTIVITY_CATEGORY_CHIPS: { id: ActivityCategoryFilter; label: string }[] =
   { id: "referral", label: "Referrals" },
   { id: "transfer", label: "Transfers" },
 ];
+
+/** v6 rule 7: one glyph per tone. The word beside it carries the meaning. */
+const ACTIVITY_GLYPH: Record<WardActivityEventTone, WfTone> = {
+  danger: "danger",
+  warning: "warning",
+  info: "info",
+};
+
+const ACTIVITY_TONE_WORD: Record<WardActivityEventTone, string> = {
+  danger: "Act now",
+  warning: "Needs you",
+  info: "Update",
+};
 
 function activityChangeCategory(change: { category?: WardActivityCategory }): WardActivityCategory {
   return change.category ?? "other";
@@ -402,13 +417,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId],
   );
   const flaggedFigures = useMemo(() => figures.filter((f) => f.flagged), [figures]);
-  const telemetrySummary = useMemo(
-    () =>
-      flaggedFigures.length > 0
-        ? flaggedFigures.map((f) => `${f.value} ${f.label.toLowerCase()}`).join(", ")
-        : "Nominal",
-    [flaggedFigures],
-  );
 
   // `WardTasksDrawer` draws its own header and its own close button — the Tasks `<Sheet>` below
   // is `headerHidden` with no `title`, so Sheet's own header (and the `closeRef` button it would
@@ -444,66 +452,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       : pathname === STATISTICS_COMPARE_HREF
         ? "Statistics compare"
         : "Ward Flow");
-
-  const routeSubtitle = useMemo(() => {
-    if (place) {
-      if (place.kind === "ward") {
-        if (/^\/mockups\/ward-flow\/board\//u.test(pathname)) return "Bed Board";
-        return "Inpatient Unit";
-      }
-      if (place.kind === "ed") return "Emergency Department";
-      if (place.kind === "team") return "Community Team";
-    }
-    if (/^\/mockups\/ward-flow\/board\//u.test(pathname)) return "Live Bed Board";
-    if (pathname === WARD_HOME_HREF || routeTitle === "Home") {
-      return "Statewide Bed Coordination";
-    }
-    if (pathname.includes("/movements") || routeTitle === "Movements") {
-      return "Transfers, Discharges & Arrivals";
-    }
-    if (pathname.includes("/sovereign") || routeTitle === "Sovereign Health") {
-      return "Aboriginal Health Liaison & Cultural Safety";
-    }
-    if (pathname.includes("/capacity") || routeTitle === "Capacity") {
-      return "Bed Availability & Occupancy";
-    }
-    if (pathname.includes("/delays") || routeTitle === "Delays") {
-      return "Transfer & Placement Delays";
-    }
-    if (pathname.includes("/governance") || routeTitle === "Governance") {
-      return "Today’s answers";
-    }
-    if (pathname.includes("/transport") || routeTitle === "Transport") {
-      return "Patient Transfers & Fleet";
-    }
-    if (pathname.includes("/network") || routeTitle === "Network") {
-      return "Statewide Hospital Network";
-    }
-    if (routeTitle === "Bed board") {
-      return "Live Bed Board";
-    }
-    if (
-      routeTitle === "Ward statistics" ||
-      routeTitle === "Emergency department statistics" ||
-      routeTitle === "Community statistics" ||
-      routeTitle === "Service statistics"
-    ) {
-      return "Flow & Utilisation Metrics";
-    }
-    if (routeTitle === "Settings") {
-      return "System Preferences & Thresholds";
-    }
-    if (routeTitle === "On-call") {
-      return "Directory & Rosters";
-    }
-    if (routeTitle === "Add a patient") {
-      return "Clinical Placement Intake";
-    }
-    if (routeTitle === "Patient Now") {
-      return "Real-Time Patient Record";
-    }
-    return undefined;
-  }, [pathname, place, routeTitle]);
 
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
@@ -855,15 +803,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const isFixedJurisdiction = fixedService !== undefined;
   const activeService = isFixedJurisdiction ? fixedService : service;
   const activeSwatchKey = activeService ? (SERVICE_SWATCH_KEY[activeService] ?? "statewide") : "statewide";
-  const activeServiceBadgeLabel = useMemo(() => {
-    if (!activeService) return "STATEWIDE";
-    if (activeService === "East Metro") return "EAST METRO";
-    if (activeService === "North Metro") return "NORTH METRO";
-    if (activeService === "South Metro") return "SOUTH METRO";
-    if (activeService === "WACHS") return "WACHS";
-    if (activeService === "Private") return "PRIVATE";
-    return String(activeService).toUpperCase();
-  }, [activeService]);
+  const activeServiceBadgeLabel = activeService ?? "Statewide";
+  const activityHasUnread = unreadNoticeCount > 0;
 
   return (
     <header
@@ -873,115 +814,99 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       data-long-title={routeTitle.length > 17 || undefined}
     >
       <div className={styles.title}>
-        <div className={styles.cockpitCapsule}>
-          <div className={styles.titleGroup}>
-            <span
-              className={styles.place}
-              data-testid={place ? "ward-bar-place" : "ward-bar-route-title"}
-              title={routeTitle}
-            >
-              {routeTitle}
-            </span>
-            {routeSubtitle ? (
-              <span className={styles.subtitle} data-testid="ward-bar-subtitle">
-                {routeSubtitle}
-              </span>
-            ) : null}
-          </div>
+        <div className={styles.titleGroup}>
+          <span
+            className={styles.place}
+            data-testid={place ? "ward-bar-place" : "ward-bar-route-title"}
+            title={routeTitle}
+          >
+            {routeTitle}
+          </span>
+        </div>
 
-          <div className={styles.scopeBadgeContainer}>
-            <button
-              type="button"
-              ref={serviceTriggerRef}
-              className={styles.scopeBadgeBtn}
-              data-testid="ward-bar-service-trigger"
-              data-service={activeSwatchKey}
-              data-locked={isFixedJurisdiction ? "true" : undefined}
-              aria-haspopup={isFixedJurisdiction ? undefined : "true"}
-              aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
-              aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
-              aria-label={
-                isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeService ?? "All services"}`
+        <div className={styles.scopeBadgeContainer}>
+          <button
+            type="button"
+            ref={serviceTriggerRef}
+            className={styles.scopeBadgeBtn}
+            data-testid="ward-bar-service-trigger"
+            data-service={activeSwatchKey}
+            data-locked={isFixedJurisdiction ? "true" : undefined}
+            aria-haspopup={isFixedJurisdiction ? undefined : "true"}
+            aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
+            aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
+            aria-label={
+              isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeService ?? "All services"}`
+            }
+            onClick={() => {
+              if (isFixedJurisdiction) {
+                announceToWardShell(`${routeTitle} is in ${activeService}.`);
+                return;
               }
-              onClick={() => {
-                if (isFixedJurisdiction) {
-                  announceToWardShell(`${routeTitle} is in ${activeService}.`);
-                  return;
-                }
-                if (openPanel === "service") {
-                  closePopover("service", false);
-                } else {
-                  openPopover("service");
-                }
-              }}
-            >
-              <span className={styles.scopeBadgeInner}>
-                <span className={styles.scopeDot} aria-hidden="true" />
-                <span className={styles.scopeBadgeLabel}>{activeServiceBadgeLabel}</span>
-                {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" />}
-              </span>
-              <span className="sr-only">{activeService ?? "All services"}</span>
-            </button>
+              if (openPanel === "service") {
+                closePopover("service", false);
+              } else {
+                openPopover("service");
+              }
+            }}
+          >
+            <span className={styles.scopeDot} aria-hidden="true" />
+            <span className={styles.scopeBadgeLabel}>{activeServiceBadgeLabel}</span>
+            {!isFixedJurisdiction && (
+              <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
+            )}
+            <span className="sr-only">{activeService ?? "All services"}</span>
+          </button>
 
-            {!isFixedJurisdiction && openPanel === "service" ? (
-              <div
-                id="ward-bar-service-panel"
-                ref={servicePanelRef}
-                className={styles.servicePanel}
-                role="group"
-                aria-label="Choose a health service"
-                data-testid="ward-bar-service-panel"
+          {!isFixedJurisdiction && openPanel === "service" ? (
+            <div
+              id="ward-bar-service-panel"
+              ref={servicePanelRef}
+              className={styles.servicePanel}
+              role="group"
+              aria-label="Choose a health service"
+              data-testid="ward-bar-service-panel"
+            >
+              <p className={styles.popoverHead}>
+                Service<span className={styles.popoverHint}>scopes the lists</span>
+              </p>
+              <button
+                type="button"
+                className={styles.serviceOption}
+                aria-pressed={service === null}
+                onClick={() => selectService(null)}
               >
-                <p className={styles.popoverHead}>
-                  Service<span className={styles.popoverHint}>scopes the lists</span>
-                </p>
-                <button
-                  type="button"
-                  className={styles.serviceOption}
-                  aria-pressed={service === null}
-                  onClick={() => selectService(null)}
-                >
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <span className={styles.serviceDot} aria-hidden="true" style={{ background: "var(--muted)" }} />
-                    All services
-                  </span>
-                  <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
-                </button>
-                {HEALTH_SERVICES.map((candidate) => {
-                  const openCount = serviceOptionOpenCounts.get(candidate) ?? 0;
-                  return (
-                    <button
-                      key={candidate}
-                      type="button"
-                      className={styles.serviceOption}
-                      aria-pressed={service === candidate}
-                      onClick={() => selectService(candidate)}
-                    >
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <span
-                          className={styles.serviceDot}
-                          data-service={SERVICE_SWATCH_KEY[candidate]}
-                          aria-hidden="true"
-                        />
-                        {candidate}
-                      </span>
-                      <span className={styles.serviceOptionCount} aria-hidden="true">
-                        {openCount > 0 ? `${openCount} open` : "none open"}
-                      </span>
-                      <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
-                    </button>
-                  );
-                })}
-                <p className={styles.popoverNote}>
-                  {`One service, or all of them. ${
-                    SERVICE_SCOPED_SCREENS.length > 1
-                      ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-                      : SERVICE_SCOPED_SCREENS.join(", ")
-                  } narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`}
-                </p>
-              </div>
-            ) : null}
-          </div>
+                <span className={styles.serviceName}>All services</span>
+                <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
+              </button>
+              <hr className={styles.popoverRule} />
+              {HEALTH_SERVICES.map((candidate) => {
+                const openCount = serviceOptionOpenCounts.get(candidate) ?? 0;
+                return (
+                  <button
+                    key={candidate}
+                    type="button"
+                    className={styles.serviceOption}
+                    aria-pressed={service === candidate}
+                    onClick={() => selectService(candidate)}
+                  >
+                    <span className={styles.serviceName}>{candidate}</span>
+                    <span className={styles.serviceOptionCount} aria-hidden="true">
+                      {openCount > 0 ? `${openCount} open` : "none open"}
+                    </span>
+                    <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
+                  </button>
+                );
+              })}
+              <p className={styles.popoverNote}>
+                {`One service, or all of them. ${
+                  SERVICE_SCOPED_SCREENS.length > 1
+                    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
+                    : SERVICE_SCOPED_SCREENS.join(", ")
+                } narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <span
@@ -1015,10 +940,12 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           aria-controls="ward-bar-activity-drawer"
           onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
         >
-          <History className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          <RotateCcwClock className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Activity</span>
+          {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
           <span className="sr-only">
             {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
+            {activityHasUnread ? `, ${unreadNoticeCount} unread` : ""}
           </span>
         </button>
 
@@ -1033,11 +960,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <span className={styles.triggerIconWrap}>
-            <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-            <span className={styles.badge}>{tasksItems.length}</span>
-          </span>
+          <ListChecks className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tasks</span>
+          <span className={styles.badge}>{tasksItems.length}</span>
         </button>
 
         <button
@@ -1053,37 +978,25 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         >
           <Wrench className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tools</span>
-          <ChevronDown className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+          <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
         </button>
       </div>
 
       {/*
        * ⚠️ **THE PRIMARY ACTION IS A SIBLING OF `.drawerTriggers`, NEVER A MEMBER OF IT, AND THAT
-       * WAS MEASURED.** `.drawerTriggers` is a nested flex row with `flex-shrink: 0` and no
-       * `flex-wrap`, so nothing inside it can ever move to a second line or give up a pixel.
-       * Rendered inside that group, this control made the group 379px wide inside the bar's 343px
-       * content box at a 375px viewport, and `document.body.scrollWidth` measured 395 — the whole
-       * PAGE scrolled sideways on `/mockups/ward-flow/statistics/ed/rph-ed`, which is what
-       * `ui-ward-statistics-journey.spec.ts` refuses. As a direct child of `.bar` it is governed
-       * by that row's own `flex-wrap: wrap` instead — the wrap this stylesheet's header calls
-       * load-bearing at phone width — and takes its own line when the row runs out, costing
-       * nothing at every width where it already fits.
+       * WAS MEASURED.** `.drawerTriggers` cannot shrink, so a primary inside it pushed the whole page
+       * sideways at 375px (`ui-ward-statistics-journey.spec.ts`). As a direct child of `.bar` it
+       * keeps its own place in the row and its labels collapse by the bar's container width.
+       *
+       * D-16, item 43: five kinds, three shapes. "none" and an absent `primaryAction` render nothing.
+       * "new-referral" opens a menu of its three real destinations. The other three kinds open a
+       * popover headed by their own label whose body reads exactly "Not wired in this prototype.",
+       * and announce "<label> is not wired in this prototype." on first open. Never an `<a>`.
+       *
+       * v6 (7 Oct 2026): one primary split button. The caret sits in its own segment behind a fine
+       * divider; the whole control still opens the same menu, so no action changed.
        */}
-      {/*
-       * D-16, updated for item 43 (2026-09-17 owner answers): five kinds, three shapes. "none"
-       * and an absent `primaryAction` both render nothing — the ONE branch below that returns
-       * `null`. "new-referral" is the one kind with a real destination, so it is the one kind
-       * that opens a popover of `<Link>`s. The other three (`record-decision`, `contact-team`,
-       * `export-figures`) now open a popover of their own too — reusing the "primary" popover
-       * id and its trigger/panel refs, so the shared outside-click and Escape handling below
-       * (which already closes "primary" and returns focus to `primaryTriggerRef`) covers this
-       * shape for free rather than a second near-identical mechanism. Never an `<a>`, so no
-       * `href` attribute exists anywhere in this branch. The panel is headed by the control's
-       * own label with the body EXACTLY "Not wired in this prototype." — the build plan's item
-       * 43 wording (§3 "Top bar"), a menu headed "{label}" with that body. The click still
-       * announces "<label> is not wired in this prototype." to the live region on first open,
-       * standard §8.6's exact sentence, unchanged from before this task.
-       */}
+      {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}
       {primaryAction?.kind === "new-referral" ? (
         <div className={styles.primaryWrap}>
           <button
@@ -1096,10 +1009,11 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             aria-controls="ward-bar-primary-panel"
             onClick={() => (openPanel === "primary" ? closePopover("primary", false) : openPopover("primary"))}
           >
+            <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
             <span className={styles.primaryPrefix}>New </span>
             <span className={styles.primaryMain}>referral</span>
             <span className={styles.referralChevron} aria-hidden="true">
-              <ChevronRight className={styles.triggerIcon} aria-hidden="true" />
+              <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
             </span>
           </button>
           {openPanel === "primary" ? (
@@ -1111,25 +1025,30 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               aria-label={primaryAction.label}
               data-testid="ward-bar-primary-panel"
             >
-              {primaryAction.menu.map((entry) => (
-                <Link
-                  key={entry.source}
-                  href={entry.href}
-                  role="menuitem"
-                  className={styles.primaryMenuItem}
-                  data-testid={`ward-bar-primary-menu-${entry.source}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const category: "community" | "ed" | "ward" =
-                      entry.source === "community" ? "community" : entry.source === "ed_medical" ? "ed" : "ward";
-                    setReferralCategory(category);
-                    referralReturnFocusRef.current = primaryTriggerRef.current;
-                    openPopover("referral");
-                  }}
-                >
-                  {entry.label}
-                </Link>
-              ))}
+              {primaryAction.menu.map((entry) => {
+                const MenuIcon =
+                  entry.source === "community" ? Users : entry.source === "ed_medical" ? Siren : Hospital;
+                return (
+                  <Link
+                    key={entry.source}
+                    href={entry.href}
+                    role="menuitem"
+                    className={styles.primaryMenuItem}
+                    data-testid={`ward-bar-primary-menu-${entry.source}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const category: "community" | "ed" | "ward" =
+                        entry.source === "community" ? "community" : entry.source === "ed_medical" ? "ed" : "ward";
+                      setReferralCategory(category);
+                      referralReturnFocusRef.current = primaryTriggerRef.current;
+                      openPopover("referral");
+                    }}
+                  >
+                    <MenuIcon className={styles.menuIcon} aria-hidden="true" strokeWidth={1.75} />
+                    {entry.label}
+                  </Link>
+                );
+              })}
             </div>
           ) : null}
         </div>
@@ -1154,7 +1073,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           >
             <span className={styles.primaryMain}>{primaryAction.label}</span>
             <span className={styles.referralChevron} aria-hidden="true">
-              <ChevronRight className={styles.triggerIcon} aria-hidden="true" />
+              <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
             </span>
           </button>
           {openPanel === "primary" ? (
@@ -1178,14 +1097,21 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         open={openPanel === "activity"}
         onClose={() => closePopover("activity")}
         title="Activity"
-        headerLeading={<Activity className={styles.drawerHeadingIcon} aria-hidden="true" />}
-        titleAccessory={<span className={styles.drawerScope}>Synthetic events</span>}
+        headerLeading={
+          <span className={styles.drawerTile} aria-hidden="true">
+            <RotateCcwClock aria-hidden="true" className={styles.drawerHeadingIcon} strokeWidth={1.75} />
+          </span>
+        }
+        headerActions={
+          <kbd className={styles.escKbd} aria-hidden="true">
+            Esc
+          </kbd>
+        }
         placement="right"
         testId="ward-bar-activity-sheet"
         returnFocusRef={activityTriggerRef}
         descriptionContent={
           <p className={styles.activityFreshness} data-tone={activityTone}>
-            <span className={styles.dot} data-tone={activityTone} aria-hidden="true" />
             <span>
               Synthetic state · demo time {formatInstant(now)}
               {lastActivityAt === undefined
@@ -1202,32 +1128,37 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         bodyClassName={styles.drawerBody}
         footer={
           <p className={styles.drawerFoot}>
-            Synthetic events are derived from current demo records and listed newest first.
+            <span>Synthetic events · newest first</span>
+            <span className={styles.footClock}>
+              Demo time <b>{formatInstant(now)}</b>
+            </span>
           </p>
         }
         footerClassName={styles.drawerFooter}
       >
-        <div className={`${styles.activitySegments} ${styles.segTrack}`} role="group" aria-label="Activity sections">
-          <button
-            type="button"
-            className={styles.segBtn}
-            aria-pressed={activityPart === "activity"}
-            aria-controls="ward-bar-activity-events"
-            onClick={() => setActivityPart("activity")}
-          >
-            Activity
-            <span>{shownActivity?.changes.length ?? 0}</span>
-          </button>
-          <button
-            type="button"
-            className={styles.segBtn}
-            aria-pressed={activityPart === "tally"}
-            aria-controls="ward-bar-activity-tally"
-            onClick={() => setActivityPart("tally")}
-          >
-            Live tally
-            <span>{shownActivity?.pageTitle ?? "Current page"}</span>
-          </button>
+        <div className={styles.activitySegments} role="group" aria-label="Activity sections">
+          <div className={styles.segTrack}>
+            <button
+              type="button"
+              className={styles.segBtn}
+              aria-pressed={activityPart === "activity"}
+              aria-controls="ward-bar-activity-events"
+              onClick={() => setActivityPart("activity")}
+            >
+              Activity
+              <span>{shownActivity?.changes.length ?? 0}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.segBtn}
+              aria-pressed={activityPart === "tally"}
+              aria-controls="ward-bar-activity-tally"
+              onClick={() => setActivityPart("tally")}
+            >
+              Live tally
+              <span>{shownActivity?.pageTitle ?? "Current page"}</span>
+            </button>
+          </div>
         </div>
 
         {activityPart === "activity" ? (
@@ -1241,16 +1172,23 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 <strong>{unreadNoticeCount}</strong>
                 <span>Unread notices</span>
               </div>
-              <div>
-                <strong>{formatInstant(now)}</strong>
-                <span>Demo time</span>
-              </div>
+              {lastActivityAt === undefined ? (
+                <div>
+                  <strong>{formatInstant(now)}</strong>
+                  <span>Demo time</span>
+                </div>
+              ) : (
+                <div>
+                  <strong>{formatInstant(lastActivityAt)}</strong>
+                  <span>Last event</span>
+                </div>
+              )}
             </div>
             <label className={styles.drawerSearch}>
-              <Search aria-hidden="true" />
+              <Search aria-hidden="true" strokeWidth={1.75} />
               <input
                 aria-label="Search activity"
-                placeholder="Search events and notices…"
+                placeholder="Search events and notices"
                 value={activityQuery}
                 onChange={(event) => setActivityQuery(event.target.value)}
               />
@@ -1280,32 +1218,31 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
         <section id="ward-bar-activity-events" className={styles.activitySection} hidden={activityPart !== "activity"}>
           {scopedNotices.length > 0 ? (
-            <>
+            <div className={styles.card}>
               {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
                   `scopedNotices.length`, even though read notices stay in the list below. */}
-              <div className={styles.noticeHeading}>
+              <div className={styles.cardHead}>
                 <p className={styles.activityHead}>
                   Notices <span>· {unreadNoticeCount} unread</span>
                 </p>
                 <button
                   type="button"
-                  className={styles.filterChip}
+                  className={styles.switchBtn}
                   aria-pressed={unreadOnly}
                   onClick={() => setUnreadOnly(!unreadOnly)}
                 >
                   Unread only
+                  <span className={styles.switchTrack} aria-hidden="true" />
                 </button>
               </div>
-              {visibleNotices.length === 0 ? (
-                <p className={styles.activityEmpty}>No notices match these filters.</p>
-              ) : null}
+              {visibleNotices.length === 0 ? <p className={styles.cardEmpty}>No notices match these filters.</p> : null}
               <ol className={styles.activityFeed} aria-label="Notices">
                 {visibleNotices.map((notice) => {
                   const isRead = notice.readAt !== undefined;
                   return (
-                    <li key={notice.id} data-tone="info" data-notice-read={isRead}>
-                      <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                      <span className={styles.eventDot} aria-hidden="true" />
+                    <li key={notice.id} className={styles.noticeRow} data-tone="info" data-notice-read={isRead}>
+                      <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
+                      <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
                       <div className={styles.noticeContent}>
                         <span>{notice.sentence}</span>
                         {/* No automatic read on opening the drawer — this is the only place
@@ -1327,92 +1264,94 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                   );
                 })}
               </ol>
-            </>
-          ) : null}
-          <p className={styles.activityHead}>
-            Recent changes <span>{filteredActivityChanges.length}</span>
-          </p>
-          {!shownActivity && scopedNotices.length === 0 ? (
-            <p className={styles.activityEmpty}>{service ? `No event today in ${service}.` : "No event today."}</p>
-          ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
-            <p className={styles.activityEmpty}>No event today.</p>
-          ) : filteredActivityChanges.length === 0 ? (
-            <div className={styles.activityEmpty}>
-              <Search aria-hidden="true" />
-              <strong>No matching events</strong>
-              <p>Try another search or event category.</p>
-              <button
-                type="button"
-                className={styles.filterChip}
-                onClick={() => {
-                  setActivityQuery("");
-                  setActivityCategoryFilter("all");
-                }}
-              >
-                Clear event filters
-              </button>
             </div>
-          ) : (
-            <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
-              {filteredActivityChanges.map((change) => {
-                const tone = activityToneFor(change.id);
-                return (
-                  <li
-                    key={change.id}
-                    className={styles.feedRow}
-                    data-tone={tone}
-                    data-category={activityChangeCategory(change)}
-                  >
-                    <time className={styles.feedTime}>{change.time}</time>
-                    <span className={`${styles.eventDot} ${styles.feedToneDot}`} data-tone={tone} aria-hidden="true" />
-                    <div className={styles.feedContent}>
-                      <span className={styles.eventLabel} data-tone={tone}>
-                        {tone === "danger"
-                          ? "Deadline or refused action"
-                          : tone === "warning"
-                            ? "Needs you"
-                            : "Recorded update"}
-                      </span>
-                      <span className={styles.feedText}>{change.text}</span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-          {shownActivity && shownActivity.changes.length > 0 ? (
-            <details className={styles.activityKey}>
-              <summary>Event key</summary>
-              <div>
-                <span>
-                  <i data-tone="info" aria-hidden="true" />
-                  Recorded update
-                </span>
-                <span>
-                  <i data-tone="warning" aria-hidden="true" />
-                  Needs you
-                </span>
-                <span>
-                  <i data-tone="danger" aria-hidden="true" />
-                  Deadline or refused action
-                </span>
-              </div>
-            </details>
           ) : null}
-          {publishedChecks.length > 0 ? (
-            <details className={styles.activityKey} data-testid="ward-bar-figure-checks">
-              <summary>
-                Figure checks · {reconciledCheckCount} of {publishedChecks.length} reconcile
-              </summary>
-              <div>
-                {publishedChecks.map((check) => (
-                  <span key={check.label}>
-                    <i data-tone={check.ok ? "info" : "danger"} aria-hidden="true" />
-                    {check.label} · {check.ok ? "Reconciles" : "Does not reconcile"}
-                  </span>
-                ))}
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <p className={styles.activityHead}>
+                Recent changes <span className={styles.countPill}>{filteredActivityChanges.length}</span>
+              </p>
+            </div>
+            {!shownActivity && scopedNotices.length === 0 ? (
+              <p className={styles.cardEmpty}>{service ? `No event today in ${service}.` : "No event today."}</p>
+            ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
+              <p className={styles.cardEmpty}>No event today.</p>
+            ) : filteredActivityChanges.length === 0 ? (
+              <div className={styles.activityEmpty}>
+                <span className={styles.emptyIcon} aria-hidden="true">
+                  <Search aria-hidden="true" strokeWidth={1.75} />
+                </span>
+                <strong>No matching events</strong>
+                <p>Try another search or event category.</p>
+                <button
+                  type="button"
+                  className={styles.quietBtn}
+                  onClick={() => {
+                    setActivityQuery("");
+                    setActivityCategoryFilter("all");
+                  }}
+                >
+                  Clear event filters
+                </button>
               </div>
-            </details>
+            ) : (
+              <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
+                {filteredActivityChanges.map((change) => {
+                  const tone = activityToneFor(change.id);
+                  return (
+                    <li
+                      key={change.id}
+                      className={styles.feedRow}
+                      data-tone={tone}
+                      data-category={activityChangeCategory(change)}
+                    >
+                      <time className={styles.feedTime}>{change.time}</time>
+                      <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={9} className={styles.feedGlyph} />
+                      <span className={styles.feedText}>{change.text}</span>
+                      <span className={styles.eventLabel} data-tone={tone}>
+                        {ACTIVITY_TONE_WORD[tone]}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
+          {(shownActivity && shownActivity.changes.length > 0) || publishedChecks.length > 0 ? (
+            <div className={styles.card}>
+              {shownActivity && shownActivity.changes.length > 0 ? (
+                <p className={styles.activityKey}>
+                  {(["danger", "warning", "info"] as const).map((tone) => (
+                    <span key={tone}>
+                      <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={8} />
+                      {ACTIVITY_TONE_WORD[tone]}
+                    </span>
+                  ))}
+                </p>
+              ) : null}
+              {publishedChecks.length > 0 ? (
+                <details className={styles.figureChecks} data-testid="ward-bar-figure-checks">
+                  <summary>
+                    <StatusGlyph
+                      tone={reconciledCheckCount === publishedChecks.length ? "success" : "danger"}
+                      size={9}
+                    />
+                    <span>
+                      Figure checks · {reconciledCheckCount} of {publishedChecks.length} reconcile
+                    </span>
+                    <ChevronDown className={styles.detailsCaret} aria-hidden="true" strokeWidth={1.75} />
+                  </summary>
+                  <div>
+                    {publishedChecks.map((check) => (
+                      <span key={check.label}>
+                        <StatusGlyph tone={check.ok ? "success" : "danger"} size={8} />
+                        {check.label} · {check.ok ? "Reconciles" : "Does not reconcile"}
+                      </span>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
+            </div>
           ) : null}
         </section>
 
@@ -1424,42 +1363,57 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 <div className={styles.activityTiles}>
                   {shownActivity.tiles.map((tile) => (
                     <div key={tile.label} className={styles.activityTile} data-tone={tile.tone}>
-                      <small>{tile.label}</small>
                       <b>{tile.value}</b>
+                      <small>
+                        {tile.tone ? (
+                          <StatusGlyph tone={tile.tone === "good" ? "success" : tile.tone} size={8} />
+                        ) : null}
+                        {tile.label}
+                      </small>
                     </div>
                   ))}
                 </div>
               ) : null}
               {usesDerivedActivity ? (
-                <table className={styles.tallyDepartments}>
-                  <caption>Emergency departments</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Department</th>
-                      <th scope="col">Waiting</th>
-                      <th scope="col">Longest</th>
-                      <th scope="col">Due times passed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commandActivity.departments.map((row) => (
-                      <tr key={row.ed.id}>
-                        <th scope="row">
-                          <Link
-                            href={edHref(row.ed.id)}
-                            onClick={() => closePopover("activity", false)}
-                            title={row.ed.name}
-                          >
-                            {row.ed.siteCode}
-                          </Link>
-                        </th>
-                        <td>{row.waiting}</td>
-                        <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
-                        <td data-breached={row.breaching > 0}>{row.breaching}</td>
+                <div className={styles.card}>
+                  <table className={styles.tallyDepartments}>
+                    <caption>
+                      Emergency departments
+                      <span className={styles.countPill} aria-hidden="true">
+                        {commandActivity.departments.length}
+                      </span>
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Department</th>
+                        <th scope="col">Waiting</th>
+                        <th scope="col">Longest</th>
+                        <th scope="col">Due times passed</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {commandActivity.departments.map((row) => (
+                        <tr key={row.ed.id}>
+                          <th scope="row">
+                            <Link
+                              href={edHref(row.ed.id)}
+                              onClick={() => closePopover("activity", false)}
+                              title={row.ed.name}
+                            >
+                              {row.ed.siteCode}
+                            </Link>
+                          </th>
+                          <td>{row.waiting}</td>
+                          <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
+                          <td data-breached={row.breaching > 0}>
+                            {row.breaching > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
+                            {row.breaching}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : null}
             </>
           ) : (
@@ -1504,8 +1458,17 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         open={openPanel === "tools"}
         onClose={() => closePopover("tools")}
         title="Tools"
-        headerLeading={<Wrench className={styles.drawerHeadingIcon} aria-hidden="true" />}
-        titleAccessory={<span className={styles.drawerScope}>Whole network</span>}
+        headerLeading={
+          <span className={styles.drawerTile} aria-hidden="true">
+            <Wrench aria-hidden="true" className={styles.drawerHeadingIcon} strokeWidth={1.75} />
+          </span>
+        }
+        headerActions={
+          <kbd className={styles.escKbd} aria-hidden="true">
+            Esc
+          </kbd>
+        }
+        descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsTriggerRef}
@@ -1515,19 +1478,26 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         titleClassName={styles.drawerTitle}
         closeButtonClassName={styles.drawerClose}
         bodyClassName={styles.drawerBody}
-        footer={<p className={styles.drawerFoot}>Whole network · Synthetic prototype</p>}
+        footer={
+          <p className={styles.drawerFoot}>
+            <span>Whole network · synthetic prototype</span>
+            <span className={styles.footClock}>
+              Demo time <b>{formatInstant(now)}</b>
+            </span>
+          </p>
+        }
         footerClassName={styles.drawerFooter}
       >
         <div className={styles.toolsNav} role="group" aria-label="Tools sections">
           {(
             [
-              ["overview", "Overview", Wrench],
-              ["figures", "Figures", BarChart3],
-              ["utilities", "Utilities", Calculator],
-              ["directory", "Directory", BookOpen],
-              ["operations", "Shift desk", ClipboardCheck],
+              ["overview", "Overview"],
+              ["figures", "Figures"],
+              ["utilities", "Utilities"],
+              ["directory", "Directory"],
+              ["operations", "Shift desk"],
             ] as const
-          ).map(([id, label, Icon]) => (
+          ).map(([id, label]) => (
             <button
               key={id}
               ref={id === "figures" ? figuresTabRef : undefined}
@@ -1536,8 +1506,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               aria-controls={`ward-tools-${id}`}
               onClick={() => setToolsPart(id)}
             >
-              <Icon aria-hidden="true" />
-              <span>{label}</span>
+              {label}
             </button>
           ))}
         </div>
@@ -1556,19 +1525,31 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             }}
             aria-controls="ward-tools-figures"
           >
-            <span className={styles.toolIcon}>
-              <BarChart3 aria-hidden="true" />
+            <span className={styles.toolIconSolid} aria-hidden="true">
+              <BarChart3 aria-hidden="true" strokeWidth={1.75} />
             </span>
-            <span>
+            <span className={styles.launchText}>
               <span className={styles.launchEyebrow}>Network overview</span>
               <strong>Figures at a glance</strong>
-              <em>Capacity, demand and recorded time limits</em>
-              <small>{flaggedFigures.length > 0 ? telemetrySummary : "Nothing flagged"}</small>
+              <small>
+                {flaggedFigures.length > 0
+                  ? flaggedFigures.map((figure, index) => (
+                      <span key={figure.key}>
+                        {index > 0 ? " · " : null}
+                        <StatusGlyph tone={figure.key === "passed" ? "danger" : "warning"} size={8} />
+                        <b>{figure.value}</b> {figure.label.toLowerCase()}
+                      </span>
+                    ))
+                  : "Nothing flagged"}
+              </small>
             </span>
-            <ChevronRight aria-hidden="true" />
+            <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
           </button>
-          <section className={styles.toolsSection}>
-            <h3 className={styles.toolsHeading}>Appearance</h3>
+          <section className={`${styles.toolsSection} ${styles.appearanceRow}`}>
+            <h3 className={styles.toolsHeading}>
+              <Sun aria-hidden="true" strokeWidth={1.75} />
+              Appearance
+            </h3>
             <div className={styles.appearanceTrack} role="group" aria-label="Appearance theme">
               <button
                 type="button"
@@ -1576,7 +1557,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 aria-pressed={appearance === "dark"}
                 onClick={() => applyAppearance("dark")}
               >
-                <Moon aria-hidden="true" /> Dark theme
+                Dark
               </button>
               <button
                 type="button"
@@ -1584,7 +1565,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 aria-pressed={appearance === "light"}
                 onClick={() => applyAppearance("light")}
               >
-                <Sun aria-hidden="true" /> Light theme
+                Light
               </button>
               <button
                 type="button"
@@ -1592,7 +1573,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 aria-pressed={appearance === "auto"}
                 onClick={() => applyAppearance("auto")}
               >
-                <Monitor aria-hidden="true" /> System
+                System
               </button>
             </div>
           </section>
@@ -1600,11 +1581,13 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Quick actions</h3>
             <Link href={handoverHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-              <FileText aria-hidden="true" />
+              <span className={styles.toolIcon} aria-hidden="true">
+                <FileText aria-hidden="true" strokeWidth={1.75} />
+              </span>
               <span>
                 Handover sheet<em>Review and print the current handover</em>
               </span>
-              <ChevronRight aria-hidden="true" />
+              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
             </Link>
             <button
               type="button"
@@ -1615,18 +1598,22 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 openPopover("referral");
               }}
             >
-              <Plus aria-hidden="true" />
+              <span className={styles.toolIcon} aria-hidden="true">
+                <Plus aria-hidden="true" strokeWidth={1.75} />
+              </span>
               <span>
                 New referral<em>Review details and choose a destination</em>
               </span>
-              <ChevronRight aria-hidden="true" />
+              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
             </button>
             <Link href={settingsHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
-              <Settings aria-hidden="true" />
+              <span className={styles.toolIcon} aria-hidden="true">
+                <Settings aria-hidden="true" strokeWidth={1.75} />
+              </span>
               <span>
                 Settings<em>Configuration and preferences</em>
               </span>
-              <ChevronRight aria-hidden="true" />
+              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
             </Link>
           </section>
 
@@ -1636,11 +1623,13 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           </section>
           <section className={`${styles.toolsSection} ${styles.referenceSection}`} aria-label="Reference page">
             <a href={digestHref()} className={styles.toolItem}>
-              <BookOpen aria-hidden="true" />
-              <span>
-                Ward Flow Digest<em>Explore the product design reference</em>
+              <span className={styles.toolIcon} aria-hidden="true">
+                <BookOpen aria-hidden="true" strokeWidth={1.75} />
               </span>
-              <ChevronRight aria-hidden="true" />
+              <span>
+                Ward Flow Digest<em>Product design reference</em>
+              </span>
+              <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
             </a>
           </section>
         </div>
@@ -1648,26 +1637,36 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           <NetworkFigures />
         </div>
         <div id="ward-tools-utilities" className={styles.toolsPanel} hidden={toolsPart !== "utilities"}>
-          <OperationalLinks onNavigate={() => closePopover("tools", false)} />
           <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>Shortcuts</h3>
+            <OperationalLinks onNavigate={() => closePopover("tools", false)} />
+          </section>
+          <section className={`${styles.toolsSection} ${styles.toolsWidget}`}>
             <h3 className={styles.toolsHeading}>
+              <MapIcon aria-hidden="true" strokeWidth={1.75} />
               Catchment resolver <span>WA Health</span>
             </h3>
             <WardCatchmentResolver />
           </section>
 
-          <section className={styles.toolsSection}>
+          <section className={`${styles.toolsSection} ${styles.toolsWidget}`}>
             <h3 className={styles.toolsHeading}>
+              <CalendarClock aria-hidden="true" strokeWidth={1.75} />
               Form date review <span>Recorded times only</span>
             </h3>
             <WardMhaCalculator />
           </section>
         </div>
         <div id="ward-tools-operations" className={styles.toolsPanel} hidden={toolsPart !== "operations"}>
-          <h3 className={styles.toolsHeading}>Shift desk</h3>
-          <OperationalLinks onNavigate={() => closePopover("tools", false)} />
-          <section className={styles.toolsSection} aria-label="Scenario controls">
-            <h3 className={styles.toolsHeading}>Scenario controls</h3>
+          <section className={styles.toolsSection}>
+            <h3 className={styles.toolsHeading}>Shift desk</h3>
+            <OperationalLinks onNavigate={() => closePopover("tools", false)} />
+          </section>
+          <section className={`${styles.toolsSection} ${styles.toolsWidget}`} aria-label="Scenario controls">
+            <h3 className={styles.toolsHeading}>
+              <FlaskConical aria-hidden="true" strokeWidth={1.75} />
+              Scenario controls
+            </h3>
             <WardDemoControls />
             <WardRoleSwitcher />
           </section>
