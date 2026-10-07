@@ -160,9 +160,7 @@ export function WardHomeTab({
                 </svg>
                 <span>Ward Census &amp; Turnover</span>
               </div>
-              <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--muted)" }}>
-                Current ward record
-              </span>
+              <span className={styles.cardMeta}>Current ward record</span>
             </div>
             <div className={styles.cardBody}>
               <div className={styles.censusQuadGrid}>
@@ -188,11 +186,15 @@ export function WardHomeTab({
                   <span className={styles.censusBoxFoot}>{breakdown.confirmedToday} confirmed ready</span>
                 </div>
                 <div className={styles.censusBox}>
-                  <span className={styles.censusBoxLabel}>On Section 17 Leave</span>
+                  <span className={styles.censusBoxLabel}>On leave</span>
                   <span className={styles.censusBoxVal} style={{ color: "var(--warn)" }}>
                     {unitLeaveBedsCount}
                   </span>
-                  <span className={styles.censusBoxFoot}>Due back 16:00</span>
+                  <span className={styles.censusBoxFoot}>
+                    {unitLeaveBeds.length === 0
+                      ? "None out"
+                      : `Back ${formatInstantWithDay(unitLeaveBeds[0].expectedReturn, now)}`}
+                  </span>
                 </div>
               </div>
 
@@ -349,7 +351,7 @@ export function WardHomeTab({
                     <span className={styles.timelineTime}>{formatInstantWithDay(leaveBed.confirmedAt, now)}</span>
                     <div className={styles.timelineBody}>
                       <span>
-                        <strong>Section 17 Leave:</strong> Patient on approved leave (Expected return{" "}
+                        <strong>Leave:</strong> Patient on approved leave (Expected return{" "}
                         {formatInstant(leaveBed.expectedReturn)}).
                       </span>
                       <div className={styles.timelineMetaRow}>

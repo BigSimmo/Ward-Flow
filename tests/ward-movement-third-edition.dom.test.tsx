@@ -81,13 +81,13 @@ function renderScreen() {
  * Today's traffic, before the board. This supersedes the six-panel characterization described
  * above. Traffic still precedes the patient rows, preserving the earlier ordering intent.
  * Engine-backed transport facts sit inside the bounded Transport summary view.
+ * Shape of the day shares that side panel and is the region name only after the corner toggle.
  */
 const EXPECTED_PANELS: readonly RegExp[] = [
   /^The day$/u,
   /^Today’s traffic$/u,
   /^Movement worklist$/u,
   /^Transport right now$/u,
-  /^Shape of the day$/u,
 ] as const;
 
 describe("the Movements screen's panels, in the order a coordinator meets them", () => {
@@ -118,6 +118,7 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
    */
   it("keeps the open-day summary beside and after the board it summarises", () => {
     renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     const titles = panelTitlesInOrder();
     const board = titles.indexOf("Movement worklist");
     const glance = titles.indexOf("Shape of the day");
@@ -151,6 +152,7 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
     ).toBeLessThan(wardMovements.length);
 
     renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     const board = screen.getByRole("region", { name: "Movement worklist" });
     expect(
       within(board).getByRole("tab", { name: new RegExp(`Resolved today ${closed.length}`, "u") }),

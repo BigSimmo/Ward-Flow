@@ -411,11 +411,7 @@ export function StatisticsOverviewScreen() {
                 </div>
               </dl>
 
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-capacity-disclosure"
-              >
-                <summary>What these three numbers do and do not mean</summary>
+              <div data-testid="ward-statistics-overview-capacity-disclosure">
                 <div className={styles.revealBody}>
                   <p>
                     &ldquo;Ready to admit into&rdquo; is the sum of the smaller of each unit&apos;s empty and
@@ -428,7 +424,7 @@ export function StatisticsOverviewScreen() {
                     in the current network record.
                   </p>
                 </div>
-              </details>
+              </div>
             </div>
           </StatisticsDetailPanel>
 
@@ -544,11 +540,7 @@ export function StatisticsOverviewScreen() {
                 </>
               )}
 
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-declines-scope"
-              >
-                <summary>Who this count misses</summary>
+              <div data-testid="ward-statistics-overview-declines-scope">
                 <div className={styles.revealBody}>
                   <p>
                     Counts recorded ward refusals for people already inside an emergency department. Excludes referrals
@@ -561,7 +553,7 @@ export function StatisticsOverviewScreen() {
                     would define a different population, so this page does not make that choice.
                   </p>
                 </div>
-              </details>
+              </div>
 
               {/*
                * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
@@ -610,11 +602,7 @@ export function StatisticsOverviewScreen() {
                 refused.
               </p>
 
-              <details
-                className={`${styles.reveal} source-print`}
-                data-testid="ward-statistics-overview-refused-so-far-disclosure"
-              >
-                <summary>What &ldquo;so far&rdquo; means</summary>
+              <div data-testid="ward-statistics-overview-refused-so-far-disclosure">
                 <div className={styles.revealBody}>
                   <p>
                     No closure flag marks the network as exhausted. A decline removes that ward from the current list,
@@ -631,7 +619,7 @@ export function StatisticsOverviewScreen() {
                     are classified first, so the count above is a floor.
                   </p>
                 </div>
-              </details>
+              </div>
 
               <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
                 <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>{" "}
@@ -682,20 +670,17 @@ export function StatisticsOverviewScreen() {
               <p className={styles.body} data-testid="ward-statistics-overview-invented-figures">
                 <strong>Every figure here is invented and describes no real person or day.</strong>
               </p>
-              <details className={`${styles.reveal} source-print`}>
-                <summary>Provenance and limits</summary>
-                <div className={styles.revealBody}>
-                  <p>
-                    The invented figures cover network capacity, the four admission stages, declines, current movements,
-                    the referral worklist, pending beds and the 30 chart points.
-                  </p>
-                  <p data-testid="ward-statistics-overview-invented-unknowns">
-                    <strong>Not measured:</strong> referrals turned away before a person reaches a department, durations
-                    between unrecorded instants, and offers to named patients. The prototype records no offer, so these
-                    remain stated absences rather than invented figures.
-                  </p>
-                </div>
-              </details>
+              <div className={styles.revealBody}>
+                <p>
+                  The invented figures cover network capacity, the four admission stages, declines, current movements,
+                  the referral worklist, pending beds and the 30 chart points.
+                </p>
+                <p data-testid="ward-statistics-overview-invented-unknowns">
+                  <strong>Not measured:</strong> referrals turned away before a person reaches a department, durations
+                  between unrecorded instants, and offers to named patients. The prototype records no offer, so these
+                  remain stated absences rather than invented figures.
+                </p>
+              </div>
             </div>
           </StatisticsDetailPanel>
         </div>

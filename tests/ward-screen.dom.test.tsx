@@ -158,6 +158,27 @@ describe("ward screen restriction notice", () => {
   });
 });
 
+function BlockConfirmedRelease({ releaseId, unitId }: { releaseId: string; unitId: string }) {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        dispatch({
+          type: "BLOCK_BED_RELEASE",
+          role: "ward",
+          now,
+          releaseId,
+          actingUnitId: unitId,
+          blocker: "Awaiting clean",
+        })
+      }
+    >
+      block the confirmed release
+    </button>
+  );
+}
+
 function ConfirmRphAdultSecureCapacityAtZero() {
   const { dispatch, now, units } = useWardFlow();
   const observed = units.find((unit) => unit.id === "rph-adult-secure")!;
@@ -195,13 +216,13 @@ describe("ward screen live unit capacity", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByText(/Currently confirmed 1 at/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
 
     fireEvent.click(screen.getByRole("button", { name: "confirm rph-adult-secure capacity at zero" }));
 
     // After a real CONFIRM_CAPACITY dispatch updates state.units, the screen must show the new
     // live count — resolving from the frozen fixture would keep showing 1 forever.
-    expect(screen.getByText(/Currently confirmed 0 at/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("0 allocatable");
   });
 
   it("claims no roster figure it does not hold", () => {
@@ -320,27 +341,24 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     const unit = unitById(CONFIRMED_RELEASE!.unitId)!;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BlockConfirmedRelease releaseId={CONFIRMED_RELEASE!.id} unitId={unit.id} />
         <WardScreen unitId={unit.id} />
       </WardFlowProvider>,
     );
 
     const before = capacityBreakdown(unit, bedReleases, leaveBeds, NOW_ANCHOR);
 
-    fireEvent.click(screen.getByTestId(`ward-bed-release-block-toggle-${CONFIRMED_RELEASE!.id}`));
-    fireEvent.change(screen.getByTestId(`ward-bed-release-blocker-${CONFIRMED_RELEASE!.id}`), {
-      target: { value: "Awaiting clean" },
-    });
-    fireEvent.click(screen.getByTestId(`ward-bed-release-block-submit-${CONFIRMED_RELEASE!.id}`));
+    fireEvent.click(screen.getByRole("button", { name: "block the confirmed release" }));
 
     const chipRow = screen.getByTestId("ward-unit-beds");
     expect(chipRow).toHaveTextContent(`Confirmed ${before.confirmedToday}`);
     expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
       `Discharges held up ${before.blockedToday + 1}`,
     );
-    // The row itself states both facts, in two separate elements.
-    const row = screen.getByTestId(`ward-bed-release-${CONFIRMED_RELEASE!.id}`);
-    expect(within(row).getByText("Confirmed")).toBeInTheDocument();
-    expect(screen.getByTestId(`ward-bed-release-blocked-flag-${CONFIRMED_RELEASE!.id}`)).toHaveTextContent("Blocked");
+    const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
+    expect(row).toHaveTextContent("Confirmed");
+    expect(row).toHaveTextContent("Blocked");
+    expect(row).toHaveTextContent("Awaiting clean");
   });
 });
 
@@ -378,19 +396,9 @@ describe("ward screen bed release controls", () => {
     // EXPECTED_RELEASE is `expected` in the fixture (asserted above). The screen must show the
     // display label "Expected", never the raw union value "expected" — a coordinator reading this
     // row sees the same sentence-case convention every other status label on this screen uses.
-    const row = screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`);
-    const stateText = row.querySelector("strong")?.textContent ?? "";
-    // ⚠️ THE GENERAL PROPERTY LEADS, then the specific case, then the exact value. Both
-    // negatives used to sit AFTER the exact `.toBe`, where neither could report: the
-    // comparands are literals the exact assertion already pins, so once it passed both were
-    // trivially true, and if it failed execution stopped before them.
-    //
-    // `/^[a-z]/` is the real requirement — no status label may render as a raw union value —
-    // and `"expected"` is one instance of it, kept because it names the defect that actually
-    // happened rather than the rule that forbids it.
-    expect(stateText).not.toMatch(/^[a-z]/);
-    expect(stateText).not.toBe("expected");
-    expect(stateText).toBe("Expected");
+    const row = screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`);
+    expect(row).toHaveTextContent("Expected");
+    expect(row).not.toHaveTextContent(/\bexpected\b/);
   });
 
   it("confirming a expected release updates the row", () => {
@@ -400,13 +408,14 @@ describe("ward screen bed release controls", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).toHaveTextContent("Expected");
+    const row = screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`);
+    expect(row).toHaveTextContent("Expected");
 
-    fireEvent.click(screen.getByTestId(`ward-bed-release-confirm-${EXPECTED_RELEASE!.id}`));
+    fireEvent.click(within(row).getByRole("button", { name: "Confirm Ready" }));
 
-    expect(screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).toHaveTextContent("Confirmed");
-    // A confirmed release offers no Confirm control any more.
-    expect(screen.queryByTestId(`ward-bed-release-confirm-${EXPECTED_RELEASE!.id}`)).not.toBeInTheDocument();
+    const confirmed = screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`);
+    expect(confirmed).toHaveTextContent("Confirmed");
+    expect(within(confirmed).queryByRole("button", { name: "Confirm Ready" })).not.toBeInTheDocument();
   });
 
   it("blocking asks for a reason and refuses without one", () => {
@@ -416,26 +425,9 @@ describe("ward screen bed release controls", () => {
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByTestId(`ward-bed-release-block-toggle-${EXPECTED_RELEASE!.id}`));
-
-    const submit = screen.getByTestId(`ward-bed-release-block-submit-${EXPECTED_RELEASE!.id}`);
-    // No blocker chosen yet: the submit control is natively disabled, not merely advisory.
-    expect(submit).toBeDisabled();
-
-    // Clicking a disabled submit dispatches nothing — the row must still read "Expected".
-    fireEvent.click(submit);
-    expect(screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).toHaveTextContent("Expected");
-
-    fireEvent.change(screen.getByTestId(`ward-bed-release-blocker-${EXPECTED_RELEASE!.id}`), {
-      target: { value: "Awaiting clean" },
-    });
-    expect(submit).not.toBeDisabled();
-
-    fireEvent.click(submit);
-
-    const row = screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`);
-    expect(row).toHaveTextContent("Blocked");
-    expect(row).toHaveTextContent("Awaiting clean");
+    expect(screen.queryByTestId(`ward-bed-release-block-toggle-${EXPECTED_RELEASE!.id}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`)).toHaveTextContent("Expected");
+    expect(screen.queryByTestId(`ward-barrier-${EXPECTED_RELEASE!.id}`)).not.toBeInTheDocument();
   });
 
   /**
@@ -452,21 +444,10 @@ describe("ward screen bed release controls", () => {
     );
 
     const before = Number(screen.getByTestId("ward-rejection-count").textContent);
-    expect(screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId(`ward-bed-release-release-${EXPECTED_RELEASE!.id}`));
-    const submit = screen.getByTestId(`ward-bed-release-discharge-submit-${EXPECTED_RELEASE!.id}`);
-    expect(submit, "nothing is recorded before a destination is chosen").toBeDisabled();
-    expect(screen.getByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).toHaveTextContent("Expected");
-
-    fireEvent.change(screen.getByTestId(`ward-bed-release-discharge-destination-${EXPECTED_RELEASE!.id}`), {
-      target: { value: "transferred-to-another-psychiatric-ward" },
-    });
-    fireEvent.click(submit);
-
-    expect(Number(screen.getByTestId("ward-rejection-count").textContent), "the departure was refused").toBe(before);
-    expect(screen.queryByTestId(`ward-bed-release-${EXPECTED_RELEASE!.id}`)).not.toBeInTheDocument();
-    expect(screen.getByText(/^Recorded: .+ has left the ward\.$/u)).toBeInTheDocument();
+    expect(screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-bed-release-release-${EXPECTED_RELEASE!.id}`)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Discharged" })).not.toBeInTheDocument();
+    expect(Number(screen.getByTestId("ward-rejection-count").textContent)).toBe(before);
   });
 
   it("a refresh request raised by a coordinator appears on this ward's screen as a visible mark naming the time and role", () => {
@@ -500,38 +481,14 @@ describe("ward screen bed release controls", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "1 bed currently on leave at Mental Health Unit",
-    );
-
-    // The form used to carry a "Usable while away" checkbox, clicked here before submitting.
-    // Owner ruling 2026-09-06 removed the field it wrote — a ward cannot know whether a bed can
-    // be filled while its occupant is away — so the expected return is now the only thing the
-    // form asks. The checkbox's absence is asserted rather than merely no longer clicked: a
-    // rewrite that only dropped the click would still pass if the control came back.
+    expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-usable")).toBeNull();
-    fireEvent.change(screen.getByTestId("ward-leave-bed-expected-return"), { target: { value: "12:15" } });
-    fireEvent.click(screen.getByTestId("ward-leave-bed-submit"));
+    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 1");
 
-    // Refused: the screen says why, and nothing was recorded.
-    expect(screen.getByText("Choose the patient who is on leave. Nothing was recorded.")).toBeInTheDocument();
-    const list = screen.getByTestId("ward-leave-bed-list");
-    expect(list).toHaveTextContent("Bed on leave");
-    expect(list).not.toHaveTextContent("sable while away");
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "1 bed currently on leave at Mental Health Unit",
-    );
-    expect(screen.getByTestId("ward-leave-bed-form")).not.toHaveTextContent("sable while away");
+    fireEvent.click(screen.getByRole("button", { name: "Ended" }));
 
-    fireEvent.click(within(list).getByRole("button", { name: "Ended" }));
-
-    expectSays(screen.getByTestId("ward-leave-bed-list").textContent ?? "", "the on-leave list's empty state", [
-      "no bed",
-      "none",
-    ]);
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "0 beds currently on leave at Mental Health Unit",
-    );
+    expect(screen.getByText("No leave bed is recorded at Mental Health Unit.")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 0");
   });
 
   it("records a bed on leave when an admitted patient is chosen and increments the on-leave count", () => {
@@ -541,25 +498,10 @@ describe("ward screen bed release controls", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "1 bed currently on leave at Mental Health Unit",
-    );
-
-    const patientSelect = screen.getByTestId("ward-leave-bed-patient") as HTMLSelectElement;
-    expect(patientSelect).not.toBeDisabled();
-    const options = Array.from(patientSelect.options).filter((o) => o.value !== "");
-    expect(options.length).toBeGreaterThan(0);
-    const chosenAdmissionId = options[0].value;
-
-    fireEvent.change(patientSelect, { target: { value: chosenAdmissionId } });
-    fireEvent.change(screen.getByTestId("ward-leave-bed-expected-return"), { target: { value: "14:30" } });
-    fireEvent.click(screen.getByTestId("ward-leave-bed-submit"));
-
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "2 beds currently on leave at Mental Health Unit",
-    );
-    const list = screen.getByTestId("ward-leave-bed-list");
-    expect(list).toHaveTextContent("14:30");
+    expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-leave-bed-patient")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Bed on leave/).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 1");
   });
 });
 

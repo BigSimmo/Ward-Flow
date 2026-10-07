@@ -130,17 +130,14 @@ function renderScreen(props: {
 
 describe("the statistics screen — six drawing panels, kept apart", () => {
   // Josh, 25 Sept 2026: made-up trends show "Not recorded"; targets stay, labelled as targets.
-  it("offers only the current state, with concise history and synthetic-data context", () => {
+  it("offers only the current state, without a history switch or the old reporting strip", () => {
     renderScreen({ admissions: [], referrals: [], bedReleases: [] });
-    const period = screen.getByTestId("ward-statistics-reporting-period");
-    expect(period).toBeVisible();
-    expect(period).not.toHaveAttribute("aria-hidden", "true");
-    expect(period.textContent).toContain("Current state");
-    expect(period.textContent).toContain("history unavailable");
-    expect(period.textContent).toContain("Synthetic data");
+    expect(screen.queryByTestId("ward-statistics-reporting-period")).toBeNull();
+    expect(screen.queryByText("history unavailable")).toBeNull();
+    expect(screen.queryByText("Current state")).toBeNull();
     expect(screen.queryByText("Last 7 Days")).toBeNull();
     expect(screen.queryByText("Last 30 Days")).toBeNull();
-    expect(within(period).queryByRole("radio")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
   });
 
   it("shows a current capacity chart without inventing history or a target", () => {
@@ -223,7 +220,6 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
     expect(rendered.length).toBeGreaterThan(0);
     expect([...rendered].sort()).toEqual([...PLACEMENT.map((entry) => entry.figure)].sort());
 
-    fireEvent.click(within(screen.getByTestId("ward-statistics-system")).getByText("Bed data notes"));
     for (const { figure, belongsIn, notIn } of PLACEMENT) {
       const home = screen.getByTestId(`ward-statistics-${belongsIn}`);
       const other = screen.getByTestId(`ward-statistics-${notIn}`);

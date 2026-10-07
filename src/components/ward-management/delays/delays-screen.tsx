@@ -54,7 +54,7 @@ import { Users, Clock, TriangleAlert } from "lucide-react";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
-export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
+export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
 
 export interface SystemicDelayHold {
   id: string;
@@ -140,7 +140,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   // Tabs & Tooltips
   const [registerTab, setRegisterTab] = useState<"escalations" | "attention" | "resolved">("escalations");
-  const [systemicFilter, setSystemicFilter] = useState<SystemicHoldCategory>("all");
 
   // Prototype Actions & Notices (Owner Rule D4)
   const [protoActionNotice, setProtoActionNotice] = useState<string | null>(null);
@@ -324,9 +323,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     return l !== undefined && l < 0;
   }).length;
 
-  const filteredHolds =
-    systemicFilter === "all" ? SYSTEMIC_HOLDS : SYSTEMIC_HOLDS.filter((h) => h.category === systemicFilter);
-
   const queueMatches = (movement: Movement, cause: DelayCause) =>
     queueScope === null ||
     ("owner" in queueScope
@@ -348,48 +344,34 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       data-testid="ward-delays-page"
     >
       <main id="main-content" className={styles.main}>
-        {/* MASTHEAD HEADER */}
-        <header className={styles.pageHeader}>
-          <div className={styles.pageTitleGroup}>
-            <h1 className={styles.pageTitle}>Delays</h1>
-            <span className={styles.pageSubtitle}>See the pressure. Act on the next step.</span>
+        <h1 className={styles.landmarkTitle}>Delays</h1>
+        <div className={styles.countStrip} aria-label="Waiting counts">
+          <div className={styles.statPill}>
+            <Users size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>{open.length}</span>
+            <span className={styles.statPillLabel}>waiting</span>
           </div>
-
-          <div className={styles.mastheadMeta}>
-            <div className={styles.statPill}>
-              <Users size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>{open.length}</span>
-              <span className={styles.statPillLabel}>waiting</span>
-            </div>
-            <div className={styles.statPill} data-tone="wait">
-              <Clock size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>
-                {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
-              </span>
-              <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
-            </div>
-            <div className={styles.statPill} data-tone="escalated">
-              <TriangleAlert size={26} aria-hidden="true" />
-              <span className={styles.statPillValue}>
-                {open.filter((movement) => movement.escalation !== undefined).length}
-              </span>
-              <span className={styles.statPillLabel}>escalated</span>
-            </div>
-            {breachedCount > 0 && (
-              <div className={styles.breachedSentinelPill}>
-                <span className={styles.sentinelDot} />
-                <span>{breachedCount} past recorded legal time</span>
-              </div>
-            )}
-            <div className={styles.liveClockPill}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>{formatInstantWithDay(now, now)}</span>
-            </div>
+          <div className={styles.statPill} data-tone="wait">
+            <Clock size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>
+              {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
+            </span>
+            <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
           </div>
-        </header>
+          <div className={styles.statPill} data-tone="escalated">
+            <TriangleAlert size={14} aria-hidden="true" />
+            <span className={styles.statPillValue}>
+              {open.filter((movement) => movement.escalation !== undefined).length}
+            </span>
+            <span className={styles.statPillLabel}>escalated</span>
+          </div>
+          {breachedCount > 0 && (
+            <div className={styles.breachedSentinelPill}>
+              <span className={styles.sentinelDot} />
+              <span>{breachedCount} past recorded legal time</span>
+            </div>
+          )}
+        </div>
 
         {showAliasBanner && aliasFrom ? (
           <aside
@@ -535,153 +517,148 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             )
           }
         />
-        <WardPanel title="Escalations and resolved">
-          <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
-            {(
-              [
-                { id: "escalations", label: "Escalations", count: escalatedRows.length },
-                { id: "attention", label: "Attention", count: attentionRows.length },
-                { id: "resolved", label: "Resolved today", count: closedToday.length },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                id={`delays-tab-${tab.id}`}
-                aria-controls={`delays-pane-${tab.id}`}
-                aria-selected={registerTab === tab.id}
-                tabIndex={registerTab === tab.id ? 0 : -1}
-                className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
-                onClick={() => setRegisterTab(tab.id)}
+        <div className={styles.lowerBand}>
+          <WardPanel title="Escalations and resolved">
+            <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
+              {(
+                [
+                  { id: "escalations", label: "Escalations", count: escalatedRows.length },
+                  { id: "attention", label: "Attention", count: attentionRows.length },
+                  { id: "resolved", label: "Resolved today", count: closedToday.length },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  id={`delays-tab-${tab.id}`}
+                  aria-controls={`delays-pane-${tab.id}`}
+                  aria-selected={registerTab === tab.id}
+                  tabIndex={registerTab === tab.id ? 0 : -1}
+                  className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
+                  onClick={() => setRegisterTab(tab.id)}
+                >
+                  {tab.label}{" "}
+                  <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
+                    {tab.count === 0 ? "none" : tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-escalations"
+                aria-labelledby="delays-tab-escalations"
+                hidden={registerTab !== "escalations"}
               >
-                {tab.label}{" "}
-                <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
-                  {tab.count === 0 ? "none" : tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-escalations"
-              aria-labelledby="delays-tab-escalations"
-              hidden={registerTab !== "escalations"}
-            >
-              {escalatedRows.length === 0 ? (
-                <p className={styles.absent}>Nobody has been escalated today.</p>
-              ) : (
-                <ul className={styles.rows}>
-                  {escalatedRows.map((movement) => (
-                    <li key={movement.id} className={styles.row}>
-                      <span className={styles.rowTop}>
-                        {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                        <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
-                        <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
-                      </span>
-                      <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
-                      {/* D-b: this register is whole-network, so a row outside the chosen
-                                  service is never dropped — only marked. */}
-                      {isOutsideChosenService(movement) ? (
-                        <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
-                          {`Outside ${service}`}
-                        </span>
-                      ) : null}
-                      <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-attention"
-              aria-labelledby="delays-tab-attention"
-              hidden={registerTab !== "attention"}
-            >
-              {attentionRows.length === 0 ? (
-                <p className={styles.absent}>No movements requiring urgent attention right now.</p>
-              ) : (
-                <ul className={styles.attentionTabList}>
-                  {attentionRows.map(({ group, movement }) => (
-                    <li key={movement.id}>
-                      <button
-                        type="button"
-                        className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
-                        onClick={() => selectMovement(movement.id)}
-                        data-testid={`delays-attention-item-${movement.id}`}
-                      >
-                        <div className={styles.attentionCardTop}>
+                {escalatedRows.length === 0 ? (
+                  <p className={styles.absent}>Nobody has been escalated today.</p>
+                ) : (
+                  <ul className={styles.rows}>
+                    {escalatedRows.map((movement) => (
+                      <li key={movement.id} className={styles.row}>
+                        <span className={styles.rowTop}>
                           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                          <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
-                          <span className={styles.attentionWhen}>
-                            {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
+                          <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
+                          <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
+                        </span>
+                        <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
+                        {/* D-b: this register is whole-network, so a row outside the chosen
+                                  service is never dropped — only marked. */}
+                        {isOutsideChosenService(movement) ? (
+                          <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
+                            {`Outside ${service}`}
                           </span>
-                        </div>
-                        <div className={styles.attentionCardBottom}>
-                          {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
-                          {isOutsideChosenService(movement) ? (
-                            <span
-                              className={styles.attentionOutside}
-                              data-testid={`delays-attention-outside-${movement.id}`}
-                            >
-                              {` · Outside ${service}`}
-                            </span>
-                          ) : null}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                        ) : null}
+                        <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div
-              className={styles.tabPane}
-              role="tabpanel"
-              id="delays-pane-resolved"
-              aria-labelledby="delays-tab-resolved"
-              hidden={registerTab !== "resolved"}
-            >
-              <p className={styles.absent}>
-                {closedToday.length === 0
-                  ? service === null
-                    ? "Nobody who was on this screen this morning has left it yet."
-                    : `Nobody who was on this screen this morning has left it yet, in ${service}.`
-                  : [
-                      placedToday.length > 0
-                        ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
-                        : null,
-                      didNotProceedToday.length > 0
-                        ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
-                        : null,
-                    ]
-                      .filter((sentence) => sentence !== null)
-                      .join(" ")}{" "}
-                Kept until midnight for handover.
-              </p>
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-attention"
+                aria-labelledby="delays-tab-attention"
+                hidden={registerTab !== "attention"}
+              >
+                {attentionRows.length === 0 ? (
+                  <p className={styles.absent}>No movements requiring urgent attention right now.</p>
+                ) : (
+                  <ul className={styles.attentionTabList}>
+                    {attentionRows.map(({ group, movement }) => (
+                      <li key={movement.id}>
+                        <button
+                          type="button"
+                          className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
+                          onClick={() => selectMovement(movement.id)}
+                          data-testid={`delays-attention-item-${movement.id}`}
+                        >
+                          <div className={styles.attentionCardTop}>
+                            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                            <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
+                            <span className={styles.attentionWhen}>
+                              {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
+                            </span>
+                          </div>
+                          <div className={styles.attentionCardBottom}>
+                            {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
+                            {isOutsideChosenService(movement) ? (
+                              <span
+                                className={styles.attentionOutside}
+                                data-testid={`delays-attention-outside-${movement.id}`}
+                              >
+                                {` · Outside ${service}`}
+                              </span>
+                            ) : null}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div
+                className={styles.tabPane}
+                role="tabpanel"
+                id="delays-pane-resolved"
+                aria-labelledby="delays-tab-resolved"
+                hidden={registerTab !== "resolved"}
+              >
+                <p className={styles.absent}>
+                  {closedToday.length === 0
+                    ? service === null
+                      ? "Nobody who was on this screen this morning has left it yet."
+                      : `Nobody who was on this screen this morning has left it yet, in ${service}.`
+                    : [
+                        placedToday.length > 0
+                          ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
+                          : null,
+                        didNotProceedToday.length > 0
+                          ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
+                          : null,
+                      ]
+                        .filter((sentence) => sentence !== null)
+                        .join(" ")}{" "}
+                  Kept until midnight for handover.
+                </p>
+              </div>
             </div>
-          </div>
-        </WardPanel>
-        {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-        <WardPanel title="Delays with no named person">
-          <div className={styles.systemicPanel}>
-            <div className={styles.systemicHeader}>
+          </WardPanel>
+          {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
+          <WardPanel title="System delays" accessibleName="Delays with no named person">
+            <div className={styles.systemicPanel}>
               <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
-                represented as individual patient movements; systemic and facility holds active across the Western
-                Australian network are tracked below.
+                represented as individual patient movements; state and system delays across the Western Australian
+                network are tracked in this box.
               </span>
-              <div className={styles.systemicTitleBlock}>
-                <span className={styles.systemicSubtitle}>
-                  Statewide facility holds, ward closures &amp; transport logistics
-                </span>
-              </div>
-              <div className={styles.systemicActions}>
+              <div className={styles.systemicHeader}>
                 <button
                   type="button"
                   className={styles.logHoldButton}
@@ -689,8 +666,8 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   aria-label="Record a service-wide or facility delay"
                 >
                   <svg
-                    width="14"
-                    height="14"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -703,90 +680,43 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   <span>Record Hold</span>
                 </button>
               </div>
-            </div>
+              {SYSTEMIC_HOLDS.length === 0 ? (
+                <p className={styles.systemicEmptyLine}>No statewide delays</p>
+              ) : (
+                <div className={styles.systemicGrid}>
+                  {SYSTEMIC_HOLDS.map((hold) => (
+                    <div
+                      key={hold.id}
+                      className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
+                      role="article"
+                      aria-label={`${hold.facility}: ${hold.categoryLabel}`}
+                    >
+                      <div className={styles.systemicCardHeader}>
+                        <div className={styles.systemicCardTitleCluster}>
+                          <span className={styles.systemicFacility}>{hold.facility}</span>
+                          <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
+                        </div>
+                        <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
+                      </div>
 
-            <div className={styles.systemicFilterBar} role="group" aria-label="Filter systemic delays by category">
-              {(
-                [
-                  { id: "all", label: "All holds", count: SYSTEMIC_HOLDS.length },
-                  {
-                    id: "ward",
-                    label: "Ward closures",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
-                  },
-                  {
-                    id: "transport",
-                    label: "Transport & fleet",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
-                  },
-                  {
-                    id: "staffing",
-                    label: "Staffing surge",
-                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
-                  },
-                ] as const
-              ).map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  className={`${styles.systemicChip} ${systemicFilter === chip.id ? styles.systemicChipActive : ""}`}
-                  aria-pressed={systemicFilter === chip.id}
-                  aria-label={`Filter by ${chip.label}, ${chip.count} active`}
-                  onClick={() => setSystemicFilter(chip.id)}
-                >
-                  {chip.label} <span className={styles.systemicChipBadge}>{chip.count}</span>
-                </button>
-              ))}
-            </div>
+                      <p className={styles.systemicReason}>{hold.reason}</p>
 
-            {filteredHolds.length === 0 ? (
-              <div className={styles.systemicEmptyState}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--muted)"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className={styles.systemicReason}>No active systemic holds recorded across the statewide network.</p>
-              </div>
-            ) : null}
-            <div className={styles.systemicGrid}>
-              {filteredHolds.map((hold) => (
-                <div
-                  key={hold.id}
-                  className={`${styles.systemicCard} ${hold.severity === "danger" ? styles.systemicCardDanger : ""}`}
-                  role="article"
-                  aria-label={`${hold.facility}: ${hold.categoryLabel}`}
-                >
-                  <div className={styles.systemicCardHeader}>
-                    <div className={styles.systemicCardTitleCluster}>
-                      <span className={styles.systemicFacility}>{hold.facility}</span>
-                      <span className={styles.systemicCatPill}>{hold.categoryLabel}</span>
+                      <div className={styles.systemicImpactStrip}>
+                        <span className={styles.systemicImpactLabel}>Impact:</span>
+                        <span className={styles.systemicImpactValue}>{hold.impact}</span>
+                      </div>
+
+                      <div className={styles.systemicCardFooter}>
+                        <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
+                        <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
+                      </div>
                     </div>
-                    <span className={styles.systemicElapsed}>{hold.startedAgo}</span>
-                  </div>
-
-                  <p className={styles.systemicReason}>{hold.reason}</p>
-
-                  <div className={styles.systemicImpactStrip}>
-                    <span className={styles.systemicImpactLabel}>Impact:</span>
-                    <span className={styles.systemicImpactValue}>{hold.impact}</span>
-                  </div>
-
-                  <div className={styles.systemicCardFooter}>
-                    <span className={styles.systemicReview}>Next Review: {hold.nextReview}</span>
-                    <span className={styles.systemicOwner}>Desk: {hold.owner}</span>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        </WardPanel>
+          </WardPanel>
+        </div>
 
         <WardPrototypeFooter testId="ward-delays-governance" />
       </main>

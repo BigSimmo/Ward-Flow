@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
@@ -44,11 +44,14 @@ describe("ward decision demonstration boundaries", () => {
     expect(screen.queryByRole("button", { name: /Declare AWOL/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Aaron K\./)).not.toBeInTheDocument();
   });
-  it("labels optional demonstration action feedback as unrecorded and unsent", () => {
+  it("does not show the illustrative banner or fictional clinical actions", () => {
     render(<WardDecisionsCockpit unit={unit} demonstration />);
-    fireEvent.click(screen.getByRole("button", { name: /Declare AWOL/ }));
-    expect(screen.getByRole("status")).toHaveTextContent("no clinical record was changed and no message was sent");
-    expect(screen.getByRole("note")).toHaveTextContent("Demonstration only");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Demonstration only/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Declare AWOL/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Aaron K\./)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
+    expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
   });
   it("does not invent a named patient or form deadline when the ward has no supplied alerts", () => {
     const view = render(
