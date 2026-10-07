@@ -267,55 +267,34 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 </div>
               ))}
             </div>
-
-            <WardTable testId="ward-statistics-community-figures-table">
-              <thead>
-                <tr>
-                  <th scope="col">Figure</th>
-                  <th scope="col">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {figureRows.map((row) => (
-                  <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
-                    <th scope="row">{row.label}</th>
-                    <td
-                      data-testid={`ward-statistics-community-value-${row.key}`}
-                      data-unmeasured={isUnmeasured(row.figure) || undefined}
-                    >
-                      {figureText(row.figure)}
-                    </td>
+            <div className={pageStyles.figureDetailsBody}>
+              <WardTable testId="ward-statistics-community-figures-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Figure</th>
+                    <th scope="col">Count</th>
                   </tr>
-                ))}
-              </tbody>
-            </WardTable>
-            <section className={styles.panelBody}>
-              <h3 className={styles.figureHeading}>Case age distribution</h3>
-              <section
-                className={pageStyles.nestedMeasure}
-                data-testid="ward-statistics-community-case-age"
-                aria-labelledby="ward-statistics-community-case-age-heading"
-              >
-                <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
-                <p className={styles.unmeasured}>Not recorded</p>
-              </section>
-            </section>
-          </div>
-        </StatisticsDetailPanel>
+                </thead>
+                <tbody>
+                  {figureRows.map((row) => (
+                    <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
+                      <th scope="row">{row.label}</th>
+                      <td
+                        data-testid={`ward-statistics-community-value-${row.key}`}
+                        data-unmeasured={isUnmeasured(row.figure) || undefined}
+                      >
+                        {figureText(row.figure)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </WardTable>
 
-        <StatisticsDetailPanel
-          title="Follow-up after discharge"
-          count="7-day follow-up"
-          testId="ward-statistics-community-followup"
-        >
-          <div
-            id="community-stat-followup"
-            className={styles.panelBody}
-            role="group"
-            aria-label="Post-discharge follow-up content"
-            tabIndex={-1}
-          >
-            <p className={styles.unmeasured}>Not recorded</p>
+              {/*
+            The scoped sentences. Each names the population its figure actually measured — see the
+            file header on why widening the figure is the wrong repair.
+          */}
+            </div>
           </div>
         </StatisticsDetailPanel>
 
@@ -340,6 +319,8 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             </p>
           </div>
         </StatisticsDetailPanel>
+
+        <div className={pageStyles.unsupportedGrid}></div>
 
         <WardPanel title="People currently in a hospital bed" testId="ward-statistics-community-in-hospital">
           <div

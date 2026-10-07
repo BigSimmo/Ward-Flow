@@ -1,4 +1,3 @@
-import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -19,7 +18,7 @@ import {
   refusedAndNothingPending,
   type AdmissionStagePosition,
 } from "@/components/ward-management/statistics/statistics-derivations";
-
+import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -241,17 +240,12 @@ describe("the statistics overview now carries real figures, honestly", () => {
    * contract.
    */
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
-  it("carries exactly one trend, and it says Not recorded rather than drawing one", () => {
+  it("omits the unavailable historical trend instead of reserving an empty panel", () => {
     renderOverview();
 
     const main = within(screen.getByTestId("ward-statistics-overview-screen")).getByRole("main");
     const charts = main.querySelectorAll('[data-ward-primitive="demonstration-chart"]');
-    expect(charts.length, "expected exactly one demonstration chart on this page").toBe(1);
-
-    const chart = charts[0];
-    expect(chart.textContent).toContain("Not recorded");
-    expect(chart.querySelectorAll("p")).toHaveLength(1);
-    expect(chart.querySelector("svg"), "no invented line is drawn").toBeNull();
+    expect(charts).toHaveLength(0);
   });
 
   /**
@@ -260,8 +254,10 @@ describe("the statistics overview now carries real figures, honestly", () => {
    * disclosure's own testid rather than the whole page, so a false positive elsewhere in the page's
    * prose cannot satisfy it.
    */
-  it("uses visible operational panels instead of the retired explanation: states who the declines-by-reason figure misses", () => {
-    assertStatisticsPresentation("overview", "ward-statistics-overview-declines-scope");
+  it("keeps the decline breakdown visible without the retired scope explanation", () => {
+    renderOverview();
+    expect(screen.queryByTestId("ward-statistics-overview-declines-scope")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeVisible();
   });
 
   /** The two tables the brief requires, at minimum. */
@@ -271,13 +267,23 @@ describe("the statistics overview now carries real figures, honestly", () => {
     expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeInTheDocument();
   });
 
-  /** The three disclosures the brief requires, at minimum — native `<details>` elements, per the
-   *  fourth-edition design language's `.reveal` primitive. */
-  it("uses visible operational panels instead of the retired explanation: carries at least three disclosures", () => {
-    assertStatisticsPresentation("overview");
+  /** Limits sit on the page. They are not closed disclosures. */
+  it("removes explanation panels without closing the data behind disclosures", () => {
+    renderOverview();
+    const main = screen.getByRole("main");
+    expect(main.querySelectorAll("details")).toHaveLength(0);
+    for (const id of ["ward-statistics-overview-declines-scope", "ward-statistics-overview-refused-so-far-disclosure"])
+      expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-capacity-disclosure").tagName).toBe("SECTION");
   });
 
-  it("uses visible operational panels instead of the retired explanation: shows the shared section title and retained reporting scope and provenance", () => {
-    assertStatisticsPresentation("overview", "ward-statistics-overview-invented-figures");
+  it("shows the shared section title and compact synthetic-data footer", () => {
+    renderOverview();
+    const section = statisticsSectionById("overview");
+    expect(section).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
+    expect(screen.getByTestId("ward-statistics-overview-scope").textContent).toContain("Network-wide current state");
+    expect(screen.queryByTestId("ward-statistics-overview-invented-figures")).toBeNull();
+    expect(screen.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
   });
 });

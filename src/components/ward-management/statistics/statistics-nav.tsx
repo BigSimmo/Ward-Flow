@@ -9,6 +9,7 @@ import {
   STATISTICS_SERVICE_CHOOSER_HREF,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
 } from "./statistics-sections";
+import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-nav.module.css";
 
 export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community";
@@ -19,6 +20,7 @@ interface StatisticsNavProps {
 }
 
 export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps) {
+  const samples = useStatisticsSamples();
   const pathname = usePathname() || "";
   const router = useRouter();
   const navRef = useRef<HTMLElement>(null);
@@ -260,6 +262,20 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
           );
         })}
       </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={samples}
+        aria-label="Sample statistics"
+        className={styles.sampleSwitch}
+        onClick={() => setStatisticsSamples(!samples)}
+      >
+        <span>Samples</span>
+        <span className={styles.switchTrack} aria-hidden="true">
+          <span />
+        </span>
+        <span className={styles.switchState}>{samples ? "On" : "Off"}</span>
+      </button>
     </nav>
   );
 }

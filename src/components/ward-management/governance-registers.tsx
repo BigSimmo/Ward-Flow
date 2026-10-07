@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Fingerprint, History } from "lucide-react";
+import { CheckCircle2, ChevronRight, ClipboardList, Fingerprint, History } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
@@ -126,8 +126,7 @@ export function GovernanceAccessRecordPanel() {
   );
 }
 
-type GovernanceRegisterTab =
-  "overrides" | "captured" | "decisions" | "access" | "restrictive" | "search-seizure" | "legacy" | "measures";
+type GovernanceRegisterTab = "overrides" | "captured" | "decisions" | "restrictive" | "search-seizure";
 
 type GovernanceApi = Pick<
   ReturnType<typeof useWardFlow>,
@@ -138,8 +137,6 @@ type WorkbenchProps = {
   units: Unit[];
   now: Instant;
   api?: GovernanceApi;
-  legacyChanges?: ReactNode;
-  effectiveness?: ReactNode;
   sampleData?: boolean;
 };
 const actor = { role: "coordinator" } as const;
@@ -476,7 +473,6 @@ interface GovernanceOverrideItem {
   patient: string;
   unit: string;
   service: string;
-  route: string;
   category: string;
   reason: string;
   by: string;
@@ -528,7 +524,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Harper, Chloe",
     unit: "bty-adult-secure",
     service: "East Metro",
-    route: "East Metro · Bentley Adult Secure",
     category: "Acuity Ceiling Override",
     reason: "Emergency department escalation · locked bed bypass authorised to mitigate acute self-harm risk.",
     by: "Duty Consultant Psychiatrist",
@@ -545,7 +540,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Gallagher, Liam",
     unit: "scgh-mental-health-unit",
     service: "North Metro",
-    route: "North Metro · Sir Charles Gairdner MHU",
     category: "Catchment Boundary Bypass",
     reason:
       "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
@@ -563,7 +557,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Vance, Eleanor",
     unit: "bty-adult-secure",
     service: "East Metro",
-    route: "East Metro · Bentley Adult Secure",
     category: "Legal Form Deadline Review",
     reason: "Involuntary detention Form 3D continuation review expedited pending statutory tribunal scheduling.",
     by: "Flow Coordinator",
@@ -580,7 +573,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Chen, Marcus",
     unit: "fre-adult-open",
     service: "South Metro to East Metro",
-    route: "South Metro to East Metro · Fremantle",
     category: "Catchment Boundary Bypass",
     reason: "Receiving clinical team agreed placement due to specialized dual-diagnosis rehabilitation program.",
     by: "State Bed Coordinator",
@@ -598,7 +590,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Wren, Tobias",
     unit: "gry-adult-secure",
     service: "North Metro",
-    route: "North Metro · Graylands Hospital",
     category: "Acuity Ceiling Override",
     reason: "Emergency department escalation · locked bed bypass authorised to mitigate acute self-harm risk.",
     by: "Duty Consultant Psychiatrist",
@@ -615,7 +606,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Al-Mansoor, Tariq",
     unit: "bty-adult-secure",
     service: "North Metro to East Metro",
-    route: "North Metro to East Metro · Bentley",
     category: "Cohort & Gender Mix Exception",
     reason: "Specialist trauma-informed single room placement allocated following high occupancy in secure corridor.",
     by: "State Bed Coordinator",
@@ -632,7 +622,6 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     patient: "Miller, David",
     unit: "bun-adult-open",
     service: "North Metro to WACHS",
-    route: "North Metro to WACHS · Bunbury",
     category: "Catchment Boundary Bypass",
     reason: "Metropolitan ICU bed saturation decompression · regional bed allocated with medical transport.",
     by: "Executive Director On-Call",
@@ -650,7 +639,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
     id: "DEC-091",
     auditor: "Clinical Director",
     time: "Yesterday",
-    subject: "OVR-104 (Marcus Chen)",
+    subject: "Chen, Marcus",
     category: "Catchment Boundary Bypass",
     verdict: "Upheld in Full",
     tone: "good",
@@ -659,7 +648,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
     id: "DEC-090",
     auditor: "Clinical Director",
     time: "Earlier today",
-    subject: "OVR-103 (Tobias Wren)",
+    subject: "Wren, Tobias",
     category: "Acuity Ceiling Override",
     verdict: "Upheld in Full",
     tone: "good",
@@ -668,7 +657,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
     id: "DEC-089",
     auditor: "Governance Lead Psychiatrist",
     time: "Yesterday morning",
-    subject: "OVR-102 (Tariq Al-Mansoor)",
+    subject: "Al-Mansoor, Tariq",
     category: "Cohort & Gender Mix Exception",
     verdict: "Upheld with Recommendations",
     tone: "good",
@@ -677,7 +666,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
     id: "DEC-088",
     auditor: "Governance Lead Psychiatrist",
     time: "Previous shift",
-    subject: "OVR-101 (David Miller)",
+    subject: "Miller, David",
     category: "Catchment Boundary Bypass",
     verdict: "Upheld in Full",
     tone: "good",
@@ -748,7 +737,7 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   return <GovernanceSession key={props.api?.worldGeneration ?? "unavailable"} {...props} />;
 }
 
-function GovernanceSession({ movements, units, now, api, legacyChanges, effectiveness, sampleData }: WorkbenchProps) {
+function GovernanceSession({ movements, units, now, api, sampleData }: WorkbenchProps) {
   const hasSampleData = sampleData !== undefined ? sampleData : Boolean(api);
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<GovernanceRegisterTab>("overrides");
@@ -858,7 +847,6 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
     savedReview?.at === pending?.at;
   const reviewPending = pending !== null && reviewAttempt === undefined;
   const overrides = allOverrides(movements);
-  const legacyCount = overrides.length;
 
   const totalMonitored = overrideList.length;
   const catchmentBypasses = overrideList.filter((o) => o.category === "Catchment Boundary Bypass").length;
@@ -886,21 +874,18 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
   }
 
   const tabs: { id: GovernanceRegisterTab; label: string; count?: number }[] = [
-    { id: "overrides", label: "Overrides Register", count: totalMonitored },
-    { id: "decisions", label: "Decision Log", count: decisionList.length },
-    { id: "access", label: "Session Access Record", count: 0 },
+    { id: "overrides", label: "Overrides", count: totalMonitored },
+    { id: "decisions", label: "Decisions", count: decisionList.length },
     {
       id: "restrictive",
-      label: "Restrictive Practices (Forms 10/11)",
+      label: "Restrictive practices",
       count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
     },
     {
       id: "search-seizure",
-      label: "Search & Seizure (Form 8)",
+      label: "Search and seizure",
       count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0,
     },
-    { id: "legacy", label: "Legacy facts" },
-    ...(effectiveness ? [{ id: "measures" as const, label: "Effectiveness" }] : []),
   ];
 
   const inspStatus = selected
@@ -925,7 +910,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
     setPending(null);
     if (event) {
       setSelectedOverrideId(null);
-      setAnnouncement(`Selected event ${event.id}.`);
+      setAnnouncement(`Selected ${actionLabels[event.action]}.`);
     }
   };
 
@@ -940,15 +925,9 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
         ? "Overrides register view shown."
         : next === "decisions"
           ? "Decision log view shown."
-          : next === "access"
-            ? "Session access record view shown."
-            : next === "restrictive"
-              ? "Restrictive practices register view shown."
-              : next === "search-seizure"
-                ? "Search and seizure register view shown."
-                : next === "legacy"
-                  ? "Legacy facts view shown."
-                  : "Effectiveness view shown.",
+          : next === "restrictive"
+            ? "Restrictive practices register view shown."
+            : "Search and seizure register view shown.",
     );
   }
 
@@ -1068,7 +1047,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
         auditor: endorseRole,
         time: "Just now",
         // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-        subject: selectedOverride.id,
+        subject: selectedOverride.patient,
         category: selectedOverride.category,
         verdict: endorseVerdict.split(" · ")[0],
         tone: "good",
@@ -1077,7 +1056,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
 
       closeEndorseModal();
       showToast("Action executed successfully.");
-      setAnnouncement(`Override ${selectedOverride.id} endorsed and recorded.`);
+      setAnnouncement(`Override for ${selectedOverride.patient} endorsed and recorded.`);
     }
   }
 
@@ -1151,12 +1130,11 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
       />
 
       <div className={thirdEdition.workspaceBar} role="region" aria-label="Governance session status and actions">
-        <div className={thirdEdition.workspaceMeta}>
+        <div className={thirdEdition.sessionCard}>
           <span className={thirdEdition.sessionDot} aria-hidden="true" />
           <p className={thirdEdition.workspaceNote}>Captured this session · resets with demo</p>
-          <span className={thirdEdition.metaDot} aria-hidden="true">
-            ·
-          </span>
+        </div>
+        <div className={thirdEdition.workspaceMeta}>
           <div className={thirdEdition.summary}>
             <span className={thirdEdition.summaryPill}>
               <strong>{allowed ? events.length : "—"}</strong> captured
@@ -1177,7 +1155,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
             onClick={openEndorseModal}
             aria-label="Endorse current audit"
           >
-            + Endorse Current Audit
+            Endorse audit
           </button>
         </div>
       </div>
@@ -1229,18 +1207,16 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
               <table className={thirdEdition.govTable} id="ovrTable" aria-label="Clinical gate exceptions register">
                 <thead>
                   <tr>
-                    <th scope="col">Audit ID</th>
-                    <th scope="col">Patient · URM</th>
-                    <th scope="col">Location · Route</th>
-                    <th scope="col">Gate Overridden</th>
-                    <th scope="col">Authorised By</th>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Gate overridden</th>
+                    <th scope="col">Authorised by</th>
                     <th scope="col">Status</th>
                   </tr>
                 </thead>
                 <tbody id="ovrTableBody">
                   {overrideList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+                      <td colSpan={4} className={thirdEdition.emptyCell}>
                         No override audit is recorded in this session.
                       </td>
                     </tr>
@@ -1262,7 +1238,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                         onClick={() => {
                           setSelectedOverrideId(o.id);
                           setSelection(null);
-                          setAnnouncement(`Selected override ${o.id}.`);
+                          setAnnouncement(`Selected override for ${o.patient}.`);
                         }}
                         tabIndex={0}
                         role="row"
@@ -1274,14 +1250,10 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                           }
                         }}
                       >
-                        <td className="mono">
-                          <strong>{o.id}</strong>
-                        </td>
-                        {/* Owner, 26 Sept 2026: dropped the WF journey number under the patient's name. */}
+                        {/* Owner, 26 Sept 2026: the patient's name, not a journey or audit number. */}
                         <td>
                           <strong>{o.patient}</strong>
                         </td>
-                        <td>{o.route}</td>
                         <td>
                           <span className={thirdEdition.badge} data-tone={catTone}>
                             {o.category}
@@ -1456,9 +1428,9 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                   <h2 className={thirdEdition.srOnly}>Event detail</h2>
                   <p>
                     {selected
-                      ? `${selected.id} · ${categoryLabels[selected.category]}`
+                      ? categoryLabels[selected.category]
                       : selectedOverride
-                        ? `${selectedOverride.id} · ${selectedOverride.category}`
+                        ? selectedOverride.category
                         : "Select an event from the register"}
                     <span className={thirdEdition.srOnly}>Select an event from the register</span>
                   </p>
@@ -1521,28 +1493,16 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                   <div className={thirdEdition.inspectorBody}>
                     <div className={thirdEdition.inspectorCard}>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Override Audit ID</span>
-                        <span className={`${thirdEdition.inspectorVal} mono`} id="inspId">
-                          {selectedOverride.id}
-                        </span>
-                      </div>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Patient · URM</span>
+                        <span className={thirdEdition.inspectorLabel}>Patient</span>
                         {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                         <span className={thirdEdition.inspectorVal} id="inspPatient">
                           {selectedOverride.patient}
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Gate Overridden</span>
+                        <span className={thirdEdition.inspectorLabel}>Gate overridden</span>
                         <span className={thirdEdition.inspectorVal} id="inspGate">
                           {selectedOverride.category}
-                        </span>
-                      </div>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Transfer Route</span>
-                        <span className={thirdEdition.inspectorVal} id="inspRoute">
-                          {selectedOverride.route}
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
@@ -1576,12 +1536,11 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                       </div>
                     )}
 
-                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                    <div className={thirdEdition.inspectorActions}>
                       <button
                         type="button"
                         className={`${thirdEdition.btn} ${thirdEdition.primary}`}
                         id="btnEndorseInsp"
-                        style={{ flex: 1 }}
                         onClick={openEndorseModal}
                       >
                         Endorse Override
@@ -1590,7 +1549,6 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                         type="button"
                         className={thirdEdition.btn}
                         id="btnReferInsp"
-                        style={{ flex: 1 }}
                         onClick={() => showToast("Not wired in this prototype.")}
                       >
                         Refer to Committee
@@ -1710,7 +1668,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                   <th scope="col">Decision ID</th>
                   <th scope="col">Auditor Role</th>
                   <th scope="col">Timestamp</th>
-                  <th scope="col">Audit Subject</th>
+                  <th scope="col">Patient</th>
                   <th scope="col">Gate Category</th>
                   <th scope="col">Verdict</th>
                 </tr>
@@ -1741,58 +1699,6 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {tab === "access" && (
-        <div
-          id="pane-access"
-          role="tabpanel"
-          aria-labelledby="tab-access"
-          tabIndex={0}
-          className={thirdEdition.tabsPanel}
-        >
-          <div className={thirdEdition.ph}>
-            <h2>Session Access &amp; Privacy Audit Record</h2>
-            {/* Josh, 25 September 2026 (item 4): the panel says in plain view that nothing here is saved. */}
-            <span
-              className="mono"
-              style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
-              data-testid="ward-governance-access-session-only"
-            >
-              This session only, not saved
-            </span>
-          </div>
-          <div className={thirdEdition.tableWrap}>
-            <table
-              className={thirdEdition.govTable}
-              id="accessTable"
-              aria-label="Session access record, kept for this session only"
-            >
-              <thead>
-                <tr>
-                  <th scope="col">Movement ID</th>
-                  <th scope="col">Accessing Role</th>
-                  <th scope="col">Console Module</th>
-                  <th scope="col">Access Time</th>
-                  <th scope="col">Clinical Context</th>
-                </tr>
-              </thead>
-              {/* Six typed-in rows used to stand here, naming a role, a screen and a purpose for
-                  each "look" at a real movement. This system has no signed-in user and records no
-                  one looking, as the panel below says (25 September 2026 audit, A16). */}
-              <tbody id="accessTableBody">
-                <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                    No access by any person is recorded. What this session keeps is described below.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div style={{ padding: "16px 18px", borderTop: "1px solid var(--line)" }}>
-            <GovernanceAccessRecordPanel />
           </div>
         </div>
       )}
@@ -1915,47 +1821,6 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
         </div>
       )}
 
-      {tab === "legacy" && (
-        <div
-          id="governance-legacy-panel"
-          role="tabpanel"
-          aria-labelledby="tab-legacy"
-          className={thirdEdition.legacyPanel}
-        >
-          <header className={thirdEdition.panelHeader}>
-            <div>
-              <h2>Legacy operational facts</h2>
-              <p>Separate source records · capture/review unavailable</p>
-            </div>
-            <span className={thirdEdition.badge}>{legacyCount} override facts</span>
-          </header>
-          <div className={thirdEdition.legacyGrid}>
-            <GovernanceOverridesRegisterPanel movements={movements} units={units} now={now} />
-            {legacyChanges}
-          </div>
-          <details className={thirdEdition.accessScope}>
-            <summary>
-              <ChevronDown aria-hidden="true" style={{ width: 16, height: 16 }} />
-              <span>Search access scope</span>
-            </summary>
-            <div className={thirdEdition.accessScopeBody}>
-              <GovernanceAccessRecordPanel />
-            </div>
-          </details>
-        </div>
-      )}
-
-      {tab === "measures" && (
-        <div
-          id="governance-measures-panel"
-          role="tabpanel"
-          aria-labelledby="tab-measures"
-          className={thirdEdition.legacyPanel}
-        >
-          {effectiveness}
-        </div>
-      )}
-
       {/* Review-recording & endorsement modal */}
       <div
         ref={endorseModalRef}
@@ -1985,7 +1850,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
           <div className={thirdEdition.modalBody}>
             <div className={thirdEdition.formGroup}>
               <label className={thirdEdition.formLabel} htmlFor="endorseSubj">
-                Override Audit Subject
+                Override under review
               </label>
               <input
                 type="text"
@@ -1993,9 +1858,9 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                 id="endorseSubj"
                 value={
                   selected
-                    ? `${selected.id} · ${actionLabels[selected.action]} (${subjectLabel(selected, patientOf)})`
+                    ? `${actionLabels[selected.action]} (${subjectLabel(selected, patientOf)})`
                     : selectedOverride
-                      ? `${selectedOverride.id} · ${selectedOverride.patient}`
+                      ? `${selectedOverride.patient} · ${selectedOverride.category}`
                       : "No override selected"
                 }
                 readOnly

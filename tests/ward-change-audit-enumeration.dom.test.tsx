@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -41,7 +41,6 @@ function renderGovernance() {
       <GovernanceView />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Legacy facts" }));
 }
 
 /** The labels as the sentence renders them — de-capitalised, otherwise verbatim. */
@@ -58,28 +57,21 @@ describe("the change-audit panel's description of itself", () => {
     ).toBeGreaterThan(4);
   });
 
-  it("names every kind of change it can show, in the heading", () => {
+  it("does not mount a change-audit sentence that could under-count the kinds", () => {
     renderGovernance();
-    const panel = screen.getByTestId("ward-governance-change-audit").textContent ?? "";
-    for (const word of kindWords) {
-      expect(
-        panel,
-        `the audit can record "${word}" and the panel does not say so. A reader takes this list as ` +
-          "the set of things the panel would have told them about",
-      ).toContain(word);
-    }
-  });
-
-  it("names every kind in whichever state it is in — including the empty one", () => {
-    renderGovernance();
-    const panel = screen.getByTestId("ward-governance-change-audit");
-    const empty = screen.queryByTestId("ward-governance-change-audit-empty");
-
-    // The empty state is the worse of the two: a heading that undercounts is a bad summary, while
-    // "nothing has been recorded yet" against a kind it does not list is a false statement.
-    const text = (empty ?? panel).textContent ?? "";
-    for (const word of kindWords) {
-      expect(text, `the ${empty ? "empty state" : "panel"} omits "${word}"`).toContain(word);
-    }
+    expect(screen.queryByRole("tab", { name: "Legacy facts" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-governance-change-audit")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-governance-change-audit-empty")).not.toBeInTheDocument();
+    // The label map is still the complete set. A restored panel must derive its sentence from it.
+    expect(kindWords).toEqual(
+      expect.arrayContaining([
+        "urgency change",
+        "legal status change",
+        "pull released",
+        "transport cancelled",
+        "stage corrected",
+        "acceptance withdrawn",
+      ]),
+    );
   });
 });

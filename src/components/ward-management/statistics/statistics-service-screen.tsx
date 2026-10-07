@@ -305,6 +305,13 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dd>{serviceEds.length} emergency departments</dd>
                 </div>
               </dl>
+              <div className={pageStyles.measureDetailsBody}>
+                <p className={styles.body} data-testid="ward-statistics-service-summary">
+                  Recorded network scope: {serviceSites.length} {serviceSites.length === 1 ? "hospital" : "hospitals"};{" "}
+                  {serviceUnits.length} {serviceUnits.length === 1 ? "ward" : "wards"}; {serviceEds.length}{" "}
+                  {serviceEds.length === 1 ? "emergency department" : "emergency departments"}.
+                </p>
+              </div>
 
               <dl
                 className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}
@@ -375,7 +382,23 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             nought has `openNow === ready` even with beds pending — the proxy would still print
             "0, not 0". Compare the numbers the sentence is about.
           */}
-              {serviceUnits.length > 0 ? null : null}
+              {serviceUnits.length > 0 ? (
+                <div className={pageStyles.measureDetailsBody}>
+                  <p className={styles.body} data-testid="ward-statistics-service-pending-preparation">
+                    {pendingPreparation} of this service&apos;s empty {pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
+                    marked Pending and included in Ready.{" "}
+                    {totalOpenNow < totalReady ? (
+                      <strong>Available to act on now: {totalOpenNow}, because Pending beds cannot be pulled.</strong>
+                    ) : null}
+                  </p>
+                  <p className={serviceStyles.measuredCount} data-testid="ward-statistics-service-zero-ready-wards">
+                    <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
+                    {service}
+                    &apos;s {serviceUnits.length} {serviceUnits.length === 1 ? "ward has" : "wards have"} no ready beds
+                    at all right now.
+                  </p>
+                </div>
+              ) : null}
               {serviceUnits.length === 0 ? (
                 <p className={styles.notFoundBody} data-testid="ward-statistics-service-no-wards">
                   No ward in this prototype is recorded at a {service} hospital.
@@ -442,6 +465,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </div>
               </dl>
 
+              <div className={pageStyles.measureDetailsBody}></div>
+
               <h3 className={pageStyles.sectionHeading}>Accepted at a ward in another service</h3>
               <ul
                 className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
@@ -500,47 +525,37 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
               <DistanceBandsBar total={outOfAreaEntries.length} bandCounts={bandCounts} />
 
-              <section className={styles.panelBody}>
-                <h3 className={styles.figureHeading}>Recorded band counts</h3>
-                <ul
-                  className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
-                  data-testid="ward-statistics-service-out-of-area-bands"
-                >
-                  {OUT_OF_AREA_BANDS.map((band) => (
-                    <li
-                      key={band}
-                      className={serviceStyles.tallyRow}
-                      data-testid={`ward-statistics-service-out-of-area-band-${band}`}
-                    >
-                      <span className={serviceStyles.tallyReason}>{TRAVEL_BAND_LABELS[band]}</span>
-                      <span className={pageStyles.bandTrack} aria-hidden="true">
-                        <span
-                          style={{
-                            width: `${outOfAreaEntries.length === 0 ? 0 : ((bandCounts.get(band) ?? 0) / outOfAreaEntries.length) * 100}%`,
-                          }}
-                        />
-                      </span>
+              <ul
+                className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
+                data-testid="ward-statistics-service-out-of-area-bands"
+              >
+                {OUT_OF_AREA_BANDS.map((band) => (
+                  <li
+                    key={band}
+                    className={serviceStyles.tallyRow}
+                    data-testid={`ward-statistics-service-out-of-area-band-${band}`}
+                  >
+                    <span className={serviceStyles.tallyReason}>{TRAVEL_BAND_LABELS[band]}</span>
+                    <span className={pageStyles.bandTrack} aria-hidden="true">
                       <span
-                        className={serviceStyles.tallyCount}
-                        data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}
-                      >
-                        {bandCounts.get(band) ?? 0}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                        style={{
+                          width: `${outOfAreaEntries.length === 0 ? 0 : ((bandCounts.get(band) ?? 0) / outOfAreaEntries.length) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <span
+                      className={serviceStyles.tallyCount}
+                      data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}
+                    >
+                      {bandCounts.get(band) ?? 0}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className={pageStyles.measureDetailsBody}></div>
             </div>
           </WardPanel>
-
-          <StatisticsDetailPanel title="Sent and taken in, over the last 30 days" testId="ward-statistics-service-flow">
-            <div
-              className={styles.panelBody}
-              role="group"
-              aria-label="Thirty day service flow content"
-              tabIndex={0}
-            ></div>
-          </StatisticsDetailPanel>
         </div>
 
         <div className={pageStyles.pageFoot}>

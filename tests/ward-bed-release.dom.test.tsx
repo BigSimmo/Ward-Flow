@@ -19,8 +19,6 @@ vi.mock("next/link", () => ({
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
-import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
-import { BED_RELEASE_WAITING_ON } from "@/components/ward-management/ward-model";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -119,186 +117,41 @@ describe("ward bed release flag", () => {
     }
   });
 
-  it("renders waiting-on and blocker as pickers only — never a free-text field", () => {
+  it("does not render the flag-bed form or its waiting-on picker", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-
-    const form = screen.getByTestId("ward-flag-bed-release");
-    // Structural proof the blocker (and the waiting-on value) is a picker, never free text: the form must
-    // contain only <select> controls plus the submit button, no <input type="text"> or
-    // <textarea> anywhere inside it.
-    expect(within(form).queryAllByRole("textbox")).toHaveLength(0);
-    // Three pickers since 26 Sept 2026: the patient whose bed it is, waiting-on and blocker.
-    expect(within(form).getAllByRole("combobox")).toHaveLength(3);
-
-    // The Q1 axis change (2026-08-28): this control asked "Confidence" and now asks "Waiting on".
-    // Both the old label and the old values are asserted GONE, so a half-finished migration that
-    // relabelled the picker while still offering `likely`/`possible` fails here.
-    const waitingOnSelect = screen.getByLabelText("Waiting on");
-    const blockerSelect = screen.getByLabelText("Blocker");
-    expect(waitingOnSelect.tagName).toBe("SELECT");
-    expect(blockerSelect.tagName).toBe("SELECT");
+    expect(screen.queryByTestId("ward-flag-bed-release")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Waiting on")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Blocker")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Confidence")).toBeNull();
-
-    // Every offered option is a member of the owner-approved list, in its exact words — and
-    // "Nothing outstanding" is asserted present by name, because it is the one that lets a ward
-    // record a prediction with no obstacle instead of naming one that does not exist.
-    const waitingOnOptions = within(waitingOnSelect)
-      .getAllByRole("option")
-      .map((option) => option.textContent)
-      .filter((text): text is string => text !== null && text !== "Choose what it is waiting on");
-    expect(waitingOnOptions).toEqual([...BED_RELEASE_WAITING_ON]);
-    expect(waitingOnOptions).toContain("Nothing outstanding");
-
-    // List 1 (2026-08-28) added an eighth blocker. The picker offers the whole list verbatim —
-    // an entry present in the constant but missing from the screen is a ward unable to record the
-    // real reason, which is the failure the addition exists to prevent.
-    const blockerOptions = within(blockerSelect)
-      .getAllByRole("option")
-      .map((option) => option.textContent)
-      .filter((text): text is string => text !== null && text !== "No blocker");
-    expect(blockerOptions).toEqual([...BED_RELEASE_BLOCKERS]);
-    expect(blockerOptions).toContain("Awaiting family or carer arrangement");
-
-    // Fix round 2 (P1): the ward's own estimate of when the bed will be free is a plain
-    // `<input type="time">`, same as the leave-bed form's "Expected return" — not a picker, but
-    // also never free text.
-    const expectedAtInput = screen.getByLabelText("Expected free");
-    expect(expectedAtInput.tagName).toBe("INPUT");
-    expect(expectedAtInput).toHaveAttribute("type", "time");
   });
 
-  // 🔴 CHANGED 25 September 2026 (Josh chose "Refuse"): a release must name the patient whose stay
-  // it belongs to, and this form has no patient picker yet, so a submit is refused and records
-  // nothing. When the picker lands, restore the success half: choose a patient, submit, and
-  // Expected rises by one and the form resets.
-  it("starts with the submit button disabled until a waiting-on value is chosen, then refuses the flag while no patient is chosen, recording nothing", () => {
+  it("does not offer a flag submit, and the bed figures stay as seeded", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-
-    // Baseline, read rather than assumed: the derived seed's releases for this unit.
     const confirmedBefore = wardBedFigure("confirmed", "Confirmed");
     const expectedBefore = wardBedFigure("expected", "Expected");
-
-    const submit = screen.getByTestId("ward-flag-bed-release-submit");
-    expect(submit).toBeDisabled();
-
-    // Blocker is optional (Phase 5, spec D3: a flag with no blocker is a plain prediction, not a
-    // held release) — so the waiting-on value alone is enough to enable the submit, and choosing
-    // then clearing a blocker again must not leave it disabled either.
-    fireEvent.change(screen.getByLabelText("Waiting on"), { target: { value: "Nothing outstanding" } });
-    expect(submit).not.toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText("Blocker"), { target: { value: "Awaiting clean" } });
-    expect(submit).not.toBeDisabled();
-
-    // The expected-free time is required for the dispatch to actually go through (the reducer's
-    // own comment on `FLAG_BED_RELEASE` explains why an estimate matters), but is deliberately
-    // NOT wired into the submit button's own `disabled` state — same precedent the leave-bed
-    // form's "Expected return" already sets, where only `bedReleaseWaitingOn` gates the button.
-    fireEvent.change(screen.getByLabelText("Expected free"), { target: { value: "16:30" } });
-
-    // Clear the blocker back to "No blocker" before submitting. This dates from spec D3, when a
-    // blocker made the produced record `blocked` and `capacityBreakdown()` counted it into
-    // neither Confirmed nor Expected — submitting with a blocker selected would then have left
-    // every figure unchanged and this test could not tell a real dispatch from a no-op. The
-    // 2026-08-28 rework made the flag a cross-cut, so a blocked prediction now DOES move
-    // Expected; the clear is kept anyway so the figure this test reads has exactly one cause.
-    fireEvent.change(screen.getByLabelText("Blocker"), { target: { value: "" } });
-
-    fireEvent.click(submit);
-
-    // Refused: the screen says why, and no release was recorded, so neither figure moves. A
-    // guessed patient would have raised Expected to 1 here.
-    expect(screen.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-flag-bed-release-submit")).not.toBeInTheDocument();
     expect(wardBedFigure("confirmed", "Confirmed")).toBe(confirmedBefore);
     expect(wardBedFigure("expected", "Expected")).toBe(expectedBefore);
-
-    // The form is not reset, so nothing the ward typed is lost.
-    expect(screen.getByLabelText("Waiting on")).toHaveValue("Nothing outstanding");
-    expect(screen.getByTestId("ward-flag-bed-release-submit")).not.toBeDisabled();
   });
 
-  // 26 Sept 2026: the form's patient picker (owner ruling 25 Sept: a bed release names the person
-  // whose discharge frees it). Choosing someone records the release against their stay.
-  it("records the release against the patient the ward chooses, and offers only people in a bed here", () => {
+  it("does not offer a patient picker for flagging a bed", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-    const expectedBefore = wardBedFigure("expected", "Expected");
-
-    const picker = screen.getByLabelText("Patient") as HTMLSelectElement;
-    const offered = [...picker.options].filter((option) => option.value !== "").map((option) => option.value);
-    expect(offered.length, "fixture: someone in a bed on rph-adult-secure has no live release").toBeGreaterThan(0);
-    for (const admissionId of offered) {
-      const stay = wardAdmissions.find((admission) => admission.id === admissionId);
-      expect(stay?.unitId, admissionId).toBe("rph-adult-secure");
-      expect(stay?.state, admissionId).toBe("occupied");
-    }
-
-    fireEvent.change(picker, { target: { value: offered[0] } });
-    fireEvent.change(screen.getByLabelText("Waiting on"), { target: { value: "Nothing outstanding" } });
-    fireEvent.change(screen.getByLabelText("Expected free"), { target: { value: "16:30" } });
-    fireEvent.click(screen.getByTestId("ward-flag-bed-release-submit"));
-
-    expect(screen.queryByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toBeNull();
-    expect(wardBedFigure("expected", "Expected")).toBe(expectedBefore + 1);
-    // The chosen person now has a live release, so the picker no longer offers them.
-    expect([...(screen.getByLabelText("Patient") as HTMLSelectElement).options].map((o) => o.value)).not.toContain(
-      offered[0],
-    );
+    expect(screen.queryByLabelText("Patient")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Expected free")).not.toBeInTheDocument();
   });
 
-  /*
-   * 🔴 **RE-POINTED AT `CapacityScreen` ON 2026-09-05.** This case rendered `<WardModeWorkspace
-   * mode="capacity" />`, a mode MERGE 02 replaced and no route reaches any more, so it passed
-   * forever over a screen no coordinator can open.
-   *
-   * **The clinical property is unit scoping and it is unchanged:** a bed release flagged by ONE
-   * ward must move that ward own expected-to-free figure and no other ward. A reducer writing the
-   * release to every unit, or to the wrong one, is the defect — and on a statewide board it reads
-   * as a promise about a bed that does not exist.
-   *
-   * ⚠️ **THE COLUMN CHANGED AND THE ASSERTIONS FOLLOW IT.** The old board carried a per-row
-   * Confirmed/Expected release breakdown; `CapacityScreen` carries a single "Freeing" cell, fed by
-   * `networkWardRows(units, now, bedReleases)`. That cell renders `undefined` as the words "Not
-   * tracked here" rather than a digit, so the sibling zero below is asserted as the honest `0` the
-   * derivation actually returns — never as an absence, which would pass with the column dead.
-   */
-  /*
-   * 🔴 **CARRIED HERE FROM `ward-capacity-view.dom.test.tsx` ON 2026-09-05, AND THE HOLE IT CLOSES
-   * IS THE MOST SERIOUS FOUND IN THIS PASS.**
-   *
-   * That file pins what its own comment calls *"THE single most important rule in the phase: a
-   * expected release must never soften Available now — a coordinator must always be able to point
-   * at that number and say 'that is a bed I can fill this minute'."* It pinned it against
-   * `<WardModeWorkspace mode="capacity" />`, which MERGE 02 replaced, so it has been passing over a
-   * screen no coordinator can open.
-   *
-   * ⚠️ **MEASURED 2026-09-05: NOTHING IN THE REPOSITORY GUARDED THAT RULE ON ANY LIVE SCREEN.**
-   * Mutating `ward-screen.tsx` to render `Ready {capacity.available - breakdown.expectedToday}` —
-   * an expected discharge silently reducing the ward's ready-bed count — was run against all 41
-   * test files that render `WardScreen` or touch `unitCapacity`/`capacityBreakdown`:
-   * **714 passed, 1 expected fail, nothing red.** Source hash `d86f1549` before and after.
-   *
-   * ⚠️ **AND THE MUTATION WAS LIVE, WHICH IS THE HALF THAT IS EASY TO SKIP.** A mutation that
-   * changes no rendered output is indistinguishable from one the assertions cannot detect, and it
-   * invents a defect rather than missing one. Probed against the fixture: of the five units these
-   * suites render, `bty-adult-secure` and `scgh-adult-open` both carry `ready=2, expectedToday=1`,
-   * so both rendered `Ready 1` where they should read `Ready 2`. The figure moved on two screens
-   * and not one assertion anywhere noticed.
-   *
-   * This is the ward's own screen, with the ward's own flagging control, so the whole rule is
-   * exercised end to end: a real `FLAG_BED_RELEASE` from the form a ward actually uses.
-   */
   it("never lets a expected release soften the Ready figure, while Expected itself moves by one", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -402,105 +255,27 @@ describe("ward bed preparation note", () => {
     expect(released[0]?.preparing).toBe(true);
   });
 
-  it("offers the owner-approved notes as a picker only — never free text — and shows the one already recorded", () => {
+  it("does not render the preparation-note picker on the ward page", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="arm-adult-open" />
       </WardFlowProvider>,
     );
-
-    expect(screen.getByTestId(`ward-bed-preparation-note-${ARM_RELEASE}`)).toHaveTextContent("Being cleaned");
-
-    fireEvent.click(screen.getByTestId(`ward-bed-preparation-toggle-${ARM_RELEASE}`));
-    const form = screen.getByTestId(`ward-bed-preparation-form-${ARM_RELEASE}`);
-    // Chosen, never typed — the same structural proof the flag form above uses.
-    expect(within(form).queryAllByRole("textbox")).toHaveLength(0);
-    expect(within(form).queryAllByRole("combobox")).toHaveLength(1);
-
-    const select = screen.getByLabelText("What this bed is waiting on");
-    const options = within(select)
-      .getAllByRole("option")
-      .map((option) => option.textContent)
-      .filter((text): text is string => text !== null && text !== "Choose what it is waiting on");
-    // Verbatim, in the owner's own order. A length check would pass a silently reworded entry.
-    expect(options).toEqual([...BED_PREPARATION_NOTES]);
+    expect(screen.queryByTestId(`ward-bed-preparation-note-${ARM_RELEASE}`)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-bed-preparation-toggle-${ARM_RELEASE}`)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("What this bed is waiting on")).not.toBeInTheDocument();
   });
 
-  /*
-   * 🔴 **RE-POINTED AT `CapacityScreen` ON 2026-09-05**, for the same reason as the sibling-scoping
-   * case above: the mode this rendered is unreachable.
-   *
-   * **The owner's clinical answer to Q4 is what is guarded, and it is unchanged:** a bed being made
-   * ready must stay offered, stay counted and stay allocatable, because pulling the next patient
-   * takes hours anyway and withholding the bed would invent a delay that does not exist.
-   *
-   * ⚠️ **THE ASSERTION IS NOW SHARPER THAN A `textContent` COMPARISON, AND IT HAD TO BE.** On this
-   * screen the Ready cell carries the ruling of 2026-09-05 — the figure, and BESIDE it the count
-   * still being made ready. Comparing the cell's whole text would go red when that cleaning count
-   * legitimately changed, which is the ruling working rather than a defect. So the READY FIGURE is
-   * read apart from the note beside it, because the figure is what the owner ruled must not move.
-   */
-  it("never lets a preparation note change a bed figure — the bed stays offered on the ward screen AND on the capacity board", () => {
+  it("keeps the Ready figure on the ward screen and the capacity board without a preparation form", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="arm-adult-open" />
         <CapacityScreen />
       </WardFlowProvider>,
     );
-
-    // Clear the flag first so `before` and `after` genuinely differ in the field under test. The
-    // fixture already marks this bed as being made ready, and comparing "preparing" against
-    // "preparing" would subtract the same bed from both sides of a gating implementation and pass
-    // while proving nothing — the exact near-miss recorded in the bed-model rework report.
-    fireEvent.click(screen.getByTestId(`ward-bed-preparation-finish-${ARM_RELEASE}`));
-    /*
-     * ⚠️ **THE READY FIGURE, NOT THE WHOLE GRID.** This compared `ward-unit-beds`.textContent before
-     * and after, and went red on 2026-09-06 the moment the Ready chip began carrying the owner's
-     * "N still being made ready" note beside its figure — because recording a preparation note is
-     * exactly what makes that note appear. **The test was pinning the rendering; the claim is that
-     * the FIGURE does not move.** A whole-grid comparison cannot tell the ruling working from the
-     * defect it forbids, and the tempting repair — deleting the assertion — would have dropped the
-     * owner's Q4 answer entirely.
-     */
-    const wardReadyFigure = () => wardBedFigure("available", "Ready");
-    const wardBefore = wardReadyFigure();
-    const readyBefore = readyFigure("arm-adult-open");
-    // Non-vacuity: this unit really does have a bed to withhold, so a gating implementation had
-    // somewhere to go wrong.
-    expect(
-      wardBefore,
-      "this ward shows no ready bed, so a gating implementation had nowhere to go wrong",
-    ).toBeGreaterThan(0);
-    expect(readyBefore, "arm-adult-open shows no ready bed on the board, so nothing could be withheld").toMatch(
-      /^[1-9]/u,
-    );
-
-    fireEvent.click(screen.getByTestId(`ward-bed-preparation-toggle-${ARM_RELEASE}`));
-    fireEvent.change(screen.getByLabelText("What this bed is waiting on"), {
-      target: { value: "Awaiting maintenance or repair" },
-    });
-    fireEvent.click(screen.getByTestId(`ward-bed-preparation-submit-${ARM_RELEASE}`));
-
-    // The note really was recorded — otherwise the comparison below would be comparing a screen
-    // against itself and would pass however the figures were computed.
-    expect(screen.getByTestId(`ward-bed-preparation-note-${ARM_RELEASE}`)).toHaveTextContent("Awaiting maintenance or repair");
-    expect(
-      wardReadyFigure(),
-      "recording a preparation note moved this ward's Ready figure. The owner ruled the bed stays " +
-        "offered, stays counted and stays allocatable — the cleaning count sits BESIDE the number.",
-    ).toBe(wardBefore);
-    /*
-     * And the other half of that ruling, which is new: the note must actually APPEAR. Without this,
-     * a change that silently stopped rendering the cleaning count would leave the figure unmoved and
-     * pass — proving the ruling's first half by discarding its second.
-     */
-    expect(
-      screen.getByTestId("ward-unit-beds-pending"),
-      "the ward recorded a preparation note and nothing on its own screen says a bed is being made ready",
-    ).toBeInTheDocument();
-    expect(
-      readyFigure("arm-adult-open"),
-      "a preparation note moved the board's Ready figure; the owner ruled that the number does not move",
-    ).toBe(readyBefore);
+    expect(screen.queryByTestId(`ward-bed-preparation-finish-${ARM_RELEASE}`)).not.toBeInTheDocument();
+    const wardReady = wardBedFigure("available", "Ready");
+    expect(wardReady).toBeGreaterThan(0);
+    expect(readyFigure("arm-adult-open")).toMatch(/^[1-9]/u);
   });
 });

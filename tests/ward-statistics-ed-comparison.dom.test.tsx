@@ -151,7 +151,13 @@ describe("comparison across departments", () => {
     expect(within(panel).queryByTestId("ward-stat-ed-comparison-not-built")).toBeNull();
   });
 
-  it("uses visible operational panels instead of the retired explanation: quotes the drawing's own guarantee about quiet departments", () => {
-    assertStatisticsPresentation("ed", "ward-stat-ed-comparison-scope");
+  it("says a quiet department is a measured none, not a missing figure", () => {
+    renderEd([]);
+    expect(screen.queryByTestId("ward-stat-ed-comparison-scope")).toBeNull();
+    const table = within(screen.getByTestId("ward-stat-ed-comparison")).getByRole("table");
+    const rows = within(table).getAllByRole("row");
+    expect(rows.length).toBeGreaterThan(1);
+    for (const cell of within(table).getAllByTestId(/^ward-stat-ed-comparison-waiting-/))
+      expect(cell.textContent).toBe("0");
   });
 });

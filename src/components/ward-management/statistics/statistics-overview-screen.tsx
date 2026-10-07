@@ -7,8 +7,6 @@ import family from "./statistics-family.module.css";
 import Link from "next/link";
 
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { generateDemonstrationSeries } from "@/components/ward-management/statistics/statistics-demonstration";
-import { DemonstrationChart } from "@/components/ward-management/statistics/statistics-demonstration-chart";
 import {
   admissionStagePosition,
   refusedAndNothingPending,
@@ -82,7 +80,7 @@ export function StatisticsOverviewScreen() {
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
-  const { admissions, movements, bedReleases, leaveBeds, units, scenario } = useWardFlow();
+  const { admissions, movements, bedReleases, leaveBeds, units } = useWardFlow();
   const now = useWardFlowClock();
   const service = useServiceScope();
 
@@ -214,22 +212,6 @@ export function StatisticsOverviewScreen() {
       hy,
     };
   });
-
-  // Baseline anchored to today's real admission volume so the invented walk starts somewhere
-  // plausible; the walk itself is still a deterministic pseudo-random draw, never a measurement —
-  // see `generateDemonstrationSeries`'s own header for why that matters and why it is seeded from
-  // the scenario, the clock and this series' own label rather than from anything measured.
-  const admissionsPerDayBaseline = Math.max(1, Math.round(admissions.length / 30));
-  const admissionsTrend = generateDemonstrationSeries(
-    scenario,
-    now,
-    {
-      label: "Admissions started per day across the network",
-      whatItWouldMeasure: "daily admissions across every ward over the last 30 days",
-      whyItIsNotReal: "only current state is retained; no daily admission history exists",
-    },
-    { baseline: admissionsPerDayBaseline, volatility: Math.max(admissionsPerDayBaseline * 0.4, 1) },
-  );
 
   return (
     <StatisticsSectionFrame
@@ -446,12 +428,6 @@ export function StatisticsOverviewScreen() {
                   </tr>
                 </tfoot>
               </WardTable>
-
-              <DemonstrationChart
-                series={admissionsTrend}
-                testId="ward-statistics-overview-demo-trend"
-                variant="overview"
-              />
             </div>
           </StatisticsDetailPanel>
         </div>

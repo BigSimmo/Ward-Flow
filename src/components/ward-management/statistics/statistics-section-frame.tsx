@@ -69,6 +69,7 @@ export function StatisticsSectionFrame({
   section,
   title,
   subtitle,
+  metadata,
   testId,
   design,
   children,
@@ -80,6 +81,7 @@ export function StatisticsSectionFrame({
   title?: string;
   /** One line under the heading saying what this page is for. */
   subtitle: string;
+  metadata?: ReactNode;
   testId: string;
   /** Opts only this frame subtree into the third-edition token and presentation contract. */
   design?: "third-edition";
@@ -89,7 +91,7 @@ export function StatisticsSectionFrame({
 
   if (isThirdEdition) {
     return (
-      <ThirdEditionFrame section={section} title={title} subtitle={subtitle} testId={testId}>
+      <ThirdEditionFrame section={section} title={title} subtitle={subtitle} metadata={metadata} testId={testId}>
         {children}
       </ThirdEditionFrame>
     );
@@ -163,12 +165,14 @@ export function StatisticsSectionFrame({
 function ThirdEditionFrame({
   section,
   title,
+  metadata,
   testId,
   children,
 }: {
   section: StatisticsSection;
   title?: string;
   subtitle: string;
+  metadata?: ReactNode;
   testId: string;
   children: ReactNode;
 }) {
@@ -215,6 +219,7 @@ function ThirdEditionFrame({
               {section.label}
             </p>
             <h1 className={thirdEditionStyles.headerTitle}>{title ?? section.label}</h1>
+            {metadata && <p className={thirdEditionStyles.metadata}>{metadata}</p>}
           </header>
         </div>
         {children}

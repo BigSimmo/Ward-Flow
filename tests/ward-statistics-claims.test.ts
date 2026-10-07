@@ -51,6 +51,7 @@ const EXPECTED_REGISTERED_SURFACES = 8;
 // This exact set is the only locator exemption; arbitrary retirement metadata cannot bypass it.
 // Owner-requested removal of page explanations. Keep checking each underlying model citation.
 const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set([
+  "statistics-ward-screen/blocked/waitlist-wait-is-always-null",
   "statistics-screen/refused-so-far/the-shared-derivation-classifies-escalation-first",
   "statistics-screen/refused-so-far/an-escalation-is-recorded-unvalidated",
 
@@ -376,8 +377,8 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(53);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(27);
+    expect(retired).toHaveLength(54);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(26);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)

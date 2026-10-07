@@ -402,11 +402,9 @@ describe("ward and ED comparisons — the chooser", () => {
     expect(screen.queryByTestId("ward-statistics-compare-ward-list")).toBeNull();
     // Polish items 13 and 14 (Josh approved, 26 Sept 2026): the two chart cards say so too, rather
     // than an empty card under a heading.
-    expect(screen.getByTestId("ward-statistics-compare-ward-chart-empty").textContent).toBe(
-      "No ward is recorded in this prototype, so there is nothing to chart.",
-    );
+    expect(screen.getByTestId("ward-statistics-compare-ward-chart-empty").textContent).toBe("No wards recorded.");
     expect(screen.getByTestId("ward-statistics-compare-ed-chart-empty").textContent).toBe(
-      "No emergency department is recorded in this prototype, so there is nothing to chart.",
+      "No emergency departments recorded.",
     );
   });
 });
@@ -468,9 +466,7 @@ describe("one ward in detail", () => {
       />,
     );
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe(
-      "Test Ward is recorded at Royal Perth Hospital.",
-    );
+    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe("Royal Perth Hospital");
     expect(screen.getByTestId("ward-statistics-ward-measures")).toBeTruthy();
     expect(screen.queryByTestId("ward-statistics-ward-unresolved")).toBeNull();
   });
@@ -497,7 +493,9 @@ describe("one ward in detail", () => {
     const seeded = allUnits()[0];
     renderInProvider(<StatisticsWardScreen unitId={seeded.id} />);
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain(seeded.name);
+    expect(
+      within(screen.getByTestId("ward-statistics-ward-screen")).getByRole("heading", { level: 1 }),
+    ).toHaveTextContent(seeded.name);
     expect(screen.queryByTestId("ward-statistics-ward-unresolved")).toBeNull();
   });
 
@@ -517,9 +515,7 @@ describe("one ward in detail", () => {
       />,
     );
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain(
-      "carries a site code this prototype has no site for",
-    );
+    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain("Hospital not recorded");
   });
 
   /**

@@ -183,12 +183,12 @@ describe("ward capacity — occupancy and readiness over time (demonstration)", 
     assertStatisticsPresentation("ward", "ward-stat-trends-disclaimer");
   });
 
-  it("draws a different-looking trend for each series even though both share the same ward and clock", () => {
+  it("omits empty history panels until sample statistics are enabled in the shared layout", () => {
     const unit = unitWithCapacity(5, 2);
     renderWard(unit);
 
-    const occupancyText = screen.getByTestId("ward-stat-occupancy-trend").textContent ?? "";
-    const readyText = screen.getByTestId("ward-stat-ready-trend").textContent ?? "";
-    expect(occupancyText).not.toBe(readyText);
+    expect(screen.queryByTestId("ward-stat-occupancy-trend")).toBeNull();
+    expect(screen.queryByTestId("ward-stat-ready-trend")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
   });
 });

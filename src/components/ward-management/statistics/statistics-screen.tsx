@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-derivations";
 import {
   STATISTICS_COMMUNITY_CHOOSER_ID,
+  STATISTICS_SECTIONS,
   STATISTICS_SERVICE_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
@@ -336,8 +337,6 @@ export function StatisticsScreen({
           <h1 className={styles.pageTitle}>Statistics</h1>
         </header>
 
-        {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
-
         {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
         <WardPanel
           title="Across all services"
@@ -409,8 +408,29 @@ export function StatisticsScreen({
             </div>
           </dl>
 
-          {/* Bed measurements & Coordinator Access disclosure (Preserving contract & test assertions) */}
-          {/* Always-visible navigation to statistics sections */}
+          <nav
+            className={styles.index}
+            aria-labelledby="ward-statistics-index-heading"
+            data-testid="ward-statistics-index"
+          >
+            <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
+              Where to look
+            </h2>
+            <ul className={styles.indexList}>
+              {STATISTICS_SECTIONS.map((sec) => (
+                <li key={sec.id} className={styles.indexItem}>
+                  <Link
+                    href={sec.href}
+                    className={styles.indexLink}
+                    data-testid={`ward-statistics-index-entry-${sec.id}`}
+                  >
+                    <span className={styles.indexLabel}>{sec.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className={styles.panelBody}></div>
         </WardPanel>
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
@@ -422,50 +442,53 @@ export function StatisticsScreen({
             leaveBeds={leaveBeds}
           />
 
-          <article className={styles.panelBody} data-testid="ward-statistics-pull-to-arrival">
-            <dl className={pageStyles.band} aria-label="Admission timing">
-              <div className={pageStyles.kpi}>
-                <dt>Average pull to arrival</dt>
-                <dd>
-                  <span data-testid="ward-statistics-arrival-average">
-                    {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
-                  </span>
-                  <small>
-                    <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span> measured
-                    admissions
-                  </small>
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Shortest</dt>
-                <dd data-testid="ward-statistics-arrival-shortest">
-                  {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Longest</dt>
-                <dd data-testid="ward-statistics-arrival-longest">
-                  {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
-                </dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Awaiting arrival</dt>
-                <dd data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Ended admissions</dt>
-                <dd data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Excluded records</dt>
-                <dd data-testid="ward-statistics-arrival-incoherent">{arrivals.incoherentCount}</dd>
-              </div>
-              <div className={pageStyles.kpi}>
-                <dt>Marked pending</dt>
-                <dd data-testid="ward-statistics-preparing-count">{preparingCount}</dd>
-              </div>
-            </dl>
-          </article>
+          {/* Patients audience contract and pull-to-arrival article */}
+          <div className={styles.panelBody}>
+            <article className={styles.panelBody} data-testid="ward-statistics-pull-to-arrival">
+              <dl className={pageStyles.band} aria-label="Admission timing">
+                <div className={pageStyles.kpi}>
+                  <dt>Average pull to arrival</dt>
+                  <dd>
+                    <span data-testid="ward-statistics-arrival-average">
+                      {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
+                    </span>
+                    <small>
+                      <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
+                      measured admissions
+                    </small>
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Shortest</dt>
+                  <dd data-testid="ward-statistics-arrival-shortest">
+                    {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Longest</dt>
+                  <dd data-testid="ward-statistics-arrival-longest">
+                    {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
+                  </dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Awaiting arrival</dt>
+                  <dd data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Ended admissions</dt>
+                  <dd data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Excluded records</dt>
+                  <dd data-testid="ward-statistics-arrival-incoherent">{arrivals.incoherentCount}</dd>
+                </div>
+                <div className={pageStyles.kpi}>
+                  <dt>Marked pending</dt>
+                  <dd data-testid="ward-statistics-preparing-count">{preparingCount}</dd>
+                </div>
+              </dl>
+            </article>
+          </div>
         </WardPanel>
 
         {/* ══════════ TWO-COLUMN GRID 1: PRESSURE & ED WAITS ══════════ */}
@@ -616,81 +639,76 @@ export function StatisticsScreen({
               <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit">Compare wards and departments ↗</Link>
             </div>
 
-            {/* Pressure articles (preserved for test suite) */}
-            <section className={styles.panelBody}>
-              <h3 className={styles.figureHeading}>Discharge blockers and refusals</h3>
-              <div className={styles.panelBody}>
-                <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
-                  <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
+            <div className={styles.panelBody}>
+              <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
+                <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
 
-                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
-                    <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
-                      {refused.count}
-                    </span>{" "}
-                    of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
-                    open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
-                  </p>
+                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
+                  <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
+                    {refused.count}
+                  </span>{" "}
+                  of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
+                  open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
+                </p>
 
-                  <p className={styles.measuredCount}>
-                    Parallel referral cap{" "}
-                    <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>
-                  </p>
+                <p className={styles.measuredCount}>
+                  Parallel referral cap{" "}
+                  <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>
+                </p>
 
-                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
-                    <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
-                    {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation
-                    instead.
-                  </p>
-                </article>
+                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
+                  <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
+                  {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation instead.
+                </p>
+              </article>
 
-                <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
-                  <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
+              <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
+                <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
 
-                  <p
-                    className={styles.measuredCount}
-                    data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                <p
+                  className={styles.measuredCount}
+                  data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                >
+                  <span
+                    className={styles.measuredValue}
+                    data-testid="ward-statistics-blocked-discharges-by-reason-total"
                   >
-                    <span
-                      className={styles.measuredValue}
-                      data-testid="ward-statistics-blocked-discharges-by-reason-total"
+                    {blocked.totalCount}
+                  </span>{" "}
+                  blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
+                  <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                    {blocked.admissionCount}
+                  </span>{" "}
+                  {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
+                </p>
+
+                <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
+                  {blocked.tallies.map((tally) => (
+                    <li
+                      key={tally.reason}
+                      className={styles.tallyRow}
+                      data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
                     >
-                      {blocked.totalCount}
-                    </span>{" "}
-                    blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                      {blocked.admissionCount}
-                    </span>{" "}
-                    {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
-                  </p>
-
-                  <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                    {blocked.tallies.map((tally) => (
-                      <li
-                        key={tally.reason}
-                        className={styles.tallyRow}
-                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
+                      <span className={styles.tallyReason}>{tally.reason}</span>
+                      <span
+                        className={styles.tallyCount}
+                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
                       >
-                        <span className={styles.tallyReason}>{tally.reason}</span>
-                        <span
-                          className={styles.tallyCount}
-                          data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
-                        >
-                          {tally.count}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                        {tally.count}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
 
-                  <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                    All{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                      {blocked.vocabularySize}
-                    </span>{" "}
-                    blocker categories.
-                  </p>
-                </article>
-              </div>
-            </section>
+                <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+                  All{" "}
+                  <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+                    {blocked.vocabularySize}
+                  </span>{" "}
+                  blocker categories.
+                </p>
+              </article>
+            </div>
           </WardPanel>
 
           {/* Emergency departments */}
@@ -842,56 +860,58 @@ export function StatisticsScreen({
               </table>
             </div>
 
-            <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
-              <h3 className={styles.figureHeading}>Declines by reason</h3>
+            <div className={styles.panelBody}>
+              <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
+                <h3 className={styles.figureHeading}>Declines by reason</h3>
 
-              {!declinesReadout.ok ? (
-                <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
-                  {declinesReadout.statement}
-                </p>
-              ) : (
-                <>
-                  <small>
-                    <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                      {declinesReadout.value.vocabularySize}
-                    </span>{" "}
-                    reason categories
-                  </small>
-                  <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
-                    <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
-                      {declinesReadout.value.totalCount}
-                    </span>{" "}
-                    {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
-                    <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                      {declinesReadout.value.movementsWithDeclinesCount}
-                    </span>{" "}
-                    of the{" "}
-                    <span data-testid="ward-statistics-declines-by-reason-movements">
-                      {declinesReadout.value.movementCount}
-                    </span>{" "}
-                    {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
+                {!declinesReadout.ok ? (
+                  <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
+                    {declinesReadout.statement}
                   </p>
+                ) : (
+                  <>
+                    <small>
+                      <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                        {declinesReadout.value.vocabularySize}
+                      </span>{" "}
+                      reason categories
+                    </small>
+                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
+                      <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
+                        {declinesReadout.value.totalCount}
+                      </span>{" "}
+                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
+                        {declinesReadout.value.movementsWithDeclinesCount}
+                      </span>{" "}
+                      of the{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-movements">
+                        {declinesReadout.value.movementCount}
+                      </span>{" "}
+                      {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
+                    </p>
 
-                  <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
-                    {declinesReadout.value.tallies.map((tally) => (
-                      <li
-                        key={tally.reason}
-                        className={styles.tallyRow}
-                        data-testid={`ward-statistics-decline-${tally.reason}`}
-                      >
-                        <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
-                        <span
-                          className={styles.tallyCount}
-                          data-testid={`ward-statistics-decline-${tally.reason}-count`}
+                    <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
+                      {declinesReadout.value.tallies.map((tally) => (
+                        <li
+                          key={tally.reason}
+                          className={styles.tallyRow}
+                          data-testid={`ward-statistics-decline-${tally.reason}`}
                         >
-                          {tally.count}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </article>
+                          <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
+                          <span
+                            className={styles.tallyCount}
+                            data-testid={`ward-statistics-decline-${tally.reason}-count`}
+                          >
+                            {tally.count}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </article>
+            </div>
           </WardPanel>
         </div>
 
@@ -980,11 +1000,11 @@ export function StatisticsScreen({
                 </div>
               </dl>
 
-              <div className={styles.panelBody}>
+              <p className={pageStyles.panelFoot}>
                 <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link>
-              </div>
+              </p>
 
-              {/* Referrals article for test suite */}
+              <div className={styles.panelBody}></div>
             </WardPanel>
 
             {/* Choose a health service */}

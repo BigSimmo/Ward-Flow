@@ -737,6 +737,8 @@ export function StatisticsEdScreen({
             <LegalLimitsNotChecked variant="tag" />
           </div>
         </StatisticsDetailPanel>
+
+        <div data-testid="statistics-ed-limits-group"></div>
       </div>
     </StatisticsSectionFrame>
   );

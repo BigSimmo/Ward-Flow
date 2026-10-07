@@ -216,9 +216,10 @@ test.describe("@mockup Ward screen", () => {
       await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();
       await homeTab.click();
       await expect(wardScreen.getByRole("region", { name: "Awaiting your answer" })).toBeVisible();
-      await decisionsTab.click();
       await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
       await expect(wardScreen.getByRole("region", { name: "Ward figures, right now" })).toBeVisible();
+      await decisionsTab.click();
+      await expect(wardScreen.getByRole("region", { name: "Staffing" })).toBeVisible();
     };
 
     await assertStructure();
@@ -226,8 +227,9 @@ test.describe("@mockup Ward screen", () => {
     await page.emulateMedia({ forcedColors: "active" });
     await assertStructure();
 
-    // Print keeps whichever tab is active (Decisions, left by the pass above); the tab buttons
-    // themselves are hidden in print by globals.css, so no click happens here.
+    // Print keeps whichever tab is active, and the tab buttons are hidden, so Home is selected
+    // before print. The bed figures live on Home.
+    await homeTab.click();
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
     await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
     await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();
@@ -1212,11 +1214,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(pullButton).not.toHaveAttribute("title");
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
-    // The capacity form lives on the Decisions tab (3ac951fcd1, 22 Sept), inside an "Update
-    // allocatable count directly" `<details>` that is rendered OPEN (53105ca6ea, 25 Sept, removed
-    // the old "Update ward figures and bed records" wrapper). Do NOT click that summary: on an open
-    // disclosure the click closes it and hides the input.
-    await page.locator("#tabBtn-return").click();
+    // The capacity form opens from "Confirm today's numbers". It is not on the Decisions queue.
+    await wardScreen.getByRole("button", { name: /Confirm today.s numbers/ }).click();
     await wardScreen.getByTestId("ward-capacity-input").fill("0");
     await wardScreen.getByTestId("ward-capacity-submit").click();
 
@@ -1226,6 +1225,10 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(bedGrid).toContainText("Ready 0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(wardScreen.getByText(/Currently confirmed 0 at/)).toBeVisible();
+    await wardScreen
+      .getByRole("dialog", { name: /Confirm capacity figures/ })
+      .getByRole("button", { name: "Done" })
+      .click();
 
     // --- Step 4: the Hold control must stop advertising an action the reducer would now
     // refuse — the reviewer's Proof 2 ("hold button ... aria-disabled = null ... nothing

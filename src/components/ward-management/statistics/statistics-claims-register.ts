@@ -1662,6 +1662,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
    */
   // ── statistics-ward-screen.tsx ────────────────────────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested hiding empty statistics panels; no waitlist average is recorded.",
+    },
     id: "statistics-ward-screen/blocked/waitlist-wait-is-always-null",
     renderedIn: WARD_STATS_SCREEN,
     // Moved 2026-09-05: the paragraph survives verbatim as the built `Average wait after being
