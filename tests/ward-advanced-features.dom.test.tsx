@@ -156,11 +156,12 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       // Pre-admission medical clearance toggle button
       const toggleBtn = screen.getByTestId("ward-referral-medical-clearance-toggle");
       expect(toggleBtn).toBeDefined();
-      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Pending");
+      // v6 (ReferralDrawer.webp): before the question is answered the status reads "Not answered".
+      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Not answered");
 
       // The summary opens Documentation; a draft does not alter the live movement.
       fireEvent.click(toggleBtn);
-      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Pending");
+      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Not answered");
       const clearance = screen.getByRole("group", { name: "Has the patient been medically cleared?" });
       fireEvent.click(within(clearance).getByLabelText("Yes"));
       expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Cleared");

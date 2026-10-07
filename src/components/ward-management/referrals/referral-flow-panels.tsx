@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Circle, FileUp, X } from "lucide-react";
-import { useEffect, useId, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { StatusGlyph } from "@/components/wf";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -45,7 +46,7 @@ function YesNo({ label, value, onChange }: { label: string; value: string; onCha
   const id = useId();
   return (
     <fieldset className={styles.answerGroup}>
-      <legend>{label}</legend>
+      <legend className={styles.required}>{label}</legend>
       <div className={styles.answerOptions}>
         {(["yes", "no"] as const).map((answer) => (
           <label key={answer} data-selected={answer === value}>
@@ -122,15 +123,17 @@ function ChartUpload({
     }
   }
   return (
-    <div>
+    <div className={styles.uploadItem}>
       <div className={styles.uploadRow}>
         <span className={styles.uploadStatus} data-complete={!!file}>
-          {file ? <Check aria-hidden="true" size={14} /> : <Circle aria-hidden="true" size={18} />}
+          {file ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />}
         </span>
         <div className={styles.uploadDescription}>
-          <label htmlFor={id}>{label}</label>
+          <label htmlFor={id} className={styles.required}>
+            {label}
+          </label>
           <span>
-            {file ? `${file.name} · ${(file.sizeBytes / 1024).toFixed(1)} KB` : "PDF, PNG or JPEG · up to 2 MB"}
+            {file ? `${file.name} · ${(file.sizeBytes / 1024).toFixed(1)} KB` : "PDF, PNG or JPEG, up to 2 MB"}
           </span>
         </div>
         <input
@@ -147,10 +150,10 @@ function ChartUpload({
           disabled={reading}
           onClick={() => inputRef.current?.click()}
         >
-          <FileUp aria-hidden="true" size={14} />
+          <Upload aria-hidden="true" />
           {reading ? "Reading…" : file ? "Replace" : "Upload"}
         </button>
-        {file && (
+        {file ? (
           <button
             type="button"
             className={styles.removeFile}
@@ -162,8 +165,10 @@ function ChartUpload({
               if (inputRef.current) inputRef.current.value = "";
             }}
           >
-            <X aria-hidden="true" size={14} />
+            <X aria-hidden="true" />
           </button>
+        ) : (
+          <span className={styles.removeSpacer} aria-hidden="true" />
         )}
       </div>
       {error && (
@@ -171,6 +176,23 @@ function ChartUpload({
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/** "2026-10-07T12:30" as "12:30". The clinician typed it, so nothing is computed from it. */
+function typedClockTime(value: string): string {
+  return /T(\d{2}:\d{2})/.exec(value)?.[1] ?? value;
+}
+
+function PanelHead({ icon: Icon, title, children }: { icon: typeof User; title: string; children?: ReactNode }) {
+  return (
+    <div className={styles.cardHead}>
+      <span className={styles.cardIcon} aria-hidden="true">
+        <Icon aria-hidden="true" />
+      </span>
+      <h3 className={styles.cardTitle}>{title}</h3>
+      {children ? <div className={styles.cardHeadAside}>{children}</div> : null}
     </div>
   );
 }
@@ -193,139 +215,226 @@ export function DocumentationPanel({
       charts: [...current.charts.filter((file) => file.kind !== kind), ...(chart ? [chart] : [])],
     }));
   }
+  const clearance =
+    draft.medical === "yes"
+      ? ({ tone: "success", label: "Cleared" } as const)
+      : draft.medical === "no"
+        ? ({ tone: "warning", label: "Pending" } as const)
+        : ({ tone: "neutral", label: "Not answered" } as const);
   return (
     <>
       <section className={styles.refCard}>
-        <h3 className={styles.refCardTitle}>Medical clearance</h3>
-        <YesNo
-          label="Has the patient been medically cleared?"
-          value={draft.medical}
-          onChange={(medical) => onChange({ ...draft, medical })}
-        />
-        {draft.medical === "no" && (
-          <div className={styles.fieldGrid}>
-            <label className={styles.flowField}>
-              Expected medical clearance
-              <input
-                className={styles.fieldInput}
-                type="datetime-local"
-                value={draft.expectedAt}
-                onChange={(e) => onChange({ ...draft, expectedAt: e.target.value })}
-              />
-            </label>
-            <label className={styles.flowField}>
-              Clarification contact name
-              <input
-                className={styles.fieldInput}
-                maxLength={200}
-                value={draft.contactName}
-                onChange={(e) => onChange({ ...draft, contactName: e.target.value })}
-              />
-            </label>
-            <label className={styles.flowField}>
-              Clarification contact phone
-              <input
-                className={styles.fieldInput}
-                type="tel"
-                maxLength={40}
-                value={draft.contactPhone}
-                onChange={(e) => onChange({ ...draft, contactPhone: e.target.value })}
-              />
-            </label>
+        <PanelHead icon={Stethoscope} title="Medical clearance">
+          <span className={styles.asideText}>
+            <StatusGlyph tone={clearance.tone} size={9} />
+            {clearance.label}
+          </span>
+        </PanelHead>
+        <div className={styles.cardBody}>
+          <YesNo
+            label="Has the patient been medically cleared?"
+            value={draft.medical}
+            onChange={(medical) => onChange({ ...draft, medical })}
+          />
+          {draft.medical === "no" && (
+            <>
+              <div className={styles.fieldGrid} data-layout="three">
+                <div className={styles.formField}>
+                  <div className={styles.fieldLabelRow}>
+                    <label htmlFor={`${id}-expected`} className={styles.required}>
+                      Expected clearance
+                    </label>
+                  </div>
+                  <input
+                    id={`${id}-expected`}
+                    className={styles.fieldInput}
+                    type="datetime-local"
+                    value={draft.expectedAt}
+                    onChange={(e) => onChange({ ...draft, expectedAt: e.target.value })}
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <div className={styles.fieldLabelRow}>
+                    <label htmlFor={`${id}-contact`} className={styles.required}>
+                      Contact name
+                    </label>
+                  </div>
+                  <input
+                    id={`${id}-contact`}
+                    className={styles.fieldInput}
+                    maxLength={200}
+                    placeholder="Who can answer questions"
+                    value={draft.contactName}
+                    onChange={(e) => onChange({ ...draft, contactName: e.target.value })}
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <div className={styles.fieldLabelRow}>
+                    <label htmlFor={`${id}-phone`} className={styles.required}>
+                      Contact phone
+                    </label>
+                  </div>
+                  <input
+                    id={`${id}-phone`}
+                    className={styles.fieldInput}
+                    type="tel"
+                    maxLength={40}
+                    placeholder="Direct number"
+                    value={draft.contactPhone}
+                    onChange={(e) => onChange({ ...draft, contactPhone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <p className={styles.infoStrip}>
+                <StatusGlyph tone="info" size={8} />
+                <strong>
+                  {draft.expectedAt ? (
+                    <>
+                      Clearance expected <span className={styles.mono}>{typedClockTime(draft.expectedAt)}</span>
+                    </>
+                  ) : (
+                    "Expected clearance not entered"
+                  )}
+                </strong>
+                <span>Shown to every recipient</span>
+              </p>
+            </>
+          )}
+        </div>
+      </section>
+      <section className={styles.refCard}>
+        <PanelHead icon={FileText} title="Triage and documents">
+          <span className={styles.asideText}>{draft.charts.length} attached</span>
+        </PanelHead>
+        <div className={styles.cardBody}>
+          <YesNo
+            label="Triage and RAMP completed"
+            value={draft.triage}
+            onChange={(triage) => onChange({ ...draft, triage })}
+          />
+          <div className={styles.uploadList} role="group" aria-label="Supporting documentation">
+            <ChartUpload
+              key={`${id}-medication`}
+              kind="medication"
+              label="Medication chart"
+              file={draft.charts.find((file) => file.kind === "medication")}
+              onChange={(file) => changeChart("medication", file)}
+            />
+            <ChartUpload
+              key={`${id}-observation`}
+              kind="observation"
+              label="Observation chart"
+              file={draft.charts.find((file) => file.kind === "observation")}
+              onChange={(file) => changeChart("observation", file)}
+            />
           </div>
-        )}
+          <YesNo
+            label="Anything else to attach?"
+            value={draft.additional}
+            onChange={(additional) =>
+              onChange({
+                ...draft,
+                additional,
+                charts: additional === "no" ? draft.charts.filter((file) => file.kind !== "other") : draft.charts,
+              })
+            }
+          />
+          {draft.additional === "yes" && (
+            <div className={styles.uploadList}>
+              <ChartUpload
+                kind="other"
+                label="Additional document"
+                file={draft.charts.find((file) => file.kind === "other")}
+                onChange={(file) => changeChart("other", file)}
+              />
+            </div>
+          )}
+          <p className={styles.bodyMeta}>
+            <Lock aria-hidden="true" />
+            Synthetic documents only, kept for this session
+          </p>
+        </div>
       </section>
       <section className={styles.refCard}>
-        <YesNo
-          label="Triage and RAMP completed"
-          value={draft.triage}
-          onChange={(triage) => onChange({ ...draft, triage })}
-        />
-        <h3 className={styles.refCardTitle}>Supporting documentation</h3>
-        <ChartUpload
-          key={`${id}-medication`}
-          kind="medication"
-          label="Medication chart"
-          file={draft.charts.find((file) => file.kind === "medication")}
-          onChange={(file) => changeChart("medication", file)}
-        />
-        <ChartUpload
-          key={`${id}-observation`}
-          kind="observation"
-          label="Observation chart"
-          file={draft.charts.find((file) => file.kind === "observation")}
-          onChange={(file) => changeChart("observation", file)}
-        />
-        <YesNo
-          label="Anything else to attach?"
-          value={draft.additional}
-          onChange={(additional) =>
-            onChange({
-              ...draft,
-              additional,
-              charts: additional === "no" ? draft.charts.filter((file) => file.kind !== "other") : draft.charts,
-            })
-          }
-        />
-        {draft.additional === "yes" && (
-          <ChartUpload
-            kind="other"
-            label="Additional document"
-            file={draft.charts.find((file) => file.kind === "other")}
-            onChange={(file) => changeChart("other", file)}
-          />
-        )}
-        <p className={styles.refCardSubtitle}>
-          Synthetic documents only. Attachments remain available in this session.
-        </p>
-      </section>
-      <section className={styles.refCard}>
-        <h3 className={styles.refCardTitle}>Referrer details</h3>
-        <label className={styles.flowField}>
-          Referrer name
-          <input
-            className={styles.fieldInput}
-            value={referrerName}
-            maxLength={200}
-            onChange={(e) => onReferrerNameChange(e.target.value)}
-          />
-        </label>
-        <p className={styles.refCardSubtitle}>Confirm your email, phone, role and location before sending.</p>
+        <PanelHead icon={User} title="Referrer" />
+        <div className={styles.cardBody}>
+          <div className={styles.fieldGrid}>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabelRow}>
+                <label htmlFor={`${id}-referrer`}>Referrer name</label>
+              </div>
+              <input
+                id={`${id}-referrer`}
+                className={styles.fieldInput}
+                value={referrerName}
+                maxLength={200}
+                placeholder="Your name"
+                onChange={(e) => onReferrerNameChange(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className={styles.bodyMeta}>Confirm your email, phone, role and location before sending</p>
+        </div>
       </section>
     </>
   );
 }
 
+const CONTACT_FIELDS = [
+  ["name", "Your name", "text", "Full name"],
+  ["email", "Email address", "email", "name@health.wa.gov.au"],
+  ["phone", "Phone number", "tel", "Direct number"],
+  ["role", "Your role", "text", "For example ED registrar"],
+  ["location", "Location or service", "text", "Ward, ED or team"],
+] as const;
+
 export function ContactFields({
   contact,
   onChange,
+  errors = {},
 }: {
   contact: ReferralContact;
   onChange: (contact: ReferralContact) => void;
+  /** Shown under each field after a failed send. `referralContactError` stays the gate. */
+  errors?: Partial<Record<keyof ReferralContact, string>>;
 }) {
+  const id = useId();
   return (
     <div className={styles.fieldGrid}>
-      {(
-        [
-          ["name", "Your name", "text"],
-          ["email", "Email address", "email"],
-          ["phone", "Phone number", "tel"],
-          ["role", "Your role", "text"],
-          ["location", "Location / service", "text"],
-        ] as const
-      ).map(([key, label, type]) => (
-        <label className={styles.flowField} key={key}>
-          {label}
-          <input
-            className={styles.fieldInput}
-            type={type}
-            required
-            maxLength={key === "email" ? 254 : key === "phone" ? 40 : 200}
-            value={contact[key]}
-            onChange={(e) => onChange({ ...contact, [key]: e.target.value })}
-          />
-        </label>
-      ))}
+      {CONTACT_FIELDS.map(([key, label, type, placeholder]) => {
+        const error = errors[key];
+        return (
+          <div
+            className={`${styles.formField} ${key === "location" ? styles.fieldWide : ""}`}
+            key={key}
+            data-invalid={error ? true : undefined}
+          >
+            <div className={styles.fieldLabelRow}>
+              <label htmlFor={`${id}-${key}`} className={styles.required}>
+                {label}
+              </label>
+            </div>
+            <input
+              id={`${id}-${key}`}
+              className={styles.fieldInput}
+              type={type}
+              required
+              placeholder={placeholder}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? `${id}-${key}-error` : undefined}
+              maxLength={key === "email" ? 254 : key === "phone" ? 40 : 200}
+              value={contact[key]}
+              onChange={(e) => onChange({ ...contact, [key]: e.target.value })}
+            />
+            {error ? (
+              <p className={styles.fieldError} id={`${id}-${key}-error`}>
+                <StatusGlyph tone="danger" size={9} />
+                {error}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

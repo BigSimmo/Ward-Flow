@@ -29,7 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { StatusGlyph, type WfTone } from "@/components/wf/status-glyph";
+import { StatusGlyph, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -1179,7 +1179,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 </div>
               ) : (
                 <div>
-                  <strong>{formatInstant(lastActivityAt)}</strong>
+                  <strong>{formatInstantWithDay(lastActivityAt, now)}</strong>
                   <span>Last event</span>
                 </div>
               )}
