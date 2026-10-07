@@ -139,7 +139,7 @@ export function Checkbox({
           className={cn(
             boxBase,
             "border-[color:var(--border-strong)] bg-[color:var(--surface)] shadow-[var(--shadow-inset)]",
-            "peer-checked:border-[color:var(--command)] peer-checked:bg-[color:var(--command)] peer-checked:text-[color:var(--command-contrast)]",
+            "peer-checked:border-[color:var(--command)] peer-checked:bg-[color:var(--command)] peer-checked:text-[color:var(--command-contrast)] peer-checked:[&>svg]:opacity-100",
             "peer-indeterminate:border-[color:var(--command)] peer-indeterminate:bg-[color:var(--command)] peer-indeterminate:text-[color:var(--command-contrast)]",
             "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[color:var(--focus)]",
             "peer-disabled:border-[color:var(--border)] peer-disabled:bg-[color:var(--surface-subtle)] peer-disabled:shadow-none",
@@ -150,7 +150,7 @@ export function Checkbox({
           {indeterminate ? (
             <span className="h-0.5 w-2.5 rounded-full bg-current" />
           ) : (
-            <Check aria-hidden="true" className="size-icon-xs opacity-0 peer-checked:opacity-100" strokeWidth={3} />
+            <Check aria-hidden="true" className="size-icon-xs opacity-0" strokeWidth={3} />
           )}
         </span>
       </span>
@@ -272,13 +272,13 @@ export function RadioGroup({
                   className={cn(
                     boxBase,
                     "rounded-full border-[color:var(--border-strong)] bg-[color:var(--surface)] shadow-[var(--shadow-inset)]",
-                    "peer-checked:border-[color:var(--command)]",
+                    "peer-checked:border-[color:var(--command)] peer-checked:[&>span]:opacity-100",
                     "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[color:var(--focus)]",
                     "peer-disabled:border-[color:var(--border)] peer-disabled:bg-[color:var(--surface-subtle)] peer-disabled:shadow-none",
                     "forced-colors:border",
                   )}
                 >
-                  <span className="size-2 rounded-full bg-[color:var(--command)] opacity-0 peer-checked:opacity-100" />
+                  <span className="size-2 rounded-full bg-[color:var(--command)] opacity-0" />
                 </span>
               </span>
             </Row>

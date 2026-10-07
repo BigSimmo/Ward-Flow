@@ -682,6 +682,8 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .drawerDialog {
@@ -690,6 +692,9 @@
   border-radius: var(--r1, 8px);
   max-width: 520px;
   width: 100%;
+  max-height: min(90dvh, calc(100% - 32px));
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--float);
   overflow: hidden;
   animation: modalScale 0.15s ease-out;
@@ -713,6 +718,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: none;
 }
 
 .drawerTitle {
@@ -741,6 +747,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .drawerFoot {
@@ -750,6 +758,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  flex: none;
 }
 
 .formGroup {

@@ -97,7 +97,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ckb-v2 ${themeClass}`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col">
         {/* Applies the resolved theme before first paint on every route (standalone
             pages don't mount useTheme, and hydration-time toggling flashes light).
             Mirrors resolveThemePreference in src/lib/theme.ts: stored choice wins,

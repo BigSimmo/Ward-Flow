@@ -114,7 +114,7 @@ export function Button({
     <button
       {...props}
       ref={ref}
-      data-testid={testId}
+      data-testid={testId ?? (props as Record<string, unknown>)["data-testid"]}
       type={type ?? "button"}
       disabled={busy || disabled}
       aria-busy={busy || undefined}

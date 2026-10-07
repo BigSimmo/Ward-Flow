@@ -3787,3 +3787,52 @@
     color: CanvasText;
   }
 }
+
+/* Surge bed badge & WA MHA authorised badges */
+.surgeBadge {
+  display: inline-block;
+  margin-left: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  font-size: var(--t-minus-2, 0.6875rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--amber-ink, #92400e);
+  background: var(--amber-subtle, #fef3c7);
+  border: 1px solid var(--amber-border, #fcd34d);
+  border-radius: var(--r-full, 9999px);
+  vertical-align: middle;
+}
+
+.authYes {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: var(--t-minus-1, 0.75rem);
+  font-weight: 600;
+  color: var(--teal-ink, #0f766e);
+  background: var(--teal-subtle, #ccfbf1);
+  border: 1px solid var(--teal-border, #99f6e4);
+  border-radius: var(--r-full, 9999px);
+}
+
+.authNo {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: var(--t-minus-1, 0.75rem);
+  font-weight: 500;
+  color: var(--muted, #64748b);
+  background: var(--surface-subtle, #f1f5f9);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--r-full, 9999px);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

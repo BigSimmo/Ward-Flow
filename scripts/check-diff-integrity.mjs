@@ -495,7 +495,8 @@ export function evaluate({ base, git = NODE_GIT, config, readWorkingFile }) {
     // `test(...)` calls the destination still contains. Counting the destination would report
     // 20 -> 20 and pass on a diff that silently removed twenty cases from the suite.
     const afterIsTestFile = afterPath !== null && isTestFile(afterPath);
-    const afterSource = afterIsTestFile ? readAfter(/** @type {string} */ (afterPath)) : null;
+    const destinationSource = afterPath !== null ? readAfter(/** @type {string} */ (afterPath)) : null;
+    const afterSource = afterIsTestFile ? destinationSource : null;
     const before = countTestCases(beforeSource, beforePath);
     const after = afterSource === null ? 0 : countTestCases(afterSource, afterPath ?? beforePath);
     verdicts.push(
@@ -503,7 +504,7 @@ export function evaluate({ base, git = NODE_GIT, config, readWorkingFile }) {
         path: afterPath ?? beforePath,
         before,
         after,
-        exists: afterSource !== null,
+        exists: destinationSource !== null,
         config,
       }),
     );

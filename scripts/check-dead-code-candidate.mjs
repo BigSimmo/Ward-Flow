@@ -484,7 +484,9 @@ export function removedDeclarationsInDiff(base, { root = process.cwd(), runGit =
     }
     if (!file) continue;
     const declaration =
-      /^([-+])(?:export\s+)?(?:async\s+)?(?:function|const|class|type|interface)\s+([A-Za-z_$][\w$]*)/.exec(line);
+      /^([-+])\s*(?:export\s+(?:default\s+)?)?(?:async\s+)?(?:function|const|let|var|class|type|interface|enum)\s+([A-Za-z_$][\w$]*)/.exec(
+        line,
+      );
     if (!declaration) continue;
     if (declaration[1] === "+") added.add(`${file}:${declaration[2]}`);
     else removed.push({ symbol: declaration[2], file });
