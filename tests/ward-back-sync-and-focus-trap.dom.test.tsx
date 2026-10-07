@@ -24,11 +24,15 @@ afterEach(() => {
 
 describe("Issue 3: Movement Drawer Browser Back Sync", () => {
   function renderMovements() {
-    return render(
+    const view = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <MovementsScreen />
       </WardFlowProvider>,
     );
+    // v6 (7 Oct 2026): the worklist shows the first rows of each group until Show all; the drawer
+    // cases open a row that may sit past that point, so they open the full list first.
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+$/u }));
+    return view;
   }
 
   function openDrawer(id: string) {

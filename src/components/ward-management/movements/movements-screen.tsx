@@ -14,9 +14,7 @@ import {
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,6 +24,7 @@ import type { HealthService, Movement, Referral, Unit } from "@/components/ward-
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import {
   byLongestWait,
@@ -47,16 +46,32 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { Hero, HeroStat, LiveChip, StatusGlyph, Timer, TierTile, buttonClass, type WfTone } from "@/components/wf";
+import { ArrowRightLeft, ChartColumn, Search, Truck } from "lucide-react";
+import {
+  Card,
+  CardHead,
+  ChipGroup,
+  FilterChip,
+  Hero,
+  HeroStat,
+  Legend,
+  LiveChip,
+  StackBar,
+  StatusGlyph,
+  TextInput,
+  Timer,
+  TierTile,
+  buttonClass,
+  durMinutes,
+  type WfFill,
+  type WfTone,
+} from "@/components/wf";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
-const MINUTE_MS = 60_000;
-/** Tier 1 waits: due soon at 2h, overdue at 4h (design system v6 §5, synthetic, needs sign-off). */
-const TIER_ONE_DUE_SOON_MS = 2 * 60 * MINUTE_MS;
-const TIER_ONE_OVERDUE_MS = 4 * 60 * MINUTE_MS;
+const MS_PER_MINUTE = 60_000;
 
 function meaningfulBlocker(movement: Movement): string | null {
   const blocker = movement.blocker.trim();
@@ -285,6 +300,9 @@ export function MovementsScreen() {
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [sideView, setSideView] = useState<"transport" | "shape">("transport");
+  // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -295,6 +313,9 @@ export function MovementsScreen() {
 
   function revealMovement(id: string, byStage = false) {
     setBoardTab("every");
+    // A jump must land on a rendered row: clear a search that would hide it. A row past its
+    // group's short list is kept on screen by `pinnedRowIds` below.
+    setSearch("");
     if (byStage) setOrder("stands");
     // A request number makes a second click on the same record scroll and focus again.
     setReveal((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
@@ -535,6 +556,82 @@ export function MovementsScreen() {
     return urgentMovementsOutsideService(movements.filter(isOpen), chosenService, units, now, configuration).length;
   }, [service, movements, units, now, configuration]);
 
+  // v6 worklist search (7 Oct 2026): filters the rows already derived above, by name, UMRN or
+  // ED. Nothing new is computed about a movement; a row either matches or is left out.
+  const searchTerm = search.trim().toLowerCase();
+  const matchesSearch =
+    searchTerm === ""
+      ? null
+      : (movement: Movement) => movementSearchText(movement, patients, referrals).includes(searchTerm);
+  const shownStages = matchesSearch
+    ? worklistStages.map((stage) => ({ ...stage, movements: stage.movements.filter(matchesSearch) }))
+    : worklistStages;
+  const shownCauseGroups = matchesSearch
+    ? worklistCauseGroups
+        .map((group) => ({ ...group, movements: group.movements.filter(matchesSearch) }))
+        .filter((group) => group.movements.length > 0)
+    : worklistCauseGroups;
+  const shownTransportGroups = matchesSearch
+    ? worklistTransportGroups.map((group) => ({ ...group, rows: group.rows.filter(matchesSearch) }))
+    : worklistTransportGroups;
+  const shownByWait = byLongestWait(matchesSearch ? worklistMovements.filter(matchesSearch) : worklistMovements, now);
+  const shownClosedToday = matchesSearch ? worklistClosedToday.filter(matchesSearch) : worklistClosedToday;
+  const searchedTotal = matchesSearch ? shownByWait.length : null;
+
+  // Each group shows its first rows until Show all. A row the reader jumped to or opened stays on
+  // screen even past that point, so a jump always lands on a visible row.
+  const pinnedRowIds = new Set<string>([reveal?.id, detailId].filter((id): id is string => typeof id === "string"));
+  const capping = !showAll && matchesSearch === null;
+  const capRows = (rows: Movement[], cap: number) =>
+    capping ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id)) : rows;
+  const hiddenIn = (groups: Movement[][], cap: number) =>
+    groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
+  const hiddenRowCount =
+    boardTab === "resolved"
+      ? hiddenIn([shownClosedToday], LIST_CAP)
+      : order === "stands"
+        ? hiddenIn(
+            shownStages.map((stage) => stage.movements),
+            GROUP_CAP,
+          )
+        : order === "transport"
+          ? hiddenIn(
+              shownTransportGroups.map((group) => group.rows),
+              GROUP_CAP,
+            )
+          : order === "cause"
+            ? hiddenIn(
+                shownCauseGroups.map((group) => group.movements),
+                GROUP_CAP,
+              )
+            : hiddenIn([shownByWait], LIST_CAP);
+  const worklistListTotal = boardTab === "resolved" ? worklistClosedToday.length : worklistMovements.length;
+  const worklistFootText = matchesSearch
+    ? `${boardTab === "resolved" ? shownClosedToday.length : shownByWait.length} of ${worklistListTotal} match`
+    : boardTab === "resolved"
+      ? "Resolved today"
+      : order === "stands"
+        ? "Grouped by stage, tier then wait"
+        : order === "transport"
+          ? "Grouped by transport, longest wait first"
+          : order === "cause"
+            ? "Grouped by cause, longest wait first"
+            : "Longest wait first";
+  const renderRow = (movement: Movement) => (
+    <StageRow
+      key={movement.id}
+      movement={movement}
+      now={now}
+      units={units}
+      referrals={referrals}
+      patients={patients}
+      accessTargetMinutes={accessTarget}
+      reveal={reveal}
+      consumeReveal={consumeReveal}
+      onOpenDetail={openDetail}
+    />
+  );
+
   /**
    * D-d (Ward Lead's decisions, 2026-09-17, amending build plan §2 after an Opus adversarial
    * review, R1): a jump link that targets a movement OUTSIDE the scoped worklist must never
@@ -661,10 +758,13 @@ export function MovementsScreen() {
                         </span>
                         <span className={styles.needsYouWait}>
                           <Timer
-                            at={movement.openedAt * MINUTE_MS}
-                            now={now * MINUTE_MS}
+                            at={movement.openedAt * MS_PER_MINUTE}
+                            now={now * MS_PER_MINUTE}
                             direction="waiting"
-                            thresholds={{ dueSoon: TIER_ONE_DUE_SOON_MS, overdue: TIER_ONE_OVERDUE_MS }}
+                            thresholds={{
+                              dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES * MS_PER_MINUTE,
+                              overdue: accessTarget * MS_PER_MINUTE,
+                            }}
                             hideFlagWord
                             hideDirection
                           />
@@ -704,34 +804,39 @@ export function MovementsScreen() {
             {/* D-f: the scope bar and its "not these figures" sentence moved to the top of the
                 page (see the comment beside the header above) — never here, on the panel they were
                 disclaiming. */}
-            <WardPanel title="Movement worklist" count={`${worklistMovements.length} moves`}>
+            <Card aria-label="Movement worklist" data-ward-primitive="panel" className={styles.wlCard}>
+              <CardHead
+                icon={ArrowRightLeft}
+                title="Movement worklist"
+                action={
+                  <div className={styles.boardTabs} role="tablist" aria-label="Movements">
+                    {(
+                      [
+                        { id: "every", label: "Every movement", count: worklistMovements.length },
+                        { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        id={`movements-tab-${tab.id}`}
+                        aria-controls={`movements-pane-${tab.id}`}
+                        aria-selected={boardTab === tab.id}
+                        tabIndex={boardTab === tab.id ? 0 : -1}
+                        className={styles.boardTab}
+                        onClick={() => setBoardTab(tab.id)}
+                      >
+                        {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
+                            other count on these screens uses, and a ruling rather than a default. */}
+                        <span>{tab.label}</span>{" "}
+                        <span className={styles.boardTabCount}>{tab.count === 0 ? "none" : tab.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
               <div className={styles.worklistToolbar}>
-                <div className={styles.boardTabs} role="tablist" aria-label="Movements">
-                  {(
-                    [
-                      { id: "every", label: "Every movement", count: worklistMovements.length },
-                      { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
-                    ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      id={`movements-tab-${tab.id}`}
-                      aria-controls={`movements-pane-${tab.id}`}
-                      aria-selected={boardTab === tab.id}
-                      tabIndex={boardTab === tab.id ? 0 : -1}
-                      className={styles.boardTab}
-                      onClick={() => setBoardTab(tab.id)}
-                    >
-                      {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
-                          other count on these screens uses, and a ruling rather than a default. */}
-                      <span>{tab.label}</span>{" "}
-                      <span className={styles.boardTabCount}>{tab.count === 0 ? "none" : tab.count}</span>
-                    </button>
-                  ))}
-                </div>
-
                 {boardTab === "every" ? (
                   <div className={styles.orderBar} role="radiogroup" aria-label="Order">
                     <span className={styles.orderLegend} aria-hidden="true">
@@ -763,14 +868,39 @@ export function MovementsScreen() {
                       </button>
                     ))}
                   </div>
-                ) : null}
+                ) : (
+                  <span />
+                )}
+                <TextInput
+                  type="search"
+                  icon={Search}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  onClear={() => setSearch("")}
+                  placeholder="Name, UMRN or ED"
+                  aria-label="Search movements by name, UMRN or ED"
+                  boxClassName={styles.wlSearch}
+                />
+              </div>
+
+              {/* Column heads for the rows below. The rows are list items, so these are a visual
+                  guide only; each row names its own cells for assistive technology. */}
+              <div className={styles.wlColumns} aria-hidden="true">
+                <span>Tier</span>
+                <span>Person</span>
+                <span>From and to</span>
+                <span>Barrier</span>
+                <span className={styles.wlColumnEnd}>Waited</span>
               </div>
 
               {boardTab === "every" ? (
                 <div role="tabpanel" id="movements-pane-every" aria-labelledby="movements-tab-every">
                   <div className={styles.movementListBody} tabIndex={0} role="region" aria-label="Movement records">
+                    {searchedTotal === 0 ? (
+                      <p className={styles.absent}>No movement matches “{search.trim()}”.</p>
+                    ) : null}
                     {order === "cause"
-                      ? worklistCauseGroups.map((group) => (
+                      ? shownCauseGroups.map((group) => (
                           <div key={group.key} className={styles.stageBlock}>
                             <div className={styles.causeGroupHeading} data-sev={group.sev}>
                               <h3 className={styles.causeGroupTitle}>{group.title}</h3>
@@ -778,115 +908,77 @@ export function MovementsScreen() {
                               {group.note ? <p className={styles.causeGroupNote}>{group.note}</p> : null}
                               <span className={styles.causeGroupCount}>{group.movements.length}</span>
                             </div>
-                            <WardRecordList>
-                              {group.movements.map((movement) => (
-                                <StageRow
-                                  key={movement.id}
-                                  movement={movement}
-                                  now={now}
-                                  units={units}
-                                  referrals={referrals}
-                                  patients={patients}
-                                  accessTargetMinutes={accessTarget}
-                                  reveal={reveal}
-                                  consumeReveal={consumeReveal}
-                                  onOpenDetail={openDetail}
-                                />
-                              ))}
-                            </WardRecordList>
+                            <WardRecordList>{capRows(group.movements, GROUP_CAP).map(renderRow)}</WardRecordList>
                           </div>
                         ))
                       : null}
                     {order === "stands"
-                      ? worklistStages.map((stage) => (
-                          <div key={stage.id} className={styles.stageBlock}>
-                            {stage.movements.length > 0 ? (
-                              <>
-                                <WardGroupHeading title={stage.label} people={stage.movements.length} />
-                                <WardRecordList>
-                                  {stage.movements.map((movement) => (
-                                    <StageRow
-                                      key={movement.id}
-                                      movement={movement}
-                                      now={now}
-                                      units={units}
-                                      referrals={referrals}
-                                      patients={patients}
-                                      accessTargetMinutes={accessTarget}
-                                      reveal={reveal}
-                                      consumeReveal={consumeReveal}
-                                      onOpenDetail={openDetail}
-                                    />
-                                  ))}
-                                </WardRecordList>
-                              </>
-                            ) : (
-                              <div className={styles.emptyStage}>
-                                <h3 className={styles.emptyStageTitle}>{stage.label}</h3>
-                                <p className={styles.absent}>No movements at this stage{inServiceSuffix(service)}.</p>
+                      ? shownStages.map((stage) => {
+                          if (stage.movements.length === 0) {
+                            if (matchesSearch !== null) return null;
+                            return (
+                              <div key={stage.id} className={styles.stageBlock}>
+                                <div className={styles.emptyStage}>
+                                  <h3 className={styles.emptyStageTitle}>{stage.label}</h3>
+                                  <p className={styles.absent}>No movements at this stage{inServiceSuffix(service)}.</p>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))
+                            );
+                          }
+                          const rows = capRows(stage.movements, GROUP_CAP);
+                          return (
+                            <div key={stage.id} className={styles.stageBlock}>
+                              <WardGroupHeading
+                                title={stage.label}
+                                people={stage.movements.length}
+                                note={moreNote(stage.movements.length - rows.length)}
+                              />
+                              <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                            </div>
+                          );
+                        })
                       : null}
 
                     {order === "transport"
-                      ? worklistTransportGroups.map((group) => (
-                          <div key={group.id} className={styles.stageBlock}>
-                            {group.rows.length > 0 ? (
-                              <>
-                                <WardGroupHeading title={group.title} people={group.rows.length} />
-                                <WardRecordList>
-                                  {group.rows.map((movement) => (
-                                    <StageRow
-                                      key={movement.id}
-                                      movement={movement}
-                                      now={now}
-                                      units={units}
-                                      referrals={referrals}
-                                      patients={patients}
-                                      accessTargetMinutes={accessTarget}
-                                      reveal={reveal}
-                                      consumeReveal={consumeReveal}
-                                      onOpenDetail={openDetail}
-                                    />
-                                  ))}
-                                </WardRecordList>
-                              </>
-                            ) : (
-                              <div className={styles.emptyStage}>
-                                <h3 className={styles.emptyStageTitle}>{group.title}</h3>
-                                <p className={styles.absent}>
-                                  No movement is in this group right now{inServiceSuffix(service)}.
-                                </p>
+                      ? shownTransportGroups.map((group) => {
+                          if (group.rows.length === 0) {
+                            if (matchesSearch !== null) return null;
+                            return (
+                              <div key={group.id} className={styles.stageBlock}>
+                                <div className={styles.emptyStage}>
+                                  <h3 className={styles.emptyStageTitle}>{group.title}</h3>
+                                  <p className={styles.absent}>
+                                    No movement is in this group right now{inServiceSuffix(service)}.
+                                  </p>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))
+                            );
+                          }
+                          const rows = capRows(group.rows, GROUP_CAP);
+                          return (
+                            <div key={group.id} className={styles.stageBlock}>
+                              <WardGroupHeading
+                                title={group.title}
+                                people={group.rows.length}
+                                note={moreNote(group.rows.length - rows.length)}
+                              />
+                              <WardRecordList>{rows.map(renderRow)}</WardRecordList>
+                            </div>
+                          );
+                        })
                       : null}
 
-                    {order === "wait" ? (
+                    {order === "wait" && shownByWait.length > 0 ? (
                       <div className={styles.stageBlock}>
                         {/* `byLongestWait` measures a closed movement to its CLOSURE, not to now — the
                           row beside it renders a frozen clock, and an order computed from a running
                           one would contradict the number the reader can see. */}
-                        <WardGroupHeading title="Longest wait first" people={worklistMovements.length} />
-                        <WardRecordList>
-                          {byLongestWait(worklistMovements, now).map((movement) => (
-                            <StageRow
-                              key={movement.id}
-                              movement={movement}
-                              now={now}
-                              units={units}
-                              referrals={referrals}
-                              patients={patients}
-                              accessTargetMinutes={accessTarget}
-                              reveal={reveal}
-                              consumeReveal={consumeReveal}
-                              onOpenDetail={openDetail}
-                            />
-                          ))}
-                        </WardRecordList>
+                        <WardGroupHeading
+                          title="Longest wait first"
+                          people={shownByWait.length}
+                          note={moreNote(shownByWait.length - capRows(shownByWait, LIST_CAP).length)}
+                        />
+                        <WardRecordList>{capRows(shownByWait, LIST_CAP).map(renderRow)}</WardRecordList>
                       </div>
                     ) : null}
                   </div>
@@ -901,115 +993,115 @@ export function MovementsScreen() {
                   >
                     {worklistClosedToday.length === 0 ? (
                       <p className={styles.absent}>No movement has resolved today{inServiceSuffix(service)}.</p>
+                    ) : shownClosedToday.length === 0 ? (
+                      <p className={styles.absent}>No resolved movement matches “{search.trim()}”.</p>
                     ) : (
-                      <WardRecordList>
-                        {worklistClosedToday.map((movement) => (
-                          <StageRow
-                            key={movement.id}
-                            movement={movement}
-                            now={now}
-                            units={units}
-                            referrals={referrals}
-                            patients={patients}
-                            accessTargetMinutes={accessTarget}
-                            reveal={reveal}
-                            consumeReveal={consumeReveal}
-                            onOpenDetail={openDetail}
-                          />
-                        ))}
-                      </WardRecordList>
+                      <WardRecordList>{capRows(shownClosedToday, LIST_CAP).map(renderRow)}</WardRecordList>
                     )}
                   </div>
                 </div>
               )}
-            </WardPanel>
+
+              <div className={styles.wlFoot}>
+                <span className={styles.wlFootText}>{worklistFootText}</span>
+                {matchesSearch === null && (hiddenRowCount > 0 || showAll) ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    aria-expanded={showAll}
+                    aria-controls={boardTab === "every" ? "movements-pane-every" : "movements-pane-resolved"}
+                    onClick={() => setShowAll((value) => !value)}
+                  >
+                    {showAll ? "Show fewer" : `Show all ${worklistListTotal}`}
+                  </button>
+                ) : null}
+              </div>
+            </Card>
           </div>
 
           <aside className={styles.secondary} aria-label="Movement details">
             {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
                 the region name follows whichever view is showing. The transport count stays off
                 the header: the bar caption already says how many legs are booked or moving. */}
-            <WardPanel
-              title={sideView === "transport" ? "Transport right now" : "Shape of the day"}
-              count={
-                sideView === "shape"
-                  ? shapeTab === "resolved"
-                    ? `${closedToday.length} resolved today`
-                    : `${openMovements.length} open`
-                  : undefined
-              }
-              headerAction={
-                <div className={styles.sideViewToggle} role="group" aria-label="Movement side view">
-                  <button
-                    type="button"
-                    aria-pressed={sideView === "transport"}
-                    onClick={() => setSideView("transport")}
-                  >
-                    Transport
-                  </button>
-                  <button type="button" aria-pressed={sideView === "shape"} onClick={() => setSideView("shape")}>
-                    Shape of the day
-                  </button>
-                </div>
-              }
+            {/* The region keeps its longer name, "Transport right now", which tests and earlier
+                readers know it by; the visible title is the mockup's shorter "Transport now". */}
+            <Card
+              aria-label={sideView === "transport" ? "Transport right now" : "Shape of the day"}
+              data-ward-primitive="panel"
+              className={styles.sideCard}
             >
+              <CardHead
+                icon={sideView === "transport" ? Truck : ChartColumn}
+                title={sideView === "transport" ? "Transport now" : "Shape of the day"}
+                meta={
+                  sideView === "shape"
+                    ? shapeTab === "resolved"
+                      ? `${closedToday.length} resolved today`
+                      : `${openMovements.length} open`
+                    : undefined
+                }
+                action={
+                  <div className={styles.sideViewToggle} role="group" aria-label="Movement side view">
+                    <button
+                      type="button"
+                      aria-pressed={sideView === "transport"}
+                      onClick={() => setSideView("transport")}
+                    >
+                      Jobs
+                    </button>
+                    <button type="button" aria-pressed={sideView === "shape"} onClick={() => setSideView("shape")}>
+                      Shape of the day
+                    </button>
+                  </div>
+                }
+              />
               {sideView === "transport" ? (
                 legs.length === 0 ? (
                   <p className={styles.absent}>No transport leg is booked or moving right now.</p>
                 ) : (
                   <div className={styles.transportWidget}>
                     <div className={styles.transportBarWrap}>
-                      <WardBar
-                        segments={
-                          [
-                            { label: LEG_STATE_LABEL.Accepted, value: counts.Accepted, tone: "accent" },
-                            { label: LEG_STATE_LABEL["En route"], value: counts["En route"], tone: "warning" },
-                            { label: LEG_STATE_LABEL.Collected, value: counts.Collected, tone: "warning" },
-                            { label: LEG_STATE_LABEL.Arrived, value: counts.Arrived, tone: "good" },
-                            { label: LEG_STATE_LABEL.Cancelled, value: counts.Cancelled, tone: "danger" },
-                          ] satisfies WardBarSegment[]
-                        }
-                        caption={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
+                      <StackBar
+                        label={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
+                        segments={TRANSPORT_STATES.map((st) => ({
+                          id: st.id,
+                          label: LEG_STATE_LABEL[st.id],
+                          value: counts[st.id],
+                          fill: st.fill,
+                          hatch: st.hatch,
+                        }))}
+                      />
+                      <Legend
+                        className={styles.transportLegend}
+                        items={TRANSPORT_STATES.filter((st) => counts[st.id] > 0 || st.id === "Arrived").map((st) => ({
+                          id: st.id,
+                          label: LEG_STATE_LABEL[st.id],
+                          fill: st.fill,
+                          hatch: st.hatch,
+                          value: counts[st.id] === 0 ? "none" : counts[st.id],
+                        }))}
                       />
                     </div>
 
-                    <div
-                      className={styles.transportFilterBar}
-                      role="group"
-                      aria-label="Filter transport legs by status"
-                    >
-                      <button
-                        type="button"
-                        className={styles.transportFilterBtn}
-                        data-active={transportFilter === "all" ? "true" : undefined}
-                        onClick={() => setTransportFilter("all")}
+                    <ChipGroup label="Filter transport legs by status" className={styles.transportFilterBar}>
+                      <FilterChip
+                        pressed={transportFilter === "all"}
+                        onPressedChange={() => setTransportFilter("all")}
+                        count={legs.length}
                       >
-                        <span>All</span>
-                        <span className={styles.transportFilterCount}>{legs.length}</span>
-                      </button>
-                      {(
-                        [
-                          { id: "Accepted", label: "Booked", count: counts.Accepted, tone: "accent" },
-                          { id: "En route", label: "En route", count: counts["En route"], tone: "warning" },
-                          { id: "Collected", label: "Collected", count: counts.Collected, tone: "warning" },
-                          { id: "Arrived", label: "Arrived", count: counts.Arrived, tone: "good" },
-                          { id: "Cancelled", label: "Cancelled", count: counts.Cancelled, tone: "danger" },
-                        ] as const
-                      ).map((st) => (
-                        <button
+                        All
+                      </FilterChip>
+                      {TRANSPORT_STATES.filter((st) => counts[st.id] > 0 || transportFilter === st.id).map((st) => (
+                        <FilterChip
                           key={st.id}
-                          type="button"
-                          className={styles.transportFilterBtn}
-                          data-tone={st.tone}
-                          data-active={transportFilter === st.id ? "true" : undefined}
-                          disabled={st.count === 0}
-                          onClick={() => setTransportFilter(st.id)}
+                          pressed={transportFilter === st.id}
+                          onPressedChange={(pressed) => setTransportFilter(pressed ? st.id : "all")}
+                          count={counts[st.id] === 0 ? "none" : counts[st.id]}
                         >
-                          <span>{st.label}</span>
-                          <span className={styles.transportFilterCount}>{st.count === 0 ? "none" : st.count}</span>
-                        </button>
+                          {LEG_STATE_LABEL[st.id]}
+                        </FilterChip>
                       ))}
-                    </div>
+                    </ChipGroup>
 
                     <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
                       {filteredLegs.length === 0 ? (
@@ -1018,52 +1110,41 @@ export function MovementsScreen() {
                         filteredLegs.map((leg) => {
                           const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
                           const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-                          const legTone =
-                            leg.state === "Arrived"
-                              ? "good"
-                              : leg.state === "Cancelled"
-                                ? "danger"
-                                : leg.state === "Accepted"
-                                  ? "accent"
-                                  : "warning";
-                          const stateLabel =
-                            leg.state === "Accepted" ? "Booked" : (LEG_STATE_LABEL[leg.state] ?? leg.state);
+                          const originEd = edById(leg.movement.originEdId);
+                          const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
+                          const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
+                          const selected = detailId === leg.movement.id;
 
                           return (
                             <button
                               key={leg.movement.id}
                               type="button"
                               className={styles.transportRunCard}
-                              data-tone={legTone}
+                              data-selected={selected ? "true" : undefined}
                               onClick={() => {
                                 openDetail(leg.movement.id);
                                 revealMovement(leg.movement.id);
                               }}
                               aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
                             >
-                              <div className={styles.transportRunHeader}>
-                                <div className={styles.transportRunIdentity}>
-                                  <span className={styles.transportRunName}>{patientInfo.formalName}</span>
-                                </div>
-                                <span className={styles[`transportRunPill_${legTone}`]}>{stateLabel}</span>
-                              </div>
-                              <div className={styles.transportRunCorridor}>
-                                <span className={styles.transportRunNode} title={originLabel}>
-                                  {originLabel}
+                              <span className={styles.trCell}>
+                                <span className={styles.trName}>{patientInfo.formalName}</span>
+                                <span className={styles.trSub} title={`${originLabel} to ${destinationLabel}`}>
+                                  {shortOrigin} to {destinationLabel}
                                 </span>
-                                <span className={styles.transportRunArrow} aria-hidden="true">
-                                  →
+                              </span>
+                              <span className={styles.trCell}>
+                                <span className={styles.trState}>
+                                  <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
+                                  {stateLabel}
                                 </span>
-                                <span className={styles.transportRunNode} title={destinationLabel}>
-                                  {destinationLabel}
-                                </span>
-                              </div>
-                              <div className={styles.transportRunFooter}>
-                                <span className={styles.transportRunProvider}>{leg.provider}</span>
-                                <span className={styles.transportRunTime}>
-                                  Booked {splitDuration(leg.minutesSinceBooked)} ago
-                                </span>
-                              </div>
+                                <span className={styles.trSub}>{leg.provider}</span>
+                              </span>
+                              <span className={styles.trWhen}>
+                                <span className="sr-only">Booked </span>
+                                {durMinutes(leg.minutesSinceBooked)}
+                                <span className="sr-only"> ago</span>
+                              </span>
                             </button>
                           );
                         })
@@ -1314,7 +1395,7 @@ export function MovementsScreen() {
                   </div>
                 </>
               )}
-            </WardPanel>
+            </Card>
           </aside>
         </div>
 
@@ -1491,8 +1572,9 @@ function StageRow({
   // v6 worklist row (7 Oct 2026): one line per person (tier, person, from and to, barrier, waited),
   // then a quiet second line with the record's tags and its two actions.
   const waitedMinutes = Math.max(clockEnd - movement.openedAt, 0);
-  const waitThresholds =
-    movement.urgency === 1 ? { dueSoon: 2 * 60, overdue: 4 * 60 } : { dueSoon: 8 * 60, overdue: 24 * 60 };
+  // "Due soon" from the named ED severe-pressure default, "Overdue" past the configured ED access
+  // target. No tier-specific window is invented here.
+  const waitThresholds = { dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES, overdue: accessTargetMinutes };
   const waitWord = closure
     ? "in journey before it ended"
     : waitedMinutes >= waitThresholds.overdue
@@ -1576,13 +1658,13 @@ function StageRow({
         </span>
         <span className={styles.wlWait}>
           <Timer
-            at={movement.openedAt * MINUTE_MS}
-            now={clockEnd * MINUTE_MS}
+            at={movement.openedAt * MS_PER_MINUTE}
+            now={clockEnd * MS_PER_MINUTE}
             direction="waiting"
             thresholds={
               closure
                 ? undefined
-                : { dueSoon: waitThresholds.dueSoon * MINUTE_MS, overdue: waitThresholds.overdue * MINUTE_MS }
+                : { dueSoon: waitThresholds.dueSoon * MS_PER_MINUTE, overdue: waitThresholds.overdue * MS_PER_MINUTE }
             }
             hideFlagWord
             hideDirection
@@ -1691,6 +1773,47 @@ function StageRow({
  * are in a vehicle that has already picked them up. The finer distinction is the point of the
  * collapse — it is what `transportLeg` knew all along and this screen was discarding.
  */
+/** Rows shown per group in the worklist before Show all, and in a single ungrouped list. */
+const GROUP_CAP = 4;
+const LIST_CAP = 12;
+
+function moreNote(hidden: number): string | undefined {
+  return hidden > 0 ? `${hidden} more` : undefined;
+}
+
+/** What the worklist search box matches: the person's names and UMRN, and the ED they left. */
+function movementSearchText(movement: Movement, patients: readonly Patient[], referrals: Referral[]): string {
+  const person = resolveSubjectPatient(movement, { patients, referrals });
+  const ed = edById(movement.originEdId);
+  return [
+    person.formalName,
+    person.displayName,
+    person.umrn,
+    ed ? `${ed.siteCode} ED` : "",
+    departmentLabel(movement.originEdId, ed?.name),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+/** Transport states in bar order, with the data fill each takes in the bar and legend. */
+const TRANSPORT_STATES: { id: MovementLegState; fill: WfFill; hatch?: boolean }[] = [
+  { id: "Accepted", fill: "data-3" },
+  { id: "En route", fill: "data-2" },
+  { id: "Collected", fill: "data-1" },
+  { id: "Arrived", fill: "ready" },
+  { id: "Cancelled", fill: "closed" },
+];
+
+/** A leg's state as a glyph: hollow while booked, filled while moving, a tick once delivered. */
+const LEG_STATE_TONE: Record<MovementLegState, WfTone> = {
+  Accepted: "neutral",
+  "En route": "info",
+  Collected: "info",
+  Arrived: "success",
+  Cancelled: "closed",
+};
+
 const LEG_STATE_LABEL: Record<MovementLegState, string> = {
   Accepted: "Booked",
   "En route": "En route",

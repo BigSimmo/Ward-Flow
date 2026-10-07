@@ -67,6 +67,9 @@ function renderBoard() {
       <ClockAdvancer minutes={ADVANCE_BY} />
     </WardFlowProvider>,
   );
+  // v6 (7 Oct 2026): the worklist shows the first rows of each group until Show all; these
+  // cases read every row, so they open the full list first.
+  fireEvent.click(screen.getByRole("button", { name: /^Show all \d+$/u }));
   // Read the mounted worklist; clock assertions below still compare live and frozen journeys.
   return screen.getByRole("region", { name: "Movement worklist" });
 }

@@ -42,11 +42,15 @@ const legs = transportLegs(openMovements, NOW);
 const counts = transportCounts(legs);
 
 function renderScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <MovementsScreen />
     </WardFlowProvider>,
   );
+  // v6 (7 Oct 2026): the worklist shows the first rows of each group until Show all; these
+  // cases read every row, so they open the full list first.
+  fireEvent.click(screen.getByRole("button", { name: /^Show all \d+$/u }));
+  return view;
 }
 
 /**

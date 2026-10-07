@@ -181,7 +181,8 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const badge = trafficPanel.querySelector("#ganttScrubBadgeText");
 
     expect(scrubber).toHaveValue("0");
-    expect(badge).toHaveTextContent("NOW (+0h)");
+    // v6 (7 Oct 2026): the badge reads "Now, HH:MM" rather than "NOW (+0h)".
+    expect(badge).toHaveTextContent(/^Now, \d{2}:\d{2}$/u);
 
     // Scrub forward 12 hours
     fireEvent.change(scrubber, { target: { value: "12" } });
@@ -192,7 +193,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const resetBtn = within(trafficPanel).getByRole("button", { name: "Reset" });
     fireEvent.click(resetBtn);
     expect(scrubber).toHaveValue("0");
-    expect(badge).toHaveTextContent("NOW (+0h)");
+    expect(badge).toHaveTextContent(/^Now, \d{2}:\d{2}$/u);
   });
 
   it("opens a modal timeline, retains corridors and restores focus on Escape", () => {
