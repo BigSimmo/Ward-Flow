@@ -446,6 +446,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * describes rather than left to contradict three live controls.
    */
   [
+    "/mockups/ward-flow/tools-preview",
+    "Design preview of the Tools workspace, opened from the Tools drawer. It is not a rail section; the existing Tools drawer stays the operational surface.",
+  ],
+  [
     "/mockups/ward-flow/settings",
     "No rail item by the drawing's own instruction — it opens from the Tools drawer on every screen. " +
       "Settings is reached from the Tools drawer (shell/ward-bar.tsx), the rail footer (shell/ward-rail.tsx) " +

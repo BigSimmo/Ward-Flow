@@ -115,6 +115,7 @@ import {
   settingsHref,
   signInHref,
   teamHref,
+  toolsPreviewHref,
   unitHref,
   wardBoardHref,
   wardStatisticsHref,
@@ -597,6 +598,7 @@ const BUILDER_ROUTES: readonly {
   { name: "edHref", href: edHref("peel-ed"), route: "ed/[edId]" },
   { name: "movementHref", href: movementHref("WF-M-1"), route: "movements/[movementId]" },
   { name: "handoverHref", href: handoverHref(), route: "handover" },
+  { name: "toolsPreviewHref", href: toolsPreviewHref(), route: "tools-preview" },
   { name: "settingsHref", href: settingsHref(), route: "settings" },
   { name: "officerHref", href: officerHref(), route: "transport/officer" },
   { name: "onCallHref", href: onCallHref(), route: "on-call" },
@@ -630,7 +632,7 @@ const BUILDER_ROUTES: readonly {
 describe("every href the facade builds lands on a route that exists", () => {
   it("covers every builder the facade exports", () => {
     // Anti-vacuity: an empty or shrunken list would make every case below pass by not running.
-    expect(BUILDER_ROUTES.length).toBe(18);
+    expect(BUILDER_ROUTES.length).toBe(19);
     expect(new Set(BUILDER_ROUTES.map((entry) => entry.name)).size).toBe(BUILDER_ROUTES.length);
   });
 
@@ -706,6 +708,7 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
   { name: "edHref", line: "return `/mockups/ward-flow/ed/${encodeURIComponent(edId)}`;" },
   { name: "movementHref", line: "return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;" },
   { name: "handoverHref", line: 'return "/mockups/ward-flow/handover";' },
+  { name: "toolsPreviewHref", line: 'return "/mockups/ward-flow/tools-preview";' },
   { name: "settingsHref", line: 'return "/mockups/ward-flow/settings";' },
   { name: "officerHref", line: 'return "/mockups/ward-flow/transport/officer";' },
   { name: "onCallHref", line: 'return "/mockups/ward-flow/on-call";' },

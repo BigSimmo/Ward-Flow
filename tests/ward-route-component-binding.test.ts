@@ -133,6 +133,7 @@ const PINNED: Record<string, string | null> = {
   "statistics/community/[teamId]": "StatisticsCommunityScreen",
   "statistics/ward/[unitId]": "StatisticsWardScreen",
   transport: "redirect:/mockups/ward-flow/movements",
+  "tools-preview": "ToolsPreview",
   "transport/officer": "OfficerScreen",
   "ward/[unitId]": "WardScreen",
   // The Answer presentation is a distinct reachable route over the same authoritative WardScreen;

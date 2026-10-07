@@ -266,6 +266,11 @@ export function handoverHref(): string {
   return "/mockups/ward-flow/handover";
 }
 
+/** Design preview opened from the Tools drawer. The operational Tools drawer stays in the bar. */
+export function toolsPreviewHref(): string {
+  return "/mockups/ward-flow/tools-preview";
+}
+
 export function settingsHref(): string {
   return "/mockups/ward-flow/settings";
 }

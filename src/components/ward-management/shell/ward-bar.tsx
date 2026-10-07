@@ -78,6 +78,7 @@ import {
   officerHref,
   onCallHref,
   settingsHref,
+  toolsPreviewHref,
   unitHref,
 } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -1600,11 +1601,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
           <section className={styles.toolsSection}>
             <h3 className={styles.toolsHeading}>Quick actions</h3>
-            <Link
-              href="/mockups/ward-flow/tools-preview"
-              className={styles.toolItem}
-              onClick={() => closePopover("tools", false)}
-            >
+            <Link href={toolsPreviewHref()} className={styles.toolItem} onClick={() => closePopover("tools", false)}>
               <Wrench aria-hidden="true" />
               <span>
                 Preview redesigned tools<em>Explore the interactive design proposal</em>

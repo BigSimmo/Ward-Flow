@@ -26,10 +26,10 @@ import {
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { bedStates } from "../ward-bed-states";
-import { capacityBreakdown } from "../ward-bed-availability";
+import { bedsPendingPreparation, capacityBreakdown } from "../ward-bed-availability";
 import { referralQueueOrder } from "../ward-referrals";
 import { isOpen } from "../ward-derivations";
-import { formatInstant, splitDuration } from "../ward-clock";
+import { formatInstant, formatInstantWithDay, splitDuration } from "../ward-clock";
 import { allEmergencyDepartments, wardSites } from "../ward-sites";
 import { HEALTH_SERVICES } from "../ward-model";
 import { REFERENCE_TEAM_NAMES, REFERENCE_TEAM_CAVEAT, referenceTeamDetail } from "../reference/ward-reference-teams";
@@ -145,7 +145,7 @@ export function ToolsPreview() {
   const beds = units.reduce((total, unit) => total + unit.beds, 0);
   const occupied = sum("occupied");
   const occupancy = beds > 0 ? Math.round((occupied / beds) * 100) : null;
-  const pending = sum("beingMadeReady");
+  const pending = units.reduce((total, unit) => total + bedsPendingPreparation(unit.id, bedReleases), 0);
   const breakdowns = units.map((unit) => capacityBreakdown(unit, bedReleases, leaveBeds, now));
   const fresh = units.filter(
     (unit) =>
@@ -209,9 +209,9 @@ export function ToolsPreview() {
           ...(find("passed")?.flagged ? { tone: "amber" as const } : {}),
         },
         {
-          label: "Due within 1h",
+          label: find("within-hour")?.label ?? "Due soon",
           value: find("within-hour")?.value ?? "—",
-          note: "Your current urgent default",
+          note: "Recorded due time on your current urgent default",
           ...(find("within-hour")?.flagged ? { tone: "amber" as const } : {}),
         },
         {
@@ -310,7 +310,12 @@ export function ToolsPreview() {
   }
 
   return (
-    <main className={styles.stage} data-preview-theme={dark ? "dark" : "light"} data-preview-open={open}>
+    <main
+      id="main-content"
+      className={styles.stage}
+      data-preview-theme={dark ? "dark" : "light"}
+      data-preview-open={open}
+    >
       <div className={styles.stageIntro}>
         <span className={styles.kicker}>WARD FLOW / DESIGN PREVIEW</span>
         <h1>
@@ -408,7 +413,9 @@ export function ToolsPreview() {
                       <BedDouble aria-hidden="true" />
                       <span>Ready now</span>
                       <strong>{find("ready")?.value}</strong>
-                      <small>{pending ? `${pending} pending preparation` : `Across ${units.length} wards`}</small>
+                      <small>
+                        {pending > 0 ? `${pending} still being made ready` : `Across ${units.length} wards`}
+                      </small>
                       <button
                         type="button"
                         onClick={() => {
@@ -443,7 +450,7 @@ export function ToolsPreview() {
                               {m.dueAt < now ? "Recorded deadline passed" : `${splitDuration(m.dueAt - now)} remaining`}
                             </small>
                           </span>
-                          <b>{formatInstant(m.dueAt)}</b>
+                          <b>{formatInstantWithDay(m.dueAt, now)}</b>
                         </Link>
                       ))}
                       {!due.length && <p className={styles.note}>No recorded due times on open movements.</p>}
@@ -574,7 +581,7 @@ export function ToolsPreview() {
                     ))}
                   </div>
                   <div className={styles.resultLine} role="status">
-                    <strong>{matches.length} contacts</strong>
+                    <strong>{matches.length} synthetic records</strong>
                     <span>Network directory</span>
                   </div>
                   <p className={styles.note}>
@@ -631,7 +638,7 @@ export function ToolsPreview() {
                             <p>{REFERENCE_TEAM_CAVEAT}</p>
                           </details>
                         ) : (
-                          <small className={styles.pending}>Awaiting verified contact details</small>
+                          <small className={styles.unverified}>Awaiting verified contact details</small>
                         )}
                       </li>
                     ))}
@@ -814,7 +821,7 @@ export function ToolsPreview() {
                             {m.dueAt < now ? "Deadline passed" : `${splitDuration(m.dueAt - now)} remaining`}
                           </small>
                         </span>
-                        <b>{formatInstant(m.dueAt)}</b>
+                        <b>{formatInstantWithDay(m.dueAt, now)}</b>
                         <ChevronRight aria-hidden="true" />
                       </Link>
                     ))}
@@ -824,12 +831,8 @@ export function ToolsPreview() {
                     <Action href={handoverHref()} icon={<FileText aria-hidden="true" />} title="Shift handover">
                       Review, print and share
                     </Action>
-                    <Action
-                      href="/mockups/ward-flow/escalation"
-                      icon={<Users aria-hidden="true" />}
-                      title="Escalation workspace"
-                    >
-                      Review the existing escalation view
+                    <Action href="/mockups/ward-flow/delays" icon={<Users aria-hidden="true" />} title="Delays">
+                      Review recorded delays
                     </Action>
                   </div>
                   <button type="button" className={styles.copyButton} onClick={copySnapshot}>

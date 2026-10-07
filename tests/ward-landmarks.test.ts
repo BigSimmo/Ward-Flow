@@ -83,6 +83,7 @@ import { WardPatientWorkspace } from "@/components/ward-management/ward-manageme
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
+import { ToolsPreview } from "@/components/ward-management/tools/tools-preview";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -256,6 +257,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
+  { route: `${ROUTE_PREFIX}/tools-preview`, render: () => createElement(ToolsPreview) },
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
 ];
 

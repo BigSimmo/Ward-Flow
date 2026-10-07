@@ -97,6 +97,7 @@ import { StatisticsServiceScreen } from "@/components/ward-management/statistics
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
+import { ToolsPreview } from "@/components/ward-management/tools/tools-preview";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 
@@ -205,6 +206,10 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
       concrete: `/mockups/ward-flow/statistics/ward/${unit.id}`,
       render: () => <StatisticsWardScreen unitId={unit.id} />,
     },
+  ],
+  [
+    "/mockups/ward-flow/tools-preview",
+    { concrete: "/mockups/ward-flow/tools-preview", render: () => <ToolsPreview /> },
   ],
   [
     "/mockups/ward-flow/transport/officer",

@@ -1,4 +1,5 @@
 import { SettingsScreen } from "../src/components/ward-management/settings/settings-screen";
+import { ToolsPreview } from "../src/components/ward-management/tools/tools-preview";
 import { StatisticsScreen } from "../src/components/ward-management/statistics/statistics-screen";
 import { StatisticsOverviewScreen } from "../src/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsCompareScreen } from "../src/components/ward-management/statistics/statistics-compare-screen";
@@ -1270,6 +1271,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   // 2026-09-12: the Settings screen. Listed here rather than among the redirect-only stubs because
   // it genuinely renders — it is unlisted in the RAIL, which is a different register entirely.
   { route: `${ROUTE_PREFIX}/settings`, render: () => createElement(SettingsScreen) },
+  { route: `${ROUTE_PREFIX}/tools-preview`, render: () => createElement(ToolsPreview) },
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
   { route: `${ROUTE_PREFIX}/statistics/overview`, render: () => createElement(StatisticsOverviewScreen) },
   { route: `${ROUTE_PREFIX}/statistics/compare`, render: () => createElement(StatisticsCompareScreen) },
@@ -1423,7 +1425,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    expect(RENDERABLE_ROUTES.length).toBe(37);
   });
 });
 
