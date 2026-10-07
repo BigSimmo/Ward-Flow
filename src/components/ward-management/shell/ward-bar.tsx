@@ -748,7 +748,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   );
 
   const openMovement = useCallback(
-    (movementId: string) => {
+    (movementId: string, action?: "refer" | "contact") => {
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -757,7 +757,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
       }
-      router.push(movementHref(movementId));
+      router.push(
+        `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+      );
     },
     [router],
   );
@@ -1500,6 +1502,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
+            records={{ movements, patients, referrals, units }}
           />
         </div>
       </Sheet>
