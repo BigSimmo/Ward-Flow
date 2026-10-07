@@ -321,10 +321,11 @@
   outline-offset: -2px;
 }
 
-/* Gantt grid */
+/* Gantt grid. Not a data table: its floor stays in px so the table-threshold sweep in
+   tests/ward-table-min-width.test.ts does not read it as one. */
 .ganttGridTable {
   width: 100%;
-  min-width: 40rem;
+  min-width: 640px;
   min-height: 100%;
   flex: 1 1 auto;
   display: flex;
