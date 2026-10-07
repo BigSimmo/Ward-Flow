@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { edById } from "@/components/ward-management/ward-sites";
+import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
   title: "Emergency department statistics — Ward Flow",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default async function WardStatisticsEdPage({ params }: { params: Promise<{ edId: string }> }) {
   const { edId } = await params;
-  const id = decodeURIComponent(edId);
+  const id = safeDecodeURIComponent(edId);
   const ed = edById(id);
   return <StatisticsEdScreen edId={ed ? ed.id : id} />;
 }

@@ -428,6 +428,29 @@ describe("complete guarded local care journey", () => {
   });
 });
 
+describe("D-30 coordinator-only transfer acceptance", () => {
+  it("refuses transfer acceptance from a ward role and records it from the coordinator", () => {
+    const { state, admission } = fixture();
+    const target = state.units.find((u) => u.id !== admission.unitId)!;
+    const accept: CareChange = { kind: "transfer", receivingUnitId: target.id, step: "accepted" };
+
+    const wardAttempt = wardFlowReducer(
+      state,
+      command(state, admission.id, accept, { role: "ward", actingUnitId: admission.unitId }),
+    );
+    expect(wardAttempt.admissions).toBe(state.admissions);
+    expect(wardAttempt.rejections).toHaveLength(state.rejections.length + 1);
+    expect(wardAttempt.auditEvents.at(-1)).toMatchObject({ outcome: "denied", reasonCode: "role" });
+    expect(wardAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer).toBeUndefined();
+
+    const coordinatorAttempt = wardFlowReducer(state, command(state, admission.id, accept));
+    expect(coordinatorAttempt.rejections).toEqual([]);
+    expect(coordinatorAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer?.step).toBe(
+      "accepted",
+    );
+  });
+});
+
 describe("care restore and paper provenance review boundaries", () => {
   it.each(["revocation", "5A", "5B"] as const)(
     "refuses an older %s paper entered after the current status change",

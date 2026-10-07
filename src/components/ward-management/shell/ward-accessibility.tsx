@@ -7,10 +7,12 @@ type Preference = "reduced-motion" | "high-contrast";
 const CHANGE = "ward-accessibility-change";
 const fallback: Partial<Record<Preference, boolean>> = {};
 function read(preference: Preference): boolean {
+  // Session fallback wins when a write was refused (private browsing / blocked storage).
+  if (Object.prototype.hasOwnProperty.call(fallback, preference)) return fallback[preference]!;
   try {
     return window.localStorage.getItem(`ward-flow-${preference}`) === "true";
   } catch {
-    return fallback[preference] ?? false;
+    return false;
   }
 }
 function subscribe(onChange: () => void) {
@@ -28,11 +30,12 @@ export function useWardAccessibilityPreference(preference: Preference): [boolean
   const contrast = useHighContrast();
   const set = useCallback(
     (enabled: boolean) => {
-      fallback[preference] = enabled;
       try {
         window.localStorage.setItem(`ward-flow-${preference}`, String(enabled));
+        delete fallback[preference];
       } catch {
         // Keep the preference usable when storage is blocked.
+        fallback[preference] = enabled;
       }
       window.dispatchEvent(new Event(CHANGE));
     },

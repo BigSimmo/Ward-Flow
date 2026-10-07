@@ -318,7 +318,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !reference(movement, "patientId", patientIds) ||
       !reference(movement, "referralId", referralIds) ||
       !reference(movement, "admissionId", admissionIds) ||
-      !reference(movement, "repatriationSourceAdmissionId", admissionIds) ||
+      !reference(movement, "sourceAdmissionId", admissionIds) ||
       !reference(movement, "acceptedUnitId", unitIds)
     )
       return false;

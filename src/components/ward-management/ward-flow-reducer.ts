@@ -64,6 +64,7 @@ import {
   referralSenderRole,
   referralState,
   referralSuburbIsAnswered,
+  wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
@@ -1182,7 +1183,7 @@ function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlow
 
 /** A recorded sending ward is the only exception to the one-current-stay placement rule. */
 function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
-  if (movement.repatriationSourceAdmissionId) return findAdmission(state, movement.repatriationSourceAdmissionId);
+  if (movement.sourceAdmissionId) return findAdmission(state, movement.sourceAdmissionId);
   const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
   if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
   const patientId = movement.patientId ?? referral.patientId;
@@ -1674,6 +1675,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
           admission.careJourney.followUp.serviceId !== event.actingTeamId))
     )
       return deny("scope");
+    // D-30: only the central bed coordinator accepts an inter-ward transfer.
+    if (event.change.kind === "transfer" && event.change.step === "accepted" && event.role !== "coordinator")
+      return deny("role");
     const refusal = careChangeRefusal(admission, event.change, event.now);
     if (refusal) return deny("transition", "denied", refusal);
     if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))
@@ -3897,7 +3901,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
       const source = movementSourceAdmission(state, movement);
       if (
-        (movement.repatriationSourceAdmissionId && !source) ||
+        (movement.sourceAdmissionId && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
       ) {
         return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");
@@ -4805,7 +4809,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
       const source = movementSourceAdmission(state, movement);
       if (
-        (movement.repatriationSourceAdmissionId && !source) ||
+        (movement.sourceAdmissionId && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
       ) {
         return reject(
@@ -4915,8 +4919,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       } else {
         withPerson = withUnit;
       }
-      if (source) {
-        const sendingUnit = findUnit(withPerson, source.unitId)!;
+      /*
+       * A repatriation or recorded ward transfer carries the sending stay (via
+       * `sourceAdmissionId` or a psychiatric-ward referral). Arrival at the receiving ward ends
+       * that stay as a transfer, so one person never holds a bed at both hospitals. A stay that
+       * has already left (or has gone) is left alone.
+       */
+      const sendingUnit = source ? findUnit(withPerson, source.unitId) : undefined;
+      if (source && sendingUnit && source.state === "occupied") {
         withPerson = departAdmission(
           withPerson,
           source,
@@ -6339,6 +6349,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           state,
           event,
           `${event.type} was raised by role ${event.role}, which may only answer ${ownKind.replace(/_/g, " ")} destinations, not ${event.destinationKind.replace(/_/g, " ")}`,
+        );
+      }
+      if (
+        event.role === "ward" &&
+        event.destinationKind === "psychiatric_ward" &&
+        event.unitId !== undefined &&
+        wardTransferNeedsCoordinator(referral, event.unitId, state.units)
+      ) {
+        return reject(
+          state,
+          event,
+          `D-30: a transfer from a ward at another hospital is accepted by the central bed coordinator, not the receiving ward`,
         );
       }
       const eligibleAddressings = referral.destinations.filter(
@@ -9035,7 +9057,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
           homeRegion: admission.homeRegion ?? undefined,
-          repatriationSourceAdmissionId: admission.id,
+          sourceAdmissionId: admission.id,
         };
         nextMovements = [...state.movements, returnMovement];
       }

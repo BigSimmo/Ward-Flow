@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { referralForMovement } from "../src/components/ward-management/ward-derivations";
+import { eligibility } from "../src/components/ward-management/ward-eligibility";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { TRANSPORT_PROVIDERS } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
@@ -223,8 +224,8 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
 
       const returnMovement = afterState.movements.at(-1)!;
       expect(returnMovement.stage).toBe("placement_requested");
+      expect(returnMovement.sourceAdmissionId).toBe(admission.id);
       expect(returnMovement.admissionId).toBeUndefined();
-      expect(returnMovement.repatriationSourceAdmissionId).toBe(admission.id);
       expect(returnMovement.patientId).toBe(admission.patientId ?? undefined);
       expect(returnMovement.blocker).toContain("Royal Perth Hospital");
       expect(returnMovement.blocker).toContain("agreed; awaiting destination bed placement");
@@ -255,6 +256,125 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       expect(afterState.rejections).toHaveLength(0);
       expect(afterState.repatriations).toHaveLength(1);
       expect(afterState.movements.length).toBe(movementsBefore);
+    });
+
+    it("lets the receiving ward pull the return movement instead of refusing it as someone else's bed", () => {
+      const state = seedWardFlowState("standard");
+      const admission = state.admissions.find((candidate) => candidate.state === "occupied")!;
+      const repatState = wardFlowReducer(state, {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now: NOW,
+        admissionId: admission.id,
+        homeHospital: "RPH",
+        receivingWardAgreed: true,
+        mode: "road",
+        provider: TRANSPORT_PROVIDERS[0],
+        cadNumber: "CAD-9876",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 120,
+      });
+      const returnMovement = repatState.movements.at(-1)!;
+      const destination = repatState.units.find(
+        (unit) =>
+          unit.id !== admission.unitId &&
+          unit.cohort === returnMovement.cohort &&
+          unit.empty.value > 1 &&
+          eligibility(returnMovement, unit, NOW).eligible,
+      )!;
+      expect(destination, "the seed needs a second ward with room for this cohort").toBeDefined();
+
+      let next = wardFlowReducer(repatState, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW + 5,
+        movementId: returnMovement.id,
+        unitIds: [destination.id],
+      });
+      next = wardFlowReducer(next, {
+        type: "ACCEPT_IN_PRINCIPLE",
+        role: "ward",
+        now: NOW + 10,
+        movementId: returnMovement.id,
+        unitId: destination.id,
+      });
+      next = wardFlowReducer(next, {
+        type: "PULL_PATIENT",
+        role: "ward",
+        now: NOW + 15,
+        movementId: returnMovement.id,
+        unitId: destination.id,
+      });
+
+      expect(next.rejections.map((rejection) => rejection.reason)).toEqual([]);
+      const pulled = next.movements.find((movement) => movement.id === returnMovement.id)!;
+      expect(pulled.stage).toBe("pulled");
+      expect(pulled.admissionId).not.toBe(admission.id);
+      expect(next.admissions.find((candidate) => candidate.id === admission.id)?.state).toBe("occupied");
+
+      // Arrival ends the sending stay, so the patient never holds a bed at both hospitals.
+      const sendingUnitEmptyBefore = next.units.find((unit) => unit.id === admission.unitId)!.empty.value;
+      next = wardFlowReducer(next, {
+        type: "RECORD_TRANSPORT_NEED",
+        role: "ward",
+        now: NOW + 20,
+        movementId: returnMovement.id,
+        needed: false,
+      });
+      next = wardFlowReducer(next, {
+        type: "PATIENT_ARRIVED",
+        role: "ward",
+        now: NOW + 30,
+        movementId: returnMovement.id,
+        actingUnitId: destination.id,
+      });
+      expect(next.rejections.map((rejection) => rejection.reason)).toEqual([]);
+      const sending = next.admissions.find((candidate) => candidate.id === admission.id)!;
+      expect(sending.state).toBe("departed");
+      expect(sending.leavingDestination).toBe("transferred-to-another-psychiatric-ward");
+      expect(next.units.find((unit) => unit.id === admission.unitId)!.empty.value).toBe(sendingUnitEmptyBefore + 1);
+    });
+
+    it("does not delete source admission from state when repatriation referral is withdrawn", () => {
+      const state = seedWardFlowState("standard");
+      const admission = state.admissions[0]!;
+
+      const repatState = wardFlowReducer(state, {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now: NOW,
+        admissionId: admission.id,
+        homeHospital: "RPH",
+        receivingWardAgreed: true,
+        mode: "road",
+        provider: TRANSPORT_PROVIDERS[0],
+        cadNumber: "CAD-9876",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 120,
+      });
+
+      const returnMovement = repatState.movements.at(-1)!;
+      expect(returnMovement.sourceAdmissionId).toBe(admission.id);
+      expect(returnMovement.admissionId).toBeUndefined();
+
+      // Refer to a unit and withdraw
+      const referredState = wardFlowReducer(repatState, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW + 5,
+        movementId: returnMovement.id,
+        unitIds: ["unit-rph-acute"],
+      });
+
+      const withdrawnState = wardFlowReducer(referredState, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        now: NOW + 10,
+        movementId: returnMovement.id,
+      });
+
+      // Source admission must still exist in admissions (not deleted by releasePulledBedAndAdmission)!
+      expect(withdrawnState.admissions.some((a) => a.id === admission.id)).toBe(true);
     });
   });
 });

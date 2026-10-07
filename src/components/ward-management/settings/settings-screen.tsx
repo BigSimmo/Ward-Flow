@@ -452,6 +452,16 @@ export function SettingsScreen() {
 
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
+
+  // Keep document attributes in sync when Settings is mounted without the layout helper
+  // (focused DOM tests) and when preferences change from these switches.
+  useEffect(() => {
+    if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
+    else document.documentElement.removeAttribute("data-reduced-motion");
+    if (highContrast) document.documentElement.setAttribute("data-high-contrast", "true");
+    else document.documentElement.removeAttribute("data-high-contrast");
+  }, [reducedMotion, highContrast]);
+
   const handleToggleReducedMotion = (enabled: boolean) => {
     setReducedMotion(enabled);
     showToast(`Reduced motion ${enabled ? "enabled" : "disabled"}.`);
@@ -523,7 +533,7 @@ export function SettingsScreen() {
     percent: number;
   }>({
     usedFormatted: "48 KB",
-    quotaFormatted: "5.0 MB",
+    quotaFormatted: "5 MB",
     percent: 1,
   });
 
@@ -538,7 +548,7 @@ export function SettingsScreen() {
             const quotaMB = Math.round(estimate.quota / (1024 * 1024));
             const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
             setStorageEstimate({
-              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
+              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1).replace(/\.0$/, "")} MB`,
               quotaFormatted: `${quotaMB} MB`,
               percent: Math.max(1, pct),
             });
@@ -566,7 +576,7 @@ export function SettingsScreen() {
         if (mounted) {
           setStorageEstimate({
             usedFormatted: `${kb} KB`,
-            quotaFormatted: "5.0 MB",
+            quotaFormatted: "5 MB",
             percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
           });
         }

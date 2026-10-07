@@ -6,11 +6,11 @@ import { describe, it, expect } from "vitest";
 import { DischargeCareJourney } from "@/components/ward-management/discharges/discharge-care-journey";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-function Workspace() {
+function Workspace({ role = "coordinator" }: { role?: "coordinator" | "ward" }) {
   const { admissions, openDischargeRecord, readDischargeRecord, dayZero, dispatch, rejections } = useWardFlow();
   const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
   const admission = admissions.find((a) => a.state === "occupied" && a.patientId)!;
-  const actor = { role: "coordinator" } as const;
+  const actor = role === "ward" ? ({ role, actingUnitId: admission.unitId } as const) : ({ role } as const);
   const read = readDischargeRecord(actor, admission.id, handle);
   const date = new Date(dayZero.getTime() + NOW_ANCHOR * 60_000);
   const local = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
@@ -30,10 +30,10 @@ function Workspace() {
     </>
   );
 }
-function start() {
+function start(role?: "coordinator" | "ward") {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <Workspace />
+      <Workspace role={role} />
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Open care record" }));
@@ -102,5 +102,24 @@ describe("care action rejection attribution", () => {
     expect(screen.getByTestId("global-rejection-count")).toHaveTextContent("1");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("crisis plan: completed");
+  });
+});
+
+describe("D-30 transfer acceptance controls", () => {
+  const stepOptions = () =>
+    within(screen.getByRole("combobox", { name: "Transfer step" }))
+      .getAllByRole("option")
+      .map((o) => o.getAttribute("value"))
+      .filter(Boolean);
+  it("offers the coordinator acceptance, handover and arrival", () => {
+    start("coordinator");
+    expect(stepOptions()).toEqual(["accepted", "handover", "arrived"]);
+  });
+  it("does not offer a ward user transfer acceptance", () => {
+    start("ward");
+    expect(stepOptions()).toEqual(["handover"]);
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent(
+      "Only the central bed coordinator accepts a transfer",
+    );
   });
 });

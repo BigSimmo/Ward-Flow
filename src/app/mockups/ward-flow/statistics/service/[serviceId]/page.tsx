@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
+import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
   title: "Health service statistics — Ward Flow",
@@ -19,5 +20,5 @@ export const metadata: Metadata = {
  */
 export default async function StatisticsServicePage({ params }: { params: Promise<{ serviceId: string }> }) {
   const { serviceId } = await params;
-  return <StatisticsServiceScreen serviceId={decodeURIComponent(serviceId)} />;
+  return <StatisticsServiceScreen serviceId={safeDecodeURIComponent(serviceId)} />;
 }

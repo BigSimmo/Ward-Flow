@@ -1989,6 +1989,7 @@ export function WardBoard({
           now={now}
           nameFor={nameFor}
           onOpen={setSelectedKey}
+          bedReleases={liveBedReleases}
         />
 
         {/*

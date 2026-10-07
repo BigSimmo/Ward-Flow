@@ -1601,8 +1601,12 @@ export type Movement = {
    * later stages were authored rather than reached by dispatching the event.
    */
   admissionId?: string;
-  /** Occupied sending stay for a repatriation; never a destination reservation. */
-  repatriationSourceAdmissionId?: string;
+  /**
+   * The source `Admission` at the sending hospital when this movement represents a repatriation
+   * or inter-hospital transfer. Kept separate from `admissionId` so that pre-pull movements do not
+   * deadlock destination pulls or cause accidental deletion of active stays on referral withdrawal.
+   */
+  sourceAdmissionId?: string;
   /** The CURRENT psychiatric examination a Form 1A refers the person for. Until it happens you
    *  often do not know whether an authorised bed is needed at all. Superseded by a later
    *  examination only when this one's outcome is `"further_examination_ordered"` — see
