@@ -328,7 +328,6 @@ function AlertRows({
 
         const actionVerb =
           categoryBadge.label === "Form Due Time Passed"
-
             ? "Re-authorise"
             : categoryBadge.label === "Multiple Declines"
               ? "Intervene"
