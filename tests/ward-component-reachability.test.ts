@@ -242,6 +242,15 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     module: "src/components/ward-management/statistics/statistics-primitives.tsx",
     why: "referenced by nothing in src/ at all — StatFootnote is only constructed by its retired DOM suite",
   },
+  /*
+   * The v6 rail (header and sidebar boards 02, 03 and 03b, 7 October 2026) removed the "Reconciliation
+   * not published" line from the rail. The component stays because `hub/hub-provenance.ts` still
+   * imports its exported helpers; it is no longer mounted on any route.
+   */
+  {
+    module: "src/components/ward-management/shell/ward-reconciliation-line.tsx",
+    why: "unmounted from the rail by the v6 restyle — its helpers stay for hub-provenance",
+  },
 ];
 
 describe("every ward component a test renders is one a coordinator can still reach", () => {

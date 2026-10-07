@@ -76,10 +76,11 @@ afterEach(() => {
 });
 
 describe("the rail's chosen-service word (item 52)", () => {
-  it("keeps all pages reachable from the desktop All Pages control", () => {
+  // v6 rail (7 October 2026): the control reads "All pages", in sentence case.
+  it("keeps all pages reachable from the desktop All pages control", () => {
     renderRail();
     expect(screen.getAllByRole("button", { name: "Menu" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "All Pages" }));
+    fireEvent.click(screen.getByRole("button", { name: "All pages" }));
     const navigation = screen.getByRole("dialog", { name: "Ward Flow navigation" });
     expect(within(navigation).getByRole("link", { name: /Statistics/i })).toHaveAttribute(
       "href",
@@ -143,7 +144,8 @@ describe("rail board time and handover countdown", () => {
 
     const countdown = screen.getByRole("link", { name: /Handover countdown:/i });
     expect(countdown).toHaveAccessibleName(/Handover Due/);
-    expect(countdown).toHaveTextContent("Handover Due");
+    // v6 rail (7 October 2026): the visible chip reads "due now"; the accessible name keeps "Handover Due".
+    expect(countdown).toHaveTextContent("due now");
     expect(countdown.textContent).not.toContain("3h 38m");
     expect(document.body.textContent).not.toContain("3h 38m");
   });
@@ -162,11 +164,18 @@ describe("rail bed alerts (live figures)", () => {
       trigger.click();
     });
 
-    expect(screen.getByText(`${expected.totalFreeBeds} Unoccupied Beds`)).toBeInTheDocument();
-    expect(screen.queryByText("18 Unoccupied Beds")).not.toBeInTheDocument();
+    // v6 rail (board 03b, 7 October 2026): the header chip reads "N unoccupied beds" and each
+    // service row reads "N of M free", in place of the earlier "N unoccupied (o/t)".
+    const header = screen.getByTestId("ward-rail-bed-alerts-free");
+    expect(header).toHaveTextContent(`${expected.totalFreeBeds} unoccupied beds`);
+    expect(header).not.toHaveTextContent("18 unoccupied beds");
 
+    const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
+    expect(rows).toHaveLength(expected.services.length);
     for (const row of expected.services) {
-      expect(screen.getByText(`${row.freeBeds} unoccupied (${row.occupiedBeds}/${row.totalBeds})`)).toBeInTheDocument();
+      const match = rows.find((element) => element.textContent?.includes(row.name));
+      expect(match, `no Bed alerts row for ${row.name}`).toBeDefined();
+      expect(match).toHaveTextContent(`${row.freeBeds} of ${row.totalBeds} free`);
     }
   });
 

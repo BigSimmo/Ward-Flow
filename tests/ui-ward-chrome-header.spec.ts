@@ -295,34 +295,20 @@ test.describe("@mockup Ward shell bar", () => {
           ).toHaveCount(0);
         }
 
-        // Keep the approved compact neutral status distinct from a published verdict.
-        // Movements publishes actual checks, so its result must still appear once.
-        const reconciliation = page.getByTestId("ward-reconciliation-line");
-        if (route === PUBLISHED_CHECKS_ROUTE) {
-          await expect(reconciliation, "the published reconciliation verdict must appear once").toHaveCount(1);
-          await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
-          await expect(reconciliation).toHaveAttribute("data-tone", "good");
-          if (width === 800) {
-            await page.getByRole("button", { name: "Menu", exact: true }).focus();
-            await page.keyboard.press("Enter");
-            await expect(reconciliation).toHaveCount(1);
-            await expect(reconciliation).toBeVisible();
-            await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
-            await expect(reconciliation).toHaveAttribute("data-tone", "good");
-            await page.keyboard.press("Escape");
-            await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
-          }
-        } else {
-          await expect(reconciliation, "the unpublished status must appear once").toHaveCount(1);
-          await expect(reconciliation).toHaveText("Reconciliation not published");
-          await expect(reconciliation).toHaveAttribute("data-tone", "neutral");
-        }
+        // v6 rail (header and sidebar boards 02, 03 and 03b, 7 October 2026): the rail no longer
+        // carries a reconciliation line on any route, published or not. Published checks surface
+        // in the Activity drawer (`tests/ward-checks-publication.dom.test.tsx`).
+        await expect(
+          page.getByTestId("ward-reconciliation-line"),
+          `the rail must carry no reconciliation line on ${route} at ${width}px`,
+        ).toHaveCount(0);
         await expect(page.getByText("No reconciliation is available for this page yet.", { exact: true })).toHaveCount(
           0,
         );
       }
 
-      // Compact layouts keep shift context in Menu; measure the status where users read it.
+      // Compact layouts keep shift context in Menu; check it where users read it. The v6 Menu sheet
+      // carries board time and handover and no reconciliation line.
       // Tablet coverage uses keyboard activation: its existing Menu pointer target sits outside the viewport.
       await gotoWardChrome(page, DELAYS_ROUTE);
       const menu = page.getByRole("button", { name: "Menu", exact: true });
@@ -330,37 +316,14 @@ test.describe("@mockup Ward shell bar", () => {
         await menu.focus();
         await page.keyboard.press("Enter");
       } else if (width === 375) await menu.click();
-      await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
-      const visibleStatus = page.getByTestId("ward-reconciliation-line").filter({ visible: true });
-      await expect(visibleStatus).toHaveCount(1);
-      await expect(visibleStatus).toHaveText("Reconciliation not published");
-      const fits = await visibleStatus.evaluate((line) => {
-        const text = line.querySelector("span:last-child");
-        if (!text) return false;
-        const range = document.createRange();
-        range.selectNodeContents(text);
-        const bounds = line.getBoundingClientRect();
-        const rects = Array.from(range.getClientRects());
-        return (
-          rects.length > 0 &&
-          rects.every(
-            (rect) =>
-              rect.width > 1 &&
-              rect.left >= bounds.left - 1 &&
-              rect.right <= bounds.right + 1 &&
-              rect.left >= 0 &&
-              rect.right <= window.innerWidth &&
-              line.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)),
-          )
-        );
-      });
-      expect(fits, "the reconciliation sentence must wrap within its line and remain unobscured").toBe(true);
+      await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
       if (width <= 1000) {
+        const sheet = page.getByTestId("ward-rail-more-pages");
+        await expect(sheet.getByText("Board time", { exact: true })).toBeVisible();
         await page.keyboard.press("Escape");
         await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
         await expect(menu).toBeFocused();
-        await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
-        await expect(visibleStatus).toHaveCount(width === 800 ? 1 : 0);
+        await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
       }
     });
   }
