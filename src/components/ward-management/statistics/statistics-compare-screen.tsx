@@ -302,13 +302,6 @@ export function StatisticsCompareScreen({
       </nav>
 
       {/* ══════════ SCOPE & ATTRIBUTION LIMITS PANEL ══════════ */}
-      <WardPanel
-        title="Scope and attribution limits"
-        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-        testId="ward-statistics-compare-scope"
-      >
-        <div className={styles.panelBody}></div>
-      </WardPanel>
 
       <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
         <section className={styles.panelBody}>
@@ -322,7 +315,7 @@ export function StatisticsCompareScreen({
                 </div>
                 {units.length === 0 ? (
                   <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
-                    No ward is recorded in this prototype, so there is nothing to chart.
+                    No wards recorded.
                   </p>
                 ) : (
                   <WardAlosBarChart units={units} admissions={admissions} now={now} />
@@ -356,7 +349,7 @@ export function StatisticsCompareScreen({
                 </div>
                 {emergencyDepartments.length === 0 ? (
                   <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
-                    No emergency department is recorded in this prototype, so there is nothing to chart.
+                    No emergency departments recorded.
                   </p>
                 ) : (
                   <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
@@ -471,32 +464,6 @@ export function StatisticsCompareScreen({
        * typed here.
        */}
       {/* ══════════ DATA PROVENANCE PANEL ══════════ */}
-      <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
-        <div className={styles.panelBody}>
-          {/*
-           * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
-           * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
-           * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
-           * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
-           * has scrolled away, and alone it must still say the figures are not real.
-           *
-           * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
-           * suite run over this screen: "None of it describes a real person…" and a second
-           * paragraph that said only what IS real. Both were honest and both failed, because the
-           * disclosing words were not bound to a verb or a noun inside their own sentence.
-           *
-           * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
-           * sentence boundary, so a marker before it does not vouch for the clause after it —
-           * which is the exact hole its own header records ("The ward names are invented; there
-           * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
-           */}
-          <p className={styles.body}>
-            Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
-            this screen is a real person, a real bed or a real referral.
-          </p>
-        </div>
-      </WardPanel>
     </StatisticsSectionFrame>
   );
 }
@@ -659,11 +626,6 @@ const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
  *
  * A single row cannot be uniform in any useful sense, so a one-row table reports nothing.
  */
-/** English for a list of column names, so the note reads as a sentence rather than as output. */
-function joinNames(names: readonly string[]): string {
-  if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
 
 /**
  * One comparison table, plus the note about its own uniform columns.
@@ -768,7 +730,6 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
-      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
         height={H}

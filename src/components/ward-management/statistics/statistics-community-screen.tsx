@@ -273,7 +273,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 <tr>
                   <th scope="col">Figure</th>
                   <th scope="col">Count</th>
-                  <th scope="col">What it counts</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,7 +285,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     >
                       {figureText(row.figure)}
                     </td>
-                    <td>{row.counts}</td>
                   </tr>
                 ))}
               </tbody>
@@ -299,10 +297,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 aria-labelledby="ward-statistics-community-case-age-heading"
               >
                 <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
-                <p className={styles.unmeasured}>
-                  Not recorded. This prototype keeps no history of how long a case has stayed open, so there is no
-                  distribution to chart.
-                </p>
+                <p className={styles.unmeasured}>Not recorded</p>
               </section>
             </section>
           </div>
@@ -320,10 +315,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             aria-label="Post-discharge follow-up content"
             tabIndex={-1}
           >
-            <p className={styles.unmeasured}>
-              Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
-              writes it, so there is no follow-up percentage to show.
-            </p>
+            <p className={styles.unmeasured}>Not recorded</p>
           </div>
         </StatisticsDetailPanel>
 

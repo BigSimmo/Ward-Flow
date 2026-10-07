@@ -515,7 +515,9 @@ export function StatisticsWardScreen({
           testId="ward-statistics-ward-occupancy-trajectory"
           dataTabSection="occ"
         >
-          <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}></div>
+          <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}>
+            <p className={styles.body}>Not recorded</p>
+          </div>
         </StatisticsDetailPanel>
 
         <div className={pageStyles.measureColumns} data-testid="ward-statistics-ward-measures">
@@ -540,7 +542,7 @@ export function StatisticsWardScreen({
                 <h3 className={styles.subHeading}>Average length of stay</h3>
                 <p className={styles.body} data-testid="ward-stat-length-of-stay">
                   {statistics.averageLengthOfStayDays === null ? (
-                    <>No admission on this ward has arrived yet, so there is no stay to measure.</>
+                    <>Not recorded</>
                   ) : (
                     <>
                       {statistics.averageLengthOfStayDays} {statistics.averageLengthOfStayDays === 1 ? "day" : "days"},
@@ -570,10 +572,7 @@ export function StatisticsWardScreen({
                  */}
                 <p className={styles.body} data-testid="ward-stat-empty-bed-minutes">
                   {statistics.averageEmptyBedMinutes === null ? (
-                    <>
-                      No bed on this ward has a usable pair of instants — a bed given away and a person arriving, with
-                      the arrival not earlier than the pull — so there is no empty stretch to average.
-                    </>
+                    <>Not recorded</>
                   ) : (
                     <>
                       {splitDuration(statistics.averageEmptyBedMinutes)} between a bed being given away and the person
@@ -597,36 +596,12 @@ export function StatisticsWardScreen({
             moves between.
           */}
                 <p className={styles.body} data-testid="ward-stat-empty-bed-incoherent">
-                  <strong>{statistics.emptyBedIncoherentCount}</strong>{" "}
-                  {statistics.emptyBedIncoherentCount === 1
-                    ? "admission on this ward records"
-                    : "admissions on this ward record"}{" "}
-                  an arrival earlier than the bed was given away.
-                  {statistics.emptyBedIncoherentCount > 0 ? (
-                    <>
-                      {" "}
-                      That cannot be true, so {statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"} excluded
-                      from the average and counted here instead.
-                    </>
-                  ) : null}
+                  <strong>{statistics.emptyBedIncoherentCount}</strong> invalid arrival records excluded
                 </p>
-
-                {statistics.emptyBedMinutesShortest !== null &&
-                statistics.emptyBedMinutesLongest !== null &&
-                statistics.emptyBedMinutesShortest === statistics.emptyBedMinutesLongest ? (
-                  <p className={styles.body} data-testid="ward-stat-empty-bed-uniform">
-                    <strong>
-                      Every measured gap on this ward is that same length, so the average describes no variation.
-                    </strong>
-                  </p>
-                ) : null}
 
                 <h3 className={styles.subHeading}>Average wait after being accepted</h3>
                 <div data-testid="ward-stat-waitlist-wait">
-                  <p className={styles.body}>
-                    This measure cannot be formed. The admission record carries no instant marking when a person joined
-                    the waiting list.
-                  </p>
+                  <p className={styles.body}>Not recorded</p>
                 </div>
               </div>
             </StatisticsDetailPanel>
@@ -718,10 +693,7 @@ export function StatisticsWardScreen({
                  */}
                 <p className={styles.body} data-testid="ward-stat-discharge-outcomes">
                   {statistics.dischargeDateOutcomes.consideredCount === 0 ? (
-                    <>
-                      No discharge date on this ward can be judged yet: judging one needs a date written down and the
-                      person to have since left, and no admission here has both.
-                    </>
+                    <>No resolved discharge dates.</>
                   ) : (
                     <>
                       Of {statistics.dischargeDateOutcomes.consideredCount} whose date can be judged — written down, and
@@ -810,10 +782,7 @@ export function StatisticsWardScreen({
                     >
                       <span className={pageStyles.kpiLabel}>Share of the ward</span>
                       {ready === null ? (
-                        <span>
-                          The share of the ward could not be worked out, for the same reason the breakdown below could
-                          not.
-                        </span>
+                        <span>Unavailable</span>
                       ) : ready.shareOfWard.kind === "measured" ? (
                         <>
                           <strong className={pageStyles.kpiValue}>{figureText(ready.shareOfWard)}%</strong>

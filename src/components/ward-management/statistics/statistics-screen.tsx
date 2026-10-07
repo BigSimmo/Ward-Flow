@@ -631,19 +631,15 @@ export function StatisticsScreen({
                     open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
                   </p>
 
-                  <p className={styles.figureNote} data-testid="ward-statistics-refused-so-far-why-so-far">
-                    <strong>&ldquo;So far&rdquo; is the limit of the record.</strong> There is no exhausted-network
-                    marker. At most{" "}
-                    <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>{" "}
-                    wards can be deciding together, but the lifetime number asked is not recorded. This is a current
-                    worklist, not a count of people no ward would take.
+                  <p className={styles.measuredCount}>
+                    Parallel referral cap{" "}
+                    <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>
                   </p>
 
                   <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
                     <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
                     {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation
-                    instead. Escalations are classified first, so this is a floor. An escalation records an opinion, not
-                    a derived finding that the network was exhausted.
+                    instead.
                   </p>
                 </article>
 
@@ -690,7 +686,7 @@ export function StatisticsScreen({
                     <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
                       {blocked.vocabularySize}
                     </span>{" "}
-                    allowed blockers are shown. Nought means checked with no matching admission, not unavailable.
+                    blocker categories.
                   </p>
                 </article>
               </div>

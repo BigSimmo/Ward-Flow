@@ -31,6 +31,11 @@ export function assertStatisticsPresentation(mode: Mode, retiredId?: string) {
   expect(container.querySelectorAll("details")).toHaveLength(0);
   expect(container.querySelectorAll('[data-ward-primitive="panel"]')).not.toHaveLength(0);
   expect(container.textContent).not.toMatch(/NaN|Infinity/);
+  expect(page.queryByRole("heading", { name: /^(Data provenance|Scope and attribution limits)$/i })).toBeNull();
+  expect(container.textContent).not.toMatch(
+    /If the model could compute|This prototype keeps no history|nothing in this prototype writes|This measure cannot be formed|Three comparison measures are unavailable|So far.{0,10}is the limit of the record|Nought means checked/i,
+  );
+  expect(page.queryByRole("columnheader", { name: "What it counts" })).toBeNull();
   expect(page.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
   if (retiredId) expect(page.queryByTestId(retiredId)).toBeNull();
 }

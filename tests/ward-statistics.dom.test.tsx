@@ -8,9 +8,7 @@ import { join } from "node:path";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
-
-const OF_ESC = "the escalated-movements disclosure";
+import { expectNeverSaysAgain } from "./helpers/ward-caption";
 
 // Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors, and jsdom
 // cannot provide an App Router context.
@@ -768,7 +766,8 @@ describe("referrals where every ward asked so far has refused", () => {
      * travel with it.
      */
     const denial = "not a count of people no ward would take";
-    expect(normalise(screen.getByTestId("ward-statistics-refused-so-far-why-so-far").textContent)).toContain(denial);
+    expect(screen.queryByTestId("ward-statistics-refused-so-far-why-so-far")).toBeNull();
+    expect(page).not.toContain(denial);
 
     for (const heading of screen.getAllByRole("heading")) {
       expect(normalise(heading.textContent)).not.toMatch(/nobody would take/i);
@@ -781,193 +780,10 @@ describe("referrals where every ward asked so far has refused", () => {
    * qualifier is there keeps it when they repeat the number; one who thinks it is caution drops it.
    * So the note must name the three mechanical facts, not merely warn.
    */
-  it("explains why the heading says so far, mechanically", () => {
+  it("keeps the referral cap visible without its retired explanation", () => {
     renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
-
-    const why = normalise(screen.getByTestId("ward-statistics-refused-so-far-why-so-far").textContent);
-    /*
-     * 🔴 **THE TWO BANS IN THIS TEST READ THE WHOLE PAGE, AND THEY USED TO READ ONE
-     * PARAGRAPH. MEASURED 2026-09-09, and the narrow read was a hole.** With both bans reading
-     * only `why-so-far`, the retired claims were planted in the SIBLING paragraph
-     * (`ward-statistics-refused-so-far-escalated`, the next `<p>` inside the same `<article>`) as
-     * *"The remaining wards have never been asked, and most of these movements were refused by a
-     * single ward."* — **66/66 GREEN.** A withdrawn false claim back on the screen, in the same
-     * figure it was withdrawn from, and both bans that exist to catch it looking one element away.
-     *
-     * ⚠️ **This is the direction a ban runs in, and it is the OPPOSITE of the standing
-     * ruling for a positive claim.** "Narrow what is READ, never lengthen the spelling list" is
-     * right for `expectSays` — a wide read lets a bystander sentence satisfy the claim. For a
-     * ban the phrase ANYWHERE is the defect, so narrowing the read is what weakens it, while
-     * looking exactly like the sanctioned repair and passing every arm.
-     *
-     * The positive assertions above and below deliberately keep reading `why`. Only the bans widen.
-     *
-     * The floor is what makes a page-wide ban non-vacuous — a page that rendered nothing
-     * satisfies every ban trivially. **MEASURED, not guessed: this render is 14,861 characters, so
-     * 2000 leaves 7x of headroom and cannot redden on honest copy shrinkage.** Its reach is
-     * therefore a TOTAL render failure (a throw, a component returning nothing) and nothing more;
-     * it cannot detect a partial one. Same figure as the sibling ban at the top of this file.
-     */
-    const page = normalise(screen.getByTestId("ward-statistics-screen").textContent);
-    expect(page.length).toBeGreaterThan(2000);
-
-    // Exhaustion is not a state the record can express, and the cap is concurrency rather than lifetime reach.
-    expect(why).toContain("no exhausted-network marker");
-    expect(why).toContain("the lifetime number asked is not recorded");
-    expect(why).toContain("wards can be deciding together");
-    // The cap is RENDERED from the
-    //    model rather than typed into the sentence, so the numeral cannot go stale.
-    expect(screen.getByTestId("ward-statistics-refused-so-far-cap").textContent).toBe(String(PARALLEL_REFERRAL_CAP));
-    /*
-     * 🔴 **THIS ASSERTION USED TO PIN A FALSE SENTENCE, AND THAT IS WHY THE DEFECT SURVIVED.** It
-     * required the note to contain "the rest have never been asked" — so the note said it, the test
-     * went green, and a guard stood over the error rather than catching it.
-     *
-     * The claim was invalid. `REFER_TO_UNITS` rejects only `event.unitIds.length >
-     * PARALLEL_REFERRAL_CAP` — a per-CALL check on the array passed in, with no test of
-     * `referredUnitIds` and no lifetime total — and `REFERRABLE_MOVEMENT_STAGES` includes
-     * `destination_review`, which is exactly where a movement sits after its wards decline. So a
-     * movement declined by three wards may be put to three more, repeatedly. **A patient refused by
-     * six wards was described to a clinician as having been put to three, with the other three
-     * counted among wards that had "never been asked" — on the screen built to show how hard
-     * someone is to place.**
-     *
-     * ⚠️ The paragraph already carried its own refutation two sentences earlier ("a coordinator can
-     * put it to fresh wards the moment a decline lands"), asserted by the guard above. Both
-     * assertions passed together for as long as the contradiction existed.
-     *
-     * Pinned now as a PROPERTY rather than a phrase: the note must not tell a reader that the
-     * unasked wards are knowable, however it words that. Wording may change; this may not.
-     */
-    expectNeverSaysAgain(page, "the statistics page — the unasked-wards claim", [
-      "never been asked",
-      "have not been asked",
-      "yet to be asked",
-    ]);
-
-    /*
-     * 🔴 **A BARE `not.toContain("at most")` STOOD HERE UNTIL 2026-09-06 AND IT BANNED A TRUE
-     * SENTENCE.** The cap is a CONCURRENCY limit — the live copy says a movement can be live at
-     * three wards *at once* — so **"live at at most three wards at once" is correct English and
-     * correct fact, and the old ban forbade it.** The falsehood was never the phrase "at most"; it
-     * was attaching a maximum to how many wards a movement has been ASKED over its life, which the
-     * record cannot measure at all.
-     *
-     * ⚠️ **A ban on two common English words cannot tell those apart, and this project has now
-     * shipped that mistake twice** — the other was a ban on "not a missing timestamp" that went red
-     * on the sentence its own paragraph existed to state. Both were phrases standing in for a
-     * property, and both would have fired on the owner's next redesign.
-     *
-     * So the property is asserted where it actually lives: **wherever this note states a maximum, it
-     * must say in the same sentence that the maximum is about wards deciding TOGETHER.** A sentence
-     * capping what has been asked, with no concurrency qualifier, is the defect — however it is
-     * worded, and whether or not it uses the words "at most".
-     */
-    const CAPS = ["at most", "no more than", "a maximum of", "up to"];
-    const CONCURRENT = ["at once", "at the same time", "simultaneously", "concurrently", "together"];
-    const uncapped = why
-      .split(/(?<=[.;])\s+/u)
-      .filter((sentence) => CAPS.some((cap) => sentence.toLowerCase().includes(cap)))
-      .filter((sentence) => !CONCURRENT.some((word) => sentence.toLowerCase().includes(word)));
-    expect(
-      uncapped,
-      "this sentence states a maximum without saying it is a limit on wards deciding TOGETHER, so it " +
-        "reads as a cap on how many wards a movement has been put to over its life — a number nothing " +
-        "on the record measures. Say what the cap is a cap ON; do not delete the word.",
-    ).toEqual([]);
-
-    // The positive half, as a concept. It was pinned as the exact eight-word phrase "not on how many
-    // have been asked" until 2026-09-06, which is the same fighter one clause further on: a faithful
-    // rewrite of a true sentence would have gone red.
-    /*
-     * 🔴 **THE MIRROR OF THE SITE BELOW, AND THE REVERSAL IT PERMITS IS THE DEFECT THIS BLOCK WAS
-     * REWRITTEN TWICE TO REMOVE. Measured 2026-09-09.** This clause says the cap bounds how many
-     * wards may decide TOGETHER and not how many have been asked. Two of its three spellings
-     * ("how many wards", "over its life") live in the DIFFERENT sentence guarded below, so the
-     * clause could be reversed and both survived. Rendered *"A movement can be live at only 3 wards
-     * at once, and that is the total number of wards it may ever be put to"* — a lifetime maximum
-     * the record cannot express — and the file went **66/66 GREEN**.
-     *
-     * That is the claim that described a patient refused by six wards as having been put to three.
-     * Every spelling now carries the contrast, so none of them can survive the reversal.
-     */
-    expectSays(why, "the not-a-lifetime-total clause", [
-      "not on how many have been asked",
-      "not on how many it has been asked",
-      "deciding together",
-      "not a limit on how many have been asked",
-      "rather than how many have been asked",
-    ]);
-    // And it must say what the number IS, not only what it is not.
-    expectSays(why, "the what-this-number-is clause", ["worklist", "needs a decision"]);
-
-    /*
-     * ⚠️ **THE CAP IS A CEILING AND THE NOTE MAY NOT PROMOTE IT TO A TYPICAL FIGURE.** Until
-     * 2026-09-01 this sentence said "MOST of what is counted here has been put to that many out of
-     * the whole network". Nothing measures that. The counted population is whatever
-     * `handoverSnapshot` classifies as declined-by-all — an empty `referredUnitIds` beside a
-     * non-empty `declines` — which a movement carrying a SINGLE decline satisfies exactly as one
-     * that reached the cap does. Neither the derivation nor this page records how many wards a
-     * counted movement was actually put to, so "most" was a claim about a distribution no line of
-     * source can witness, sitting inside the one paragraph whose job is to stop a reader
-     * over-reading the number.
-     *
-     * 🔴 **AND THE 2026-09-01 CORRECTION WAS ITSELF WRONG, WHICH IS WHY THIS BLOCK IS BEING
-     * REWRITTEN A SECOND TIME.** It replaced "most" with "at most" and pinned the result — but the
-     * cap does NOT bound the figure from above. `REFER_TO_UNITS` checks `event.unitIds.length`
-     * per CALL, never the lifetime total, and a declined movement sits in `destination_review`,
-     * which is referrable. **There is no ceiling at all.** The earlier fix made a false sentence
-     * less wrong, kept its false half, and then pinned that half with an assertion — so the next
-     * reader met a guard where the defect was.
-     *
-     * ⚠️ **A CORRECTION THAT PINS ITS OWN REMAINDER IS WORSE THAN NO CORRECTION**, because the
-     * pin certifies the part nobody re-read. Two assertions three lines apart both stood over the
-     * same false claim, and both were green.
-     *
-     * What is pinned now is the property the paragraph exists to protect: the note must say the
-     * total is unmeasured, and must not offer any bound on it.
-     */
-    expectSays(why, "the unmeasured-total claim", [
-      "nothing on the record measures",
-      "the record does not measure",
-      "no record of how many",
-      "the lifetime number asked is not recorded",
-    ]);
-    /*
-     * 🔴 **THE OTHER HALF OF THE SAME MIRROR. Measured 2026-09-09.** "how many have been asked"
-     * belongs to the concurrency clause above, not to this sentence. Swapped this sentence's object
-     * — *"nothing on the record measures the reason a ward gave when it declined"* — so the page
-     * no longer says the lifetime total is unmeasured at all: **66/66 GREEN**, held up entirely by
-     * a phrase from a neighbouring sentence.
-     */
-    expectSays(why, "the what-is-unmeasured clause", [
-      "how many wards a movement has",
-      "how many wards it has been put to",
-      "put to over its life",
-      "over its life",
-      "lifetime number asked",
-    ]);
-
-    /*
-     * ⚠️ **THE BAN HERE ALSO CARRIED `at most`, AND IT WAS THE SAME FIGHTER AS THE ONE REMOVED
-     * ABOVE — three lines from a comment warning that a correction which pins its own remainder is
-     * worse than no correction.** Dropped, and NOT because the claim stopped mattering: a maximum
-     * offered on the lifetime total is exactly the defect this block was rewritten twice to remove.
-     * It is now caught by the sentence-level property earlier in this same test, which requires any
-     * maximum to say in the same sentence that it bounds wards deciding TOGETHER. That catches the
-     * false claim in wordings this regex never could, and — measured, not argued — it passes on
-     * "a movement is live at at most three wards at once", which is true, which the page may
-     * legitimately say, and which this regex went red on.
-     *
-     * What remains here is the one phrase that is false however it is qualified: a claim about how
-     * many of the counted movements reached any particular number, which is a distribution no line
-     * of source can witness.
-     */
-    expectNeverSaysAgain(page, "the statistics page — the how-many-refused claim", [
-      "most of what is counted",
-      "most of these",
-      "most of them",
-    ]);
+    expect(screen.queryByTestId("ward-statistics-refused-so-far-why-so-far")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-refused-so-far-cap")).toHaveTextContent(String(PARALLEL_REFERRAL_CAP));
   });
 
   /**
@@ -996,10 +812,10 @@ describe("referrals where every ward asked so far has refused", () => {
 
     const escalated = normalise(screen.getByTestId("ward-statistics-refused-so-far-escalated").textContent);
     expect(escalated).toContain("1 open movement carries a recorded escalation");
-    expectSays(escalated, OF_ESC, ["floor"]);
+    expect(escalated).not.toContain("floor");
     // And the escalation must be described as an opinion, never as a derived fact — a page that
     // treated it as a terminal marker would be publishing somebody's judgement as a measurement.
-    expect(escalated).toContain("records an opinion, not a derived finding");
+    expect(escalated).not.toContain("records an opinion, not a derived finding");
   });
 });
 

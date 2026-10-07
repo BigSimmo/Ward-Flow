@@ -1136,6 +1136,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: THE_PARALLEL_REFERRAL_CAP_IS_REMOVED,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of remaining explanatory captions; the model evidence remains checked.",
+    },
     id: "statistics-screen/refused-so-far/the-shared-derivation-classifies-escalation-first",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Escalations are classified first, so this is a floor.",
@@ -1158,6 +1162,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of remaining explanatory captions; the model evidence remains checked.",
+    },
     id: "statistics-screen/refused-so-far/an-escalation-is-recorded-unvalidated",
     renderedIn: STATISTICS_SCREEN,
     rendered: "An escalation records an opinion, not a derived",

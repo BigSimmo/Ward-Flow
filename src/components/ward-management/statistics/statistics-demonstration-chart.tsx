@@ -21,11 +21,8 @@
 // `generateDemonstrationSeries` returns without ever naming this type, both get past the compiler;
 // see `statistics-demonstration.ts`'s header and `tests/ward-statistics-demonstration.test.ts` for
 // what actually stops each. This component is the one place the wrapper's expectation is met, and
-// the one place a demonstration series' three disclosure fields
-// (`label`, `whatItWouldMeasure`, `whyItIsNotReal`) are actually shown to whoever is looking at the
-// screen — not merely carried in an `aria-label`, the same discipline `WardBar` (`ward-bar.tsx`)
-// already holds to after a real defect: a caption that exists only for a screen reader leaves the
-// sighted reader looking at a picture with no visible account of what it is.
+// the one place an unavailable series is labelled visibly. Long explanatory captions were
+// removed at the owner's request; "Not recorded" remains beside its metric name.
 //
 // This module deliberately draws its own inline SVG rather than adding a dependency: nothing under
 // `ward-management/` renders a chart today (`statistics.module.css`'s own `.chartWrap`/`.chartSvg`/
@@ -41,7 +38,7 @@ import styles from "./statistics.module.css";
 // 🔴 NO LINE IS DRAWN ANY MORE — Josh, 25 September 2026: "the made-up 30-day (and 14-day) trend
 // charts on the statistics pages show 'Not recorded' until real history exists." Until then this
 // component drew the generated series as a line, badged "Demonstration data". It now shows the
-// series' own label with "Not recorded" and its two disclosure fields, and draws nothing: a badge
+// series' own label with "Not recorded" and draws nothing: a badge
 // beside an invented line still puts an invented line in front of a clinician. The series type and
 // the generator stay, so a screen that gains real history replaces a call here rather than a design.
 
@@ -71,10 +68,6 @@ export function DemonstrationChart({
     >
       <p className={styles.chartCaption}>
         <span className={styles.prototypeBadge}>Not recorded</span> {series.label}
-      </p>
-      <p className={styles.chartCaption}>
-        If the model could compute this, it would show <b>{series.whatItWouldMeasure}</b>. It cannot:{" "}
-        {series.whyItIsNotReal}
       </p>
     </div>
   );

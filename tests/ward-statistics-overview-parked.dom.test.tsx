@@ -250,7 +250,7 @@ describe("the statistics overview now carries real figures, honestly", () => {
 
     const chart = charts[0];
     expect(chart.textContent).toContain("Not recorded");
-    expect((chart.textContent ?? "").toLowerCase()).toContain("cannot");
+    expect(chart.querySelectorAll("p")).toHaveLength(1);
     expect(chart.querySelector("svg"), "no invented line is drawn").toBeNull();
   });
 

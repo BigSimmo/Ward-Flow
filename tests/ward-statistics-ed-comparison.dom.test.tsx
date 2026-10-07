@@ -138,7 +138,7 @@ describe("comparison across departments", () => {
    * threshold nobody has ruled on. ⚠️ **Asserted as absent from the HEADERS, not merely explained in
    * prose — a column quietly appearing later with an invented figure in it is the failure.**
    */
-  it("builds none of the three columns it cannot support, and says which and why", () => {
+  it("omits unsupported columns and the retired explanation", () => {
     const panel = renderEd([]);
     const headers = within(panel)
       .getAllByRole("columnheader")
@@ -148,9 +148,7 @@ describe("comparison across departments", () => {
     expect(headers.some((header) => header.includes("accepted"))).toBe(false);
     expect(headers.some((header) => header.includes("out of area"))).toBe(false);
 
-    const note = (within(panel).getByTestId("ward-stat-ed-comparison-not-built").textContent ?? "").toLowerCase();
-    expect(note).toContain("median");
-    expect(note, "the reason the seven-day columns cannot be built is not stated").toContain("history");
+    expect(within(panel).queryByTestId("ward-stat-ed-comparison-not-built")).toBeNull();
   });
 
   it("uses visible operational panels instead of the retired explanation: quotes the drawing's own guarantee about quiet departments", () => {

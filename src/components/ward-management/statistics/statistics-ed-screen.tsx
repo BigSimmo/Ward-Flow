@@ -646,15 +646,12 @@ export function StatisticsEdScreen({
               arm to satisfy the compiler for a case that cannot occur. */}
             {!declinesReadout.ok ? (
               <p className={styles.body} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
-                {declinesReadout.statement} This figure is a subtraction from that total, so it cannot be stated on its
-                own — the count above is not affected, because it reads the reason directly rather than through the
-                list.
+                {declinesReadout.statement}
               </p>
             ) : (
               <p className={styles.body} data-testid="ward-stat-ed-declined-not-suitable">
                 {notSuitableDeclineCount} {notSuitableDeclineCount === 1 ? "decline gave" : "declines gave"} a reason
-                other than having no free bed — a mix of clinical mismatch, staffing and administrative reasons, and one
-                that is itself about capacity. They are listed by name in the breakdown on the statistics home page.
+                other than having no free bed.
               </p>
             )}
           </div>
@@ -737,16 +734,7 @@ export function StatisticsEdScreen({
               </tbody>
             </WardTable>
 
-            <LegalLimitsNotChecked />
-
-            <p className={styles.notBuilt} data-testid="ward-stat-ed-comparison-not-built">
-              <strong>Three comparison measures are unavailable</strong>, and none stands as a nought or a dash.{" "}
-              <em>Accepted, 7 days</em> and <em>Out of area, 7 days</em> both need a rolling seven-day window, and this
-              prototype keeps no history at all — only the current state of each movement — so neither can be formed
-              from anything it stores. <em>Median wait</em> needs a minimum sample size below which it is suppressed,
-              and the one such threshold this prototype has was ruled by the owner for a different measure. No threshold
-              is applied here.
-            </p>
+            <LegalLimitsNotChecked variant="tag" />
           </div>
         </StatisticsDetailPanel>
       </div>

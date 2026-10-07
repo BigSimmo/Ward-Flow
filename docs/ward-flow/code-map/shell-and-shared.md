@@ -767,3 +767,5 @@ referencing it by name were not searched, and its own header comment's claim abo
 screen" is unverified beyond that one importer. Whether `shell/ward-bar.tsx`'s
 Escape-order and drawer-history behaviour actually works in a browser was not verified here — only
 read from source and the doc comments' own citations of `tests/ward-shell-third-edition.dom.test.tsx`.
+
+The statistics polish also removes the remaining comparison provenance panel, empty scope panel, long unavailable-measure explanations, and community figure-definition column. Historical measures retain compact “Not recorded” labels; recorded numbers and error states remain visible. The shared seven-mode presentation check rejects these explanation panels and placeholder paragraphs.

@@ -570,19 +570,13 @@ export function StatisticsOverviewScreen() {
                 <span data-testid="ward-statistics-overview-refused-so-far-open-count">
                   {refused.openMovementCount}
                 </span>{" "}
-                open {refused.openMovementCount === 1 ? "movement" : "movements"} network-wide have at least one
-                ward&apos;s refusal on record and no ward currently deciding — every ward asked <em>so far</em> has
-                refused.
+                open {refused.openMovementCount === 1 ? "movement" : "movements"}: every ward asked so far has refused.
               </p>
 
               <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
                 <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>{" "}
-                {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending across the network —
-                cleaning, maintenance or repair, or with no reason stated.{" "}
-                <strong>
-                  A patient cannot be pulled into a bed that is still Pending, so the network can act on {openNow} of
-                  its {capacity.ready} Ready beds right now.
-                </strong>
+                {preparingCount === 1 ? "bed" : "beds"} pending preparation · <strong>{openNow}</strong> open for
+                placement
               </p>
             </div>
           </WardPanel>
