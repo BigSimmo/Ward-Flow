@@ -45,6 +45,75 @@ a.secondary:hover {
   vertical-align: bottom;
 }
 
+/* The page's own row in a comparison table. */
+.currentRow > * {
+  background: var(--wf-selected);
+}
+
+.meterCell {
+  width: 38%;
+  min-width: 8rem;
+}
+
+.legendLine {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  white-space: nowrap;
+}
+
+.crossList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crossRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.crossRow:first-child {
+  border-top: 0;
+}
+
+.crossName {
+  display: block;
+  color: var(--wf-ink-1);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.crossName:hover {
+  text-decoration: underline;
+}
+
+.crossDue {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.crossDue b {
+  display: block;
+  font-family: var(--wf-mono);
+}
+
+@media (max-width: 760px) {
+  .crossName {
+    min-height: var(--ward-tap, 48px);
+    display: flex;
+    align-items: center;
+  }
+}
+
 .subHead {
   margin: 0;
   color: var(--wf-ink-2);

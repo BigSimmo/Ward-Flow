@@ -66,12 +66,6 @@
     "owner": "Build linked demo data"
   },
   {
-    "file": "statistics/statistics-ed-screen.tsx",
-    "rule": "hour window",
-    "text": "positioned by elapsed time since their movement opened. past 24 hours, past 48.",
-    "owner": "Remove invented data"
-  },
-  {
     "file": "ward-flow-reducer.ts",
     "rule": "hour window",
     "text": "Leave bed has been away for more than 24 hours — consider opening it.",
