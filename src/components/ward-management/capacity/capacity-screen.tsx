@@ -13,7 +13,7 @@ import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-pag
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
-import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
+import { WardChip } from "@/components/ward-management/ward-chip";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -1629,7 +1629,7 @@ function CapacityTabs({
 function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () => void }) {
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlow();
-  const { now, paused, togglePause } = usePageLive();
+  const { now } = usePageLive();
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
