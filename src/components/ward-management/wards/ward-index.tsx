@@ -1,33 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Info, LayoutGrid, List, Lock, Search } from "lucide-react";
 
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import {
+  BarList,
+  Button,
+  Card,
+  EmptyState,
+  Hero,
+  HeroStat,
+  Icon,
+  Kbd,
+  Popover,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  buttonClass,
+  cx,
+  dur,
+} from "@/components/wf";
+import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   designationSummary,
+  lockedBedsFree,
   unitHasLockedBeds,
-  unitHasOpenBeds,
+  wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
+import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-
-import styles from "./ward-index.module.css";
+import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
+import { BedStrip } from "@/components/ward-management/wards/bed-strip";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
-/**
- * 23-Ward Directory Profiles and Capacity Cards — Third Edition Perfected.
- * Renders the statewide clinical census, interactive filter ribbons, capacity KPI strip,
- * and 23 organized square ward cards with live capacity, 1:1 specialling, flow metrics, and
- * profile modal.
- */
+import styles from "./ward-index.module.css";
 
-type ServiceFilter = "all" | "NMHS" | "SMHS" | "EMHS" | "WACHS" | "Private";
-type CohortFilter = "all" | "adult-acute" | "older-adult" | "perinatal" | "forensic" | "sub-acute";
-type AvailFilter = "all" | "vacant" | "full" | "high-acuity";
+/**
+ * All wards (v6). One hero band with the statewide counts, one filter card (service, search,
+ * cards or table; status, cohort, order), then every ward as a card or a table row. Every figure
+ * is read from the provider: bed states from `bedStates`, discharges from `capacityBreakdown`,
+ * confirmation age from the ward's own allocatable figure.
+ */
 
 interface WardMetadata {
   num: string;
@@ -284,1213 +305,641 @@ const WARD_METADATA: Record<string, WardMetadata> = {
   },
 };
 
-function getServiceCode(
-  serviceName?: HealthService | string,
-): "NMHS" | "SMHS" | "EMHS" | "WACHS" | "Private" | "OTHER" {
-  if (!serviceName) return "OTHER";
-  if (serviceName.includes("North Metro")) return "NMHS";
-  if (serviceName.includes("South Metro")) return "SMHS";
-  if (serviceName.includes("East Metro")) return "EMHS";
-  if (serviceName.includes("WACHS") || serviceName.includes("Country")) return "WACHS";
-  if (serviceName.includes("Private") || serviceName.includes("St John") || serviceName.includes("SJGM"))
-    return "Private";
-  return "OTHER";
+type ServiceFilter = "all" | HealthService;
+type StatusFilter = "all" | "has-ready" | "full" | "stale";
+type CohortFilter = "all" | "adult" | "older-adult" | "youth" | "perinatal";
+type OrderBy = "service" | "most-ready" | "fullest";
+type ViewMode = "cards" | "table";
+
+/** "Fiona Stanley Hospital" -> "Fiona Stanley". Display only; the full name stays in the profile. */
+function siteShortName(name: string): string {
+  return name.replace(/ (Hospital|Health Service|Health Campus|Mental Health Service)$/u, "");
 }
 
-function getCohortKey(unit: Unit): "adult-acute" | "older-adult" | "perinatal" | "forensic" | "sub-acute" {
-  if (unit.forensic || /forensic/i.test(unit.name) || /forensic/i.test(unit.cohort)) return "forensic";
-  if (/older/i.test(unit.cohort) || /psychogeriatric/i.test(unit.cohort) || /older/i.test(unit.name))
-    return "older-adult";
-  if (/perinatal|mbu|mother|youth|adolescent/i.test(unit.cohort) || /perinatal|mbu|youth|adolescent/i.test(unit.name))
-    return "perinatal";
-  if (/sub-acute|rehab/i.test(unit.cohort) || /sub-acute|rehab/i.test(unit.name)) return "sub-acute";
-  return "adult-acute";
+function serviceShortName(service: HealthService): string {
+  return service.replace(/ Metro$/u, "");
 }
 
-function getAcuityLabel(unit: Unit): { label: string; tone: "danger" | "warn" | "good" | "accent" | "gilt" } {
-  if (unit.forensic) return { label: "Forensic", tone: "danger" };
-  const summary = designationSummary(unit);
-  if (unitHasLockedBeds(unit) && unitHasOpenBeds(unit)) return { label: summary, tone: "warn" };
-  if (unitHasLockedBeds(unit)) return { label: summary, tone: "danger" };
-  return { label: summary, tone: "good" };
+/** Mother and baby wards read as perinatal; the model's cohorts are Adult, Older adult, Youth. */
+function cohortKey(unit: Unit): Exclude<CohortFilter, "all"> {
+  if (/mother|baby|perinatal|mbu/iu.test(unit.name)) return "perinatal";
+  if (unit.cohort === "Older adult") return "older-adult";
+  if (unit.cohort === "Youth") return "youth";
+  return "adult";
+}
+
+function cohortLabel(unit: Unit): string {
+  return cohortKey(unit) === "perinatal" ? "Perinatal" : unit.cohort;
+}
+
+/** Owner ruling 2026-09-04: Open, Locked or Mixed, read from the bed counts. */
+function SecurityLabel({ unit }: { unit: Unit }) {
+  const category = wardCategory(unit);
+  return (
+    <span className={styles.acuityBadge} title={designationSummary(unit)}>
+      {category !== "Open" ? <Icon icon={Lock} size={14} /> : null}
+      {category}
+    </span>
+  );
+}
+
+const NEAR_FULL = 0.95;
+const SERVICE_LINE = 0.9;
+
+type WardRow = {
+  unit: Unit;
+  service: HealthService | null;
+  siteName: string;
+  siteShort: string;
+  states: ReturnType<typeof bedStates>;
+  occupancy: number;
+  ready: number;
+  out: number;
+  incoming: number;
+  confirmedAt: Instant;
+  stale: boolean;
+  specialling: number;
+};
+
+export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
+  const { units: liveUnits, bedReleases, movements, admissions, leaveBeds } = useWardFlow();
+  const units = unitsOverride ?? liveUnits;
+  const { now, paused, togglePause } = usePageLive();
+
+  const [service, setService] = useState<ServiceFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [cohort, setCohort] = useState<CohortFilter>("all");
+  const [order, setOrder] = useState<OrderBy>("service");
+  const [view, setView] = useState<ViewMode>("cards");
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "/") return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const rows: WardRow[] = useMemo(
+    () =>
+      units.map((unit) => {
+        const site = siteByCode(unit.siteCode);
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const capacity = unitCapacity(unit, bedReleases);
+        const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
+        const incoming = movements.filter(
+          (movement) =>
+            (movement.stage === "moving" || movement.stage === "accepted_awaiting_bed") &&
+            movement.acceptedUnitId === unit.id,
+        ).length;
+        return {
+          unit,
+          service: site?.service ?? null,
+          siteName: site?.name ?? unit.siteCode,
+          siteShort: site ? siteShortName(site.name) : unit.siteCode,
+          states,
+          occupancy: unit.beds > 0 ? capacity.occupied / unit.beds : 0,
+          ready: states.ready,
+          out: breakdown.confirmedToday + breakdown.expectedToday,
+          incoming,
+          confirmedAt: unit.allocatable.confirmedAt,
+          stale: now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
+          specialling: Math.max(0, unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions)),
+        };
+      }),
+    [units, admissions, bedReleases, leaveBeds, movements, now],
+  );
+
+  const services = useMemo(
+    () =>
+      wardServiceOrder
+        .map((name) => ({ name, rows: rows.filter((row) => row.service === name) }))
+        .filter((group) => group.rows.length > 0),
+    [rows],
+  );
+  const placed = rows.filter((row) => row.service !== null);
+  const unplaced = rows.filter((row) => row.service === null);
+
+  // Statewide hero counts.
+  const totalBeds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
+  const totalOccupied = rows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
+  const readyNow = rows.reduce((sum, row) => sum + row.ready, 0);
+  const shiftEnd = dayShiftEndInstant(now);
+  const freeingByShiftEnd = bedReleases.filter(
+    (release) =>
+      release.state !== "discharged" &&
+      release.expectedAt <= shiftEnd &&
+      units.some((unit) => unit.id === release.unitId),
+  ).length;
+  const pulled = rows.reduce((sum, row) => sum + row.states.pulled, 0);
+  const specialling = rows.reduce((sum, row) => sum + row.specialling, 0);
+  const staleCount = rows.filter((row) => row.stale).length;
+
+  const matchesQuery = (row: WardRow) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return [row.unit.name, row.siteName, row.unit.cohort, row.service ?? ""].some((text) =>
+      text.toLowerCase().includes(q),
+    );
+  };
+
+  // Counts for each control follow the other filters, so a count never promises rows it cannot show.
+  const byService = (row: WardRow) => service === "all" || row.service === service;
+  const byStatus = (row: WardRow) =>
+    status === "all" ||
+    (status === "has-ready" && row.ready > 0) ||
+    (status === "full" && row.ready === 0) ||
+    (status === "stale" && row.stale);
+  const byCohort = (row: WardRow) => cohort === "all" || cohortKey(row.unit) === cohort;
+
+  const filtered = placed.filter((row) => byService(row) && byStatus(row) && byCohort(row) && matchesQuery(row));
+  const serviceRank = (row: WardRow) => wardServiceOrder.indexOf(row.service as HealthService);
+  const ordered = [...filtered].sort((a, b) => {
+    if (order === "most-ready") return b.ready - a.ready || serviceRank(a) - serviceRank(b);
+    if (order === "fullest") return b.occupancy - a.occupancy || serviceRank(a) - serviceRank(b);
+    return serviceRank(a) - serviceRank(b);
+  });
+
+  const isFiltered = service !== "all" || status !== "all" || cohort !== "all" || query !== "";
+  const resetFilters = () => {
+    setService("all");
+    setStatus("all");
+    setCohort("all");
+    setQuery("");
+  };
+
+  const serviceItems = [
+    { id: "all" as ServiceFilter, label: "All", count: placed.filter((row) => matchesQuery(row)).length },
+    ...services.map((group) => ({
+      id: group.name as ServiceFilter,
+      label: serviceShortName(group.name),
+      count: group.rows.filter((row) => matchesQuery(row)).length,
+    })),
+  ];
+
+  const serviceBars = services.map((group) => {
+    const beds = group.rows.reduce((sum, row) => sum + row.unit.beds, 0);
+    const occupied = group.rows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
+    const value = beds > 0 ? occupied / beds : 0;
+    return {
+      id: group.name,
+      label: group.name,
+      value: value * 100,
+      display: `${(value * 100).toFixed(1)}%`,
+      fill: value >= SERVICE_LINE ? ("data-1" as const) : ("data-2" as const),
+    };
+  });
+
+  return (
+    <div
+      className={styles.screen}
+      data-testid="ward-index"
+      data-ward-design="v6"
+      data-ward-rebuilt-screen="wards-index"
+    >
+      <main id="main-content" className={styles.main}>
+        <Hero
+          eyebrow="Wards · Statewide"
+          level={1}
+          title={
+            <>
+              <SrOnly>All wards, </SrOnly>
+              {units.length} wards, {totalBeds} beds
+            </>
+          }
+          stats={
+            <>
+              <HeroStat
+                value={`${totalBeds > 0 ? ((totalOccupied / totalBeds) * 100).toFixed(1) : "0.0"}%`}
+                label="Occupied"
+              />
+              <HeroStat value={readyNow} label="Ready now" tone="success" />
+              <HeroStat value={readyNow + freeingByShiftEnd} label={`Ready by ${formatInstant(shiftEnd)}`} />
+              <HeroStat value={pulled} label="Pulled" />
+              <HeroStat value={specialling} label="1:1 specialling" />
+              <HeroStat value={staleCount} label="Stale counts" tone={staleCount > 0 ? "warning" : undefined} />
+            </>
+          }
+          aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
+        />
+
+        <section className={styles.filters} aria-label="Ward filters">
+          <div className={styles.filterRow}>
+            <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
+            <TextInput
+              ref={searchRef}
+              type="search"
+              id="wardSearchInput"
+              icon={Search}
+              placeholder="Ward, hospital or suburb"
+              aria-label="Filter wards by keyword"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onClear={() => setQuery("")}
+              trailing={query ? undefined : <Kbd>/</Kbd>}
+              autoComplete="off"
+              spellCheck={false}
+              boxClassName={styles.search}
+            />
+            <Segmented
+              label="View"
+              items={[
+                { id: "cards" as ViewMode, label: <ViewLabel icon={LayoutGrid} text="Cards" /> },
+                { id: "table" as ViewMode, label: <ViewLabel icon={List} text="Table" /> },
+              ]}
+              value={view}
+              onChange={setView}
+              size="md"
+            />
+          </div>
+          <div className={styles.filterRow}>
+            <span className={styles.filterLabel} id="ward-status-label">
+              Status
+            </span>
+            <Segmented
+              label="Status"
+              items={[
+                { id: "all" as StatusFilter, label: "All" },
+                { id: "has-ready" as StatusFilter, label: "Has ready" },
+                { id: "full" as StatusFilter, label: "Full" },
+                { id: "stale" as StatusFilter, label: "Stale" },
+              ]}
+              value={status}
+              onChange={setStatus}
+            />
+            <span className={styles.filterLabel}>Cohort</span>
+            <Segmented
+              label="Cohort"
+              items={[
+                { id: "all" as CohortFilter, label: "All" },
+                { id: "adult" as CohortFilter, label: "Adult" },
+                { id: "older-adult" as CohortFilter, label: "Older adult" },
+                { id: "youth" as CohortFilter, label: "Youth" },
+                { id: "perinatal" as CohortFilter, label: "Perinatal" },
+              ]}
+              value={cohort}
+              onChange={setCohort}
+            />
+            <span className={styles.filterLabel}>Order</span>
+            <Segmented
+              label="Order"
+              items={[
+                { id: "service" as OrderBy, label: "Service" },
+                { id: "most-ready" as OrderBy, label: "Most ready" },
+                { id: "fullest" as OrderBy, label: "Fullest" },
+              ]}
+              value={order}
+              onChange={setOrder}
+            />
+            <span className={styles.shownCount}>
+              {isFiltered ? (
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Reset filters
+                </Button>
+              ) : null}
+              <span>
+                {filtered.length} of {placed.length}
+              </span>
+            </span>
+          </div>
+        </section>
+
+        {/* Service anchors: the canonical service order, one heading each, for in-page links. */}
+        <div className={styles.serviceAnchors}>
+          {wardServiceOrder.map((name) => (
+            <section key={name} id={`wards-${slug(name)}`} data-testid={`ward-index-service-${slug(name)}`}>
+              <h3>{name}</h3>
+            </section>
+          ))}
+        </div>
+
+        {ordered.length === 0 ? (
+          <Card className={styles.emptyCard}>
+            <EmptyState
+              icon={Search}
+              title="No wards match"
+              meta={`${placed.length} wards in the network`}
+              action={
+                <Button variant="sec" size="sm" onClick={resetFilters}>
+                  Reset filters
+                </Button>
+              }
+            />
+          </Card>
+        ) : view === "cards" ? (
+          <section className={styles.cardGrid} aria-label="Ward cards">
+            {ordered.map((row) => (
+              <WardCard key={row.unit.id} row={row} now={now} />
+            ))}
+            <Card className={styles.serviceCard} as="section" aria-labelledby="ward-service-occupancy">
+              <div className={styles.serviceHead}>
+                <h3 id="ward-service-occupancy" className={styles.eyebrow}>
+                  Occupancy by service
+                </h3>
+                <span className={styles.serviceMeta}>dashed at {SERVICE_LINE * 100}%</span>
+              </div>
+              <BarList
+                label="Occupancy by service"
+                rows={serviceBars}
+                max={100}
+                mean={SERVICE_LINE * 100}
+                meanLabel=""
+                track
+                labelWidth="88px"
+              />
+            </Card>
+          </section>
+        ) : (
+          <WardTable rows={ordered} now={now} />
+        )}
+
+        {unplaced.length > 0 ? (
+          <section id="wards-unplaced" className={styles.unplaced} data-testid="ward-index-unplaced">
+            <h3 className={styles.eyebrow}>Not placed in a health service</h3>
+            <ul className={styles.unplacedList}>
+              {unplaced.map((row) => (
+                <li key={row.unit.id}>
+                  <Link
+                    className={styles.unplacedLink}
+                    href={`/mockups/ward-flow/ward/${row.unit.id}`}
+                    data-testid={`ward-index-link-${row.unit.id}`}
+                  >
+                    {row.unit.name}
+                  </Link>
+                  <span className={styles.meta}>
+                    {row.siteName} · {row.unit.cohort} · {wardCategory(row.unit)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <WardPrototypeFooter
+          testId="ward-index-governance"
+          note="Synthetic prototype. Invented figures under real WA hospital names. Lists update once a minute."
+        />
+      </main>
+    </div>
+  );
 }
 
 function slug(service: HealthService): string {
   return service.toLowerCase().split(" ").join("-");
 }
 
-export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
-  const { units: liveUnits, bedReleases, movements, admissions } = useWardFlow();
-  const units = unitsOverride ?? liveUnits;
-
-  // Filter States
-  const [selectedService, setSelectedService] = useState<ServiceFilter>("all");
-  const [selectedCohort, setSelectedCohort] = useState<CohortFilter>("all");
-  const [selectedAvail, setSelectedAvail] = useState<AvailFilter>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [profileWardId, setProfileWardId] = useState<string | null>(null);
-
-  // Dropdown states & refs
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
-  const [cohortDropdownOpen, setCohortDropdownOpen] = useState(false);
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-  const cohortDropdownRef = useRef<HTMLDivElement>(null);
-  const profileTriggerRef = useRef<HTMLElement | null>(null);
-  const profileModalRef = useRef<HTMLDivElement | null>(null);
-
-  const closeProfileModal = useCallback(() => {
-    setProfileWardId(null);
-    profileTriggerRef.current?.focus();
-  }, [setProfileWardId]);
-
-  // Outside click & keyboard navigation listener
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
-        setStatusDropdownOpen(false);
-      }
-      if (cohortDropdownRef.current && !cohortDropdownRef.current.contains(e.target as Node)) {
-        setCohortDropdownOpen(false);
-      }
-    }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setStatusDropdownOpen(false);
-        setCohortDropdownOpen(false);
-      }
-      if (
-        e.key === "/" &&
-        document.activeElement !== searchInputRef.current &&
-        !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  // Keyboard dismissal and focus containment for modal
-  useEffect(() => {
-    if (!profileWardId) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        closeProfileModal();
-        return;
-      }
-      if (e.key === "Tab" && profileModalRef.current) {
-        const focusable = Array.from(
-          profileModalRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((el) => !el.hasAttribute("disabled"));
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-        if (e.shiftKey && document.activeElement === first) {
-          last.focus();
-          e.preventDefault();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          first.focus();
-          e.preventDefault();
-        }
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    queueMicrotask(() => {
-      const first = profileModalRef.current?.querySelector<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      first?.focus();
-    });
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [profileWardId, closeProfileModal]);
-
-  // Compute canonical service groups via wardServiceOrder
-  const serviceGroups: { service: HealthService; units: Unit[] }[] = useMemo(() => {
-    return wardServiceOrder.map((service) => ({
-      service,
-      units: units.filter((unit) => siteByCode(unit.siteCode)?.service === service),
-    }));
-  }, [units]);
-
-  const grouped = useMemo(
-    () => new Set(serviceGroups.flatMap((group) => group.units.map((unit) => unit.id))),
-    [serviceGroups],
-  );
-  const unplaced = useMemo(() => units.filter((unit) => !grouped.has(unit.id)), [units, grouped]);
-
-  // Network KPIs
-  const totalStaffedBeds = useMemo(() => units.reduce((acc, u) => acc + u.beds, 0), [units]);
-  const totalOccupiedBeds = useMemo(
-    () => units.reduce((acc, u) => acc + unitCapacity(u, bedReleases).occupied, 0),
-    [units, bedReleases],
-  );
-  const totalAvailableBeds = useMemo(
-    () => units.reduce((acc, u) => acc + unitCapacity(u, bedReleases).available, 0),
-    [units, bedReleases],
-  );
-  const lockedUnitsCount = useMemo(() => units.filter((u) => unitHasLockedBeds(u)).length, [units]);
-  const totalActiveSpecialling = useMemo(() => {
-    return units.reduce((acc, u) => {
-      const free = remainingSpeciallingCapacity(u, admissions);
-      return acc + Math.max(0, u.speciallingCapacity - free);
-    }, 0);
-  }, [units, admissions]);
-
-  const networkOccupancyPct = totalStaffedBeds > 0 ? ((totalOccupiedBeds / totalStaffedBeds) * 100).toFixed(1) : "0.0";
-
-  // Filtered unit set (placed units only; unplaced render in their dedicated section)
-  const filteredUnits = useMemo(() => {
-    return units
-      .filter((unit) => grouped.has(unit.id))
-      .filter((unit) => {
-        const site = siteByCode(unit.siteCode);
-        const svcCode = getServiceCode(site?.service);
-        const cohortKey = getCohortKey(unit);
-        const cap = unitCapacity(unit, bedReleases);
-        const isLocked = unitHasLockedBeds(unit);
-
-        // Service match
-        if (selectedService !== "all" && svcCode !== selectedService) return false;
-
-        // Cohort match
-        if (selectedCohort !== "all" && cohortKey !== selectedCohort) return false;
-
-        // Availability match
-        if (selectedAvail === "vacant" && cap.available <= 0) return false;
-        if (selectedAvail === "full" && cap.available > 0) return false;
-        if (selectedAvail === "high-acuity" && !isLocked) return false;
-
-        // Search match
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase().trim();
-          const siteName = site?.name?.toLowerCase() ?? "";
-          const wardName = unit.name.toLowerCase();
-          const cohort = unit.cohort.toLowerCase();
-          if (
-            !wardName.includes(q) &&
-            !siteName.includes(q) &&
-            !cohort.includes(q) &&
-            !svcCode.toLowerCase().includes(q)
-          ) {
-            return false;
-          }
-        }
-
-        return true;
-      });
-  }, [units, grouped, selectedService, selectedCohort, selectedAvail, searchQuery, bedReleases]);
-
-  const isFiltered =
-    selectedService !== "all" || selectedCohort !== "all" || selectedAvail !== "all" || searchQuery !== "";
-
-  const resetFilters = () => {
-    setSelectedService("all");
-    setSelectedCohort("all");
-    setSelectedAvail("all");
-    setSearchQuery("");
-    setStatusDropdownOpen(false);
-    setCohortDropdownOpen(false);
-  };
-
-  // Selected Profile Ward
-  const profileUnit = profileWardId ? units.find((u) => u.id === profileWardId) : null;
-  const profileSite = profileUnit ? siteByCode(profileUnit.siteCode) : null;
-  const profileMeta = profileUnit
-    ? (WARD_METADATA[profileUnit.id] ?? {
-        num: "Shift Coordinator",
-        ext: "2000",
-        vocera: "#NUM-01",
-        criteria: "Adult acute clinical assessment.",
-        mhaForms: "Form 1A, Form 3A, Form 6A",
-        security: unitHasLockedBeds(profileUnit) ? "Locked Unit" : "Open Inpatient Care",
-        securityTone: unitHasLockedBeds(profileUnit) ? "danger" : "good",
-      })
-    : null;
-  const profileCap = profileUnit ? unitCapacity(profileUnit, bedReleases) : null;
-  const profilePendingPrep = profileUnit ? bedsPendingPreparation(profileUnit.id, bedReleases) : 0;
-
+function ViewLabel({ icon, text }: { icon: typeof List; text: string }) {
   return (
-    <div
-      className={styles.screen}
-      data-testid="ward-index"
-      data-ward-design="third-edition"
-      data-ward-rebuilt-screen="wards-index"
+    <span className={styles.viewLabel}>
+      <Icon icon={icon} size={14} />
+      {text}
+    </span>
+  );
+}
+
+function OccupancyFigure({ row }: { row: WardRow }) {
+  const pct = Math.round(row.occupancy * 100);
+  const nearFull = row.occupancy >= NEAR_FULL;
+  return (
+    <span className={styles.figure}>
+      {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
+      <b className={styles.num}>{pct}%</b> {nearFull ? "near full" : "occupied"}
+    </span>
+  );
+}
+
+function Confirmed({ row, now }: { row: WardRow; now: Instant }) {
+  const age = dur(Math.max(0, now - row.confirmedAt) * 60_000);
+  return row.stale ? (
+    <span className={styles.confirmed}>
+      <StatusGlyph tone="warning" size={8} />
+      <b className={styles.num}>{age}</b> stale, ask NUM
+    </span>
+  ) : (
+    <span className={styles.confirmed}>
+      <b className={styles.num}>{age}</b> since confirmed
+    </span>
+  );
+}
+
+function WardCard({ row, now }: { row: WardRow; now: Instant }) {
+  const { unit } = row;
+  return (
+    <article
+      className={styles.wardCard}
+      data-service={row.service ?? "none"}
+      data-cohort={cohortKey(unit)}
+      data-avail={row.ready > 0 ? "vacant" : "full"}
+      data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
     >
-      <main id="main-content" className={styles.main}>
-        {/* Page Header with Telemetry Capsule (Elevated Workstation Architecture) */}
-        <header className={styles.pageHeader}>
-          <div className={styles.headerLeft}>
-            <div className={styles.titleGroup}>
-              <h1 className={styles.pageTitle}>
-                <span className={styles.liveBeacon} aria-hidden="true">
-                  <span className={styles.liveDot} />
-                  <span className={styles.liveRing} />
-                </span>
-                All wards
-              </h1>
-              <span className={styles.pageSubtitleNote}>Every ward</span>
-            </div>
-
-            {/* Accessible text contract for automated suites */}
-            <div
-              className={styles.srOnly}
-              style={{
-                position: "absolute",
-                width: "1px",
-                height: "1px",
-                padding: 0,
-                margin: "-1px",
-                overflow: "hidden",
-                clip: "rect(0, 0, 0, 0)",
-                whiteSpace: "nowrap",
-                border: 0,
-              }}
-            >
-              <h2>Statewide Capacity Indicators</h2>
-              <div>Operational Wards</div>
-              <div>Total Staffed Beds</div>
-              <div>Available Beds Now</div>
-              <div>Locked & HDU Units</div>
-            </div>
-
-            {/* Apple Health-caliber Telemetry Pill Capsule */}
-            <div className={styles.telemetryCapsule} role="region" aria-label="Statewide Ward Telemetry">
-              <div
-                className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                onClick={resetFilters}
-                title="Click to reset filters and view all operational wards"
-                tabIndex={0}
-                role="button"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    resetFilters();
-                  }
-                }}
-              >
-                <span className={styles.telemetryLabel}>WARDS</span>
-                <span className={styles.telemetryVal}>{units.length}</span>
-                <span className={styles.telemetrySub}>· 5 clusters</span>
-              </div>
-
-              <div
-                className={styles.telemetryItem}
-                title={`Network bed occupancy: ${totalOccupiedBeds} of ${totalStaffedBeds} beds (${networkOccupancyPct}%)`}
-              >
-                <span className={styles.telemetryLabel}>BEDS</span>
-                <span className={styles.telemetryVal}>{totalStaffedBeds}</span>
-                <div className={styles.microMeter} aria-hidden="true" title={`${networkOccupancyPct}% Occupancy`}>
-                  <div
-                    className={styles.microMeterFill}
-                    style={{ width: `${Math.min(100, Number(networkOccupancyPct))}%` }}
-                  />
-                </div>
-                <span className={styles.telemetrySub}>{networkOccupancyPct}% occ</span>
-              </div>
-
-              <div
-                className={`${styles.telemetryItem} ${styles.interactiveItem} ${selectedAvail === "vacant" ? styles.telemetryItemActive : ""}`}
-                onClick={() => setSelectedAvail(selectedAvail === "vacant" ? "all" : "vacant")}
-                title="Filter wards with ready available vacancies"
-                tabIndex={0}
-                role="button"
-                aria-pressed={selectedAvail === "vacant"}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelectedAvail(selectedAvail === "vacant" ? "all" : "vacant");
-                  }
-                }}
-              >
-                <span className={styles.telemetryLabel}>AVAILABLE</span>
-                <span className={styles.telemetryPillGood}>{totalAvailableBeds} Ready</span>
-              </div>
-
-              <div
-                className={`${styles.telemetryItem} ${styles.interactiveItem} ${selectedAvail === "high-acuity" ? styles.telemetryItemActive : ""}`}
-                onClick={() => setSelectedAvail(selectedAvail === "high-acuity" ? "all" : "high-acuity")}
-                title="Filter locked and HDU high-acuity units"
-                tabIndex={0}
-                role="button"
-                aria-pressed={selectedAvail === "high-acuity"}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelectedAvail(selectedAvail === "high-acuity" ? "all" : "high-acuity");
-                  }
-                }}
-              >
-                <span className={styles.telemetryLabel}>LOCKED/HDU</span>
-                <span className={styles.telemetryPillDanger}>{lockedUnitsCount}</span>
-                <span className={styles.telemetrySub}>· {totalActiveSpecialling} 1:1</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* 2-Row Structured Filter Cockpit (Option 2 Architecture) */}
-        <section className={styles.cockpitPanel} aria-label="Directory Filters">
-          {/* Row 1: Health Service Cluster Tabs */}
-          <div
-            className={styles.cockpitTabBar}
-            role="tablist"
-            aria-label="Health Service Cluster"
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "Home" || e.key === "End") {
-                const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-                const activeTab = (document.activeElement as HTMLElement)?.closest<HTMLButtonElement>('[role="tab"]');
-                const currentIndex = activeTab
-                  ? tabs.indexOf(activeTab)
-                  : tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
-                if (currentIndex !== -1) {
-                  e.preventDefault();
-                  let nextIndex = currentIndex;
-                  if (e.key === "Home") {
-                    nextIndex = 0;
-                  } else if (e.key === "End") {
-                    nextIndex = tabs.length - 1;
-                  } else if (e.key === "ArrowRight") {
-                    nextIndex = (currentIndex + 1) % tabs.length;
-                  } else if (e.key === "ArrowLeft") {
-                    nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-                  }
-                  const targetTab = tabs[nextIndex];
-                  if (targetTab) {
-                    targetTab.focus();
-                    targetTab.click();
-                  }
-                }
-              }
-            }}
-          >
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "all" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "all"}
-              tabIndex={selectedService === "all" ? 0 : -1}
-              onClick={() => setSelectedService("all")}
-            >
-              <span>All Services</span>
-              <span className={styles.clusterTabCount}>{units.length}</span>
-            </button>
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "NMHS" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "NMHS"}
-              tabIndex={selectedService === "NMHS" ? 0 : -1}
-              onClick={() => setSelectedService("NMHS")}
-            >
-              <span>North Metro NMHS</span>
-              <span className={styles.clusterTabCount}>
-                {units.filter((u) => getServiceCode(siteByCode(u.siteCode)?.service) === "NMHS").length}
-              </span>
-            </button>
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "SMHS" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "SMHS"}
-              tabIndex={selectedService === "SMHS" ? 0 : -1}
-              onClick={() => setSelectedService("SMHS")}
-            >
-              <span>South Metro SMHS</span>
-              <span className={styles.clusterTabCount}>
-                {units.filter((u) => getServiceCode(siteByCode(u.siteCode)?.service) === "SMHS").length}
-              </span>
-            </button>
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "EMHS" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "EMHS"}
-              tabIndex={selectedService === "EMHS" ? 0 : -1}
-              onClick={() => setSelectedService("EMHS")}
-            >
-              <span>East Metro EMHS</span>
-              <span className={styles.clusterTabCount}>
-                {units.filter((u) => getServiceCode(siteByCode(u.siteCode)?.service) === "EMHS").length}
-              </span>
-            </button>
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "WACHS" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "WACHS"}
-              tabIndex={selectedService === "WACHS" ? 0 : -1}
-              onClick={() => setSelectedService("WACHS")}
-            >
-              <span>WA Country WACHS</span>
-              <span className={styles.clusterTabCount}>
-                {units.filter((u) => getServiceCode(siteByCode(u.siteCode)?.service) === "WACHS").length}
-              </span>
-            </button>
-            <button
-              className={`${styles.cockpitTab} ${selectedService === "Private" ? styles.active : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={selectedService === "Private"}
-              tabIndex={selectedService === "Private" ? 0 : -1}
-              onClick={() => setSelectedService("Private")}
-            >
-              <span>Private</span>
-              <span className={styles.clusterTabCount}>
-                {units.filter((u) => getServiceCode(siteByCode(u.siteCode)?.service) === "Private").length}
-              </span>
-            </button>
-          </div>
-
-          {/* Row 2: Search Input + Status & Cohort Dropdowns + Feedback */}
-          <div className={styles.cockpitControlRow}>
-            <div className={styles.cockpitLeftControls}>
-              {/* Enriched Search Input */}
-              <div className={styles.cockpitSearchWrap}>
-                <svg
-                  className={styles.cockpitSearchIcon}
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  id="wardSearchInput"
-                  className={styles.cockpitSearchInput}
-                  placeholder="Filter 22 wards by hospital, service, suburb..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoComplete="off"
-                  spellCheck="false"
-                  aria-label="Filter wards by keyword"
-                />
-                {searchQuery ? (
-                  <button
-                    type="button"
-                    className={styles.cockpitClearBtn}
-                    onClick={() => setSearchQuery("")}
-                    aria-label="Clear search"
-                  >
-                    ✕
-                  </button>
-                ) : (
-                  <kbd className={styles.cockpitShortcutKbd}>/</kbd>
-                )}
-              </div>
-
-              {/* Status Dropdown Menu */}
-              <div
-                className={`${styles.dropdownAnchor} ${statusDropdownOpen ? styles.open : ""}`}
-                ref={statusDropdownRef}
-              >
-                <button
-                  type="button"
-                  className={`${styles.dropdownBtn} ${selectedAvail !== "all" ? styles.hasActiveFilter : ""}`}
-                  onClick={() => {
-                    setStatusDropdownOpen(!statusDropdownOpen);
-                    setCohortDropdownOpen(false);
-                  }}
-                  aria-expanded={statusDropdownOpen}
-                  aria-haspopup="true"
-                  aria-label={selectedAvail === "all" ? "All" : `Status: ${selectedAvail}`}
-                >
-                  <span className={styles.dropdownPrefix}>STATUS:</span>
-                  <span>
-                    {selectedAvail === "all"
-                      ? "All Statuses"
-                      : selectedAvail === "vacant"
-                        ? "Available Wards"
-                        : selectedAvail === "full"
-                          ? "Full / At Capacity"
-                          : "High-Acuity Units"}
-                  </span>
-                  <svg className={styles.dropdownChevron} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                {statusDropdownOpen && (
-                  <div className={styles.dropdownPopover} role="menu" aria-label="Filter by Status">
-                    <div className={styles.dropdownHeader}>Bed Availability Status</div>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedAvail === "all" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedAvail("all");
-                        setStatusDropdownOpen(false);
-                      }}
-                    >
-                      <span>All Statuses</span>
-                      <span className={styles.dropdownItemCount}>{units.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedAvail === "vacant" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedAvail("vacant");
-                        setStatusDropdownOpen(false);
-                      }}
-                    >
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <span className={styles.availDotGood} aria-hidden="true" />
-                        Available Wards
-                      </span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => unitCapacity(u, bedReleases).available > 0).length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedAvail === "full" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedAvail("full");
-                        setStatusDropdownOpen(false);
-                      }}
-                    >
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <span className={styles.availDotDanger} aria-hidden="true" />
-                        Full / At Capacity
-                      </span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => unitCapacity(u, bedReleases).available === 0).length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedAvail === "high-acuity" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedAvail("high-acuity");
-                        setStatusDropdownOpen(false);
-                      }}
-                    >
-                      <span>High-Acuity Units</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => unitHasLockedBeds(u)).length}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Cohort Dropdown Menu */}
-              <div
-                className={`${styles.dropdownAnchor} ${cohortDropdownOpen ? styles.open : ""}`}
-                ref={cohortDropdownRef}
-              >
-                <button
-                  type="button"
-                  className={`${styles.dropdownBtn} ${selectedCohort !== "all" ? styles.hasActiveFilter : ""}`}
-                  onClick={() => {
-                    setCohortDropdownOpen(!cohortDropdownOpen);
-                    setStatusDropdownOpen(false);
-                  }}
-                  aria-expanded={cohortDropdownOpen}
-                  aria-haspopup="true"
-                  aria-label={selectedCohort === "all" ? "All Cohorts" : `Cohort: ${selectedCohort}`}
-                >
-                  <span className={styles.dropdownPrefix}>COHORT:</span>
-                  <span>
-                    {selectedCohort === "all"
-                      ? "All Cohorts"
-                      : selectedCohort === "adult-acute"
-                        ? "Adult Acute"
-                        : selectedCohort === "older-adult"
-                          ? "Older Adult / Psychogeriatric"
-                          : selectedCohort === "perinatal"
-                            ? "Perinatal / MBU"
-                            : selectedCohort === "forensic"
-                              ? "Forensic / Secure HDU"
-                              : "Sub-Acute / Rehabilitation"}
-                  </span>
-                  <svg className={styles.dropdownChevron} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                {cohortDropdownOpen && (
-                  <div className={styles.dropdownPopover} role="menu" aria-label="Filter by Clinical Cohort">
-                    <div className={styles.dropdownHeader}>Clinical Cohort Designation</div>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "all" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("all");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>All Cohorts</span>
-                      <span className={styles.dropdownItemCount}>{units.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "adult-acute" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("adult-acute");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>Adult Acute</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => getCohortKey(u) === "adult-acute").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "older-adult" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("older-adult");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>Older Adult / Psychogeriatric</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => getCohortKey(u) === "older-adult").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "perinatal" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("perinatal");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>Perinatal / MBU</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => getCohortKey(u) === "perinatal").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "forensic" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("forensic");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>Forensic / Secure HDU</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => getCohortKey(u) === "forensic").length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={`${styles.dropdownItem} ${selectedCohort === "sub-acute" ? styles.selected : ""}`}
-                      onClick={() => {
-                        setSelectedCohort("sub-acute");
-                        setCohortDropdownOpen(false);
-                      }}
-                    >
-                      <span>Sub-Acute / Rehabilitation</span>
-                      <span className={styles.dropdownItemCount}>
-                        {units.filter((u) => getCohortKey(u) === "sub-acute").length}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right side feedback & reset */}
-            <div className={styles.cockpitFeedback}>
-              <span>
-                Showing <b>{filteredUnits.length}</b> of {units.length} prototype wards
-              </span>
-              {isFiltered && (
-                <button
-                  type="button"
-                  className={styles.cockpitResetBtn}
-                  onClick={resetFilters}
-                  aria-label="Reset Filters"
-                  title="Clear all active search and filter parameters"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Directory Sub-Header Bar (from Image Reference) */}
-        <div className={styles.directorySubBar}>
-          <div className={styles.directorySubTitle}>
-            Inpatient Wards Directory{" "}
-            <span className={styles.directorySubCount}>
-              (Showing {filteredUnits.length} of {units.length} statewide wards)
-            </span>
-          </div>
-          <div className={styles.directorySubHint}>Ward contacts &amp; criteria</div>
-        </div>
-
-        {/* 3. Canonical Service Headings & Navigation Anchor Points */}
-        <div style={{ display: "none" }}>
-          {serviceGroups.map((group) => (
-            <section
-              key={group.service}
-              id={`wards-${slug(group.service)}`}
-              data-testid={`ward-index-service-${slug(group.service)}`}
-            >
-              <h3 className={styles.sectionHeading}>{group.service}</h3>
-            </section>
-          ))}
-        </div>
-
-        {/* 4. 23-Ward Square Cards Grid */}
-        <section className={styles.cardGrid} id="wardCardsGrid" aria-label="Inpatient Ward Cards">
-          {filteredUnits.length === 0 ? (
-            <div className={styles.emptyState}>
-              <h3 className={styles.emptyStateTitle}>No wards match</h3>
-              <p className={styles.emptyStateSub}>
-                No hospital wards matched your current active filter combination. Clear your search or reset filters to
-                view all statewide units.
-              </p>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
-                onClick={resetFilters}
-              >
-                Reset All Filters
-              </button>
-            </div>
-          ) : (
-            filteredUnits.map((unit) => {
-              const site = siteByCode(unit.siteCode);
-              const svcCode = getServiceCode(site?.service);
-              const acuity = getAcuityLabel(unit);
-              const cap = unitCapacity(unit, bedReleases);
-              const activeSpecialling = Math.max(
-                0,
-                unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions),
-              );
-
-              const occPct = unit.beds > 0 ? ((cap.occupied / unit.beds) * 100).toFixed(1) : "0.0";
-              const occNum = Number(occPct);
-              const statusTone =
-                occNum >= 100 ? styles.statusDanger : occNum >= 90 ? styles.statusWarn : styles.statusGood;
-              const fillTone = occNum >= 100 ? styles.fillDanger : occNum >= 90 ? styles.fillWarn : styles.fillGood;
-              const statusText = occNum >= 100 ? "At Capacity" : occNum >= 90 ? "High Pressure" : "Operational";
-
-              // Flow counts
-              const unitReleases = bedReleases.filter((r) => r.unitId === unit.id).length;
-              const unitInbounds = movements.filter(
-                (m) => (m.stage === "moving" || m.stage === "accepted_awaiting_bed") && m.acceptedUnitId === unit.id,
-              ).length;
-              const pendingPrep = bedsPendingPreparation(unit.id, bedReleases);
-
-              return (
-                <article
-                  key={unit.id}
-                  className={styles.wardCard}
-                  data-service={svcCode}
-                  data-cohort={getCohortKey(unit)}
-                  data-avail={cap.available > 0 ? "vacant" : "full"}
-                  data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
-                >
-                  {/* Card Header */}
-                  <div className={styles.cardTop}>
-                    <div className={styles.cardHeaderRow}>
-                      <div className={styles.cardTitleGroup}>
-                        <div className={styles.cardTitleLine}>
-                          <span
-                            className={styles.cardStatusPip}
-                            data-tone={occNum >= 100 ? "danger" : occNum >= 90 ? "warn" : "good"}
-                            aria-hidden="true"
-                          />
-                          <h4 className={styles.wardTitle} title={unit.name}>
-                            {unit.name}
-                          </h4>
-                        </div>
-                        <div className={styles.wardFacility} title={site?.name ?? unit.siteCode}>
-                          {site?.name ?? unit.siteCode}
-                        </div>
-                      </div>
-                      <div className={styles.cardBadges}>
-                        <span className={styles.svcBadge} data-svc={svcCode}>
-                          {svcCode}
-                        </span>
-                        <span className={styles.acuityBadge} data-tone={acuity.tone}>
-                          {acuity.label}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Meter Section: Zero Wrapping, Zero Overflow */}
-                  <div className={styles.cardMeterSection}>
-                    <div className={styles.meterHeader}>
-                      <div className={styles.meterLeftGroup}>
-                        <span className={styles.meterLabel}>Occupancy</span>
-                        <span className={styles.meterPct}>{occPct}%</span>
-                      </div>
-                      <span className={`${styles.meterStatusBadge} ${statusTone}`}>{statusText}</span>
-                    </div>
-                    <div
-                      className={styles.meterTrack}
-                      role="progressbar"
-                      aria-valuenow={occNum}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`${unit.name} Occupancy: ${occPct}%`}
-                    >
-                      <div
-                        className={`${styles.meterFill} ${fillTone}`}
-                        style={{ width: `${Math.min(100, occNum)}%` }}
-                      />
-                    </div>
-                    <div className={styles.meterSubRow}>
-                      <span
-                        className={styles.meterSubText}
-                        title={`${cap.occupied} of ${unit.beds} staffed beds occupied`}
-                      >
-                        <b>{cap.occupied}</b> of <b>{unit.beds}</b> staffed beds occupied
-                      </span>
-                      <span className={styles.meterAvailHint}>
-                        {cap.available > 0 ? (
-                          <span className={styles.meterAvailGood}>
-                            <b>{cap.available}</b> ready
-                          </span>
-                        ) : (
-                          <span className={styles.meterAvailFull}>0 ready</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 4-Column Clinical Matrix: Generous, crisp, zero awkward wrap */}
-                  <div className={styles.compactStatsStrip}>
-                    <div className={styles.statCol} title={`Base staffed complement: ${unit.beds} beds`}>
-                      <span className={styles.statColLabel}>Staffed</span>
-                      <span className={styles.statColVal}>{unit.beds}</span>
-                      <span className={styles.statColSub}>Total</span>
-                    </div>
-
-                    <div className={styles.statCol} title={`Current admitted census: ${cap.occupied} patients`}>
-                      <span className={styles.statColLabel}>Occupied</span>
-                      <span className={styles.statColVal}>{cap.occupied}</span>
-                      <span className={styles.statColSub}>Census</span>
-                    </div>
-
-                    <div
-                      className={styles.statCol}
-                      title={
-                        cap.available > 0
-                          ? `${cap.available} ready for intake${pendingPrep > 0 ? ` (${pendingPrep} preparing)` : ""}`
-                          : "Capacity saturated (0 vacancies)"
-                      }
-                    >
-                      <span className={styles.statColLabel}>Available</span>
-                      <span
-                        className={`${styles.statColVal} ${cap.available > 0 ? styles.vacantGood : styles.fullDanger}`}
-                      >
-                        {cap.available}
-                      </span>
-                      <span className={styles.statColSub}>{cap.available > 0 ? "Ready" : "None"}</span>
-                    </div>
-
-                    <div
-                      className={styles.statCol}
-                      title={
-                        activeSpecialling > 0
-                          ? `${activeSpecialling} patients requiring 1:1 specialling nursing`
-                          : "No patients requiring 1:1 specialling nursing"
-                      }
-                    >
-                      <span className={styles.statColLabel}>1:1 Spec</span>
-                      <span className={`${styles.statColVal} ${activeSpecialling > 0 ? styles.speciallingActive : ""}`}>
-                        {activeSpecialling}
-                      </span>
-                      <span className={styles.statColSub}>{activeSpecialling > 0 ? "Active" : "None"}</span>
-                    </div>
-                  </div>
-
-                  {/* Flow Indicators: Dedicated 2-Column Grid with Lucide-style Modern SVG Arrows */}
-                  <div className={styles.flowStrip}>
-                    <div
-                      className={`${styles.flowChip} ${styles.flowDischarge}`}
-                      title={`${unitReleases} patient discharges scheduled today`}
-                    >
-                      <svg
-                        className={styles.flowIcon}
-                        viewBox="0 0 24 24"
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <line x1="7" y1="17" x2="17" y2="7" />
-                        <polyline points="7 7 17 7 17 17" />
-                      </svg>
-                      <span className={styles.flowText}>
-                        <b>{unitReleases}</b> Discharges
-                      </span>
-                    </div>
-                    <div
-                      className={`${styles.flowChip} ${styles.flowInbound}`}
-                      title={`${unitInbounds} inbound patient transfers pending`}
-                    >
-                      <svg
-                        className={styles.flowIcon}
-                        viewBox="0 0 24 24"
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <line x1="17" y1="7" x2="7" y2="17" />
-                        <polyline points="17 17 7 17 7 7" />
-                      </svg>
-                      <span className={styles.flowText}>
-                        <b>{unitInbounds}</b> Inbound
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Actions Footer */}
-                  <div className={styles.cardFoot}>
-                    <Link
-                      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
-                      href={`/mockups/ward-flow/ward/${unit.id}`}
-                      data-testid={`ward-index-link-${unit.id}`}
-                    >
-                      <span>Enter Ward</span>
-                      <span aria-hidden="true">&rarr;</span>
-                    </Link>
-                    <Link
-                      className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSm}`}
-                      href={["/mockups", "ward-flow", "board", unit.id].join("/")}
-                    >
-                      Bed Board
-                    </Link>
-                    <button
-                      type="button"
-                      className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
-                      onClick={(e) => {
-                        profileTriggerRef.current = e.currentTarget;
-                        setProfileWardId(unit.id);
-                      }}
-                      title="View ward criteria and NUM contact"
-                    >
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <circle cx="8" cy="8" r="6" />
-                        <path d="M8 7v4M8 5h.01" />
-                      </svg>
-                      <span>Profile</span>
-                    </button>
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </section>
-
-        {/* Unplaced Section if any unit lacks a registered site */}
-        {unplaced.length > 0 && (
-          <section
-            id="wards-unplaced"
-            className={styles.section}
-            data-testid="ward-index-unplaced"
-            style={{ marginTop: "1rem" }}
-          >
-            <h3 className={styles.sectionHeading}>Not placed in a health service</h3>
-            <p className={styles.unplacedNote}>Health service unavailable: no site is recorded for these ward codes.</p>
-            <ul className={styles.wardList}>
-              {unplaced.map((unit) => (
-                <li key={unit.id} className={styles.wardItem}>
-                  <Link
-                    className={styles.wardLink}
-                    href={`/mockups/ward-flow/ward/${unit.id}`}
-                    data-testid={`ward-index-link-${unit.id}`}
-                  >
-                    <span className={styles.wardName}>
-                      {unit.name}
-                      <span aria-hidden="true">↗</span>
-                    </span>
-                    <span className={styles.wardSite}>{siteByCode(unit.siteCode)?.name ?? unit.siteCode}</span>
-                    <span className={styles.wardKind}>
-                      {unit.cohort} · {unitHasLockedBeds(unit) ? "Locked" : "Open"}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <WardPrototypeFooter testId="ward-index-governance" note="Synthetic ward data · Not a medical device" />
-      </main>
-
-      {/* 6. Ward Profile Modal Dialog */}
-      {profileUnit && profileMeta && profileCap && (
-        <div
-          className={styles.modalOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modalWardTitle"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeProfileModal();
-          }}
+      <div className={styles.cardHead}>
+        <h3 className={styles.wardTitle} title={unit.name}>
+          {unit.name}
+        </h3>
+        <SecurityLabel unit={unit} />
+      </div>
+      <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
+        {row.service} · {row.siteShort} · {cohortLabel(unit)}
+      </p>
+      <BedStrip counts={row.states} wardName={unit.name} className={styles.strip} />
+      <div className={styles.figures}>
+        <OccupancyFigure row={row} />
+        <span className={styles.flow}>
+          <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
+          <b className={styles.num}>{row.out}</b> out <span aria-hidden="true">·</span>{" "}
+          <b className={styles.num}>{row.incoming}</b> in
+        </span>
+      </div>
+      <div className={styles.cardFoot}>
+        <Confirmed row={row} now={now} />
+        <WardProfile row={row} />
+        <Link
+          className={buttonClass({ variant: "sec", size: "sm" })}
+          href={`/mockups/ward-flow/ward/${unit.id}`}
+          data-testid={`ward-index-link-${unit.id}`}
+          aria-label={`Enter ${unit.name}`}
         >
-          <div className={styles.modalDialog} ref={profileModalRef}>
-            <div className={styles.modalHead}>
-              <h3 id="modalWardTitle">{profileUnit.name} · Clinical Profile</h3>
-              <button
-                type="button"
-                className={styles.modalCloseBtn}
-                onClick={closeProfileModal}
-                aria-label="Close dialog"
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M3 3l10 10M13 3L3 13" />
-                </svg>
-              </button>
+          Enter
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function WardProfile({ row }: { row: WardRow }) {
+  const { unit } = row;
+  const meta: WardMetadata = WARD_METADATA[unit.id] ?? {
+    num: "Shift coordinator",
+    ext: "2000",
+    vocera: "#NUM-01",
+    criteria: "Adult acute clinical assessment.",
+    mhaForms: "Form 1A, Form 3A, Form 6A",
+    security: unitHasLockedBeds(unit) ? "Locked Unit" : "Open Inpatient Care",
+    securityTone: unitHasLockedBeds(unit) ? "danger" : "good",
+  };
+  const forms = meta.mhaForms.split(",").map((form) => form.trim());
+  return (
+    <Popover
+      label={`${unit.name} profile`}
+      align="end"
+      panelClassName={styles.profile}
+      trigger={(props) => (
+        <button {...props} type="button" className={styles.iconButton} aria-label={`${unit.name} profile`}>
+          <Icon icon={Info} size={16} />
+        </button>
+      )}
+    >
+      {(close) => (
+        <div className={styles.profileBody}>
+          <div className={styles.profileHead}>
+            <span className={styles.eyebrow}>{row.service ?? "Unplaced"} · Profile</span>
+            <span className={styles.profileTitle}>{unit.name}</span>
+            <span className={styles.meta}>{row.siteName}</span>
+          </div>
+          <dl className={styles.profileStats}>
+            <div>
+              <dt>Beds</dt>
+              <dd>{unit.beds}</dd>
             </div>
-            <div className={styles.modalBody}>
-              <div className={styles.modalSection}>
-                <span className={styles.modalSectionTitle}>Hospital Facility &amp; Health Service</span>
-                <div className={styles.modalSectionContent} style={{ fontSize: "var(--t-3, 14px)", fontWeight: 700 }}>
-                  {profileSite?.name ?? profileUnit.siteCode} · ({profileSite?.service ?? "WA Health"})
-                </div>
-              </div>
-
-              <div className={styles.modalGrid2}>
-                <div className={styles.modalSection}>
-                  <span className={styles.modalSectionTitle}>Clinical Profile / Cohort</span>
-                  <div className={styles.modalSectionContent}>{profileUnit.cohort}</div>
-                </div>
-                <div className={styles.modalSection}>
-                  <span className={styles.modalSectionTitle}>Security Class</span>
-                  <div className={styles.modalSectionContent}>{getAcuityLabel(profileUnit).label}</div>
-                </div>
-              </div>
-
-              <div className={styles.modalGrid2}>
-                <div className={styles.modalSection}>
-                  <span className={styles.modalSectionTitle}>Bed Complement</span>
-                  <div className={styles.modalSectionContent} style={{ fontSize: "var(--t-4, 16px)", fontWeight: 700 }}>
-                    {profileUnit.beds} Staffed ({profileCap.occupied} Occupied)
-                  </div>
-                </div>
-                <div className={styles.modalSection}>
-                  <span className={styles.modalSectionTitle}>Current Vacancies</span>
-                  <div
-                    className={styles.modalSectionContent}
-                    style={{
-                      fontSize: "var(--t-4, 16px)",
-                      fontWeight: 700,
-                      color: profileCap.available > 0 ? "var(--good)" : "var(--muted)",
-                    }}
-                  >
-                    {profileCap.available > 0
-                      ? `${profileCap.available} Ready${profilePendingPrep > 0 ? ` (${profilePendingPrep} still being made ready)` : ""}`
-                      : "0 Vacant (none)"}
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.modalSection}>
-                <span className={styles.modalSectionTitle}>Admission Criteria &amp; Target Population</span>
-                <div className={styles.modalSectionContent} style={{ fontSize: "var(--t-1, 13px)", lineHeight: 1.5 }}>
-                  {profileMeta.criteria}
-                </div>
-              </div>
-
-              <div className={styles.modalSection}>
-                <span className={styles.modalSectionTitle}>Recorded forms</span>
-                <div className={styles.modalSectionContent} style={{ fontSize: "var(--t-1, 13px)" }}>
-                  Recorded forms · {profileMeta.mhaForms}
-                </div>
-              </div>
-
-              <div
-                className={styles.modalSection}
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r2, 6px)",
-                  padding: "10px 12px",
-                }}
-              >
-                <span className={styles.modalSectionTitle}>Shift Leadership &amp; Direct Contact</span>
-                <div style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)", fontWeight: 600, marginTop: "2px" }}>
-                  NUM: {profileMeta.num} · Direct Ext. {profileMeta.ext} · Vocera: {profileMeta.vocera}
-                </div>
-                <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)", marginTop: "2px" }}>
-                  Contact Bed Desk coordinator for priority admission authorization.
-                </div>
-              </div>
+            <div>
+              <dt>Ready</dt>
+              <dd>{row.ready}</dd>
             </div>
-            <div className={styles.modalFoot}>
-              <button type="button" className={styles.btn} onClick={() => setProfileWardId(null)}>
-                Close
-              </button>
-              <Link className={`${styles.btn} ${styles.btnPrimary}`} href={`/mockups/ward-flow/ward/${profileUnit.id}`}>
-                Enter Ward &rarr;
-              </Link>
+            <div>
+              <dt>Locked beds</dt>
+              <dd>{unit.lockedBeds}</dd>
             </div>
+            <div>
+              <dt>1:1</dt>
+              <dd>{row.specialling}</dd>
+            </div>
+          </dl>
+          <dl className={styles.profileFacts}>
+            <dt>Cohort</dt>
+            <dd>{cohortLabel(unit)}</dd>
+            <dt>Security</dt>
+            <dd>
+              {designationSummary(unit)}
+              {unitHasLockedBeds(unit) ? `, ${lockedBedsFree(unit)} locked free` : ""}
+            </dd>
+            <dt>Admits</dt>
+            <dd>{meta.criteria}</dd>
+            <dt>Forms held</dt>
+            <dd className={styles.formChips}>
+              {forms.map((form) => (
+                <span key={form} className={styles.formChip}>
+                  {form}
+                </span>
+              ))}
+            </dd>
+            <dt>Catchment</dt>
+            <dd>{row.service ?? "Not placed"}</dd>
+          </dl>
+          <div className={styles.profileFoot}>
+            <span className={styles.numOnShift}>
+              <span className={styles.profileTitleSm}>NUM on shift</span>
+              <span className={styles.mono} title={`${meta.num}, ext ${meta.ext}`}>
+                ext {meta.ext} · {meta.num}
+              </span>
+            </span>
+            <Link
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              href={`/mockups/ward-flow/board/${unit.id}`}
+              onClick={close}
+            >
+              Bed board
+            </Link>
+            <Link
+              className={buttonClass({ variant: "pri", size: "sm" })}
+              href={`/mockups/ward-flow/ward/${unit.id}`}
+              onClick={close}
+            >
+              Enter ward
+            </Link>
           </div>
         </div>
       )}
-    </div>
+    </Popover>
+  );
+}
+
+const TABLE_COLUMNS = "minmax(200px, 2.2fr) 100px 80px minmax(120px, 1.4fr) 76px 56px 64px 92px 72px";
+
+function WardTable({ rows, now }: { rows: WardRow[]; now: Instant }) {
+  return (
+    <Card className={styles.tableCard} as="section" aria-label="Ward table">
+      <div role="table" aria-label="Wards" className={styles.table}>
+        <div role="rowgroup">
+          <div role="row" className={cx(styles.tr, styles.th)} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
+            <span role="columnheader">Ward</span>
+            <span role="columnheader">Service</span>
+            <span role="columnheader">Security</span>
+            <span role="columnheader">Beds</span>
+            <span role="columnheader">Occupied</span>
+            <span role="columnheader" className={styles.end}>
+              Ready
+            </span>
+            <span role="columnheader" className={styles.end}>
+              Out, in
+            </span>
+            <span role="columnheader">Confirmed</span>
+            <span role="columnheader">
+              <span className={styles.srOnly}>Open</span>
+            </span>
+          </div>
+        </div>
+        <div role="rowgroup">
+          {rows.map((row) => (
+            <div role="row" key={row.unit.id} className={styles.tr} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
+              <span role="cell" className={styles.wardCell}>
+                <span className={styles.wardTitle}>{row.unit.name}</span>
+                <span className={styles.meta}>
+                  {row.siteShort} · {cohortLabel(row.unit)}
+                </span>
+              </span>
+              <span role="cell">{row.service}</span>
+              <span role="cell">
+                <SecurityLabel unit={row.unit} />
+              </span>
+              <span role="cell">
+                <BedStrip counts={row.states} wardName={row.unit.name} />
+              </span>
+              <span role="cell">
+                <span className={styles.figure}>
+                  {row.occupancy >= NEAR_FULL ? <StatusGlyph tone="warning" size={8} /> : null}
+                  <b className={styles.num}>{Math.round(row.occupancy * 100)}%</b>
+                </span>
+              </span>
+              <span role="cell" className={cx(styles.end, styles.bigNum)}>
+                {row.ready}
+              </span>
+              <span role="cell" className={cx(styles.end, styles.num)}>
+                {row.out}, {row.incoming}
+              </span>
+              <span role="cell" className={styles.num}>
+                {row.stale ? <StatusGlyph tone="warning" size={8} /> : null}{" "}
+                {dur(Math.max(0, now - row.confirmedAt) * 60_000)}
+              </span>
+              <span role="cell" className={styles.end}>
+                <Link
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  href={`/mockups/ward-flow/ward/${row.unit.id}`}
+                  data-testid={`ward-index-link-${row.unit.id}`}
+                  aria-label={`Enter ${row.unit.name}`}
+                >
+                  Enter
+                </Link>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
   );
 }

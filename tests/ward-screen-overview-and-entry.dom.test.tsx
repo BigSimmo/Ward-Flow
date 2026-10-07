@@ -139,15 +139,17 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const main = document.getElementById("main-content")!;
     // Search input and filter buttons are rendered
     expect(main.querySelector("#wardSearchInput")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /All Services/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "All Cohorts" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+    // v6 (approved Wards mockup, 7 Oct 2026): service, status, cohort and order are segmented
+    // radio groups rather than tabs and dropdowns.
+    for (const group of ["Health service", "Status", "Cohort", "Order", "View"]) {
+      expect(screen.getByRole("radiogroup", { name: group })).toBeInTheDocument();
+    }
+    expect(screen.getAllByRole("radio", { name: "All" }).length).toBeGreaterThanOrEqual(2);
 
-    // Statewide capacity KPIs
-    expect(screen.getByText("Operational Wards")).toBeInTheDocument();
-    expect(screen.getByText("Total Staffed Beds")).toBeInTheDocument();
-    expect(screen.getByText("Available Beds Now")).toBeInTheDocument();
-    expect(screen.getByText("Locked & HDU Units")).toBeInTheDocument();
+    // Statewide capacity counts on the hero band
+    for (const label of ["Occupied", "Ready now", "Pulled", "1:1 specialling", "Stale counts"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
   });
 
   it("links to every ward the live provider holds — none hand-picked, none missing", () => {
@@ -177,18 +179,18 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.getByText("FSH Adult Secure")).toBeInTheDocument();
 
     // Reset filters
-    const resetBtn = screen.getByRole("button", { name: "Reset Filters" });
+    const resetBtn = screen.getByRole("button", { name: "Reset filters" });
     fireEvent.click(resetBtn);
     expect(searchInput).toHaveValue("");
 
-    // Clicking Profile opens the modal
+    // Clicking a ward's profile button opens its profile pop-out (v6: a dialog named "<ward> profile")
     const profileBtns = screen.getAllByRole("button", { name: /Profile/i });
     expect(profileBtns.length).toBeGreaterThan(0);
     fireEvent.click(profileBtns[0]);
 
-    // Modal dialog is open
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getAllByText(/Clinical Profile/i).length).toBeGreaterThan(0);
+    // Profile dialog is open
+    expect(screen.getByRole("dialog", { name: /profile/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Profile/i).length).toBeGreaterThan(0);
   });
 
   it("renders the Ward Console third edition action bar, tab navigation, and interactive telemetry drawer", () => {
