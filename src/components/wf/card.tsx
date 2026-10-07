@@ -1,10 +1,11 @@
-import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
+import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cx } from "./cx";
 import { IconTile } from "./primitives";
 import styles from "./card.module.css";
 
-export type CardProps = ComponentPropsWithoutRef<"section"> & {
+/** Takes a `ref` (React 19 ref-as-prop); it lands on the rendered element whatever `as` is. */
+export type CardProps = ComponentPropsWithRef<"section"> & {
   /** `compact` is the one-row list card: tile, title over meta, values, one action. */
   variant?: "default" | "compact";
   as?: "section" | "article" | "div" | "li";
@@ -69,7 +70,7 @@ export function CardBody({
   flush = false,
   className,
   ...rest
-}: ComponentPropsWithoutRef<"div"> & { /** No padding, for tables and lists. */ flush?: boolean }) {
+}: ComponentPropsWithRef<"div"> & { /** No padding, for tables and lists. */ flush?: boolean }) {
   return <div className={cx(styles.body, flush && styles.flush, className)} {...rest} />;
 }
 
