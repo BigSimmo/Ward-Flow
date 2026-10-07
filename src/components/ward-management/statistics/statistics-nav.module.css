@@ -1,8 +1,15 @@
 .navBar {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 20;
   width: 100%;
   min-width: 0;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 10px 24px color-mix(in srgb, var(--ink) 5%, transparent);
+  backdrop-filter: blur(16px);
 }
 .scrollTrack {
   display: flex;

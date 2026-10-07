@@ -41,6 +41,10 @@ picked — kept as-is rather than guessed at.
 | `ward-flow-sign-in` | Ward Flow's sign-in and role screen. A **sibling** of `ward-flow/**`, not a child, and deliberately so: the `ward-flow` layout mounts the rail, bar and provider around every nested route with no opt-out, and this screen is specified to have none of them. It holds no password field and signs nobody in — it describes what each role may see. Gated by its own entry in `DEVELOPER_GATED_PATH_PREFIXES`, because the hyphen means the `ward-flow` prefix does not cover it. |
 | `ward-flow-digest`  | Ward Flow design and governance reference digest route (`/mockups/ward-flow-digest`), serving the authoritative `docs/ward-flow/mockups/ward-flow-digest.html` document. A sibling of `ward-flow/**`.                                                                                                                                                                                                                                                                              |
 
+### Work mode phone
+
+`work-mode` is an active study (6 October 2026): the interactive PsychSift phone at `/mockups/work-mode`. It covers My Day, Roster, Teaching, Assessments, CPD and Admin, plus search. Names and records are synthetic. The source HTML gallery also lists extra states, such as offline and signed out, that this phone does not show.
+
 ### Redirects
 
 | Route                    | Forwards to                |

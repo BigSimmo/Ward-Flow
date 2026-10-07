@@ -30,6 +30,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { EmergencyDepartment, LegalForm, Movement, Unit } from "@/components/ward-management/ward-model";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
@@ -470,14 +471,12 @@ function leadingGroups(intent: SearchIntent, query: string): readonly SearchGrou
 }
 
 function movementDisplayNames(movements: readonly Movement[], patients: readonly Patient[]): Record<string, string> {
-  const byId = new Map(patients.map((patient) => [patient.id, patient]));
+  const resolve = createPatientResolver({ patients, movements });
   const names: Record<string, string> = {};
   for (const movement of movements) {
-    const patientId = movement.patientId;
-    if (!patientId) continue;
-    const patient = byId.get(patientId);
-    if (!patient) continue;
-    names[movement.id] = patientDisplayName(patient);
+    const resolved = resolve(movement);
+    if (!resolved.patient) continue;
+    names[movement.id] = resolved.displayName;
   }
   return names;
 }

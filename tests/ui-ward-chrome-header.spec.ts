@@ -88,10 +88,10 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  * legitimately taller control never reddens this file.
  *
  * FIXTURE: `/mockups/ward-flow/delays` is the exact route the original audit measured faults 1-3
- * against. The query "a" matches all eight seeded patients in fixture order (verified against
- * `ward-patients-seed.ts`, and the same fact `ui-ward-search.spec.ts` already documents) plus
- * every open movement whose id or metadata contains the letter. The first is always
- * `ward-global-search-result-person-PT-001` (Talia Halloway), which is what the click test uses.
+ * against. The click test searches "Halloway", the family name on PT-001 (Talia Halloway,
+ * `ward-patients-seed.ts`). A single letter "a" now ranks word-start names ahead of a buried
+ * match and keeps six people, so Talia is no longer in that short list. The family name still
+ * renders `ward-global-search-result-person-PT-001` and is what the click follows.
  *
  * Selectors are `data-testid` hooks (this codebase's own established convention — see every
  * `ui-ward-*.spec.ts`) or ARIA role/name, never a CSS Module class name, because those are hashed.
@@ -383,7 +383,7 @@ test.describe("@mockup Ward shell bar", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoWardChrome(page);
 
-    await searchInput(page).fill("a");
+    await searchInput(page).fill("Halloway");
     await expect(searchPopup(page)).toBeVisible();
 
     const firstResult = page.getByTestId("ward-global-search-result-person-PT-001");
