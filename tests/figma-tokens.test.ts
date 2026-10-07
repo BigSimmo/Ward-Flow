@@ -60,6 +60,19 @@ describe("figma token sync", () => {
     expect(result.css).toContain("--wf-r-lg: 16px;");
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
   });
+
+  it("refuses a Day edit that would also change Night when the CSS holds one value for both", () => {
+    const pulled = exportTokens(css) as Tokens;
+    pulled.Colour.Day["--wf-hero-danger"] = "#ff0000";
+    pulled.Colour.Night["--wf-hero-danger"] = "#00ff00";
+    const result = applyTokens(css, pulled);
+    expect(result.applied).toBe(0);
+    expect(result.skipped).toHaveLength(2);
+    expect(result.css).toBe(css);
+
+    pulled.Colour.Night["--wf-hero-danger"] = "#ff0000";
+    expect(applyTokens(css, pulled).css).toContain("--wf-hero-danger: #ff0000;");
+  });
 });
 
 describe("figma sync map", () => {

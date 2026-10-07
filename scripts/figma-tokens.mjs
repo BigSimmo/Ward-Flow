@@ -132,6 +132,11 @@ export function exportTokens(css) {
   return tokens;
 }
 
+function sameColour(a, b) {
+  const [x, y] = [toRgba(a), toRgba(b)];
+  return !!x && !!y && x.every((v, i) => v === y[i]);
+}
+
 /** Tokens in `incoming` whose value differs from the CSS, plus names the CSS does not have. */
 export function diffTokens(css, incoming) {
   const current = exportTokens(css);
@@ -146,10 +151,6 @@ export function diffTokens(css, incoming) {
       }
       if (!same(have[name], value)) changes.push({ group, mode, name, from: have[name], to: value });
     }
-  };
-  const sameColour = (a, b) => {
-    const [x, y] = [toRgba(a), toRgba(b)];
-    return !!x && !!y && x.every((v, i) => v === y[i]);
   };
   for (const mode of ["Day", "Night"]) {
     compare("Colour", mode, current.Colour[mode], incoming.Colour?.[mode], sameColour);
@@ -169,8 +170,14 @@ export function applyTokens(css, incoming) {
     const night = decls.filter((d) => d.name === c.name && d.where === "night");
     const base = decls.filter((d) => d.name === c.name && d.where !== "night");
     const targets = c.mode === "Night" ? night : base;
-    if (!targets.length || (c.mode === "Night" && base.some((d) => d.where === "shared"))) {
+    if (!targets.length) {
       skipped.push(`${c.name} (${c.mode}): the CSS has no separate ${c.mode} value to change`);
+      continue;
+    }
+    // A colour with no night declaration serves both modes, so a Day edit would also change Night.
+    const wantNight = incoming.Colour?.Night?.[c.name];
+    if (c.mode === "Day" && !night.length && wantNight !== undefined && !sameColour(wantNight, c.to)) {
+      skipped.push(`${c.name} (Day): Figma has different Day and Night values but the CSS holds one for both`);
       continue;
     }
     for (const t of targets) edits.push({ ...t, value });
