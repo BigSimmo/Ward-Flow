@@ -477,12 +477,15 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     setQuery("");
   };
 
+  // Each service count applies every other active filter (status, cohort, search), so it matches
+  // the rows that option would show.
+  const otherFilters = (row: WardRow) => byStatus(row) && byCohort(row) && matchesQuery(row);
   const serviceItems = [
-    { id: "all" as ServiceFilter, label: "All", count: placed.filter((row) => matchesQuery(row)).length },
+    { id: "all" as ServiceFilter, label: "All", count: placed.filter(otherFilters).length },
     ...services.map((group) => ({
       id: group.name as ServiceFilter,
       label: serviceShortName(group.name),
-      count: group.rows.filter((row) => matchesQuery(row)).length,
+      count: group.rows.filter(otherFilters).length,
     })),
   ];
 
