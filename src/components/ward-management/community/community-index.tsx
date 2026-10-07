@@ -266,11 +266,21 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
      * own field owns "/" on this page, which is what its "/" hint promises.
      */
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "/" && document.activeElement !== searchInputRef.current) {
-        event.preventDefault();
-        event.stopPropagation();
-        searchInputRef.current?.focus();
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (document.activeElement === searchInputRef.current) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
       }
+      event.preventDefault();
+      event.stopPropagation();
+      searchInputRef.current?.focus();
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
