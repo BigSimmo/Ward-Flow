@@ -29,6 +29,8 @@ import {
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { axisMax } from "@/components/ward-management/statistics/statistics-axis";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -195,6 +197,8 @@ export function StatisticsScreen({
   const occupiedCount = occupancy.occupied;
   const occupiedPct = totalBeds > 0 ? Math.round((occupiedCount / totalBeds) * 100) : 0;
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
+  // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
+  const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   const waitingCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
@@ -410,7 +414,10 @@ export function StatisticsScreen({
             <>
               <HeroStat value={totalBeds} label="Beds" />
               <HeroStat value={occupiedCount} label={`${occupiedPct}% occupied`} />
-              <HeroStat value={availableNow} label="Ready" />
+              <HeroStat
+                value={availableNow}
+                label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
+              />
               <HeroStat value={waitingCount} label="Waiting in ED" />
               <HeroStat
                 value={<span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>}
@@ -786,6 +793,7 @@ export function StatisticsScreen({
                 label="Blocked discharges by blocker"
                 labelWidth="10.5rem"
                 axis
+                max={axisMax(blocked.tallies.map((tally) => tally.count))}
                 mean={blockedMean}
                 rows={blocked.tallies.map((tally) => ({
                   id: tally.reason,
@@ -844,6 +852,7 @@ export function StatisticsScreen({
                     label="Declines by reason"
                     labelWidth="10.5rem"
                     axis
+                    max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
                     mean={
                       declinesReadout.value.vocabularySize > 0
                         ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize

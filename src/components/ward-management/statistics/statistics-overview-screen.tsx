@@ -25,6 +25,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { axisMax } from "./statistics-axis";
 import { occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-v6.module.css";
 
@@ -315,6 +316,7 @@ export function StatisticsOverviewScreen() {
                 <BarList
                   label="Admissions by stage"
                   axis
+                  max={axisMax(stageTallies.map((stage) => stage.count))}
                   labelWidth="10.5rem"
                   rows={stageTallies.map((stage) => ({
                     id: stage.position,
@@ -416,6 +418,7 @@ export function StatisticsOverviewScreen() {
                   <BarList
                     label="Declines by reason across the network"
                     axis
+                    max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
                     labelWidth="10.5rem"
                     mean={
                       declinesReadout.value.vocabularySize > 0
