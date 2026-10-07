@@ -1569,11 +1569,16 @@ export function escalationBoard(movements: Movement[], units: Unit[], now: Insta
  * A closed movement can never reach the result set, even when every other field of the query
  * — including the movement's own id typed verbatim — would otherwise match it. Search existing
  * for a patient who has already left the system must read as "not found", not as a stale hit.
+ *
+ * `patientDisplayNames`, when supplied, adds that movement's display name to the text haystack.
+ * Callers that omit it search the same fields as before.
  */
 export type MovementSearchQuery = {
   text: string;
   stage?: MovementStage;
   edId?: string;
+  /** Movement id → display name. Included in the text haystack only for ids the caller supplies. */
+  patientDisplayNames?: Readonly<Record<string, string>>;
 };
 
 export function searchMovements(movements: Movement[], units: Unit[], query: MovementSearchQuery): Movement[] {
@@ -1586,6 +1591,7 @@ export function searchMovements(movements: Movement[], units: Unit[], query: Mov
     .filter((movement) => {
       if (needle === "") return true;
       const destination = destinationUnit(movement, units);
+      const patientName = query.patientDisplayNames?.[movement.id];
       const haystack = [
         movement.id,
         movement.originEdId,
@@ -1593,7 +1599,8 @@ export function searchMovements(movements: Movement[], units: Unit[], query: Mov
         destination?.name,
         stageCopy[movement.stage].label,
         movement.owner,
-      ].filter((value): value is string => value !== undefined);
+        patientName,
+      ].filter((value): value is string => value !== undefined && value.length > 0);
       return haystack.some((value) => value.toLowerCase().includes(needle));
     });
 }

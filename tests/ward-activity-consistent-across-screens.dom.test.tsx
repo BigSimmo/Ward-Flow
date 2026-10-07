@@ -62,8 +62,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
     const { user, sheet } = await openActivityDrawer();
 
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
-    const dot = trigger.querySelector('[data-tone][aria-hidden="true"]');
-    expect(dot).toHaveAttribute("data-tone", "good");
+    expect(trigger.querySelector('[data-tone][aria-hidden="true"]')).toBeNull();
     expect(trigger.textContent).toContain("synthetic activity");
     expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
 

@@ -17,6 +17,7 @@ import {
   FilePlus,
   FileText,
   Gauge,
+  History,
   LogIn,
   Plus,
   RefreshCw,
@@ -1046,15 +1047,15 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           type="button"
           ref={activityTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="activity"
           data-testid="ward-bar-activity-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "activity"}
           aria-controls="ward-bar-activity-drawer"
           onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
         >
-          <Activity className={styles.triggerIcon} aria-hidden="true" />
+          <History className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Activity</span>
-          <span className={styles.dot} data-tone={activityTone} aria-hidden="true" />
           <span className="sr-only">
             {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
           </span>
@@ -1064,30 +1065,34 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
           type="button"
           ref={tasksTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="tasks"
           data-testid="ward-bar-tasks-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "tasks"}
           aria-controls="ward-bar-tasks-drawer"
           onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
         >
-          <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" />
+          <span className={styles.triggerIconWrap}>
+            <ClipboardCheck className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+            <span className={styles.badge}>{tasksItems.length}</span>
+          </span>
           <span className={styles.triggerLabel}>Tasks</span>
-          <span className={styles.badge}>{tasksItems.length}</span>
         </button>
 
         <button
           type="button"
           ref={toolsTriggerRef}
           className={styles.drawerTrigger}
+          data-bar-mode="tools"
           data-testid="ward-bar-tools-trigger"
           aria-haspopup="dialog"
           aria-expanded={openPanel === "tools"}
           aria-controls="ward-bar-tools-drawer"
           onClick={() => (openPanel === "tools" ? closePopover("tools", false) : openPopover("tools"))}
         >
-          <Wrench className={styles.triggerIcon} aria-hidden="true" />
+          <Wrench className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tools</span>
-          <ChevronDown className={styles.triggerIcon} aria-hidden="true" />
+          <ChevronDown className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
         </button>
       </div>
 
