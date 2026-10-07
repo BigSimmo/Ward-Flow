@@ -27,6 +27,7 @@ import {
 
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
+import { createBrowserStore } from "@/lib/client-store-factory";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import {
   defaultWardConfiguration,
@@ -416,6 +417,53 @@ function SwitchText({ title, sub, subTestId }: { title: string; sub: string; sub
   );
 }
 
+const REDUCED_MOTION_KEY = "ward-flow-reduced-motion";
+const HIGH_CONTRAST_KEY = "ward-flow-high-contrast";
+const REDUCED_MOTION_EVENT = "ward-flow:reduced-motion-change";
+const HIGH_CONTRAST_EVENT = "ward-flow:high-contrast-change";
+
+function subscribeReducedMotion(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", onChange);
+  window.addEventListener(REDUCED_MOTION_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(REDUCED_MOTION_EVENT, onChange);
+  };
+}
+
+function getReducedMotionSnapshot(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(REDUCED_MOTION_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+const useReducedMotionStore = createBrowserStore(subscribeReducedMotion, getReducedMotionSnapshot, false);
+
+function subscribeHighContrast(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", onChange);
+  window.addEventListener(HIGH_CONTRAST_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(HIGH_CONTRAST_EVENT, onChange);
+  };
+}
+
+function getHighContrastSnapshot(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(HIGH_CONTRAST_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+const useHighContrastStore = createBrowserStore(subscribeHighContrast, getHighContrastSnapshot, false);
+
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const railOpen = useRailOpenStore();
@@ -455,14 +503,9 @@ export function SettingsScreen() {
   const [genderMixProtection, setGenderMixProtection] = useState(false);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
-  // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
-  // DOM attributes synced below without setState-in-effect).
-  const [reducedMotion, setReducedMotion] = useState<boolean>(
-    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-reduced-motion") === "true",
-  );
-  const [highContrast, setHighContrast] = useState<boolean>(
-    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-high-contrast") === "true",
-  );
+  // Real functional Accessibility & Ergonomic preferences via SSR-safe external store
+  const reducedMotion = useReducedMotionStore();
+  const highContrast = useHighContrastStore();
 
   useEffect(() => {
     if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
@@ -472,27 +515,35 @@ export function SettingsScreen() {
   }, [reducedMotion, highContrast]);
 
   const handleToggleReducedMotion = (enabled: boolean) => {
-    setReducedMotion(enabled);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("ward-flow-reduced-motion", enabled ? "true" : "false");
+      try {
+        window.localStorage.setItem(REDUCED_MOTION_KEY, enabled ? "true" : "false");
+      } catch {
+        // Ignore storage access errors in private browsing or sandbox
+      }
       if (enabled) {
         document.documentElement.setAttribute("data-reduced-motion", "true");
       } else {
         document.documentElement.removeAttribute("data-reduced-motion");
       }
+      window.dispatchEvent(new Event(REDUCED_MOTION_EVENT));
     }
     showToast(`Reduced motion ${enabled ? "enabled" : "disabled"}.`);
   };
 
   const handleToggleHighContrast = (enabled: boolean) => {
-    setHighContrast(enabled);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("ward-flow-high-contrast", enabled ? "true" : "false");
+      try {
+        window.localStorage.setItem(HIGH_CONTRAST_KEY, enabled ? "true" : "false");
+      } catch {
+        // Ignore storage access errors in private browsing or sandbox
+      }
       if (enabled) {
         document.documentElement.setAttribute("data-high-contrast", "true");
       } else {
         document.documentElement.removeAttribute("data-high-contrast");
       }
+      window.dispatchEvent(new Event(HIGH_CONTRAST_EVENT));
     }
     showToast(`High contrast mode ${enabled ? "enabled" : "disabled"}.`);
   };
@@ -592,7 +643,7 @@ export function SettingsScreen() {
     percent: number;
   }>({
     usedFormatted: "48 KB",
-    quotaFormatted: "5.0 MB",
+    quotaFormatted: "5 MB",
     percent: 1,
   });
 
@@ -607,7 +658,7 @@ export function SettingsScreen() {
             const quotaMB = Math.round(estimate.quota / (1024 * 1024));
             const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
             setStorageEstimate({
-              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
+              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1).replace(/\.0$/, "")} MB`,
               quotaFormatted: `${quotaMB} MB`,
               percent: Math.max(1, pct),
             });
@@ -635,7 +686,7 @@ export function SettingsScreen() {
         if (mounted) {
           setStorageEstimate({
             usedFormatted: `${kb} KB`,
-            quotaFormatted: "5.0 MB",
+            quotaFormatted: "5 MB",
             percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
           });
         }

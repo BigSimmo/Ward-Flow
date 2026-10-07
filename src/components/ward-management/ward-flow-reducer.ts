@@ -8946,7 +8946,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
           homeRegion: admission.homeRegion ?? undefined,
-          admissionId: admission.id,
+          sourceAdmissionId: admission.id,
         };
         nextMovements = [...state.movements, returnMovement];
       }

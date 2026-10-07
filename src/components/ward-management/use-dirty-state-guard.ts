@@ -29,6 +29,7 @@ export interface DirtyStateGuardOptions {
 export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStateGuardOptions) {
   const isRestoringRef = useRef(true);
   const onRestoreRef = useRef(onRestore);
+  const restoredValueRef = useRef<string | null>(null);
 
   useEffect(() => {
     onRestoreRef.current = onRestore;
@@ -43,6 +44,7 @@ export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStat
     try {
       const cached = window.sessionStorage.getItem(`wf-draft:${key}`);
       if (cached !== null && cached.length > 0) {
+        restoredValueRef.current = cached;
         onRestoreRef.current(cached);
       }
     } catch {
@@ -58,7 +60,13 @@ export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStat
     try {
       if (isDirty && value !== undefined && value.length > 0) {
         if (!isSyntheticSafe(value)) return;
+        restoredValueRef.current = null;
         window.sessionStorage.setItem(`wf-draft:${key}`, value);
+      } else if (restoredValueRef.current !== null) {
+        // A draft was restored on mount; avoid clearing storage until dirty state updates
+        if (value === restoredValueRef.current) {
+          restoredValueRef.current = null;
+        }
       } else if (!isDirty || (value !== undefined && value.length === 0)) {
         window.sessionStorage.removeItem(`wf-draft:${key}`);
       }
@@ -69,6 +77,7 @@ export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStat
 
   // 3. Clear storage helper
   const clearDraft = useCallback(() => {
+    restoredValueRef.current = null;
     if (!key || typeof window === "undefined") return;
     try {
       window.sessionStorage.removeItem(`wf-draft:${key}`);
