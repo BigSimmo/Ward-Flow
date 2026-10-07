@@ -1,6 +1,6 @@
 # Ward Flow — status
 
-**Current as of 6 October 2026, `main` at `1695b40` (pull request #79 / #80).** This top section is the
+**Current as of 7 October 2026.** This top section is the
 current "what is built and what is left" page. Everything under
 [Historical record](#historical-record-25-september-2026) is the older 25 September snapshot from the
 former Database repository, kept as evidence only. When this page and the code disagree, the code
@@ -36,8 +36,9 @@ reviews that must happen before any real patient.
 | Records and reports    | Handover (Command Horizon flight deck and print), legal forms (with MHA expiry reminders), statistics dashboards and charts (with CSV export)                  |
 | Other                  | Settings, compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase                               |
 
-**Recent work since the move (27 September to 6 October), by theme:**
+**Recent work since the move (27 September to 7 October), by theme:**
 
+- **Adversarial review & statutory remediation (7 October):** Enforced D-30 mandatory central coordinator role gate for inter-ward transfer acceptance (`ward-flow-reducer.ts`); ordered emergency referral placement queue by FIFO waiting time with ATS badges per D-32 (`ward-referrals.ts`); aligned statutory MHA form renewal wording to strictly advisory terms ("Record Form Renewal" / "Record Paper Extension") eliminating software authority assumptions per D-22 and D-37 (`legal-forms-screen.tsx`, `alerts-screen.tsx`); renamed MHA tool to "MHA Timeframe Assistant (Advisory)"; synchronized drawer open/close states with URL search parameters (`?drawer=<id>`) with clean history popstate traversal (`ward-bar.tsx`); pruned legacy Supabase startup checks (`src/instrumentation.ts`); updated documentation and script inventories to 159 scripts and 117 npm scripts (`docs/scripts-index.md`).
 - **Patient flight deck & search (#66, #69):** Unified Patient Now flight deck consolidating patient dossier and transit operations into a 3-column brief with live journey tracking (`usePatientNow`, #69); Direction 3 Floating Glass Command Horizon for patient search console (#66); perfected referral detail inspector with a 4-column demographic strip, live ready badge, and clear placement rationale (#66).
 - **Handover Command Horizon & print (#42, #72):** 3-tier flight deck and shift switcher, rapid snapshot sections, KPI tiles (caseload, vacancies, form expiries, 1:1s), and verified table sheet (#42, #72); dedicated print stylesheet with `CanvasText` and D7 landmark compliance (#72); restored legal notice HUD tag (#42).
 - **Compact floating drawers (#70):** Redesigned Tools, Tasks, Activity, and Referrals drawers as curved floating panels with layered theme-aware surfaces, backdrop focus trapping, and Escape key dismissal (#70); Figures feature integrated into Tools; Tasks severity filtering; Activity status pills and horizontal mobile scrolling (#70).

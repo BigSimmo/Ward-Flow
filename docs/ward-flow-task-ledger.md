@@ -1,18 +1,19 @@
 # Ward Flow — the task ledger
 
-> **Current task navigation — 6 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The [3 October pathway audit](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) is a later audit than the September record below, covering its own scope. The October 2026 entries (§7.70 through §7.76) record PRs #37 through #80 landed on `origin/main` at commit `1695b40`.
+> **Current task navigation — 7 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The [3 October pathway audit](ward-flow/reports/wa-health-pathway-audit-2026-10-03.md) is a later audit than the September record below, covering its own scope. The October 2026 entries (§7.70 through §7.77) record recent landed changes and active estate remediations.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
 
-> 🟢 **STATUS AS OF 6 OCTOBER 2026, ESTATE RESOLUTION & ELEVATION: read this first.** The latest session closeout,
+> 🟢 **STATUS AS OF 7 OCTOBER 2026, ESTATE RESOLUTION & ELEVATION: read this first.** The latest session closeout,
 > 100% clean test suite verification proof (over 10,400 tests across five parallel shards, 0 failing, whole-tree lint clean), and verified
 > visual/structural elevations are tracked through **§7.70 ("WF-BANNER-20261005: Universal Curved Synthetic Prototype Banner & Symmetrical Master Search Hub")**,
 > **§7.71 ("WF-FLIGHT-DECK-20261005 / WF-59: Unified Patient Now Flight Deck, 7-Stage Live Journey Stepper & 5-Tab Dossier")**,
 > **§7.72 ("WF-HANDOVER-20261005: Handover Command Horizon 3-Tier Flight Deck, Shift Switcher & High-Contrast Print")**,
 > **§7.73 ("WF-ED-PSYCHIATRY-20261005: Individual Emergency Department Psychiatry Screen Polish & Typography")**,
 > **§7.74 ("WF-STATISTICS-20261005: Estate-Wide Seven-Screen Statistics Dashboard Polish & Structure Preservation")**,
-> **§7.75 ("WF-CI-PERF-20261005: Unit Test Shard Rebalancing from CI Durations, Next.js Build Cache, Playwright Cache & Full-Tree Linting")**, and
-> **§7.76 ("WF-ESTATE-PERFECTION-20261006: WF-51 Zero-Gap Copy Fix, WF-60 Demonstration Script & Decisions D-30–D-36")** at the end of this file.
+> **§7.75 ("WF-CI-PERF-20261005: Unit Test Shard Rebalancing from CI Durations, Next.js Build Cache, Playwright Cache & Full-Tree Linting")**,
+> **§7.76 ("WF-ESTATE-PERFECTION-20261006: WF-51 Zero-Gap Copy Fix, WF-60 Demonstration Script & Decisions D-30–D-36")**, and
+> **§7.77 ("WF-ESTATE-REMEDIATION-20261007: Phase 1–3 Remediation, D-30 Transfer Gate, D-32 FIFO Queue, D-22/D-37 Advisory Form Renewals & Drawer URL Search Parameter Sync")** at the end of this file.
 > Broader task state remains tracked across §7.8 to §7.69.
 >
 > - Everything between here and **"👑 AUTHORITATIVE WARD FLOW MASTER LEDGER"** is the 30 August record.
@@ -8408,3 +8409,35 @@ Automated verification summary:
   - `tests/ward-capacity-network-fold.dom.test.tsx` (7/7 passed)
   - Full TypeScript typecheck: 0 errors
   - ESLint & Prettier: 100% clean
+
+---
+
+### §7.77 WF-ESTATE-REMEDIATION-20261007: Phase 1–3 Remediation, D-30 Transfer Gate, D-32 FIFO Queue, D-22/D-37 Advisory Form Renewals & Drawer URL Search Parameter Sync
+
+- **Date:** 7 October 2026
+- **Status:** **In Progress / Active Execution**
+- **Trigger:** Adversarial 20-Agent Estate Review & Counter-Audit across Clinical, Engine, Statutory, and Ergonomic Domains.
+- **Scope & Deliverables:**
+  1. **Dead Code & Verification Integrity Safeguards (Commit `a04ab00`):**
+     - Updated `scripts/check-dead-code-candidate.mjs` line 244 to scan `docs/ward-flow/plans` in addition to superpowers plans, preventing false-positive dead export alerts.
+     - Replaced native `alert()` calls in `src/components/ward-management/ward/ward-bed-dossier-drawer.tsx` with accessible announcements (`role="status"` live region) and toggles.
+     - Renamed `"MHA Deadline Calculator"` to `"MHA Timeframe Assistant (Advisory)"` in `src/components/ward-management/tools/ward-mha-calculator.tsx` per Decisions D-22 and D-37.
+     - Corrected clerical ruling reference in `ward-figure.tsx` from D-27 to Anti-Box Modernization ruling D-28.
+     - Fixed inverted test assertions and comments in `tests/ward-flow-reducer.test.ts` to truthfully match "Arrived — Bed Turnaround" staging.
+  2. **D-32 Emergency Referral FIFO Queue Ordering (Commit `3299926`):**
+     - Aligned `src/components/ward-management/ward-referrals.ts` line 645 to sort emergency referrals strictly by FIFO waiting time (`a.raisedAt - b.raisedAt`) while displaying prominent ATS triage badges, eliminating black-box automated urgency re-sorting per Decision D-32.
+     - Updated `tests/ward-referral-model.test.ts` and `tests/ward-network-referral-placement.dom.test.tsx` (100% green).
+  3. **Batch A: D-30 Inter-Ward Transfer Gate, Supabase Prune & Patient Fallback (Commit `dbb6c37`):**
+     - Enforced that inter-ward transfer acceptance (`change.step === "accepted"`) requires `event.role === "coordinator"` in `src/components/ward-management/ward-flow-reducer.ts` per Decision D-30. Added regression test in `tests/ward-care-journey.test.ts`.
+     - Pruned dead loopback Supabase and RAG environment variable checks from `src/instrumentation.ts` and `tests/instrumentation.test.ts`.
+     - Fixed `src/components/ward-management/ward/ward-notification-center.tsx` to supply `effectivePatients` to `resolveSubjectPatient`, eliminating false `"Unknown Patient"` alerts.
+  4. **Statutory Mental Health Act Advisory Renewal Wording (Commit `34c1517`):**
+     - Replaced `"Re-Authorise"` and `"Confirm Re-Authorisation"` with `"Record Form Renewal"` and `"Record Paper Extension"` across `legal-forms-screen.tsx` and `alerts-screen.tsx`, eliminating implied software statutory authority per Decisions D-22 and D-37.
+     - Updated `tests/ward-dynamic-island-rollout.contract.test.tsx` and `tests/ward-legal-forms-not-wired-and-register.dom.test.tsx` (122/122 tests green).
+  5. **Drawer URL Search Parameter Synchronization (Commit `b275569`):**
+     - Added `drawerSearchParamUrl` helper in `src/components/ward-management/shell/ward-bar.tsx` syncing `?drawer=<id>` into `window.location.search` during `pushState` / `replaceState` and clearing it on close.
+     - Handled `PopStateEvent` traversal to preserve browser back/forward history for open drawers.
+     - Resolved nested modal dialog ambiguity by making `WardTasksDrawer`'s role conditionally `role="dialog"` only when standalone (`withBackdrop=true`) and `role="complementary"` when embedded within `<Sheet>`.
+     - Added dedicated regression test suite in `tests/ward-shell-third-edition.dom.test.tsx` (55/55 tests green).
+  6. **Script & Documentation Inventory Synchronization:**
+     - Ran `npm run docs:update`, updating `docs/scripts-index.md` (159 script files, 117 npm scripts) and `docs/site-map.md`. Verified with `npm run docs:check-inventory`.
