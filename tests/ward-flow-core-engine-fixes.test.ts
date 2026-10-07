@@ -219,7 +219,8 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
 
       const returnMovement = afterState.movements.at(-1)!;
       expect(returnMovement.stage).toBe("placement_requested");
-      expect(returnMovement.admissionId).toBe(admission.id);
+      expect(returnMovement.sourceAdmissionId).toBe(admission.id);
+      expect(returnMovement.admissionId).toBeUndefined();
       expect(returnMovement.patientId).toBe(admission.patientId ?? undefined);
       expect(returnMovement.blocker).toContain("Royal Perth Hospital");
       expect(returnMovement.blocker).toContain("agreed; awaiting destination bed placement");
@@ -250,6 +251,48 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       expect(afterState.rejections).toHaveLength(0);
       expect(afterState.repatriations).toHaveLength(1);
       expect(afterState.movements.length).toBe(movementsBefore);
+    });
+
+    it("does not delete source admission from state when repatriation referral is withdrawn", () => {
+      const state = seedWardFlowState("standard");
+      const admission = state.admissions[0]!;
+
+      const repatState = wardFlowReducer(state, {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now: NOW,
+        admissionId: admission.id,
+        homeHospital: "RPH",
+        receivingWardAgreed: true,
+        mode: "road",
+        provider: TRANSPORT_PROVIDERS[0],
+        cadNumber: "CAD-9876",
+        transportLegalStatus: "voluntary",
+        estimatedAt: NOW + 120,
+      });
+
+      const returnMovement = repatState.movements.at(-1)!;
+      expect(returnMovement.sourceAdmissionId).toBe(admission.id);
+      expect(returnMovement.admissionId).toBeUndefined();
+
+      // Refer to a unit and withdraw
+      const referredState = wardFlowReducer(repatState, {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: NOW + 5,
+        movementId: returnMovement.id,
+        unitIds: ["unit-rph-acute"],
+      });
+
+      const withdrawnState = wardFlowReducer(referredState, {
+        type: "WITHDRAW_REFERRAL",
+        role: "coordinator",
+        now: NOW + 10,
+        movementId: returnMovement.id,
+      });
+
+      // Source admission must still exist in admissions (not deleted by releasePulledBedAndAdmission)!
+      expect(withdrawnState.admissions.some((a) => a.id === admission.id)).toBe(true);
     });
   });
 });

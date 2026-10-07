@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
+import { safeDecodeURIComponent } from "@/lib/safe-url";
 
 export const metadata: Metadata = {
   title: "Community team statistics — Ward Flow",
@@ -19,5 +20,5 @@ export const metadata: Metadata = {
  */
 export default async function StatisticsCommunityPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = await params;
-  return <StatisticsCommunityScreen teamId={decodeURIComponent(teamId)} />;
+  return <StatisticsCommunityScreen teamId={safeDecodeURIComponent(teamId)} />;
 }

@@ -276,4 +276,20 @@ describe("capacity breakdown", () => {
     expect(result.expectedToday).toBe(0);
     expect(result.onLeave).toBe(0);
   });
+
+  it("excludes tomorrow's releases from confirmedToday and expectedToday, counting them in excludedBeyondToday", () => {
+    const tomorrowInstant = NOW_ANCHOR + 24 * 60; // 1 day ahead
+    const result = capacityBreakdown(
+      unit,
+      [
+        release({ id: "WR-TOMORROW-01", state: "confirmed", expectedAt: tomorrowInstant }),
+        release({ id: "WR-TOMORROW-02", state: "expected", expectedAt: tomorrowInstant }),
+      ],
+      [],
+      NOW_ANCHOR,
+    );
+    expect(result.confirmedToday).toBe(0);
+    expect(result.expectedToday).toBe(0);
+    expect(result.excludedBeyondToday).toBe(2);
+  });
 });

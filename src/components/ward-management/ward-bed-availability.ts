@@ -191,7 +191,7 @@ export function capacityBreakdown(
   for (const release of unitReleases) {
     if (release.state === "discharged") continue;
     const band = releaseBand(release, now);
-    if (band === "beyond-today") {
+    if (band === "beyond-today" || band === "tomorrow") {
       excludedBeyondToday += 1;
       continue;
     }

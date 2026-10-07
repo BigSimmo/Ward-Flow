@@ -4,6 +4,7 @@ import { WardMovementNotFound } from "@/components/ward-management/ward-manageme
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import type { PatientId } from "@/components/ward-management/ward-patients";
+import { safeDecodeURIComponent } from "@/lib/safe-url";
 
 /** Person and movement IDs share Patient Now; the governed dossier remains available by query. */
 export const metadata: Metadata = {
@@ -24,14 +25,9 @@ export default async function WardPersonPage({
 }) {
   const { patientId } = await params;
   const query = await searchParams;
-  let id: string;
-  try {
-    id = decodeURIComponent(patientId);
-  } catch {
-    return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
-  }
+  const id = safeDecodeURIComponent(patientId);
   if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
-    return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
+    return <WardMovementNotFound requestedId={id || patientId} reason="not-a-person-id" />;
   }
   if (query?.view === "governed" || query?.view === "legacy") {
     return <PersonScreen patientId={id as PatientId} />;
