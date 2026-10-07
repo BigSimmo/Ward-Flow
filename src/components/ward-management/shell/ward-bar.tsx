@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
+  FlaskConical,
   FileText,
   Plus,
   Settings,
@@ -51,6 +52,8 @@ import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_OVERVIEW_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
+import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -366,9 +369,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const appearance = useAppearanceStore();
-  const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "operations">(
-    "overview",
-  );
+  const [toolsPart, setToolsPart] = useState<
+    "overview" | "figures" | "utilities" | "directory" | "operations" | "demo"
+  >("overview");
   const [activityQuery, setActivityQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
@@ -1519,6 +1522,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               ["utilities", "Utilities", Calculator],
               ["directory", "Directory", BookOpen],
               ["operations", "Shift desk", ClipboardCheck],
+              ["demo", "Demo", FlaskConical],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -1663,6 +1667,12 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
           <ToolsContactDirectory onNavigate={() => closePopover("tools", false)} />
         </div>
+        <section className={styles.toolsSection} aria-label="Demonstration">
+          <h3 className={styles.toolsHeading}>Demonstration</h3>
+          <WardDemoControls />
+          <WardRoleSwitcher />
+        </section>
+        <div id="ward-tools-demo" className={styles.toolsPanel} hidden={toolsPart !== "demo"} />
       </Sheet>
 
       <Sheet

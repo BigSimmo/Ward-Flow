@@ -45,45 +45,17 @@ const EXPECTED_MODEL_CLAIMS = 80;
  * commit that ended it and is inverted in the same change.
  */
 const EXPECTED_UNEVIDENCED_CLAIMS = 11;
-const EXPECTED_REGISTERED_SURFACES = 8;
+// 8 -> 9 when the overview precedent sentences returned to the page and their claims
+// became active locators again. The overview screen is part of the sweep.
+const EXPECTED_REGISTERED_SURFACES = 9;
 
 // Q004 removed these implementation explanations from the page, not their historical evidence.
 // This exact set is the only locator exemption; arbitrary retirement metadata cannot bypass it.
-// Owner-requested removal of page explanations. Keep checking each underlying model citation.
-const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set([
-  "statistics-screen/bed-readiness/preparing-is-a-boolean",
-  "statistics-screen/bed-readiness/preparation-stamps-confirmed-at",
-  "statistics-screen/bed-readiness/confirmed-at-is-one-shared-field",
-  "statistics-screen/bed-readiness/reducer-writes-the-callers-preparing-value",
-  "statistics-screen/declines/addressing-has-one-unit-field",
-  "statistics-screen/declines/accepted-unit-id-is-written-on-acceptance",
-  "statistics-screen/declines/movement-declines-name-a-unit",
-  "statistics-screen/declines/movement-carries-a-decline-list",
-  "statistics-screen/declines/a-movement-is-inside-an-emergency-department",
-  "statistics-screen/not-offered/a-unit-holds-two-aggregate-capacity-counts",
-  "statistics-screen/declines-by-reason/the-existing-label-map-belongs-to-the-other-list",
-  "statistics-screen/pull-to-arrival/the-arrival-instant",
-  "statistics-screen/referral-to-bed/referrals-carry-a-raised-instant",
-  "statistics-overview-screen/precedent/addressing-has-one-unit-field",
-  "statistics-overview-screen/precedent/movement-declines-name-a-unit",
-  "statistics-overview-screen/precedent/a-movement-is-inside-an-emergency-department",
-  "statistics-compare-screen/attributability/admissions-always-carry-a-unit",
-  "statistics-compare-screen/declines/ward-destination-records-bed-criteria",
-  "statistics-compare-screen/declines/addressing-has-one-unit-field",
-  "statistics-compare-screen/declines/accepted-unit-id-is-written-on-acceptance",
-  "statistics-compare-screen/double-count/referred-unit-ids-is-a-list",
-  "statistics-ward-screen/blocked/the-derivation-takes-admissions-only",
-  "statistics-ward-screen/blocked/the-nearest-equivalent-measures-from-referral-raised-at",
-  "statistics-ed-screen/attributable/department-record-holds-three-fields",
-  "statistics-ed-screen/attributable/origin-ed-id-is-required",
-  "statistics-ed-screen/attributable/a-movement-records-when-it-opened",
-  "statistics-ed-screen/attributable/a-movement-records-its-stage",
-  "statistics-ed-screen/attributable/a-movement-records-every-ward-decline",
-  "statistics-ed-screen/attributable/an-ed-destination-carries-an-ed-id",
-  "statistics-ed-screen/attributable/raised-at-is-required",
-  "statistics-ed-screen/attributable/triaged-at-is-optional",
-  "statistics-ed-screen/near-miss/a-movement-can-close-as-did-not-proceed",
-]);
+// The 2026-10-07 presentation retirement assumed those sentences had left the pages.
+// The main merge put the same locators back, including bed-readiness's
+// `ward-statistics-readiness-timing-absent`, so those claims are active again.
+// This set stays empty until a sentence is actually absent from its page.
+const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set<string>([]);
 const RETIRED_PAGE_CLAIM_IDS = new Set([
   ...PRESENTATION_RETIRED_PAGE_CLAIM_IDS,
   "statistics-screen/bed-readiness/confirming-the-discharge-overwrites-it",
@@ -373,8 +345,8 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(51);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(29);
+    expect(retired).toHaveLength(19);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(61);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)

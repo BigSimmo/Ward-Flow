@@ -154,6 +154,7 @@
 /** The surfaces this register claims to have swept. Repository-relative paths. */
 export const REGISTERED_SURFACES: readonly string[] = [
   "src/components/ward-management/statistics/statistics-screen.tsx",
+  "src/components/ward-management/statistics/statistics-overview-screen.tsx",
   "src/components/ward-management/statistics/statistics-compare-screen.tsx",
   "src/components/ward-management/statistics/statistics-ward-screen.tsx",
   "src/components/ward-management/statistics/statistics-ed-screen.tsx",
@@ -654,11 +655,6 @@ const COMMUNITY_TEAM_BODY =
 export const MODEL_CLAIMS: readonly ModelClaim[] = [
   // ── statistics-screen.tsx — beds being made ready ─────────────────────────────────────────────
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/bed-readiness/preparing-is-a-boolean",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-readiness-timing-absent"',
@@ -668,11 +664,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: PREPARING_STOPS_BEING_A_BOOLEAN,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/bed-readiness/preparation-stamps-confirmed-at",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Bed readiness has a yes/no flag and one shared timestamp",
@@ -686,11 +677,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/bed-readiness/confirmed-at-is-one-shared-field",
     renderedIn: STATISTICS_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The page now says "that record's ONE
@@ -842,11 +828,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/bed-readiness/reducer-writes-the-callers-preparing-value",
     renderedIn: STATISTICS_SCREEN,
     rendered: "This count reads the flag as recorded; the model does not enforce that the occupant has already left.",
@@ -867,11 +848,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-screen.tsx — declines per ward ─────────────────────────────────────────────────
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines/addressing-has-one-unit-field",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-declines-withheld"',
@@ -897,11 +873,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines/accepted-unit-id-is-written-on-acceptance",
     renderedIn: STATISTICS_SCREEN,
     rendered: "A referral names a ward only when that ward accepts",
@@ -911,11 +882,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines/movement-declines-name-a-unit",
     renderedIn: STATISTICS_SCREEN,
     rendered: "declines name a ward for people already inside an emergency department.",
@@ -925,11 +891,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: DECLINE_LOSES_ITS_UNIT,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines/movement-carries-a-decline-list",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Movement declines grouped by the ward&apos;s recorded reason.",
@@ -977,11 +938,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines/a-movement-is-inside-an-emergency-department",
     renderedIn: STATISTICS_SCREEN,
     rendered: "people already inside an emergency department.",
@@ -993,11 +949,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-screen.tsx — empty beds that were not offered (the figure that is not built) ───
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/not-offered/a-unit-holds-two-aggregate-capacity-counts",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-not-offered-absent"',
@@ -1239,11 +1190,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/declines-by-reason/the-existing-label-map-belongs-to-the-other-list",
     renderedIn: STATISTICS_SCREEN,
     rendered: "`DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by",
@@ -1278,11 +1224,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/pull-to-arrival/the-arrival-instant",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Time between the recorded bed pull and arrival instants on an admission.",
@@ -1396,11 +1337,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-screen/referral-to-bed/referrals-carry-a-raised-instant",
     renderedIn: STATISTICS_SCREEN,
     rendered: "arrived no earlier than the referral was raised.",
@@ -1431,11 +1367,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   // ── statistics-overview-screen.tsx ────────────────────────────────────────────────────────────
 
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-overview-screen/precedent/addressing-has-one-unit-field",
     renderedIn: OVERVIEW_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The claim is unchanged and the page
@@ -1448,11 +1379,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: REFERRAL_ADDRESSING_GAINS_A_SECOND_UNIT_ID,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-overview-screen/precedent/movement-declines-name-a-unit",
     renderedIn: OVERVIEW_SCREEN,
     rendered: "a movement decline names a ward for somebody already inside a department.",
@@ -1462,11 +1388,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: DECLINE_LOSES_ITS_UNIT,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-overview-screen/precedent/a-movement-is-inside-an-emergency-department",
     renderedIn: OVERVIEW_SCREEN,
     rendered: "already inside a department",
@@ -1478,11 +1399,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-compare-screen.tsx ─────────────────────────────────────────────────────────────
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-compare-screen/attributability/admissions-always-carry-a-unit",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-attributability-rule"',
@@ -1498,11 +1414,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-compare-screen/declines/ward-destination-records-bed-criteria",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-declines-example"',
@@ -1514,11 +1425,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-compare-screen/declines/addressing-has-one-unit-field",
     renderedIn: COMPARE_SCREEN,
     rendered: "A referral names its ward only when a ward accepts.",
@@ -1528,11 +1434,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: REFERRAL_ADDRESSING_GAINS_A_SECOND_UNIT_ID,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-compare-screen/declines/accepted-unit-id-is-written-on-acceptance",
     renderedIn: COMPARE_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. Both this claim and the one above are
@@ -1546,11 +1447,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-compare-screen/double-count/referred-unit-ids-is-a-list",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-double-count-example"',
@@ -1671,11 +1567,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ward-screen/blocked/the-derivation-takes-admissions-only",
     renderedIn: WARD_STATS_SCREEN,
     // Locator moved 2026-09-06: the paragraph was reworded when the owner ruled the field names
@@ -1694,11 +1585,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ward-screen/blocked/the-nearest-equivalent-measures-from-referral-raised-at",
     renderedIn: WARD_STATS_SCREEN,
     /*
@@ -1730,11 +1616,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-ed-screen.tsx ──────────────────────────────────────────────────────────────────
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/department-record-holds-three-fields",
     renderedIn: ED_SCREEN,
     rendered: 'data-testid="ward-statistics-ed-attributable"',
@@ -1756,11 +1637,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/origin-ed-id-is-required",
     renderedIn: ED_SCREEN,
     /*
@@ -1781,11 +1657,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/a-movement-records-when-it-opened",
     renderedIn: ED_SCREEN,
     rendered: "alongside when their movement opened",
@@ -1799,11 +1670,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/a-movement-records-its-stage",
     renderedIn: ED_SCREEN,
     rendered: "what stage it has reached",
@@ -1817,11 +1683,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/a-movement-records-every-ward-decline",
     renderedIn: ED_SCREEN,
     rendered: "every ward decline against it",
@@ -1831,11 +1692,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/an-ed-destination-carries-an-ed-id",
     renderedIn: ED_SCREEN,
     rendered: "names the department on its destination",
@@ -1849,11 +1705,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/raised-at-is-required",
     renderedIn: ED_SCREEN,
     rendered: "the moment it was raised is always recorded",
@@ -1863,11 +1714,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: RAISED_AT_STOPS_BEING_REQUIRED,
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/attributable/triaged-at-is-optional",
     renderedIn: ED_SCREEN,
     rendered: "the moment it was triaged is optional",
@@ -1881,11 +1727,6 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
-    retiredPageProse: {
-      date: "2026-10-07",
-      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
-    },
-
     id: "statistics-ed-screen/near-miss/a-movement-can-close-as-did-not-proceed",
     renderedIn: ED_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The page now describes the outcome

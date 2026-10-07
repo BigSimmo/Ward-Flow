@@ -86,14 +86,15 @@ describe("Figures in the Tools workspace", () => {
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
   });
 
-  it("keeps compact utilities and replaces Demo with the shift desk", async () => {
+  it("keeps compact utilities and keeps the shift desk beside Demo", async () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
     expect(within(tools).getByText("Catchment resolver")).toBeVisible();
     expect(within(tools).getByText("Form date review")).toBeVisible();
     fireEvent.click(within(tools).getByRole("button", { name: "Shift desk" }));
     expect(await within(tools).findByRole("link", { name: /Shift handover/ })).toBeVisible();
-    expect(within(tools).queryByRole("button", { name: "Demo" })).toBeNull();
+    expect(within(tools).getByRole("button", { name: "Demo" })).toBeVisible();
+    expect(within(tools).getByTestId("ward-demo-controls-trigger")).toBeVisible();
   });
 
   it("filters the directory without losing its navigation links", async () => {

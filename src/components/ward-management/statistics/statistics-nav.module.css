@@ -1,6 +1,7 @@
 .navBar {
   position: sticky;
-  top: var(--statistics-header-offset, 3.5rem);
+  --statistics-header-offset: 3.5rem;
+  top: var(--statistics-header-offset);
   z-index: 20;
   flex-shrink: 0;
   width: 100%;
