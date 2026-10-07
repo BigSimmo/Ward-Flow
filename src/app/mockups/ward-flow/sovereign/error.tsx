@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { TriangleAlert } from "lucide-react";
+import { Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
 import styles from "@/components/ward-management/sovereign/sovereign-showcase.module.css";
 
 export default function SovereignShowcaseError({
@@ -15,18 +17,18 @@ export default function SovereignShowcaseError({
   }, [error]);
 
   return (
-    <main className={styles.workspace} role="alert" aria-label="Sovereign Showcase Error">
-      <section className={styles.heroBanner}>
-        <div className={styles.heroText}>
-          <h2>Something went wrong</h2>
+    <main className={styles.workspace} data-ward-design="v6" role="alert" aria-label="Sovereign Showcase Error">
+      <Card>
+        <CardHead icon={TriangleAlert} title="Something went wrong" />
+        <CardBody>
           <p>Failed to load the Sovereign Suite showcase screen.</p>
-        </div>
-        <div className={styles.heroActions}>
-          <button type="button" className={styles.btnPrimary} onClick={() => reset()}>
+        </CardBody>
+        <CardFoot>
+          <Button variant="pri" onClick={() => reset()}>
             Try again
-          </button>
-        </div>
-      </section>
+          </Button>
+        </CardFoot>
+      </Card>
     </main>
   );
 }

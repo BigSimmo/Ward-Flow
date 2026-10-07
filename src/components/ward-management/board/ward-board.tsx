@@ -1771,6 +1771,34 @@ export function WardBoard({
             when there is one: an absence here is silence, never a "0 being made ready", which would
             be a claim nobody made.
           */}
+          {/* v6 band figures (design/pages-v6/WardBoard--bed-board.png). Each is a count this page
+              already prints below — the triage bar, the incoming list and the Going out list — so the
+              band cannot disagree with them. */}
+          <dl className={styles.bandStats} data-testid="ward-board-band-stats">
+            <div>
+              <dt>Occupied</dt>
+              <dd>{states.occupied}</dd>
+            </div>
+            <div>
+              <dt>Going out today</dt>
+              <dd>{outgoing.length}</dd>
+            </div>
+            <div>
+              <dt>Coming in</dt>
+              <dd>{incoming.length}</dd>
+            </div>
+            <div>
+              <dt>
+                {pulledIn.length > 0 ? (
+                  <span aria-hidden="true" className={styles.bandGlyph}>
+                    ▲
+                  </span>
+                ) : null}
+                Pulled, not arrived
+              </dt>
+              <dd>{pulledIn.length}</dd>
+            </div>
+          </dl>
           {pendingPreparation > 0 ? (
             <p className={styles.beingMadeReady} data-testid="ward-board-pending-preparation">
               {pendingPreparation} of them {pendingPreparation === 1 ? "is" : "are"} still being made ready — the bed
@@ -2301,368 +2329,6 @@ export function WardBoard({
           </div>
 
           <div className={styles.gridColumn}>
-            <section className={styles.workBand} aria-labelledby="ward-board-work-band-heading">
-              <details className={styles.workBandFold} data-testid="ward-board-work-band" open>
-                <summary className={styles.workBandSummary}>
-                  <h2 id="ward-board-work-band-heading" className={styles.workBandTitle}>
-                    Needs you this shift
-                  </h2>
-                  <span className={styles.workBandDigest} data-testid="ward-board-work-band-digest">
-                    {shiftDigest}
-                  </span>
-                </summary>
-                <div className={styles.shiftTabbar} role="group" aria-label="Which shift is drawn">
-                  <button
-                    type="button"
-                    className={`${styles.shiftTabBtn}${shiftTab === "busy" ? ` ${styles.shiftTabBtnActive}` : ""}`}
-                    aria-pressed={shiftTab === "busy"}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShiftTab("busy");
-                    }}
-                  >
-                    This shift <span className={styles.shiftTabNum}>{shiftTiles.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.shiftTabBtn}${shiftTab === "quiet" ? ` ${styles.shiftTabBtnActive}` : ""}`}
-                    aria-pressed={shiftTab === "quiet"}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShiftTab("quiet");
-                    }}
-                  >
-                    Preview: a quiet shift
-                  </button>
-                </div>
-                {shiftTab === "quiet" ? (
-                  <p className={styles.workBandEmpty}>
-                    Every bed is accounted for. Nothing on this board needs you before the next handover at 15:30.
-                    Absence here means every bed has been looked at, not that the board is empty.
-                  </p>
-                ) : shiftTiles.length === 0 ? (
-                  <p className={styles.workBandEmpty}>
-                    No bed is out of service or closed; nobody is travelling here or due out today.
-                  </p>
-                ) : (
-                  <div className={styles.shiftGrid} data-testid="ward-board-work-band-list">
-                    {shiftTiles.map((item) => (
-                      <div key={item.key} className={styles.shiftTile} data-tone={item.tone ?? undefined}>
-                        <div className={styles.shiftTop}>
-                          <button
-                            type="button"
-                            className={styles.shiftBedLink}
-                            onClick={() => {
-                              if (item.selectableKey) {
-                                setSelectedKey(item.selectableKey);
-                              }
-                            }}
-                          >
-                            {item.label}
-                          </button>
-                          <span className={styles.shiftTag}>{item.chip}</span>
-                          <span className={styles.shiftWhen}>{item.when}</span>
-                        </div>
-                        <span className={styles.shiftSub}>{item.text}</span>
-                        <div className={styles.shiftRowActs}>
-                          {item.acts.map((act, actIdx) => (
-                            <button
-                              key={actIdx}
-                              type="button"
-                              className={styles.shiftCtl}
-                              data-tone={act.tone ?? undefined}
-                              onClick={() => handleShiftAction(item, act.word)}
-                            >
-                              {act.word}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {blockerDialogItem ? (
-                  <div
-                    ref={blockerDialogRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="blocker-dialog-title"
-                    aria-describedby="blocker-dialog-description"
-                    id="ward-board-blocker-dialog"
-                    tabIndex={-1}
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) closeBlockerDialog();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        e.stopPropagation();
-                        closeBlockerDialog();
-                      } else {
-                        trapDialogFocus(e, blockerDialogRef.current);
-                      }
-                    }}
-                    style={{
-                      position: "fixed",
-                      inset: 0,
-                      background: "var(--scrim)",
-                      backdropFilter: "blur(4px)",
-                      WebkitBackdropFilter: "blur(4px)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      zIndex: 1000,
-                      padding: "1rem",
-                    }}
-                  >
-                    <div
-                      style={{
-                        background: "var(--surface)",
-                        color: "var(--ink)",
-                        padding: "1.5rem",
-                        borderRadius: "var(--r1, 0.5rem)",
-                        maxWidth: "32rem",
-                        width: "92%",
-                        boxShadow: "var(--lift)",
-                        border: "1px solid var(--line-strong)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1rem",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <h3
-                          id="blocker-dialog-title"
-                          style={{
-                            margin: 0,
-                            fontSize: "1.15rem",
-                            fontWeight: 600,
-                            color: "var(--ink)",
-                            fontVariantNumeric: "tabular-nums",
-                          }}
-                        >
-                          Record a blocker for {blockerDialogItem.label}
-                        </h3>
-                        <button
-                          ref={blockerCloseBtnRef}
-                          type="button"
-                          onClick={closeBlockerDialog}
-                          aria-label="Close dialog"
-                          style={{
-                            minHeight: "var(--ward-tap, 48px)",
-                            minWidth: "var(--ward-tap, 48px)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: "1px solid var(--line-strong)",
-                            borderRadius: "var(--r1, 0.25rem)",
-                            background: "var(--surface)",
-                            color: "var(--ink)",
-                            cursor: "pointer",
-                            fontSize: "1.1rem",
-                            padding: 0,
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div
-                        style={{
-                          padding: "0.75rem 1rem",
-                          borderRadius: "var(--r1, 0.25rem)",
-                          background: "var(--surface-2, var(--sunk))",
-                          border: "1px solid var(--line)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "0.375rem",
-                          fontSize: "0.875rem",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                            gap: "0.5rem",
-                          }}
-                        >
-                          <span style={{ fontWeight: 600, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
-                            Bed / Subject: {blockerDialogItem.label}
-                          </span>
-                          {blockerDialogItem.chip ? (
-                            <span
-                              style={{
-                                fontFamily: "var(--mono, monospace)",
-                                fontVariantNumeric: "tabular-nums",
-                                fontSize: "0.8rem",
-                                padding: "0.125rem 0.5rem",
-                                borderRadius: "999px",
-                                border: "1px solid var(--line-strong)",
-                                background: "var(--surface)",
-                                color: "var(--ink)",
-                              }}
-                            >
-                              {blockerDialogItem.chip}
-                            </span>
-                          ) : null}
-                        </div>
-                        {blockerDialogItem.when ? (
-                          <span
-                            style={{ color: "var(--ink-soft)", fontVariantNumeric: "tabular-nums", fontSize: "0.8rem" }}
-                          >
-                            Timing indicator: {blockerDialogItem.when}
-                          </span>
-                        ) : null}
-                        {blockerDialogItem.text ? (
-                          <span style={{ color: "var(--ink-soft)", fontSize: "0.825rem", lineHeight: 1.4 }}>
-                            {blockerDialogItem.text}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        <p
-                          id="blocker-dialog-description"
-                          style={{ margin: 0, fontSize: "0.9rem", color: "var(--ink-soft)", fontWeight: 500 }}
-                        >
-                          Select the reason preventing bed release:
-                        </p>
-                        <div
-                          role="radiogroup"
-                          aria-labelledby="blocker-dialog-description"
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "0.5rem",
-                            maxHeight: "14rem",
-                            overflowY: "auto",
-                            padding: "0.25rem",
-                          }}
-                        >
-                          {BED_RELEASE_BLOCKERS.map((b) => {
-                            const isSelected = selectedBlocker === b;
-                            return (
-                              <button
-                                key={b}
-                                type="button"
-                                role="radio"
-                                aria-checked={isSelected}
-                                onClick={() => setSelectedBlocker(b)}
-                                style={{
-                                  minHeight: "var(--ward-tap, 48px)",
-                                  minWidth: "var(--ward-tap, 48px)",
-                                  padding: "0.625rem 0.875rem",
-                                  borderRadius: "var(--r1, 0.25rem)",
-                                  border: isSelected
-                                    ? "2px solid var(--accent, var(--primary))"
-                                    : "1px solid var(--line-strong)",
-                                  background: isSelected ? "var(--accent-soft, var(--surface-2))" : "var(--surface)",
-                                  color: "var(--ink)",
-                                  fontWeight: isSelected ? 600 : 400,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "flex-start",
-                                  textAlign: "left",
-                                  fontVariantNumeric: "tabular-nums",
-                                  fontSize: "0.875rem",
-                                  lineHeight: "1.3",
-                                  boxShadow: isSelected ? "var(--lift)" : "none",
-                                }}
-                              >
-                                {b}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-                        <button
-                          type="button"
-                          className={styles.shiftCtl}
-                          onClick={closeBlockerDialog}
-                          style={{
-                            minHeight: "var(--ward-tap, 48px)",
-                            minWidth: "var(--ward-tap, 48px)",
-                            padding: "0.625rem 1.25rem",
-                            fontWeight: 500,
-                            border: "1px solid var(--line-strong)",
-                            background: "var(--surface)",
-                            color: "var(--ink)",
-                            cursor: "pointer",
-                            boxShadow: "var(--lift)",
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.shiftCtl}
-                          data-tone="warn"
-                          onClick={() => {
-                            // Walkthrough D3 (25 Sept 2026): a release names its stay (owner ruling),
-                            // so the blocker goes on THIS person's own live release, never the ward's
-                            // first release or a made-up id. With none, nothing is recorded.
-                            const ownRelease = liveBedReleases?.find(
-                              (r) => r.admissionId === blockerDialogItem.selectableKey && r.state !== "discharged",
-                            );
-                            const who = blockerDialogItem.who || nameFor(blockerDialogItem.selectableKey);
-                            if (!ownRelease) {
-                              const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
-                              setToastMessage(msg);
-                              announceToWardShell(
-                                "No discharge is recorded for this patient, so there is nothing to hold up. Nothing was changed.",
-                              );
-                            } else {
-                              dispatchAndReport(
-                                () =>
-                                  dispatch({
-                                    type: "BLOCK_BED_RELEASE",
-                                    role: "ward",
-                                    now,
-                                    releaseId: ownRelease.id,
-                                    actingUnitId: unit.id,
-                                    blocker: selectedBlocker,
-                                  }),
-                                `Blocker recorded for ${who}: ${selectedBlocker}.`,
-                                `Blocker recorded for this patient: ${selectedBlocker}.`,
-                              );
-                            }
-                            closeBlockerDialog();
-                          }}
-                          style={{
-                            minHeight: "var(--ward-tap, 48px)",
-                            minWidth: "var(--ward-tap, 48px)",
-                            padding: "0.625rem 1.25rem",
-                            fontWeight: 600,
-                            border: "2px solid var(--warn)",
-                            background: "var(--warn-soft, var(--surface))",
-                            color: "var(--ink)",
-                            cursor: "pointer",
-                            fontVariantNumeric: "tabular-nums",
-                            boxShadow: "var(--lift)",
-                          }}
-                        >
-                          Confirm blocker
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </details>
-            </section>
-
             {/* ✅ **THE GRID HAD NO HEADING AT ALL** — measured across the whole component, not inferred.
                 The drawing names it, and a grid of twenty tiles with nothing above it is unreachable
                 for anybody navigating this screen by heading. */}
@@ -2807,16 +2473,26 @@ export function WardBoard({
                         <>
                           <span className={styles.bedTop}>
                             <span className={styles.bedState}>Occupied</span>
+                          </span>
+                          <span className={styles.bedFigureRow}>
                             <span className={styles.days} data-testid={`ward-board-bed-${index + 1}-days`}>
                               {tile.days}
                               <span className={styles.daysUnit}> day{tile.days === 1 ? "" : "s"}</span>
                             </span>
+                            {tileOccupant !== undefined && (
+                              <span className={styles.bedWho}>
+                                {tileOccupant.sex} · {tileOccupant.homeRegion ?? "home region not recorded"}
+                              </span>
+                            )}
                           </span>
-                          {tileOccupant !== undefined && (
-                            <span className={styles.bedWho}>
-                              {tileOccupant.sex} · {tileOccupant.homeRegion ?? "home region not recorded"}
-                            </span>
-                          )}
+                          {/* The stay band as four steps, the legend's own scale. It repeats the band
+                            label beside it, so nothing is carried by the bar alone. */}
+                          <span className={styles.stayBar} data-band={tile.bandId ?? "none"} aria-hidden="true">
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                          </span>
                           <span className={styles.bedNote}>{tile.bandLabel}</span>
                           {/* The band in words, for the screen reader only: the visible number already
                             states it.
@@ -3353,6 +3029,367 @@ export function WardBoard({
               </>
             )}
           </aside>
+          <section className={`${styles.workBand} ${styles.workZone}`} aria-labelledby="ward-board-work-band-heading">
+            <details className={styles.workBandFold} data-testid="ward-board-work-band" open>
+              <summary className={styles.workBandSummary}>
+                <h2 id="ward-board-work-band-heading" className={styles.workBandTitle}>
+                  Needs you this shift
+                </h2>
+                <span className={styles.workBandDigest} data-testid="ward-board-work-band-digest">
+                  {shiftDigest}
+                </span>
+              </summary>
+              <div className={styles.shiftTabbar} role="group" aria-label="Which shift is drawn">
+                <button
+                  type="button"
+                  className={`${styles.shiftTabBtn}${shiftTab === "busy" ? ` ${styles.shiftTabBtnActive}` : ""}`}
+                  aria-pressed={shiftTab === "busy"}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShiftTab("busy");
+                  }}
+                >
+                  This shift <span className={styles.shiftTabNum}>{shiftTiles.length}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.shiftTabBtn}${shiftTab === "quiet" ? ` ${styles.shiftTabBtnActive}` : ""}`}
+                  aria-pressed={shiftTab === "quiet"}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShiftTab("quiet");
+                  }}
+                >
+                  Preview: a quiet shift
+                </button>
+              </div>
+              {shiftTab === "quiet" ? (
+                <p className={styles.workBandEmpty}>
+                  Every bed is accounted for. Nothing on this board needs you before the next handover at 15:30. Absence
+                  here means every bed has been looked at, not that the board is empty.
+                </p>
+              ) : shiftTiles.length === 0 ? (
+                <p className={styles.workBandEmpty}>
+                  No bed is out of service or closed; nobody is travelling here or due out today.
+                </p>
+              ) : (
+                <div className={styles.shiftGrid} data-testid="ward-board-work-band-list">
+                  {shiftTiles.map((item) => (
+                    <div key={item.key} className={styles.shiftTile} data-tone={item.tone ?? undefined}>
+                      <div className={styles.shiftTop}>
+                        <button
+                          type="button"
+                          className={styles.shiftBedLink}
+                          onClick={() => {
+                            if (item.selectableKey) {
+                              setSelectedKey(item.selectableKey);
+                            }
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                        <span className={styles.shiftTag}>{item.chip}</span>
+                        <span className={styles.shiftWhen}>{item.when}</span>
+                      </div>
+                      <span className={styles.shiftSub}>{item.text}</span>
+                      <div className={styles.shiftRowActs}>
+                        {item.acts.map((act, actIdx) => (
+                          <button
+                            key={actIdx}
+                            type="button"
+                            className={styles.shiftCtl}
+                            data-tone={act.tone ?? undefined}
+                            onClick={() => handleShiftAction(item, act.word)}
+                          >
+                            {act.word}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {blockerDialogItem ? (
+                <div
+                  ref={blockerDialogRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="blocker-dialog-title"
+                  aria-describedby="blocker-dialog-description"
+                  id="ward-board-blocker-dialog"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) closeBlockerDialog();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.stopPropagation();
+                      closeBlockerDialog();
+                    } else {
+                      trapDialogFocus(e, blockerDialogRef.current);
+                    }
+                  }}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    background: "var(--scrim)",
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1000,
+                    padding: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "var(--surface)",
+                      color: "var(--ink)",
+                      padding: "1.5rem",
+                      borderRadius: "var(--r1, 0.5rem)",
+                      maxWidth: "32rem",
+                      width: "92%",
+                      boxShadow: "var(--lift)",
+                      border: "1px solid var(--line-strong)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1rem",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <h3
+                        id="blocker-dialog-title"
+                        style={{
+                          margin: 0,
+                          fontSize: "1.15rem",
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        Record a blocker for {blockerDialogItem.label}
+                      </h3>
+                      <button
+                        ref={blockerCloseBtnRef}
+                        type="button"
+                        onClick={closeBlockerDialog}
+                        aria-label="Close dialog"
+                        style={{
+                          minHeight: "var(--ward-tap, 48px)",
+                          minWidth: "var(--ward-tap, 48px)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid var(--line-strong)",
+                          borderRadius: "var(--r1, 0.25rem)",
+                          background: "var(--surface)",
+                          color: "var(--ink)",
+                          cursor: "pointer",
+                          fontSize: "1.1rem",
+                          padding: 0,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "0.75rem 1rem",
+                        borderRadius: "var(--r1, 0.25rem)",
+                        background: "var(--surface-2, var(--sunk))",
+                        border: "1px solid var(--line)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.375rem",
+                        fontSize: "0.875rem",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          flexWrap: "wrap",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
+                          Bed / Subject: {blockerDialogItem.label}
+                        </span>
+                        {blockerDialogItem.chip ? (
+                          <span
+                            style={{
+                              fontFamily: "var(--mono, monospace)",
+                              fontVariantNumeric: "tabular-nums",
+                              fontSize: "0.8rem",
+                              padding: "0.125rem 0.5rem",
+                              borderRadius: "999px",
+                              border: "1px solid var(--line-strong)",
+                              background: "var(--surface)",
+                              color: "var(--ink)",
+                            }}
+                          >
+                            {blockerDialogItem.chip}
+                          </span>
+                        ) : null}
+                      </div>
+                      {blockerDialogItem.when ? (
+                        <span
+                          style={{ color: "var(--ink-soft)", fontVariantNumeric: "tabular-nums", fontSize: "0.8rem" }}
+                        >
+                          Timing indicator: {blockerDialogItem.when}
+                        </span>
+                      ) : null}
+                      {blockerDialogItem.text ? (
+                        <span style={{ color: "var(--ink-soft)", fontSize: "0.825rem", lineHeight: 1.4 }}>
+                          {blockerDialogItem.text}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <p
+                        id="blocker-dialog-description"
+                        style={{ margin: 0, fontSize: "0.9rem", color: "var(--ink-soft)", fontWeight: 500 }}
+                      >
+                        Select the reason preventing bed release:
+                      </p>
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="blocker-dialog-description"
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "0.5rem",
+                          maxHeight: "14rem",
+                          overflowY: "auto",
+                          padding: "0.25rem",
+                        }}
+                      >
+                        {BED_RELEASE_BLOCKERS.map((b) => {
+                          const isSelected = selectedBlocker === b;
+                          return (
+                            <button
+                              key={b}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              onClick={() => setSelectedBlocker(b)}
+                              style={{
+                                minHeight: "var(--ward-tap, 48px)",
+                                minWidth: "var(--ward-tap, 48px)",
+                                padding: "0.625rem 0.875rem",
+                                borderRadius: "var(--r1, 0.25rem)",
+                                border: isSelected
+                                  ? "2px solid var(--accent, var(--primary))"
+                                  : "1px solid var(--line-strong)",
+                                background: isSelected ? "var(--accent-soft, var(--surface-2))" : "var(--surface)",
+                                color: "var(--ink)",
+                                fontWeight: isSelected ? 600 : 400,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                textAlign: "left",
+                                fontVariantNumeric: "tabular-nums",
+                                fontSize: "0.875rem",
+                                lineHeight: "1.3",
+                                boxShadow: isSelected ? "var(--lift)" : "none",
+                              }}
+                            >
+                              {b}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+                      <button
+                        type="button"
+                        className={styles.shiftCtl}
+                        onClick={closeBlockerDialog}
+                        style={{
+                          minHeight: "var(--ward-tap, 48px)",
+                          minWidth: "var(--ward-tap, 48px)",
+                          padding: "0.625rem 1.25rem",
+                          fontWeight: 500,
+                          border: "1px solid var(--line-strong)",
+                          background: "var(--surface)",
+                          color: "var(--ink)",
+                          cursor: "pointer",
+                          boxShadow: "var(--lift)",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.shiftCtl}
+                        data-tone="warn"
+                        onClick={() => {
+                          // Walkthrough D3 (25 Sept 2026): a release names its stay (owner ruling),
+                          // so the blocker goes on THIS person's own live release, never the ward's
+                          // first release or a made-up id. With none, nothing is recorded.
+                          const ownRelease = liveBedReleases?.find(
+                            (r) => r.admissionId === blockerDialogItem.selectableKey && r.state !== "discharged",
+                          );
+                          const who = blockerDialogItem.who || nameFor(blockerDialogItem.selectableKey);
+                          if (!ownRelease) {
+                            const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
+                            setToastMessage(msg);
+                            announceToWardShell(
+                              "No discharge is recorded for this patient, so there is nothing to hold up. Nothing was changed.",
+                            );
+                          } else {
+                            dispatchAndReport(
+                              () =>
+                                dispatch({
+                                  type: "BLOCK_BED_RELEASE",
+                                  role: "ward",
+                                  now,
+                                  releaseId: ownRelease.id,
+                                  actingUnitId: unit.id,
+                                  blocker: selectedBlocker,
+                                }),
+                              `Blocker recorded for ${who}: ${selectedBlocker}.`,
+                              `Blocker recorded for this patient: ${selectedBlocker}.`,
+                            );
+                          }
+                          closeBlockerDialog();
+                        }}
+                        style={{
+                          minHeight: "var(--ward-tap, 48px)",
+                          minWidth: "var(--ward-tap, 48px)",
+                          padding: "0.625rem 1.25rem",
+                          fontWeight: 600,
+                          border: "2px solid var(--warn)",
+                          background: "var(--warn-soft, var(--surface))",
+                          color: "var(--ink)",
+                          cursor: "pointer",
+                          fontVariantNumeric: "tabular-nums",
+                          boxShadow: "var(--lift)",
+                        }}
+                      >
+                        Confirm blocker
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </details>
+          </section>
         </div>
 
         {/*

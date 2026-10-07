@@ -86,10 +86,11 @@ describe("ED compact draft selectors", () => {
         </WardFlowProvider>,
       );
       const count = screen.queryAllByTestId(/^ward-ed-patient-WF-/).length;
-      fireEvent.click(screen.getByRole("button", { name: /Other EDs/ }));
-      const currentDepartment = screen.getByRole("link", { current: "page" });
-      const boardCount = within(currentDepartment).getByText("on board").parentElement!;
-      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*on board$`));
+      // v6: the department strip is always shown, so there is no "Other EDs" toggle to open first.
+      const strip = screen.getByRole("navigation", { name: "Emergency departments" });
+      const currentDepartment = within(strip).getByRole("link", { current: "page" });
+      const boardCount = within(currentDepartment).getByText("waiting").parentElement!;
+      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*waiting$`));
       view.unmount();
     }
   });

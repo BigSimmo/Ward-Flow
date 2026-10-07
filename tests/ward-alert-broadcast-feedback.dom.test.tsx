@@ -38,8 +38,8 @@ function prepareBroadcast() {
       <ResetControl />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
-  fireEvent.change(screen.getByLabelText(/Broadcast Target Scope/i), { target: { value: "forensic" } });
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+  fireEvent.change(screen.getByLabelText(/^Target scope$/i), { target: { value: "forensic" } });
   fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
 }
 
@@ -51,10 +51,10 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
     "dispatched to Frankland Centre Forensic Mental Health.",
   );
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent("dispatched statewide");
-  expect(screen.getByRole("button", { name: "Broadcast Network Alert" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Broadcast alert" })).toHaveFocus();
   fireEvent.click(screen.getByRole("button", { name: "Dismiss notice" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
 });
 
@@ -65,15 +65,15 @@ it("does not reopen an accepted directive or retain its confirmation after a sce
   fireEvent.click(screen.getByRole("button", { name: "Reset synthetic scenario" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
   expect(screen.getByLabelText(/I confirm this directive is clinically authorised/i)).not.toBeChecked();
 });
 
 it("keeps the draft and modal open after the engine refuses a dispatch, then allows retry", () => {
   prepareBroadcast();
-  const title = screen.getByLabelText(/Directive Headline \/ Title/i) as HTMLInputElement;
-  const message = screen.getByLabelText(/Message Body & Clinical Instructions/i) as HTMLTextAreaElement;
+  const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
+  const message = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
   const before = { title: title.value, message: message.value };
   harness.refuse = true;
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
@@ -83,7 +83,7 @@ it("keeps the draft and modal open after the engine refuses a dispatch, then all
   );
   expect(title.value).toBe(before.title);
   expect(message.value).toBe(before.message);
-  expect((screen.getByLabelText(/Broadcast Target Scope/i) as HTMLSelectElement).value).toBe("forensic");
+  expect((screen.getByLabelText(/^Target scope$/i) as HTMLSelectElement).value).toBe("forensic");
   expect(screen.queryByText(/dispatched to/i)).not.toBeInTheDocument();
   harness.refuse = false;
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));

@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Activity, FileText } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
+import { Card, CardHead, Segmented, StatusGlyph, type WfTone } from "@/components/wf";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
@@ -11,61 +12,54 @@ import { edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
-import styles from "./coordinator.module.css";
+import styles from "./pressure-strip.module.css";
+
+type Order = "worst" | "most" | "longest";
+
+const ORDER_ITEMS: { id: Order; label: string }[] = [
+  { id: "worst", label: "Worst first" },
+  { id: "most", label: "Most waiting" },
+  { id: "longest", label: "Longest wait" },
+];
 
 type PressureStripProps = {
   now: Instant;
   selectedEdId: string | undefined;
   onSelectEd: (edId: string | undefined) => void;
   /**
-   * REQUIRED, not injectable-for-tests. It was optional, and the one screen that renders this in
-   * production did not pass it — so the strip silently read the seed fixture while the referral
-   * queue beside it read live state. An optional argument whose absence produces a plausible
-   * answer is the same defect as `edPressure`'s old default, one level up.
-   *
-   * Tests still pass `[]` here to exercise a department with nobody waiting, rather than waiting
-   * for the live fixture to grow one (Task 4 review Important 5). That was always the honest use
-   * of this parameter; what it can no longer do is stand in for a production caller's silence.
+   * REQUIRED, not injectable-for-tests. It was optional, and the one screen that rendered this did
+   * not pass it — so the strip silently read the seed fixture while the queue beside it read live
+   * state. Tests still pass `[]` to exercise a department with nobody waiting.
    */
   movements: Movement[];
   /**
-   * Item 44, build plan task B1 (`docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
-   * "Command: the patients queue and pressure strip are scoped."). `undefined`/`null` (every
-   * existing direct caller — `tests/pressure-strip.dom.test.tsx` included — never passes this)
-   * renders every department, unchanged from before this task. `coordinator-screen.tsx` is the
-   * one production caller and always passes the live `useServiceScope()` value, `null` included
-   * while All services is chosen.
-   *
-   * An emergency department this module cannot resolve to any service (`edHealthService` returns
-   * `undefined`) stays visible regardless of the choice — the same "unresolvable means always
-   * shown" rule `ward-service-scope.ts`'s own header comment gives for a movement or a referral.
+   * `undefined`/`null` renders every department. A department this module cannot resolve to any
+   * service stays visible regardless of the choice, and the foot states how many the choice hid.
    */
   service?: HealthService | null;
+  /** A line under the departments, such as the network's "no common deadline scale" note. */
+  foot?: ReactNode;
+};
+
+const TONE_GLYPH: Record<string, WfTone> = {
+  danger: "danger",
+  warn: "warning",
+  good: "neutral",
+  waiting: "neutral",
+  quiet: "neutral",
 };
 
 /**
- * The coordinator's one-second read on "which emergency department is worst". Worst-first
- * ordering comes from `edPressure` (a passed legal deadline outranks a long wait, which
- * outranks sheer volume) — this component only renders that order, it never re-derives it.
- *
- * The visible label is `ed.siteCode`, never a name shortened by string surgery: `ed.name` is
- * carried in the card's accessible name and `title` instead, so the unabbreviated hospital
- * reaches a screen reader and a hover without ever displaying a plausible-but-wrong guess.
+ * ED pressure (v6 Network mockup). One tile per emergency department: code and service, how many
+ * wait, a bar for the longest wait against the worst department, the longest wait with its glyph,
+ * and the recorded legal deadlines. Pressing a tile selects that department (`aria-pressed`,
+ * `ward-ed-<id>`). Every visible figure is `aria-hidden` and restated in the tile's accessible name.
  */
-export function PressureStrip({ now, selectedEdId, onSelectEd, movements, service = null }: PressureStripProps) {
+export function PressureStrip({ now, selectedEdId, onSelectEd, movements, service = null, foot }: PressureStripProps) {
+  const [order, setOrder] = useState<Order>("worst");
   const pressure = edPressure(now, movements);
-  // Only `.open` is read below (for each department's own legal-deadline states) — never
-  // `pastAccessTarget`/`detainedAndPastAccessTarget` — so this reads the target-independent half
-  // of ed-home-derivations.ts (Task 6 of the audit-wiring plan, 2026-09-16).
   const summaries = edOpenSummaries(movements, now);
 
-  const scrollRef = useRef<HTMLUListElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  // Item 44, task B1: an ED belongs to its site's service (`edHealthService`); one this module
-  // cannot resolve at all stays visible regardless of the choice, the same conservative-failure
-  // rule the rest of `ward-service-scope.ts` gives for every other population.
   const scopedPressure = service
     ? pressure.filter((row) => {
         const rowService = edHealthService(row.ed.id);
@@ -74,69 +68,30 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
     : pressure;
   const hiddenByService = pressure.length - scopedPressure.length;
   const longestWait = Math.max(1, ...scopedPressure.map((row) => row.longestWaitMinutes));
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 2);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener("scroll", checkScroll, { passive: true });
-    window.addEventListener("resize", checkScroll);
-    return () => {
-      el.removeEventListener("scroll", checkScroll);
-      window.removeEventListener("resize", checkScroll);
-    };
-  }, [checkScroll, scopedPressure.length]);
-
-  const scroll = (direction: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const scrollAmount = Math.max(300, Math.floor(el.clientWidth * 0.75));
-    const offset = direction === "left" ? -scrollAmount : scrollAmount;
-    el.scrollBy({ left: offset, behavior: "smooth" });
-  };
+  // "Worst first" keeps `edPressure`'s own ranking: overdue, then longest wait, then waiting.
+  const rows =
+    order === "worst"
+      ? scopedPressure
+      : [...scopedPressure].sort((a, b) =>
+          order === "most"
+            ? b.waiting - a.waiting || b.longestWaitMinutes - a.longestWaitMinutes
+            : b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting,
+        );
 
   return (
-    <section className={styles.pressureStrip} aria-label="Emergency department pressure">
-      <header className={styles.regionHeader}>
-        <h2>
-          <span className={styles.liveDot} aria-hidden="true" />
-          Emergency department pressure
-        </h2>
-        <div className={styles.pressureHeaderActions}>
-          <span className={styles.regionCount}>{scopedPressure.length} departments</span>
-          <div className={styles.pressureNavButtons}>
-            <button
-              type="button"
-              className={styles.pressureScrollButton}
-              onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-              aria-label="Scroll emergency departments left"
-              title="Scroll left"
-            >
-              <ChevronLeft aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={styles.pressureScrollButton}
-              onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-              aria-label="Scroll emergency departments right"
-              title="Scroll right"
-            >
-              <ChevronRight aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      </header>
-      <ul className={styles.pressureList} ref={scrollRef}>
-        {scopedPressure.map((row) => {
+    <Card as="section" className={styles.strip} aria-label="Emergency department pressure">
+      <CardHead
+        icon={Activity}
+        title="Emergency department pressure"
+        meta={
+          <>
+            <span className={styles.countTag}>{scopedPressure.length} departments</span> Waiting and longest wait
+          </>
+        }
+        action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}
+      />
+      <ul className={styles.list}>
+        {rows.map((row) => {
           const selected = row.ed.id === selectedEdId;
           const shortName = edShortName(row.ed);
           const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
@@ -148,7 +103,6 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
 
-          // Streamlined label on card face avoids ugly ellipsis clipping in tight cards
           const deadlineLabel =
             row.breaching > 0
               ? `${row.breaching} overdue`
@@ -159,7 +113,7 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                   : deadlines.length > 0
                     ? `${deadlines.length} on track`
                     : row.waiting > 0
-                      ? "No deadlines"
+                      ? "None due"
                       : "No patients waiting";
 
           const deadlineAccessible =
@@ -200,7 +154,7 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
               <button
                 type="button"
                 data-testid={`ward-ed-${row.ed.id}`}
-                className={selected ? styles.pressureCardSelected : styles.pressureCard}
+                className={selected ? styles.tileSelected : styles.tile}
                 data-breaching={row.breaching}
                 data-longest-minutes={row.longestWaitMinutes}
                 data-waiting={row.waiting}
@@ -210,51 +164,48 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                 title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}`}
                 onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
               >
-                <span className={styles.pressureIdentity} aria-hidden="true">
-                  <strong className={styles.pressureEdName}>{shortName}</strong>
-                  {serviceAcronym ? <span className={styles.pressureServiceBadge}>{serviceAcronym}</span> : null}
+                <span className={styles.identity} aria-hidden="true">
+                  <strong className={styles.code}>{row.ed.siteCode}</strong>
+                  {serviceAcronym ? <span className={styles.service}>{serviceAcronym}</span> : null}
                 </span>
                 {row.waiting === 0 ? (
-                  <span className={styles.pressureStats} aria-hidden="true">
+                  <span className={styles.quiet} aria-hidden="true">
                     No patients waiting
                   </span>
                 ) : (
-                  <span className={styles.pressureStats} aria-hidden="true">
-                    <strong>{row.waiting}</strong> waiting
-                  </span>
+                  <>
+                    <span className={styles.waiting} aria-hidden="true">
+                      <strong>{row.waiting}</strong> waiting
+                    </span>
+                    <span className={styles.track} aria-hidden="true">
+                      <span
+                        className={styles.fill}
+                        style={{ width: `${(row.longestWaitMinutes / longestWait) * 100}%` }}
+                      />
+                    </span>
+                    <span className={styles.longest} aria-hidden="true">
+                      <StatusGlyph tone={TONE_GLYPH[pressureTone] ?? "neutral"} size={8} />
+                      <span className={styles.longestLabel}>Longest</span>
+                      {splitDuration(row.longestWaitMinutes)}
+                    </span>
+                    <span className={styles.deadline} aria-hidden="true">
+                      <FileText size={12} aria-hidden="true" />
+                      {deadlineLabel}
+                    </span>
+                  </>
                 )}
-                {row.waiting > 0 ? (
-                  <span className={styles.pressureWait} aria-hidden="true">
-                    Longest {splitDuration(row.longestWaitMinutes)}
-                  </span>
-                ) : (
-                  <span className={styles.pressureWaitSpacer} aria-hidden="true" />
-                )}
-                <span
-                  className={styles.pressureTrack}
-                  aria-hidden="true"
-                  title="Longest wait relative to the other departments"
-                >
-                  <span style={{ width: `${(row.longestWaitMinutes / longestWait) * 100}%` }} />
-                </span>
-                <span className={styles.pressureDeadline} aria-hidden="true">
-                  {deadlineLabel}
-                </span>
               </button>
             </li>
           );
         })}
       </ul>
-      {/* §3 "Command", strip foot: states exactly how many departments the service choice hid,
-       *  never leaves that count unstated once a service is chosen — the same "never go silent on
-       *  a narrowing" convention the scope bar's own notes follow. */}
       {service ? (
-        <p className={styles.placeholder} data-testid="ward-pressure-strip-service-foot">
-          {/* §3's own exact wording, fixed plural regardless of the count — the same literal
-           *  template the build plan gives, with no singular variant specified. */}
+        <p className={styles.foot} data-testid="ward-pressure-strip-service-foot">
+          {/* §3's own exact wording, fixed plural regardless of the count. */}
           {`${hiddenByService} departments outside ${service} are not shown.`}
         </p>
       ) : null}
-    </section>
+      {foot ? <div className={styles.foot}>{foot}</div> : null}
+    </Card>
   );
 }

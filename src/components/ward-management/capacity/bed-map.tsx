@@ -25,6 +25,7 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
+import { StatusGlyph } from "@/components/wf";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -211,19 +212,23 @@ const SQUARE_LABEL: Record<BedSquareState, string> = {
  * mislabelled "held" box always had; Pulled is a bed spoken for, so it takes the occupied fill and
  * is told apart by its own glyph and words. No new colour is introduced for either.
  */
-const SQUARE_CLASS: Record<BedSquareState, string | undefined> = {
-  ready: styles.ready,
-  pulled: styles.occupied,
-  closed: styles.held,
-  occupied: styles.occupied,
-};
+function squareClass(state: BedSquareState): string | undefined {
+  // Read at render, never at module load: browser specs import this module without its CSS.
+  const classes: Record<BedSquareState, string | undefined> = {
+    ready: styles.ready,
+    pulled: styles.occupied,
+    closed: styles.held,
+    occupied: styles.occupied,
+  };
+  return classes[state];
+}
 
 function squareLabel(square: BedSquare): string {
   return square.preparing ? "Ready bed — still being made ready" : SQUARE_LABEL[square.state];
 }
 
 function squareClassName(square: BedSquare): string {
-  const base = `${styles.square} ${SQUARE_CLASS[square.state]}`;
+  const base = `${styles.square} ${squareClass(square.state)}`;
   return square.preparing ? `${base} ${styles.preparing}` : base;
 }
 
@@ -252,10 +257,11 @@ function BedMapLegend() {
         <li key={item.key} className={styles.legendItem}>
           <span
             aria-hidden="true"
+            data-bed-map-state={item.state}
             className={
               item.preparing
-                ? `${styles.legendSwatch} ${SQUARE_CLASS[item.state]} ${styles.preparing}`
-                : `${styles.legendSwatch} ${SQUARE_CLASS[item.state]}`
+                ? `${styles.legendSwatch} ${squareClass(item.state)} ${styles.preparing}`
+                : `${styles.legendSwatch} ${squareClass(item.state)}`
             }
           />
           {item.label}
@@ -366,7 +372,6 @@ function WardBlock({
         <div className={styles.wardAvailability}>
           {ward.ready > 0 ? (
             <span className={styles.chipReady}>
-              <span className={styles.statusDotReady} aria-hidden="true" />
               <strong>{countCellText(ward.ready)}</strong> ready
             </span>
           ) : (
@@ -377,18 +382,7 @@ function WardBlock({
         <div className={styles.statusChipsRow}>
           {ward.pendingPreparation > 0 ? (
             <span className={styles.chipTurnover} title={`${ward.pendingPreparation} still being made ready`}>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                aria-hidden="true"
-              >
-                <path d="M20 7v5h-5M4 17v-5h5" />
-                <path d="M6 7a7 7 0 0 1 12-1l2 6M18 17a7 7 0 0 1-12 1l-2-6" />
-              </svg>{" "}
+              <StatusGlyph tone="neutral" size={9} />
               {ward.pendingPreparation} turnover
               <span className={styles.srOnly}> ({ward.pendingPreparation} still being made ready)</span>
             </span>
@@ -396,24 +390,14 @@ function WardBlock({
 
           {ward.pulled > 0 ? (
             <span className={styles.chipOccupied} title={BED_STATE_DETAILS.pulled}>
+              <StatusGlyph tone="warning" size={9} />
               {countCellText(ward.pulled)} pulled
             </span>
           ) : null}
 
           {ward.closed > 0 ? (
             <span className={styles.chipHeld} title={BED_STATE_DETAILS.closed}>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                aria-hidden="true"
-              >
-                <rect x="5" y="10" width="14" height="11" rx="2" />
-                <path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v3" />
-              </svg>{" "}
+              <StatusGlyph tone="closed" size={9} />
               {countCellText(ward.closed)} closed
             </span>
           ) : null}
@@ -961,10 +945,10 @@ export function BedMap({
         </div>
         <div role="group" aria-label="Bed map layout" className={styles.layoutSwitch}>
           <button type="button" aria-pressed={layout === "grid"} onClick={() => setLayout("grid")}>
-            Grid view
+            Grid
           </button>
           <button type="button" aria-pressed={layout === "row"} onClick={() => setLayout("row")}>
-            Row view
+            Rows
           </button>
         </div>
         <nav className={styles.serviceNav} aria-label="Bed map service shortcuts">

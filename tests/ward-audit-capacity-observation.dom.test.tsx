@@ -4,6 +4,13 @@ import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-vi
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// The answer view's back link goes through contextual history (ContextualBackLink), which reads
+// the app router; jsdom has none mounted.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
   useWardFlow: () => context,

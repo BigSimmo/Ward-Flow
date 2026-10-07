@@ -69,7 +69,8 @@ describe("the Capacity screen", () => {
     // after the fact.
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Capacity" })).toBeInTheDocument();
+    // v6: the hero title reads "Capacity, N beds ready of M" (the first word is screen-reader only).
+    expect(screen.getByRole("heading", { level: 1, name: /^Capacity,/u })).toBeInTheDocument();
   });
 
   it("shows the ready-bed split as a bar whose numbers are the real locked/open sums, never invented", () => {
@@ -109,7 +110,8 @@ describe("the Capacity screen", () => {
     const table = screen.getByTestId("ward-capacity-gap-table");
     for (const row of shortfallRows) {
       const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      expect(within(tableRow).getByText(/shortfall/iu)).toBeInTheDocument();
+      // v6 wording: a glyph and the word "Short" (design/pages-v6/Capacity.png).
+      expect(within(tableRow).getByText(/^short$/iu)).toBeInTheDocument();
       // The magnitude is real too — not just the word.
       expect(tableRow).toHaveTextContent(`${Math.abs(row.gap)} short`);
     }
@@ -124,8 +126,8 @@ describe("the Capacity screen", () => {
     const table = screen.getByTestId("ward-capacity-gap-table");
     for (const row of nonNegativeRows) {
       const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      expect(within(tableRow).queryByText(/shortfall/iu)).toBeNull();
-      expect(within(tableRow).getByText(row.gap === 0 ? /exactly enough/iu : /spare capacity/iu)).toBeInTheDocument();
+      expect(within(tableRow).queryByText(/^short$/iu)).toBeNull();
+      expect(within(tableRow).getByText(row.gap === 0 ? /^exactly enough$/iu : /^spare$/iu)).toBeInTheDocument();
     }
   });
 
@@ -137,7 +139,7 @@ describe("the Capacity screen", () => {
       String(gapTotals.bedsThatFit),
     );
     expect(totalRow).toHaveTextContent(
-      gapTotals.gap < 0 ? /shortfall/iu : gapTotals.gap === 0 ? /exactly enough/iu : /spare capacity/iu,
+      gapTotals.gap < 0 ? /short/iu : gapTotals.gap === 0 ? /exactly enough/iu : /spare/iu,
     );
   });
 

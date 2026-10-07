@@ -3,29 +3,27 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
-  AlertCircle,
+  Activity,
+  AlarmClock,
   AlertTriangle,
+  Bell,
   Check,
   CheckCircle2,
-  Clock,
-  Layers,
-  BellRing,
   ChevronDown,
-  BedDouble,
-  ClipboardList,
+  Clock,
+  Eye,
+  FileText,
+  MoreHorizontal,
   Radio,
-  Truck,
   Users,
   X,
-  Info,
 } from "lucide-react";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -51,7 +49,32 @@ import {
 } from "./broadcast-draft";
 
 import styles from "./alerts.module.css";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHead,
+  Checkbox,
+  ChipGroup,
+  Count,
+  EmptyState,
+  Field,
+  FilterChip,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  IconTile,
+  Inset,
+  Kbd,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  Textarea,
+  buttonClass,
+  durMinutes,
+  type WfTone,
+} from "@/components/wf";
 
 /**
  * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
@@ -199,7 +222,10 @@ function ConditionContext({
 }) {
   return (
     <section className={styles.condition} aria-label={title}>
-      <h3 className={styles.conditionTitle}>{title}</h3>
+      <h3 className={styles.conditionTitle}>
+        <Check size={14} aria-hidden="true" className={styles.watchMark} />
+        {title}
+      </h3>
       <p className={styles.watches}>{watches}</p>
       {items.length === 0 ? <p className={styles.none}>{none}</p> : null}
     </section>
@@ -217,6 +243,12 @@ function alertDetail(item: InboxItem): string {
   return item.movementId && item.detail.startsWith(prefix) ? item.detail.slice(prefix.length) : item.detail;
 }
 
+/** Severity as a glyph tone. Red only for what needs action now; routine rows stay neutral. */
+function severityGlyph(item: InboxItem): WfTone {
+  const tone = getAlertSeverity(item).tone;
+  return tone === "danger" ? "danger" : tone === "warn" ? "warning" : "neutral";
+}
+
 function AlertRows({
   items,
   empty,
@@ -230,6 +262,7 @@ function AlertRows({
   state = { units },
   isFiltered,
   onResetFilters,
+  prominent = false,
 }: {
   items: InboxItem[];
   empty: string;
@@ -243,6 +276,8 @@ function AlertRows({
   state?: { units?: readonly { id: string; name: string }[] };
   isFiltered?: boolean;
   onResetFilters?: () => void;
+  /** The "Needs you" layout: a fuller card with the primary action and inline acknowledge and snooze. */
+  prominent?: boolean;
 }) {
   const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
   const quickMenuRef = useRef<HTMLDivElement>(null);
@@ -270,23 +305,22 @@ function AlertRows({
   if (items.length === 0) {
     return (
       <div className={styles.emptyContainer}>
-        <p className={styles.alertsEmpty}>{empty}</p>
+        <EmptyState icon={CheckCircle2} title={empty} />
         {isFiltered && onResetFilters && (
-          <button type="button" className={styles.resetFilterBtn} onClick={onResetFilters}>
+          <Button size="sm" variant="ghost" className={styles.btnSm} onClick={onResetFilters}>
             Clear active filters
-          </button>
+          </Button>
         )}
       </div>
     );
   }
 
   return (
-    <ul className={styles.rows}>
+    <ul className={prominent ? styles.cardRows : styles.rows}>
       {items.map((item) => {
         const isAcknowledged = Array.isArray(acknowledgements[item.id])
           ? (acknowledgements[item.id] as unknown[]).length > 0
           : Boolean(acknowledgements[item.id]);
-        const severity = getAlertSeverity(item);
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
@@ -294,171 +328,222 @@ function AlertRows({
 
         const actionVerb =
           categoryBadge.label === "Form Due Time Passed"
-            ? "Record Renewal"
+
+            ? "Re-authorise"
             : categoryBadge.label === "Multiple Declines"
               ? "Intervene"
               : categoryBadge.label === "Reservation Window"
-                ? "Extend Hold"
+                ? "Extend hold"
                 : categoryBadge.label === "Transport Leg"
-                  ? "Review Leg"
+                  ? "Review leg"
                   : "Action";
 
-        return (
-          <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
-            <div className={styles.alertIcon} data-tone={severity.tone}>
-              {categoryBadge.label === "Reservation Window" ? (
-                <BedDouble className={styles.tabIcon} aria-hidden="true" />
-              ) : categoryBadge.label === "Transport Leg" ? (
-                <Truck className={styles.tabIcon} aria-hidden="true" />
-              ) : severity.tone === "danger" ? (
-                <AlertCircle className={styles.tabIcon} aria-hidden="true" />
-              ) : severity.tone === "warn" ? (
-                <AlertTriangle className={styles.tabIcon} aria-hidden="true" />
-              ) : (
-                <Clock className={styles.tabIcon} aria-hidden="true" />
-              )}
-            </div>
-            <div className={styles.alertContent}>
-              <div className={styles.alertHead}>
-                <span className={styles.alertTitleText}>{item.title}</span>
-                {overdueText && (
-                  <span className={styles.overdueChip} data-tone={severity.tone}>
-                    <Clock className={styles.chipIcon} aria-hidden="true" />
-                    {overdueText}
-                  </span>
-                )}
-                {!overdueText && <span className={styles.alertTiming}>{alertDetail(item)}</span>}
-                <span className={styles.alertMetaText}>
-                  <strong className={styles.patientName}>{patientInfo.displayName}</strong> · UMRN:{" "}
-                  <strong>{patientInfo.umrn}</strong> •{" "}
-                  <span className={styles.locationTag}>{patientInfo.location}</span> · Owner: {item.owner}
-                </span>
-                {isAcknowledged && (
-                  <span className={styles.badge} data-tone="good">
-                    <Check className={styles.btnIcon} aria-hidden="true" />
-                    Acknowledged
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className={styles.alertActions}>
-              <button
-                type="button"
-                aria-label={`${actionVerb} for ${patientInfo.displayName}`}
-                title={`${actionVerb}: ${item.title}`}
-                data-testid="ward-alerts-action-btn"
-                className={`${styles.btn} ${styles.btnSm} ${severity.tone === "danger" ? styles.btnDanger : ""}`}
-                onClick={(e) => onAction?.(item, e.currentTarget)}
+        const menu = (
+          <div className={styles.quickActionDropdownWrap}>
+            <Button
+              iconOnly
+              icon={prominent ? MoreHorizontal : ChevronDown}
+              size="sm"
+              variant={prominent ? "sec" : "ghost"}
+              className={styles.btnSm}
+              aria-label={`More actions for ${item.title} · ${patientInfo.displayName}`}
+              title={`More actions for ${patientInfo.displayName}`}
+              aria-haspopup="menu"
+              aria-expanded={openQuickMenuId === item.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                quickMenuTriggerRef.current = e.currentTarget;
+                setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
+              }}
+            />
+            {openQuickMenuId === item.id && (
+              <div
+                ref={quickMenuRef}
+                className={styles.quickActionMenu}
+                role="menu"
+                aria-label={`Actions for ${patientInfo.displayName}`}
+                onClick={(e) => e.stopPropagation()}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenQuickMenuId(null);
+                }}
+                onKeyDown={(event) => {
+                  const options = Array.from(
+                    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+                  );
+                  const current = options.indexOf(document.activeElement as HTMLButtonElement);
+                  const next =
+                    event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? options.length - 1
+                        : event.key === "ArrowDown"
+                          ? (current + 1) % options.length
+                          : event.key === "ArrowUp"
+                            ? (current - 1 + options.length) % options.length
+                            : -1;
+                  if (next < 0) return;
+                  event.preventDefault();
+                  options[next]?.focus();
+                }}
               >
-                {actionVerb}
-              </button>
-              {categoryBadge.label === "Form Due Time Passed" && (
-                <Link
-                  className={`${styles.btn} ${styles.btnSm} ${styles.btnSecondaryLink}`}
-                  href="/mockups/ward-flow/legal-forms"
-                >
-                  View Order
-                </Link>
-              )}
-              {categoryBadge.label === "Multiple Declines" && (
-                <Link
-                  className={`${styles.btn} ${styles.btnSm} ${styles.btnSecondaryLink}`}
-                  href={
-                    patientInfo.routeTarget
-                      ? `/mockups/ward-flow/people/${encodeURIComponent(patientInfo.routeTarget)}`
-                      : "/mockups/ward-flow"
-                  }
-                >
-                  Trajectory
-                </Link>
-              )}
-
-              {/* Inline Quick Action Dropdown */}
-              <div className={styles.quickActionDropdownWrap}>
                 <button
                   type="button"
-                  className={`${styles.btn} ${styles.btnSm} ${styles.quickActionTrigger}`}
-                  aria-label={`More actions for ${item.title} · ${patientInfo.displayName}`}
-                  title={`More actions for ${patientInfo.displayName}`}
-                  aria-haspopup="menu"
-                  aria-expanded={openQuickMenuId === item.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    quickMenuTriggerRef.current = e.currentTarget;
-                    setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
+                  role="menuitem"
+                  className={styles.quickActionMenuItem}
+                  onClick={() => {
+                    setOpenQuickMenuId(null);
+                    onQuickAction?.(item, "snooze", patientInfo.displayName);
                   }}
                 >
-                  <ChevronDown className={styles.btnIcon} aria-hidden="true" />
+                  <Clock size={14} aria-hidden="true" />
+                  <span>Snooze 30m</span>
                 </button>
-                {openQuickMenuId === item.id && (
-                  <div
-                    ref={quickMenuRef}
-                    className={styles.quickActionMenu}
-                    role="menu"
-                    aria-label={`Actions for ${patientInfo.displayName}`}
-                    onClick={(e) => e.stopPropagation()}
-                    onBlur={(event) => {
-                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenQuickMenuId(null);
-                    }}
-                    onKeyDown={(event) => {
-                      const options = Array.from(
-                        event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
-                      );
-                      const current = options.indexOf(document.activeElement as HTMLButtonElement);
-                      const next =
-                        event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? options.length - 1
-                            : event.key === "ArrowDown"
-                              ? (current + 1) % options.length
-                              : event.key === "ArrowUp"
-                                ? (current - 1 + options.length) % options.length
-                                : -1;
-                      if (next < 0) return;
-                      event.preventDefault();
-                      options[next]?.focus();
-                    }}
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={styles.quickActionMenuItem}
-                      onClick={() => {
-                        setOpenQuickMenuId(null);
-                        onQuickAction?.(item, "snooze", patientInfo.displayName);
-                      }}
-                    >
-                      <Clock className={styles.btnIcon} aria-hidden="true" />
-                      <span>Snooze 30m</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={styles.quickActionMenuItem}
-                      onClick={() => {
-                        setOpenQuickMenuId(null);
-                        onQuickAction?.(item, "escalate", patientInfo.displayName);
-                      }}
-                    >
-                      <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
-                      <span>Escalate to Consultant On-Call</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={styles.quickActionMenuItem}
-                      onClick={() => {
-                        setOpenQuickMenuId(null);
-                        onQuickAction?.(item, "acknowledge", patientInfo.displayName);
-                      }}
-                    >
-                      <Check className={styles.btnIcon} aria-hidden="true" />
-                      <span>Acknowledge &amp; Monitor</span>
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.quickActionMenuItem}
+                  onClick={() => {
+                    setOpenQuickMenuId(null);
+                    onQuickAction?.(item, "escalate", patientInfo.displayName);
+                  }}
+                >
+                  <AlertTriangle size={14} aria-hidden="true" />
+                  <span>Escalate to consultant on call</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.quickActionMenuItem}
+                  onClick={() => {
+                    setOpenQuickMenuId(null);
+                    onQuickAction?.(item, "acknowledge", patientInfo.displayName);
+                  }}
+                >
+                  <Check size={14} aria-hidden="true" />
+                  <span>Acknowledge and monitor</span>
+                </button>
               </div>
+            )}
+          </div>
+        );
+
+        const primary = (
+          <Button
+            size="sm"
+            variant={prominent ? "pri" : "sec"}
+            className={styles.btn}
+            aria-label={`${actionVerb} for ${patientInfo.displayName}`}
+            title={`${actionVerb}: ${item.title}`}
+            data-testid="ward-alerts-action-btn"
+            onClick={(e) => onAction?.(item, e.currentTarget)}
+          >
+            {actionVerb}
+          </Button>
+        );
+
+        const secondaryLink =
+          categoryBadge.label === "Form Due Time Passed" ? (
+            <Link className={buttonClass({ size: "sm", className: styles.btn })} href="/mockups/ward-flow/legal-forms">
+              View order
+            </Link>
+          ) : categoryBadge.label === "Multiple Declines" ? (
+            <Link
+              className={buttonClass({ size: "sm", className: styles.btn })}
+              href={
+                patientInfo.routeTarget
+                  ? `/mockups/ward-flow/people/${encodeURIComponent(patientInfo.routeTarget)}`
+                  : "/mockups/ward-flow"
+              }
+            >
+              Trajectory
+            </Link>
+          ) : null;
+
+        const who = (
+          <span className={styles.alertMetaText}>
+            <strong className={styles.patientName}>{patientInfo.displayName}</strong>
+            <span aria-hidden="true"> · </span>
+            <strong className={styles.mono}>{patientInfo.umrn}</strong>
+            <span aria-hidden="true"> · </span>
+            <span className={styles.locationTag}>{patientInfo.location}</span>
+          </span>
+        );
+
+        const timing = overdueText ? (
+          <span className={styles.overdueText}>{overdueText}</span>
+        ) : (
+          <span className={styles.alertTiming}>{alertDetail(item)}</span>
+        );
+
+        if (prominent) {
+          return (
+            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
+              <div className={styles.cardTop}>
+                <StatusGlyph tone={severityGlyph(item)} />
+                <div className={styles.alertContent}>
+                  <span className={styles.alertTitleText}>{item.title}</span>
+                  {who}
+                  <span className={styles.ownerLine}>
+                    {timing}
+                    <span aria-hidden="true"> · </span>
+                    <span>Owner {item.owner.toLowerCase()}</span>
+                  </span>
+                </div>
+                {isAcknowledged ? (
+                  <Badge tone="success" size="sm">
+                    Acknowledged
+                  </Badge>
+                ) : null}
+              </div>
+              <div className={styles.alertActions}>
+                {primary}
+                {secondaryLink}
+                {menu}
+                <span className={styles.actionGap} />
+                {!isAcknowledged ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={styles.btn}
+                    onClick={() => onQuickAction?.(item, "acknowledge", patientInfo.displayName)}
+                  >
+                    Acknowledge
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={AlarmClock}
+                  className={styles.btn}
+                  onClick={() => onQuickAction?.(item, "snooze", patientInfo.displayName)}
+                >
+                  Snooze 30m
+                </Button>
+              </div>
+            </li>
+          );
+        }
+
+        return (
+          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId}>
+            <StatusGlyph tone={severityGlyph(item)} />
+            <div className={styles.alertContent}>
+              <span className={styles.alertHead}>
+                <span className={styles.alertTitleText}>{item.title}</span>
+                {timing}
+                {isAcknowledged ? (
+                  <Badge tone="success" size="sm">
+                    Acknowledged
+                  </Badge>
+                ) : null}
+              </span>
+              {who}
+            </div>
+            <span className={styles.ownerCell}>{item.owner}</span>
+            <div className={styles.rowActions}>
+              {primary}
+              {secondaryLink}
+              {menu}
             </div>
           </li>
         );
@@ -856,33 +941,143 @@ function AlertsWorkspace() {
     });
   };
 
+  const resetFilters = () => {
+    setTierFilter("all");
+    setRoleFilter("all");
+  };
+  const isFiltered = tierFilter !== "all" || roleFilter !== "all";
+  const shownCount = filteredNeedsYou.length + filteredOtherRoles.length;
+  const tierItems = [
+    {
+      id: "all" as const,
+      label: (
+        <>
+          <span>All alerts</span>
+          <SrOnly>, all active tiers</SrOnly>
+        </>
+      ),
+      count: totalActive,
+    },
+    {
+      id: "emergency" as const,
+      label: (
+        <>
+          <span>Clinical risk</span>
+          <SrOnly>, Tier 1: Clinical Emergency / High Risk</SrOnly>
+        </>
+      ),
+      count: tier1Count,
+    },
+    {
+      id: "capacity" as const,
+      label: (
+        <>
+          <span>Capacity and delay</span>
+          <SrOnly>, Tier 2: Capacity Pressure / Delay</SrOnly>
+        </>
+      ),
+      count: tier2Count,
+    },
+    {
+      id: "admin" as const,
+      label: (
+        <>
+          <span>Admin and transfer</span>
+          <SrOnly>, Tier 3: Administrative &amp; Transfer</SrOnly>
+        </>
+      ),
+      count: tier3Count,
+    },
+  ];
+  const roleChips = [
+    { id: "all", label: "All roles", count: totalActive },
+    { id: "coordinator", label: "Coordinator", count: coordinatorCount },
+    { id: "registrar", label: "Duty registrar", count: registrarCount },
+    { id: "bed_manager", label: "Bed manager", count: bedManagerCount },
+    { id: "num", label: "NUM", count: numCount },
+  ];
+  const conditionTiles: {
+    id: string;
+    label: string;
+    value: number;
+    tone: WfTone;
+    sub: string;
+  }[] = [
+    {
+      id: "kpi-legal-expiries",
+      label: "Form expiries passed",
+      value: legal.length,
+      tone: legal.length > 0 ? "danger" : "success",
+      sub:
+        legal.length > 0
+          ? "Form past expiry, action required"
+          : `0 of ${withDeadline.length} with a written deadline passed`,
+    },
+    {
+      id: "kpi-gridlock",
+      label: "Placement gridlock",
+      value: declined.length,
+      tone: declined.length > 0 ? "danger" : "success",
+      sub:
+        declined.length > 0
+          ? "Every destination asked declined"
+          : `0 of ${declineCandidates} declined by every ward asked`,
+    },
+    {
+      id: "kpi-ed-wait",
+      label: "Prolonged ED wait",
+      value: prolongedEdCount,
+      tone: prolongedEdCount > 0 ? "warning" : "success",
+      sub: "A day or more in ED",
+    },
+    {
+      id: "kpi-active-monitored",
+      label: "Active monitored",
+      value: totalActive,
+      tone: "neutral",
+      sub: "Current inbox alerts",
+    },
+  ];
+  const directiveTone: WfTone =
+    activeBroadcast?.severity === "critical" ? "danger" : activeBroadcast?.severity === "warning" ? "warning" : "info";
+  const severityLabel = (severity: BroadcastSeverity) =>
+    severity === "critical" ? "Critical" : severity === "warning" ? "Warning" : "Advisory";
+
   return (
-    <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="third-edition">
+    <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
-        {/* Clinical Page Header — Action & Status Deck */}
-        <header className={styles.pageHeader}>
-          <div className={styles.headerLeftDeck}>
-            <h1 aria-label="Alerts and Operational Notices">Alerts</h1>
-            <dl className={styles.summary} aria-label="Alert summary">
-              <div data-tone={needsYouCount > 0 ? "danger" : "quiet"}>
-                <dt>Needs you</dt>
-                <dd>{needsYouCount}</dd>
-              </div>
-              <div>
-                <dt>Other roles</dt>
-                <dd>{otherRolesCount}</dd>
-              </div>
-              <div>
-                <dt>Conditions checked</dt>
-                <dd>7</dd>
-              </div>
-            </dl>
-          </div>
-          <div className={styles.pageHeaderActions}>
-            <button
+        <Hero
+          level={1}
+          eyebrow="Alerts"
+          title={
+            needsYouCount === 0
+              ? "No alert needs you"
+              : needsYouCount === 1
+                ? "1 alert needs you"
+                : `${needsYouCount} alerts need you`
+          }
+          stats={
+            <div className={styles.heroStats} role="group" aria-label="Alert summary">
+              <HeroStat value={needsYouCount} label="Needs you" tone={needsYouCount > 0 ? "danger" : undefined} />
+              <HeroStat value={otherRolesCount} label="Other roles" />
+              <HeroStat value={7} label="Conditions checked" />
+              <HeroStat value={activeBroadcast ? 1 : 0} label="Directive live" />
+            </div>
+          }
+          bar={
+            <HeroTrack
+              label="Escalation tiers"
+              items={tierItems}
+              value={tierFilter}
+              onChange={(next) => setTierFilter(next)}
+            />
+          }
+          barAside={
+            <Button
               ref={broadcastTriggerRef}
-              type="button"
-              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBroadcast}`}
+              variant="light"
+              size="sm"
+              icon={Radio}
               onClick={(e) => {
                 broadcastTriggerRef.current = e.currentTarget;
                 setBroadcastRequest(null);
@@ -891,45 +1086,41 @@ function AlertsWorkspace() {
                 setBroadcastModalOpen(true);
               }}
             >
-              <Radio className={styles.btnIcon} aria-hidden="true" />
-              <span>Broadcast Network Alert</span>
-            </button>
-          </div>
-        </header>
+              Broadcast alert
+            </Button>
+          }
+        />
 
-        {/* Broadcast Toast Notification */}
+        {/* Broadcast feedback */}
         {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) && (
           <div
-            className={`${styles.toastSuccess}${broadcastRefused ? ` ${styles.toastRefused}` : ""}`}
+            className={styles.feedbackLine}
             role={broadcastRefused ? "alert" : "status"}
             aria-label="Broadcast feedback"
           >
-            {broadcastRefused ? (
-              <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
-            ) : (
-              <Check className={styles.btnIcon} aria-hidden="true" />
-            )}
-            <span>{broadcastFeedback}</span>
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnSm}`}
-              style={{ marginLeft: "auto", background: "transparent", border: "none", cursor: "pointer" }}
+            <StatusGlyph tone={broadcastRefused ? "danger" : "success"} />
+            <span className={styles.feedbackText}>{broadcastFeedback}</span>
+            <Button
+              iconOnly
+              icon={X}
+              size="sm"
+              variant="ghost"
+              className={styles.btnSm}
               onClick={() => {
                 if (broadcastAccepted) setBroadcastModalOpen(false);
                 setBroadcastRequest(null);
                 setBroadcastSuccessNotice(null);
               }}
               aria-label="Dismiss notice"
-            >
-              <X className={styles.tabIcon} aria-hidden="true" />
-            </button>
+            />
           </div>
         )}
 
-        {/* Active Statewide Broadcast Directive Banner Card */}
+        {/* Active statewide directive */}
         {activeBroadcast && (
-          <div
-            className={styles.activeDirectiveCard}
+          <Card
+            as="div"
+            className={styles.directiveRow}
             data-severity={activeBroadcast.severity}
             aria-live="assertive"
             aria-atomic="true"
@@ -938,281 +1129,115 @@ function AlertsWorkspace() {
             {/* The acknowledged-units count below is announced; this sentence travels with it
                 (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
             <span className="sr-only">These counts are invented figures.</span>
-            <div className={styles.directiveHead}>
-              <span className={styles.directivePulse} aria-hidden="true" />
-              <span
-                className={styles.badge}
-                data-tone={
-                  activeBroadcast.severity === "critical"
-                    ? "danger"
-                    : activeBroadcast.severity === "warning"
-                      ? "warn"
-                      : "accent"
-                }
-              >
-                {activeBroadcast.severity.toUpperCase()} DIRECTIVE
+            <IconTile icon={Radio} />
+            <div className={styles.directiveText}>
+              <span className={styles.directiveLine}>
+                <strong className={styles.directiveTitle}>{activeBroadcast.title}</strong>
+                <span className={styles.quiet}>{activeBroadcast.targetScopeLabel}</span>
               </span>
-              <span className={styles.directiveTitle}>{activeBroadcast.title}</span>
-              <span
-                className={styles.overdueChip}
-                data-tone={activeBroadcast.severity === "critical" ? "danger" : "warn"}
-              >
-                <Clock className={styles.chipIcon} aria-hidden="true" />
-                {formatTimeRemaining(activeBroadcast.expiresAt, now)}
+              <span className={styles.directiveMeta}>
+                {activeBroadcast.message}
+                <span aria-hidden="true"> · </span>
+                Issued {formatInstantWithDay(activeBroadcast.dispatchedAt, now)} by {activeBroadcast.dispatchedByName}
+                <span aria-hidden="true"> · </span>
+                <span>
+                  {activeBroadcast.acknowledgedUnits.length} of {units.length} units acknowledged
+                </span>
               </span>
             </div>
-            <p className={styles.directiveBody}>{activeBroadcast.message}</p>
-            <div className={styles.directiveMetaRow}>
-              <span>
-                <strong>Target Scope:</strong> {activeBroadcast.targetScopeLabel}
-              </span>
-              <span>
-                <strong>Dispatched By:</strong> {activeBroadcast.dispatchedByName}
-              </span>
-            </div>
-            <div className={styles.directiveFoot}>
-              <span className={styles.ackTally}>
-                <Check className={styles.btnIcon} aria-hidden="true" />
-                {activeBroadcast.acknowledgedUnits.length} of {units.length} Clinical Units Acknowledged
-              </span>
-              <button
-                type="button"
-                className={styles.btnDangerOutline}
-                onClick={() => handleStandDown(activeBroadcast.id)}
-              >
-                <AlertCircle className={styles.btnIcon} aria-hidden="true" />
-                <span>Stand down this alert</span>
-              </button>
-            </div>
-          </div>
+            <Badge tone={directiveTone}>{severityLabel(activeBroadcast.severity)} directive</Badge>
+            <span className={styles.timeChip}>
+              <b>{durMinutes(Math.max(0, now - activeBroadcast.dispatchedAt))}</b> ago
+            </span>
+            <span className={styles.timeChip}>
+              {activeBroadcast.expiresAt > now ? (
+                <>
+                  <b>{durMinutes(activeBroadcast.expiresAt - now)}</b> left
+                </>
+              ) : (
+                formatTimeRemaining(activeBroadcast.expiresAt, now)
+              )}
+            </span>
+            <Button
+              size="sm"
+              className={styles.btn}
+              aria-label="Stand down this alert"
+              onClick={() => handleStandDown(activeBroadcast.id)}
+            >
+              Stand down
+            </Button>
+          </Card>
         )}
 
-        {/* Contextual Dynamic HUD Island */}
-        <WardDynamicIsland
-          title="Clinical Alerts"
-          className={styles.alertsHud}
-          status={legal.length > 0 || declined.length > 0 ? "alarm" : prolongedEdCount > 0 ? "warning" : "nominal"}
-          statusText={
-            legal.length > 0
-              ? `${legal.length} form expiries passed`
-              : declined.length > 0
-                ? `${declined.length} placement gridlocks`
-                : prolongedEdCount > 0
-                  ? `${prolongedEdCount} prolonged ED waits`
-                  : "All clinical escalation tiers nominal"
-          }
-          ariaLabel="Clinical alerts summary indicators"
-          testId="ward-alerts-hud-island"
-          metrics={[
-            {
-              id: "kpi-legal-expiries",
-              label: "Form expiries passed",
-              value: legal.length,
-              tone: legal.length > 0 ? "danger" : "good",
-              subtext:
-                legal.length > 0
-                  ? "Form past expiry / action required"
-                  : `0 of ${withDeadline.length} with a written deadline passed`,
-            },
-            {
-              id: "kpi-gridlock",
-              label: "Placement Gridlock",
-              value: declined.length,
-              tone: declined.length > 0 ? "danger" : "good",
-              subtext:
-                declined.length > 0
-                  ? "Every destination asked declined"
-                  : `0 of ${declineCandidates} declined by every ward asked`,
-            },
-            {
-              id: "kpi-ed-wait",
-              label: "Prolonged ED Wait",
-              value: prolongedEdCount,
-              subtext: "A day or more in ED",
-              tone: prolongedEdCount > 0 ? "warn" : "good",
-            },
-            {
-              id: "kpi-active-monitored",
-              label: "Active Monitored",
-              value: totalActive,
-              subtext: "Current inbox alerts",
-              tone: "accent",
-            },
-          ]}
-        />
-
-        {/* Unified Operational Filter & Control Toolbar */}
-        <div className={styles.toolbarCard}>
-          {/* 3 Escalation Tier Tabs */}
-          <div
-            className={styles.tierTabBar}
-            role="tablist"
-            aria-label="Escalation Tiers"
-            onKeyDown={(event) => {
-              const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-              const current = tabs.indexOf(document.activeElement as HTMLButtonElement);
-              const next =
-                event.key === "Home"
-                  ? 0
-                  : event.key === "End"
-                    ? tabs.length - 1
-                    : event.key === "ArrowRight"
-                      ? (current + 1) % tabs.length
-                      : event.key === "ArrowLeft"
-                        ? (current - 1 + tabs.length) % tabs.length
-                        : -1;
-              if (next < 0) return;
-              event.preventDefault();
-              tabs[next]?.focus();
-              tabs[next]?.click();
-            }}
-          >
-            <button
-              type="button"
-              role="tab"
-              id="alerts-tier-all"
-              aria-controls="alerts-results"
-              aria-label={`All alerts, all active tiers (${totalActive})`}
-              tabIndex={tierFilter === "all" ? 0 : -1}
-              aria-selected={tierFilter === "all"}
-              className={`${styles.tierTab} ${tierFilter === "all" ? styles.tierTabActive : ""}`}
-              onClick={() => setTierFilter("all")}
-            >
-              <Layers className={styles.tabIcon} aria-hidden="true" />
-              <span>All alerts</span>
-              <span className={styles.tabCount}>{totalActive}</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="alerts-tier-emergency"
-              aria-controls="alerts-results"
-              aria-label={`Clinical risk, Tier 1: Clinical Emergency / High Risk (${tier1Count})`}
-              tabIndex={tierFilter === "emergency" ? 0 : -1}
-              aria-selected={tierFilter === "emergency"}
-              className={`${styles.tierTab} ${tierFilter === "emergency" ? styles.tierTabActive : ""}`}
-              onClick={() => setTierFilter("emergency")}
-            >
-              <AlertCircle className={styles.tabIcon} aria-hidden="true" />
-              <span>Clinical risk</span>
-              <span className={styles.tabCount} data-tone="danger">
-                {tier1Count}
-              </span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="alerts-tier-capacity"
-              aria-controls="alerts-results"
-              aria-label={`Capacity & delay, Tier 2: Capacity Pressure / Delay (${tier2Count})`}
-              tabIndex={tierFilter === "capacity" ? 0 : -1}
-              aria-selected={tierFilter === "capacity"}
-              className={`${styles.tierTab} ${tierFilter === "capacity" ? styles.tierTabActive : ""}`}
-              onClick={() => setTierFilter("capacity")}
-            >
-              <BedDouble className={styles.tabIcon} aria-hidden="true" />
-              <span>Capacity &amp; delay</span>
-              <span className={styles.tabCount} data-tone="warn">
-                {tier2Count}
-              </span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="alerts-tier-admin"
-              aria-controls="alerts-results"
-              aria-label={`Admin & transfer, Tier 3: Administrative & Transfer (${tier3Count})`}
-              tabIndex={tierFilter === "admin" ? 0 : -1}
-              aria-selected={tierFilter === "admin"}
-              className={`${styles.tierTab} ${tierFilter === "admin" ? styles.tierTabActive : ""}`}
-              onClick={() => setTierFilter("admin")}
-            >
-              <ClipboardList className={styles.tabIcon} aria-hidden="true" />
-              <span>Admin &amp; transfer</span>
-              <span className={styles.tabCount} data-tone="accent">
-                {tier3Count}
-              </span>
-            </button>
+        {/* Conditions watched */}
+        <Card aria-labelledby="alerts-conditions-title" data-testid="ward-alerts-hud-island">
+          <CardHead
+            id="alerts-conditions-title"
+            icon={Activity}
+            title="Conditions watched"
+            aside={<span className={styles.quiet}>Checked at {formatInstantWithDay(now, now)}</span>}
+          />
+          <div className={styles.tileGrid}>
+            {conditionTiles.map((tile) => (
+              <div key={tile.id} className={styles.tile} data-kpi={tile.id}>
+                <span className={styles.tileHead}>
+                  <span className={styles.tileLabel}>{tile.label}</span>
+                  <StatusGlyph tone={tile.tone} size={9} />
+                </span>
+                <span className={styles.tileValue}>{tile.value}</span>
+                <span className={styles.tileSub}>{tile.sub}</span>
+              </div>
+            ))}
           </div>
+        </Card>
 
-          {/* Role-Based Addressed Filter Pills */}
-          <div className={styles.filterBar} role="region" aria-label="Filter by Addressed Role">
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Addressed to</span>
-              <button
-                type="button"
-                className={`${styles.filterBtn} ${roleFilter === "all" ? styles.filterBtnActive : ""}`}
-                aria-pressed={roleFilter === "all"}
-                onClick={() => setRoleFilter("all")}
-              >
-                <Users className={styles.btnIcon} aria-hidden="true" />
-                All Roles ({totalActive})
-              </button>
-              <button
-                type="button"
-                className={`${styles.filterBtn} ${roleFilter === "coordinator" ? styles.filterBtnActive : ""}`}
-                aria-pressed={roleFilter === "coordinator"}
-                onClick={() => setRoleFilter("coordinator")}
-              >
-                Coordinator ({coordinatorCount})
-              </button>
-              <button
-                type="button"
-                className={`${styles.filterBtn} ${roleFilter === "registrar" ? styles.filterBtnActive : ""}`}
-                aria-pressed={roleFilter === "registrar"}
-                onClick={() => setRoleFilter("registrar")}
-              >
-                Duty Registrar ({registrarCount})
-              </button>
-              <button
-                type="button"
-                className={`${styles.filterBtn} ${roleFilter === "bed_manager" ? styles.filterBtnActive : ""}`}
-                aria-pressed={roleFilter === "bed_manager"}
-                onClick={() => setRoleFilter("bed_manager")}
-              >
-                Bed Manager ({bedManagerCount})
-              </button>
-              <button
-                type="button"
-                className={`${styles.filterBtn} ${roleFilter === "num" ? styles.filterBtnActive : ""}`}
-                aria-pressed={roleFilter === "num"}
-                onClick={() => setRoleFilter("num")}
-              >
-                NUM ({numCount})
-              </button>
-            </div>
-            <div className={styles.filterSummary}>
-              <span role="status" aria-live="polite" aria-atomic="true">
-                Showing {filteredNeedsYou.length + filteredOtherRoles.length} of {totalActive} alerts from synthetic
-                records
-              </span>
-              {(tierFilter !== "all" || roleFilter !== "all") && (
-                <button
-                  type="button"
-                  className={styles.resetFilterBtn}
-                  onClick={() => {
-                    setTierFilter("all");
-                    setRoleFilter("all");
-                  }}
+        {/* Addressed-to filter */}
+        <div className={styles.filterBar}>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel} id="alerts-role-label">
+              Addressed to
+            </span>
+            <ChipGroup label="Filter by addressed role" className={styles.chipRow}>
+              {roleChips.map((chip) => (
+                <FilterChip
+                  key={chip.id}
+                  className={styles.filterBtn}
+                  pressed={roleFilter === chip.id}
+                  onPressedChange={() => setRoleFilter(chip.id)}
+                  count={chip.count}
                 >
-                  Reset filters
-                </button>
-              )}
-            </div>
+                  {chip.label}
+                </FilterChip>
+              ))}
+            </ChipGroup>
+          </div>
+          <div className={styles.filterSummary}>
+            <span role="status" aria-live="polite" aria-atomic="true">
+              Showing {shownCount} of {totalActive}
+              <span className="sr-only"> alerts from synthetic records</span>
+            </span>
+            {isFiltered && (
+              <Button size="sm" variant="ghost" className={styles.btnSm} onClick={resetFilters}>
+                Reset filters
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Active Alert Groups */}
-        <div
-          className={styles.panelGrid}
-          id="alerts-results"
-          role="tabpanel"
-          aria-labelledby={`alerts-tier-${tierFilter}`}
-        >
+        {/* Alert groups */}
+        <div className={styles.panelGrid} id="alerts-results">
           <div className={styles.priorityColumn}>
-            <WardPanel title="Needs you" count={`${filteredNeedsYou.length} to act on`}>
+            <Card aria-labelledby="alerts-needs-you-title">
+              <CardHead
+                id="alerts-needs-you-title"
+                icon={Bell}
+                title="Needs you"
+                meta={<Count n={filteredNeedsYou.length} />}
+                aside={<span className={styles.quiet}>{filteredNeedsYou.length} to act on</span>}
+              />
               <div className={styles.panelBody} role="region" aria-label="Needs you alerts" tabIndex={0}>
                 <AlertRows
+                  prominent
                   items={filteredNeedsYou}
                   empty="No high-priority clinical or legal conditions are currently active."
                   onAction={handleOpenAction}
@@ -1223,27 +1248,20 @@ function AlertsWorkspace() {
                   movements={movements}
                   units={units}
                   state={state}
-                  isFiltered={tierFilter !== "all" || roleFilter !== "all"}
-                  onResetFilters={() => {
-                    setTierFilter("all");
-                    setRoleFilter("all");
-                  }}
+                  isFiltered={isFiltered}
+                  onResetFilters={resetFilters}
                 />
               </div>
-            </WardPanel>
+            </Card>
 
-            {/* Operational Notices & Shift Communication Feed */}
-            <section className={styles.feedSection} aria-label="Operational Notices and Shift Communication Feed">
-              <div className={styles.feedHead}>
-                <div className={styles.feedHeadTitleGroup}>
-                  <BellRing className={styles.feedIconAccent} aria-hidden="true" />
-                  <h2>Role notices</h2>
-                </div>
-                <span className={styles.feedCount}>{feedNotices.length} recorded</span>
-              </div>
+            {/* Operational notices */}
+            <Card as="section" aria-label="Operational Notices and Shift Communication Feed">
+              <CardHead icon={FileText} title="Role notices" meta={<Count n={feedNotices.length} />} />
               {feedNotices.length === 0 ? (
-                <div className={styles.feedEmptyCard}>
-                  <Info className={styles.feedIconAccent} aria-hidden="true" />
+                <div className={styles.feedEmpty}>
+                  <span className={styles.emptyMark} aria-hidden="true">
+                    <CheckCircle2 size={16} aria-hidden="true" />
+                  </span>
                   <div>
                     <p className={styles.none}>No notices have been raised this session.</p>
                     <p className={styles.feedEmptySub}>
@@ -1257,112 +1275,122 @@ function AlertsWorkspace() {
                     const isRead = notice.readAt !== undefined;
                     return (
                       <li key={notice.id} className={styles.feedItem}>
-                        <div className={styles.feedIcon}>
-                          <Info className={styles.tabIcon} aria-hidden="true" />
-                        </div>
+                        <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
                         <div className={styles.feedContent}>
-                          <div className={styles.feedItemHead}>
-                            <span className={styles.badge} data-tone="accent">
-                              Notice
-                            </span>
-                            <span className={styles.feedTitle}>{notice.sentence}</span>
-                            <span className={styles.feedMeta}>
-                              • To: {WARD_FLOW_ROLE_LABELS[notice.to.role]} • Raised{" "}
-                              {formatInstantWithDay(notice.raisedAt, now)}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <span className={styles.badge} data-tone={isRead ? "good" : "accent"}>
-                            {isRead ? "Read" : "Unread"}
+                          <span className={styles.feedTitle}>{notice.sentence}</span>
+                          <span className={styles.feedMeta}>
+                            To {WARD_FLOW_ROLE_LABELS[notice.to.role]} · raised{" "}
+                            {formatInstantWithDay(notice.raisedAt, now)}
                           </span>
                         </div>
+                        <span className={styles.feedState}>{isRead ? "Read" : "Unread"}</span>
                       </li>
                     );
                   })}
                 </ul>
               )}
-            </section>
-            <details className={`${styles.contextDetails} source-print`}>
-              <summary>
-                <Info className={styles.btnIcon} aria-hidden="true" />
-                Monitoring scope &amp; limitations
-                <ChevronDown className={styles.disclosureChevron} aria-hidden="true" />
-              </summary>
-              <div className={styles.contextGrid}>
-                <ConditionContext
-                  title="Form expiry passed"
-                  watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
-                  none={`No recorded form expiry has passed. ${withDeadline.length} ${
-                    withDeadline.length === 1 ? "movement carries" : "movements carry"
-                  } one and none is overdue — that is a count, not a gap.`}
-                  items={legal}
-                />
-                <ConditionContext
-                  title="Every ward asked has declined"
-                  watches="Watches movements where every ward approached has refused and none has accepted."
-                  none="No movement has been refused by every ward it asked."
-                  items={declined}
-                />
-                <ConditionContext
-                  title="Destination no longer suitable"
-                  watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
-                  none="No accepted destination has failed an authorised-hospital check."
-                  items={unlawful}
-                />
-                <ConditionContext
-                  title="Bed hold expired"
-                  watches="Watches bed pulls against the time they were held until."
-                  none="No bed hold has lapsed."
-                  items={pullExpired}
-                />
-                <ConditionContext
-                  title="Transport waiting to leave"
-                  watches="Watches accepted transport legs that have not departed."
-                  none="No accepted transport leg is still waiting to leave."
-                  items={transport}
-                />
-                <section className={styles.condition} aria-label="Referral awaiting triage">
-                  <h3 className={styles.conditionTitle}>Referral awaiting triage</h3>
-                  <p className={styles.watches}>
-                    Watches referrals that have never been triaged. Read from the referrals themselves, not from the
-                    action inbox — no inbox category covers triage.
-                  </p>
-                  {untriaged.length === 0 ? (
-                    <p className={styles.none}>Every referral has been triaged.</p>
-                  ) : (
-                    <p className={styles.count}>
-                      <strong>
-                        {untriaged.length} of {(state.referrals ?? []).length}
-                      </strong>{" "}
-                      referrals have never been triaged.
+            </Card>
+
+            <Card as="div" className={styles.scopeCard}>
+              <details className={`${styles.contextDetails} source-print`}>
+                <summary className={styles.scopeSummary}>
+                  <IconTile icon={Eye} />
+                  <span className={styles.scopeTitle}>Monitoring scope</span>
+                  <Count n={7} />
+                  <span className={styles.scopeMeta}>7 watched, 1 not</span>
+                  <ChevronDown className={styles.disclosureChevron} aria-hidden="true" size={16} />
+                </summary>
+                <div className={styles.contextGrid}>
+                  <ConditionContext
+                    title="Form expiry passed"
+                    watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
+                    none={`No recorded form expiry has passed. ${withDeadline.length} ${
+                      withDeadline.length === 1 ? "movement carries" : "movements carry"
+                    } one and none is overdue — that is a count, not a gap.`}
+                    items={legal}
+                  />
+                  <ConditionContext
+                    title="Every ward asked has declined"
+                    watches="Watches movements where every ward approached has refused and none has accepted."
+                    none="No movement has been refused by every ward it asked."
+                    items={declined}
+                  />
+                  <ConditionContext
+                    title="Destination no longer suitable"
+                    watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
+                    none="No accepted destination has failed an authorised-hospital check."
+                    items={unlawful}
+                  />
+                  <ConditionContext
+                    title="Bed hold expired"
+                    watches="Watches bed pulls against the time they were held until."
+                    none="No bed hold has lapsed."
+                    items={pullExpired}
+                  />
+                  <ConditionContext
+                    title="Transport waiting to leave"
+                    watches="Watches accepted transport legs that have not departed."
+                    none="No accepted transport leg is still waiting to leave."
+                    items={transport}
+                  />
+                  <section className={styles.condition} aria-label="Referral awaiting triage">
+                    <h3 className={styles.conditionTitle}>
+                      <Check size={14} aria-hidden="true" className={styles.watchMark} />
+                      Referral awaiting triage
+                    </h3>
+                    <p className={styles.watches}>
+                      Watches referrals that have never been triaged. Read from the referrals themselves, not from the
+                      action inbox — no inbox category covers triage.
                     </p>
-                  )}
-                </section>
-                <section className={styles.condition} aria-label="Override recorded">
-                  <h3 className={styles.conditionTitle}>Override recorded</h3>
-                  <p className={styles.watches}>
-                    Watches referrals made by override. {overrides.length === 0 ? "None has been recorded." : null}
-                  </p>
-                  <p className={styles.gap}>
-                    <strong>This screen cannot identify a prior gate verdict.</strong> The record keeps who, when, which
-                    fixed reason and which wards; it does not retain a prior gate verdict.
-                  </p>
-                </section>
-                <section className={styles.condition} aria-label="What this screen does not watch">
-                  <h3 className={styles.conditionTitle}>What this screen does not watch</h3>
-                  <p className={styles.gap}>
-                    <strong>Handover sheets.</strong> The design for this screen carries a &ldquo;handover sheet
-                    due&rdquo; alert. Nothing in this system records when a shift hands over, so there is no deadline to
-                    measure and this screen cannot tell you whether one is due. It is listed here rather than left out,
-                    because a screen that silently drops a condition reads as though it checked it.
-                  </p>
-                </section>
-              </div>
-            </details>
+                    {untriaged.length === 0 ? (
+                      <p className={styles.none}>Every referral has been triaged.</p>
+                    ) : (
+                      <p className={styles.count}>
+                        <strong>
+                          {untriaged.length} of {(state.referrals ?? []).length}
+                        </strong>{" "}
+                        referrals have never been triaged.
+                      </p>
+                    )}
+                  </section>
+                  <section className={styles.condition} aria-label="Override recorded">
+                    <h3 className={styles.conditionTitle}>
+                      <Check size={14} aria-hidden="true" className={styles.watchMark} />
+                      Override recorded
+                    </h3>
+                    <p className={styles.watches}>
+                      Watches referrals made by override. {overrides.length === 0 ? "None has been recorded." : null}
+                    </p>
+                    <p className={styles.gap}>
+                      <strong>This screen cannot identify a prior gate verdict.</strong> The record keeps who, when,
+                      which fixed reason and which wards; it does not retain a prior gate verdict.
+                    </p>
+                  </section>
+                  <section className={styles.conditionWide} aria-label="What this screen does not watch">
+                    <h3 className={styles.conditionTitle}>
+                      <X size={14} aria-hidden="true" className={styles.watchMark} />
+                      What this screen does not watch
+                    </h3>
+                    <p className={styles.gap}>
+                      <strong>Handover sheets.</strong> The design for this screen carries a &ldquo;handover sheet
+                      due&rdquo; alert. Nothing in this system records when a shift hands over, so there is no deadline
+                      to measure and this screen cannot tell you whether one is due. It is listed here rather than left
+                      out, because a screen that silently drops a condition reads as though it checked it.
+                    </p>
+                  </section>
+                </div>
+              </details>
+            </Card>
           </div>
 
-          <WardPanel title="For other roles" count={`${filteredOtherRoles.length} elsewhere`}>
+          <Card aria-labelledby="alerts-other-roles-title" className={styles.otherCard}>
+            <CardHead
+              id="alerts-other-roles-title"
+              icon={Users}
+              title="For other roles"
+              meta={<Count n={filteredOtherRoles.length} />}
+              aside={<span className={styles.quiet}>{filteredOtherRoles.length} elsewhere</span>}
+            />
             <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
               <AlertRows
                 items={filteredOtherRoles}
@@ -1375,22 +1403,19 @@ function AlertsWorkspace() {
                 movements={movements}
                 units={units}
                 state={state}
-                isFiltered={tierFilter !== "all" || roleFilter !== "all"}
-                onResetFilters={() => {
-                  setTierFilter("all");
-                  setRoleFilter("all");
-                }}
+                isFiltered={isFiltered}
+                onResetFilters={resetFilters}
               />
             </div>
-          </WardPanel>
+          </Card>
         </div>
 
-        {/* Right Inspector Drawer for Alert Escalation & Triage */}
+        {/* Alert inspector sheet */}
         {selectedAlert && (
           <div className={styles.inspectorOverlay} role="presentation" onClick={handleCloseDrawer}>
             <aside
               ref={drawerRef}
-              className={`${styles.inspectorDrawer} ${styles.drawer}`}
+              className={styles.inspectorDrawer}
               role="dialog"
               aria-modal="true"
               aria-labelledby="action-modal-title"
@@ -1400,163 +1425,141 @@ function AlertsWorkspace() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.drawerHead}>
+                <IconTile icon={Bell} />
                 <div className={styles.drawerHeadTitles}>
-                  <h3 id="action-modal-title" className={styles.drawerTitle}>
+                  <h2 id="action-modal-title" className={styles.drawerTitle}>
                     Alert Escalation &amp; Triage
-                  </h3>
+                  </h2>
                   <p id="action-modal-desc" className={styles.drawerSubtitle}>
                     {selectedAlert.title}
                   </p>
                 </div>
-                <button
+                <Kbd>esc</Kbd>
+                <Button
                   ref={drawerCloseRef}
-                  type="button"
-                  className={styles.drawerClose}
+                  iconOnly
+                  icon={X}
+                  variant="ghost"
+                  size="sm"
                   onClick={handleCloseDrawer}
                   aria-label="Close drawer"
                   title="Close drawer (Esc)"
-                >
-                  <X className={styles.tabIcon} aria-hidden="true" />
-                </button>
+                />
               </div>
 
               <div className={styles.drawerBody}>
-                {/* Clinical Status & Owner Header */}
                 <div className={styles.drawerSection}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span className={styles.badge} data-tone={selectedSeverity.tone}>
-                      {selectedSeverity.label}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "var(--t-2)", fontWeight: 650, color: "var(--ink)" }}>
-                    {selectedPatientName}
-                  </div>
-                  <div style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>{alertDetail(selectedAlert)}</div>
+                  <Badge
+                    tone={
+                      selectedSeverity.tone === "danger"
+                        ? "danger"
+                        : selectedSeverity.tone === "warn"
+                          ? "warning"
+                          : "neutral"
+                    }
+                  >
+                    {selectedSeverity.label}
+                  </Badge>
+                  <div className={styles.drawerPatient}>{selectedPatientName}</div>
+                  <div className={styles.quiet}>{alertDetail(selectedAlert)}</div>
                 </div>
 
-                {/* Case Parameters */}
                 <div className={styles.drawerSection}>
-                  <h4 className={styles.drawerSectionTitle}>Case Parameters &amp; Tracking</h4>
-                  <div className={styles.drawerGrid}>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Origin ED / Setting</span>
-                      <span className={styles.drawerFieldValue}>
-                        {selectedMovement?.originEdId ?? "Emergency Dept"}
-                      </span>
-                    </div>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Assigned Role</span>
-                      <span className={styles.drawerFieldValue}>{selectedAlert.owner}</span>
-                    </div>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Legal Status</span>
-                      <span className={styles.drawerFieldValue}>{selectedMovement?.legalStatus ?? "Voluntary"}</span>
-                    </div>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Declines Logged</span>
-                      <span className={styles.drawerFieldValue}>
-                        {selectedMovement ? `${selectedMovement.declines.length} Units` : "0 Units"}
-                      </span>
-                    </div>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Current Clock</span>
-                      <span className={styles.drawerFieldValue}>{formatInstant(now)}</span>
-                    </div>
-                    <div className={styles.drawerField}>
-                      <span className={styles.drawerFieldLabel}>Escalation Level</span>
-                      <span className={styles.drawerFieldValue}>
-                        {selectedMovement?.escalation ? "Tier 2 Escalated" : "Tier 1 Standard"}
-                      </span>
-                    </div>
-                  </div>
+                  <h3 className={styles.drawerSectionTitle}>Case Parameters &amp; Tracking</h3>
+                  <Inset>
+                    <dl className={styles.drawerGrid}>
+                      <div>
+                        <dt>Origin ED or setting</dt>
+                        <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
+                      </div>
+                      <div>
+                        <dt>Assigned role</dt>
+                        <dd>{selectedAlert.owner}</dd>
+                      </div>
+                      <div>
+                        <dt>Legal status</dt>
+                        <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
+                      </div>
+                      <div>
+                        <dt>Declines logged</dt>
+                        <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
+                      </div>
+                      <div>
+                        <dt>Board time</dt>
+                        <dd>{formatInstantWithDay(now, now)}</dd>
+                      </div>
+                      <div>
+                        <dt>Escalation</dt>
+                        <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
+                      </div>
+                    </dl>
+                  </Inset>
                 </div>
 
-                {/* Acknowledgment Status Panel */}
                 <div className={styles.ackBox}>
-                  <div className={styles.ackText}>
-                    {isSelectedAcknowledged ? (
-                      <>
-                        <CheckCircle2 className={styles.tabIcon} style={{ color: "var(--good)" }} aria-hidden="true" />
-                        <span>Acknowledged by Duty Coordinator</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock className={styles.tabIcon} style={{ color: "var(--warn)" }} aria-hidden="true" />
-                        <span>Pending Coordinator Triage</span>
-                      </>
-                    )}
-                  </div>
+                  <span className={styles.ackText}>
+                    <StatusGlyph tone={isSelectedAcknowledged ? "success" : "warning"} />
+                    {isSelectedAcknowledged ? "Acknowledged by Duty Coordinator" : "Pending coordinator triage"}
+                  </span>
                   {!isSelectedAcknowledged ? (
-                    <button type="button" className={`${styles.btn} ${styles.btnSm}`} onClick={handleAcknowledge}>
+                    <Button size="sm" className={styles.btn} onClick={handleAcknowledge}>
                       Acknowledge Alert
-                    </button>
-                  ) : (
-                    <span className={styles.badge} data-tone="good">
-                      Active In Progress
-                    </span>
-                  )}
+                    </Button>
+                  ) : null}
                 </div>
 
-                {/* Triage & Escalation Form */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-action-intervention">
-                    Action Taken / Clinical Intervention
-                  </label>
-                  <select id="alerts-action-intervention" className={styles.formSelect} defaultValue="escalate">
-                    <option value="escalate">Escalate to Executive Director on Call (Tier 3)</option>
+                <Field label="Action taken" id="alerts-action-intervention">
+                  <Select defaultValue="escalate">
+                    <option value="escalate">Escalate to executive director on call (tier 3)</option>
                     <option value="reauthorise">Extend recorded form</option>
-                    <option value="override">Declare Catchment Override for Placement</option>
-                    <option value="extend_hold">Extend Bed Hold (30-Minute Grace Window)</option>
-                    <option value="dispatch_transport">Dispatch Urgent Mental Health Secure Transport</option>
-                    <option value="acknowledge">Acknowledge &amp; Retain on Active Watch</option>
-                  </select>
-                </div>
+                    <option value="override">Declare catchment override for placement</option>
+                    <option value="extend_hold">Extend bed hold (30 minute grace window)</option>
+                    <option value="dispatch_transport">Dispatch urgent secure transport</option>
+                    <option value="acknowledge">Acknowledge and retain on active watch</option>
+                  </Select>
+                </Field>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-action-note">
-                    Clinician Sign-off Notes &amp; Rationale
-                  </label>
-                  <textarea
-                    id="alerts-action-note"
-                    className={styles.formTextarea}
+                <Field label="Sign-off note" id="alerts-action-note">
+                  <Textarea
+                    rows={3}
                     placeholder="Record the action taken and who was contacted."
                     data-gramm="false"
                     data-enable-grammarly="false"
                     spellCheck={false}
                     autoComplete="off"
                   />
-                </div>
+                </Field>
               </div>
 
               <div className={styles.drawerFoot}>
-                <button type="button" className={styles.btn} onClick={handleCloseDrawer}>
-                  Cancel
-                </button>
                 {/* D4: Unconnected action confirmation */}
-                <button
-                  type="button"
+                <span id="ward-alerts-action-confirm-note" className={styles.confirmNote}>
+                  Not wired in this prototype.
+                </span>
+                <Button className={styles.btn} onClick={handleCloseDrawer}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="pri"
+                  className={styles.btn}
                   data-testid="ward-alerts-action-confirm"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
                   aria-disabled="true"
                   aria-describedby="ward-alerts-action-confirm-note"
                   title="Not wired in this prototype."
                   onClick={ignoreUnavailableActivation}
                 >
-                  Record Intervention
-                </button>
-                <span id="ward-alerts-action-confirm-note" className={styles.confirmNote}>
-                  Not wired in this prototype.
-                </span>
+                  Record intervention
+                </Button>
               </div>
             </aside>
           </div>
         )}
 
-        {/* Broadcast Statewide Network Alert Modal */}
+        {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
           <div
             ref={modalRef}
-            className={`${styles.modal} ${styles.modalOverlay}`}
+            className={styles.modalOverlay}
             role="dialog"
             aria-modal="true"
             aria-labelledby="broadcast-title"
@@ -1569,191 +1572,102 @@ function AlertsWorkspace() {
               }
             }}
           >
-            <div className={`${styles.modalDialog} ${styles.card}`} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.modalHead}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <Radio className={styles.titleIcon} aria-hidden="true" style={{ color: "var(--accent)" }} />
-                  <h3 id="broadcast-title">Broadcast Statewide Network Alert</h3>
+            <div className={styles.composer} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.drawerHead}>
+                <IconTile icon={Radio} />
+                <div className={styles.drawerHeadTitles}>
+                  <h2 id="broadcast-title" className={styles.drawerTitle}>
+                    Broadcast network alert
+                  </h2>
+                  <p id="broadcast-desc" className={styles.drawerSubtitle}>
+                    Records a synthetic directive for the chosen scope. No external alert is sent.
+                  </p>
                 </div>
-                <button
+                <Kbd>esc</Kbd>
+                <Button
                   ref={modalCloseRef}
-                  type="button"
-                  className={`${styles.btn} ${styles.btnSm}`}
+                  iconOnly
+                  icon={X}
+                  variant="ghost"
+                  size="sm"
                   onClick={handleCloseBroadcastModal}
                   aria-label="Close broadcast modal"
                   title="Close broadcast modal (Esc)"
-                >
-                  <X className={styles.tabIcon} aria-hidden="true" />
-                </button>
+                />
               </div>
-              <div className={styles.modalBody}>
-                <p id="broadcast-desc" className={styles.modalIntro}>
-                  Record a synthetic directive for the selected scope. No external alerts are sent.
-                </p>
+              <div className={styles.composerBody}>
                 {broadcastRefused && (
-                  <div
-                    className={`${styles.toastSuccess} ${styles.toastRefused}`}
-                    role="alert"
-                    aria-label="Broadcast feedback"
-                  >
-                    <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
-                    <span>{broadcastFeedback}</span>
+                  <div className={styles.feedbackLine} role="alert" aria-label="Broadcast feedback">
+                    <StatusGlyph tone="danger" />
+                    <span className={styles.feedbackText}>{broadcastFeedback}</span>
                   </div>
                 )}
 
-                {/* Clinical Protocol & Bed Flow Template */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-template">
-                    WA Clinical Protocol &amp; Flow Template
-                  </label>
-                  <select
-                    id="alerts-broadcast-template"
-                    className={styles.formSelect}
-                    value={selectedTemplateId}
-                    onChange={(e) => handleSelectTemplate(e.target.value)}
-                  >
+                <Field label="Start from" id="alerts-broadcast-template">
+                  <Select value={selectedTemplateId} onChange={(e) => handleSelectTemplate(e.target.value)}>
                     {WA_BROADCAST_TEMPLATES.map((tmpl) => (
                       <option key={tmpl.id} value={tmpl.id}>
-                        [{tmpl.severity.toUpperCase()}] {tmpl.name}
+                        {tmpl.name}
                       </option>
                     ))}
-                    <option value="custom">Custom Ad-Hoc Directive...</option>
-                  </select>
+                    <option value="custom">Custom directive</option>
+                  </Select>
+                </Field>
+
+                <div className={styles.composerPair}>
+                  <Field label="Severity" id="alerts-broadcast-severity">
+                    <Select
+                      value={broadcastSeverity}
+                      onChange={(e) => setBroadcastSeverity(e.target.value as BroadcastSeverity)}
+                    >
+                      <option value="advisory">Advisory</option>
+                      <option value="warning">Warning</option>
+                      <option value="critical">Gridlock</option>
+                    </Select>
+                  </Field>
+                  <Field label="Expires" id="alerts-broadcast-duration">
+                    <Select
+                      value={broadcastDurationMinutes}
+                      onChange={(e) => setBroadcastDurationMinutes(Number(e.target.value))}
+                    >
+                      <option value={60}>1h</option>
+                      <option value={120}>2h</option>
+                      <option value={240}>4h</option>
+                      <option value={480}>8h</option>
+                      <option value={720}>12h</option>
+                      <option value={1440}>24h</option>
+                    </Select>
+                  </Field>
                 </div>
 
-                {/* Directive Title */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-title">
-                    Directive Headline / Title
-                  </label>
-                  <input
-                    id="alerts-broadcast-title"
-                    type="text"
-                    className={styles.formInput}
-                    value={broadcastTitle}
-                    onChange={(e) => setBroadcastTitle(e.target.value)}
-                    placeholder="Short descriptive operational title..."
-                  />
-                </div>
-
-                {/* Alert Urgency Level Selector */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-severity">
-                    Alert Urgency &amp; Severity Level
-                  </label>
-                  <select
-                    id="alerts-broadcast-severity"
-                    className={styles.formSelect}
-                    value={broadcastSeverity}
-                    onChange={(e) => {
-                      const sev = e.target.value as BroadcastSeverity;
-                      setBroadcastSeverity(sev);
-                    }}
-                  >
-                    <option value="critical">Critical Network Gridlock (Red / High-Visibility Banner)</option>
-                    <option value="warning">Operational Escalation / Warning (Amber)</option>
-                    <option value="advisory">Clinical &amp; Transport Advisory (Blue)</option>
-                  </select>
-                </div>
-
-                {/* Clear Visual Severity Indicator */}
-                <div
-                  className={styles.severityCard}
-                  data-severity={broadcastSeverity === "critical" ? "critical" : "operational"}
-                >
-                  <div className={styles.severityIcon}>
-                    {broadcastSeverity === "critical" ? (
-                      <AlertCircle className={styles.titleIcon} aria-hidden="true" />
-                    ) : broadcastSeverity === "warning" ? (
-                      <AlertTriangle className={styles.titleIcon} aria-hidden="true" />
-                    ) : (
-                      <Clock className={styles.titleIcon} aria-hidden="true" />
-                    )}
-                  </div>
-                  <div className={styles.severityContent}>
-                    <div className={styles.severityHead}>
-                      <span
-                        className={styles.badge}
-                        data-tone={
-                          broadcastSeverity === "critical"
-                            ? "danger"
-                            : broadcastSeverity === "warning"
-                              ? "warn"
-                              : "accent"
-                        }
-                      >
-                        {broadcastSeverity.toUpperCase()} PRIORITY
-                      </span>
-                      <span className={styles.severityTitle}>
-                        {broadcastSeverity === "critical"
-                          ? "Statewide Gridlock Directive"
-                          : broadcastSeverity === "warning"
-                            ? "Operational Flow Warning"
-                            : "Standard Network Advisory"}
-                      </span>
-                    </div>
-                    <div className={styles.severityDesc}>
-                      {broadcastSeverity === "critical"
-                        ? "Immediate high-visibility directive banner displayed across all 23 inpatient wards and 8 ED consoles."
-                        : broadcastSeverity === "warning"
-                          ? "Operational escalation displayed in shift communications, bed desk consoles, and unit rosters."
-                          : "Advisory notice displayed in shift communications and general role notice streams."}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Broadcast Target Facility */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-target">
-                    Broadcast Target Scope
-                  </label>
-                  <select
-                    id="alerts-broadcast-target"
-                    className={styles.formSelect}
+                <Field label="Target scope" id="alerts-broadcast-target">
+                  <Select
                     value={broadcastScope}
                     onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}
                   >
-                    <option value="all">All 23 Inpatient Wards &amp; 8 ED Desks</option>
-                    <option value="metro_adult">
-                      Metropolitan Adult Units Only (FSH, SCGH, RPH, Bentley, Fremantle, Armadale)
-                    </option>
-                    <option value="ed_liaison">Emergency Department Mental Health Liaison Only</option>
-                    <option value="forensic">Frankland Centre Forensic Mental Health Only</option>
-                    <option value="adolescent">CAMHS Adolescent Acute Units Only (Bentley &amp; PCH)</option>
-                    <option value="older_adult">Psychogeriatric &amp; Older Adult Units Only</option>
-                    <option value="regional_wachs">WACHS Regional Mental Health Network</option>
-                  </select>
-                </div>
+                    <option value="all">All 23 inpatient wards and 8 ED desks</option>
+                    <option value="metro_adult">Metropolitan adult units</option>
+                    <option value="ed_liaison">ED mental health liaison desks</option>
+                    <option value="forensic">Frankland Centre forensic</option>
+                    <option value="adolescent">CAMHS adolescent acute units</option>
+                    <option value="older_adult">Older adult units</option>
+                    <option value="regional_wachs">WACHS regional network</option>
+                  </Select>
+                </Field>
 
-                {/* Directive Duration */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-duration">
-                    Directive Duration
-                  </label>
-                  <select
-                    id="alerts-broadcast-duration"
-                    className={styles.formSelect}
-                    value={broadcastDurationMinutes}
-                    onChange={(e) => setBroadcastDurationMinutes(Number(e.target.value))}
-                  >
-                    <option value={60}>1 hour</option>
-                    <option value={120}>2 hours</option>
-                    <option value={240}>4 hours (Standard shift duration)</option>
-                    <option value={480}>8 hours</option>
-                    <option value={720}>12 hours</option>
-                    <option value={1440}>24 hours</option>
-                  </select>
-                </div>
+                <Field label="Title" id="alerts-broadcast-title">
+                  <TextInput
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="Short operational title"
+                  />
+                </Field>
 
-                {/* Message Body */}
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="alerts-broadcast-message">
-                    Message Body &amp; Clinical Instructions
-                  </label>
-                  <textarea
-                    id="alerts-broadcast-message"
-                    className={styles.formTextarea}
-                    placeholder="Enter urgent clinical or flow directive..."
+                <Field label="Directive" id="alerts-broadcast-message">
+                  <Textarea
+                    rows={3}
+                    maxLength={280}
+                    placeholder="Enter the flow directive"
                     value={broadcastMessage}
                     onChange={(e) => setBroadcastMessage(e.target.value)}
                     data-gramm="false"
@@ -1761,36 +1675,46 @@ function AlertsWorkspace() {
                     spellCheck={false}
                     autoComplete="off"
                   />
+                </Field>
+
+                <div className={styles.previewBlock}>
+                  <span className={styles.drawerSectionTitle}>Preview on every desk</span>
+                  <div className={styles.previewCard}>
+                    <StatusGlyph
+                      tone={
+                        broadcastSeverity === "critical"
+                          ? "danger"
+                          : broadcastSeverity === "warning"
+                            ? "warning"
+                            : "info"
+                      }
+                    />
+                    <div className={styles.directiveText}>
+                      <strong className={styles.directiveTitle}>{broadcastTitle.trim() || "Untitled directive"}</strong>
+                      <span className={styles.quiet}>
+                        {severityLabel(broadcastSeverity)} · expires in {durMinutes(broadcastDurationMinutes)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Explicit Confirmation Safeguard */}
-                <div className={styles.safeguardCard}>
-                  <div className={styles.safeguardRow}>
-                    <input
-                      type="checkbox"
-                      id="alerts-broadcast-safeguard"
-                      className={styles.safeguardCheckbox}
-                      checked={broadcastConfirmed}
-                      onChange={(e) => setBroadcastConfirmed(e.target.checked)}
-                    />
-                    <label htmlFor="alerts-broadcast-safeguard" className={styles.safeguardLabel}>
-                      I confirm this directive is clinically authorised for immediate statewide network broadcast.
-                    </label>
-                  </div>
-                  <div className={styles.safeguardNotice}>
-                    Statewide broadcasts transmit immediate visual alerts to duty coordinators, bed managers, and
-                    registrars across all health service regions.
-                  </div>
-                </div>
+                <Checkbox
+                  id="alerts-broadcast-safeguard"
+                  checked={broadcastConfirmed}
+                  onChange={(e) => setBroadcastConfirmed(e.target.checked)}
+                  label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
+                />
               </div>
-              <div className={styles.modalFoot}>
-                <button type="button" className={styles.btn} onClick={handleCloseBroadcastModal}>
+              <div className={styles.drawerFoot}>
+                <span className={styles.confirmNote}>Dispatched by the state bed desk coordinator</span>
+                <Button className={styles.btn} onClick={handleCloseBroadcastModal}>
                   Cancel
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="pri"
+                  icon={Radio}
+                  className={styles.btn}
                   data-testid="ward-alerts-broadcast-confirm"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
                   disabled={
                     !broadcastConfirmed ||
                     !broadcastTitle.trim() ||
@@ -1799,9 +1723,8 @@ function AlertsWorkspace() {
                   }
                   onClick={handleDispatchBroadcast}
                 >
-                  <Radio className={styles.btnIcon} aria-hidden="true" />
-                  <span>Dispatch Broadcast</span>
-                </button>
+                  Dispatch
+                </Button>
               </div>
             </div>
           </div>

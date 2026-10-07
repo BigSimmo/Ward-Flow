@@ -48,10 +48,15 @@ import {
   ownerOf,
 } from "./delays-derivations";
 import styles from "./delays.module.css";
-import { DelaysTableWorkspace } from "./delays-data-views";
+import { DelaysBlockerPanel, DelaysTableWorkspace } from "./delays-data-views";
 import { DelaysCoordination, delayQueueLabel, type DelayQueueScope } from "./delays-coordination";
-import { Users, Clock, TriangleAlert } from "lucide-react";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  DUE_SOON_URGENT_MINUTES,
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
+import { Button, Hero, HeroStat, IconTile } from "@/components/wf";
+import { CircleCheck, Plus } from "lucide-react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
@@ -322,6 +327,14 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     const l = legalDeadlineMinutes(m, now);
     return l !== undefined && l < 0;
   }).length;
+  // Same bands and windows the Pressure card and its distribution read.
+  const dueWithinHourCount = open.filter((m) => {
+    const l = legalDeadlineMinutes(m, now);
+    return l !== undefined && l >= 0 && l <= DUE_SOON_URGENT_MINUTES;
+  }).length;
+  const overSevereWaitCount = open.filter((m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
+  const overLongWaitCount = open.filter((m) => now - m.openedAt >= LONG_WAIT_MINUTES).length;
+  const escalatedCount = open.filter((m) => m.escalation !== undefined).length;
 
   const queueMatches = (movement: Movement, cause: DelayCause) =>
     queueScope === null ||
@@ -337,41 +350,38 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     .filter((group) => group.movements.length > 0);
 
   return (
-    <div
-      className={styles.screen}
-      data-ward-design="third-edition"
-      data-ward-page="delays"
-      data-testid="ward-delays-page"
-    >
+    <div className={styles.screen} data-ward-design="v6" data-ward-page="delays" data-testid="ward-delays-page">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.landmarkTitle}>Delays</h1>
-        <div className={styles.countStrip} aria-label="Waiting counts">
-          <div className={styles.statPill}>
-            <Users size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>{open.length}</span>
-            <span className={styles.statPillLabel}>waiting</span>
-          </div>
-          <div className={styles.statPill} data-tone="wait">
-            <Clock size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>
-              {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
-            </span>
-            <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
-          </div>
-          <div className={styles.statPill} data-tone="escalated">
-            <TriangleAlert size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>
-              {open.filter((movement) => movement.escalation !== undefined).length}
-            </span>
-            <span className={styles.statPillLabel}>escalated</span>
-          </div>
-          {breachedCount > 0 && (
-            <div className={styles.breachedSentinelPill}>
-              <span className={styles.sentinelDot} />
-              <span>{breachedCount} past recorded legal time</span>
-            </div>
-          )}
-        </div>
+        <Hero
+          level={1}
+          eyebrow="Delays"
+          title={`${open.length} ${open.length === 1 ? "person" : "people"} waiting`}
+          stats={
+            <>
+              <HeroStat
+                value={overSevereWaitCount}
+                tone={overSevereWaitCount > 0 ? "warning" : undefined}
+                label={`Over ${severeWaitHours}h`}
+              />
+              <HeroStat
+                value={overLongWaitCount}
+                tone={overLongWaitCount > 0 ? "danger" : undefined}
+                label={`Over ${LONG_WAIT_MINUTES / 60}h`}
+              />
+              <HeroStat value={escalatedCount} label="Escalated" />
+              <HeroStat
+                value={breachedCount}
+                tone={breachedCount > 0 ? "danger" : undefined}
+                label="Past recorded time"
+              />
+              <HeroStat
+                value={dueWithinHourCount}
+                tone={dueWithinHourCount > 0 ? "warning" : undefined}
+                label={`Due within ${DUE_SOON_URGENT_MINUTES}m`}
+              />
+            </>
+          }
+        />
 
         {showAliasBanner && aliasFrom ? (
           <aside
@@ -469,12 +479,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             setMarkedCause(null);
             setDelayFilterId(id);
           }}
-          markedCause={effectiveMarkedCause}
-          onMarkCause={(cause) => {
-            setMarkedOwner(null);
-            setMarkedCause(markedCause === cause ? null : cause);
-            setDelayFilterId("waiting");
-          }}
           onListKeyDown={handlePersonListKeyDown}
           detail={
             selected === null ? null : (
@@ -518,6 +522,16 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           }
         />
         <div className={styles.lowerBand}>
+          <DelaysBlockerPanel
+            rows={queueRows}
+            groups={queueGroups}
+            markedCause={effectiveMarkedCause}
+            onMarkCause={(cause) => {
+              setMarkedOwner(null);
+              setMarkedCause(markedCause === cause ? null : cause);
+              setDelayFilterId("waiting");
+            }}
+          />
           <WardPanel title="Escalations and resolved">
             <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
               {(
@@ -651,37 +665,35 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           </WardPanel>
           {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-          <WardPanel title="System delays" accessibleName="Delays with no named person">
+          <WardPanel
+            title="System delays"
+            accessibleName="Delays with no named person"
+            headerAction={
+              <Button
+                variant="sec"
+                size="sm"
+                icon={Plus}
+                onClick={() => handleProtoAction("Not wired in this prototype.")}
+                aria-label="Record a service-wide or facility delay"
+              >
+                Record hold
+              </Button>
+            }
+          >
             <div className={styles.systemicPanel}>
               <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
                 represented as individual patient movements; state and system delays across the Western Australian
                 network are tracked in this box.
               </span>
-              <div className={styles.systemicHeader}>
-                <button
-                  type="button"
-                  className={styles.logHoldButton}
-                  onClick={() => handleProtoAction("Record a service-wide delay")}
-                  aria-label="Record a service-wide or facility delay"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  <span>Record Hold</span>
-                </button>
-              </div>
               {SYSTEMIC_HOLDS.length === 0 ? (
-                <p className={styles.systemicEmptyLine}>No statewide delays</p>
+                <div className={styles.systemicEmpty}>
+                  <IconTile icon={CircleCheck} />
+                  <p>
+                    <strong>No statewide delays</strong>
+                    <span>None recorded on this board</span>
+                  </p>
+                </div>
               ) : (
                 <div className={styles.systemicGrid}>
                   {SYSTEMIC_HOLDS.map((hold) => (
@@ -1063,11 +1075,11 @@ function SelectedPerson({
       {/* Coordination Actions (Rule D4) */}
       {(() => {
         const handleAssignBed = () => {
-          onAction("Assign Recommended Bed & Lock Place");
+          onAction("Not wired in this prototype.");
         };
 
         const handleRenewHold = () => {
-          onAction("Renew Bed Hold (60m)");
+          onAction("Not wired in this prototype.");
         };
 
         const handleEscalate = () => {
