@@ -599,28 +599,23 @@
   height: 100%;
 }
 
-/* Event Bars */
+/* Event Bars (v6 Movements, 7 Oct 2026): slim pills in the data ramp, names in the body face. */
 .ganttBar {
   position: absolute;
-  height: 32px;
+  height: 22px;
   min-width: 90px;
-  border-radius: var(--r1);
-  padding: 0 8px;
+  border-radius: var(--wf-r-pill);
+  padding: 0 var(--wf-s-2);
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--t-0);
-  font-family: var(--mono);
-  font-weight: 600;
-  color: var(--on-accent);
+  gap: var(--wf-s-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-on-accent);
   cursor: pointer;
   z-index: 15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--surface) 20%, transparent),
-    var(--lift);
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease;
@@ -629,23 +624,20 @@
 
 .ganttBar:hover {
   transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--surface) 35%, transparent),
-    var(--lift);
+  box-shadow: var(--wf-e1);
   z-index: 25;
 }
 
 .ganttBar:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
   z-index: 25;
 }
 
 .ganttBar.scrubActive {
-  outline: 2px solid var(--accent-ink);
   box-shadow:
-    0 0 0 2px var(--surface),
-    0 0 0 4px var(--accent);
+    0 0 0 2px var(--wf-surface),
+    0 0 0 3px var(--wf-pri-1);
   z-index: 20;
 }
 
@@ -653,98 +645,103 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-variant-numeric: tabular-nums;
+  font: inherit;
 }
 
 .barWaitBadge {
-  font-size: var(--t-0);
-  font-family: var(--mono);
+  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
-  background: var(--surface-2);
-  color: var(--muted);
-  padding: 1px 4px;
-  border-radius: 2px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  padding: 1px var(--wf-s-1);
+  border-radius: var(--wf-r-xs);
   margin-left: auto;
 }
 
-/* Bar Status Tones */
+/* Bar Status Tones: the data ramp, never a status fill. A delay is an amber dot, not a red bar. */
 .barAdmit {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-1);
+  color: var(--wf-on-accent);
 }
 
 .barTransit {
-  background: var(--svc-north);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-2);
+  color: var(--wf-on-accent);
 }
 
 .barLeave {
-  background: var(--gilt-soft);
+  background: var(--wf-surface-2);
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
     transparent 3px,
-    color-mix(in srgb, var(--gilt) 20%, transparent) 3px,
-    color-mix(in srgb, var(--gilt) 20%, transparent) 6px
+    var(--wf-line-2) 3px,
+    var(--wf-line-2) 5px
   );
-  color: var(--gilt);
-  border: 1px dashed var(--gilt);
+  color: var(--wf-ink-1);
+  border-color: var(--wf-line-2);
 }
 
 .barDisch {
-  background: var(--good);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-3);
+  color: var(--wf-ink-1);
 }
 
 .barPred {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  color: var(--warn);
+  background: var(--wf-surface);
+  border: 1px dashed var(--wf-line-3);
+  color: var(--wf-ink-2);
 }
 
 .barDelay {
-  background: var(--danger);
-  color: var(--on-accent);
-  border-color: var(--line);
+  background: var(--wf-data-1);
+  color: var(--wf-on-accent);
+}
+
+.barDelay::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-warning);
 }
 
 /* Swatch Legend Tokens */
 .swatchAdmit {
-  background: var(--accent);
+  background: var(--wf-data-1);
 }
 
 .swatchTransit {
-  background: var(--svc-north);
+  background: var(--wf-data-2);
 }
 
 .swatchLeave {
-  background: var(--gilt-soft);
+  background: var(--wf-surface-2);
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
     transparent 2px,
-    color-mix(in srgb, var(--gilt) 30%, transparent) 2px,
-    color-mix(in srgb, var(--gilt) 30%, transparent) 4px
+    var(--wf-line-3) 2px,
+    var(--wf-line-3) 3px
   );
-  border: 1px dashed var(--gilt);
+  border: 1px solid var(--wf-line-2);
 }
 
 .swatchDisch {
-  background: var(--good);
+  background: var(--wf-data-3);
 }
 
 .swatchPred {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
 }
 
 .swatchDelay {
-  background: var(--danger);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-warning);
 }
 
 .activeSelect {

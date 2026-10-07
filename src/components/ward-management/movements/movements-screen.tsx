@@ -16,10 +16,8 @@ import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-m
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
-import { WardChip } from "@/components/ward-management/ward-chip";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
-import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
@@ -27,6 +25,7 @@ import { departmentLabel, wardLabel } from "@/components/ward-management/ward-ab
 import type { HealthService, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import {
   byLongestWait,
@@ -48,10 +47,16 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
+import { Hero, HeroStat, LiveChip, StatusGlyph, Timer, TierTile, buttonClass, type WfTone } from "@/components/wf";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+
+const MINUTE_MS = 60_000;
+/** Tier 1 waits: due soon at 2h, overdue at 4h (design system v6 §5, synthetic, needs sign-off). */
+const TIER_ONE_DUE_SOON_MS = 2 * 60 * MINUTE_MS;
+const TIER_ONE_OVERDUE_MS = 4 * 60 * MINUTE_MS;
 
 function meaningfulBlocker(movement: Movement): string | null {
   const blocker = movement.blocker.trim();
@@ -567,12 +572,9 @@ export function MovementsScreen() {
       data-ward-rebuilt-screen="movements"
     >
       <main id="main-content" className={styles.main}>
-        <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>
-            <span className={styles.liveDot} aria-hidden="true" />
-            Movements
-          </h1>
-        </header>
+        {/* v6 Movements (7 Oct 2026): the hero band carries the page's figures; the h1 stays for
+            assistive technology and the tests that pin it. */}
+        <h1 className="sr-only">Movements</h1>
 
         {/*
           D-f (Ward Lead's decisions, 2026-09-17, amending build plan §2 after an Opus adversarial
@@ -600,76 +602,102 @@ export function MovementsScreen() {
           </>
         ) : null}
 
-        <div className={styles.dayPanel}>
-          <WardPanel title="The day" count={`${openMovements.length} open movements`}>
-            <div className={styles.dayMetrics}>
-              <DayMetric label="Open" value={openMovements.length} />
-              <DayMetric label="Resolved today" value={closedToday.length} />
-              <DayMetric label="Tier 1 open" value={tierOneOpen.length} tone="danger" />
-              <DayMetric label="Transport legs" value={legs.length} />
-              <DayMetric label="No transport leg" value={withoutBookedTransport} tone="warning" />
-              <DayMetric label="Active corridors" value={activeCorridorCount} />
+        <section className={styles.daySection} aria-label="The day" data-ward-primitive="panel">
+          <Hero
+            className={styles.dayHero}
+            eyebrow="The day"
+            title={<span data-ward-panel-count>{`${openMovements.length} open movements`}</span>}
+            stats={
+              <>
+                <DayMetric label="Resolved today" value={closedToday.length} />
+                <DayMetric label="Tier 1 open" value={tierOneOpen.length} tone="danger" />
+                <DayMetric label="Transport legs" value={legs.length} />
+                <DayMetric label="No transport leg" value={withoutBookedTransport} tone="warning" />
+                <DayMetric label="Active corridors" value={activeCorridorCount} />
+              </>
+            }
+            aside={<LiveChip state="live" onHero />}
+          />
+
+          <div className={styles.needsYou} role="group" aria-label="Needs you" data-testid="movements-needs-you">
+            <div className={styles.needsYouHead}>
+              <h2 className={styles.needsYouTitle}>Needs you</h2>
+              {attentionCore.length > 0 ? (
+                <span className={styles.needsYouMeta}>
+                  {attentionCore.length} of {tierOneOpen.length} Tier 1
+                </span>
+              ) : null}
             </div>
-            <div className={styles.attentionBand}>
-              <div className={styles.attentionHeading}>
-                <h3 className={styles.attentionTitle}>Needs you</h3>
-                {attentionCore.length > 0 ? (
-                  <span>
-                    {attentionCore.length} of {tierOneOpen.length} tier 1 open
-                  </span>
-                ) : null}
-              </div>
-              {attentionMovements.length === 0 ? (
-                <p className={styles.attentionEmpty}>No open tier 1 movement needs calling out.</p>
-              ) : (
-                // D-b (Ward Lead's decisions, 2026-09-17): "Worth your attention" is already
-                // whole-network — `attentionMovements` is built off `openMovements`, never the
-                // scoped `worklistMovements` — so it never needed narrowing. What it lacked was the
-                // marker: a movement outside the chosen service is named here without saying so.
-                <div className={styles.attentionList}>
-                  {attentionMovements.map((movement) => {
-                    const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
-                    const who = resolveSubjectPatient(movement, { patients, referrals }).displayName;
-                    return (
+            {attentionMovements.length === 0 ? (
+              <p className={styles.attentionEmpty}>No open Tier 1 movement needs calling out.</p>
+            ) : (
+              // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
+              // worklist, and a movement outside the chosen service says so.
+              <ul className={styles.needsYouList}>
+                {attentionMovements.map((movement) => {
+                  const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
+                  const who = resolveSubjectPatient(movement, { patients, referrals }).displayName;
+                  const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
+                  return (
+                    <li key={movement.id} className={styles.needsYouCell}>
                       <button
-                        key={movement.id}
                         type="button"
-                        className={styles.attentionPill}
+                        className={styles.needsYouItem}
                         data-record-key={movement.id}
                         onClick={() => jumpToMovement(movement.id)}
-                        aria-label={`Find ${who} in worklist: ${meaningfulBlocker(movement) ?? stageCopy[movement.stage].label}${outsideService ? ` — outside ${service}` : ""}`}
+                        aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >
-                        <strong>{who}</strong>
-                        <span>{meaningfulBlocker(movement) ?? stageCopy[movement.stage].label}</span>
-                        <span>{splitDuration(Math.max(now - movement.openedAt, 0))} waiting</span>
-                        {outsideService ? (
-                          <span data-testid={`movements-attention-outside-${movement.id}`}>{`Outside ${service}`}</span>
-                        ) : null}
+                        <TierTile tier={movement.urgency} />
+                        <span className={styles.needsYouMain}>
+                          <strong className={styles.needsYouName}>{who}</strong>
+                          <span className={styles.needsYouReason}>
+                            {reason}
+                            {outsideService ? (
+                              <span
+                                data-testid={`movements-attention-outside-${movement.id}`}
+                              >{` · Outside ${service}`}</span>
+                            ) : null}
+                          </span>
+                        </span>
+                        <span className={styles.needsYouWait}>
+                          <Timer
+                            at={movement.openedAt * MINUTE_MS}
+                            now={now * MINUTE_MS}
+                            direction="waiting"
+                            thresholds={{ dueSoon: TIER_ONE_DUE_SOON_MS, overdue: TIER_ONE_OVERDUE_MS }}
+                            hideFlagWord
+                            hideDirection
+                          />
+                          <span className={styles.needsYouWord}>waiting</span>
+                        </span>
+                        {/* The whole cell is the button; this is its visible label, not a second control. */}
+                        <span className={buttonClass({ variant: "sec", size: "sm" })} aria-hidden="true">
+                          Open
+                        </span>
                       </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </WardPanel>
-        </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </section>
 
-        <div className={styles.trafficPanel}>
-          <WardPanel title="Today’s traffic" count={`${activeCorridorCount} active corridors`}>
-            <MovementHorizonGantt
-              lanes={horizonLanes}
-              corridors={corridors}
-              refusedCorridors={refusedCorridors}
-              units={units}
-              now={now}
-              selectedMovementId={detailId}
-              onSelectMovement={(id) => {
-                openDetail(id);
-                revealMovement(id);
-              }}
-            />
-          </WardPanel>
-        </div>
+        <section className={styles.trafficPanel} aria-label="Today’s traffic" data-ward-primitive="panel">
+          <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
+          <MovementHorizonGantt
+            lanes={horizonLanes}
+            corridors={corridors}
+            refusedCorridors={refusedCorridors}
+            units={units}
+            now={now}
+            selectedMovementId={detailId}
+            onSelectMovement={(id) => {
+              openDetail(id);
+              revealMovement(id);
+            }}
+          />
+        </section>
 
         <div className={styles.columns}>
           <div className={styles.primary}>
@@ -1313,24 +1341,13 @@ export function MovementsScreen() {
   );
 }
 
-function DayMetric({
-  label,
-  value,
-  tone = "neutral",
-}: {
-  label: string;
-  value: number;
-  tone?: "neutral" | "warning" | "danger";
-}) {
+function DayMetric({ label, value, tone }: { label: string; value: number; tone?: "warning" | "danger" }) {
   return (
-    // `data-testid` added for D-b/D-f test coverage: it lets a test isolate this panel's own
-    // whole-network FIGURES from the "Worth your attention" band beside them, which now legitimately
-    // carries an "Outside {S}" marker when a service is chosen (D-b) — the figures themselves never
-    // change, only that sub-list gains a marker, and a test comparing the whole panel's raw text
-    // needs a way to tell the two apart.
-    <div className={styles.dayMetric} data-tone={tone} data-testid="movements-day-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    // `data-testid` for D-b/D-f coverage: it isolates the hero's whole-network FIGURES from the
+    // "Needs you" list, which carries an "Outside {S}" marker when a service is chosen. The wrapper
+    // is `display: contents`, so the hero's own separators still sit between the stats.
+    <div className={styles.dayMetricSlot} data-testid="movements-day-metric">
+      <HeroStat value={<strong>{value}</strong>} label={label} tone={value > 0 ? tone : undefined} />
     </div>
   );
 }
@@ -1378,7 +1395,6 @@ function StageRow({
   const { destinationLabel } = transportRouteLabels(movement, units);
   const blocker = meaningfulBlocker(movement);
   const healthService = movementHealthService(movement) ?? "Origin service not identified";
-  const level: WardChipLevel = movement.urgency === 1 ? "urgent" : "routine";
 
   /*
    * 🔴 **A CLOSED MOVEMENT WAS RENDERING AS A PERSON STILL WAITING FOR A BED, WITH A RUNNING
@@ -1472,138 +1488,183 @@ function StageRow({
     transportText = "Transport not tracked here yet";
   }
 
+  // v6 worklist row (7 Oct 2026): one line per person (tier, person, from and to, barrier, waited),
+  // then a quiet second line with the record's tags and its two actions.
+  const waitedMinutes = Math.max(clockEnd - movement.openedAt, 0);
+  const waitThresholds =
+    movement.urgency === 1 ? { dueSoon: 2 * 60, overdue: 4 * 60 } : { dueSoon: 8 * 60, overdue: 24 * 60 };
+  const waitWord = closure
+    ? "in journey before it ended"
+    : waitedMinutes >= waitThresholds.overdue
+      ? "Overdue"
+      : waitedMinutes >= waitThresholds.dueSoon
+        ? "Due soon"
+        : "waited";
+  const barrierText = closure ? closure.reason : (blocker ?? stageCopy[movement.stage].label);
+  const barrierTone: WfTone = closure
+    ? "closed"
+    : legalTagTone === "danger" || (movement.urgency === 1 && blocker)
+      ? "danger"
+      : blocker || legalTagTone
+        ? "warning"
+        : "info";
+  const tags = [
+    stageCopy[movement.stage].label,
+    movement.security === "Secure" ? "Needs locked bed" : "Open bed suits",
+    movement.specialling ? "One-to-one nursing" : null,
+    movement.highAcuity ? "High acuity" : null,
+  ].filter((tag): tag is string => tag !== null);
+
   return (
     <li
       ref={rowRef}
       tabIndex={-1}
-      className={styles.movementRecord}
+      className={styles.wlRow}
       data-ward-primitive="record-row"
       data-record-key={movement.id}
       data-revealed={revealRequest !== null ? "true" : undefined}
       data-tone={closure ? "neutral" : movement.urgency === 1 ? "danger" : "neutral"}
       aria-label={`Movement for ${patientInfo.formalName}`}
     >
-      <div className={styles.recordHeading}>
-        <strong className={styles.recordId} data-ward-primitive="record-id">
-          {patientInfo.formalName}
-        </strong>
-        <span className={styles.recordPerson}>
-          UMRN: <strong>{patientInfo.umrn}</strong> · {movement.cohort} · {movement.sex}
+      <div className={styles.wlLine}>
+        <span aria-hidden="true">
+          <TierTile tier={movement.urgency} />
         </span>
-        {closureState ? <WardChip level={closureState.level}>{closureState.text}</WardChip> : null}
-        <WardChip level={level}>{urgencyTierLabel(movement.urgency)}</WardChip>
-        <div className={styles.recordClockWrap}>
-          <span className={styles.recordClock}>
-            <strong>{splitDuration(Math.max(clockEnd - movement.openedAt, 0))}</strong>
-            <small>{closure ? "in journey before it ended" : "waited"}</small>
+        <span className={styles.wlCell}>
+          <strong className={styles.wlName} data-ward-primitive="record-id">
+            {patientInfo.formalName}
+          </strong>
+          <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
+          <span className={styles.wlSub}>
+            <span className="sr-only">UMRN </span>
+            {patientInfo.umrn} · {movement.cohort} · {movement.sex}
           </span>
+        </span>
+        <span className={styles.wlCell}>
+          <strong className={styles.wlStrong} title={originLabel} aria-label={originLabel}>
+            {originEd ? `${originEd.siteCode} ED` : originLabel}
+          </strong>
+          <span className={styles.wlSub}>
+            {movement.acceptedUnitId ? (
+              <>
+                {destinationLabel}
+                {/* Walkthrough code-read, 25 Sept 2026: say "accepted" until the bed is pulled. */}
+                {movement.stage === "accepted_awaiting_bed" ? ", accepted" : ", bed allocated"}
+              </>
+            ) : (
+              <>
+                <span title="No accepted destination recorded">Destination pending</span>
+                {movement.declines.length > 0
+                  ? ` · ${movement.declines.length} decline${movement.declines.length === 1 ? "" : "s"} recorded`
+                  : null}
+                {movement.escalation ? " · state desk escalated" : null}
+              </>
+            )}
+          </span>
+        </span>
+        <span className={styles.wlCell}>
+          <span className={styles.wlBarrier}>
+            <StatusGlyph tone={barrierTone} size={9} />
+            <span className={styles.wlEllipsis}>
+              <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
+              {barrierText}
+            </span>
+          </span>
+          <span className={styles.wlSub} data-tone={legalTagTone}>
+            {legalText}
+          </span>
+        </span>
+        <span className={styles.wlWait}>
+          <Timer
+            at={movement.openedAt * MINUTE_MS}
+            now={clockEnd * MINUTE_MS}
+            direction="waiting"
+            thresholds={
+              closure
+                ? undefined
+                : { dueSoon: waitThresholds.dueSoon * MINUTE_MS, overdue: waitThresholds.overdue * MINUTE_MS }
+            }
+            hideFlagWord
+            hideDirection
+          />
+          <span className={styles.wlWord}>{waitWord}</span>
+          {/* Task 6 (2026-09-16): the meter reads the configured ED access target, never 24h. */}
           <span
-            className={styles.rowWaitMeter}
+            className={styles.wlMeter}
             aria-hidden="true"
-            title={`${splitDuration(Math.max(clockEnd - movement.openedAt, 0))} of ${splitDuration(accessTargetMinutes)}`}
+            title={`${splitDuration(waitedMinutes)} of ${splitDuration(accessTargetMinutes)}`}
           >
-            <i
-              style={{
-                width: `${Math.min(100, Math.max(0, ((clockEnd - movement.openedAt) / accessTargetMinutes) * 100)).toFixed(0)}%`,
-              }}
-            />
+            <i style={{ width: `${Math.min(100, (waitedMinutes / accessTargetMinutes) * 100).toFixed(0)}%` }} />
           </span>
-        </div>
+        </span>
       </div>
-      <p className={styles.recordRoute}>
-        <strong title={originLabel} aria-label={originLabel}>
-          {originEd ? `${originEd.siteCode} ED` : originLabel}
-        </strong>
-        {movement.acceptedUnitId ? (
-          <>
-            <span className={styles.routeArrow} aria-hidden="true">
-              ➔
+      <div className={styles.wlMeta}>
+        <span className={styles.wlTags}>
+          {closureState ? (
+            <span className={styles.wlTag}>
+              <StatusGlyph tone="closed" size={9} />
+              <span data-ward-primitive="chip">{closureState.text}</span>
             </span>
-            <strong>{destinationLabel}</strong>
-            {/* Walkthrough code-read, 25 Sept 2026: "bed allocated" printed beside "Accepted, awaiting bed",
-                before any bed was pulled. Say "accepted" until the bed is pulled. */}
-            <span className={styles.recordRouteStatus}>
-              {movement.stage === "accepted_awaiting_bed" ? " · accepted" : " · bed allocated"}
+          ) : null}
+          {movement.flaggedUrgent ? (
+            <span className={styles.wlTag}>
+              <StatusGlyph tone="danger" size={9} />
+              Flagged urgent
             </span>
+          ) : null}
+          {!movement.owner.trim() ? (
+            <span className={styles.wlTag}>
+              <StatusGlyph tone="warning" size={9} />
+              No owner
+            </span>
+          ) : null}
+          <span className={styles.wlTag}>
+            {transportTone ? (
+              <StatusGlyph
+                tone={transportTone === "good" ? "success" : transportTone === "warn" ? "warning" : "danger"}
+                size={9}
+              />
+            ) : null}
+            {transportText}
+          </span>
+          <span className={styles.wlTagText}>{tags.join(" · ")}</span>
+          <span className={styles.wlTagText}>
+            {healthService} · Owner: {movement.owner.trim() || "Not recorded"}
+          </span>
+          {movement.escalation ? (
+            <span className={styles.wlTagText}>
+              Escalated {splitDuration(Math.max(now - movement.escalation.at, 0))} ago to {movement.escalation.contact}
+              {" · tried "}
+              {movement.escalation.triedUnitIds
+                .map((id) => units.find((candidate) => candidate.id === id)?.name ?? id)
+                .join(", ") || "No units recorded"}
+            </span>
+          ) : null}
+        </span>
+        <span className={styles.wlActions}>
+          {movement.acceptedUnitId ? (
             <Link
               href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
-              className={styles.jumpToWardBtn}
-              onClick={(e) => e.stopPropagation()}
+              className={styles.wlLink}
               title={`Open ${destinationLabel} Bed Board`}
             >
-              Open on Ward Board →
+              Ward board
             </Link>
-          </>
-        ) : (
-          <>
-            <span title="No accepted destination recorded">· Destination pending</span>
-            {movement.declines.length > 0 ? (
-              <span className={styles.recordRouteStatus}>
-                {" · "}
-                {movement.declines.length} decline{movement.declines.length === 1 ? "" : "s"} recorded
-              </span>
-            ) : null}
-            {movement.escalation ? <span className={styles.recordRouteStatus}> · state desk escalated</span> : null}
-          </>
-        )}
-      </p>
-      <div className={styles.recordTags}>
-        <span className={styles.recordTag}>{stageCopy[movement.stage].label}</span>
-        <span className={styles.recordTag} data-tone={legalTagTone}>
-          {legalText}
-        </span>
-        <span className={styles.recordTag} data-tone={transportTone}>
-          {transportText}
-        </span>
-        <span className={styles.recordTag}>
-          {movement.security === "Secure" ? "Needs locked bed" : "Open bed suits"}
-        </span>
-        {movement.flaggedUrgent ? (
-          <span className={styles.recordTag} data-tone="warn">
-            Flagged urgent
-          </span>
-        ) : null}
-        {movement.specialling ? <span className={styles.recordTag}>One-to-one nursing</span> : null}
-        {movement.highAcuity ? <span className={styles.recordTag}>High acuity</span> : null}
-        {!movement.owner.trim() ? (
-          <span className={styles.recordTag} data-tone="warn">
-            No owner
-          </span>
-        ) : null}
-      </div>
-      {movement.escalation ? (
-        <div className={styles.recordEscalation}>
-          <strong>Escalated {splitDuration(Math.max(now - movement.escalation.at, 0))} ago</strong>
-          {" to "}
-          {movement.escalation.contact}
-          {" · tried "}
-          {movement.escalation.triedUnitIds
-            .map((id) => {
-              const u = units.find((candidate) => candidate.id === id);
-              return u ? u.name : id;
-            })
-            .join(", ") || "No units recorded"}
-        </div>
-      ) : null}
-      {closure || blocker ? (
-        <p className={styles.recordReason}>
-          <span className={styles.recordReasonLabel}>{closure ? "Closure note" : "Delay barrier"}:</span>{" "}
-          {closure ? closure.reason : blocker}
-        </p>
-      ) : null}
-      <div className={styles.recordFooter}>
-        <p className={styles.recordOwner}>
-          {healthService}
-          <span> · Owner: {movement.owner.trim() || "Not recorded"}</span>
-        </p>
-        <div className={styles.recordActions}>
-          <button type="button" className={styles.detailBtn} onClick={() => onOpenDetail(movement.id)}>
+          ) : null}
+          <button
+            type="button"
+            className={buttonClass({ variant: "ghost", size: "sm" })}
+            onClick={() => onOpenDetail(movement.id)}
+          >
             What is recorded
           </button>
-          <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
+          <Link
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            href={`/mockups/ward-flow/movements/${movement.id}`}
+          >
             Review patient
           </Link>
-        </div>
+        </span>
       </div>
     </li>
   );
