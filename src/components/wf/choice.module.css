@@ -241,6 +241,14 @@
   }
 }
 
+/* Phone: segmented options and hero track items meet the 48px tap floor. */
+@media (max-width: 48rem) {
+  .segItem,
+  .trk .segItem {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .segItem {
     transition: none;

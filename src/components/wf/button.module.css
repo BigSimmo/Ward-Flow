@@ -282,6 +282,17 @@
   width: 28px;
 }
 
+/* Phone: every button is at least the 48px tap floor, whatever its size. */
+@media (max-width: 48rem) {
+  .b {
+    min-height: var(--spacing-tap, 3rem);
+  }
+  .iconOnly,
+  .splitCaret {
+    min-width: var(--spacing-tap, 3rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .b {
     transition: none;
