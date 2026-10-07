@@ -37,7 +37,11 @@ describe("Ward backend CI", () => {
     expect(install.text).toMatch(/run: npm ci --ignore-scripts/u);
     expect(backendTest.text).toMatch(/steps\.backend-install\.outcome == 'success'/u);
     expect(backendTest.text).toMatch(/working-directory: backend\/ward-flow/u);
-    expect(backendTest.text).toMatch(/run: npm test/u);
+    expect(backendTest.text).toMatch(/run: npm run build:engine && npm test/u);
+    expect(backendTest.text).toMatch(
+      /WARD_TEST_DATABASE_URL: postgresql:\/\/postgres@127\.0\.0\.1:5432\/wardflow_test/u,
+    );
+    expect(workflow).toMatch(/image: postgres:16/u);
     expect(install.start).toBeLessThan(backendTest.start);
     expect(workflow).not.toMatch(/continue-on-error:/u);
 

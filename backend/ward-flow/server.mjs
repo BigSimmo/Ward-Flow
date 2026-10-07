@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { readConfig } from "./config.mjs";
 import { createStore, openStorage } from "./database.mjs";
 import { createAuthenticator, VerifierUnavailableError } from "./auth.mjs";
+import { createSharedHandler } from "./shared-http.mjs";
 
 const BODY_LIMIT = 1_048_576;
 const SESSION_PATH = /^\/v1\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
@@ -32,8 +33,24 @@ async function readBody(request) {
   }
 }
 
-export function createHandler({ config, store, authenticate }) {
+export function createHandler({ config, store, authenticate, sharedStore }) {
+  const sharedHandler = sharedStore
+    ? createSharedHandler({
+        config,
+        store: sharedStore,
+        authenticate,
+        readBody,
+        verifierUnavailable: VerifierUnavailableError,
+      })
+    : null;
   return async (request) => {
+    if (new URL(request.url).pathname.startsWith("/v1/workspace"))
+      return sharedHandler
+        ? sharedHandler(request)
+        : Response.json(
+            { error: "Shared workspace is not configured" },
+            { status: 503, headers: { "cache-control": "no-store" } },
+          );
     const origin = request.headers.get("origin");
     const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff" };
     const respond = (status, value) => Response.json(value, { status, headers });
@@ -68,8 +85,8 @@ export function createHandler({ config, store, authenticate }) {
     const sessionId = match?.[1].toLowerCase();
     try {
       if (path === "/readyz" && request.method === "GET") {
-        await store.ready();
-        return respond(200, { storage: "ready" });
+        await (sharedStore ?? store).ready();
+        return respond(200, sharedStore ? { database: "ready" } : { storage: "ready" });
       }
       if (!match) return respond(405, { error: "Method not allowed" });
       if (request.method === "GET") {
@@ -133,7 +150,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const config = readConfig();
     const storage = await openStorage(config.storage);
     const authenticate = await createAuthenticator(config);
-    const server = listen(createHandler({ config, store: createStore(storage), authenticate }), config);
+    let sharedStore;
+    if (config.shared) {
+      const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
+      const engine = await import("./dist/engine.mjs");
+      sharedStore = createWorkspaceStore(createPostgresPool(config.postgres), {
+        workspaceId: config.workspaceId,
+        engine,
+      });
+    }
+    const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
     const close = () => {
       server.close();
     };

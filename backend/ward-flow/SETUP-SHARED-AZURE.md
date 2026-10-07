@@ -1,0 +1,103 @@
+# Coordinator-only shared Azure setup
+
+Implementation checkpoint, 7 October 2026: WF-29, WF-33 and WF-57. The owner requested one application role, coordinator, with access to the complete Ward Flow workspace. Each person still signs in with their own Entra account; a configured list assigns the coordinator role. Hospital role tiers can be introduced later.
+
+This is a synthetic demonstration implementation. No live Azure resource was read, created, migrated, connected or deployed by this implementation session. The selected cloud runtime reports no outbound Azure identity, no secrets/runtime bindings and no Azure management or database network access. Both available browser connections report disconnected. Existing repository records establish the Azure Function and Blob service, but do not establish the current PostgreSQL inventory.
+
+## What is implemented
+
+- The existing Azure Function gains `/api/v1/workspace`, `/api/v1/workspace/commands` and `/api/v1/workspace/audit`. Existing owner-specific Blob sessions remain separate.
+- PostgreSQL holds one shared, versioned JSONB workspace, idempotency receipts and append-only audit entries. Named coordinators share the same workspace ID. The server applies the existing domain engine against the latest locked state.
+- A stale command returns 409 without overwriting the winner. Successful state, audit and command receipt commit in one transaction. A retry uses the same command ID; reusing an ID for different content is refused.
+- Audit identifies the authenticated Entra object ID and effective role `coordinator`, with action, revision, outcome, server commit time and structured domain audit changes. Existing domain roles are workflow perspectives, not access grants. Workflow guards remain effective.
+- Microsoft browser sign-in and three-second refresh connect the existing provider to server state. Saves are confirmed only after commit. Uncertain saves retain their command ID for explicit retry. Revoked access clears protected state and removes the board.
+- Shared mode does not read/write the browser's demo-state storage. Local demo mode and its typed-text privacy boundary remain unchanged. Shared scenario-file replacement is disabled because it would bypass audited commands.
+- Schema version 1 contains an explicit shared repatriation validator. This does not loosen the browser's prohibition on persisting those records. All entered content must remain invented.
+- Database connections use verified TLS and short-lived Entra tokens. The app identity can update workspace state and append/read receipts/audit, but cannot migrate the schema or change/delete audit entries.
+
+## One settings file
+
+Copy `infra/azure-settings.example.json` to ignored `infra/azure-settings.local.json`. Fill the actual Ward Flow subscription, tenant, coordinator account object IDs and migration administrator identity. The migration administrator is an Entra database administrator name, not a password. Leave `serverName` empty to discover and reuse a single existing server in `rg-wardflow-dev-aue`; if more than one exists, set the verified name explicitly. Keep the generated workspace UUID stable across restarts and deployments.
+
+The resource group, existing Function and API audience are fixed to Ward Flow. The setup verifies the selected subscription/tenant, the Function's Australian location and managed identity, then inspects PostgreSQL. It does not use PsychSift resources.
+
+The default frontend client is the existing API application ID. Verify that this registration supports a SPA and exposes a v2 `WardFlow.Access` scope. An approved separate SPA client can be set in the settings file, with delegated API permission and required consent. Do not change existing web redirect URIs, secrets or token audiences to make SPA sign-in work.
+
+No secret or access token belongs in the settings file, frontend variables, repository or chat. Follow the cloud runtime's selected outbound identity/CLI profile when running setup; a login in another browser or desktop is not automatically attached to this cloud worker.
+
+## Apply in order
+
+Run from the repository root with Node 24, this repository's locked dependencies, Azure CLI and access to the selected Ward Flow subscription. Build the shared engine before packaging. `zip` is needed for packaging.
+
+```sh
+npm ci
+npm --prefix backend/ward-flow ci --ignore-scripts
+npm --prefix backend/ward-flow run build:engine
+npm --prefix backend/ward-flow run azure:inspect -- /absolute/path/to/azure-settings.local.json
+```
+
+Inspection reports safe resource metadata. If a database already exists, review its hosting, private network, authentication and backup settings; inspection preserves them. Subsequent modes refuse an unsuitable existing database rather than silently replace or open it.
+
+```sh
+npm --prefix backend/ward-flow run azure:provision -- /absolute/path/to/azure-settings.local.json
+```
+
+Provision reuses the discovered server. Only when no matching server exists does it apply `infra/database.bicep`: PostgreSQL 16, Australia East by default (matching the Function's Australian region), 32 GB storage, burstable B1ms development compute, 35-day backups, public access disabled, Entra-only authentication, private DNS and a private VNet. It creates database `wardflow`. Existing Ward Flow networks or Function network integration cause a review stop before creating a new topology. The default address space is `10.74.0.0/16`; verify its suitability before applying the new-network template.
+
+Provision writes non-secret `dist/setup/backend.env` and `dist/setup/frontend.env`. These are ignored generated outputs. Existing private networks need a verified `functionSubnetId` in the same VNet as the database; an existing network attachment is never silently switched. The new subnet delegation targets the documented Flex Consumption Function. Another hosting plan needs its appropriate reviewed delegation.
+
+Before enabling shared mode, install the new backend code while keeping `WARD_SHARED_ENABLED=false`:
+
+```sh
+npm --prefix backend/ward-flow run package:deployment
+az functionapp deployment source config-zip \
+  --subscription YOUR_VERIFIED_WARD_FLOW_SUBSCRIPTION \
+  --resource-group rg-wardflow-dev-aue \
+  --name wardflow-dev-api-aue \
+  --src backend/ward-flow/dist/wardflow-backend.zip
+```
+
+The archive contains the Function runtime, compiled engine and locked backend dependencies. It excludes `.env`, setup outputs and tests. Flex Consumption deployment must use its supported package deployment; do not set `WEBSITE_RUN_FROM_PACKAGE` as a workaround.
+
+The configuration command must run on a host that can reach the private database, through an authorised VNet-connected runner/VPN or equivalent private connection. Public Azure Cloud Shell does not by itself establish that reachability. A proxy-only HTTP identity is also insufficient for PostgreSQL TCP access.
+
+```sh
+npm --prefix backend/ward-flow run azure:configure -- /absolute/path/to/azure-settings.local.json
+```
+
+Configure verifies the existing enforced Function Entra authentication and safe identity/storage app settings. It creates the `wardflow` database only if missing on the reused server, preserves an existing database, and applies versioned migrations under the nominated administrator, verifies/creates the Function's Entra database principal and grants least privilege. Migration and grants are repeatable; a grant failure remains a failure even if the schema was already applied. It then attaches the reviewed private network, appends the SPA redirect URI without replacing existing redirects, adds the exact frontend CORS origin, expands any existing host identity allowlist to include the named coordinators, and applies shared backend settings. Consent for a separate frontend client remains an explicit directory configuration step.
+
+Apply the generated `frontend.env` values to the verified frontend service and rebuild it. Next.js public variables are embedded at build time; changing runtime variables alone does not update an already-built client. The Microsoft SPA redirect is exactly `<frontendOrigin>/mockups/ward-flow`.
+
+After deployment, run:
+
+```sh
+node backend/ward-flow/azure-setup.mjs verify /absolute/path/to/azure-settings.local.json
+```
+
+This authenticates with the coordinator API scope and checks database readiness, effective role, exact workspace ID and audit access. The first authorised workspace GET creates the invented baseline and its audit entry. A health response alone does not establish this integration. Then verify two independent coordinator sessions: shared save/reload, last-bed contention, conflict presentation, explicit lost-response retry and access revocation. Confirm the actual deployed frontend/backend revisions, not only the branch's test result.
+
+## Local evidence and remaining verification
+
+The focused PostgreSQL test uses an actual local PostgreSQL server and refuses remote database URLs. The backend suite must be run with the compiled engine and a disposable local database. CI supplies PostgreSQL 16 and runs the same integration test inside the blocking static job. The local implementation session used PostgreSQL 18; a hosted CI result has not been observed.
+
+```sh
+npm --prefix backend/ward-flow run build:engine
+WARD_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5432/wardflow_test npm --prefix backend/ward-flow test
+```
+
+The proof covers two-account contention for the last bed, stable idempotency, changed-content reuse, fresh-store reads, append-only audit protection and rollback when audit insertion fails. Focused frontend tests cover uncertain-save retry, conflicts, access revocation, refresh/dispatch races, server-state adoption without browser persistence and preserving local drafts during updates. Existing demo-provider/privacy/restore tests remain applicable.
+
+Local verification on 7 October 2026: 43 backend tests passed, eight focused frontend/CI tests passed, 52 existing provider/privacy/restore/scenario/audit tests passed, source typecheck and scoped ESLint passed, and the production Next build and offline Bicep compilation passed. System Chromium smoke checks returned HTTP 200 with no page errors; enabling shared mode without configuration hid the board and left browser session storage empty. Six offline setup tests check existing-server reuse, ambiguous inventory, identity mismatch and preserving unsuitable resources/networks. These tests use a fake Azure CLI and make no Azure requests.
+
+Migration SQL and an offline Bicep compilation are not live Azure application evidence. Azure-managed token access, actual private DNS/routing, consent, Easy Auth, deployment, restore and hosted browser journeys remain unverified until the authorised resource checks pass.
+
+## Before real patient use
+
+Keep the existing D-36/D-37 institutional approvals and MHA advisory limits separate from technical setup. An approved health-service deployment needs privacy/clinical/records review, a commissioned Entra tenant and access process, approved hosting for the whole data path, retention and incident procedures, and a demonstrated recovery plan. The documented Railway frontend is in Singapore; Australian database hosting does not establish approval of that frontend or its logs/support arrangements.
+
+The shared baseline still seeds invented patients and uses a server-owned demonstration clock. Live patient sourcing, accurate operational timestamp semantics and any PAS adapter need their own reviewed implementation. This is not a flag that turns synthetic records into approved clinical data.
+
+For a commissioned production database, review compute, high availability, independent audit integrity/retention, monitoring, backup residency and access, and measured recovery objectives. The current burstable instance and same-region backups are a development baseline. Test backup restore and disaster recovery before claiming readiness. Database audit triggers protect application writes; they do not make the database administrator unable to alter data. An approved immutable audit archive is separate work.
+
+Backend code can support later roles and PAS ingestion without a screen rewrite. The small configuration surface makes hosted synthetic connection straightforward; real clinical commissioning is a separate acceptance milestone.

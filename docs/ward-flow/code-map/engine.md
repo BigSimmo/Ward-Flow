@@ -1,5 +1,20 @@
 # Engine: reducer, events, state and persistence
 
+## Shared coordinator implementation — 7 October 2026
+
+The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)
+through `ward-shared-client.ts` (polling, pending commands, conflict and retry state). Shared mode
+adopts committed server snapshots without reading/writing demo browser storage; only local view
+drafts remain browser-owned. `ward-shared-state-validation.ts` adds an explicit shared repatriation
+schema without changing the browser persistence fence. Existing reducer workflow roles describe
+the action's operational perspective; the authenticated shared role is coordinator.
+
+`backend/ward-flow/engine.ts` bundles the domain engine for the Azure Function. `postgres.mjs`
+executes versioned shared commands, receipts and audit in one transaction. The new migration runner,
+Entra managed-identity grants, Azure resource discovery and private PostgreSQL template are described
+in [the shared setup guide](../../../backend/ward-flow/SETUP-SHARED-AZURE.md). Shared mode defaults off.
+Source and local tests do not establish hosted identity, database or deployment readiness.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026
