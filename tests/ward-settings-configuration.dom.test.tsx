@@ -97,24 +97,24 @@ describe("settings screen configuration draft", () => {
 
   it("morning rollup deadline stepper and slider update draft and dispatch on save", () => {
     renderSettings();
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30");
     expect(rollupSlider().value).toBe("570");
 
     // Click plus button (increase by 15m to 09:45 AM / 585)
     fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45");
     expect(rollupSlider().value).toBe("585");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570"); // not saved yet
 
     // Click minus button twice (decrease by 30m to 09:15 AM / 555)
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15");
     expect(rollupSlider().value).toBe("555");
 
     // Move slider to 600 (10:00 AM)
     fireEvent.change(rollupSlider(), { target: { value: "600" } });
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");
 
     // Save coordination rules

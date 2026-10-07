@@ -82,7 +82,7 @@ const UNWIRED_CONTROLS: readonly UnwiredControl[] = [
   {
     rowTestId: "setting-form4a-warn-row",
     descTestId: "setting-form4a-warn-desc",
-    title: "Recorded Form 4A expiry warning (demo)",
+    title: "Form 4A expiry warning",
     role: "slider",
   },
   {
@@ -94,7 +94,7 @@ const UNWIRED_CONTROLS: readonly UnwiredControl[] = [
   {
     rowTestId: "setting-medical-release-row",
     descTestId: "setting-medical-release-desc",
-    title: "Medical Clearance Bed Release Buffer",
+    title: "Clearance bed buffer",
     role: "combobox",
   },
   // Domain 2 · Capacity, Bed Reservation & Surge Rules
@@ -114,25 +114,25 @@ const UNWIRED_CONTROLS: readonly UnwiredControl[] = [
   {
     rowTestId: "setting-form1a-strict-row",
     descTestId: "setting-form1a-strict-desc",
-    title: "Require a Form 1A before an involuntary admission",
+    title: "Form 1A before involuntary",
     role: "checkbox",
   },
   {
     rowTestId: "setting-form4a-escort-row",
     descTestId: "setting-form4a-escort-desc",
-    title: "Escort required before transport advances (demo)",
+    title: "Escort before transport",
     role: "checkbox",
   },
   {
     rowTestId: "setting-auth-hospital-row",
     descTestId: "setting-auth-hospital-desc",
-    title: "Authorised Hospital Involuntary Bed Validation",
+    title: "Authorised bed check",
     role: "checkbox",
   },
   {
     rowTestId: "setting-cp-audit-row",
     descTestId: "setting-cp-audit-desc",
-    title: "Audit Log for Chief Psychiatrist",
+    title: "Chief Psychiatrist audit",
     role: "checkbox",
   },
 ];
