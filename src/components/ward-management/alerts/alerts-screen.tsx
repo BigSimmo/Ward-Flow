@@ -294,7 +294,7 @@ function AlertRows({
 
         const actionVerb =
           categoryBadge.label === "Form Due Time Passed"
-            ? "Re-Authorise"
+            ? "Record Renewal"
             : categoryBadge.label === "Multiple Declines"
               ? "Intervene"
               : categoryBadge.label === "Reservation Window"

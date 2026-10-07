@@ -693,9 +693,9 @@ export function buildLegalFormsHudProps(overrides?: {
           type="button"
           data-testid="ward-legal-reauth-btn"
           onClick={onReAuthorise}
-          aria-label="Re-Authorise Order"
+          aria-label="Record Form Renewal"
         >
-          Re-Authorise
+          Record Form Renewal
         </button>
       ) : (
         <span data-testid="ward-legal-limits-tag">Legal Limits Not Checked</span>
@@ -1411,7 +1411,7 @@ describe("Tier 3: Interactions & Filters", () => {
     expect(handleEscalate).toHaveBeenCalledTimes(1);
   });
 
-  it("Legal Forms: clicking 'Re-Authorise' in actions slot dispatches re-authorization handler", () => {
+  it("Legal Forms: clicking 'Record Form Renewal' in actions slot dispatches re-authorization handler", () => {
     const handleReauth = vi.fn();
     render(<WardDynamicIsland {...buildLegalFormsHudProps({ passedCount: 1, onReAuthorise: handleReauth })} />);
     fireEvent.click(screen.getByTestId("ward-legal-reauth-btn"));
@@ -1589,7 +1589,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
     fireEvent.click(screen.getByTestId("ward-legal-kpi-passed"));
     expect(urgency).toBe("urgent");
 
-    // Stage 3: Clinician triggers Re-Authorise
+    // Stage 3: Clinician triggers Record Form Renewal
     fireEvent.click(screen.getByTestId("ward-legal-reauth-btn"));
     expect(handleReauth).toHaveBeenCalledTimes(1);
 

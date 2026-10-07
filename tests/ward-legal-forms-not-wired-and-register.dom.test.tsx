@@ -53,7 +53,7 @@ describe("Legal forms — unwired confirm controls (F2.1)", () => {
     const rows = legalFormGroupRows(wardMovements, NOW, "with-deadline");
     const breached = rows.some((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW);
     if (breached) {
-      fireEvent.click(screen.getByText("Re-Authorise Order"));
+      fireEvent.click(screen.getByRole("button", { name: "Record Form Renewal" }));
       const renewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
       expect(renewConfirm).toHaveAttribute("aria-disabled", "true");
       expect(renewConfirm).not.toBeDisabled();

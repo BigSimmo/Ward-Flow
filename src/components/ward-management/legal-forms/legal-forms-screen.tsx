@@ -426,10 +426,10 @@ export function LegalFormsScreen() {
                   className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
                   data-testid="ward-legal-reauth-btn"
                   onClick={() => handleOpenRenew()}
-                  aria-label="Re-Authorise Order"
+                  aria-label="Record Form Renewal"
                 >
                   <Clock size={14} aria-hidden="true" />
-                  <span>Re-Authorise</span>
+                  <span>Record Form Renewal</span>
                 </button>
               ) : null}
             </div>
@@ -1460,7 +1460,7 @@ export function LegalFormsScreen() {
           </div>
         )}
 
-        {/* Re-Authorise Modal */}
+        {/* Record Form Renewal Modal */}
         {renewModalOpen && (
           <div
             ref={renewModalRef}
@@ -1512,7 +1512,7 @@ export function LegalFormsScreen() {
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel} htmlFor="legal-forms-renew-justification">
-                    Re-Authorisation Justification
+                    Form Renewal Justification
                   </label>
                   <textarea
                     id="legal-forms-renew-justification"
@@ -1538,7 +1538,7 @@ export function LegalFormsScreen() {
                   title="Not wired in this prototype."
                   onClick={ignoreUnavailableActivation}
                 >
-                  Confirm Re-Authorisation
+                  Record Paper Extension
                 </button>
                 <span id="ward-legal-forms-renew-confirm-note" className={styles.confirmNote}>
                   Not wired in this prototype.
@@ -1635,7 +1635,7 @@ function LegalFormRow({
               className={`${styles.btn} ${styles.btnSm} ${styles.btnDanger}`}
               onClick={() => onRenew(movement)}
             >
-              Re-Authorise
+              Record Form Renewal
             </button>
           )}
           <button
