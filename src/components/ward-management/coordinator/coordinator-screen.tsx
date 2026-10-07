@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero, HeroStat, LiveChip, buttonClass } from "@/components/wf";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { clockState } from "@/components/ward-management/ward-clock";
+import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -256,7 +257,7 @@ export function CoordinatorScreen() {
                 />
                 <HeroStat
                   value={breachWithinHour}
-                  label="Breach within 1h"
+                  label={`Due within ${DUE_SOON_URGENT_MINUTES / 60}h`}
                   tone={breachWithinHour > 0 ? "warning" : undefined}
                 />
               </>

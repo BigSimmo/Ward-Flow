@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Card, CardHead, Segmented, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -17,9 +18,6 @@ import { edHealthService, healthServiceAcronym } from "@/components/ward-managem
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
 import styles from "./home.module.css";
-
-/** A longest wait past a day is red: act now. Past the severe line it is amber. Synthetic, needs sign-off. */
-const LONGEST_DANGER_MINUTES = 24 * 60;
 
 type Order = "longest" | "most";
 
@@ -46,6 +44,8 @@ type HomeEdPressureProps = {
  * The Network screen keeps its own `PressureStrip`; this card is Home's own layout.
  */
 export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
+  // A longest wait past the configured ED access target is red; past the severe line it is amber.
+  const { configuration } = useWardFlow();
   const [order, setOrder] = useState<Order>("longest");
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
   const summaries = useMemo(() => edOpenSummaries(movements, now), [movements, now]);
@@ -90,7 +90,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
               : critical > 0
                 ? {
                     tone: "danger",
-                    text: `${critical} due in 1h`,
+                    text: `${critical} due in ${DUE_SOON_URGENT_MINUTES / 60}h`,
                     spoken: `${critical} due within ${DUE_SOON_URGENT_MINUTES / 60}h (your default)`,
                   }
                 : due > 0
@@ -112,7 +112,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           const longestTone: WfTone | null =
             row.waiting === 0
               ? null
-              : row.longestWaitMinutes >= LONGEST_DANGER_MINUTES
+              : row.longestWaitMinutes >= configuration.edAccessTargetMinutes
                 ? "danger"
                 : row.longestWaitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES
                   ? "warning"

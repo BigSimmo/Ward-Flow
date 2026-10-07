@@ -42,7 +42,7 @@ import styles from "./home.module.css";
 
 type QueueTab = "patients" | "referrals";
 
-const MINUTE_MS = 60_000;
+const MS_PER_MINUTE = 60_000;
 
 /**
  * Wait thresholds for the queue (design system v6 §5): Tier 1 is due soon at 2h and overdue at 4h,
@@ -301,10 +301,13 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueWait}>
                   <Timer
-                    at={movement.openedAt * MINUTE_MS}
-                    now={now * MINUTE_MS}
+                    at={movement.openedAt * MS_PER_MINUTE}
+                    now={now * MS_PER_MINUTE}
                     direction="waiting"
-                    thresholds={{ dueSoon: thresholds.dueSoon * MINUTE_MS, overdue: thresholds.overdue * MINUTE_MS }}
+                    thresholds={{
+                      dueSoon: thresholds.dueSoon * MS_PER_MINUTE,
+                      overdue: thresholds.overdue * MS_PER_MINUTE,
+                    }}
                     hideFlagWord
                     hideDirection
                     className={styles.queueTimer}
@@ -361,8 +364,8 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueWait}>
                   <Timer
-                    at={referral.raisedAt * MINUTE_MS}
-                    now={now * MINUTE_MS}
+                    at={referral.raisedAt * MS_PER_MINUTE}
+                    now={now * MS_PER_MINUTE}
                     direction="waiting"
                     hideDirection
                     className={styles.queueTimer}
