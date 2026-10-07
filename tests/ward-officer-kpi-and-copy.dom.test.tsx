@@ -62,51 +62,51 @@ describe("officer screen KPI captions match their populations", () => {
     expect(acceptedNotCollected.length + collectedNotArrived.length + notYetAccepted.length).toBe(jobs.length);
   });
 
-  it("renders Active Transit Runs as dispatched-or-in-transit jobs only, not every open job", () => {
+  it("renders the accepted-not-collected count as those jobs only, not every open job", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
       </WardFlowProvider>,
     );
 
-    const label = screen.getByText("Active Transit Runs");
-    const value = label.nextElementSibling;
-    const sub = value?.nextElementSibling;
-    // Before this fix the value was 8 (every open job, including WF-005/WF-015 which nobody has
-    // yet collected) — a number the "Dispatched or In Transit" caption beside it did not cover.
+    // v6 (7 Oct 2026): the hero stat's own label now names the population ("Accepted, not
+    // collected"), where the old card split it into "Active Transit Runs" over "Dispatched or In
+    // Transit". The hero stat is a value line followed by its label.
+    const label = screen.getByText("Accepted, not collected");
+    const value = label.previousElementSibling;
+    // Before the 16 Sept fix the value was 8 (every open job, including WF-005/WF-015 which nobody
+    // has yet collected) — a number the caption beside it did not cover.
     // 2 → 5: the 17 Sept sample-data addition, WF-021/WF-025/WF-030 (accepted-only).
     expect(value?.textContent).toBe("5");
-    expect(sub?.textContent).toBe("Dispatched or In Transit");
+    expect(label.textContent).toBe("Accepted, not collected");
   });
 
-  it("renders Awaiting Departure as not-yet-accepted jobs only, not every not-yet-collected job", () => {
+  it("renders the not-yet-accepted count as those jobs only, not every not-yet-collected job", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
       </WardFlowProvider>,
     );
 
-    const label = screen.getByText("Awaiting Departure");
-    const value = label.nextElementSibling;
-    const sub = value?.nextElementSibling;
-    // Before this fix the value was 2 (WF-005 and WF-015, both already accepted — a crew is
-    // already assigned) under a caption reading "ED Handover Pending", which is no longer true of
-    // an accepted job.
+    const label = screen.getByText("Not yet accepted");
+    const value = label.previousElementSibling;
+    // Before the 16 Sept fix the value was 2 (WF-005 and WF-015, both already accepted — a crew is
+    // already assigned) under a caption that was no longer true of an accepted job.
     expect(value?.textContent).toBe("0");
-    expect(sub?.textContent).toBe("ED Handover Pending");
+    expect(label.textContent).toBe("Not yet accepted");
   });
 
-  it("keeps Patient On Board counting exactly the collected-not-arrived jobs, unchanged", () => {
+  it("keeps the on-board count exactly the collected-not-arrived jobs, unchanged", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
       </WardFlowProvider>,
     );
 
-    const label = screen.getByText("Patient On Board");
-    const value = label.nextElementSibling;
+    // v6: the on-board count is the hero title ("8 on board").
+    const title = screen.getByRole("heading", { level: 1 });
     // 6 → 8: the 17 Sept sample-data addition, WF-026/WF-031 (collected-not-arrived).
-    expect(value?.textContent).toBe("8");
+    expect(title.textContent).toBe("8 on board");
   });
 });
 
@@ -229,6 +229,8 @@ describe("officer screen's refusals region has its own accessible name", () => {
     );
 
     fireEvent.click(screen.getByTestId("force-already-accepted-rejection"));
+    // v6: refusals sit on the Jobs card's Refused tab.
+    fireEvent.click(screen.getByRole("tab", { name: /^Refused/ }));
 
     const refusals = screen.getByTestId("ward-officer-refusals");
     expect(within(refusals).getByText(/was refused/)).toBeInTheDocument();
@@ -262,7 +264,8 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
     const selectButton = screen.queryByTestId("ward-officer-select-WF-006");
     if (selectButton) fireEvent.click(selectButton);
 
-    const card = screen.getByTestId("ward-officer-job-WF-006");
+    // v6: the four stage actions sit in the selected job's panel beside the list.
+    const card = screen.getByTestId("ward-officer-detail");
     expect(within(card).queryByRole("button", { name: "Arrived" })).not.toBeInTheDocument();
     const button = within(card).getByRole("button", { name: "Delivered" });
 
@@ -313,6 +316,7 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
     );
 
     fireEvent.click(screen.getByTestId("force-not-yet-collected-rejection"));
+    fireEvent.click(screen.getByRole("tab", { name: /^Refused/ }));
 
     const refusals = screen.getByTestId("ward-officer-refusals");
     // The label and " was refused: " sit in separate JSX text nodes (see the render above), so
