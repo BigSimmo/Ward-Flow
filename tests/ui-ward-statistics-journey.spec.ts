@@ -204,18 +204,16 @@ test.describe("@mockup page-specific statistics insights", () => {
     await expect(
       page.getByTestId("capacity-details").getByRole("link", { name: /Mental Health Unit/ }),
     ).toHaveAttribute("href", /statistics\/ward\//);
-    const placements = page.getByTestId("statistics-service-placement-chart");
-    await placements.getByRole("button", { name: /^Within service:/ }).click();
-    await expect(placements.getByRole("complementary", { name: "Within service details" })).toBeVisible();
-    await placements.getByRole("button", { name: "Close chart details" }).click();
-    await expect(placements.getByRole("complementary")).toHaveCount(0);
-    const travel = page.getByTestId("statistics-service-travel-chart");
-    await expect(travel).toContainText("synthetic travel times");
-    await travel.getByRole("button", { name: "Travel bands data view" }).click();
-    await expect(travel.getByRole("table")).toBeVisible();
-    await travel.getByRole("button", { name: /^Three hours or more from home:/ }).click();
-    await expect(travel.getByRole("complementary")).toContainText("Travel bands are synthetic");
-    await travel.getByRole("button", { name: "Close chart details" }).click();
+    // v6 (7 Oct 2026): placements are a bar list with a Chart and Data switch; travel bands are
+    // a bar list in the Far from home card, labelled as synthetic.
+    const placements = page.getByTestId("ward-statistics-service-placement");
+    await placements.getByRole("radio", { name: "Data" }).click();
+    await expect(placements.getByRole("rowheader", { name: "North Metro" })).toBeVisible();
+    await placements.getByRole("radio", { name: "Chart" }).click();
+    await expect(placements.getByRole("table")).toHaveCount(0);
+    const travel = page.getByTestId("ward-statistics-service-out-of-area");
+    await expect(travel).toContainText("Synthetic travel bands");
+    await expect(travel).toContainText("Three hours or more from home");
   });
   test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
