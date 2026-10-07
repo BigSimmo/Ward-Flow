@@ -939,9 +939,6 @@ export function StatisticsScreen({
                 </div>
               </div>
               <div className={styles.panelBody}>
-                <p className={pageStyles.scopeNote} data-testid="ward-statistics-community-landing-absence">
-                  Community activity totals are not recorded.
-                </p>
                 <section className={styles.panelBody}>
                   <h3 className={styles.figureHeading}>Choose a community team</h3>
                   <ul className={styles.indexList} data-testid="ward-statistics-community-list">

@@ -28,12 +28,23 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
     const bar = document.querySelector<HTMLElement>('[data-testid="ward-bar"]');
     if (!bar || !navRef.current) return;
     const nav = navRef.current;
-    const updateOffset = () =>
-      nav.style.setProperty("--statistics-header-offset", `${bar.getBoundingClientRect().height}px`);
+    const updateOffset = () => {
+      const barHeight = bar.getBoundingClientRect().height;
+      nav.style.setProperty("--statistics-header-offset", `${barHeight}px`);
+      // Account for both rows when links wrap, and avoid counting the shell's scroll padding twice.
+      const shell = nav.closest<HTMLElement>('[class*="shellContent"]');
+      const scroller = shell && getComputedStyle(shell).overflowY === "auto" ? shell : document.scrollingElement;
+      const shellScrollPadding = scroller ? parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0 : 0;
+      nav.parentElement?.style.setProperty(
+        "--statistics-anchor-offset",
+        `${barHeight + nav.getBoundingClientRect().height - shellScrollPadding + 12}px`,
+      );
+    };
     updateOffset();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(updateOffset);
     observer.observe(bar);
+    observer.observe(nav);
     return () => observer.disconnect();
   }, []);
 

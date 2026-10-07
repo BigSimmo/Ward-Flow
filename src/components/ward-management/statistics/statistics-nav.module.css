@@ -168,3 +168,36 @@
     transition: none;
   }
 }
+
+/* Tighten the mode bar while keeping the same route structure and tap targets. */
+.navItem {
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.sampleSwitch {
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  padding-left: 0.875rem;
+}
+@media (max-width: 760px) {
+  .mobileSelect {
+    flex: 1 1 8rem;
+    width: auto;
+    min-width: 0;
+    padding-right: 0.25rem;
+  }
+  .mobileSelect > span {
+    display: none;
+  }
+  .sampleSwitch {
+    margin-left: 0.25rem;
+    margin-right: 0.5rem;
+    padding-left: 0.625rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navItem {
+    transition: none;
+  }
+}

@@ -181,10 +181,6 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      <p className={family.note}>
-        Ready beds and people waiting are separate counts. This page does not match which bed suits which person.
-      </p>
-
       <StatisticsInsightChart
         key="wards"
         defaultSort="value"

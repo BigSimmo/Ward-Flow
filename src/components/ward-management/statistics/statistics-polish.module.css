@@ -19,7 +19,7 @@
 .root :global(section[id]),
 .root :global(div[id]),
 .root :global(dl[id]) {
-  scroll-margin-top: 8rem;
+  scroll-margin-top: var(--statistics-anchor-offset, 8rem);
 }
 .root :global(dl[aria-label]) {
   border-radius: 0.625rem;
@@ -97,5 +97,51 @@
 @media (prefers-reduced-motion: reduce) {
   .root :global(tbody tr) {
     transition: none;
+  }
+}
+
+/* Keep the identifying column and headings in view, like the capacity tables. */
+.root :global(div:has(> table)) {
+  position: relative;
+  max-height: min(32rem, 65dvh);
+  overflow: auto;
+  isolation: isolate;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  border-radius: 0.625rem;
+}
+.root :global(table thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  box-shadow: 0 1px 0 var(--line);
+}
+.root :global(table tr > :first-child:not([colspan])) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  box-shadow:
+    1px 0 0 var(--line),
+    6px 0 14px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.root :global(table thead tr > th:first-child) {
+  top: 0;
+  z-index: 4;
+  background: var(--surface-2);
+}
+.root :global(table tbody tr:hover > :first-child) {
+  background: var(--surface-2);
+}
+@media print {
+  .root :global(div:has(> table)) {
+    max-height: none;
+    overflow: visible;
+  }
+  .root :global(table th),
+  .root :global(table td) {
+    position: static !important;
+    box-shadow: none !important;
   }
 }

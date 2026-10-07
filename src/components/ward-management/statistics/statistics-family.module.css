@@ -1,6 +1,6 @@
 .shownSection {
   min-width: 0;
-  scroll-margin-top: 7.5rem;
+  scroll-margin-top: var(--statistics-anchor-offset, 7.5rem);
 }
 .disclosure {
   min-width: 0;

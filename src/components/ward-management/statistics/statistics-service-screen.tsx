@@ -305,13 +305,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dd>{serviceEds.length} emergency departments</dd>
                 </div>
               </dl>
-              <div className={pageStyles.measureDetailsBody}>
-                <p className={styles.body} data-testid="ward-statistics-service-summary">
-                  Recorded network scope: {serviceSites.length} {serviceSites.length === 1 ? "hospital" : "hospitals"};{" "}
-                  {serviceUnits.length} {serviceUnits.length === 1 ? "ward" : "wards"}; {serviceEds.length}{" "}
-                  {serviceEds.length === 1 ? "emergency department" : "emergency departments"}.
-                </p>
-              </div>
 
               <dl
                 className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}
@@ -385,17 +378,11 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
               {serviceUnits.length > 0 ? (
                 <div className={pageStyles.measureDetailsBody}>
                   <p className={styles.body} data-testid="ward-statistics-service-pending-preparation">
-                    {pendingPreparation} of this service&apos;s empty {pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
-                    marked Pending and included in Ready.{" "}
-                    {totalOpenNow < totalReady ? (
-                      <strong>Available to act on now: {totalOpenNow}, because Pending beds cannot be pulled.</strong>
-                    ) : null}
+                    <strong>{pendingPreparation}</strong> pending · <strong>{totalOpenNow}</strong> open now
                   </p>
                   <p className={serviceStyles.measuredCount} data-testid="ward-statistics-service-zero-ready-wards">
                     <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
-                    {service}
-                    &apos;s {serviceUnits.length} {serviceUnits.length === 1 ? "ward has" : "wards have"} no ready beds
-                    at all right now.
+                    {serviceUnits.length} wards without ready beds
                   </p>
                 </div>
               ) : null}

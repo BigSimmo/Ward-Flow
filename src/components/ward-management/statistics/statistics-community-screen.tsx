@@ -427,14 +427,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         see: everything here is invented, and it names each one.
       */}
 
-        <WardPanel title="Coverage limits" testId="ward-statistics-community-limits">
+        <WardPanel title="Unassigned community care" testId="ward-statistics-community-limits">
           <div className={styles.panelBody} role="group" aria-label="Community coverage limits content" tabIndex={0}>
             <p className={styles.body} data-testid="ward-statistics-community-unseen">
-              <strong>{unseen.length}</strong> {unseen.length === 1 ? "admission belongs" : "admissions belong"} to no
-              community team on this page, out of {admissions.length}.
+              <strong>{unseen.length}</strong> of {admissions.length} admissions without a community team
             </p>
             <p className={styles.body}>
-              <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-operational-link">
+              <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-coverage-link">
                 Open {team.name}&apos;s operational page
               </Link>
             </p>

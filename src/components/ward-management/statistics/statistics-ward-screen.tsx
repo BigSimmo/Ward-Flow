@@ -218,7 +218,6 @@ export function StatisticsWardScreen({
           : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
       return {
         id: admission.id,
-        bed: "Not recorded",
         state: admissionStateLabels[admission.state],
         pt: `${admission.id} (${admission.sex === "Female" ? "F" : admission.sex === "Male" ? "M" : admission.sex.toLowerCase()})`,
         admitted:
@@ -236,11 +235,7 @@ export function StatisticsWardScreen({
     if (!bedSearchQuery.trim()) return bedMatrixList;
     const q = bedSearchQuery.toLowerCase().trim();
     return bedMatrixList.filter(
-      (b) =>
-        b.bed.toLowerCase().includes(q) ||
-        b.state.toLowerCase().includes(q) ||
-        b.pt.toLowerCase().includes(q) ||
-        b.target.toLowerCase().includes(q),
+      (b) => b.state.toLowerCase().includes(q) || b.pt.toLowerCase().includes(q) || b.target.toLowerCase().includes(q),
     );
   })();
 
@@ -400,16 +395,15 @@ export function StatisticsWardScreen({
                 Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
               </span>
             </div>
-            <div className={pageStyles.tableWrap}>
+            <div className={pageStyles.tableWrap} tabIndex={0} role="region" aria-label="Ward admission roster">
               <table className={pageStyles.dataTable}>
                 <caption className={pageStyles.srOnly}>
                   Recorded admission roster; numbered bed assignments are not recorded
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Assigned bed</th>
-                    <th scope="col">Status</th>
                     <th scope="col">Admission / recorded sex</th>
+                    <th scope="col">Status</th>
                     <th scope="col">Admitted</th>
                     <th scope="col" className={pageStyles.n}>
                       Length of stay
@@ -420,7 +414,7 @@ export function StatisticsWardScreen({
                 <tbody>
                   {filteredBedMatrix.length === 0 ? (
                     <tr>
-                      <td colSpan={6}>
+                      <td colSpan={5}>
                         {bedMatrixList.length === 0
                           ? "No current admissions recorded"
                           : "No admissions match this search"}
@@ -433,14 +427,11 @@ export function StatisticsWardScreen({
 
                     return (
                       <tr key={b.id}>
-                        <td>
-                          <strong>{b.bed}</strong>
-                        </td>
+                        <th scope="row">
+                          <strong>{b.pt}</strong>
+                        </th>
                         <td>
                           <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
-                        </td>
-                        <td>
-                          <strong>{b.pt}</strong>
                         </td>
                         <td>{b.admitted}</td>
                         <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
@@ -450,81 +441,6 @@ export function StatisticsWardScreen({
                   })}
                 </tbody>
               </table>
-            </div>
-
-            <div className={pageStyles.measureDetailsBody}>
-              <h3 className={styles.subHeading}>Empty</h3>
-              <p className={styles.body}>
-                {unit.empty.value} {unit.empty.value === 1 ? "bed is" : "beds are"} physically empty on this ward right
-                now, whether or not the ward has confirmed it can allocate them.
-              </p>
-
-              <h3 className={styles.subHeading}>Allocatable</h3>
-              <p className={styles.body}>
-                {unit.allocatable.value === 0 ? (
-                  <>{unit.name} has no free bed right now — none of its beds are confirmed allocatable.</>
-                ) : (
-                  <>
-                    {unit.allocatable.value} {unit.allocatable.value === 1 ? "bed" : "beds"} this ward has confirmed it
-                    can allocate to a new patient.
-                  </>
-                )}
-              </p>
-
-              {/*
-               * Ruling R-B-09: "Ready" is the one word for `min(allocatable, empty)`, computed above by
-               * `unitCapacity` — never re-derived here. Both inputs sit beside it above so a reader can
-               * check the arithmetic rather than take the word for it — never "available now", "you can
-               * fill today", or "no bed free" (retired wording; "no free bed" above is a different,
-               * correct claim about `allocatable` alone).
-               */}
-              <h3 className={styles.subHeading}>Ready</h3>
-              <p className={styles.body}>
-                {capacity.available} {capacity.available === 1 ? "bed is" : "beds are"} ready to admit a new patient
-                right now — the smaller of the {unit.empty.value}{" "}
-                {unit.empty.value === 1 ? "bed that is" : "beds that are"} physically empty and the{" "}
-                {unit.allocatable.value} the ward has confirmed allocatable.
-              </p>
-              {/*
-               * ⚠️ **THE READY FIGURE ABOVE DELIBERATELY SUBTRACTS NOTHING FOR THIS, AND MUST NOT START.**
-               * The owner ruled (2026-09-01) that a bed being made ready blocks the pull but must not drop
-               * the ward's figure, so the number does not lurch as cleaning starts and stops. What was
-               * missing was this sentence beside it, not an adjustment to it.
-               *
-               * **Population is the owner's ruling of 2026-09-07: beds the patient has already left.**
-               * `bedsPendingPreparation` filters `state === "discharged" && preparing`, so a bed still
-               * occupied and flagged is not counted here — it is not a bed anyone can plan around tonight.
-               *
-               * ⚠️ **"marked as" is load-bearing and is not a hedge to tidy away.** The reducer does not
-               * constrain which releases may carry the flag, so this is a claim about the RECORD. "N beds
-               * are being made ready" would be a claim about the world, and the model cannot support it.
-               */}
-              {/*
-            ⚠️ **THE "but" CLAUSE RENDERS ONLY WHEN THE CONSTRAINT IS ACTUALLY BITING.** With nothing
-            pending it read "0 of this ward's empty beds are marked as being made ready … but a
-            patient cannot be pulled into a bed that is still being made ready" — a warning about a
-            constraint that is not operating, on 22 of the 23 wards. Not false, which is why it
-            survived; but a caution the reader meets every time and which never applies is one they
-            learn to skip, and it is still there on the ward where it matters.
-
-            Condition compares the two figures rather than `pendingPreparation > 0`, for the reason
-            given on the service screen: `openBedsNow` floors at nought, so the counts can coincide
-            while beds are pending.
-          */}
-              <p className={styles.body}>
-                {pendingPreparation} of this ward&apos;s empty {pendingPreparation === 1 ? "bed is" : "beds are"} marked
-                as Pending — cleaning, maintenance or repair, or with no reason stated.{" "}
-                {pendingPreparation === 1 ? "It is" : "They are"} counted in the figure above rather than held back from
-                it
-                {openBeds < capacity.available ? (
-                  <strong>
-                    , but a patient cannot be pulled into a bed that is still Pending, so the number available to act on
-                    right now is {openBeds}.
-                  </strong>
-                ) : (
-                  "."
-                )}
-              </p>
             </div>
           </div>
         </WardPanel>

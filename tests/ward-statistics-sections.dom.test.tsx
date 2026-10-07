@@ -216,7 +216,10 @@ describe("across all services — the overview section", () => {
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
     expect(screen.getByTestId("ward-statistics-section-eyebrow").textContent).toBe(section?.label);
-    expect(mainOf("ward-statistics-overview-screen").textContent).toContain("Network-wide current state");
+    expect(screen.queryByTestId("ward-statistics-overview-scope")).toBeNull();
+    expect(
+      within(mainOf("ward-statistics-overview-screen")).getByTestId("ward-statistics-overview-capacity"),
+    ).toBeVisible();
   });
 
   /*

@@ -73,10 +73,9 @@ describe("Health-service statistics — a real service", () => {
     const identity = screen.getByTestId("ward-statistics-service-identity");
     for (const site of sites) expect(identity.textContent).toContain(site.name);
 
-    const summary = screen.getByTestId("ward-statistics-service-summary");
-    expect(summary.textContent).toContain(`Recorded network scope: ${sites.length} hospitals`);
-    expect(summary.textContent).toContain(`${units.length} wards`);
-    expect(summary.textContent).toContain(`${emergencyDepartments.length} emergency departments`);
+    expect(screen.queryByTestId("ward-statistics-service-summary")).toBeNull();
+    expect(identity).toHaveTextContent(`Wards${units.length}`);
+    expect(identity).toHaveTextContent(`${emergencyDepartments.length} emergency departments`);
   });
 
   it("shows one Ready-beds row per ward in the service, plus a total that is the sum of the rows", () => {
@@ -102,7 +101,7 @@ describe("Health-service statistics — a real service", () => {
     expect(stated).toBe(expectedZeroWards);
 
     const sentence = screen.getByTestId("ward-statistics-service-zero-ready-wards").textContent ?? "";
-    expect(sentence).toContain("no ready beds at all right now");
+    expect(sentence).toContain("without ready beds");
   });
 
   it("states a placement summary whose two headline counts never exceed the referrals raised", () => {

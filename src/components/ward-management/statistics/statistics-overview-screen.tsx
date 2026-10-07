@@ -347,21 +347,6 @@ export function StatisticsOverviewScreen() {
       <div className={`${styles.overviewGrid} ${family.modules}`}>
         <div className={styles.overviewColumn}>
           <StatisticsDetailPanel
-            title="Across all services"
-            count={`${refused.openMovementCount} open movements`}
-            testId="ward-statistics-overview-scope"
-          >
-            <div
-              className={styles.panelBody}
-              role="group"
-              aria-label="What this section will hold content"
-              tabIndex={0}
-            >
-              <span>Network-wide current state</span>
-            </div>
-          </StatisticsDetailPanel>
-
-          <StatisticsDetailPanel
             title="Capacity across the network, right now"
             count={`${capacity.ready} ready`}
             testId="ward-statistics-overview-capacity"

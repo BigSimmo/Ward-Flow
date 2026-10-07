@@ -29,6 +29,12 @@ export function assertStatisticsPresentation(mode: Mode, retiredId?: string) {
   expect(page.getByRole("main")).toBeVisible();
   expect(page.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(container.querySelectorAll("details")).toHaveLength(0);
+  for (const panel of container.querySelectorAll('[data-ward-primitive="panel"]')) {
+    expect(panel).toBeVisible();
+    const body = panel.cloneNode(true) as HTMLElement;
+    body.querySelector('[data-ward-primitive="panel-header"]')?.remove();
+    expect(body.textContent?.trim(), "Statistics cards must contain useful content").not.toBe("");
+  }
   expect(container.querySelectorAll('[data-ward-primitive="panel"]')).not.toHaveLength(0);
   expect(container.textContent).not.toMatch(/NaN|Infinity/);
   expect(
@@ -37,7 +43,7 @@ export function assertStatisticsPresentation(mode: Mode, retiredId?: string) {
     }),
   ).toBeNull();
   expect(container.textContent).not.toMatch(
-    /This roster records admission states|If the model could compute|This prototype keeps no history|nothing in this prototype writes|This measure cannot be formed|Three comparison measures are unavailable|So far.{0,10}is the limit of the record|Nought means checked/i,
+    /This roster records admission states|This page does not match which bed suits which person|physically empty on this ward right now, whether or not|If the model could compute|This prototype keeps no history|nothing in this prototype writes|This measure cannot be formed|Three comparison measures are unavailable|So far.{0,10}is the limit of the record|Nought means checked/i,
   );
   expect(page.queryByRole("columnheader", { name: "What it counts" })).toBeNull();
   expect(page.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);

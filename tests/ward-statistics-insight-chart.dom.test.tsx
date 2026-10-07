@@ -268,3 +268,25 @@ it("exports a formula-like record name neutralised", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+it("omits charts with no recorded measures, preserves zero counts, and hides unavailable measure options", () => {
+  const view = render(
+    <StatisticsInsightChart
+      title="Availability"
+      testId="availability"
+      metrics={metrics}
+      rows={[{ id: "none", name: "No record", values: { wait: null, count: null } }]}
+    />,
+  );
+  expect(screen.queryByTestId("availability")).toBeNull();
+  view.rerender(
+    <StatisticsInsightChart
+      title="Availability"
+      testId="availability"
+      metrics={metrics}
+      rows={[{ id: "zero", name: "Recorded zero", values: { wait: null, count: 0 } }]}
+    />,
+  );
+  expect(screen.getByRole("button", { name: "Recorded zero: 0 people" })).toBeTruthy();
+  expect(screen.queryByRole("option", { name: "Elapsed wait" })).toBeNull();
+});

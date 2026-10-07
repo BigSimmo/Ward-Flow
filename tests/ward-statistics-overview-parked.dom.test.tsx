@@ -282,7 +282,8 @@ describe("the statistics overview now carries real figures, honestly", () => {
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
     expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
-    expect(screen.getByTestId("ward-statistics-overview-scope").textContent).toContain("Network-wide current state");
+    expect(screen.queryByTestId("ward-statistics-overview-scope")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-capacity")).toBeVisible();
     expect(screen.queryByTestId("ward-statistics-overview-invented-figures")).toBeNull();
     expect(screen.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
   });
