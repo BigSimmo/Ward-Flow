@@ -58,9 +58,10 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(css).not.toMatch(/\.bar\s*\{[^}]*flex-wrap:\s*wrap\b/u);
     });
 
-    it("locks .bar height to 3.5rem", () => {
-      expect(css).toMatch(/\.bar\s*\{[^}]*height:\s*3\.5rem/u);
-      expect(css).toMatch(/\.bar\s*\{[^}]*min-height:\s*3\.5rem/u);
+    // v6 header (7 Oct 2026, boards 02 and 03): the bar is 60px, sharing the rail brand row's baseline.
+    it("locks .bar height to 3.75rem", () => {
+      expect(css).toMatch(/\.bar\s*\{[^}]*height:\s*3\.75rem/u);
+      expect(css).toMatch(/\.bar\s*\{[^}]*min-height:\s*3\.75rem/u);
     });
 
     it("contains no breaking 100% width or multi-row order on centerGroup in media queries", () => {
@@ -83,9 +84,10 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(css).toMatch(/\.primary\s*\{[^}]*min-width:\s*var\(--spacing-tap/u);
     });
 
+    // v6 (7 Oct 2026): the drawing keeps the Tools label at 1440px beside a 264px rail, so it goes at 66rem, not 72rem.
     it("hides mode labels from the bar's own width, tools first", () => {
       expect(css).toMatch(
-        /@container\s+ward-bar\s*\(max-width:\s*72rem\)\s*\{[\s\S]*?\[data-bar-mode="tools"\]\s+\.triggerLabel/u,
+        /@container\s+ward-bar\s*\(max-width:\s*66rem\)\s*\{[\s\S]*?\[data-bar-mode="tools"\]\s+\.triggerLabel/u,
       );
       expect(css).toMatch(
         /@container\s+ward-bar\s*\(max-width:\s*60rem\)\s*\{[\s\S]*?\[data-bar-mode="activity"\]\s+\.triggerLabel/u,
@@ -109,7 +111,7 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       const trigger = screen.getByTestId("ward-bar-primary-action");
       expect(trigger).toHaveAccessibleName(action.label);
       expect(trigger.className).toMatch(/referralPrimary/u);
-      expect(trigger.querySelector('[class*="referralChevron"] .lucide-chevron-right')).toBeInTheDocument();
+      expect(trigger.querySelector('[class*="referralChevron"] .lucide-chevron-down')).toBeInTheDocument();
     });
 
     it("renders New referral primary action with exact text available", () => {

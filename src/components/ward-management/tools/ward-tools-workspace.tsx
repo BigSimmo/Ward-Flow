@@ -13,6 +13,7 @@ import { wardSites, siteByCode, allEmergencyDepartments } from "../ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "../community/community-derivations";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { HEALTH_SERVICES, TRANSPORT_PROVIDERS, type Unit } from "../ward-model";
+import { StatusGlyph } from "@/components/wf/status-glyph";
 import styles from "./ward-tools-workspace.module.css";
 
 const root = "/mockups/ward-flow";
@@ -38,8 +39,9 @@ export function NetworkFigures() {
   const groups = [
     {
       id: "capacity",
-      label: "Beds & capacity",
-      icon: BedDouble,
+      label: "Beds and capacity",
+      short: "Beds",
+      meta: `${units.length} wards`,
       figures: [
         { label: "Total beds", value: String(total), sub: `${units.length} wards` },
         {
@@ -77,10 +79,11 @@ export function NetworkFigures() {
     },
     {
       id: "flow",
-      label: "Flow & discharges",
-      icon: Truck,
+      label: "Flow and discharges",
+      short: "Flow",
+      meta: "today",
       figures: [
-        { label: "Open movements", value: String(open.length), sub: "Active placement records" },
+        { label: "Open movements", value: String(open.length), sub: "Active placements" },
         {
           label: "From ED",
           value: String(open.filter((movement) => movement.originEdId !== undefined).length),
@@ -105,36 +108,47 @@ export function NetworkFigures() {
         {
           label: "Confirmed today",
           value: String(capacity.reduce((sum, value) => sum + value.confirmedToday, 0)),
-          sub: "Discharge not yet complete",
+          sub: "Not yet complete",
         },
         {
           label: "Expected today",
           value: String(capacity.reduce((sum, value) => sum + value.expectedToday, 0)),
-          sub: "Unconfirmed discharges",
+          sub: "Unconfirmed",
         },
         {
           label: "Blocked today",
           value: String(capacity.reduce((sum, value) => sum + value.blockedToday, 0)),
-          sub: "Recorded discharge blockers",
+          sub: "Discharge blockers",
         },
       ],
     },
-    { id: "deadlines", label: "Waits & recorded limits", icon: Clock, figures: deadlines },
+    {
+      id: "deadlines",
+      label: "Waits and recorded limits",
+      short: "Waits",
+      meta: "live",
+      figures: deadlines,
+    },
   ];
+  const figureCount = groups.reduce((sum, group) => sum + group.figures.length, 0);
   return (
     <div className={styles.workspace} data-testid="ward-stats-drawer-content">
       <div className={styles.meta}>
-        <span className={styles.liveDot} /> Whole network <span>Synthetic · {formatInstant(now)}</span>
+        <span className={styles.liveDot} aria-hidden="true" /> Whole network{" "}
+        <span>Synthetic · {formatInstant(now)}</span>
       </div>
       <div className={styles.filters} role="group" aria-label="Figure categories">
-        {[{ id: "all", label: "All figures" }, ...groups].map((group) => (
+        {[{ id: "all", short: "All figures", figures: { length: figureCount } }, ...groups].map((group) => (
           <button
             key={group.id}
             type="button"
             aria-pressed={category === group.id}
             onClick={() => setCategory(group.id)}
           >
-            {group.label}
+            {group.short}
+            <span className={styles.count} aria-hidden="true">
+              {group.figures.length}
+            </span>
           </button>
         ))}
       </div>
@@ -143,24 +157,34 @@ export function NetworkFigures() {
         .map((group) => (
           <section className={styles.surface} key={group.id}>
             <h3 className={styles.heading}>
-              <group.icon aria-hidden="true" />
               {group.label}
+              <span className={styles.count} aria-hidden="true">
+                {group.figures.length}
+              </span>
+              <small aria-hidden="true">{group.meta}</small>
             </h3>
             <dl className={styles.figures}>
-              {group.figures.map((figure) => (
-                <div key={figure.label} data-flagged={"flagged" in figure && figure.flagged ? true : undefined}>
-                  <dt>{figure.label}</dt>
-                  <dd>
-                    {figure.value}
-                    <small>{figure.sub}</small>
-                  </dd>
-                </div>
-              ))}
+              {group.figures.map((figure) => {
+                const flagged = "flagged" in figure && figure.flagged === true;
+                const tone = "key" in figure && figure.key === "passed" ? "danger" : "warning";
+                return (
+                  <div key={figure.label} data-flagged={flagged ? true : undefined}>
+                    <dt>{figure.label}</dt>
+                    <dd>
+                      <span className={styles.value}>
+                        {flagged ? <StatusGlyph tone={tone} size={8} /> : null}
+                        {figure.value}
+                      </span>
+                      {figure.sub ? <small>{figure.sub}</small> : null}
+                    </dd>
+                  </div>
+                );
+              })}
             </dl>
           </section>
         ))}
       <Link className={styles.moreLink} href={`${root}/statistics`}>
-        Open statistics <ArrowUpRight aria-hidden="true" />
+        Open statistics <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
       </Link>
     </div>
   );
@@ -258,14 +282,14 @@ export function ToolsContactDirectory({ onNavigate }: { onNavigate: () => void }
   const [category, setCategory] = useState("all");
   const entries = toolsDirectoryEntries(units);
   const categories = [
-    { id: "all", label: "All contacts" },
+    { id: "all", label: "All" },
     { id: "wards", label: "Wards" },
     { id: "ed", label: "ED teams" },
     { id: "community", label: "Community" },
     { id: "switchboards", label: "Switchboards" },
     { id: "coordinators", label: "Bed flow" },
     { id: "transport", label: "Transport" },
-    { id: "escalation", label: "Exec & escalation" },
+    { id: "escalation", label: "Escalation" },
   ];
   const terms = query.toLowerCase().trim().split(/\s+/);
   const matches = entries.filter(
@@ -275,14 +299,22 @@ export function ToolsContactDirectory({ onNavigate }: { onNavigate: () => void }
         `${entry.name} ${entry.context} ${entry.phone ?? ""} ${entry.email ?? ""}`.toLowerCase().includes(term),
       ),
   );
+  const countFor = (id: string) =>
+    entries.filter(
+      (entry) =>
+        (id === "all" || entry.category === id) &&
+        terms.every((term) =>
+          `${entry.name} ${entry.context} ${entry.phone ?? ""} ${entry.email ?? ""}`.toLowerCase().includes(term),
+        ),
+    ).length;
   return (
     <div className={styles.workspace}>
       <label className={styles.search}>
-        <Search aria-hidden="true" />
+        <Search aria-hidden="true" strokeWidth={1.75} />
         <input
           type="search"
           aria-label="Search contact directory"
-          placeholder="Search team, hospital, number or email…"
+          placeholder="Search team, hospital, number or email"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -296,72 +328,77 @@ export function ToolsContactDirectory({ onNavigate }: { onNavigate: () => void }
         {categories.map((item) => (
           <button type="button" key={item.id} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}>
             {item.label}
+            <span className={styles.count} aria-hidden="true">
+              {countFor(item.id)}
+            </span>
           </button>
         ))}
       </div>
-      <div className={styles.meta} role="status">
-        {matches.length} synthetic records{" "}
-        <span>Mock contact details labelled · {categories.find((item) => item.id === category)?.label}</span>
-      </div>
-      <ul className={styles.contacts} aria-label="Contact directory">
-        {matches.map((entry) => (
-          <li className={styles.surface} key={`${entry.category}-${entry.id}`}>
-            <Link className={styles.contactTitle} href={entry.href} onClick={onNavigate}>
-              <span>
-                <strong>{entry.name}</strong>
-                <small>{entry.context}</small>
-              </span>
-              <ArrowUpRight aria-hidden="true" />
-            </Link>
-            <div className={styles.contactMethods}>
-              {entry.mockPhone ? (
-                <span>
-                  <Phone aria-hidden="true" />
-                  <span className={styles.methodValue}>{entry.phone}</span>
-                  <b className={styles.mockBadge}>Mock</b>
-                </span>
-              ) : (
-                <a href={`tel:${entry.phone?.replace(/[^+\d]/g, "")}`}>
-                  <Phone aria-hidden="true" />
-                  <span className={styles.methodValue}>{entry.phone}</span>
-                </a>
-              )}
-              {entry.mockEmail ? (
-                <span>
-                  <Mail aria-hidden="true" />
-                  <span className={styles.methodValue}>{entry.email}</span>
-                  <b className={styles.mockBadge}>Mock</b>
-                </span>
-              ) : (
-                <a href={`mailto:${entry.email}`}>
-                  <Mail aria-hidden="true" />
-                  <span className={styles.methodValue}>{entry.email}</span>
-                </a>
-              )}
-            </div>
-            {!entry.mockPhone && (
-              <small className={styles.contactDate}>
-                Published · {entry.recordedOn ?? "Date not recorded"} · Not call-tested; may be obsolete
-              </small>
-            )}
-          </li>
-        ))}
-      </ul>
-      {matches.length === 0 && (
-        <div className={styles.empty}>
-          <Users aria-hidden="true" />
-          <strong>No matching contacts</strong>
-          <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setCategory("all");
-            }}
-          >
-            Reset search
-          </button>
+      <section className={styles.surface}>
+        <div className={styles.heading} role="status">
+          <span className={styles.count}>{matches.length}</span> synthetic records
+          <small>Mock numbers labelled</small>
         </div>
-      )}
+        <ul className={styles.contacts} aria-label="Contact directory">
+          {matches.map((entry) => (
+            <li key={`${entry.category}-${entry.id}`}>
+              <Link className={styles.contactTitle} href={entry.href} onClick={onNavigate}>
+                <span>
+                  <strong>{entry.name}</strong>
+                  <small>{entry.context}</small>
+                </span>
+                <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
+              </Link>
+              <div className={styles.contactMethods}>
+                {entry.mockPhone ? (
+                  <span>
+                    <Phone aria-hidden="true" strokeWidth={1.75} />
+                    <span className={styles.methodValue}>{entry.phone}</span>
+                    <b className={styles.mockBadge}>Mock</b>
+                  </span>
+                ) : (
+                  <a href={`tel:${entry.phone?.replace(/[^+\d]/g, "")}`}>
+                    <Phone aria-hidden="true" strokeWidth={1.75} />
+                    <span className={styles.methodValue}>{entry.phone}</span>
+                  </a>
+                )}
+                {entry.mockEmail ? (
+                  <span>
+                    <Mail aria-hidden="true" strokeWidth={1.75} />
+                    <span className={styles.methodValue}>{entry.email}</span>
+                    <b className={styles.mockBadge}>Mock</b>
+                  </span>
+                ) : (
+                  <a href={`mailto:${entry.email}`}>
+                    <Mail aria-hidden="true" strokeWidth={1.75} />
+                    <span className={styles.methodValue}>{entry.email}</span>
+                  </a>
+                )}
+              </div>
+              {!entry.mockPhone && (
+                <small className={styles.contactDate}>
+                  Published · {entry.recordedOn ?? "Date not recorded"} · Not call-tested; may be obsolete
+                </small>
+              )}
+            </li>
+          ))}
+        </ul>
+        {matches.length === 0 && (
+          <div className={styles.empty}>
+            <Users aria-hidden="true" strokeWidth={1.75} />
+            <strong>No matching contacts</strong>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setCategory("all");
+              }}
+            >
+              Reset search
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -371,20 +408,20 @@ export function OperationalLinks({ onNavigate }: { onNavigate: () => void }) {
     { href: "handover", name: "Shift handover", detail: "Review and print", icon: ClipboardList },
     { href: "capacity", name: "Available beds", detail: "Find placement capacity", icon: BedDouble },
     { href: "delays", name: "Discharge blockers", detail: "Review delayed discharges", icon: Clock },
-    { href: "movements", name: "Transport & movements", detail: "Track current journeys", icon: Truck },
-    { href: "on-call", name: "On-call & escalation", detail: "Find covering roles", icon: Phone },
+    { href: "movements", name: "Transport", detail: "Track current journeys", icon: Truck },
+    { href: "on-call", name: "On-call and escalation", detail: "Find covering roles", icon: Phone },
     { href: "legal-forms", name: "Recorded form limits", detail: "Review legal form records", icon: ClipboardList },
   ];
   return (
     <div className={styles.actionGrid}>
       {links.map((link) => (
         <Link className={styles.action} href={`${root}/${link.href}`} key={link.href} onClick={onNavigate}>
-          <link.icon aria-hidden="true" />
+          <link.icon aria-hidden="true" strokeWidth={1.75} />
           <span>
             <strong>{link.name}</strong>
             <small>{link.detail}</small>
           </span>
-          <ArrowUpRight aria-hidden="true" />
+          <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
         </Link>
       ))}
     </div>
