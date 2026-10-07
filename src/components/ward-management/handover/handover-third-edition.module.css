@@ -70,11 +70,6 @@
   color: var(--ward-preview-slate-100);
 }
 
-.takenAtMeta {
-  color: var(--ward-preview-slate-500);
-  font-size: 11.5px;
-}
-
 /* =====================================================================
    TIER 2: DARK TELEMETRY DECK (var(--ward-preview-dark-deck))
    ===================================================================== */
@@ -138,28 +133,6 @@
   border-color: var(--line-strong);
 }
 
-.btnPrintPrimary {
-  min-height: 2.25rem;
-  padding: 0 14px;
-  border-radius: var(--r2);
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-family: var(--display);
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.12s;
-  white-space: nowrap;
-}
-
-.btnPrintPrimary:hover {
-  background: var(--accent-press);
-}
-
 /* Pills & Dropdown */
 
 .scopeSelectForm {
@@ -170,84 +143,6 @@
 /* ── Compact Selects for Streamlined Navigation (Image 3) ── */
 
 /* ── Segmented Table Switcher (Images 1 & 2) ── */
-.tableSwitcherBar {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  padding: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.tableSwitchBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  font-family: var(--display);
-  font-size: var(--t-0);
-  font-weight: 500;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--pill);
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.tableSwitchBtn:hover {
-  color: var(--ink);
-  background: var(--surface);
-}
-
-.tableSwitchBtnActive {
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  border-color: var(--line);
-  box-shadow: var(--lift-sm);
-}
-
-.tableSwitchBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  font-size: var(--t-0);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  border-radius: var(--pill);
-  background: var(--sunk);
-  color: var(--ink);
-}
-
-.tableSwitchBadge.badgeDanger {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-}
-
-.tableSectionWrapper {
-  width: 100%;
-}
-
-.tableSectionHidden {
-  display: none !important;
-}
-
-@media print {
-  .tableSectionHidden {
-    display: block !important;
-  }
-  .tableSwitcherBar {
-    display: none !important;
-  }
-}
 
 .delayedEgressBlock {
   margin-top: 12px;
@@ -290,7 +185,6 @@
 }
 
 @media (pointer: coarse) {
-  .btnPrintPrimary,
   .btnActionSec,
   .tabBtn,
   .btnLinkAction {
@@ -755,27 +649,6 @@ table.snapSheet {
   gap: 8px;
 }
 
-.btnCompressTable {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.btnCompressTable:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 /* ── Secondary Bounded Table Scroll ── */
 .boundedTableScroll {
   width: 100%;
@@ -835,15 +708,6 @@ table.snapSheet {
   text-decoration: underline;
 }
 
-.patientMetaRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
 .patientUmrnChip {
   font-family: var(--mono);
   font-size: var(--t-0);
@@ -856,20 +720,6 @@ table.snapSheet {
   display: inline-block;
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-.patientOwnerTag {
-  font-size: 11px;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  padding: 1px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
 }
 
 .patientIdentityCellSecondary {
@@ -885,53 +735,6 @@ table.snapSheet {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   display: inline-block;
-}
-
-.routeCell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.routeOrigin {
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.routeDest {
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.actionCell {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: flex-start;
-}
-
-.actionStageTag {
-  display: inline-block;
-  font-size: var(--t-0);
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-}
-
-.actionTargetText {
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.3;
-}
-
-.actionOwnerText {
-  font-size: var(--t-0);
-  color: var(--accent);
-  font-weight: 600;
 }
 
 /* Badges & Status Pills */
@@ -983,59 +786,6 @@ table.snapSheet {
 /* Urgent Outside Filter Block */
 
 /* Sign Block */
-.signBlock {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background: var(--surface-2);
-  border-radius: var(--r2);
-  border: 1px solid var(--line);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.signCols {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.signCol {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.signRole {
-  font-size: var(--t-0);
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.signName {
-  font-size: var(--t-2);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.signAhpra {
-  font-size: var(--t-0);
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-.signOffHint {
-  margin: 0;
-  width: 100%;
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.signOffHint[data-recorded="true"] {
-  color: var(--good);
-}
 
 /* ── TAB PANELS ── */
 .tabPane {
@@ -1209,16 +959,16 @@ table.snapSheet {
   color: var(--muted);
 }
 
-/* ── SCORECARD DRAWER ── */
+/* ── Movement details sheet (v6): a floating sheet over a light scrim ── */
 .drawerOverlay {
   position: fixed;
   inset: 0;
-  background: var(--scrim);
-  backdrop-filter: blur(2px);
   z-index: 9999;
   display: none;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: flex-end;
+  padding: var(--wf-s-3);
+  background: var(--wf-scrim);
 }
 
 .drawerOverlay.open {
@@ -1226,56 +976,95 @@ table.snapSheet {
 }
 
 .scoreDrawer {
-  width: 480px;
-  max-width: 90vw;
-  background: var(--surface);
-  height: 100%;
-  border-left: 1px solid var(--line-strong);
-  box-shadow: var(--lift);
   display: flex;
   flex-direction: column;
+  width: 30rem;
+  max-width: 100%;
+  max-height: 100%;
   overflow-y: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
 }
 
 .drawerHead {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: var(--surface-2);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
 }
 
 .drawerHead h2 {
   margin: 0;
-  font-family: var(--display);
-  font-size: var(--t-3);
-  font-weight: 700;
-  color: var(--ink);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  white-space: nowrap;
 }
 
-.drawerCloseBtn {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r2);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.drawerTitleBlock {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
 }
 
-.drawerCloseBtn:hover {
-  background: var(--surface-2);
+.drawerMeta {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .drawerBody {
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+}
+
+.drawerIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+
+.drawerName {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+}
+
+.drawerFacts {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.drawerFacts > div {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.drawerFacts dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.drawerFacts dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
 }
 
 .btnLinkAction {
@@ -1298,45 +1087,32 @@ table.snapSheet {
   color: var(--accent);
 }
 
-.drawerDetailList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.drawerDetailRow {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-}
-
-.drawerDetailRow:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.drawerDetailLabel {
-  font-size: var(--t-0);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-}
-
-.drawerDetailValue {
-  font-size: var(--t-2);
-  color: var(--ink);
-}
-
 .drawerFooter {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.drawerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: var(--wf-h-sm);
+  margin-right: auto;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.drawerLink:hover {
+  background: var(--wf-hover);
 }
 
 /* ── SUBCOMPONENTS & LEGACY COMPATIBILITY ── */
@@ -1373,17 +1149,6 @@ table.snapSheet {
   margin: 0;
 }
 
-.sheetBody > .signBlock {
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  padding: 14px 16px;
-  box-shadow: var(--lift-sm);
-  margin: 0;
-}
-
 .sheetBody > .accreditationFooter {
   width: 100%;
   box-sizing: border-box;
@@ -1411,11 +1176,9 @@ table.snapSheet {
   .summaryStrip {
     grid-template-columns: repeat(2, 1fr);
   }
-  .btnPrintPrimary,
   .btnActionSec,
   .tabBtn,
   .btnLinkAction,
-  .btnCompressTable,
   .patientNameBtn {
     min-height: var(--ward-tap, 48px);
   }
@@ -1430,10 +1193,6 @@ table.snapSheet {
   }
   .officialMeta {
     text-align: left;
-  }
-  .signCols {
-    flex-direction: column;
-    gap: 8px;
   }
 }
 
@@ -1787,8 +1546,7 @@ table.snapSheet {
   .screen *::before,
   .screen *::after,
   .handoffTeams,
-  .handoffTeams strong,
-  .takenAtMeta {
+  .handoffTeams strong {
     color: CanvasText !important;
   }
 
@@ -1800,7 +1558,6 @@ table.snapSheet {
   }
 
   .drawerOverlay,
-  .btnPrintPrimary,
   .btnActionSec,
   .screen :global([data-print-hide]),
   .screen :global(.clinicalRail),
@@ -1942,19 +1699,6 @@ table.snapSheet {
     border: 1px solid var(--line) !important;
     background: none !important;
   }
-
-  .signBlock {
-    background: none !important;
-    border: 1px solid var(--line) !important;
-    color: CanvasText !important;
-    break-inside: avoid;
-  }
-
-  .signRole,
-  .signName,
-  .signAhpra {
-    color: CanvasText !important;
-  }
 }
 
 /* =====================================================================
@@ -2017,10 +1761,6 @@ table.snapSheet {
 .handoffTeams strong {
   color: var(--wf-hero-ink);
   font-weight: 600;
-}
-
-.takenAtMeta {
-  color: var(--wf-hero-ink-3);
 }
 
 .heroTimer {
@@ -2099,11 +1839,6 @@ table.snapSheet {
 .scopeLine b {
   color: var(--wf-ink-1);
   font-weight: 600;
-}
-
-.scopeLineAside {
-  margin-left: auto;
-  white-space: nowrap;
 }
 
 /* Scope select */
@@ -2267,7 +2002,6 @@ table.snapSheet {
 
 /* Section panels, sign-off and footer on the sheet */
 .main .sheetBody > section,
-.main .sheetBody > .signBlock,
 .main .sheetBody > .accreditationFooter,
 .main .panel {
   border-radius: var(--wf-r-lg);
@@ -2299,9 +2033,7 @@ table.snapSheet {
 }
 
 /* Identity and next-step cells: plain text, no boxed chips */
-.main .patientUmrnChip,
-.main .patientOwnerTag,
-.main .actionStageTag {
+.main .patientUmrnChip {
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -2312,22 +2044,6 @@ table.snapSheet {
   font-family: var(--wf-mono);
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-}
-
-.main .patientOwnerTag {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.main .actionStageTag {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-}
-
-.main .actionOwnerText {
-  color: var(--wf-ink-3);
-  font-weight: 400;
 }
 
 .main .toolbarGroup .scopeSelect {
@@ -2341,5 +2057,493 @@ table.snapSheet {
 .main .toolbarGroup .scopeSelect select,
 .main .toolbarGroup .toolbarSelect select {
   width: 100%;
+  min-width: 0;
+}
+
+/* ── v6 sheet body: sheet card and ISBAR panel, then shift tasks and sign-off ── */
+.sheetLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+@media (min-width: 62.5625rem) {
+  .sheetLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  }
+}
+
+/* Paper-only parts of the sheet: the official header, the four printed sections and the
+   accreditation footer. On screen the tabs carry the same rows. */
+.main .officialHeaderRow,
+.main .printSections,
+.main .accreditationFooter {
+  display: none;
+}
+
+.main .sheetBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  margin-top: var(--wf-s-3);
+}
+
+.main .sheetBody:empty {
+  display: none;
+}
+
+/* Underline tabs with a count */
+.sheetTabs {
+  display: flex;
+  gap: var(--wf-s-4);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sheetTab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: var(--ward-tap, 3rem);
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sheetTab:hover {
+  color: var(--wf-ink-1);
+}
+
+.sheetTab[aria-selected="true"] {
+  border-bottom-color: var(--wf-ink-1);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.sheetTab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.sheetTabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.125rem;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+/* Table cells */
+.patientText {
+  display: grid;
+  min-width: 0;
+}
+
+.tierBox {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.main .patientIdentityCell {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+
+.cellMain,
+.cellSub,
+.cellMono,
+.cellUrgent {
+  display: block;
+}
+
+.cellMain {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.cellSub {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+}
+
+.cellMono {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.cellUrgent,
+.cellAcuity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+}
+
+.cellUrgent {
+  color: var(--wf-danger-ink);
+}
+
+.cellAcuity {
+  color: var(--wf-ink-1);
+}
+
+.cellStrong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.main .snapSheet tr[data-focused="true"] td {
+  background: var(--wf-selected);
+}
+
+.sheetEmptyCell {
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  text-align: center;
+}
+
+.sheetFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.officialScope {
+  margin-top: 2px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.enlargeMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* ISBAR panel */
+.isbarPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.isbarHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.isbarTitleBlock {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.isbarEyebrow {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.isbarName {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+}
+
+.isbarMeta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.isbarWait {
+  flex: none;
+}
+
+.isbarList {
+  display: grid;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  list-style: none;
+}
+
+.isbarList li {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.isbarList li:last-child {
+  border-bottom: 0;
+}
+
+.isbarLetter {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.isbarText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.isbarLabelText {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.isbarFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: auto;
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Shift tasks card */
+.taskCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.125rem;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.taskList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.taskRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--ward-tap, 3rem);
+  padding: var(--wf-s-1) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+
+.taskText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.taskKind,
+.taskOwner {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.taskDue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.tasksEmpty {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+@media (max-width: 40rem) {
+  .taskRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .taskOwner {
+    display: none;
+  }
+}
+
+/* Sign-off card */
+.signState {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.signOffBody {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.signRecords {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.signAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.signStatus {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.signNoteHeading {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.signNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+@media print {
+  .sheetLayout {
+    display: block;
+  }
+
+  .main .officialHeaderRow {
+    display: flex;
+  }
+
+  .main .printSections,
+  .main .accreditationFooter {
+    display: block;
+  }
+
+  .tasksCard,
+  .signOffCard {
+    margin-top: var(--wf-s-3);
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
+
+/* One line per cell, as in the mockup; the full text is in the title and the movement drawer.
+   Fixed layout shares the sheet's width between the six columns, so nothing pushes it sideways. */
+.main table.snapSheet {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.main .snapSheet th:nth-child(1) {
+  width: 21%;
+}
+
+.main .snapSheet th:nth-child(2) {
+  width: 19%;
+}
+
+.main .snapSheet th:nth-child(3) {
+  width: 11%;
+}
+
+.main .snapSheet th:nth-child(4),
+.main .snapSheet th:nth-child(5) {
+  width: 14%;
+}
+
+.main .snapSheet .patientText .btnLinkAction,
+.main .snapSheet .cellMain,
+.main .snapSheet .cellSub,
+.main .snapSheet .cellStrong,
+.main .snapSheet .cellAcuityText {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.main .snapSheet .patientText .btnLinkAction {
+  display: block;
+  text-align: left;
+}
+
+.main .snapSheet .cellAcuity {
+  max-width: 100%;
+}
+
+.cellAcuityText {
+  display: block;
   min-width: 0;
 }
