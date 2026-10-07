@@ -636,8 +636,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     await queue.locator('[data-testid="ward-queue-row-WF-005"]').click();
 
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: one `data-connector-kind="destination"` connector with `data-recorded="accepted"`.)
+    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
+    // (Was: one destination connector with `data-recorded="accepted"`.) Exactly one unit is marked
+    // accepted, and it is WF-005's own accepted unit, though it is not one of its candidates.
+    const acceptedNodes = diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]');
+    await expect(acceptedNodes).toHaveCount(1);
+    await expect(acceptedNodes).toHaveAttribute("data-testid", `ward-diagram-unit-${acceptedUnitId}`);
 
     // The hub leads with the recorded destination, and never claims the movement is looking for
     // three of them.
@@ -649,8 +653,18 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const wf013 = requireMovement("WF-013");
     expect(wf013.referredUnitIds.length, "fixture assumption: WF-013 carries two parallel referrals").toBe(2);
     await queue.locator('[data-testid="ward-queue-row-WF-013"]').click();
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: two destination connectors, the first with `data-recorded="referred"`.)
+    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
+    // (Was: two destination connectors marked `data-recorded="referred"`.) Both referred units are
+    // marked referred, and nothing is marked accepted.
+    const referredNodes = diagram.locator('[data-testid^="ward-diagram-unit-"][data-referred="true"]');
+    await expect(referredNodes).toHaveCount(2);
+    const referredIds = (
+      await referredNodes.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid")))
+    )
+      .map((testId) => String(testId).replace("ward-diagram-unit-", ""))
+      .sort();
+    expect(referredIds).toEqual([...wf013.referredUnitIds].sort());
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]')).toHaveCount(0);
 
     // A movement with no recorded destination draws none — the connector reports a fact, never a
     // suggestion dressed as one.
@@ -658,8 +672,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(wf009.acceptedUnitId).toBeUndefined();
     expect(wf009.referredUnitIds).toHaveLength(0);
     await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: zero destination connectors.)
+    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
+    // (Was: zero destination connectors.) No unit is marked accepted or referred.
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]')).toHaveCount(0);
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-referred="true"]')).toHaveCount(0);
   });
 
   /**
