@@ -69,6 +69,7 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
   // guard `tests/ward-activity-count-separate.dom.test.tsx` and
   // `tests/ward-shell-mounted.dom.test.tsx` already carry for the identical component.
   beforeEach(() => {
+    window.history.replaceState({}, "", "/mockups/ward-flow");
     if (typeof window.requestAnimationFrame !== "function") {
       window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
         setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;

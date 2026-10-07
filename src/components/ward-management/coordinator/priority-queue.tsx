@@ -49,8 +49,9 @@ type PriorityQueueProps = {
    * Task C2: every referral this coordinator is still working, in the board's own order —
    * `referralQueueOrder` (`ward-referrals.ts`), computed by `coordinator-screen.tsx` and handed
    * down already filtered and sorted. Never re-filtered or re-sorted here: the population is
-   * `referralState(referral) === "queued"` and nothing else, and the order is urgency then
-   * `raisedAt` — both established elsewhere, neither re-derived in this file.
+   * `referralState(referral) === "queued"` and nothing else, and the order is FIFO waiting time
+   * (`raisedAt`) with urgency tie-breaking (Decision D-32) — both established elsewhere, neither
+   * re-derived in this file.
    *
    * ⚠️ Optional, defaulted to `[]`, purely so `tests/ward-urgent-flag.dom.test.tsx` — which
    * renders this component directly against its own older prop set — keeps compiling and passing

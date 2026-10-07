@@ -257,10 +257,17 @@ export function AddPatientForm() {
     const prior = priorSubmissionRef.current;
     if (!prior) return;
     if (patients.length <= prior.patients.length) {
-      if (rejections.length > prior.rejectionCount && rejections[0]?.attempted === "ADD_PATIENT") {
-        setLastRejection("Patient could not be added. Check the identity details and existing records.");
+      if (rejections.length > prior.rejectionCount) {
+        const recentRejection = rejections[rejections.length - 1];
+        const reason =
+          recentRejection?.attempted === "ADD_PATIENT"
+            ? recentRejection.reason || "Patient could not be added. Check the identity details and existing records."
+            : null;
         priorSubmissionRef.current = null;
-        setIsSubmitting(false);
+        queueMicrotask(() => {
+          if (reason) setLastRejection(reason);
+          setIsSubmitting(false);
+        });
       }
       return;
     }

@@ -663,7 +663,7 @@ function WardFlowWorld({
       if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
         try {
           const channel = new BroadcastChannel("ward-flow-sync");
-          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type });
+          channel.postMessage({ type: "WARD_FLOW_DISPATCH", eventType: event.type, eventPayload: event });
           channel.close();
         } catch {
           // BroadcastChannel unavailable in this environment
@@ -750,7 +750,11 @@ function WardFlowWorld({
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
         if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
-          setTick((tick) => tick + 1);
+          if (messageEvent.data?.eventPayload) {
+            dispatchContainer(messageEvent.data.eventPayload);
+          } else {
+            setTick((tick) => tick + 1);
+          }
         }
       };
       return () => {
@@ -759,7 +763,7 @@ function WardFlowWorld({
     } catch {
       return undefined;
     }
-  }, []);
+  }, [dispatchContainer]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
 
   /**

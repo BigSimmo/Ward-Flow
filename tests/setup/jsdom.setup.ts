@@ -28,6 +28,19 @@ export function installMatchMediaStub(matches = false) {
   });
 }
 
+if (typeof window !== "undefined") {
+  if (typeof window.requestAnimationFrame !== "function") {
+    window.requestAnimationFrame = (callback: FrameRequestCallback): number => {
+      return setTimeout(() => callback(performance.now()), 0) as unknown as number;
+    };
+  }
+  if (typeof window.cancelAnimationFrame !== "function") {
+    window.cancelAnimationFrame = (id: number): void => {
+      clearTimeout(id);
+    };
+  }
+}
+
 beforeEach(() => {
   installMatchMediaStub(false);
   // jsdom does not implement scrollIntoView; components call it on focus/expand.
@@ -42,6 +55,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   try {
     applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES);

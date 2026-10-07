@@ -216,4 +216,67 @@ describe("ReferralIntakeForm — Third Edition Sovereign Person & Rapid Search",
     expect(suburbSelect.value).toBe("not_known");
     expect(quickBtn.getAttribute("data-active")).toBe("true");
   });
+
+  it("handles duplicate UMRN rejection by displaying error, preserving typed inputs, and not leaking pendingAddPatientRef", async () => {
+    renderIntake();
+    const initialCount = Number(screen.getByTestId("test-patient-count").textContent);
+
+    const addBtn = screen.getByRole("button", { name: "Add new patient" });
+    fireEvent.click(addBtn);
+
+    // Type patient with duplicate UMRN (UM100001 belongs to Talia Halloway)
+    fireEvent.change(screen.getByLabelText(/Given name/), { target: { value: "Alistair" } });
+    fireEvent.change(screen.getByLabelText(/Family name/), { target: { value: "Montgomery" } });
+    fireEvent.change(screen.getByLabelText(/UMRN/), { target: { value: "UM100001" } });
+    fireEvent.change(screen.getByLabelText(/Date of birth/), { target: { value: "1985-04-12" } });
+
+    // Submit invalid colliding UMRN
+    const submitBtn = screen.getByRole("button", { name: "Register & link patient" });
+    fireEvent.click(submitBtn);
+
+    // Modal must NOT close and error must be displayed
+    expect(screen.getByRole("dialog")).toBeDefined();
+    const errorAlert = await screen.findByTestId("ward-referral-intake-add-patient-error");
+    expect(errorAlert.textContent).toMatch(/UMRN collision/i);
+
+    // Typed inputs must be preserved in the modal
+    expect(screen.getByLabelText(/Given name/)).toHaveValue("Alistair");
+    expect(screen.getByLabelText(/Family name/)).toHaveValue("Montgomery");
+    expect(screen.getByLabelText(/UMRN/)).toHaveValue("UM100001");
+    expect(screen.getByLabelText(/Date of birth/)).toHaveValue("1985-04-12");
+
+    // Correct the UMRN to a unique one — verify pendingAddPatientRef was reset and does not leak
+    fireEvent.change(screen.getByLabelText(/UMRN/), { target: { value: "UM999002" } });
+    fireEvent.click(submitBtn);
+
+    // Modal closes and new patient is linked
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.getByText("Alistair Montgomery")).toBeDefined();
+      expect(screen.getByText("UM999002")).toBeDefined();
+      expect(Number(screen.getByTestId("test-patient-count").textContent)).toBe(initialCount + 1);
+    });
+  });
+
+  it("offers 'Import Existing Record' button on collision and links existing patient without dispatching ADD_PATIENT", async () => {
+    renderIntake();
+    const initialCount = Number(screen.getByTestId("test-patient-count").textContent);
+
+    const addBtn = screen.getByRole("button", { name: "Add new patient" });
+    fireEvent.click(addBtn);
+
+    // Type colliding UMRN
+    fireEvent.change(screen.getByLabelText(/UMRN/), { target: { value: "UM100001" } });
+
+    const importBtn = await screen.findByTestId("ward-referral-intake-import-existing-patient");
+    expect(importBtn.textContent).toBe("Import Existing Record");
+
+    fireEvent.click(importBtn);
+
+    // Modal closes, Talia Halloway is linked, and no new patient was created
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("Talia Halloway")).toBeDefined();
+    expect(screen.getAllByText("UM100001").length).toBeGreaterThanOrEqual(1);
+    expect(Number(screen.getByTestId("test-patient-count").textContent)).toBe(initialCount);
+  });
 });

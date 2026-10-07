@@ -217,7 +217,13 @@ export type CommunityNameCollision = {
  * Names are linked transitively: three spellings of North Goldfield are one family, not three
  * pairs, because a reader choosing between them is making one choice.
  */
+let cachedCollisions: readonly CommunityNameCollision[] | null = null;
+let cachedDuplicatesByTeam: Map<string, readonly string[]> | null = null;
+
 export function communityNameCollisions(): readonly CommunityNameCollision[] {
+  if (cachedCollisions !== null) {
+    return cachedCollisions;
+  }
   const counts = communityTeamSuburbCounts();
   const names = [...counts.keys()].sort((left, right) => left.localeCompare(right));
 
@@ -282,7 +288,7 @@ export function communityNameCollisions(): readonly CommunityNameCollision[] {
     grouped.set(root, [...(grouped.get(root) ?? []), name]);
   }
 
-  return [...grouped.values()]
+  cachedCollisions = [...grouped.values()]
     .filter((group) => group.length > 1)
     .map((group) => ({
       names: group
@@ -290,6 +296,8 @@ export function communityNameCollisions(): readonly CommunityNameCollision[] {
         .sort((left, right) => right.suburbs - left.suburbs || left.name.localeCompare(right.name)),
     }))
     .sort((left, right) => left.names[0].name.localeCompare(right.names[0].name));
+
+  return cachedCollisions;
 }
 
 /**
@@ -321,9 +329,19 @@ export function communityNamesInCollisions(): number {
  * accurately, that nobody is there.
  */
 export function nearDuplicateSpellingsOf(teamName: string): readonly string[] {
-  const family = communityNameCollisions().find((collision) =>
-    collision.names.some((entry) => entry.name === teamName),
-  );
-  if (family === undefined) return [];
-  return family.names.filter((entry) => entry.name !== teamName).map((entry) => entry.name);
+  if (cachedDuplicatesByTeam === null) {
+    const collisions = communityNameCollisions();
+    const map = new Map<string, readonly string[]>();
+    for (const collision of collisions) {
+      const allNames = collision.names.map((entry) => entry.name);
+      for (const entry of collision.names) {
+        map.set(
+          entry.name,
+          allNames.filter((n) => n !== entry.name),
+        );
+      }
+    }
+    cachedDuplicatesByTeam = map;
+  }
+  return cachedDuplicatesByTeam.get(teamName) ?? [];
 }

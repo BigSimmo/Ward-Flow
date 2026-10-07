@@ -5468,7 +5468,7 @@ export function CommunityScreen({
                         <div style={{ fontSize: "var(--t-2)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
                           {teamConfig.consultant} (MBBS, FRANZCP)
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Direct Mobile: 0411 902 441</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Direct Mobile: 0491 570 156</div>
                       </div>
                       <div
                         style={{

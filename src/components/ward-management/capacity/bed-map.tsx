@@ -1,3 +1,5 @@
+"use client";
+
 // src/components/ward-management/capacity/bed-map.tsx
 //
 // The network's whole bed supply, drawn as one square per bed — MERGE 02's Capacity screen gains

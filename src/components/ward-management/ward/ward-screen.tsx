@@ -16,6 +16,7 @@ import {
   type WardIntakeConstraint,
 } from "@/components/ward-management/ward-change-reasons";
 import {
+  calendarDateOf,
   formatInstant,
   formatInstantWithDay,
   formatRemaining,
@@ -206,6 +207,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     notices,
     morningRollupConfirmations,
     configuration,
+    dayZero,
   } = useWardFlow();
   const now = useWardFlowClock();
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
@@ -1007,9 +1009,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const tentDiag = admission?.tentativeDiagnosis
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
       : undefined;
-    const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, new Date()) : null;
+    const patientAge = patientInfo?.patient
+      ? patientAgeYears(patientInfo.patient, dayZero ? calendarDateOf(now, dayZero) : new Date())
+      : null;
     const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? unit.cohort;
     const patientHomeRegion = admission?.homeRegion ?? null;
+
+    const releaseBlocker = bedReleases.find(
+      (r) => r.admissionId === admission?.id && r.state !== "discharged",
+    )?.blocker;
 
     return {
       bedNumber,
@@ -1030,7 +1038,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       awayAtEdHours: awayHours,
       expectedDays: expDays,
       tentativeDiagnosis: tentDiag,
-      blockReason: admission?.blockReason ?? undefined,
+      blockReason: admission?.blockReason ?? releaseBlocker ?? undefined,
       dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
       legalStatus: patientLegalStatus,

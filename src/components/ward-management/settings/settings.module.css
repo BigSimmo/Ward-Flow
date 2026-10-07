@@ -4797,14 +4797,6 @@
   transform: scale(1.15);
 }
 
-.sliderTickLabels {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 8px;
-  color: var(--muted);
-}
-
 .appleSwitch {
   position: relative;
   width: 40px;

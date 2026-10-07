@@ -1941,12 +1941,19 @@
     box-sizing: border-box;
   }
 
-  .searchWrap :global([data-testid="ward-global-search"] > div) {
+  .searchWrap :global([data-testid="ward-global-search"] > div:not([data-testid="ward-global-search-popup"])) {
     min-width: var(--spacing-tap, 3rem);
     max-width: var(--spacing-tap, 3rem);
     width: var(--spacing-tap, 3rem);
     padding: 0 !important;
     gap: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search-popup"]) {
+    min-width: min(calc(100vw - 32px), 420px) !important;
+    max-width: calc(100vw - 32px) !important;
+    width: auto !important;
     box-sizing: border-box;
   }
 

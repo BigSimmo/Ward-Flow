@@ -1,6 +1,7 @@
 import { daysInBed, type Admission, type DischargeBarrier } from "@/components/ward-management/ward-admissions";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 
 /**
  * Stranded-patient prompts (smart feature 12, owner request 4 October 2026).
@@ -55,7 +56,11 @@ function isStrandedWaitingBlocker(value: BedReleaseBlocker | null): boolean {
  * Who on these admissions is worth a gentle prompt, longest stay first (ties by id, so two renders
  * of one state never reshuffle). The caller scopes `admissions` to one ward.
  */
-export function strandedFlags(admissions: readonly Admission[], now: Instant): StrandedFlag[] {
+export function strandedFlags(
+  admissions: readonly Admission[],
+  now: Instant,
+  bedReleases?: readonly BedRelease[],
+): StrandedFlag[] {
   const flags: StrandedFlag[] = [];
   for (const admission of admissions) {
     if (admission.state !== "occupied") continue;
@@ -66,7 +71,11 @@ export function strandedFlags(admissions: readonly Admission[], now: Instant): S
     const expected = admission.expectedDischargeAt;
     const hasPlan = expected !== null && Number.isFinite(expected);
     if (days >= LONG_STAY_PROMPT_DAYS && !hasPlan) reasons.push("long-stay-no-plan");
-    const waiting = isStrandedWaitingBlocker(admission.blockReason);
+    const releaseBlocker = bedReleases?.find(
+      (r) => r.admissionId === admission.id && r.state !== "discharged",
+    )?.blocker;
+    const effectiveBlocker = admission.blockReason ?? releaseBlocker ?? null;
+    const waiting = isStrandedWaitingBlocker(effectiveBlocker);
     if (waiting) reasons.push("ready-but-waiting");
     if (reasons.length === 0) continue;
 
@@ -74,7 +83,7 @@ export function strandedFlags(admissions: readonly Admission[], now: Instant): S
       admissionId: admission.id,
       reasons,
       days,
-      waitingOn: waiting ? admission.blockReason : null,
+      waitingOn: waiting ? effectiveBlocker : null,
       barrier: admission.dischargeBarrier ?? null,
     });
   }

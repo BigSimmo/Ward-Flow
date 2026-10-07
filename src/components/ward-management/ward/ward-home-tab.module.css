@@ -60,20 +60,24 @@
 .alertActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .btnAlertAct {
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 8px 16px;
+  min-height: 40px;
+  font-size: 13px;
   font-weight: 600;
-  border-radius: var(--r1);
+  border-radius: var(--r1, 4px);
   background: var(--surface);
   border: 1px solid var(--line-strong, var(--line));
   color: var(--ink);
   cursor: pointer;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btnAlertAct:hover {

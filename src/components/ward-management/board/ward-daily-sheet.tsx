@@ -1,3 +1,5 @@
+"use client";
+
 import { useContext, useMemo } from "react";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";

@@ -254,12 +254,17 @@ export function WardHomeTab({
                 </span>
               </div>
 
-              <div
+              <label
+                htmlFor="afternoon-bed-rollup-checkbox"
                 className={styles.checkItem}
-                style={{ borderLeft: affirmationChecked ? "3px solid var(--good)" : "3px solid var(--warn)" }}
+                style={{
+                  borderLeft: affirmationChecked ? "3px solid var(--good)" : "3px solid var(--warn)",
+                  cursor: "pointer",
+                }}
               >
                 <div className={styles.checkLeft}>
                   <input
+                    id="afternoon-bed-rollup-checkbox"
                     type="checkbox"
                     checked={affirmationChecked}
                     onChange={(e) => setAffirmationChecked(e.target.checked)}
@@ -272,7 +277,7 @@ export function WardHomeTab({
                 <span className={styles.pillBadge} data-tone={affirmationChecked ? "good" : "warn"}>
                   {affirmationChecked ? "Affirmed" : "Action Due 12:30"}
                 </span>
-              </div>
+              </label>
             </div>
           </div>
         </div>
@@ -463,7 +468,7 @@ export function WardHomeTab({
                       </span>
                     ) : null}
 
-                    <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                    <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
                       <button
                         type="button"
                         data-testid={`ward-accept-${movement.id}`}

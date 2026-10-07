@@ -6,7 +6,23 @@ import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedItem } from "./ward-beds-matrix";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+
+const LONG_STAY_BARRIER_BLOCKERS: readonly BedReleaseBlocker[] = [
+  "Awaiting accommodation",
+  "Awaiting placement confirmation",
+  "Awaiting service coordination",
+  "Awaiting receiving-service acceptance",
+  "Awaiting family or carer arrangement",
+  "Funding or plan decision pending",
+];
+
+const SHIFT_TURNAROUND_HOLD_BLOCKERS: readonly BedReleaseBlocker[] = [
+  "Awaiting clean",
+  "Awaiting pharmacy",
+  "Awaiting transport",
+];
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -40,7 +56,7 @@ export function WardBedDossierDrawer({
   const [activeTab, setActiveTab] = useState<"actions" | "trajectory" | "risk" | "team">("actions");
   const [candidateAllocated, setCandidateAllocated] = useState(false);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
-  const [selectedBlocker, setSelectedBlocker] = useState("Awaiting NDIS accommodation");
+  const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>("Awaiting accommodation");
   const [maintenanceHold, setMaintenanceHold] = useState(false);
   const [cohortLock, setCohortLock] = useState(false);
   const [operationalFeedback, setOperationalFeedback] = useState<string | null>(null);
@@ -385,7 +401,12 @@ export function WardBedDossierDrawer({
                       <button
                         type="button"
                         className={styles.btnSecondary}
-                        onClick={() => setQuickBlockerOpen(!quickBlockerOpen)}
+                        onClick={() => {
+                          if (!quickBlockerOpen && bedItem?.blockReason) {
+                            setSelectedBlocker(bedItem.blockReason as BedReleaseBlocker);
+                          }
+                          setQuickBlockerOpen(!quickBlockerOpen);
+                        }}
                       >
                         {bedItem?.blockReason ? "Update Blocker" : "Record Blocker"}
                       </button>
@@ -413,14 +434,22 @@ export function WardBedDossierDrawer({
                         <select
                           className={styles.selectInput}
                           value={selectedBlocker}
-                          onChange={(e) => setSelectedBlocker(e.target.value)}
+                          onChange={(e) => setSelectedBlocker(e.target.value as BedReleaseBlocker)}
                         >
-                          <option value="Awaiting NDIS accommodation">Awaiting NDIS accommodation</option>
-                          <option value="Community step-down bed needed">Community step-down bed needed</option>
-                          <option value="Public Trustee & Guardian approval">
-                            Public Trustee &amp; Guardian approval
-                          </option>
-                          <option value="Medical clearance pending">Medical clearance pending</option>
+                          <optgroup label="Long-Stay Barriers">
+                            {LONG_STAY_BARRIER_BLOCKERS.map((blocker) => (
+                              <option key={blocker} value={blocker}>
+                                {blocker}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Shift Turnaround Holds">
+                            {SHIFT_TURNAROUND_HOLD_BLOCKERS.map((blocker) => (
+                              <option key={blocker} value={blocker}>
+                                {blocker}
+                              </option>
+                            ))}
+                          </optgroup>
                         </select>
                         <button
                           type="button"

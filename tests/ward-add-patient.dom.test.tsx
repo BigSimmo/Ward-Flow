@@ -63,6 +63,37 @@ function ReferralCount() {
   return <span data-testid="referral-count">{referrals.length}</span>;
 }
 
+function RejectionCount() {
+  const { rejections } = useWardFlow();
+  return <span data-testid="rejection-count">{rejections.length}</span>;
+}
+
+function RejectInjector() {
+  const { dispatch } = useWardFlow();
+  return (
+    <button
+      type="button"
+      data-testid="inject-unrelated-rejection"
+      onClick={() => {
+        dispatch({
+          type: "RECEIVE_REFERRAL",
+          role: "coordinator",
+          now: NOW_ANCHOR,
+          referralId: "REF-TEST-STALE",
+          source: "community",
+          homeRegion: "metro",
+          ageBand: "invalid-cohort" as unknown as "adult",
+          urgency: "routine",
+          originSiteCode: "FSH",
+          destinations: [],
+        } as unknown as Parameters<typeof dispatch>[0]);
+      }}
+    >
+      Inject Rejection
+    </button>
+  );
+}
+
 function renderForm() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -70,6 +101,8 @@ function renderForm() {
       <PatientCount />
       <LastPatientGender />
       <ReferralCount />
+      <RejectionCount />
+      <RejectInjector />
     </WardFlowProvider>,
   );
 }
@@ -653,7 +686,7 @@ describe("AddPatientForm safety regressions", () => {
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM100002" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
-    expect(await screen.findByTestId("ward-add-patient-rejection")).toHaveTextContent("Patient could not be added");
+    expect(await screen.findByTestId("ward-add-patient-rejection")).toHaveTextContent(/UMRN collision/i);
     expect(screen.getByTestId("ward-add-patient-submit")).toHaveTextContent("Add patient");
     expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before);
     expect(router.push).not.toHaveBeenCalled();
@@ -662,6 +695,29 @@ describe("AddPatientForm safety regressions", () => {
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
     expect(router.push).toHaveBeenCalledTimes(1);
+  });
+
+  it("displays the rejection error and resets isSubmitting when an unrelated rejection already exists", async () => {
+    renderForm();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+
+    // Pre-existing unrelated rejection
+    fireEvent.click(screen.getByTestId("inject-unrelated-rejection"));
+    await waitFor(() => {
+      expect(Number(screen.getByTestId("rejection-count").textContent)).toBe(1);
+    });
+
+    fillDraft();
+    // Colliding UMRN so ADD_PATIENT will reject
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM100002" } });
+    const submitBtn = screen.getByTestId("ward-add-patient-submit");
+    fireEvent.click(submitBtn);
+
+    expect(await screen.findByTestId("ward-add-patient-rejection")).toHaveTextContent(/UMRN collision/i);
+    expect(submitBtn).toHaveTextContent("Add patient");
+    expect(submitBtn.getAttribute("aria-disabled")).toBeNull();
+    expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before);
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it("clears every intake field and notice after confirming reset", () => {

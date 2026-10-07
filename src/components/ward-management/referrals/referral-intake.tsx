@@ -1434,15 +1434,28 @@ export function ReferralIntakeForm() {
 
   // Quick Add Patient Modal state
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+  const [addPatientError, setAddPatientError] = useState<string | null>(null);
   const addPatientBtnRef = useRef<HTMLButtonElement | null>(null);
   const modalCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+  const addPatientModalRef = useRef<HTMLDivElement | null>(null);
+  const pendingAddPatientRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!isAddPatientOpen) {
+      pendingAddPatientRef.current = false;
+    }
+  }, [isAddPatientOpen]);
+
+  useWardModalFocus(isAddPatientOpen, addPatientModalRef, () => {
+    setIsAddPatientOpen(false);
+    setAddPatientError(null);
+    addPatientBtnRef.current?.focus();
+  });
   const [newGivenName, setNewGivenName] = useState("");
   const [newFamilyName, setNewFamilyName] = useState("");
   const [newUmrn, setNewUmrn] = useState("");
   const [newDob, setNewDob] = useState("");
   const [newGender, setNewGender] = useState<Gender | "not-recorded">("not-recorded");
-  const [addPatientError, setAddPatientError] = useState<string | null>(null);
-  const pendingAddPatientRef = useRef<boolean>(false);
 
   const addPatientWarnings = useMemo(() => {
     if (!isAddPatientOpen) return [];
@@ -1456,6 +1469,21 @@ export function ReferralIntakeForm() {
       familyName: fName,
       dateOfBirth: newDob,
     });
+  }, [isAddPatientOpen, newGivenName, newFamilyName, newUmrn, newDob, patients]);
+
+  const existingMatch = useMemo(() => {
+    if (!isAddPatientOpen) return undefined;
+    const gName = newGivenName.trim();
+    const fName = newFamilyName.trim();
+    const um = newUmrn.trim();
+    if (!gName && !fName && !um) return undefined;
+    const candidates = duplicateCandidates(patients, {
+      umrn: um,
+      givenName: gName,
+      familyName: fName,
+      dateOfBirth: newDob,
+    });
+    return candidates.recordNumberCollision[0] ?? candidates.sameNameSameBirthDate[0];
   }, [isAddPatientOpen, newGivenName, newFamilyName, newUmrn, newDob, patients]);
 
   const trimmedSearch = searchQuery.trim();
@@ -1534,12 +1562,6 @@ export function ReferralIntakeForm() {
       dateOfBirth: newDob,
       gender: newGender === "Female" || newGender === "Male" ? newGender : undefined,
     });
-    setIsAddPatientOpen(false);
-    setNewGivenName("");
-    setNewFamilyName("");
-    setNewUmrn("");
-    setNewDob("");
-    setNewGender("not-recorded");
   }
 
   function handleAddPatientSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -1572,10 +1594,30 @@ export function ReferralIntakeForm() {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Link only the newly accepted provider record, never a speculative draft.
         handleSelectPatient(newestPatient);
       }
+      setIsAddPatientOpen(false);
+      setNewGivenName("");
+      setNewFamilyName("");
+      setNewUmrn("");
+      setNewDob("");
+      setNewGender("not-recorded");
+      setAddPatientError(null);
       pendingAddPatientRef.current = false;
     }
     prevPatientsLenRef.current = patients.length;
   }, [patients]);
+
+  const prevRejectionLenRef = useRef(rejections.length);
+  useEffect(() => {
+    if (pendingAddPatientRef.current && rejections.length > prevRejectionLenRef.current) {
+      const newest = rejections[rejections.length - 1];
+      if (newest?.attempted === "ADD_PATIENT") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Display rejection reason from reducer in modal
+        setAddPatientError(newest.reason || "Unable to register patient.");
+        pendingAddPatientRef.current = false;
+      }
+    }
+    prevRejectionLenRef.current = rejections.length;
+  }, [rejections]);
 
   // Click outside search dropdown to close
   useEffect(() => {
@@ -1594,6 +1636,8 @@ export function ReferralIntakeForm() {
     function handleKeyDown(e: globalThis.KeyboardEvent) {
       if (e.key === "Escape") {
         setIsAddPatientOpen(false);
+        setAddPatientError(null);
+        pendingAddPatientRef.current = false;
         addPatientBtnRef.current?.focus();
       }
     }
@@ -1638,9 +1682,15 @@ export function ReferralIntakeForm() {
 
   // Third Edition: Modals and Quick Clinical Utility Actions
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const previewDialogRef = useRef<HTMLDivElement>(null);
+  useWardModalFocus(isPreviewOpen, previewDialogRef, () => {
+    setIsPreviewOpen(false);
+    document.getElementById("btnPreviewReferral")?.focus();
+  });
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [receipt, setReceipt] = useState<{ referral: Referral; patient: string; catchment: string }>();
   const pendingReceipt = useRef<{ ids: Set<string>; patient: string; catchment: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const receiptDialogRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isReceiptOpen, receiptDialogRef, () => setIsReceiptOpen(false));
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1742,6 +1792,7 @@ export function ReferralIntakeForm() {
       setLastRejection(newest.attempted === "RECEIVE_REFERRAL" ? newest : undefined);
       setConfirmed(false);
       pendingReceipt.current = null;
+      setIsSubmitting(false);
     } else {
       setLastRejection(undefined);
       setConfirmed(true);
@@ -1751,6 +1802,7 @@ export function ReferralIntakeForm() {
       const created = referrals.filter((referral) => !pending.ids.has(referral.id));
       if (created.length !== 1) {
         setConfirmed(false);
+        setIsSubmitting(false);
         return;
       }
       setReceipt({
@@ -1759,6 +1811,7 @@ export function ReferralIntakeForm() {
         catchment: `${referralSuburbLabel(created[0].suburb)} · ${created[0].homeRegion}`,
       });
       pendingReceipt.current = null;
+      setIsSubmitting(false);
       setIsReceiptOpen(true);
       showToast("Referral recorded in Ward Flow for coordinator triage.");
       /*
@@ -2099,7 +2152,8 @@ export function ReferralIntakeForm() {
     event.preventDefault();
     // The keyboard route to the same guard the inert Send below enforces for a tap: implicit
     // submission never reaches a dispatch while a question is unanswered either.
-    if (!answered) return;
+    if (!answered || isSubmitting) return;
+    setIsSubmitting(true);
     priorRejectionCountRef.current = rejections.length;
     pendingReceipt.current = {
       ids: new Set(referrals.map((referral) => referral.id)),
@@ -2165,7 +2219,7 @@ export function ReferralIntakeForm() {
    * removes the tab stop, which is exactly where the reason below the button is announced from.
    */
   function ignoreUnavailableActivation(event: MouseEvent<HTMLButtonElement>) {
-    if (answered) return;
+    if (answered && !isSubmitting) return;
     event.preventDefault();
   }
 
@@ -2475,10 +2529,19 @@ export function ReferralIntakeForm() {
         {/* Quick Add Patient Modal */}
         {isAddPatientOpen && (
           <div
+            ref={addPatientModalRef}
             className={styles.modalOverlay}
             role="dialog"
             aria-modal="true"
             aria-labelledby="add-patient-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsAddPatientOpen(false);
+                setAddPatientError(null);
+                pendingAddPatientRef.current = false;
+                addPatientBtnRef.current?.focus();
+              }
+            }}
           >
             <div className={styles.modalDialog}>
               <div className={styles.modalHeader}>
@@ -2496,6 +2559,8 @@ export function ReferralIntakeForm() {
                   className={styles.modalCloseBtn}
                   onClick={() => {
                     setIsAddPatientOpen(false);
+                    setAddPatientError(null);
+                    pendingAddPatientRef.current = false;
                     addPatientBtnRef.current?.focus();
                   }}
                   aria-label="Close register patient dialog"
@@ -2509,6 +2574,7 @@ export function ReferralIntakeForm() {
                   {addPatientError && (
                     <div
                       role="alert"
+                      data-testid="ward-referral-intake-add-patient-error"
                       style={{
                         padding: "8px 12px",
                         borderRadius: "var(--r1)",
@@ -2647,12 +2713,34 @@ export function ReferralIntakeForm() {
                     className={styles.modalCancelBtn}
                     onClick={() => {
                       setIsAddPatientOpen(false);
+                      setAddPatientError(null);
+                      pendingAddPatientRef.current = false;
                       addPatientBtnRef.current?.focus();
                     }}
                   >
                     Cancel
                   </button>
-                  {addPatientWarnings.length > 0 ? (
+                  {existingMatch ? (
+                    <button
+                      type="button"
+                      className={styles.modalSubmitBtn}
+                      data-testid="ward-referral-intake-import-existing-patient"
+                      onClick={() => {
+                        handleSelectPatient(existingMatch);
+                        setIsAddPatientOpen(false);
+                        setNewGivenName("");
+                        setNewFamilyName("");
+                        setNewUmrn("");
+                        setNewDob("");
+                        setNewGender("not-recorded");
+                        setAddPatientError(null);
+                        pendingAddPatientRef.current = false;
+                        addPatientBtnRef.current?.focus();
+                      }}
+                    >
+                      Import Existing Record
+                    </button>
+                  ) : addPatientWarnings.length > 0 ? (
                     <button
                       type="button"
                       className={styles.modalSubmitBtn}
@@ -4388,7 +4476,7 @@ export function ReferralIntakeForm() {
                 className={`${pageStyles.sendButton} ${styles.submit} ${pageStyles.btnSubmit}`}
                 id="btnSend"
                 data-testid="ward-referral-intake-submit"
-                aria-disabled={answered ? undefined : "true"}
+                aria-disabled={answered && !isSubmitting ? undefined : "true"}
                 aria-describedby={
                   answered ? undefined : refusedCombination ? REFUSED_COMBINATION_ID : UNAVAILABLE_REASON_ID
                 }
@@ -4447,6 +4535,12 @@ export function ReferralIntakeForm() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="dispatchModalTitle"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsReceiptOpen(false);
+                document.getElementById("btnSend")?.focus();
+              }
+            }}
           >
             <div className={pageStyles.modalDialog}>
               <div className={`${pageStyles.modalHeader} ${pageStyles.successHeader}`}>
@@ -4558,10 +4652,17 @@ export function ReferralIntakeForm() {
         {isPreviewOpen && (
           <div
             id="previewModalBackdrop"
+            ref={previewDialogRef}
             className={pageStyles.modalBackdrop}
             role="dialog"
             aria-modal="true"
             aria-labelledby="previewModalTitle"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsPreviewOpen(false);
+                document.getElementById("btnPreviewReferral")?.focus();
+              }
+            }}
           >
             <div className={`${pageStyles.modalDialog} ${pageStyles.modalLarge}`}>
               <div className={pageStyles.modalHeader}>

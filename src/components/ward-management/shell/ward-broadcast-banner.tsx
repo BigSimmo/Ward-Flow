@@ -77,7 +77,7 @@ export function WardBroadcastBanner({ currentUnitId }: WardBroadcastBannerProps)
         </div>
 
         <div className={styles.actionsArea}>
-          <span className={styles.metaTime} title="Time until auto-expiry">
+          <span className={styles.metaTime} title="Time until auto-expiry" aria-hidden="true">
             {formatTimeRemaining(activeAlert.expiresAt, now)}
           </span>
 

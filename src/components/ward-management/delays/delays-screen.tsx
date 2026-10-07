@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
@@ -156,8 +156,8 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   const open = movements.filter(isOpen);
   const openNetworkWide = allMovements.filter(isOpen);
-  const groups = delayGroups(movements, units, now);
-  const networkGroups = delayGroups(allMovements, units, now);
+  const groups = useMemo(() => delayGroups(movements, units, now), [movements, units, now]);
+  const networkGroups = useMemo(() => delayGroups(allMovements, units, now), [allMovements, units, now]);
 
   const effectiveMarkedCause =
     markedCause !== null && groups.some((group) => group.cause === markedCause) ? markedCause : null;
