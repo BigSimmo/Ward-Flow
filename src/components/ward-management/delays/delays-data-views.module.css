@@ -796,54 +796,6 @@
   grid-column: 2;
   justify-self: start;
 }
-.noSelection {
-  padding: 20px;
-  color: var(--dv-muted);
-}
-.noSelection h3 {
-  font-size: 18px;
-  color: var(--dv-ink);
-}
-.blockerPanel {
-  margin-top: 12px;
-}
-.blockerPanel summary {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 49px;
-  padding: 11px 17px;
-  cursor: pointer;
-  list-style: none;
-}
-.blockerPanel summary::-webkit-details-marker {
-  display: none;
-}
-.blockerPanel summary h2 {
-  font-size: 14px;
-}
-.blockerPanel summary > span {
-  margin-left: auto;
-  color: var(--dv-muted);
-  font-size: 12px;
-}
-.blockerTable {
-  min-width: 550px;
-}
-.causeButton {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--dv-ink);
-  font: inherit;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-.causeButton[aria-pressed="true"] {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
 .table .numeric {
   text-align: right !important;
   font-variant-numeric: tabular-nums;
@@ -1085,8 +1037,7 @@
   .layout[data-layout="workspace"] {
     grid-template-columns: 160px minmax(0, 1fr);
   }
-  .dossier,
-  .noSelection {
+  .dossier {
     grid-column: 2;
   }
   .teamRail {
@@ -1128,8 +1079,7 @@
   .teamRail .railCauseTitle {
     margin-top: 5px;
   }
-  .dossier,
-  .noSelection {
+  .dossier {
     grid-column: 1;
   }
   .toolbar {
@@ -1659,13 +1609,6 @@
   font-size: 17px;
   letter-spacing: -0.02em;
 }
-.blockerPanel {
-  margin-top: 8px;
-}
-.blockerPanel summary {
-  min-height: 44px;
-  padding: 10px 14px;
-}
 
 .workspace,
 .panel,
@@ -1684,8 +1627,7 @@
   padding: 12px 14px;
 }
 .teamRail,
-.dossier,
-.blockerPanel {
+.dossier {
   border-radius: 8px;
 }
 .tabs,
@@ -1835,4 +1777,205 @@ span.workspaceMeasure,
   --t-1: 12px;
   font-size: 12px;
   transition-property: none;
+}
+
+/* v6 (7 Oct 2026): the responsible team reads as text with its icon, and the urgency tier as a
+ * hairline box. Colour stays in a dot, never a fill. */
+.ownerBadge.ownerBadge[data-owner] {
+  padding: 0;
+  gap: var(--wf-s-1);
+  border-radius: 0;
+  background: none;
+  color: var(--wf-ink-2);
+  box-shadow: none;
+}
+
+.urgency.urgency[data-tier] {
+  gap: var(--wf-s-1);
+  height: var(--wf-h-chip);
+  min-width: 0;
+  padding: 0 var(--wf-s-1);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: none;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.urgency.urgency[data-tier="1"]::before,
+.urgency.urgency[data-tier="2"]::before {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-warning);
+}
+
+.urgency.urgency[data-tier="1"]::before {
+  background: var(--wf-danger);
+}
+
+/* ── v6: the waiting table as one card; the blocker bar list ── */
+.workspace.workspace {
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  backdrop-filter: none;
+}
+
+.workspace .layoutHeader {
+  min-height: 3.5rem;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.workspace .layoutHeader > h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+}
+
+.layoutMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+}
+
+.workspace .tabs {
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+}
+
+.workspace .tabs button {
+  min-height: var(--wf-h-sm);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.workspace .tabs button[aria-selected="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.workspace .layout[data-layout="workspace"] {
+  padding: var(--wf-s-3);
+}
+
+.workspace .layout[data-layout="focus"] > .waitingPanel {
+  border: 0;
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.blockerPanel {
+  min-width: 0;
+}
+
+.blockerMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.blockerTable {
+  /* Scroll threshold, measured in a browser: the cause names need about 136px and the full bar
+     row about 327px, so the table scrolls inside its card rather than squeezing the bars away. */
+  min-width: 240px;
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.blockerHead th {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.blockerTable tbody th,
+.blockerTable tbody td,
+.blockerTable tfoot th,
+.blockerTable tfoot td {
+  padding: 0 var(--wf-s-4);
+  font-weight: 400;
+  text-align: left;
+}
+
+.blockerTable tbody td,
+.blockerTable tfoot td {
+  padding-left: 0;
+}
+
+.blockerTable tfoot th,
+.blockerTable tfoot td {
+  height: 2.5rem;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.causeButton {
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.causeButton:hover {
+  text-decoration: underline;
+}
+
+.causeButton[aria-pressed="true"] {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blockerBarCell {
+  width: 32%;
+}
+
+.blockerBar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.blockerBar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-1);
+}
+
+.blockerTable .numeric {
+  width: 2.5rem;
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  text-align: right;
 }

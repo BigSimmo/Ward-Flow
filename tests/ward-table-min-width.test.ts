@@ -112,7 +112,9 @@ const PINNED: Record<string, string | readonly string[] | null> = {
    * intrinsic-width measurement. */
   // Re-pinned 2026-09-25 (test fixer): 53105ca6ea split the on-call table into a roster table
   // (52rem) and an ED directory table (48rem). The latest folded app is the design reference.
-  "on-call/on-call.module.css": ["52rem", "48rem"],
+  // Re-pinned 2026-10-07 (v6 On-call): the roster table shares its row with the role panel
+  // (46rem) and the ED directory sits in the narrower lower card (36rem).
+  "on-call/on-call.module.css": ["46rem", "36rem"],
   "out-of-area/out-of-area.module.css": "30rem",
   /* The out-of-area register inspector redesign (PR #25) makes the ledger a fluid, fixed-layout
    * table that fits its panel at every desktop width; the narrow-screen case is handled by the
@@ -267,6 +269,12 @@ const PINNED: Record<string, string | readonly string[] | null> = {
    * min-content 498px, max-content 555px, past the 27.5rem (440px) pin's own min-content; raised to
    * 36rem (576px), 21px clear of max-content. */
   "statistics/statistics-third-edition.module.css": ["47.5rem", "36rem"],
+  /* v6 comparisons (7 October 2026): the ward and department Data tables, measured at 1440px at
+     581px and 511px max-content, pinned at 37rem (592px) and 32.5rem (520px) so neither is inert.
+     The CI browser sweep then measured the department table's min-content at 528px, so its pin
+     moved to 35rem (560px), and the ward table's min-content at 597px, so its pin moved to 40rem
+     (640px). */
+  "statistics/statistics-compare.module.css": ["40rem", "35rem"],
   // Pinned 2026-09-25 (test fixer). NOT a table threshold: `.tableSearch { min-width: 16rem }` is
   // the ward statistics table's search box, which the discovery sweep collects because its class
   // name contains "table". Pinned so it cannot change silently rather than narrowing the sweep.

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -44,7 +44,8 @@ vi.mock("next/link", () => ({
  */
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
-  return { ...actual, useWardFlow: () => mockContext };
+  // v6 (7 Oct 2026): the page reads the provider clock through the statistics hero.
+  return { ...actual, useWardFlow: () => mockContext, useWardFlowClock: () => NOW_ANCHOR };
 });
 
 import {
@@ -56,6 +57,7 @@ import {
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { demoDayZero } from "@/components/ward-management/ward-clock";
 
 const seeded = seedWardFlowState();
 
@@ -82,6 +84,7 @@ const mockContext = {
   ...seeded,
   admissions: admissionsWithDanglingReferral,
   now: NOW_ANCHOR,
+  dayZero: demoDayZero(new Date(2026, 9, 7)),
   dispatch: vi.fn(),
   focusMovementId: undefined,
   setFocusMovementId: vi.fn(),
@@ -92,6 +95,11 @@ function renderScreen(teamId: string) {
 }
 
 function compareRow(teamId: string) {
+  // v6 (7 Oct 2026): the comparison's exact table sits behind its Data view.
+  const card = screen.getByTestId("ward-statistics-community-comparison");
+  if (!within(card).queryByTestId("ward-statistics-community-comparison-table")) {
+    fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+  }
   const table = screen.getByTestId("ward-statistics-community-comparison-table");
   return within(table).getByTestId(`ward-statistics-community-compare-row-${teamId}`);
 }

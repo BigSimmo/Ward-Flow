@@ -132,4 +132,22 @@ describe("ReferralMatchView: a non-binary placement explains itself, then succee
     // claimed success — `ward-referral-match-decided` only renders once `ward.state !== "queued"`.
     expect(screen.getByTestId("ward-referral-match-decided").textContent).toContain("Accepted at Dabakarn");
   });
+
+  it("the tier-1 card offers no plain accept either; its button opens the same form instead", () => {
+    renderNonBinaryReferral();
+
+    // No plain "Accept at X" for this unit anywhere on the screen: the tier-1 card used to send
+    // one straight to the reducer, which could only refuse it with GENDER_PLACEMENT_REFUSAL.
+    expect(screen.queryByRole("button", { name: "Accept at Dabakarn" })).toBeNull();
+
+    const check = screen.getByTestId(`ward-referral-match-tier-1-gender-placement-${UNIT_ID}`);
+    expect(check.textContent).toBe("Check placement at Dabakarn");
+    fireEvent.click(check);
+
+    const reason = screen.getByTestId(`ward-referral-match-gender-placement-reason-${UNIT_ID}`);
+    expect(reason).toHaveFocus();
+    expect((reason.closest("details") as HTMLDetailsElement).open).toBe(true);
+    // Nothing was dispatched: the referral is still undecided until the form is answered.
+    expect(screen.queryByTestId("ward-referral-match-decided")).toBeNull();
+  });
 });

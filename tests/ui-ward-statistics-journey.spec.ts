@@ -204,18 +204,16 @@ test.describe("@mockup page-specific statistics insights", () => {
     await expect(
       page.getByTestId("capacity-details").getByRole("link", { name: /Mental Health Unit/ }),
     ).toHaveAttribute("href", /statistics\/ward\//);
-    const placements = page.getByTestId("statistics-service-placement-chart");
-    await placements.getByRole("button", { name: /^Within service:/ }).click();
-    await expect(placements.getByRole("complementary", { name: "Within service details" })).toBeVisible();
-    await placements.getByRole("button", { name: "Close chart details" }).click();
-    await expect(placements.getByRole("complementary")).toHaveCount(0);
-    const travel = page.getByTestId("statistics-service-travel-chart");
-    await expect(travel).toContainText("synthetic travel times");
-    await travel.getByRole("button", { name: "Travel bands data view" }).click();
-    await expect(travel.getByRole("table")).toBeVisible();
-    await travel.getByRole("button", { name: /^Three hours or more from home:/ }).click();
-    await expect(travel.getByRole("complementary")).toContainText("Travel bands are synthetic");
-    await travel.getByRole("button", { name: "Close chart details" }).click();
+    // v6 (7 Oct 2026): placements are a bar list with a Chart and Data switch; travel bands are
+    // a bar list in the Far from home card, labelled as synthetic.
+    const placements = page.getByTestId("ward-statistics-service-placement");
+    await placements.getByRole("radio", { name: "Data" }).click();
+    await expect(placements.getByRole("rowheader", { name: "North Metro" })).toBeVisible();
+    await placements.getByRole("radio", { name: "Chart" }).click();
+    await expect(placements.getByRole("table")).toHaveCount(0);
+    const travel = page.getByTestId("ward-statistics-service-out-of-area");
+    await expect(travel).toContainText("Synthetic travel bands");
+    await expect(travel).toContainText("Three hours or more from home");
   });
   test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -223,16 +221,15 @@ test.describe("@mockup page-specific statistics insights", () => {
     await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
     const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
     await expect(detail.locator("summary")).toHaveCount(0);
+    // v6 (7 Oct 2026): the comparison is a bar list whose team names link to each team's page.
+    const comparison = page.getByTestId("ward-statistics-community-comparison");
+    await comparison.getByLabel("Search Team comparison").fill("Bentley");
+    await comparison.getByRole("radio", { name: "With date" }).click();
     const chart = page.getByTestId("statistics-community-comparison-chart");
-    await chart.getByLabel("Search Team comparison").fill("Bentley");
-    await expect(chart.locator("button[data-chart-record]")).toHaveCount(1);
-    await chart.getByLabel("Team comparison measure").selectOption("expected");
-    await chart.locator("button[data-chart-record]").click();
-    await expect(chart.getByRole("complementary", { name: "Bentley details" }).getByRole("link")).toHaveAttribute(
+    await expect(chart.getByRole("link", { name: "Bentley" })).toHaveAttribute(
       "href",
       /statistics\/community\/bentley$/,
     );
-    await chart.getByRole("button", { name: "Close chart details" }).click();
     await expectNoPageOverflow(page, "community chart and comparison");
     await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
   });
@@ -243,15 +240,14 @@ test("@mockup ward bed figures stay visible and the chart data view preserves re
   await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
   const beds = page.getByTestId("ward-statistics-ward-beds-now");
   await expect(beds.locator("details > summary")).toHaveCount(0);
-  await expect(beds.getByRole("table").first()).toBeVisible();
+  // v6 (7 Oct 2026): bed figures are tiles in the Beds now card, and the stay chart's exact
+  // counts sit behind a Chart and Data switch.
+  await expect(beds.getByTestId("ward-stat-capacity-empty")).toBeVisible();
   const chart = page.getByTestId("statistics-ward-stays-chart");
-  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await chart.getByRole("radio", { name: "Data" }).click();
   await expect(chart.getByRole("table")).toBeVisible();
-  await chart.getByRole("button", { name: /^Under 2 weeks:/ }).click();
-  await expect(chart.getByRole("complementary", { name: "Under 2 weeks details" })).toBeVisible();
-  await chart.getByRole("button", { name: "Close chart details" }).click();
-  await expect(chart.getByRole("button", { name: /^Under 2 weeks:/ })).toBeFocused();
-  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await expect(chart.getByRole("rowheader", { name: "Under 2 weeks" })).toBeVisible();
+  await chart.getByRole("radio", { name: "Chart" }).click();
   await expect(chart.getByRole("table")).toHaveCount(0);
   await expectNoPageOverflow(page, "ward disclosure and chart data view");
 });

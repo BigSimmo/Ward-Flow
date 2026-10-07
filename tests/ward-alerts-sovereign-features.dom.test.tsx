@@ -18,16 +18,16 @@ function renderScreen() {
 describe("Alerts — Third Edition Sovereign Enhancements", () => {
   it("renders 3 escalation tier tabs and All Active Tiers tab", () => {
     renderScreen();
-    expect(screen.getByRole("tab", { name: /All Active Tiers/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Tier 1: Clinical Emergency/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Tier 2: Capacity Pressure/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Tier 3: Administrative/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /All Active Tiers/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Tier 1: Clinical Emergency/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Tier 2: Capacity Pressure/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Tier 3: Administrative/i })).toBeInTheDocument();
   });
 
   it("includes each visible tier label in its accessible name", () => {
     renderScreen();
-    for (const label of ["All alerts", "Clinical risk", "Capacity & delay", "Admin & transfer"]) {
-      const tab = screen.getByRole("tab", { name: new RegExp(label) });
+    for (const label of ["All alerts", "Clinical risk", "Capacity and delay", "Admin and transfer"]) {
+      const tab = screen.getByRole("radio", { name: new RegExp(label) });
       expect(within(tab).getByText(label)).toBeVisible();
       expect(tab).toHaveAccessibleName(new RegExp(label));
     }
@@ -95,9 +95,9 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
   it("renders 4-KPI summary strip with tabular figures", () => {
     renderScreen();
     expect(screen.getByText("Form expiries passed")).toBeInTheDocument();
-    expect(screen.getByText("Placement Gridlock")).toBeInTheDocument();
+    expect(screen.getByText("Placement gridlock")).toBeInTheDocument();
     expect(screen.getByText(/Prolonged ED Wait/i)).toBeInTheDocument();
-    expect(screen.getByText("Active Monitored")).toBeInTheDocument();
+    expect(screen.getByText("Active monitored")).toBeInTheDocument();
   });
 
   it("renders synthetic prototype badge in the subheader (FF8)", () => {

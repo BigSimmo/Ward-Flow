@@ -23,14 +23,23 @@ export function fillVar(fill: WfFill = "data-1"): string {
 
 const pct = (value: number, max: number) => (max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0);
 
-/** At most four gridlines. */
-function niceTicks(max: number, count = 4): number[] {
+/**
+ * Zero plus at most four ticks on a round step. The last tick reaches or passes `max`, so an
+ * auto-scaled axis never ends below the largest value (which would draw it at full width, level
+ * with a smaller one). A fixed scale passes `cap` to drop ticks beyond it.
+ */
+function niceTicks(max: number, count = 4, cap?: number): number[] {
   if (max <= 0) return [0];
   const rough = max / count;
   const mag = 10 ** Math.floor(Math.log10(rough));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= rough) ?? rough;
   const ticks: number[] = [];
-  for (let t = 0; t <= max + 1e-9 && ticks.length <= count; t += step) ticks.push(Number(t.toFixed(6)));
+  for (let index = 0; index <= count; index += 1) {
+    const tick = Number((index * step).toFixed(6));
+    if (cap != null && tick > cap + 1e-9) break;
+    ticks.push(tick);
+    if (tick >= max - 1e-9) break;
+  }
   return ticks;
 }
 
@@ -78,7 +87,7 @@ export function BarList({
   labelWidth,
   className,
 }: BarListProps) {
-  const ticks = axis ? niceTicks(maxProp ?? Math.max(1, ...rows.map((r) => r.value))) : [];
+  const ticks = axis ? niceTicks(maxProp ?? Math.max(1, ...rows.map((r) => r.value)), 4, maxProp) : [];
   const max = maxProp ?? (axis ? ticks[ticks.length - 1]! : Math.max(1, ...rows.map((r) => r.value)));
   const showTop = axis || mean != null;
   const firstRow = showTop ? 2 : 1;
@@ -102,9 +111,12 @@ export function BarList({
           </div>
         ) : null}
         <div className={styles.overlay} style={{ gridRow: `${firstRow} / ${firstRow + rows.length}` }}>
-          {ticks.map((t) => (
-            <span key={t} className={styles.grid} style={{ left: `${pct(t, max)}%` }} />
-          ))}
+          {/* Zero is the bars' own baseline, so at most four faint gridlines are drawn. */}
+          {ticks
+            .filter((t) => t > 0)
+            .map((t) => (
+              <span key={t} className={styles.grid} style={{ left: `${pct(t, max)}%` }} />
+            ))}
           {mean != null ? <span className={styles.meanLine} style={{ left: `${pct(mean, max)}%` }} /> : null}
         </div>
         {rows.map((row, index) => {
@@ -180,7 +192,7 @@ export function ColumnChart({
   className,
 }: ColumnChartProps) {
   const dataMax = Math.max(1, ...columns.map((c) => c.value), target?.value ?? 0);
-  const ticks = gridlines ? niceTicks(maxProp ?? dataMax) : [];
+  const ticks = gridlines ? niceTicks(maxProp ?? dataMax, 4, maxProp) : [];
   const max = maxProp ?? (gridlines ? ticks[ticks.length - 1]! : dataMax * 1.12);
   return (
     <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>

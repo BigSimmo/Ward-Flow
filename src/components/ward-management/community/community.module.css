@@ -3833,3 +3833,135 @@ button.searchBox:hover {
   white-space: nowrap;
   border-width: 0;
 }
+
+/*
+ * ── v6 body panels (7 October 2026, `design/pages-v6/CommunityTeam.png`) ──
+ * Every list panel takes the v6 card: hairline, large radius, e1, and an uppercase eyebrow title
+ * over a plain head. Declared last so it settles the cascade above it. Tokens only.
+ */
+.tabPanelActive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+.cardPanel,
+.governanceSection {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 3.5rem;
+  box-sizing: border-box;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+.panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.governanceSummary {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.governanceSummary:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.governanceBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  background: transparent;
+}
+
+.governanceBody .cardPanel {
+  box-shadow: none;
+  border-radius: var(--wf-r-md);
+}
+
+/* Table cells keep whole words; a table that needs more room scrolls rather than splitting them. */
+.table td,
+.table th {
+  overflow-wrap: normal;
+}
+
+/* Cards that follow one another inside a list keep the page's gap. */
+.tabPanelActive .cardPanel + .cardPanel {
+  margin-top: var(--wf-s-4);
+}
+
+/* The caseload register is the same v6 card, its table running edge to edge. */
+.caseloadSection {
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.caseloadHead {
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+.caseloadTitle {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.caseloadSection > .tableScroll {
+  margin-inline: 0;
+}
+
+.n {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cellLead {
+  display: block;
+  font-weight: 500;
+}
+
+.cellSub {
+  display: block;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+@media (max-width: 40rem) {
+  .governanceSummary {
+    min-height: var(--spacing-tap, 3rem);
+    box-sizing: border-box;
+  }
+}

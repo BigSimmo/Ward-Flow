@@ -89,11 +89,16 @@ describe("officer diversion control — T4b", () => {
 
     render(<OfficerScreen />);
     await user.click(screen.getByTestId(`ward-officer-select-${movementId}`));
+    // v6: the diversion form opens from the job panel's Divert button.
+    await user.click(screen.getByTestId(`ward-officer-divert-${movementId}`));
     const button = screen.getByTestId(`ward-officer-record-diversion-${movementId}`);
     expect(button).toHaveAttribute("aria-disabled", "true");
 
     await user.selectOptions(screen.getByTestId(`ward-officer-diversion-reason-${movementId}`), DIVERSION_REASONS[0]);
-    await user.selectOptions(screen.getByTestId(`ward-officer-diversion-place-${movementId}`), TRANSPORT_WHEREABOUTS[1]);
+    await user.selectOptions(
+      screen.getByTestId(`ward-officer-diversion-place-${movementId}`),
+      TRANSPORT_WHEREABOUTS[1],
+    );
     expect(button).not.toHaveAttribute("aria-disabled");
 
     await user.click(button);

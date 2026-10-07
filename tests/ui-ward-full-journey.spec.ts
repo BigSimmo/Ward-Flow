@@ -373,19 +373,21 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(jobCard, "the booked job must appear in the officer's own list").toBeVisible();
     await officerScreen.getByTestId(`ward-officer-select-${movementId}`).click();
 
-    const acceptTransport = jobCard.getByTestId(`ward-officer-accept-${movementId}`);
+    // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel, not its row.
+    const jobPanel = officerScreen.getByTestId("ward-officer-detail");
+    const acceptTransport = jobPanel.getByTestId(`ward-officer-accept-${movementId}`);
     await expect(acceptTransport).not.toHaveAttribute("aria-disabled", "true");
     await acceptTransport.click();
 
-    const enRoute = jobCard.getByTestId(`ward-officer-enroute-${movementId}`);
+    const enRoute = jobPanel.getByTestId(`ward-officer-enroute-${movementId}`);
     await expect(enRoute).not.toHaveAttribute("aria-disabled", "true");
     await enRoute.click();
 
-    const collected = jobCard.getByTestId(`ward-officer-collect-${movementId}`);
+    const collected = jobPanel.getByTestId(`ward-officer-collect-${movementId}`);
     await expect(collected).not.toHaveAttribute("aria-disabled", "true");
     await collected.click();
 
-    const arrived = jobCard.getByTestId(`ward-officer-arrive-${movementId}`);
+    const arrived = jobPanel.getByTestId(`ward-officer-arrive-${movementId}`);
     await expect(arrived).not.toHaveAttribute("aria-disabled", "true");
     await arrived.click();
     await expectNoReloadSince(page, "the officer's transport steps");

@@ -144,6 +144,10 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     why: "/escalation redirects to /delays",
   },
   {
+    module: "src/components/ward-management/statistics/statistics-insight-chart.tsx",
+    why: "v6 statistics pages (7 Oct 2026) chart with the wf primitives instead",
+  },
+  {
     module: "src/components/ward-management/tracker/live-tracker.tsx",
     why: "/transport redirects to /movements",
   },

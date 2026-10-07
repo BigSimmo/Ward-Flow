@@ -17,11 +17,11 @@ function mount() {
 }
 
 function openComposer() {
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 }
 
 function selectCustomTemplate() {
-  fireEvent.change(screen.getByLabelText(/WA Clinical Protocol & Flow Template/i), { target: { value: "custom" } });
+  fireEvent.change(screen.getByLabelText(/^Start from$/i), { target: { value: "custom" } });
 }
 
 function unloadWasPrevented() {
@@ -48,7 +48,7 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     mount();
     openComposer();
     selectCustomTemplate();
-    fireEvent.change(screen.getByLabelText(/Directive Headline \/ Title/i), { target: { value: "Only a title" } });
+    fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Only a title" } });
     expect(unloadWasPrevented()).toBe(true);
     expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ title: "Only a title" });
   });
@@ -74,25 +74,23 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     const first = mount();
     openComposer();
     selectCustomTemplate();
-    fireEvent.change(screen.getByLabelText(/Directive Headline \/ Title/i), { target: { value: "Reload headline" } });
+    fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Reload headline" } });
     fireEvent.change(document.getElementById("alerts-broadcast-severity")!, { target: { value: "warning" } });
     fireEvent.change(document.getElementById("alerts-broadcast-target")!, { target: { value: "adolescent" } });
     fireEvent.change(document.getElementById("alerts-broadcast-duration")!, { target: { value: "480" } });
-    fireEvent.change(screen.getByLabelText(/Message Body & Clinical Instructions/i), {
+    fireEvent.change(screen.getByLabelText(/^Directive$/i), {
       target: { value: "Reload body" },
     });
     first.unmount();
 
     mount();
-    expect(screen.getByRole("dialog", { name: /Broadcast Statewide Network Alert/i })).toBeInTheDocument();
-    expect((screen.getByLabelText(/WA Clinical Protocol & Flow Template/i) as HTMLSelectElement).value).toBe("custom");
-    expect((screen.getByLabelText(/Directive Headline \/ Title/i) as HTMLInputElement).value).toBe("Reload headline");
+    expect(screen.getByRole("dialog", { name: /Broadcast network alert/i })).toBeInTheDocument();
+    expect((screen.getByLabelText(/^Start from$/i) as HTMLSelectElement).value).toBe("custom");
+    expect((screen.getByLabelText(/^Title$/i) as HTMLInputElement).value).toBe("Reload headline");
     expect((document.getElementById("alerts-broadcast-severity") as HTMLSelectElement).value).toBe("warning");
     expect((document.getElementById("alerts-broadcast-target") as HTMLSelectElement).value).toBe("adolescent");
     expect((document.getElementById("alerts-broadcast-duration") as HTMLSelectElement).value).toBe("480");
-    expect((screen.getByLabelText(/Message Body & Clinical Instructions/i) as HTMLTextAreaElement).value).toBe(
-      "Reload body",
-    );
+    expect((screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement).value).toBe("Reload body");
     // still protected and still stored after the restore, so a second reload also keeps it
     expect(unloadWasPrevented()).toBe(true);
     expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({
@@ -106,6 +104,6 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
   it("ignores a malformed stored draft rather than restoring part of it", () => {
     sessionStorage.setItem(DRAFT_KEY, "plain old message text");
     mount();
-    expect(screen.queryByRole("dialog", { name: /Broadcast Statewide Network Alert/i })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).toBeNull();
   });
 });
