@@ -103,7 +103,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: /Referrals/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
 
     for (const referral of MEMBER_REFERRALS) {
       expect(
