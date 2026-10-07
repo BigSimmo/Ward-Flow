@@ -47,6 +47,14 @@
     0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
+.alertStrip[data-tone="warning"] {
+  border-color: var(--warn);
+}
+
+.alertStrip[data-tone="critical"] {
+  border-color: var(--danger);
+}
+
 @media (max-width: 768px) {
   .alertStrip {
     align-items: flex-start;
@@ -72,12 +80,27 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--r2);
 }
 
 .alertMain strong {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.alertStrip[data-tone="warning"] .alertClock {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.alertStrip[data-tone="critical"] .alertClock {
+  color: var(--danger-ink, var(--danger));
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .alertText {
@@ -242,6 +265,13 @@
 .logCard .sideHead {
   padding: 6px 10px 6px 6px;
   background: color-mix(in oklab, var(--sunk, var(--surface-2)) 28%, transparent);
+}
+
+.cardMeta {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
 }
 
 .cardTitle {
@@ -422,7 +452,7 @@
   margin: 0;
   padding: 16px 0;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--t-0);
   color: var(--muted);
 }
 

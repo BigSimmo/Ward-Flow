@@ -1126,8 +1126,23 @@
   min-height: 100%;
   padding-top: 0;
   color: var(--ink);
-  background: var(--ground);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 46%, var(--ground)), var(--ground) 22rem);
+  --glass-fill: color-mix(in srgb, var(--surface) 86%, transparent);
+  --glass-band: color-mix(in srgb, var(--surface-2) 92%, transparent);
   font-family: var(--body);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .screen {
+    --glass-fill: var(--surface);
+    --glass-band: var(--surface-2);
+    background: var(--ground);
+  }
+
+  .screen,
+  .screen * {
+    backdrop-filter: none;
+  }
 }
 
 .main {
@@ -1155,12 +1170,15 @@
 .unitCard,
 .bedSection,
 .listSection {
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 0.875rem;
   color: var(--ink);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .unitCard {
@@ -1200,11 +1218,14 @@
 
 .entryHero {
   order: 2;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  border-radius: 0.875rem;
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .bedSection {
@@ -1234,7 +1255,8 @@
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--line);
   color: var(--accent-ink);
-  background: var(--surface-2);
+  background: var(--glass-band, var(--surface-2));
+  box-shadow: inset 0 1px 0 var(--hl);
   font-family: var(--display);
   font-size: var(--t-3);
   font-weight: 600;
@@ -2548,16 +2570,29 @@
 }
 
 .topIdentityBanner .sectionHeading {
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
+  font-size: var(--t-0);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--accent);
-  background: var(--surface-2);
-  padding: 3px 8px;
-  border-radius: var(--r2, 4px);
-  border: 1px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
   margin: 0;
+}
+
+.topIdentityBanner .unitName {
+  margin: 0;
+  font-size: var(--t-4);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.topIdentityBanner .unitMeta {
+  font-size: var(--t-1);
 }
 
 .actionBar {
@@ -2579,9 +2614,11 @@
   display: inline-flex;
   gap: 2px;
   padding: 2px;
-  background: var(--sunk);
+  background: color-mix(in srgb, var(--sunk) 78%, transparent);
   border-radius: var(--r2);
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow:
+    inset 0 1px 0 var(--hl),
+    inset 0 0 0 1px var(--line);
   align-items: center;
 }
 
@@ -2618,12 +2655,12 @@
 }
 
 .wardScreenNav span[aria-current="page"] {
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 650;
   box-shadow:
-    inset 0 0 0 1.5px var(--accent),
-    var(--lift);
+    inset 0 1px 0 var(--hl),
+    inset 0 0 0 1px var(--accent);
   cursor: default;
 }
 
@@ -3021,10 +3058,13 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
+  border-radius: 0.75rem;
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  padding: 8px 12px;
 }
 
 .podFilters {
@@ -3444,11 +3484,14 @@
 
 /* ─── Perfected Third Edition Console Layout ─────────────────── */
 .cardPanel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
+  border-radius: 0.875rem;
   overflow: hidden;
-  box-shadow: var(--lift);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
   display: flex;
   flex-direction: column;
 }
@@ -4954,6 +4997,13 @@
   gap: 8px;
 }
 
+.capacityTrackMeta {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
 .capacityTrackLabel {
   font-size: var(--t-1, 13px);
   font-weight: 700;
@@ -5004,9 +5054,10 @@
 }
 
 .statBox {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 75%, var(--hl));
   border-radius: var(--r2, 6px);
+  box-shadow: inset 0 1px 0 var(--hl);
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
@@ -5020,6 +5071,9 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statBoxVal {
@@ -5130,7 +5184,7 @@
 }
 
 .constraintChip[data-active="true"] {
-  background: var(--warn-soft);
+  background: transparent;
   border-color: var(--warn);
   color: var(--ink);
   font-weight: 600;
@@ -5507,11 +5561,10 @@
   text-align: center;
   font-size: var(--t-0, 0.75rem);
   color: var(--muted);
-  padding: 14px 18px;
-  border-top: 1px solid var(--line);
-  margin-top: 10px;
-  background: var(--surface);
-  border-radius: var(--r2, 6px);
+  padding: 2px 0 0;
+  border: 0;
+  margin: 0;
+  background: transparent;
 }
 
 @media (max-width: 1080px) {
@@ -5568,7 +5621,8 @@
   cursor: pointer;
   transition:
     opacity 0.14s cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 28%, transparent);
   white-space: nowrap;
 }
@@ -5577,6 +5631,10 @@
   background: var(--ink);
   opacity: 0.9;
   color: var(--text-inverse);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl-on-accent);
 }
 
 .btnDailySheet:focus-visible {
