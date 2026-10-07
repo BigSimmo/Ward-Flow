@@ -441,25 +441,18 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           {/* Left Column: SBAR Clinical Referral Panel */}
           <section
             aria-label="Awaiting your answer"
-            className={styles.panel}
+            className={activeMovement ? styles.answerSplit : styles.panel}
             data-empty={incoming.length === 0}
             tabIndex={0}
           >
-            <div className={styles.panelHeader}>
-              <div className={styles.panelHeaderLeft}>
-                {activeMovement ? (
-                  <span className={styles.badge} data-tone={activeMovement.flaggedUrgent ? "danger" : "warn"}>
-                    {activeMovement.flaggedUrgent ? "Urgent Admission Enquiry" : `Tier ${activeMovement.urgency}`}
-                  </span>
-                ) : (
-                  <span className={styles.badge} data-tone="neutral">
-                    0 Pending
-                  </span>
-                )}
-                <h2 className={styles.panelTitle}>{activeMovement ? "Incoming Referral" : "Bed request"}</h2>
+            {activeMovement ? null : (
+              <div className={styles.panelHeader}>
+                <div className={styles.panelHeaderLeft}>
+                  <h2 className={styles.panelTitle}>Bed request</h2>
+                </div>
+                <span className={styles.panelSub}>none waiting</span>
               </div>
-              {activeMovement && <span className={styles.panelSub}>Emergency Department Origin</span>}
-            </div>
+            )}
 
             {incoming.length === 0 ? (
               <div className={styles.sbarCard}>
@@ -477,333 +470,361 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 const declineOpen = declineOpenFor === activeMovement.id;
 
                 return (
-                  <div className={styles.sbarCard} data-testid={`ward-incoming-${activeMovement.id}`}>
-                    {/* Patient Dossier Header */}
-                    <div className={styles.patientDossierBanner}>
-                      <div>
-                        <div className={styles.patientNameLine}>Incoming patient</div>
-                        <div className={styles.patientMetaLine}>
-                          Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
-                          {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                  <div className={styles.splitGrid} data-testid={`ward-incoming-${activeMovement.id}`}>
+                    <div className={styles.referralCard}>
+                      <div className={styles.panelHeader}>
+                        <div className={styles.panelHeaderLeft}>
+                          <span
+                            className={styles.answerTier}
+                            data-flagged-urgent={activeMovement.flaggedUrgent ? "true" : undefined}
+                          >
+                            {activeMovement.urgency}
+                            <span className="sr-only">
+                              {activeMovement.flaggedUrgent ? ", urgent admission enquiry" : ", tier"}
+                            </span>
+                          </span>
+                          <h2 className={styles.panelTitle}>Incoming referral</h2>
                         </div>
+                        <span className={styles.panelSub}>Emergency department origin</span>
                       </div>
-                      <div className={styles.patientDossierBadges}>
-                        <span className={styles.badge} data-tone="danger">
-                          {activeMovement.legalStatus}
-                        </span>
-                        {activeMovement.specialling ? (
-                          <span className={styles.badge} data-tone="warn">
-                            1:1 Specialling
-                          </span>
-                        ) : null}
-                        {activeMovement.highAcuity ? (
-                          <span className={styles.badge} data-tone="warn">
-                            High Acuity
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {/* SBAR Narrative Sections */}
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Situation</span>
-                      <div className={styles.sbarContent}>
-                        {activeMovement.cohort} presentation requiring{" "}
-                        {activeMovement.security === "Secure" ? "locked high-dependency" : "open acute"} inpatient
-                        admission under {activeMovement.legalStatus}. Acute clinical escalation in emergency department.
-                      </div>
-                    </div>
-
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Background</span>
-                      <div className={styles.sbarContent}>
-                        Known clinical history. Previous psychiatric admissions. Ceased regular maintenance medications
-                        prior to presentation.
-                      </div>
-                    </div>
-
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Assessment</span>
-                      <div className={styles.sbarContent}>
-                        High clinical risk profile with active psychomotor agitation. Medically stabilised for inpatient
-                        admission.{" "}
-                        {failedGateCount > 0
-                          ? "Potential admission gate incompatibilities identified below."
-                          : "All clinical admission gates satisfied."}
-                      </div>
-                    </div>
-
-                    <div className={styles.sbarSection}>
-                      <span className={styles.sbarTag}>Recommendation</span>
-                      <div className={styles.sbarContent}>
-                        Admit to {unit.name}. Bed hold standard buffer duration: 120 minutes. High-dependency
-                        observations indicated.
-                      </div>
-                    </div>
-
-                    {/* 8 Current Facts */}
-                    {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                    <dl className={styles.answerFacts} aria-label="Current facts for this patient">
-                      <div>
-                        <dt>Cohort</dt>
-                        <dd>{activeMovement.cohort}</dd>
-                      </div>
-                      <div>
-                        <dt>Bed needed</dt>
-                        <dd>{activeMovement.security === "Secure" ? "Secure" : "Open"}</dd>
-                      </div>
-                      <div>
-                        <dt>Sex</dt>
-                        <dd>{activeMovement.sex}</dd>
-                      </div>
-                      {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style. */}
-                      <div>
-                        <dt>Gender</dt>
-                        <dd>{activeMovement.gender ?? "Not recorded"}</dd>
-                      </div>
-                      <div>
-                        <dt>Specialling</dt>
-                        <dd>{activeMovement.specialling ? "Requested" : "Not requested"}</dd>
-                      </div>
-                      <div>
-                        <dt>High-acuity nursing</dt>
-                        <dd>{activeMovement.highAcuity ? "Requested" : "Not requested"}</dd>
-                      </div>
-                      <div>
-                        <dt>Legal status</dt>
-                        <dd>{activeMovement.legalStatus}</dd>
-                      </div>
-                      <div>
-                        <dt>From</dt>
-                        <dd>Emergency department. Origin department is not disclosed in this ward view.</dd>
-                      </div>
-                      <div>
-                        <dt>Referred</dt>
-                        <dd>
-                          {activeMovement.referredAt === undefined
-                            ? `No ward-referral time recorded; ${elapsedLabel(activeMovement, now)} since this movement opened`
-                            : `At ${formatInstantWithDay(activeMovement.referredAt, now)}, ${elapsedLabel(activeMovement, now)}`}
-                        </dd>
-                      </div>
-                    </dl>
-
-                    <p className={styles.answerIdentityAbsence}>
-                      Patient name and age are not recorded for this movement.
-                    </p>
-
-                    {/* 11 Clinical Gates Region */}
-                    <section
-                      className={styles.answerGates}
-                      // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                      aria-label="This ward's own gates for this patient"
-                    >
-                      <div className={styles.answerGatesHeading}>
-                        <h3>This ward&rsquo;s own gates</h3>
-                        <span>
-                          {eligibilityVerdict.gates.length - failedGateCount} of {eligibilityVerdict.gates.length} pass
-                        </span>
-                      </div>
-                      <ul>
-                        {eligibilityVerdict.gates.map((gate) => (
-                          <li key={gate.gate} data-pass={gate.pass}>
-                            <span className={styles.answerGateMark} aria-hidden="true">
-                              {gate.pass ? (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              ) : (
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="12" y1="8" x2="12" y2="12" />
-                                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                                </svg>
-                              )}
+                      <div className={styles.sbarCard}>
+                        {/* Patient Dossier Header */}
+                        <div className={styles.patientDossierBanner}>
+                          <div>
+                            <div className={styles.patientNameLine}>Incoming patient</div>
+                            <div className={styles.patientMetaLine}>
+                              Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
+                              {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                            </div>
+                          </div>
+                          <div className={styles.patientDossierBadges}>
+                            <span className={styles.badge} data-tone="danger">
+                              {activeMovement.legalStatus}
                             </span>
-                            <span className={styles.answerGateCopy}>
-                              <strong>{WARD_GATE_LABELS[gate.gate] ?? gate.gate}</strong>
-                              <span>{wardFacingGateDetail(gate)}</span>
-                            </span>
-                            <strong className={styles.answerGateVerdict}>{gate.pass ? "Pass" : "Does not pass"}</strong>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
+                            {activeMovement.specialling ? (
+                              <span className={styles.badge} data-tone="warn">
+                                1:1 Specialling
+                              </span>
+                            ) : null}
+                            {activeMovement.highAcuity ? (
+                              <span className={styles.badge} data-tone="warn">
+                                High Acuity
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
 
-                    {notice ? (
-                      <span
-                        className={styles.badge}
-                        data-testid={`ward-restriction-notice-${activeMovement.id}`}
-                        data-level={notice.level}
-                        data-tone="warn"
-                      >
-                        {notice.text}
-                      </span>
-                    ) : null}
+                        {/* SBAR Narrative Sections */}
+                        <div className={styles.sbarSection}>
+                          <span className={styles.sbarTag}>Situation</span>
+                          <div className={styles.sbarContent}>
+                            {activeMovement.cohort} presentation requiring{" "}
+                            {activeMovement.security === "Secure" ? "locked high-dependency" : "open acute"} inpatient
+                            admission under {activeMovement.legalStatus}. Acute clinical escalation in emergency
+                            department.
+                          </div>
+                        </div>
 
-                    {eligibilityIssue ? (
-                      <span
-                        className={styles.badge}
-                        data-testid={`ward-eligibility-warning-${activeMovement.id}`}
-                        data-level={eligibilityIssue.level}
-                        data-tone="danger"
-                      >
-                        {eligibilityIssue.text}
-                      </span>
-                    ) : null}
+                        <div className={styles.sbarSection}>
+                          <span className={styles.sbarTag}>Background</span>
+                          <div className={styles.sbarContent}>
+                            Known clinical history. Previous psychiatric admissions. Ceased regular maintenance
+                            medications prior to presentation.
+                          </div>
+                        </div>
 
-                    {/* Decision Action Controls */}
-                    <div className={styles.decisionArea}>
-                      <button
-                        type="button"
-                        data-testid={`ward-accept-${activeMovement.id}`}
-                        aria-disabled={blocked ? "true" : undefined}
-                        aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
-                        title={blocked ?? undefined}
-                        className={`${styles.btn} ${styles.btnGood}`}
-                        onClick={() => {
-                          if (blocked) return;
-                          handleAccept(activeMovement.id);
-                        }}
-                      >
-                        Accept in principle
-                      </button>
-                      <button
-                        type="button"
-                        data-testid={`ward-decline-toggle-${activeMovement.id}`}
-                        aria-disabled={blocked ? "true" : undefined}
-                        aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
-                        title={blocked ?? undefined}
-                        aria-expanded={declineOpen}
-                        className={`${styles.btn} ${styles.btnDanger}`}
-                        onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
-                      >
-                        Decline
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.btn}
-                        onClick={() => triggerToast("Not wired in this prototype.")}
-                      >
-                        Query / Hold
-                      </button>
+                        <div className={styles.sbarSection}>
+                          <span className={styles.sbarTag}>Assessment</span>
+                          <div className={styles.sbarContent}>
+                            High clinical risk profile with active psychomotor agitation. Medically stabilised for
+                            inpatient admission.{" "}
+                            {failedGateCount > 0
+                              ? "Potential admission gate incompatibilities identified below."
+                              : "All clinical admission gates satisfied."}
+                          </div>
+                        </div>
+
+                        <div className={styles.sbarSection}>
+                          <span className={styles.sbarTag}>Recommendation</span>
+                          <div className={styles.sbarContent}>
+                            Admit to {unit.name}. High-dependency observations indicated.
+                          </div>
+                        </div>
+
+                        {/* 8 Current Facts */}
+                        {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                        <dl className={styles.answerFacts} aria-label="Current facts for this patient">
+                          <div>
+                            <dt>Cohort</dt>
+                            <dd>{activeMovement.cohort}</dd>
+                          </div>
+                          <div>
+                            <dt>Bed needed</dt>
+                            <dd>{activeMovement.security === "Secure" ? "Secure" : "Open"}</dd>
+                          </div>
+                          <div>
+                            <dt>Sex</dt>
+                            <dd>{activeMovement.sex}</dd>
+                          </div>
+                          {/* Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, same style. */}
+                          <div>
+                            <dt>Gender</dt>
+                            <dd>{activeMovement.gender ?? "Not recorded"}</dd>
+                          </div>
+                          <div>
+                            <dt>Specialling</dt>
+                            <dd>{activeMovement.specialling ? "Requested" : "Not requested"}</dd>
+                          </div>
+                          <div>
+                            <dt>High-acuity nursing</dt>
+                            <dd>{activeMovement.highAcuity ? "Requested" : "Not requested"}</dd>
+                          </div>
+                          <div>
+                            <dt>Legal status</dt>
+                            <dd>{activeMovement.legalStatus}</dd>
+                          </div>
+                          <div>
+                            <dt>From</dt>
+                            <dd>Emergency department. Origin department is not disclosed in this ward view.</dd>
+                          </div>
+                          <div>
+                            <dt>Referred</dt>
+                            <dd>
+                              {activeMovement.referredAt === undefined
+                                ? `No ward-referral time recorded; ${elapsedLabel(activeMovement, now)} since this movement opened`
+                                : `At ${formatInstantWithDay(activeMovement.referredAt, now)}, ${elapsedLabel(activeMovement, now)}`}
+                            </dd>
+                          </div>
+                        </dl>
+
+                        <p className={styles.answerIdentityAbsence}>
+                          Patient name and age are not recorded for this movement.
+                        </p>
+                      </div>
                     </div>
 
-                    {blocked ? (
-                      <>
-                        <span id={`ward-accept-unavailable-${activeMovement.id}`} className="sr-only">
-                          {blocked}
-                        </span>
-                        <span id={`ward-decline-unavailable-${activeMovement.id}`} className="sr-only">
-                          {blocked}
-                        </span>
-                      </>
-                    ) : null}
-
-                    {lastActionRejection?.movementId === activeMovement.id ? (
-                      <p
-                        className={styles.noticeProminent}
-                        role="alert"
-                        data-testid={`ward-action-rejection-${activeMovement.id}`}
+                    <div className={styles.gatesCard}>
+                      {/* 11 Clinical Gates Region */}
+                      <section
+                        className={styles.answerGates}
+                        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+                        aria-label="This ward's own gates for this patient"
                       >
-                        {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted}{" "}
-                        not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
-                      </p>
-                    ) : null}
-
-                    {/* Override Reason Form */}
-                    {lastActionRejection &&
-                    lastActionRejection.movementId === activeMovement.id &&
-                    lastActionRejection.reason.includes(OVERRIDE_REASON_REQUIRED) ? (
-                      <form
-                        className={styles.declineForm}
-                        onSubmit={(event) => submitOverride(event, activeMovement.id)}
-                        data-testid={`ward-override-form-${activeMovement.id}`}
-                      >
-                        <fieldset className={styles.declineFieldset}>
-                          <legend className={styles.declineLegend}>Record why this is going ahead anyway</legend>
-                          {OVERRIDE_REASONS.map((reason) => (
-                            <label key={reason} className={styles.declineOption}>
-                              <input
-                                type="radio"
-                                name={`ward-override-${activeMovement.id}`}
-                                value={reason}
-                                checked={overrideReason === reason}
-                                onChange={() => setOverrideReason(reason)}
-                                data-testid={`ward-override-option-${activeMovement.id}`}
-                              />
-                              {reason}
-                            </label>
+                        <div className={styles.answerGatesHeading}>
+                          <h3>This ward&rsquo;s own gates</h3>
+                          <span>
+                            {eligibilityVerdict.gates.length - failedGateCount} of {eligibilityVerdict.gates.length}{" "}
+                            pass
+                          </span>
+                        </div>
+                        <ul>
+                          {eligibilityVerdict.gates.map((gate) => (
+                            <li key={gate.gate} data-pass={gate.pass}>
+                              <span className={styles.answerGateMark} aria-hidden="true">
+                                {gate.pass ? (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                  </svg>
+                                )}
+                              </span>
+                              <span className={styles.answerGateCopy}>
+                                <strong>{WARD_GATE_LABELS[gate.gate] ?? gate.gate}</strong>
+                                <span>{wardFacingGateDetail(gate)}</span>
+                              </span>
+                              <strong className={styles.answerGateVerdict}>
+                                {gate.pass ? "Pass" : "Does not pass"}
+                              </strong>
+                            </li>
                           ))}
-                          {lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) ? (
-                            <label className={styles.declineOption}>
-                              <input
-                                type="checkbox"
-                                checked={numConsulted}
-                                onChange={(event) => setNumConsulted(event.target.checked)}
-                                data-testid={`ward-override-num-consulted-${activeMovement.id}`}
-                              />
-                              Nurse unit manager consulted
-                            </label>
-                          ) : null}
+                        </ul>
+                      </section>
+
+                      {notice ? (
+                        <span
+                          className={styles.badge}
+                          data-testid={`ward-restriction-notice-${activeMovement.id}`}
+                          data-level={notice.level}
+                          data-tone="warn"
+                        >
+                          {notice.text}
+                        </span>
+                      ) : null}
+
+                      {eligibilityIssue ? (
+                        <span
+                          className={styles.badge}
+                          data-testid={`ward-eligibility-warning-${activeMovement.id}`}
+                          data-level={eligibilityIssue.level}
+                          data-tone="danger"
+                        >
+                          {eligibilityIssue.text}
+                        </span>
+                      ) : null}
+
+                      {blocked ? (
+                        <>
+                          <span id={`ward-accept-unavailable-${activeMovement.id}`} className="sr-only">
+                            {blocked}
+                          </span>
+                          <span id={`ward-decline-unavailable-${activeMovement.id}`} className="sr-only">
+                            {blocked}
+                          </span>
+                        </>
+                      ) : null}
+
+                      {lastActionRejection?.movementId === activeMovement.id ? (
+                        <p
+                          className={styles.noticeProminent}
+                          role="alert"
+                          data-testid={`ward-action-rejection-${activeMovement.id}`}
+                        >
+                          {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted}{" "}
+                          not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
+                        </p>
+                      ) : null}
+
+                      {/* Override Reason Form */}
+                      {lastActionRejection &&
+                      lastActionRejection.movementId === activeMovement.id &&
+                      lastActionRejection.reason.includes(OVERRIDE_REASON_REQUIRED) ? (
+                        <form
+                          className={styles.declineForm}
+                          onSubmit={(event) => submitOverride(event, activeMovement.id)}
+                          data-testid={`ward-override-form-${activeMovement.id}`}
+                        >
+                          <fieldset className={styles.declineFieldset}>
+                            <legend className={styles.declineLegend}>Record why this is going ahead anyway</legend>
+                            {OVERRIDE_REASONS.map((reason) => (
+                              <label key={reason} className={styles.declineOption}>
+                                <input
+                                  type="radio"
+                                  name={`ward-override-${activeMovement.id}`}
+                                  value={reason}
+                                  checked={overrideReason === reason}
+                                  onChange={() => setOverrideReason(reason)}
+                                  data-testid={`ward-override-option-${activeMovement.id}`}
+                                />
+                                {reason}
+                              </label>
+                            ))}
+                            {lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) ? (
+                              <label className={styles.declineOption}>
+                                <input
+                                  type="checkbox"
+                                  checked={numConsulted}
+                                  onChange={(event) => setNumConsulted(event.target.checked)}
+                                  data-testid={`ward-override-num-consulted-${activeMovement.id}`}
+                                />
+                                Nurse unit manager consulted
+                              </label>
+                            ) : null}
+                            <button
+                              type="submit"
+                              className={`${styles.btn} ${styles.btnGood}`}
+                              disabled={
+                                !overrideReason ||
+                                (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
+                              }
+                              data-testid={`ward-override-submit-${activeMovement.id}`}
+                            >
+                              Record reason and continue
+                            </button>
+                          </fieldset>
+                        </form>
+                      ) : null}
+
+                      {/* Inline Decline Form */}
+                      {declineOpen && !blocked ? (
+                        <form
+                          className={styles.declineForm}
+                          onSubmit={(event) => submitDecline(event, activeMovement.id)}
+                          data-testid={`ward-decline-form-${activeMovement.id}`}
+                        >
+                          <fieldset className={styles.declineFieldset}>
+                            <legend className={styles.declineLegend}>Decline reason for {activeMovement.id}</legend>
+                            {DECLINE_REASONS.map((reason) => (
+                              <label key={reason} className={styles.declineOption}>
+                                <input
+                                  type="radio"
+                                  name={`decline-reason-${activeMovement.id}`}
+                                  value={reason}
+                                  checked={declineReason === reason}
+                                  onChange={() => setDeclineReason(reason)}
+                                />
+                                {reason.replace(/_/g, " ")}
+                              </label>
+                            ))}
+                          </fieldset>
                           <button
                             type="submit"
-                            className={`${styles.btn} ${styles.btnGood}`}
-                            disabled={
-                              !overrideReason ||
-                              (lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL) && !numConsulted)
-                            }
-                            data-testid={`ward-override-submit-${activeMovement.id}`}
+                            disabled={!declineReason}
+                            className={`${styles.btn} ${styles.btnDanger}`}
                           >
-                            Record reason and continue
+                            Confirm decline
                           </button>
-                        </fieldset>
-                      </form>
-                    ) : null}
+                        </form>
+                      ) : null}
 
-                    {/* Inline Decline Form */}
-                    {declineOpen && !blocked ? (
-                      <form
-                        className={styles.declineForm}
-                        onSubmit={(event) => submitDecline(event, activeMovement.id)}
-                        data-testid={`ward-decline-form-${activeMovement.id}`}
-                      >
-                        <fieldset className={styles.declineFieldset}>
-                          <legend className={styles.declineLegend}>Decline reason for {activeMovement.id}</legend>
-                          {DECLINE_REASONS.map((reason) => (
-                            <label key={reason} className={styles.declineOption}>
-                              <input
-                                type="radio"
-                                name={`decline-reason-${activeMovement.id}`}
-                                value={reason}
-                                checked={declineReason === reason}
-                                onChange={() => setDeclineReason(reason)}
-                              />
-                              {reason.replace(/_/g, " ")}
-                            </label>
-                          ))}
-                        </fieldset>
-                        <button type="submit" disabled={!declineReason} className={`${styles.btn} ${styles.btnDanger}`}>
-                          Confirm decline
+                      {/* Decision Action Controls */}
+                      <div className={styles.decisionArea}>
+                        <button
+                          type="button"
+                          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.askButton}`}
+                          onClick={() => triggerToast("Not wired in this prototype.")}
+                        >
+                          Ask a question
                         </button>
-                      </form>
-                    ) : null}
+                        <button
+                          type="button"
+                          data-testid={`ward-decline-toggle-${activeMovement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          aria-expanded={declineOpen}
+                          className={buttonClass({ variant: "sec", size: "sm" })}
+                          onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
+                        >
+                          Decline
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`ward-accept-${activeMovement.id}`}
+                          aria-disabled={blocked ? "true" : undefined}
+                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
+                          title={blocked ?? undefined}
+                          className={buttonClass({ variant: "pri", size: "sm" })}
+                          onClick={() => {
+                            if (blocked) return;
+                            handleAccept(activeMovement.id);
+                          }}
+                        >
+                          Accept in principle
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 );
               })()
@@ -811,95 +832,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           </section>
 
           {/* Right Column: Bed Map Census & Operations */}
-          <div className={styles.rightColumn}>
-            {/* Unit Bed Map Census */}
-            <section className={styles.panel} aria-label={`${unit.name} Census`}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>
-                  {unit.name} Census ({unit.beds} Beds)
-                </h2>
-                <span className={styles.badge} data-tone={capacity.available > 0 ? "good" : "warn"}>
-                  {capacity.available} Ready Bed{capacity.available === 1 ? "" : "s"}
-                </span>
-              </div>
-              {pendingPreparation > 0 ? (
-                <p className={styles.notice}>
-                  {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"} at{" "}
-                  {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                </p>
-              ) : null}
-              <div className={styles.bedGrid}>
-                {Array.from({ length: unit.beds }, (_, i) => {
-                  const bedNum = String(i + 1).padStart(2, "0");
-                  // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
-                  // particular beds: no admission records a bed number.
-                  const isVacant = i < states.ready;
-                  const isPulled = !isVacant && i < states.ready + states.pulled;
-                  const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
-                  const statusLabel = isVacant
-                    ? "READY"
-                    : isPulled
-                      ? BED_STATE_LABELS.pulled
-                      : isClosed
-                        ? BED_STATE_LABELS.closed
-                        : "Inpatient";
-                  const cellClass = `${styles.bedCell} ${
-                    isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
-                  }`;
-                  return (
-                    <button
-                      type="button"
-                      key={bedNum}
-                      className={cellClass}
-                      onClick={(e) => {
-                        if (isVacant && activeMovement) {
-                          openerRef.current = e.currentTarget;
-                          setAcceptModalOpen(true);
-                        }
-                      }}
-                      aria-label={`Bed ${bedNum} ${statusLabel}`}
-                      disabled={!isVacant}
-                    >
-                      <span className={styles.bedNum}>{bedNum}</span>
-                      <span>{statusLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
-                65/35 male-to-female split of the occupied count were typed in here (25 September
-                2026 review). Ward Flow holds no staffing figures and this screen counts no one's
-                sex, so both rows say so rather than show a number. */}
-            <section className={styles.panel} aria-label="Shift milieu and staffing balance">
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Shift milieu and staffing balance</h2>
-              </div>
-              <div className={styles.milieuList}>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Nurse-to-Patient Ratio:</span>
-                  <span className={styles.milieuValue}>Not recorded in Ward Flow</span>
-                </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Gender Balance:</span>
-                  <span className={styles.milieuValue}>Not counted on this screen</span>
-                </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>1:1 Nursing Specialling:</span>
-                  <span className={styles.milieuValue}>
-                    {activeSpeciallingCount} Patient{activeSpeciallingCount === 1 ? "" : "s"} Active
-                  </span>
-                </div>
-                <div className={styles.milieuRow}>
-                  <span className={styles.milieuLabel}>Expected Discharge Today:</span>
-                  <span className={styles.milieuValue}>
-                    {breakdown.expectedToday} Patient{breakdown.expectedToday === 1 ? "" : "s"}
-                  </span>
-                </div>
-              </div>
-            </section>
-
+          <div className={styles.lowerRow}>
             {/* Confirm Your Beds (Capacity Form) */}
             <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds" tabIndex={0}>
               <div className={styles.panelHeader}>
@@ -989,6 +922,82 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     Writes to {unit.name} only &mdash; never any other ward.
                   </p>
                 </form>
+              </div>
+            </section>
+
+            {/* Unit Bed Map Census */}
+            <section className={styles.panel} aria-label={`${unit.name} Census`}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Census</h2>
+                <span className={styles.panelSub}>
+                  {unit.beds} beds · {capacity.available} ready
+                </span>
+              </div>
+              {pendingPreparation > 0 ? (
+                <p className={styles.notice}>
+                  {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"} at{" "}
+                  {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                </p>
+              ) : null}
+              <div className={styles.bedGrid}>
+                {Array.from({ length: unit.beds }, (_, i) => {
+                  const bedNum = String(i + 1).padStart(2, "0");
+                  // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
+                  // particular beds: no admission records a bed number.
+                  const isVacant = i < states.ready;
+                  const isPulled = !isVacant && i < states.ready + states.pulled;
+                  const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
+                  const statusLabel = isVacant
+                    ? "READY"
+                    : isPulled
+                      ? BED_STATE_LABELS.pulled
+                      : isClosed
+                        ? BED_STATE_LABELS.closed
+                        : "Inpatient";
+                  const cellClass = `${styles.bedCell} ${
+                    isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
+                  }`;
+                  return (
+                    <button
+                      type="button"
+                      key={bedNum}
+                      className={cellClass}
+                      onClick={(e) => {
+                        if (isVacant && activeMovement) {
+                          openerRef.current = e.currentTarget;
+                          setAcceptModalOpen(true);
+                        }
+                      }}
+                      aria-label={`Bed ${bedNum} ${statusLabel}`}
+                      disabled={!isVacant}
+                    >
+                      <span className={styles.bedNum}>{bedNum}</span>
+                      <span>{statusLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
+                65/35 male-to-female split of the occupied count were typed in here (25 September
+                2026 review). Ward Flow holds no staffing figures and this screen counts no one's
+                sex, so both rows say so rather than show a number. */}
+              <div className={styles.milieuList}>
+                <div className={styles.milieuRow}>
+                  <span className={styles.milieuLabel}>Nurse ratio</span>
+                  <span className={styles.milieuValue}>not recorded</span>
+                </div>
+                <div className={styles.milieuRow}>
+                  <span className={styles.milieuLabel}>Sex mix</span>
+                  <span className={styles.milieuValue}>not counted here</span>
+                </div>
+                <div className={styles.milieuRow}>
+                  <span className={styles.milieuLabel}>1:1 specialling</span>
+                  <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
+                </div>
+                <div className={styles.milieuRow}>
+                  <span className={styles.milieuLabel}>Expected out today</span>
+                  <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
+                </div>
               </div>
             </section>
 
