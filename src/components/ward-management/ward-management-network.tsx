@@ -33,7 +33,7 @@ import {
   unitCapacity,
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { formatElapsed, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import type {
@@ -697,7 +697,7 @@ export function WardNetworkWorkspace() {
         aria-labelledby="ward-network-placement-tab"
         hidden={view !== "placement"}
       >
-        <WardNetworkPlacementWorkspace />
+        <WardNetworkPlacementWorkspace now={now} />
       </div>
     </div>
   );
@@ -726,9 +726,9 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
   return movements.find(isOpen)?.id ?? null;
 }
 
-function WardNetworkPlacementWorkspace() {
+/** `now` is the page's own clock from `usePageLive()`, so pausing the hero freezes this workspace too. */
+function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
   const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlow();
-  const now = useWardFlowClock();
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);

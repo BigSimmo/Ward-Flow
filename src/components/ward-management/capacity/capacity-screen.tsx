@@ -543,6 +543,7 @@ export function CapacityScreen() {
                 <CapacityWardSidebar
                   key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
                   row={selectedRow}
+                  now={now}
                   onBack={clearWard}
                 />
               ) : (
@@ -1626,10 +1627,10 @@ function CapacityTabs({
 }
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
-function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () => void }) {
+/** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
+function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlow();
-  const { now } = usePageLive();
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
