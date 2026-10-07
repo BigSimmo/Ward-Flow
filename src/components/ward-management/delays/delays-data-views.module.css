@@ -1893,6 +1893,9 @@ span.workspaceMeasure,
 }
 
 .blockerTable {
+  /* Scroll threshold, measured in a browser: the cause names need about 136px and the full bar
+     row about 327px, so the table scrolls inside its card rather than squeezing the bars away. */
+  min-width: 240px;
   width: 100%;
   border-collapse: collapse;
   color: var(--wf-ink-1);
