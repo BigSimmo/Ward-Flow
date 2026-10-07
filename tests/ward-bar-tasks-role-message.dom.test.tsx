@@ -87,14 +87,14 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
     mockContext = freshContext(); // full seeded movements — real work exists, just gated off this role
     const sheet = await openTasksDrawer();
     expect(within(sheet).getByText("Tasks is the bed coordinator's list.")).toBeInTheDocument();
-    expect(within(sheet).queryByText("No outstanding work right now.")).toBeNull();
+    expect(within(sheet).queryByText("No outstanding work")).toBeNull();
   });
 
   it("keeps the coordinator's genuine empty state when a coordinator's own inbox is clear", async () => {
     route.pathname = "/mockups/ward-flow";
     mockContext = freshContext({ movements: [] }); // no movements at all -> buildActionInbox is []
     const sheet = await openTasksDrawer();
-    expect(within(sheet).getByText("No outstanding work right now.")).toBeInTheDocument();
+    expect(within(sheet).getByText("No outstanding work")).toBeInTheDocument();
     expect(within(sheet).queryByText("Tasks is the bed coordinator's list.")).toBeNull();
   });
 });
