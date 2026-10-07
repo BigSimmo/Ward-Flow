@@ -422,6 +422,25 @@ const HIGH_CONTRAST_KEY = "ward-flow-high-contrast";
 const REDUCED_MOTION_EVENT = "ward-flow:reduced-motion-change";
 const HIGH_CONTRAST_EVENT = "ward-flow:high-contrast-change";
 
+/**
+ * When browser storage refuses a write (private browsing, a sandboxed frame), the choice is held
+ * here for the rest of the session so the switch still moves and the setting still applies.
+ * `null` means storage took the last write and is the source of truth.
+ */
+const unsavedAccessibilityChoice: { reducedMotion: boolean | null; highContrast: boolean | null } = {
+  reducedMotion: null,
+  highContrast: null,
+};
+
+function saveAccessibilityChoice(choice: keyof typeof unsavedAccessibilityChoice, key: string, enabled: boolean) {
+  try {
+    window.localStorage.setItem(key, enabled ? "true" : "false");
+    unsavedAccessibilityChoice[choice] = null;
+  } catch {
+    unsavedAccessibilityChoice[choice] = enabled;
+  }
+}
+
 function subscribeReducedMotion(onChange: () => void) {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", onChange);
@@ -434,6 +453,7 @@ function subscribeReducedMotion(onChange: () => void) {
 
 function getReducedMotionSnapshot(): boolean {
   if (typeof window === "undefined") return false;
+  if (unsavedAccessibilityChoice.reducedMotion !== null) return unsavedAccessibilityChoice.reducedMotion;
   try {
     return window.localStorage.getItem(REDUCED_MOTION_KEY) === "true";
   } catch {
@@ -455,6 +475,7 @@ function subscribeHighContrast(onChange: () => void) {
 
 function getHighContrastSnapshot(): boolean {
   if (typeof window === "undefined") return false;
+  if (unsavedAccessibilityChoice.highContrast !== null) return unsavedAccessibilityChoice.highContrast;
   try {
     return window.localStorage.getItem(HIGH_CONTRAST_KEY) === "true";
   } catch {
@@ -516,11 +537,7 @@ export function SettingsScreen() {
 
   const handleToggleReducedMotion = (enabled: boolean) => {
     if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(REDUCED_MOTION_KEY, enabled ? "true" : "false");
-      } catch {
-        // Ignore storage access errors in private browsing or sandbox
-      }
+      saveAccessibilityChoice("reducedMotion", REDUCED_MOTION_KEY, enabled);
       if (enabled) {
         document.documentElement.setAttribute("data-reduced-motion", "true");
       } else {
@@ -533,11 +550,7 @@ export function SettingsScreen() {
 
   const handleToggleHighContrast = (enabled: boolean) => {
     if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(HIGH_CONTRAST_KEY, enabled ? "true" : "false");
-      } catch {
-        // Ignore storage access errors in private browsing or sandbox
-      }
+      saveAccessibilityChoice("highContrast", HIGH_CONTRAST_KEY, enabled);
       if (enabled) {
         document.documentElement.setAttribute("data-high-contrast", "true");
       } else {

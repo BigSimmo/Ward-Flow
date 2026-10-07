@@ -115,6 +115,14 @@ describe("stranded-patient prompts", () => {
     expect(strandedPromptText(flag!)).toBe("Ready but waiting: accommodation");
   });
 
+  it("prefers the live release blocker over a cleaning hold left on the admission at arrival", () => {
+    const admission = stay(1, { blockReason: "Awaiting clean", expectedDischargeAt: NOW });
+    const activeRelease = release(admission.id, { blocker: "Awaiting accommodation" });
+    const [flag] = strandedFlags([admission], NOW, [activeRelease]);
+    expect(flag?.reasons).toEqual(["ready-but-waiting"]);
+    expect(flag?.waitingOn).toBe("Awaiting accommodation");
+  });
+
   it("ignores bed release blocker when the release is already discharged", () => {
     const admission = stay(1, { blockReason: null, expectedDischargeAt: NOW });
     const dischargedRelease = release(admission.id, { state: "discharged", blocker: "Awaiting accommodation" });

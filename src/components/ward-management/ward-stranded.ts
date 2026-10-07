@@ -74,7 +74,7 @@ export function strandedFlags(
     const releaseBlocker = bedReleases?.find(
       (r) => r.admissionId === admission.id && r.state !== "discharged",
     )?.blocker;
-    const effectiveBlocker = admission.blockReason ?? releaseBlocker ?? null;
+    const effectiveBlocker = releaseBlocker ?? admission.blockReason ?? null;
     const waiting = isStrandedWaitingBlocker(effectiveBlocker);
     if (waiting) reasons.push("ready-but-waiting");
     if (reasons.length === 0) continue;

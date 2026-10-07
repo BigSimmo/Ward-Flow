@@ -1042,7 +1042,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       awayAtEdHours: awayHours,
       expectedDays: expDays,
       tentativeDiagnosis: tentDiag,
-      blockReason: admission?.blockReason ?? releaseBlocker ?? undefined,
+      blockReason: releaseBlocker ?? admission?.blockReason ?? undefined,
       dischargeBarrier: admission?.dischargeBarrier ?? undefined,
       isSpecialling,
       legalStatus: patientLegalStatus,

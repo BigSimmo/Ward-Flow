@@ -306,7 +306,29 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       const pulled = next.movements.find((movement) => movement.id === returnMovement.id)!;
       expect(pulled.stage).toBe("pulled");
       expect(pulled.admissionId).not.toBe(admission.id);
-      expect(next.admissions.some((candidate) => candidate.id === admission.id)).toBe(true);
+      expect(next.admissions.find((candidate) => candidate.id === admission.id)?.state).toBe("occupied");
+
+      // Arrival ends the sending stay, so the patient never holds a bed at both hospitals.
+      const sendingUnitEmptyBefore = next.units.find((unit) => unit.id === admission.unitId)!.empty.value;
+      next = wardFlowReducer(next, {
+        type: "RECORD_TRANSPORT_NEED",
+        role: "ward",
+        now: NOW + 20,
+        movementId: returnMovement.id,
+        needed: false,
+      });
+      next = wardFlowReducer(next, {
+        type: "PATIENT_ARRIVED",
+        role: "ward",
+        now: NOW + 30,
+        movementId: returnMovement.id,
+        actingUnitId: destination.id,
+      });
+      expect(next.rejections.map((rejection) => rejection.reason)).toEqual([]);
+      const sending = next.admissions.find((candidate) => candidate.id === admission.id)!;
+      expect(sending.state).toBe("departed");
+      expect(sending.leavingDestination).toBe("transferred-to-another-psychiatric-ward");
+      expect(next.units.find((unit) => unit.id === admission.unitId)!.empty.value).toBe(sendingUnitEmptyBefore + 1);
     });
 
     it("does not delete source admission from state when repatriation referral is withdrawn", () => {

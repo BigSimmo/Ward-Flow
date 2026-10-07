@@ -4843,6 +4843,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       } else {
         withPerson = withUnit;
       }
+      /*
+       * A repatriation return carries the sending stay as `sourceAdmissionId`. Arrival at the
+       * receiving ward ends that stay as a transfer, so one person never holds a bed at both
+       * hospitals. A stay that has already left (or has gone) is left alone.
+       */
+      const sendingAdmission =
+        movement.sourceAdmissionId === undefined ? undefined : findAdmission(withPerson, movement.sourceAdmissionId);
+      const sendingUnit = sendingAdmission ? findUnit(withPerson, sendingAdmission.unitId) : undefined;
+      if (sendingAdmission && sendingUnit && sendingAdmission.state === "occupied") {
+        withPerson = departAdmission(
+          withPerson,
+          sendingAdmission,
+          sendingUnit,
+          event.now,
+          "transferred-to-another-psychiatric-ward",
+        );
+      }
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }
 
