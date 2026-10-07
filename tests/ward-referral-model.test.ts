@@ -1439,23 +1439,12 @@ describe("Referral privacy — structural", () => {
  * logic those components render, independent of React.
  */
 describe("Task 5 — referral board ordering (referralQueueOrder, recentlyDecidedReferrals)", () => {
-  it("orders the real fixture's queued referrals by urgency, then by longest wait — RF-001 (raised 40 min ago) before RF-005 (raised 20 min ago), both tier 2", () => {
+  it("orders the real fixture's queued referrals by FIFO waiting time per Decision D-32 (earliest raised first)", () => {
     const queuedIds = referralQueueOrder(referrals).map((referral) => referral.id);
-    // RF-009 joined the fixture on 2026-08-30 as the FIRST referral addressed to an emergency
-    // department — before it, the ED hub's inbox was empty for every department and its screen was
-    // indistinguishable from a working one with nothing to show. It is queued and urgency 2, so it
-    // sorts by wait: raised 35 minutes ago, after RF-001 (40) and before RF-005 (20).
-    // RF-011 joined 2026-09-02 as the seed's one multi-destination referral (`{psychiatric_ward,
-    // emergency_department}`, FD-23's demonstration fixture — see `ward-movements.ts`). It is
-    // urgency 3, the lowest tier, specifically so it sorts LAST here rather than disturbing the
-    // three tier-2 referrals' relative order above.
-    // RF-014 and RF-015 joined 2026-09-07 as the seed's two EXPECTS — referred to an emergency
-    // department and not yet arrived, which this fixture could not previously express at all. Both
-    // took urgency 3 for the reason RF-011 did, stated above: the lowest tier sorts last and leaves
-    // the three tier-2 referrals' relative order untouched. Within that tier they sort by wait,
-    // which is why RF-015 (raised 4,500 minutes ago, deliberately past the owner's 72-hour
-    // reconsider threshold) precedes RF-014 (150), and both precede RF-011.
-    expect(queuedIds).toEqual(["RF-001", "RF-009", "RF-005", "RF-015", "RF-014", "RF-011"]);
+    // Decision D-32 (6 October 2026): Emergency referral queue defaults to FIFO waiting time.
+    // RF-015 (raised 4,500 min ago) precedes RF-014 (150 min ago), which precedes RF-011 (60 min ago),
+    // RF-001 (40 min ago), RF-009 (35 min ago), and RF-005 (20 min ago).
+    expect(queuedIds).toEqual(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   it("never includes an accepted or declined referral in the queued order", () => {
@@ -1469,17 +1458,15 @@ describe("Task 5 — referral board ordering (referralQueueOrder, recentlyDecide
   });
 
   /**
-   * Urgency must win over wait time even when wait time alone would suggest the opposite order —
-   * otherwise a test built only from fixture data that happens to already agree on both keys
-   * could pass with either key driving the sort alone. A synthetic pair proves urgency is the
-   * primary key: the tier-1 referral raised MOST RECENTLY still sorts before the tier-3 referral
-   * raised LONGEST ago.
+   * Decision D-32 (6 October 2026): Emergency referral queue defaults to FIFO waiting time
+   * (earliest raisedAt first) with clinical urgency badges displayed for clinician appraisal.
+   * Longer-waiting referrals sort ahead of recently raised urgent ones to prevent black-box queue jumping.
    */
-  it("ranks a more urgent, more recently raised referral ahead of a less urgent, longer-waiting one", () => {
+  it("ranks a longer-waiting referral ahead of a more recently raised urgent referral per D-32", () => {
     const urgentRecent: Referral = { ...referrals[0], id: "RF-SYNTH-URGENT", urgency: 1, raisedAt: NOW_ANCHOR - 5 };
     const calmOld: Referral = { ...referrals[0], id: "RF-SYNTH-CALM", urgency: 3, raisedAt: NOW_ANCHOR - 500 };
     const ordered = referralQueueOrder([calmOld, urgentRecent]).map((referral) => referral.id);
-    expect(ordered).toEqual(["RF-SYNTH-URGENT", "RF-SYNTH-CALM"]);
+    expect(ordered).toEqual(["RF-SYNTH-CALM", "RF-SYNTH-URGENT"]);
   });
 
   it("orders the real fixture's decided referrals most-recently-decided first", () => {

@@ -43,9 +43,9 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 const NETWORK_COMPONENT = resolve(process.cwd(), "src/components/ward-management/ward-management-network.tsx");
 const D15_CONTRACT_TEST = resolve(process.cwd(), "tests/ward-referral-matching.test.ts");
 
-/** The first referral the coordinator's own queue order puts up — resolved from the seed rather
- *  than named by id, so this suite follows the fixture instead of pinning a spelling of it. */
-const SUBJECT = referralQueueOrder(referrals)[0]!;
+/** The youth psychiatric referral the coordinator's placement diagram tests against —
+ *  resolved from the seed (RF-001), testing age mismatch and travel bands. */
+const SUBJECT = referrals.find((candidate) => candidate.id === "RF-001")!;
 
 const VERDICT_TESTID = /^ward-network-verdict-/;
 
