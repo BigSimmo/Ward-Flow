@@ -7616,3 +7616,350 @@ input.historyField:focus-visible {
     min-height: 3rem;
   }
 }
+
+/* ═══ v6 (NewReferral.png): the person bar is one row ═══
+ * The link switch, then the person, the search and Add new patient on a single line. The heading
+ * stays for the section's name but is not drawn; the interpreter alert takes a row of its own. */
+
+/* `!important` only answers the intake panel's own `!important` column layout and clip; the
+   search results must open past the bar's edge. */
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personPanel {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  overflow: visible !important;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personHeaderStrip,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personControlsRight {
+  display: contents;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personTitleGroup {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personModeSwitch {
+  order: 1;
+  flex: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
+  order: 2;
+  flex: 1 1 24rem;
+  flex-wrap: nowrap;
+  padding: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personMetaGroup {
+  flex: 1 1 auto;
+  min-width: 13rem;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personName,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personIdPill,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personStatusPill {
+  white-space: nowrap;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions .actionBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  text-decoration: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personPrimaryRow {
+  gap: var(--wf-s-2);
+  margin-bottom: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDetailSentence {
+  margin: 0;
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck svg {
+  color: var(--wf-success);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
+  order: 3;
+  flex: 0 1 12rem;
+  min-width: 10rem;
+  padding: 0;
+  border: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .searchResultsDropdown {
+  left: auto;
+  right: 0;
+  width: min(32rem, calc(100vw - 2 * var(--wf-s-4)));
+  border-color: var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .rapidSearchInput {
+  min-height: var(--wf-h-md);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .addPatientHeaderBtn {
+  order: 4;
+  flex: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .interpreterAlert {
+  order: 5;
+  flex: 1 1 100%;
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+
+/* ═══ v6 (NewReferral--add-patient.webp): the Register new patient dialog ═══ */
+
+.screen[data-ward-design="v6"] .modalOverlay {
+  background: var(--wf-scrim);
+  backdrop-filter: none;
+}
+
+.screen[data-ward-design="v6"] .modalDialog {
+  max-width: 34rem;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .modalHeader {
+  align-items: center;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .modalTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalSubtitle {
+  margin-top: 2px;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalCloseBtn {
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  min-width: var(--wf-h-sm);
+  min-height: var(--wf-h-sm);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-20);
+}
+
+.screen[data-ward-design="v6"] .modalCloseBtn:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .modalBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .modalRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .modalField {
+  min-width: 0;
+  gap: var(--wf-s-1);
+}
+
+.screen[data-ward-design="v6"] .modalLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .modalInput,
+.screen[data-ward-design="v6"] .modalSelect {
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalInput:focus,
+.screen[data-ward-design="v6"] .modalSelect:focus {
+  border-color: var(--wf-accent);
+  background: var(--wf-surface);
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.modalHint {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A failed save is the one red thing here; a possible duplicate is a caution, not an emergency. */
+.modalError,
+.modalNotice {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.modalError {
+  color: var(--wf-danger-ink);
+}
+
+.modalNotice {
+  color: var(--wf-ink-1);
+  box-shadow: inset 3px 0 0 var(--wf-warning);
+}
+
+.modalNoticeList {
+  margin: var(--wf-s-1) 0 0;
+  padding-left: var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .modalFooter {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn,
+.modalSecondaryBtn,
+.screen[data-ward-design="v6"] .modalSubmitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn {
+  margin-right: auto;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink);
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn:hover {
+  background: var(--wf-hover);
+}
+
+.modalSecondaryBtn {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.modalSecondaryBtn:hover {
+  border-color: var(--wf-line-3);
+}
+
+/* The one primary: deep slate with white ink, never the pale accent ink on accent that read as
+   disabled. A genuinely disabled state reads as a dashed outline with muted ink. */
+.screen[data-ward-design="v6"] .modalSubmitBtn {
+  border: 1px solid var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
+}
+
+.screen[data-ward-design="v6"] .modalSubmitBtn:hover {
+  filter: brightness(1.08);
+}
+
+.screen[data-ward-design="v6"] .modalSubmitBtn:disabled {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  box-shadow: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn:focus-visible,
+.modalSecondaryBtn:focus-visible,
+.screen[data-ward-design="v6"] .modalSubmitBtn:focus-visible,
+.screen[data-ward-design="v6"] .modalCloseBtn:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
+    flex-basis: 100%;
+  }
+
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
+    flex-wrap: wrap;
+  }
+
+  .screen[data-ward-design="v6"] .modalRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-ward-design="v6"] .modalInput,
+  .screen[data-ward-design="v6"] .modalSelect,
+  .screen[data-ward-design="v6"] .modalCancelBtn,
+  .modalSecondaryBtn,
+  .screen[data-ward-design="v6"] .modalSubmitBtn,
+  .screen[data-ward-design="v6"] .modalCloseBtn {
+    min-height: 3rem;
+  }
+}

@@ -1153,6 +1153,14 @@ type ReferralDraftPrefill = Partial<Pick<ReferralDraft, "sex" | "gender" | "subu
   originSiteCode: string | typeof UNANSWERED_VALUE;
 };
 
+/** The Add patient dialog's gender answers, in the order drawn: not recorded first, never chosen
+ * for the clinician. */
+const NEW_PATIENT_GENDER_CHOICES: readonly (readonly [Gender | "not-recorded", string])[] = [
+  ["not-recorded", "Not recorded"],
+  ["Female", "Female"],
+  ["Male", "Male"],
+];
+
 /** Facts the patient record can answer without guessing. Sex, gender and suburb are copied only
  * when they are valid options on this form. Gender is deliberately not used to answer sex, and
  * sex is deliberately not used to answer gender: the patient model records those as separate
@@ -2244,7 +2252,7 @@ export function ReferralIntakeForm() {
                 type="text"
                 data-testid="ward-referral-patient-search"
                 className={styles.rapidSearchInput}
-                placeholder="Search or link a patient (name, UMRN)..."
+                placeholder="Search or link a patient"
                 autoComplete="off"
                 data-gramm="false"
                 data-enable-grammarly="false"
@@ -2395,9 +2403,6 @@ export function ReferralIntakeForm() {
                 <button type="button" className={styles.actionBtn} onClick={handleSwitchToLinked}>
                   Change patient
                 </button>
-                <button type="button" className={styles.actionBtn} onClick={handleUnlinkPatient}>
-                  Unlink
-                </button>
               </div>
             </div>
           ) : (
@@ -2419,15 +2424,6 @@ export function ReferralIntakeForm() {
               <div className={styles.personActions}>
                 <button type="button" className={styles.actionBtn} onClick={handleSwitchToLinked}>
                   Link patient record
-                </button>
-                <button
-                  type="button"
-                  className={styles.actionBtn}
-                  onClick={() => {
-                    setIsAddPatientOpen(true);
-                  }}
-                >
-                  Register new patient
                 </button>
               </div>
             </div>
@@ -2506,16 +2502,7 @@ export function ReferralIntakeForm() {
               <form onSubmit={handleAddPatientSubmit}>
                 <div className={styles.modalBody}>
                   {addPatientError && (
-                    <div
-                      role="alert"
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: "var(--r1)",
-                        background: "var(--danger-soft)",
-                        color: "var(--danger-ink)",
-                        fontSize: "var(--t-0)",
-                      }}
-                    >
+                    <div role="alert" className={styles.modalError}>
                       {addPatientError}
                     </div>
                   )}
@@ -2524,16 +2511,10 @@ export function ReferralIntakeForm() {
                     <div
                       role="alert"
                       data-testid="ward-referral-intake-add-patient-duplicates"
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: "var(--r1)",
-                        background: "var(--danger-soft)",
-                        color: "var(--danger-ink)",
-                        fontSize: "var(--t-0)",
-                      }}
+                      className={styles.modalNotice}
                     >
                       <strong>Possible existing records — check before adding a second record:</strong>
-                      <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+                      <ul className={styles.modalNoticeList}>
                         {addPatientWarnings.map((warning) => (
                           <li key={warning}>{warning}</li>
                         ))}
@@ -2617,25 +2598,37 @@ export function ReferralIntakeForm() {
 
                   <div className={styles.modalRow}>
                     <div className={styles.modalField}>
-                      <label htmlFor="new-patient-gender" className={styles.modalLabel}>
+                      <span id="new-patient-gender-label" className={styles.modalLabel}>
                         Gender (bed allocation)
-                      </label>
-                      <select
-                        id="new-patient-gender"
-                        className={styles.modalSelect}
-                        value={newGender}
-                        onChange={(e) => setNewGender(e.target.value as Gender | "not-recorded")}
+                      </span>
+                      <div
+                        className={pageStyles.segmentGroup}
+                        role="radiogroup"
+                        aria-labelledby="new-patient-gender-label"
+                        data-testid="ward-referral-intake-add-patient-gender"
                       >
-                        <option value="not-recorded">Not yet recorded</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
-                      </select>
+                        {NEW_PATIENT_GENDER_CHOICES.map(([value, label]) => (
+                          <label
+                            key={value}
+                            className={pageStyles.segmentOption}
+                            data-selected={newGender === value ? "true" : undefined}
+                          >
+                            <input
+                              type="radio"
+                              name="new-patient-gender"
+                              value={value}
+                              className={pageStyles.srOnlyRadio}
+                              checked={newGender === value}
+                              onChange={() => setNewGender(value)}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <div className={styles.modalField}>
                       <span className={styles.modalLabel}>Legal status</span>
-                      <p style={{ marginTop: 4, fontSize: "var(--t-0)", color: "var(--muted, #64748b)" }}>
-                        MHA statutory instruments are recorded under Question 2 of this referral.
-                      </p>
+                      <p className={styles.modalHint}>Legal forms are recorded in step 2 of this referral.</p>
                     </div>
                   </div>
                 </div>
@@ -2654,7 +2647,7 @@ export function ReferralIntakeForm() {
                   {addPatientWarnings.length > 0 ? (
                     <button
                       type="button"
-                      className={styles.modalSubmitBtn}
+                      className={styles.modalSecondaryBtn}
                       onClick={() => performAddPatient(newGivenName.trim(), newFamilyName.trim(), newUmrn.trim())}
                     >
                       Register anyway
@@ -2700,7 +2693,9 @@ export function ReferralIntakeForm() {
               <div className={styles.intakeQuestions}>
                 <fieldset className={`${styles.stepSection} ${styles.identityStep} ${pageStyles.panel}`}>
                   <legend className={`${styles.stepLegend} ${pageStyles.ph} ${pageStyles.panelHeader}`}>
-                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>Step 1</span>
+                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>
+                      <span className="sr-only">Step</span> 1
+                    </span>
                     <span className={`${styles.stepName} ${pageStyles.panelHeaderTitle}`}>
                       Who the referral is about
                     </span>
@@ -2727,108 +2722,82 @@ export function ReferralIntakeForm() {
                     </span>
                   </legend>
                   <div className={pageStyles.panelBody}>
-                    {/* Row 1: Age band & Broad diagnosis category (tentative) */}
-                    <div className={pageStyles.fieldRow2}>
+                    {/* v6 (NewReferral.png): one three-column grid, in the drawing's order. */}
+                    <div className={pageStyles.fieldGrid3}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
-                          <label
+                          <span
                             className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                            htmlFor="ward-referral-intake-ageBand"
+                            id="ward-referral-intake-ageBand-label"
                           >
                             Age band
-                          </label>
+                          </span>
                           <QuestionState field="ageBand" draft={draft} />
                         </div>
-                        <select
-                          id="ward-referral-intake-ageBand"
+                        <div
+                          className={pageStyles.segmentGroup}
+                          role="radiogroup"
+                          aria-labelledby="ward-referral-intake-ageBand-label"
                           data-testid="ward-referral-intake-ageBand"
-                          className={`${styles.select} ${pageStyles.select}`}
-                          value={draft.ageBand}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              ageBand: event.target.value as Cohort | typeof UNANSWERED_VALUE,
-                            }))
-                          }
                         >
-                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
                           {AGE_BAND_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
+                            <label
+                              key={option}
+                              className={pageStyles.segmentOption}
+                              data-selected={draft.ageBand === option ? "true" : undefined}
+                            >
+                              <input
+                                type="radio"
+                                name="ward-referral-intake-ageBand"
+                                value={option}
+                                className={pageStyles.srOnlyRadio}
+                                checked={draft.ageBand === option}
+                                onChange={() => setDraft((current) => ({ ...current, ageBand: option as Cohort }))}
+                              />
                               {option}
-                            </option>
+                            </label>
                           ))}
-                        </select>
-                      </div>
-
-                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
-                        <div
-                          className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
-                        >
-                          <label
-                            className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                            htmlFor="ward-referral-intake-tentativeDiagnosis"
-                          >
-                            Broad diagnosis category (tentative)
-                          </label>
-                          <span className={pageStyles.optionalPill}>Optional · Tentative</span>
                         </div>
-                        <select
-                          id="ward-referral-intake-tentativeDiagnosis"
-                          data-testid="ward-referral-intake-tentativeDiagnosis"
-                          className={`${styles.select} ${pageStyles.select}`}
-                          value={draft.tentativeDiagnosis}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              tentativeDiagnosis: event.target.value as ReferralDraft["tentativeDiagnosis"],
-                            }))
-                          }
-                        >
-                          <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
-                          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                            <option key={block.code} value={block.code}>
-                              {tentativeDiagnosisPhrase(block.code)}
-                            </option>
-                          ))}
-                        </select>
                       </div>
-                    </div>
 
-                    {/* Row 2: Sex & Gender (decides which bed) */}
-                    <div className={pageStyles.fieldRow2}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
-                          <label
+                          <span
                             className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                            htmlFor="ward-referral-intake-sex"
+                            id="ward-referral-intake-sex-label"
                           >
                             Sex
-                          </label>
+                          </span>
                           <QuestionState field="sex" draft={draft} />
                         </div>
-                        <select
-                          id="ward-referral-intake-sex"
+                        <div
+                          className={pageStyles.segmentGroup}
+                          role="radiogroup"
+                          aria-labelledby="ward-referral-intake-sex-label"
                           data-testid="ward-referral-intake-sex"
-                          className={`${styles.select} ${pageStyles.select}`}
-                          value={draft.sex}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              sex: event.target.value as RecordedSex | typeof UNANSWERED_VALUE,
-                            }))
-                          }
                         >
-                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
                           {SEX_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
+                            <label
+                              key={option}
+                              className={pageStyles.segmentOption}
+                              data-selected={draft.sex === option ? "true" : undefined}
+                            >
+                              <input
+                                type="radio"
+                                name="ward-referral-intake-sex"
+                                value={option}
+                                className={pageStyles.srOnlyRadio}
+                                checked={draft.sex === option}
+                                onChange={() => setDraft((current) => ({ ...current, sex: option as RecordedSex }))}
+                              />
                               {option}
-                            </option>
+                            </label>
                           ))}
-                        </select>
+                        </div>
                         {subjectPrefill.sex === undefined ? null : (
                           <p
                             className={`${styles.fieldSource} ${pageStyles.note}`}
@@ -2883,10 +2852,7 @@ export function ReferralIntakeForm() {
                           </p>
                         )}
                       </div>
-                    </div>
 
-                    {/* Row 3: Home region & Suburb */}
-                    <div className={pageStyles.fieldRow2}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
@@ -3094,13 +3060,48 @@ export function ReferralIntakeForm() {
                           Recorded on the referral and used for catchment checks. Choose Not known when needed.
                         </p>
                       </div>
+
+                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                        <div
+                          className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
+                        >
+                          <label
+                            className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
+                            htmlFor="ward-referral-intake-tentativeDiagnosis"
+                          >
+                            Broad diagnosis category (tentative)
+                          </label>
+                          <span className={pageStyles.optionalPill}>Optional · Tentative</span>
+                        </div>
+                        <select
+                          id="ward-referral-intake-tentativeDiagnosis"
+                          data-testid="ward-referral-intake-tentativeDiagnosis"
+                          className={`${styles.select} ${pageStyles.select}`}
+                          value={draft.tentativeDiagnosis}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              tentativeDiagnosis: event.target.value as ReferralDraft["tentativeDiagnosis"],
+                            }))
+                          }
+                        >
+                          <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
+                          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                            <option key={block.code} value={block.code}>
+                              {tentativeDiagnosisPhrase(block.code)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </fieldset>
 
                 <fieldset className={`${styles.stepSection} ${pageStyles.panel}`}>
                   <legend className={`${styles.stepLegend} ${pageStyles.ph} ${pageStyles.panelHeader}`}>
-                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>Step 2</span>
+                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>
+                      <span className="sr-only">Step</span> 2
+                    </span>
                     <span className={`${styles.stepName} ${pageStyles.panelHeaderTitle}`}>What they need</span>
                     <span
                       className={pageStyles.stepStatusPill}
@@ -3129,8 +3130,7 @@ export function ReferralIntakeForm() {
                     </span>
                   </legend>
                   <div className={pageStyles.panelBody}>
-                    {/* Row 1: Referral source & Origin site */}
-                    <div className={pageStyles.fieldRow2}>
+                    <div className={pageStyles.fieldGrid3}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
@@ -3218,13 +3218,7 @@ export function ReferralIntakeForm() {
                           ))}
                         </select>
                       </div>
-                    </div>
-
-                    {/* Row 2: Sending team & (conditional) Sending ward */}
-                    <div className={pageStyles.fieldRow2}>
-                      <div
-                        className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup} ${draft.source !== "psychiatric_ward" ? pageStyles.fieldFull : ""}`}
-                      >
+                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
@@ -3573,7 +3567,9 @@ export function ReferralIntakeForm() {
                   testid is a guaranteed strict-mode failure in the browser suite. */}
                 <fieldset className={`${styles.stepSection} ${pageStyles.panel}`}>
                   <legend className={`${styles.stepLegend} ${pageStyles.ph} ${pageStyles.panelHeader}`}>
-                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>Step 3</span>
+                    <span className={`${styles.stepNo} ${pageStyles.stepNo} ${pageStyles.stepBadge}`}>
+                      <span className="sr-only">Step</span> 3
+                    </span>
                     <span className={`${styles.stepName} ${pageStyles.panelHeaderTitle}`}>The history</span>
                     <span
                       className={pageStyles.stepStatusPill}
@@ -3610,7 +3606,7 @@ export function ReferralIntakeForm() {
                             }))
                           }
                         >
-                          + Crisis Presentation
+                          + Crisis
                         </button>
                         <button
                           type="button"
@@ -3622,7 +3618,7 @@ export function ReferralIntakeForm() {
                             }))
                           }
                         >
-                          + Mental State Exam
+                          + Mental state
                         </button>
                         <button
                           type="button"
@@ -3636,7 +3632,7 @@ export function ReferralIntakeForm() {
                             }))
                           }
                         >
-                          + Risk Assessment
+                          + Risk
                         </button>
                         <button
                           type="button"
@@ -3650,7 +3646,7 @@ export function ReferralIntakeForm() {
                             }))
                           }
                         >
-                          + Treatment &amp; Response
+                          + Treatment
                         </button>
                       </div>
 
@@ -3705,7 +3701,6 @@ export function ReferralIntakeForm() {
                               <span>
                                 {wordCount} {wordCount === 1 ? "word" : "words"}
                               </span>
-                              <span className={styles.historyMeter}>Tabular figures active</span>
                             </div>
                             {value.trim() !== "" ? (
                               <p
@@ -3880,17 +3875,17 @@ export function ReferralIntakeForm() {
                           <div id={`ward-referral-intake-destination-facts-${option.kind}`}>
                             {option.kind === "community_team" ? (
                               <div className={pageStyles.destTargetLocationRow}>
-                                <strong>Target Team:</strong>
+                                <strong>Team</strong>
                                 <span>{mappedReferralLocations.community.name}</span>
                               </div>
                             ) : option.kind === "psychiatric_ward" ? (
                               <div className={pageStyles.destTargetLocationRow}>
-                                <strong>Designated Inpatient Facility:</strong>
+                                <strong>Unit</strong>
                                 <span>{mappedReferralLocations.acute.name}</span>
                               </div>
                             ) : option.kind === "emergency_department" ? (
                               <div className={pageStyles.destTargetLocationRow}>
-                                <strong>Receiving Emergency Department:</strong>
+                                <strong>Department</strong>
                                 <span>{mappedReferralLocations.ed.name}</span>
                               </div>
                             ) : null}

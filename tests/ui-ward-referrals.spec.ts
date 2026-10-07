@@ -107,8 +107,17 @@ async function answerEveryIntakeQuestion(
     highAcuityNursingNeeded: "yes" | "no";
   },
 ) {
-  await page.getByTestId("ward-referral-intake-ageBand").selectOption(answers.ageBand);
-  await page.getByTestId("ward-referral-intake-sex").selectOption(answers.sex);
+  // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
+  await page
+    .getByTestId("ward-referral-intake-ageBand")
+    .locator("label")
+    .filter({ has: page.getByRole("radio", { name: answers.ageBand, exact: true }) })
+    .click();
+  await page
+    .getByTestId("ward-referral-intake-sex")
+    .locator("label")
+    .filter({ has: page.getByRole("radio", { name: answers.sex, exact: true }) })
+    .click();
   // T11/T10 (owner answer 17 September 2026): a separate required question from Sex — the fifth
   // question this helper has been missed for (see the trail below on the ninth through twelfth).
   await page.getByTestId("ward-referral-intake-gender").selectOption(answers.gender);
