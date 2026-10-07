@@ -94,6 +94,11 @@ export type TimerProps = {
   chip?: boolean;
   /** Hide the threshold word (when a column already shows it). The glyph stays. */
   hideFlagWord?: boolean;
+  /**
+   * Hide the direction word visually when the column header already says it ("WAITING"). It stays
+   * for screen readers.
+   */
+  hideDirection?: boolean;
   className?: string;
 };
 
@@ -111,6 +116,7 @@ export function Timer({
   estimate = false,
   chip = false,
   hideFlagWord = false,
+  hideDirection = false,
   className,
 }: TimerProps) {
   const [fast, setFast] = useState(false);
@@ -132,7 +138,11 @@ export function Timer({
 
   const shownDirection: TimerDirection = countdown && ms < 0 ? "overdue" : direction;
   const wordFirst = shownDirection === "in";
-  const word = <span className={styles.word}>{shownDirection}</span>;
+  const word = hideDirection ? (
+    <SrOnly>{shownDirection}</SrOnly>
+  ) : (
+    <span className={styles.word}>{shownDirection}</span>
+  );
 
   return (
     <span className={cx(styles.timer, className)}>
