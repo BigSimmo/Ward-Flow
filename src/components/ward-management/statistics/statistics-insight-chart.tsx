@@ -169,6 +169,7 @@ export function StatisticsInsightChart({
       <header className={styles.header}>
         <div>
           <h2 id={headingId}>{title}</h2>
+          {metric?.note ? <p className={styles.note}>{metric.note}</p> : null}
         </div>
         <div className={styles.actions}>
           <span className={styles.count} aria-live="polite" aria-atomic="true">

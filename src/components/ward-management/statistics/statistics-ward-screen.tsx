@@ -463,7 +463,7 @@ export function StatisticsWardScreen({
                 </div>
               </WardPanel>
             )}
-            {statistics.averageEmptyBedMinutes !== null && (
+            {(statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0) && (
               <StatisticsDetailPanel
                 title="Admissions and discharges"
                 testId="ward-statistics-ward-admissions-discharges"
@@ -484,7 +484,10 @@ export function StatisticsWardScreen({
                    */}
                   <p className={styles.body} data-testid="ward-stat-empty-bed-minutes">
                     {statistics.averageEmptyBedMinutes === null ? (
-                      <>Not recorded</>
+                      <>
+                        No bed on this ward has a usable pair of instants — a bed given away and a person arriving, with
+                        the arrival not earlier than the pull — so there is no empty stretch to average.
+                      </>
                     ) : (
                       <>{splitDuration(statistics.averageEmptyBedMinutes)}</>
                     )}
@@ -523,7 +526,18 @@ export function StatisticsWardScreen({
                     </div>
                   </dl>
                   <p className={styles.body} data-testid="ward-stat-empty-bed-incoherent">
-                    <strong>{statistics.emptyBedIncoherentCount}</strong> invalid arrival records excluded
+                    <strong>{statistics.emptyBedIncoherentCount}</strong>{" "}
+                    {statistics.emptyBedIncoherentCount === 1
+                      ? "admission on this ward records"
+                      : "admissions on this ward record"}{" "}
+                    an arrival earlier than the bed was given away.
+                    {statistics.emptyBedIncoherentCount > 0 ? (
+                      <>
+                        {" "}
+                        That cannot be true, so {statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"}{" "}
+                        excluded from the average and counted here instead.
+                      </>
+                    ) : null}
                   </p>
                 </div>
               </StatisticsDetailPanel>

@@ -738,6 +738,16 @@ export function StatisticsEdScreen({
           </div>
         </StatisticsDetailPanel>
 
+        <WardPanel title="Every figure here is invented" testId="ward-statistics-ed-invented">
+          <div className={styles.panelBody} role="group" aria-label="Invented department figures" tabIndex={0}>
+            <p className={styles.body}>
+              Every count and every wait above is invented. These invented figures are derived from this
+              prototype&apos;s own invented movement records and have never been measured against a real department or a
+              real patient. Nothing on this screen is a real clinical record.
+            </p>
+          </div>
+        </WardPanel>
+
         <div data-testid="statistics-ed-limits-group"></div>
       </div>
     </StatisticsSectionFrame>

@@ -86,7 +86,7 @@ describe("interactive statistics insights", () => {
     const plotted = screen.getAllByRole("button").filter((button) => button.hasAttribute("data-chart-record"));
     expect(plotted[0]).toHaveAccessibleName("Other 3: 4 people");
     expect(plotted.at(-1)).toHaveAccessibleName("Gamma: Not linked");
-    expect(screen.queryByText("Recorded counts.")).toBeNull();
+    expect(screen.getByText("Recorded counts.")).toBeInTheDocument();
   });
   it("exports only visible rows and retains unavailable values as absences", async () => {
     let exported: Blob | undefined;

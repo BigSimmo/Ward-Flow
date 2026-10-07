@@ -122,7 +122,7 @@ export function NetworkFigures() {
     { id: "deadlines", label: "Waits & recorded limits", icon: Clock, figures: deadlines },
   ];
   return (
-    <div className={styles.workspace}>
+    <div className={styles.workspace} data-testid="ward-stats-drawer-content">
       <div className={styles.meta}>
         <span className={styles.liveDot} /> Whole network <span>Synthetic · {formatInstant(now)}</span>
       </div>
@@ -300,8 +300,8 @@ export function ToolsContactDirectory({ onNavigate }: { onNavigate: () => void }
         ))}
       </div>
       <div className={styles.meta} role="status">
-        {matches.length} contacts{" "}
-        <span>Mock details labelled · {categories.find((item) => item.id === category)?.label}</span>
+        {matches.length} synthetic records{" "}
+        <span>Mock contact details labelled · {categories.find((item) => item.id === category)?.label}</span>
       </div>
       <ul className={styles.contacts} aria-label="Contact directory">
         {matches.map((entry) => (
