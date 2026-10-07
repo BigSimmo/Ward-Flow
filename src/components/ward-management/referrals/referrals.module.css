@@ -147,7 +147,7 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.15rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   font-size: 0.75rem;
@@ -1268,7 +1268,7 @@
   color: var(--muted);
   background: var(--surface-2);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--line);
 }
 
@@ -2990,7 +2990,7 @@ input.historyField:focus-visible {
 .kpiDot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   flex-shrink: 0;
 }
 
@@ -3180,7 +3180,7 @@ input.historyField:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   transition: all 0.12s ease;
 }
 
@@ -3211,7 +3211,7 @@ input.historyField:focus-visible {
   align-items: center;
   min-height: 1.875rem;
   padding: 0 0.75rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink-soft);
@@ -3275,7 +3275,7 @@ input.historyField:focus-visible {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   background: var(--surface-2);
@@ -3457,7 +3457,7 @@ input.historyField:focus-visible {
   align-items: center;
   min-height: var(--ward-tap, 3rem);
   padding: 0 1.125rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--accent);
   background: var(--accent-soft);
   color: var(--accent-ink);
@@ -3492,7 +3492,7 @@ input.historyField:focus-visible {
   gap: 0.5rem;
   min-height: 2.125rem;
   border: 1px solid var(--line);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   padding: 0 0.875rem;
   color: var(--ink-soft);
@@ -3528,7 +3528,7 @@ input.historyField:focus-visible {
   justify-content: center;
   min-width: 1.25rem;
   height: 1.25rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   padding: 0 0.375rem;
   color: var(--muted);
@@ -4077,7 +4077,7 @@ input.historyField:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   line-height: 1.2;
 }
 
@@ -4204,7 +4204,7 @@ input.historyField:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   line-height: 1.2;
 }
 
@@ -4300,7 +4300,7 @@ input.historyField:focus-visible {
 
   .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar-thumb {
     border: 0.1875rem solid var(--surface-2);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 9999px);
     background: var(--line-strong);
   }
 }
@@ -5840,7 +5840,7 @@ input.historyField:focus-visible {
   font-size: 11px;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   border: 1px solid var(--line);
   color: inherit;
@@ -6046,7 +6046,7 @@ input.historyField:focus-visible {
   background: var(--surface-2);
   border: 1px solid var(--line);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   color: inherit;
 }
 
@@ -6184,7 +6184,7 @@ input.historyField:focus-visible {
   font-size: 11px;
   font-weight: 600;
   padding: 2.5px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   letter-spacing: 0.01em;
   line-height: 1;
   background: var(--surface);
@@ -6299,7 +6299,7 @@ input.historyField:focus-visible {
   background: var(--accent-soft);
   color: var(--accent);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 
 .presentationMeta {

@@ -168,7 +168,7 @@
   height: 1.75rem;
   padding: 0 var(--ward-space-8);
   border: 1px solid var(--ward-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   color: var(--ward-muted);
   cursor: pointer;
@@ -268,7 +268,7 @@
 
 .popup::-webkit-scrollbar-thumb {
   background: var(--ward-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 
 .popup::-webkit-scrollbar-thumb:hover {
@@ -309,7 +309,7 @@
   min-width: 1.125rem;
   height: 1.125rem;
   padding: 0 0.3125rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   border: 1px solid transparent;
   color: var(--ward-muted);
@@ -505,7 +505,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   padding: 0 var(--ward-space-4);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   border: 1px solid var(--ward-border);
   color: var(--ward-muted);
@@ -542,7 +542,7 @@
   color: var(--ward-muted);
   background: var(--surface-subtle);
   padding: 0 var(--ward-space-4);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--ward-border);
   white-space: nowrap;
   line-height: 1;
