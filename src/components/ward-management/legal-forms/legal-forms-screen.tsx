@@ -255,6 +255,8 @@ export function LegalFormsScreen() {
   const [targetMovementId, setTargetMovementId] = useState<string>("");
   const [writtenDraft, setWrittenDraft] = useState(BLANK_TYPED_WRITTEN_DRAFT);
   const [recordDraft, setRecordDraft] = useState({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+  // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
+  const [recordFormKey, setRecordFormKey] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
   const recordFormTypeRef = useRef<HTMLSelectElement | null>(null);
 
@@ -288,7 +290,11 @@ export function LegalFormsScreen() {
   const filteredNoDeadline = urgencyFilter === "urgent" ? [] : applyAuthorityFilter(noDeadline);
 
   const selectedMovement =
-    rows.find((m) => m.id === selectedMovementId) ?? filteredWithDeadline[0] ?? filteredNoDeadline[0] ?? null;
+    // Resolve only within the active filters, so a filtered-out row never stays selected.
+    [...filteredWithDeadline, ...filteredNoDeadline].find((m) => m.id === selectedMovementId) ??
+    filteredWithDeadline[0] ??
+    filteredNoDeadline[0] ??
+    null;
   const selectedPatientInfo = selectedMovement
     ? resolveSubjectPatient(selectedMovement, { patients, referrals })
     : null;
@@ -760,7 +766,7 @@ export function LegalFormsScreen() {
 
             <Card aria-label="Record a form">
               <CardHead title="Record a form" icon={FileText} level={2} />
-              <CardBody className={styles.recordForm}>
+              <CardBody key={recordFormKey} className={styles.recordForm}>
                 <Field label="Form type" id="legal-forms-new-instrument">
                   <Select
                     ref={recordFormTypeRef}
@@ -815,7 +821,10 @@ export function LegalFormsScreen() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setRecordDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" })}
+                  onClick={() => {
+                    setRecordDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+                    setRecordFormKey((key) => key + 1);
+                  }}
                 >
                   Clear
                 </Button>
