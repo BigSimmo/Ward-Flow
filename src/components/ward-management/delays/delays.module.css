@@ -1908,3 +1908,129 @@
   gap: var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
+
+/* Every panel on the page is a v6 card: hairline, radius 14, e1, no frosting. */
+.screen[data-ward-design="v6"] [data-ward-primitive="panel"] {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  backdrop-filter: none;
+}
+
+.screen[data-ward-design="v6"] [data-ward-primitive="panel-header"] {
+  min-height: 3.5rem;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: none;
+}
+
+.screen[data-ward-design="v6"] [data-ward-primitive="panel-header"] > h2 {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Bottom row: blocker bar list, the registers, system delays. */
+.screen[data-ward-design="v6"] .lowerBand {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.screen[data-ward-design="v6"] .lowerBand > [data-ward-primitive="panel"] {
+  min-height: 0;
+}
+
+.screen[data-ward-design="v6"] .lowerBand .tabBody {
+  min-height: 0;
+}
+
+.screen[data-ward-design="v6"] .tabbar {
+  flex-wrap: nowrap;
+  max-width: calc(100% - 2 * var(--wf-s-4));
+  overflow-x: auto;
+  margin: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+}
+
+.screen[data-ward-design="v6"] .tabBtn {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .tabBtnActive {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .tabNum,
+.screen[data-ward-design="v6"] .tabBtnActive .tabNum {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+}
+
+.screen[data-ward-design="v6"] .lowerBand .row,
+.screen[data-ward-design="v6"] .lowerBand .attentionCard {
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: none;
+}
+
+.screen[data-ward-design="v6"] .lowerBand .rowId,
+.screen[data-ward-design="v6"] .lowerBand .attentionWho {
+  font-family: var(--wf-font);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .lowerBand .systemicPanel {
+  padding: 0;
+}
+
+.systemicEmpty {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.systemicEmpty p {
+  display: grid;
+  margin: 0;
+}
+
+.systemicEmpty strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.systemicEmpty span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+@media (max-width: 1200px) {
+  .screen[data-ward-design="v6"] .lowerBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .screen[data-ward-design="v6"] .lowerBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

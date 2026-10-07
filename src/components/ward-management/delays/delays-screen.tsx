@@ -48,14 +48,15 @@ import {
   ownerOf,
 } from "./delays-derivations";
 import styles from "./delays.module.css";
-import { DelaysTableWorkspace } from "./delays-data-views";
+import { DelaysBlockerPanel, DelaysTableWorkspace } from "./delays-data-views";
 import { DelaysCoordination, delayQueueLabel, type DelayQueueScope } from "./delays-coordination";
 import {
   DUE_SOON_URGENT_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LONG_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
-import { Hero, HeroStat } from "@/components/wf";
+import { Button, Hero, HeroStat, IconTile } from "@/components/wf";
+import { CircleCheck, Plus } from "lucide-react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
@@ -478,12 +479,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             setMarkedCause(null);
             setDelayFilterId(id);
           }}
-          markedCause={effectiveMarkedCause}
-          onMarkCause={(cause) => {
-            setMarkedOwner(null);
-            setMarkedCause(markedCause === cause ? null : cause);
-            setDelayFilterId("waiting");
-          }}
           onListKeyDown={handlePersonListKeyDown}
           detail={
             selected === null ? null : (
@@ -527,6 +522,16 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           }
         />
         <div className={styles.lowerBand}>
+          <DelaysBlockerPanel
+            rows={queueRows}
+            groups={queueGroups}
+            markedCause={effectiveMarkedCause}
+            onMarkCause={(cause) => {
+              setMarkedOwner(null);
+              setMarkedCause(markedCause === cause ? null : cause);
+              setDelayFilterId("waiting");
+            }}
+          />
           <WardPanel title="Escalations and resolved">
             <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
               {(
@@ -660,37 +665,35 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
             </div>
           </WardPanel>
           {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
-          <WardPanel title="System delays" accessibleName="Delays with no named person">
+          <WardPanel
+            title="System delays"
+            accessibleName="Delays with no named person"
+            headerAction={
+              <Button
+                variant="sec"
+                size="sm"
+                icon={Plus}
+                onClick={() => handleProtoAction("Not wired in this prototype.")}
+                aria-label="Record a service-wide or facility delay"
+              >
+                Record hold
+              </Button>
+            }
+          >
             <div className={styles.systemicPanel}>
               <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
                 represented as individual patient movements; state and system delays across the Western Australian
                 network are tracked in this box.
               </span>
-              <div className={styles.systemicHeader}>
-                <button
-                  type="button"
-                  className={styles.logHoldButton}
-                  onClick={() => handleProtoAction("Record a service-wide delay")}
-                  aria-label="Record a service-wide or facility delay"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  <span>Record Hold</span>
-                </button>
-              </div>
               {SYSTEMIC_HOLDS.length === 0 ? (
-                <p className={styles.systemicEmptyLine}>No statewide delays</p>
+                <div className={styles.systemicEmpty}>
+                  <IconTile icon={CircleCheck} />
+                  <p>
+                    <strong>No statewide delays</strong>
+                    <span>None recorded on this board</span>
+                  </p>
+                </div>
               ) : (
                 <div className={styles.systemicGrid}>
                   {SYSTEMIC_HOLDS.map((hold) => (
@@ -1072,11 +1075,11 @@ function SelectedPerson({
       {/* Coordination Actions (Rule D4) */}
       {(() => {
         const handleAssignBed = () => {
-          onAction("Assign Recommended Bed & Lock Place");
+          onAction("Not wired in this prototype.");
         };
 
         const handleRenewHold = () => {
-          onAction("Renew Bed Hold (60m)");
+          onAction("Not wired in this prototype.");
         };
 
         const handleEscalate = () => {

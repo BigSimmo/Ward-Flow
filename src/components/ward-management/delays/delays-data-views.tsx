@@ -46,6 +46,7 @@ import {
   type DelayOwnerId,
 } from "./delays-derivations";
 import { delayTimelineScale, delayTimelineSegments } from "./delays-view-model";
+import { Card, CardHead } from "@/components/wf";
 import styles from "./delays-data-views.module.css";
 
 type DelayRecord = { movement: Movement; cause: DelayCause };
@@ -763,8 +764,6 @@ type WorkspaceProps = {
   isMarked: (movement: Movement, cause: DelayCause) => boolean;
   delayFilterId: string;
   onMarkFilter: (id: string) => void;
-  onMarkCause: (cause: DelayCause) => void;
-  markedCause: DelayCause | null;
   onListKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 };
 /** Both table designs share their filters, records and selection. */
@@ -840,7 +839,9 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
   return (
     <section className={styles.workspace} aria-label="Delay table layouts">
       <div className={styles.layoutHeader}>
-        <h2>Waiting &amp; blockers</h2>
+        <h2>
+          Waiting and blockers <span className={styles.layoutMeta}>{rows.length} waiting</span>
+        </h2>
         <div
           className={styles.tabs}
           role="tablist"
@@ -861,8 +862,8 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
         >
           {(
             [
-              { key: "focus", label: "Focus table", number: "01" },
-              { key: "workspace", label: "Action workspace", number: "02" },
+              { key: "focus", label: "Focus table" },
+              { key: "workspace", label: "Action workspace" },
             ] as const
           ).map((tab) => (
             <button
@@ -875,7 +876,6 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
               tabIndex={view === tab.key ? 0 : -1}
               onClick={() => changeTab(tab.key)}
             >
-              <span>{tab.number}</span>
               {tab.label}
             </button>
           ))}
@@ -1248,70 +1248,80 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
       {view === "focus" && selected && !shown.some(({ movement }) => movement.id === selectedId) && (
         <CompactStrip record={selected} now={now} onClose={props.onClose} />
       )}
-      <section
-        className={`${styles.panel} ${styles.blockerPanel}`}
-        role="region"
-        aria-label="What the blocker is"
-        data-ward-primitive="panel"
-      >
-        <details open={view === "focus" ? undefined : true}>
-          <summary>
-            <FileText aria-hidden="true" size={18} />
-            <h2>What the blocker is</h2>
-            <span>
-              {rows.length} waiting · {groups.length} causes
-            </span>
-            <ChevronDown aria-hidden="true" size={16} />
-          </summary>
-          <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Blocker groups">
-            <table className={`${styles.table} ${styles.blockerTable}`}>
-              <caption className="sr-only">
-                One worst blocker per waiting person in the current service scope. Select a cause to mark matching
-                people.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Blocker</th>
-                  <th scope="col">Responsible team</th>
-                  <th scope="col" className={styles.numeric}>
-                    Waiting
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map((group) => (
-                  <tr key={group.cause}>
-                    <th scope="row">
-                      <button
-                        type="button"
-                        className={styles.causeButton}
-                        data-testid={`delays-cause-${group.cause}`}
-                        aria-pressed={props.markedCause === group.cause}
-                        data-severe={SEVERE_CAUSES.includes(group.cause)}
-                        onClick={() => props.onMarkCause(group.cause)}
-                      >
-                        {group.title}
-                      </button>
-                      {group.note && <span className={styles.secondary}>{group.note}</span>}
-                    </th>
-                    <td>
-                      <OwnerBadge owner={ownerOf(group.cause)} />
-                    </td>
-                    <td className={styles.numeric}>{group.movements.length}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row">Total waiting</th>
-                  <td />
-                  <td className={styles.numeric}>{rows.length}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </details>
-      </section>
     </section>
+  );
+}
+
+/** One worst blocker per waiting person, as a bar list. Pressing a cause marks its people. */
+export function DelaysBlockerPanel({
+  rows,
+  groups,
+  markedCause,
+  onMarkCause,
+}: {
+  rows: DelayRecord[];
+  groups: DelayGroup[];
+  markedCause: DelayCause | null;
+  onMarkCause: (cause: DelayCause) => void;
+}) {
+  const peak = Math.max(1, ...groups.map((group) => group.movements.length));
+  return (
+    <Card className={styles.blockerPanel} role="region" aria-label="What the blocker is" data-ward-primitive="panel">
+      <CardHead
+        icon={FileText}
+        title="What the blocker is"
+        aside={
+          <span className={styles.blockerMeta}>
+            {rows.length} waiting · {groups.length} causes
+          </span>
+        }
+      />
+      <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Blocker groups">
+        <table className={styles.blockerTable}>
+          <caption className="sr-only">
+            One worst blocker per waiting person in the current service scope. Select a cause to mark matching people.
+          </caption>
+          <thead className={styles.blockerHead}>
+            <tr>
+              <th scope="col">Blocker</th>
+              <th scope="col">Share</th>
+              <th scope="col">Waiting</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((group) => (
+              <tr key={group.cause}>
+                <th scope="row">
+                  <button
+                    type="button"
+                    className={styles.causeButton}
+                    data-testid={`delays-cause-${group.cause}`}
+                    aria-pressed={markedCause === group.cause}
+                    data-severe={SEVERE_CAUSES.includes(group.cause)}
+                    title={`${group.note ? `${group.note}. ` : ""}Responsible team: ${ownerName(ownerOf(group.cause))}`}
+                    onClick={() => onMarkCause(group.cause)}
+                  >
+                    {group.title}
+                  </button>
+                </th>
+                <td className={styles.blockerBarCell} aria-hidden="true">
+                  <span className={styles.blockerBar}>
+                    <span style={{ width: `${(group.movements.length / peak) * 100}%` }} />
+                  </span>
+                </td>
+                <td className={styles.numeric}>{group.movements.length}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Total waiting</th>
+              <td />
+              <td className={styles.numeric}>{rows.length}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </Card>
   );
 }
