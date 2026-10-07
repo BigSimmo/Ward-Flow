@@ -241,7 +241,7 @@ export function planContractHits(symbol, options = {}) {
   const contentIndex =
     options.contentIndex ??
     createContentIndex({ root: options.root ?? process.cwd(), fileSystem: options.fileSystem ?? NODE_FILE_SYSTEM });
-  const hits = rg(symbol, ["docs/superpowers/plans", "docs/superpowers/specs"], {
+  const hits = rg(symbol, ["docs/ward-flow/plans", "docs/superpowers/plans", "docs/superpowers/specs"], {
     ...options,
     contentIndex,
   }).filter((file) => !isExcludedDocumentationPath(file));

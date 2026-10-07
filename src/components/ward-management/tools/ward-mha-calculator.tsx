@@ -325,7 +325,7 @@ export function WardMhaCalculator({
     >
       <header className={styles.headerBlock}>
         <div className={styles.titleArea}>
-          <h3 className={styles.title}>MHA Deadline Calculator</h3>
+          <h3 className={styles.title}>MHA Timeframe Assistant (Advisory)</h3>
           <p className={styles.subtitle}>WA mental health forms · entered dates only</p>
           <p className={styles.subtitle} role="note" data-testid="legal-limits-not-checked">
             {LEGAL_LIMITS_NOT_CHECKED_NOTICE}

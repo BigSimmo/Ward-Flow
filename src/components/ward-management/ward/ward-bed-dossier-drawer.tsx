@@ -41,6 +41,9 @@ export function WardBedDossierDrawer({
   const [candidateAllocated, setCandidateAllocated] = useState(false);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState("Awaiting NDIS accommodation");
+  const [maintenanceHold, setMaintenanceHold] = useState(false);
+  const [cohortLock, setCohortLock] = useState(false);
+  const [operationalFeedback, setOperationalFeedback] = useState<string | null>(null);
 
   useWardModalFocus(true, bedDrawerRef, onClose);
 
@@ -154,13 +157,40 @@ export function WardBedDossierDrawer({
                 <h4 className={styles.cardTitle}>Bed Configuration &amp; Safeguards</h4>
               </div>
               <div className={styles.btnGrid}>
-                <button type="button" className={styles.btnSecondary} onClick={() => alert("Maintenance hold placed")}>
-                  Maintenance Hold
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  aria-pressed={maintenanceHold}
+                  onClick={() => {
+                    const next = !maintenanceHold;
+                    setMaintenanceHold(next);
+                    setOperationalFeedback(next ? "Maintenance hold placed on bed." : "Maintenance hold released.");
+                  }}
+                >
+                  {maintenanceHold ? "Release Maintenance Hold" : "Maintenance Hold"}
                 </button>
-                <button type="button" className={styles.btnSecondary} onClick={() => alert("Cohort lock configured")}>
-                  Gender / Cohort Lock
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  aria-pressed={cohortLock}
+                  onClick={() => {
+                    const next = !cohortLock;
+                    setCohortLock(next);
+                    setOperationalFeedback(next ? "Gender / cohort lock active." : "Cohort lock released.");
+                  }}
+                >
+                  {cohortLock ? "Release Cohort Lock" : "Gender / Cohort Lock"}
                 </button>
               </div>
+              {operationalFeedback && (
+                <div
+                  style={{ marginTop: "8px", fontSize: "13px", color: "var(--accent, #0284c7)" }}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {operationalFeedback}
+                </div>
+              )}
             </div>
 
             {/* Clinical monitoring status (invariant preserved) */}

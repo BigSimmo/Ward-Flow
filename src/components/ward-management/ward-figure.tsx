@@ -41,7 +41,7 @@ export function WardFigure({
  * ⚠️ AT MOST TWO TILES MAY BE FLAGGED. Amber means "look here", and a strip where everything is
  * amber directs the eye nowhere — which is a total failure of the component's only job.
  *
- * 🔴 D-27 UPDATE (30 September 2026): The fatal runtime crash in production when clinical alerts surge
+ * 🔴 D-28 UPDATE (30 September 2026): The fatal runtime crash in production when clinical alerts surge
  * is eliminated. Multiple alerts are handled gracefully with visual triage and data-flagged-count.
  * Strict testing environments continue to assert the threshold.
  */

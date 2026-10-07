@@ -1371,15 +1371,16 @@ describe("scenario selection", () => {
   });
 });
 
-describe("arrival capacity floor", () => {
-  it("refuses an arrival once the unit's physically empty beds are exhausted", () => {
+describe("arrival capacity floor and bed turnaround", () => {
+  it("transitions an arrival into 'Arrived — Bed Turnaround' when physically empty beds are exhausted", () => {
     // A ward can CONFIRM_CAPACITY an allocatable count above what is physically empty — nothing
     // in PULL_PATIENT's own guard prevents that, since it only bounds `allocatable.value`. That makes
-    // over-arriving a real, reachable sequence, not a hypothetical: hold and arrive one patient
+    // over-arriving a real, reachable sequence: hold and arrive one patient
     // against rph-adult-secure's single seeded allocatable bed (empty 2 -> 1), have the ward
     // restate a larger allocatable count than physically exists, then hold and arrive a second
-    // patient (empty 1 -> 0), then attempt a third. The third must be refused rather than driving
-    // `empty.value` negative.
+    // patient (empty 1 -> 0), then arrive a third.
+    // Rather than driving empty.value negative or refusing the delivered patient at the door,
+    // the reducer marks the movement as 'Arrived — Bed Turnaround' and clamps empty.value at 0.
     const walkToArrival = (state: ReturnType<typeof seeded>, movementId: string) => {
       const steps = [
         { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
