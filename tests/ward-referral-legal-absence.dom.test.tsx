@@ -71,9 +71,12 @@ describe("Referral legal information does not infer authority from a bed request
     expect(id).not.toBe(priorId);
     const row = screen.getByTestId(`ward-referral-board-row-${id}`);
     fireEvent.click(within(row).getByRole("button", { name: id }));
-    expect(screen.getByText(/Legal status not recorded/)).toBeVisible();
+    // v6 (Referrals.png): legal status is a labelled fact ("Legal status" over "Not recorded").
+    const legalStatus = screen.getByTestId("ward-referral-detail-legal-status");
+    expect(legalStatus).toBeVisible();
+    expect(legalStatus.textContent).toMatch(/Legal status\s*Not recorded/);
     expect(screen.queryByText(/Voluntary Status|Involuntary \(MHA 2014\)/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Recorded legal forms" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Legal forms" }));
     expect(screen.getByText("Consent or detention authority")).toBeVisible();
     expect(screen.getByText("Not recorded in this referral")).toBeVisible();
     expect(screen.getByText("Register check not recorded on this referral.")).toBeVisible();

@@ -95,8 +95,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(secondCard).toHaveAttribute("aria-pressed", "false");
       expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
 
-      // Switch to dense view and verify aria-selected on row
-      const denseBtn = screen.getByRole("button", { name: /dense/i });
+      // Switch to dense view and verify aria-selected on row. v6 (Patients.png): Comfort / Dense is a
+      // segmented control, so Dense is a radio.
+      const denseBtn = screen.getByRole("radio", { name: /dense/i });
       fireEvent.click(denseBtn);
 
       const denseContainer = screen.getByRole("table", { name: "Dense caseload list" });
@@ -201,28 +202,27 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
     });
   });
 
-  describe("5. LegalFormsScreen modal focus trapping and Escape dismissal", () => {
-    it("traps focus in Record a form modal and restores focus on Escape", () => {
+  // v6 (LegalForms.png): "Record a form" is an in-page card, not a modal, so the hero button moves
+  // focus into the card's first field rather than opening and trapping a dialog.
+  describe("5. LegalFormsScreen Record a form focus", () => {
+    it("moves focus from the hero's Record a form button into the Record a form card", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <LegalFormsScreen />
         </WardFlowProvider>,
       );
 
-      const recordBtn = screen.getByText("+ Record a form");
+      const recordBtn = screen.getByRole("button", { name: "Record a form" });
       recordBtn.focus();
       expect(document.activeElement).toBe(recordBtn);
 
       fireEvent.click(recordBtn);
 
-      const modalDialog = screen.getByRole("dialog", { name: "Record a form" });
-      expect(modalDialog).toBeInTheDocument();
-      expect(modalDialog.contains(document.activeElement)).toBe(true);
-
-      fireEvent.keyDown(window, { key: "Escape" });
-
+      const card = screen.getByRole("region", { name: "Record a form" });
+      expect(card).toBeInTheDocument();
+      expect(card.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(screen.getByLabelText("Form type"));
       expect(screen.queryByRole("dialog", { name: "Record a form" })).toBeNull();
-      expect(document.activeElement).toBe(recordBtn);
     });
   });
 

@@ -1,10 +1,21 @@
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
+import { Hero, buttonClass } from "@/components/wf";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now.module.css";
 
-/** Presentation only: Patient Now supplies all identity and movement facts from shared state. */
+/** `1991-09-17` as `17/09/1991`; anything else is shown as it was recorded. */
+function australianDate(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(iso);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : iso;
+}
+
+/**
+ * v6 (Patient.png): the page's one hero band. The name is the page heading, the identity line sits
+ * under it, the movement facts on the right; the second row holds the seven stages, then the record
+ * tabs with the page actions. Presentation only: Patient Now supplies every fact from shared state.
+ */
 export function PatientFlightHeader({
   displayName,
   preferredName,
@@ -12,8 +23,11 @@ export function PatientFlightHeader({
   displayToday,
   isLiveBedflow,
   statusDetail,
+  location,
+  facts,
+  steps,
+  tabs,
   actions,
-  children,
 }: {
   displayName: string;
   preferredName?: string | null;
@@ -21,63 +35,77 @@ export function PatientFlightHeader({
   displayToday: Date;
   isLiveBedflow: boolean;
   statusDetail: string;
+  /** Where the person is now, when a movement records it. */
+  location?: string;
+  /** Movement facts on the right of the first row. */
+  facts?: ReactNode;
+  /** The seven stages, only while the movement is live. */
+  steps?: ReactNode;
+  tabs: ReactNode;
   actions?: ReactNode;
-  children: ReactNode;
 }) {
   return (
-    <>
-      <div className={styles.flightIdentity} data-testid="ward-person-identity">
-        <ContextualBackLink
-          fallbackHref="/mockups/ward-flow"
-          className={styles.backBtn}
-          aria-label="Back to previous page"
-          data-testid="ward-patient-back-button"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-        </ContextualBackLink>
-        <div className={styles.avatar} aria-hidden="true">
-          {displayName
-            .split(" ")
-            .map((part) => part[0])
-            .slice(0, 2)
-            .join("")}
-        </div>
-        <div className={styles.identityText}>
-          <div className={styles.identityEyebrow}>
-            PATIENT NOW <span> / SYNTHETIC RECORD</span>
+    <div className={styles.v6HeroWrap} data-testid="ward-person-identity">
+      <Hero
+        level={1}
+        className={styles.v6Hero}
+        title={displayName}
+        titleMeta={preferredName ? `known as ${preferredName}` : undefined}
+        eyebrow={
+          <span className={styles.v6IdLine}>
+            {patient ? (
+              <>
+                <strong className={styles.v6Mono}>{patient.umrn}</strong>
+                <span>
+                  {patientAgeYears(patient, displayToday)} y,{" "}
+                  {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
+                </span>
+                <span>DOB {australianDate(patient.dateOfBirth)}</span>
+              </>
+            ) : (
+              <span>Demographics not recorded</span>
+            )}
+            {location ? <span>{location}</span> : null}
+            {patient?.confidential ? (
+              <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
+                Confidential
+              </span>
+            ) : null}
+          </span>
+        }
+        aside={
+          <>
+            {facts}
+            <div
+              className={isLiveBedflow ? "sr-only" : styles.v6LiveState}
+              role="status"
+              aria-atomic="true"
+              data-live={isLiveBedflow}
+              data-testid="ward-patient-live-status"
+            >
+              <strong>{isLiveBedflow ? "Live bedflow" : "Patient record"}</strong>
+              <span>{statusDetail}</span>
+            </div>
+          </>
+        }
+        bar={
+          <div className={styles.v6HeroBar}>
+            {steps}
+            <div className={styles.v6HeroTabsRow}>
+              <ContextualBackLink
+                fallbackHref="/mockups/ward-flow"
+                className={buttonClass({ variant: "onHero", size: "sm", iconOnly: true })}
+                aria-label="Back to previous page"
+                data-testid="ward-patient-back-button"
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+              </ContextualBackLink>
+              {tabs}
+              <div className={styles.v6HeroActions}>{actions}</div>
+            </div>
           </div>
-          <h1>
-            {displayName} {preferredName && <small>known as {preferredName}</small>}
-          </h1>
-          <p>
-            UMRN <strong>{patient?.umrn ?? "Not recorded"}</strong>
-            <span> · </span>
-            {patient
-              ? `${patient.dateOfBirth} · ${patientAgeYears(patient, displayToday)}y · ${patient.sex}`
-              : "Demographics not recorded"}
-          </p>
-          {patient?.confidential && (
-            <span className={styles.confidentialPill} data-testid="ward-patient-confidential-pill">
-              CONFIDENTIAL
-            </span>
-          )}
-        </div>
-        <div
-          className={styles.liveState}
-          role="status"
-          aria-atomic="true"
-          data-live={isLiveBedflow}
-          data-testid="ward-patient-live-status"
-        >
-          <strong>
-            <i aria-hidden="true" />
-            {isLiveBedflow ? "Live bedflow" : "Patient record"}
-          </strong>
-          <span>{statusDetail}</span>
-        </div>
-        {actions}
-      </div>
-      {children}
-    </>
+        }
+      />
+    </div>
   );
 }

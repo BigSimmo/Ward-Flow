@@ -1,9 +1,49 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronLeft, ChevronRight, Clock, Scale, X } from "lucide-react";
+import Link from "next/link";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Clock, Copy, FileText, Info, Plus } from "lucide-react";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardFoot,
+  CardHead,
+  Count,
+  DataRow,
+  Drawer,
+  HeroTrack,
+  Hero,
+  HeroStat,
+  LiveChip,
+  Segmented,
+  Select,
+  Sheet,
+  StatGroup,
+  Stat,
+  StatusGlyph,
+  TextInput,
+  Textarea,
+  Checkbox,
+  Field,
+  Timer,
+  Timeline,
+  buttonClass,
+  cx,
+  tableClasses,
+  type TimelineItem,
+  type WfTone,
+} from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { clockState, formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
+import {
+  currentDueSoonThresholds,
+  dayOf,
+  formatInstantWithDay,
+  type Instant,
+  minutesUntil,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { type LegalClockAgeBand, type LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
@@ -12,43 +52,38 @@ import { formTitleForCode } from "@/lib/form-register";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { WardPanel } from "@/components/ward-management/ward-panel";
-import { WardGroupHeading, WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
-import { edById } from "@/components/ward-management/ward-sites";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import {
   legalDeadlineText,
+  legalExpiryReminderOf,
+  legalExpiryReminderSummary,
   legalFormBreakdown,
   legalFormGroupRows,
   legalFormRowClassification,
   isLegalDeadlineBreached,
-  legalExpiryReminderSummary,
-  legalExpiryReminderText,
+  reminderHours,
 } from "./legal-forms-derivations";
-import { actPeriodCountdownText, actPeriodReading } from "./act-periods-demo";
+import { actPeriodCountdownText, actPeriodReading, type ActPeriodReading } from "./act-periods-demo";
 import styles from "./legal-forms.module.css";
 
 /**
- * **LEGAL FORMS AND DEADLINES** (build contract: `docs/ward-flow/mockups/legal-forms-third-edition.html`).
- * Third Edition Sovereign Standard:
- *  - Hairline borders (1px solid var(--line)), zero colored side-stripes.
- *  - Time-remaining urgency ranking with clear countdown timers (tabular figures).
- *  - Form category tabs (Form 1A, Form 3A/3B/3D, Form 4A/4C, Form 6A, review dates).
- *  - Clear distinction between forms with a recorded due time vs advisory review dates (D5: No invented deadlines or section numbers).
- *  - Right inspector drawer for legal form dossier and authorized practitioner review actions.
- *  - Compact status pills and badges, tabular figures for timestamps and hours remaining.
- *  - Minimum 48px touch targets for mobile/tablet interactive elements (var(--ward-tap)).
- *  - Optical vertical alignment for SVG icons; zero emojis.
- *  - Owner Rule D4: Unconnected actions show "Not wired in this prototype."
- *  - Owner Rule D5: No invented legal section numbers or arbitrary deadlines.
- *  - Drawers and modals close on Escape and restore focus.
- *  - Zero commentary or prototype meta narration in live UI. Synthetic prototype badge preserved in header (FF8).
+ * LEGAL FORMS (v6, `design/pages-v6/LegalForms.png` and its `--dossier`, `--expiring`, `--extend`
+ * states). One hero band with the counts by warning window; form types, warning windows and forms
+ * by emergency department on the left; the expiring timeline and the two groups (time written on
+ * the form, no time written) in the middle; the selected form, the record-a-form card and today's
+ * recorded form events on the right. The dossier is a right drawer; extend is a dialog.
+ *
+ * Owner rules kept from the third edition: no invented deadlines or section numbers (D5), an
+ * unconnected action says "Not wired in this prototype." (D4), and the two groups are never ordered
+ * against each other.
  */
+
+const MS_PER_MINUTE = 60_000;
+const NOT_WIRED = "Not wired in this prototype.";
+const CHART_WINDOW_MINUTES = 8 * 60;
 
 function catalogFormLabel(code: string): string {
   const form = SELECTABLE_LEGAL_FORMS.find((entry) => entry.code === code);
@@ -118,30 +153,112 @@ function instantFromDateAndTimeInputs(dateValue: string, timeValue: string, dayZ
   return dayOffsetMinutes + minuteOfDayValue;
 }
 
+/** The authority catalogue, in the order the left card lists it. */
+type CatalogueEntry = { id: string; code: string; codes: string[]; title: string; tip: string };
+const CATALOGUE: CatalogueEntry[] = [
+  { id: "1A", code: "1A", codes: ["1A"], title: formTitleForCode("1A") ?? "Form 1A", tip: catalogFormLabel("1A") },
+  { id: "3A", code: "3A", codes: ["3A"], title: formTitleForCode("3A") ?? "Form 3A", tip: catalogFormLabel("3A") },
+  { id: "3C", code: "3C", codes: ["3C"], title: formTitleForCode("3C") ?? "Form 3C", tip: catalogFormLabel("3C") },
+  {
+    id: "3B_3D",
+    code: "3B/3D",
+    codes: ["3B", "3D"],
+    title: `${formTitleForCode("3B")} / ${formTitleForCode("3D")}`,
+    tip: `${catalogFormLabel("3B")} / ${catalogFormLabel("3D")}`,
+  },
+  {
+    id: "4A_4C",
+    code: "4A/4C",
+    codes: ["4A", "4C"],
+    title: `${formTitleForCode("4A")} / ${formTitleForCode("4C")}`,
+    tip: `${catalogFormLabel("4A")} / ${catalogFormLabel("4C")}`,
+  },
+  { id: "5A", code: "5A", codes: ["5A"], title: formTitleForCode("5A") ?? "Form 5A", tip: catalogFormLabel("5A") },
+  { id: "5B", code: "5B", codes: ["5B"], title: formTitleForCode("5B") ?? "Form 5B", tip: catalogFormLabel("5B") },
+  { id: "6A", code: "6A", codes: ["6A"], title: formTitleForCode("6A") ?? "Form 6A", tip: catalogFormLabel("6A") },
+  { id: "6B", code: "6B", codes: ["6B"], title: formTitleForCode("6B") ?? "Form 6B", tip: catalogFormLabel("6B") },
+  { id: "6C", code: "6C", codes: ["6C"], title: formTitleForCode("6C") ?? "Form 6C", tip: catalogFormLabel("6C") },
+];
+
+/** The status of one form against the warning windows: glyph tone and the short word beside it. */
+function windowState(movement: Movement, now: Instant): { tone: WfTone; text: string } | undefined {
+  const legalForm = movement.legalForm;
+  if (legalForm?.dueAt === undefined) return undefined;
+  if (isLegalDeadlineBreached(movement, now)) return { tone: "danger", text: "Passed" };
+  const reminder = legalExpiryReminderOf(movement, now);
+  if (reminder === "within-urgent") return { tone: "danger", text: `Within ${reminderHours(reminder)}h` };
+  if (reminder === "within-soon") return { tone: "warning", text: `Within ${reminderHours(reminder)}h` };
+  return { tone: "neutral", text: "Later" };
+}
+
+/** "72h period", from the labelled synthetic Act-period demo. Undefined when the demo has none. */
+function periodShort(reading: ActPeriodReading | undefined): string | undefined {
+  if (!reading) return undefined;
+  const length = reading.period.adult;
+  if ("hours" in length) return `${length.hours}h period`;
+  if ("days" in length) return `${length.days} day period`;
+  return `${length.months} month period`;
+}
+
+type FormEvent_ = { id: string; sortAt: Instant; tone: WfTone; text: string };
+
+/** Recorded legal-form facts on one movement, newest first: what the record holds and nothing more. */
+function formEvents(movement: Movement, edName: string): FormEvent_[] {
+  const code = movement.legalForm?.code;
+  if (code === undefined) return [];
+  const items: FormEvent_[] = [
+    { id: `${movement.id}-lodged`, sortAt: movement.openedAt, tone: "success", text: `Lodged on the move, ${edName}` },
+  ];
+  if (movement.formedAt !== undefined) {
+    items.push({
+      id: `${movement.id}-written`,
+      sortAt: movement.formedAt,
+      tone: "info",
+      text: `Form ${code} made, time written on form`,
+    });
+  }
+  if (movement.legalFormReceivedAt !== undefined) {
+    items.push({
+      id: `${movement.id}-received`,
+      sortAt: movement.legalFormReceivedAt,
+      tone: "success",
+      text: `Form ${code} received`,
+    });
+  }
+  for (const [index, entry] of (movement.legalFormExpiryHistory ?? []).entries()) {
+    items.push({
+      id: `${movement.id}-expiry-${index}`,
+      sortAt: entry.at,
+      tone: "info",
+      text: entry.basis === "extension" ? `Form ${code} extended` : `Expiry typed from form ${code}`,
+    });
+  }
+  return items.sort((a, b) => b.sortAt - a.sortAt);
+}
+
+function asTimeline(events: FormEvent_[], now: Instant): TimelineItem[] {
+  return events.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
+}
+
 export function LegalFormsScreen() {
   usePrintableDisclosures();
 
   const { movements, referrals, patients, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
+  const nowMs = now * MS_PER_MINUTE;
 
   const [authorityFilter, setAuthorityFilter] = useState<string>("all");
-  const [urgencyFilter, setUrgencyFilter] = useState<"all" | "urgent" | "valid">("all");
-  const [newFormModalOpen, setNewFormModalOpen] = useState<boolean>(false);
+  const [urgencyFilter, setUrgencyFilter] = useState<"all" | "urgent">("all");
   const [renewModalOpen, setRenewModalOpen] = useState<boolean>(false);
   const [inspectorDrawerOpen, setInspectorDrawerOpen] = useState<boolean>(false);
   const [selectedMovementId, setSelectedMovementId] = useState<string | null>(null);
   const [targetMovementId, setTargetMovementId] = useState<string>("");
   const [writtenDraft, setWrittenDraft] = useState(BLANK_TYPED_WRITTEN_DRAFT);
-
-  const lastActiveElementRef = useRef<HTMLElement | null>(null);
-  const drawerRef = useRef<HTMLElement | null>(null);
-  const newFormModalRef = useRef<HTMLDivElement | null>(null);
-  const renewModalRef = useRef<HTMLDivElement | null>(null);
-  const authorityCardRef = useRef<HTMLElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
-  const [canScrollRight, setCanScrollRight] = useState<boolean>(true);
-  const [scrollRatio, setScrollRatio] = useState<number>(1);
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [recordDraft, setRecordDraft] = useState({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+  // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
+  const [recordFormKey, setRecordFormKey] = useState(0);
+  const [copied, setCopied] = useState<string | null>(null);
+  const recordFormTypeRef = useRef<HTMLSelectElement | null>(null);
 
   const openMovements = movements.filter(isOpen);
 
@@ -154,88 +271,30 @@ export function LegalFormsScreen() {
   const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
   const upcoming = withDeadline.length - passed;
   const reminders = legalExpiryReminderSummary(movements, now);
-  const reminderText = legalExpiryReminderText(reminders);
-  const closeCount = reminders.withinUrgent + reminders.withinSoon;
+  const later = upcoming - reminders.withinUrgent - reminders.withinSoon;
+  const expiring = passed + reminders.withinUrgent + reminders.withinSoon;
+  const thresholds = currentDueSoonThresholds();
 
-  const checkAuthorityScroll = () => {
-    const el = authorityCardRef.current;
-    if (!el) return;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    const hasOverflow = maxScroll > 2;
-    setCanScrollLeft(el.scrollLeft > 6);
-    setCanScrollRight(hasOverflow && el.scrollLeft < maxScroll - 6);
-    if (hasOverflow) {
-      const ratio = Math.min(1, el.clientWidth / el.scrollWidth);
-      const progress = Math.max(0, Math.min(1, el.scrollLeft / maxScroll));
-      setScrollRatio(ratio);
-      setScrollProgress(progress);
-    } else {
-      setScrollRatio(1);
-      setScrollProgress(0);
-    }
-  };
-
-  useEffect(() => {
-    const el = authorityCardRef.current;
-    if (!el) return;
-    checkAuthorityScroll();
-    el.addEventListener("scroll", checkAuthorityScroll, { passive: true });
-    window.addEventListener("resize", checkAuthorityScroll);
-    return () => {
-      el.removeEventListener("scroll", checkAuthorityScroll);
-      window.removeEventListener("resize", checkAuthorityScroll);
-    };
-  }, [rows.length]);
-
-  const handleScrollCategories = (direction: "left" | "right") => {
-    const el = authorityCardRef.current;
-    if (!el) return;
-    const step = 260;
-    el.scrollBy({
-      left: direction === "left" ? -step : step,
-      behavior: "smooth",
-    });
-  };
-
-  // Filter application
   const applyAuthorityFilter = (list: Movement[]) => {
     if (authorityFilter === "all") return list;
-    if (authorityFilter === "1A") return list.filter((m) => m.legalForm?.code === "1A");
-    if (authorityFilter === "3A") return list.filter((m) => m.legalForm?.code === "3A");
-    if (authorityFilter === "3C") return list.filter((m) => m.legalForm?.code === "3C");
-    if (authorityFilter === "3B_3D")
-      return list.filter((m) => m.legalForm?.code === "3B" || m.legalForm?.code === "3D");
-    if (authorityFilter === "3D") return list.filter((m) => m.legalForm?.code === "3D");
-    if (authorityFilter === "4A_4C")
-      return list.filter((m) => m.legalForm?.code === "4A" || m.legalForm?.code === "4C");
-    if (authorityFilter === "5A") return list.filter((m) => m.legalForm?.code === "5A");
-    if (authorityFilter === "5B") return list.filter((m) => m.legalForm?.code === "5B");
-    if (authorityFilter === "6A") return list.filter((m) => m.legalForm?.code === "6A");
-    if (authorityFilter === "6B") return list.filter((m) => m.legalForm?.code === "6B");
-    if (authorityFilter === "6C") return list.filter((m) => m.legalForm?.code === "6C");
     if (authorityFilter === "reviews") return [];
-    return list;
+    const entry = CATALOGUE.find((item) => item.id === authorityFilter);
+    const codes = entry ? entry.codes : [authorityFilter];
+    return list.filter((m) => codes.includes(m.legalForm?.code ?? ""));
   };
 
-  const applyUrgencyFilter = (list: Movement[]) => {
-    if (urgencyFilter === "all") return list;
-    if (urgencyFilter === "urgent") {
-      return list.filter(
-        (m) =>
-          isLegalDeadlineBreached(m, now) ||
-          (m.legalForm?.dueAt !== undefined && minutesUntil(m.legalForm.dueAt, now) < 180),
-      );
-    }
-    if (urgencyFilter === "valid") {
-      return list.filter((m) => !isLegalDeadlineBreached(m, now));
-    }
-    return list;
-  };
-
-  const filteredWithDeadline = applyUrgencyFilter(applyAuthorityFilter(withDeadline));
+  const isExpiring = (m: Movement) => windowState(m, now)?.text !== "Later";
+  const filteredWithDeadline = applyAuthorityFilter(
+    urgencyFilter === "urgent" ? withDeadline.filter(isExpiring) : withDeadline,
+  );
   const filteredNoDeadline = urgencyFilter === "urgent" ? [] : applyAuthorityFilter(noDeadline);
 
-  const selectedMovement = rows.find((m) => m.id === selectedMovementId) ?? null;
+  const selectedMovement =
+    // Resolve only within the active filters, so a filtered-out row never stays selected.
+    [...filteredWithDeadline, ...filteredNoDeadline].find((m) => m.id === selectedMovementId) ??
+    filteredWithDeadline[0] ??
+    filteredNoDeadline[0] ??
+    null;
   const selectedPatientInfo = selectedMovement
     ? resolveSubjectPatient(selectedMovement, { patients, referrals })
     : null;
@@ -248,48 +307,38 @@ export function LegalFormsScreen() {
           (entry) => entry.movementId === selectedMovement.id && entry.attempted === "RECORD_LEGAL_FORM_WRITTEN",
         );
 
-  // Focus and Modal / Drawer Handlers
-  const handleOpenNewForm = () => {
-    lastActiveElementRef.current = document.activeElement as HTMLElement;
-    setNewFormModalOpen(true);
+  const edNameOf = (movement: Movement) => {
+    const ed = edById(movement.originEdId);
+    return ed ? edShortName(ed) : departmentLabel(movement.originEdId, undefined);
   };
 
-  const handleCloseNewForm = () => {
-    setNewFormModalOpen(false);
-    lastActiveElementRef.current?.focus();
+  const handleOpenRecordForm = (movementId?: string) => {
+    if (movementId) setRecordDraft((current) => ({ ...current, movement: movementId }));
+    const field = recordFormTypeRef.current;
+    field?.scrollIntoView?.({ block: "nearest" });
+    field?.focus();
   };
 
   const handleOpenRenew = (movementId?: string) => {
-    lastActiveElementRef.current = document.activeElement as HTMLElement;
     if (movementId) {
       setTargetMovementId(movementId);
     } else {
       const firstBreached = withDeadline.find((m) => isLegalDeadlineBreached(m, now));
-      setTargetMovementId(firstBreached?.id ?? "WF-028");
+      setTargetMovementId(firstBreached?.id ?? withDeadline[0]?.id ?? "");
     }
     setRenewModalOpen(true);
   };
 
-  const handleCloseRenew = () => {
-    setRenewModalOpen(false);
-    lastActiveElementRef.current?.focus();
+  const handleSelect = (movement: Movement) => {
+    if (movement.id !== selectedMovement?.id) setWrittenDraft(BLANK_TYPED_WRITTEN_DRAFT);
+    setSelectedMovementId(movement.id);
   };
 
   const handleOpenInspector = (movement: Movement) => {
-    lastActiveElementRef.current = document.activeElement as HTMLElement;
+    if (movement.id !== selectedMovement?.id) setWrittenDraft(BLANK_TYPED_WRITTEN_DRAFT);
     setSelectedMovementId(movement.id);
-    setWrittenDraft(BLANK_TYPED_WRITTEN_DRAFT);
     setInspectorDrawerOpen(true);
   };
-
-  const handleCloseInspector = () => {
-    setInspectorDrawerOpen(false);
-    lastActiveElementRef.current?.focus();
-  };
-
-  useWardModalFocus(inspectorDrawerOpen, drawerRef, handleCloseInspector);
-  useWardModalFocus(newFormModalOpen, newFormModalRef, handleCloseNewForm);
-  useWardModalFocus(renewModalOpen, renewModalRef, handleCloseRenew);
 
   const handleMarkFormReceived = (movementId: string) => {
     const movement = movements.find((entry) => entry.id === movementId);
@@ -316,10 +365,58 @@ export function LegalFormsScreen() {
     });
   };
 
+  const copyText = (key: string, text: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+    setCopied(key);
+    window.setTimeout(() => setCopied((current) => (current === key ? null : current)), 2000);
+  };
+
+  const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
+
+  const expiringSoon = withDeadline.filter((m) => {
+    const left = minutesUntil(m.legalForm!.dueAt!, now);
+    return left >= 0 && left <= CHART_WINDOW_MINUTES;
+  });
+  const handoverText = expiringSoon
+    .map(
+      (m) => `${formatInstantWithDay(m.legalForm!.dueAt!, now)} Form ${m.legalForm!.code}, ${patientOf(m).formalName}`,
+    )
+    .join("\n");
+
+  // Forms by emergency department, most first.
+  const byEd = new Map<string, { name: string; count: number; tone?: WfTone }>();
+  for (const movement of rows) {
+    const name = edNameOf(movement);
+    const entry = byEd.get(movement.originEdId) ?? { name, count: 0 };
+    entry.count += 1;
+    const state = windowState(movement, now);
+    if (state?.tone === "danger") entry.tone = "danger";
+    else if (state?.tone === "warning" && entry.tone !== "danger") entry.tone = "warning";
+    byEd.set(movement.originEdId, entry);
+  }
+  const edRows = [...byEd.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  // Recorded today, across every form on an open move: written, received and expiry entries.
+  const today: TimelineItem[] = asTimeline(
+    rows
+      .flatMap((movement) =>
+        formEvents(movement, edNameOf(movement))
+          .filter((event) => !event.id.endsWith("-lodged"))
+          .map((event) => ({ ...event, text: `${event.text}, ${edNameOf(movement)}` })),
+      )
+      .filter((event) => event.sortAt <= now && dayOf(event.sortAt) === dayOf(now))
+      .sort((a, b) => b.sortAt - a.sortAt)
+      .slice(0, 5),
+    now,
+  );
+
+  const catalogueCount = (codes: string[]) => rows.filter((m) => codes.includes(m.legalForm?.code ?? "")).length;
+
   return (
-    <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="third-edition">
+    <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
-        {/* Hidden screen-reader / test headings for zero visual redundancy (Eliminates Image 1 Clutter) */}
         <h1 className={styles.srOnly}>Legal forms</h1>
         <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
@@ -344,1236 +441,994 @@ export function LegalFormsScreen() {
           </div>
         </dl>
 
-        {/* Dynamic HUD Island: MHA Statutory Status */}
-        <WardDynamicIsland
-          className={styles.hud}
-          testId="ward-legal-hud-island"
-          title="Recorded legal form due times"
-          icon={<Scale size={16} aria-hidden="true" />}
-          status={passed > 0 ? "alarm" : upcoming > 0 ? "warning" : "nominal"}
-          statusText={
-            passed > 0
-              ? `${passed} recorded due times passed`
-              : closeCount > 0
-                ? `${closeCount} recorded due ${closeCount === 1 ? "time" : "times"} within ${reminders.soonHours}h`
-                : upcoming > 0
-                  ? `${upcoming} upcoming recorded due times`
-                  : "No recorded due times"
-          }
-          ariaLabel="Mental health legal forms status summary"
-          metrics={[
-            {
-              testId: "ward-legal-kpi-passed",
-              id: "kpi-deadlines-passed",
-              label: "Passed",
-              value: passed,
-              tone: passed > 0 ? "danger" : "good",
-              active: urgencyFilter === "urgent",
-              onClick: () => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent"),
-              ariaLabel: `Deadlines passed: ${passed}`,
-            },
-            {
-              testId: "ward-legal-kpi-upcoming",
-              id: "kpi-upcoming",
-              label: "Upcoming",
-              value: upcoming,
-              tone: upcoming > 0 ? "warn" : "accent",
-              active: urgencyFilter === "urgent",
-              onClick: () => setUrgencyFilter("urgent"),
-              ariaLabel: `Upcoming deadlines: ${upcoming}`,
-            },
-            {
-              testId: "ward-legal-kpi-1a",
-              id: "kpi-form-1a",
-              label: "Form 1A",
-              value: rows.filter((m) => m.legalForm?.code === "1A").length,
-              tone: "accent",
-              active: authorityFilter === "1A",
-              onClick: () => setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A"),
-              ariaLabel: `Form 1A referrals: ${rows.filter((m) => m.legalForm?.code === "1A").length}`,
-            },
-            {
-              testId: "ward-legal-kpi-3-4",
-              id: "kpi-form-3-4",
-              label: "Form 3 & 4",
-              value: rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length,
-              tone: "warn",
-              active: authorityFilter === "3B_3D",
-              onClick: () => setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D"),
-              ariaLabel: `Form 3 and 4 orders: ${rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length}`,
-            },
-            {
-              testId: "ward-legal-kpi-clockless",
-              id: "kpi-clockless",
-              label: "No time written",
-              value: noDeadline.length + voluntary,
-              tone: "muted",
-              active: authorityFilter === "all" && urgencyFilter === "all",
-              onClick: () => {
-                setAuthorityFilter("all");
-                setUrgencyFilter("all");
-              },
-              ariaLabel: `No time written and voluntary: ${noDeadline.length + voluntary}`,
-            },
-          ]}
-          actions={
-            <div className={styles.islandActionsWrap}>
-              <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
-                + Record a form
-              </button>
-              {passed > 0 ? (
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
-                  data-testid="ward-legal-reauth-btn"
-                  onClick={() => handleOpenRenew()}
-                  aria-label="Re-Authorise Order"
-                >
-                  <Clock size={14} aria-hidden="true" />
-                  <span>Re-Authorise</span>
-                </button>
-              ) : null}
-            </div>
-          }
-        />
-
-        {/* Registry Workbench: Left Authority Catalogue + Right Orders Workbench */}
-        <div className={styles.registryLayout}>
-          {/* Left Column: Form category catalogue & Deadline Context */}
-          <div className={styles.leftColumn}>
-            <details className={styles.authorityCardSection} open>
-              <summary className={styles.catalogueSummary}>
-                <span>Browse form categories</span>
-                <span className={styles.badge} data-tone="accent">
-                  {rows.length} recorded
-                </span>
-              </summary>
-              <div className={styles.scrollHeaderBar}>
-                <span className={styles.scrollHeaderTitle}>Form categories</span>
-                <div className={styles.scrollControls}>
-                  <span className={styles.scrollCueText} aria-live="polite">
-                    {canScrollRight ? "Swipe or scroll for more →" : "All categories shown"}
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.scrollChevronBtn}
-                    onClick={() => handleScrollCategories("left")}
-                    disabled={!canScrollLeft}
-                    aria-label="Scroll form categories left"
-                    title="Scroll categories left"
-                  >
-                    <ChevronLeft size={18} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.scrollChevronBtn}
-                    onClick={() => handleScrollCategories("right")}
-                    disabled={!canScrollRight}
-                    aria-label="Scroll form categories right"
-                    title="Scroll categories right"
-                  >
-                    <ChevronRight size={18} aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-
-              <div className={styles.authorityScrollTrack}>
-                {canScrollLeft && <div className={styles.scrollFadeLeft} aria-hidden="true" />}
-                <aside ref={authorityCardRef} className={styles.authorityCard} aria-label="Form catalog">
-                  <div className={styles.authorityHead}>
-                    <h3>Recorded forms (demo)</h3>
-                    <span className={styles.badge} data-tone="accent">
-                      {rows.length} Total
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "all" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("all")}
-                    title="All recorded forms — Every form recorded in this prototype"
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>ALL</span>
-                      <span className={styles.catalogTitle}>All recorded forms</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="accent">
-                        {rows.length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "1A" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("1A")}
-                    title={catalogFormLabel("1A")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>1A</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("1A")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="accent" data-form="1">
-                        {rows.filter((m) => m.legalForm?.code === "1A").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "3A" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("3A")}
-                    title={catalogFormLabel("3A")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>3A</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("3A")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="danger" data-form="3">
-                        {rows.filter((m) => m.legalForm?.code === "3A").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "3C" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("3C")}
-                    title={catalogFormLabel("3C")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>3C</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("3C")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="danger" data-form="3">
-                        {rows.filter((m) => m.legalForm?.code === "3C").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "3B_3D" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("3B_3D")}
-                    title={`${catalogFormLabel("3B")} / ${catalogFormLabel("3D")}`}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>3B / 3D</span>
-                      <span className={styles.catalogTitle}>
-                        {formTitleForCode("3B")} / {formTitleForCode("3D")}
-                      </span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="danger" data-form="3">
-                        {rows.filter((m) => m.legalForm?.code === "3B" || m.legalForm?.code === "3D").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "4A_4C" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("4A_4C")}
-                    title={`${catalogFormLabel("4A")} / ${catalogFormLabel("4C")}`}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>4A / 4C</span>
-                      <span className={styles.catalogTitle}>
-                        {formTitleForCode("4A")} / {formTitleForCode("4C")}
-                      </span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="warn">
-                        {rows.filter((m) => m.legalForm?.code === "4A" || m.legalForm?.code === "4C").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "5A" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("5A")}
-                    title={catalogFormLabel("5A")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>5A</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("5A")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="good">
-                        {rows.filter((m) => m.legalForm?.code === "5A").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "5B" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("5B")}
-                    title={catalogFormLabel("5B")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>5B</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("5B")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="good">
-                        {rows.filter((m) => m.legalForm?.code === "5B").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "6A" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("6A")}
-                    title={catalogFormLabel("6A")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>6A</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("6A")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="good">
-                        {rows.filter((m) => m.legalForm?.code === "6A").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "6B" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("6B")}
-                    title={catalogFormLabel("6B")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>6B</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("6B")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="good">
-                        {rows.filter((m) => m.legalForm?.code === "6B").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "6C" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("6C")}
-                    title={catalogFormLabel("6C")}
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>6C</span>
-                      <span className={styles.catalogTitle}>{formTitleForCode("6C")}</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="good">
-                        {rows.filter((m) => m.legalForm?.code === "6C").length}
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.catalogItem} ${authorityFilter === "reviews" ? styles.catalogItemActive : ""}`}
-                    onClick={() => setAuthorityFilter("reviews")}
-                    title="Periodic review dates (demo) — Recorded review reminders only"
-                  >
-                    <div className={styles.catalogMain}>
-                      <span className={styles.catalogCode}>REV</span>
-                      <span className={styles.catalogTitle}>Periodic review dates</span>
-                    </div>
-                    <div className={styles.catalogRightWrap}>
-                      <span className={styles.badge} data-tone="accent">
-                        0
-                      </span>
-                      <ChevronRight size={14} className={styles.catalogChevron} aria-hidden="true" />
-                    </div>
-                  </button>
-                </aside>
-                {canScrollRight && <div className={styles.scrollFadeRight} aria-hidden="true" />}
-              </div>
-
-              <div
-                className={styles.scrollIndicatorTrack}
-                role="progressbar"
-                aria-label="Form catalog carousel scroll progress"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(scrollProgress * 100)}
-              >
-                <div
-                  className={styles.scrollIndicatorThumb}
-                  style={{
-                    width: `${Math.max(15, Math.round(scrollRatio * 100))}%`,
-                    left: `${Math.round(scrollProgress * (100 - Math.max(15, Math.round(scrollRatio * 100))))}%`,
-                  }}
+        <div data-testid="ward-legal-hud-island">
+          <Hero
+            eyebrow="Statutory forms"
+            title={`${rows.length} forms on open moves`}
+            stats={
+              <>
+                <HeroStat
+                  className={styles.heroStat}
+                  value={passed}
+                  label="Passed"
+                  tone={passed > 0 ? "danger" : undefined}
                 />
-              </div>
-            </details>
-
-            {/* Secondary column: deadline context (Overhauled Image 3 Structured Breakdown) */}
-            <div className={styles.deadlineContextCard}>
-              <WardPanel title="Deadline context">
-                <div className={styles.panelBody} role="region" aria-label="Legal form deadline guidance" tabIndex={0}>
-                  {breakdown.length === 0 ? (
-                    <p className={styles.note}>
-                      No open movement carries a legal form, so there is nothing to break down.
-                    </p>
-                  ) : (
-                    <div className={styles.breakdownContainer} data-testid="legal-form-breakdown">
-                      <div className={styles.breakdownGrid}>
-                        {breakdown.map((form) => {
-                          const openWord = form.openCount === 1 ? "open movement" : "open movements";
-                          const breachClause =
-                            form.breachedCount > 0
-                              ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
-                              : "";
-                          return (
-                            <div
-                              key={form.name}
-                              className={styles.breakdownRow}
-                              data-breached={form.breachedCount > 0}
-                              onClick={() => {
-                                if (form.code) setAuthorityFilter(form.code);
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  if (form.code) setAuthorityFilter(form.code);
-                                }
-                              }}
-                              title={`Filter by ${form.name}`}
-                            >
-                              <div className={styles.breakdownHeader}>
-                                <span className={styles.breakdownCode}>{form.code ?? "FORM"}</span>
-                                <span className={styles.breakdownFormName}>
-                                  {form.name.replace(/\s*\([^)]*\)/g, "")}
-                                </span>
-                              </div>
-                              <div className={styles.breakdownMeta}>
-                                <span className={styles.breakdownCount}>
-                                  {form.openCount} {form.openCount === 1 ? "movement" : "movements"}
-                                </span>
-                                {form.breachedCount > 0 && (
-                                  <span className={styles.breakdownBreachPill}>{form.breachedCount} passed</span>
-                                )}
-                                {/* Embedded exact text for test 188 verification */}
-                                <span className={styles.srOnly}>
-                                  {`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                <HeroStat
+                  className={styles.heroStat}
+                  value={reminders.withinUrgent}
+                  label={`Within ${reminders.urgentHours}h`}
+                  tone="danger"
+                />
+                <HeroStat
+                  className={styles.heroStat}
+                  value={reminders.withinSoon}
+                  label={`Within ${reminders.soonHours}h`}
+                  tone="warning"
+                />
+                <HeroStat className={styles.heroStat} value={Math.max(later, 0)} label="Later" tone="neutral" />
+                <HeroStat
+                  className={styles.heroStat}
+                  value={noDeadline.length}
+                  label="No time written"
+                  tone="neutral"
+                />
+                <HeroStat className={styles.heroStat} value={voluntary} label="Voluntary" />
+              </>
+            }
+            aside={
+              <div className={styles.heroAside}>
+                <LiveChip state="live" onHero />
+                <div className={styles.heroControls}>
+                  <HeroTrack
+                    label="Forms shown"
+                    value={urgencyFilter}
+                    onChange={setUrgencyFilter}
+                    items={[
+                      { id: "all", label: "All", count: rows.length },
+                      { id: "urgent", label: "Expiring", count: expiring },
+                    ]}
+                  />
+                  <Button variant="light" icon={Plus} onClick={() => handleOpenRecordForm()}>
+                    Record a form
+                  </Button>
                 </div>
-              </WardPanel>
-            </div>
+              </div>
+            }
+          />
+        </div>
+
+        <div className={styles.layout}>
+          {/* Left: form types, warning windows, by emergency department */}
+          <div className={styles.column}>
+            <Card aria-label="Form types">
+              <CardHead title="Form types" level={2} aside={<span className={styles.meta}>{rows.length} total</span>} />
+              <CardBody className={styles.catalogue}>
+                <ul className={styles.catalogueList} aria-label="Form catalog">
+                  <li>
+                    <button
+                      type="button"
+                      className={cx(styles.catalogItem, authorityFilter === "all" && styles.catalogItemOn)}
+                      aria-pressed={authorityFilter === "all"}
+                      onClick={() => setAuthorityFilter("all")}
+                    >
+                      <span className={styles.code}>All</span>
+                      <span className={styles.catalogTitle}>All forms</span>
+                      <Count n={rows.length} />
+                    </button>
+                  </li>
+                  {CATALOGUE.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        className={cx(styles.catalogItem, authorityFilter === entry.id && styles.catalogItemOn)}
+                        aria-pressed={authorityFilter === entry.id}
+                        onClick={() => setAuthorityFilter(authorityFilter === entry.id ? "all" : entry.id)}
+                        title={entry.tip}
+                      >
+                        <span className={styles.code}>{entry.code}</span>
+                        <span className={styles.catalogTitle}>{entry.title}</span>
+                        <Count n={catalogueCount(entry.codes)} />
+                      </button>
+                    </li>
+                  ))}
+                  <li>
+                    <button
+                      type="button"
+                      className={cx(styles.catalogItem, authorityFilter === "reviews" && styles.catalogItemOn)}
+                      aria-pressed={authorityFilter === "reviews"}
+                      onClick={() => setAuthorityFilter(authorityFilter === "reviews" ? "all" : "reviews")}
+                    >
+                      <span className={styles.code}>REV</span>
+                      <span className={styles.catalogTitle}>Periodic review dates</span>
+                      <Count n={0} />
+                    </button>
+                  </li>
+                </ul>
+                <div className={styles.srOnly} data-testid="legal-form-breakdown">
+                  {breakdown.map((form) => {
+                    const openWord = form.openCount === 1 ? "open movement" : "open movements";
+                    const breachClause =
+                      form.breachedCount > 0
+                        ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
+                        : "";
+                    return (
+                      <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>
+                    );
+                  })}
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card aria-label="Warning windows" data-testid="ward-legal-expiry-reminder">
+              <CardHead
+                title="Warning windows"
+                level={2}
+                action={
+                  <Link href="/mockups/ward-flow/settings" className={styles.textLink}>
+                    Settings
+                  </Link>
+                }
+              />
+              <CardBody>
+                <StatGroup>
+                  <Stat value={`${reminders.urgentHours}h`} label="First" tone="danger" size="sm" />
+                  <Stat value={`${reminders.soonHours}h`} label="Second" tone="warning" size="sm" />
+                </StatGroup>
+                <WindowScale urgentMinutes={thresholds.urgentMinutes} soonMinutes={thresholds.soonMinutes} />
+                <p className={styles.footnote}>Your defaults, not legal limits</p>
+              </CardBody>
+            </Card>
+
+            <Card aria-label="By emergency dept">
+              <CardHead title="By emergency dept" level={2} aside={<span className={styles.meta}>Forms</span>} />
+              <CardBody flush>
+                <ul className={styles.edList}>
+                  {edRows.map((ed) => (
+                    <li key={ed.name} className={styles.edRow}>
+                      <span className={styles.edName}>{ed.name}</span>
+                      {ed.tone ? (
+                        <StatusGlyph tone={ed.tone} size={9} />
+                      ) : (
+                        <span className={styles.glyphSpace} aria-hidden="true" />
+                      )}
+                      <span className={styles.edCount}>{ed.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardBody>
+            </Card>
           </div>
 
-          {/* Right Column: Master Orders Workbench */}
-          <div className={styles.rightColumn}>
-            <WardPanel title="Legal forms and deadlines" count={`${rows.length} of ${openMovements.length}`}>
-              {/* Urgency Filter Strip */}
-              <div className={styles.filterStripWrap}>
-                <span className={styles.filterLabel}>Filter View:</span>
-                <div className={styles.filterButtons}>
-                  <button
-                    type="button"
-                    className={`${styles.filterBtn} ${urgencyFilter === "all" ? styles.filterBtnActive : ""}`}
-                    onClick={() => setUrgencyFilter("all")}
+          {/* Middle: expiring timeline and the two groups */}
+          <div className={styles.column}>
+            <Card aria-label="Expiring next 8h">
+              <CardHead
+                title="Expiring next 8h"
+                level={2}
+                action={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Copy}
+                    onClick={() => copyText("handover", handoverText)}
+                    disabledReason={expiringSoon.length === 0 ? "Nothing expiring" : undefined}
+                    reasonDisplay="tooltip"
                   >
-                    All Orders ({rows.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.filterBtn} ${urgencyFilter === "urgent" ? styles.filterBtnActive : ""}`}
-                    onClick={() => setUrgencyFilter("urgent")}
-                  >
-                    Urgent / Expiring (
-                    {
-                      withDeadline.filter(
-                        (m) => isLegalDeadlineBreached(m, now) || minutesUntil(m.legalForm!.dueAt!, now) < 180,
-                      ).length
-                    }
-                    )
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.filterBtn} ${urgencyFilter === "valid" ? styles.filterBtnActive : ""}`}
-                    onClick={() => setUrgencyFilter("valid")}
-                  >
-                    Valid ({rows.length - passed})
-                  </button>
-                </div>
-              </div>
+                    {copied === "handover" ? "Copied" : "Copy for handover"}
+                  </Button>
+                }
+              />
+              <CardBody>
+                <ExpiryStrip
+                  rows={expiringSoon.map((m) => ({
+                    id: m.id,
+                    dueAt: m.legalForm!.dueAt!,
+                    label: `${m.legalForm!.code} ${patientOf(m).formalName.split(",")[0]}`,
+                    tone: windowState(m, now)?.tone ?? "neutral",
+                  }))}
+                  now={now}
+                  soonMinutes={thresholds.soonMinutes}
+                />
+              </CardBody>
+            </Card>
 
-              <div className={styles.panelBody} role="region" aria-label="Legal forms list" tabIndex={0}>
-                {/* Shortened scope summary (Replacing verbose Image 5 text) */}
-                <div className={styles.scopeSummaryBanner}>
-                  <p className={styles.scopeSummaryText}>
-                    <span className={styles.scopePrimary}>
-                      {rows.length} of {openMovements.length} open{" "}
-                      {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
-                    </span>
-                    <span className={styles.scopeDetails}>
-                      {" — "}
-                      {withDeadline.length} with recorded due times, {noDeadline.length} with no deadline recorded
-                      {voluntary > 0 ? `, and ${voluntary} voluntary` : ""}.
-                    </span>
-                  </p>
-                </div>
-
-                {reminderText !== undefined ? (
-                  <p className={styles.reminderBanner} role="status" data-testid="ward-legal-expiry-reminder">
-                    <Clock size={14} aria-hidden="true" />
-                    <span>{reminderText}</span>
-                  </p>
-                ) : null}
-
+            <section
+              className={styles.groups}
+              role="region"
+              aria-label="Legal forms and deadlines"
+              data-testid="ward-legal-forms-groups"
+            >
+              <p className={styles.srOnly}>
+                {rows.length} of {openMovements.length} open{" "}
+                {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
+              </p>
+              <div role="region" aria-label="Legal forms list" className={styles.groupStack}>
                 {rows.length === 0 ? (
-                  <p className={styles.absent}>
-                    No open movement carries a legal form. Absence here means none is recorded here, not that none
-                    exists.
-                  </p>
+                  <Card>
+                    <CardBody>
+                      <p className={styles.absent}>No open movement carries a legal form.</p>
+                    </CardBody>
+                  </Card>
                 ) : (
-                  <div className={styles.ordersScrollContainer}>
-                    {/* GROUP 1: Forms with a deadline recorded */}
-                    {filteredWithDeadline.length > 0 ? (
-                      <>
-                        <WardGroupHeading
-                          title="Forms with a deadline recorded"
-                          people={filteredWithDeadline.length}
-                          note="Ordered by time remaining. A passed deadline comes first."
-                        />
-                        <WardRecordList>
-                          {filteredWithDeadline.map((movement) => (
-                            <LegalFormRow
-                              key={movement.id}
-                              movement={movement}
-                              now={now}
-                              onInspect={handleOpenInspector}
-                              onRenew={(m) => handleOpenRenew(m.id)}
-                              dayZero={dayZero}
-                              patients={patients}
-                              referrals={referrals}
-                            />
-                          ))}
-                        </WardRecordList>
-                      </>
-                    ) : (
-                      <p className={styles.absent} data-testid="ward-legal-forms-none-with-deadline">
-                        {authorityFilter === "3A" ||
-                        authorityFilter === "3C" ||
-                        authorityFilter === "5A" ||
-                        authorityFilter === "5B" ||
-                        authorityFilter === "6A" ||
-                        authorityFilter === "6B" ||
-                        authorityFilter === "6C" ||
-                        authorityFilter === "reviews"
-                          ? "No open movements recorded for this category."
-                          : "No open movement carries a form with a deadline recorded on it."}
-                      </p>
-                    )}
-
-                    {/* GROUP 2: Forms with no deadline recorded */}
-                    {filteredNoDeadline.length > 0 ? (
-                      <>
-                        <WardGroupHeading
-                          title="Forms with no deadline recorded"
-                          people={filteredNoDeadline.length}
-                          note="Not ordered by time remaining, because these records hold none. Ordered by the longest wait."
-                        />
-                        <div className={styles.noDeadlineRows}>
-                          <WardRecordList>
-                            {filteredNoDeadline.map((movement) => (
+                  <>
+                    <Card aria-labelledby="legal-group-written">
+                      <CardHead
+                        id="legal-group-written"
+                        title="Time written on form"
+                        level={2}
+                        aside={
+                          <span className={styles.meta}>
+                            {filteredWithDeadline.length} people · least time left first
+                          </span>
+                        }
+                      />
+                      <span className={styles.srOnly}>Forms with a deadline recorded</span>
+                      {filteredWithDeadline.length > 0 ? (
+                        <>
+                          <DataRow head columns={ROW_COLUMNS} aria-hidden="true" className={styles.headRow}>
+                            <span className={tableClasses.th}>Patient</span>
+                            <span className={tableClasses.th}>Form · site</span>
+                            <span className={cx(tableClasses.th, styles.end)}>Left</span>
+                          </DataRow>
+                          <ul className={styles.rowList}>
+                            {filteredWithDeadline.map((movement) => (
                               <LegalFormRow
                                 key={movement.id}
                                 movement={movement}
                                 now={now}
-                                onInspect={handleOpenInspector}
-                                onRenew={(m) => handleOpenRenew(m.id)}
+                                selected={movement.id === selectedMovement?.id}
+                                onSelect={handleSelect}
+                                onRecordTime={handleOpenInspector}
                                 dayZero={dayZero}
                                 patients={patients}
                                 referrals={referrals}
+                                edName={edNameOf(movement)}
                               />
                             ))}
-                          </WardRecordList>
-                        </div>
-                      </>
-                    ) : (
-                      <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
-                        {urgencyFilter === "urgent"
-                          ? "No time written records hidden under Urgent filter."
-                          : "Every open movement carrying a form has a deadline recorded on it."}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </WardPanel>
-          </div>
-        </div>
-
-        {/* Right Inspector Drawer: Legal Form Dossier & Authorized Practitioner Actions */}
-        {inspectorDrawerOpen && selectedMovement && (
-          <div className={styles.drawerBackdrop} onClick={handleCloseInspector}>
-            <aside
-              className={styles.inspectorDrawer}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dossier-drawer-title"
-              ref={drawerRef}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={styles.drawerHeader}>
-                <div>
-                  <h2 id="dossier-drawer-title" className={styles.drawerTitle}>
-                    Legal Form Dossier
-                  </h2>
-                  <span className={styles.drawerSubtitle}>
-                    {selectedMovement.legalForm ? legalFormName(selectedMovement.legalForm) : "Voluntary Patient"}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className={styles.drawerCloseBtn}
-                  onClick={handleCloseInspector}
-                  aria-label="Close dossier"
-                  title="Close dossier (Esc)"
-                >
-                  <span className={styles.escKey}>Esc</span>
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className={styles.drawerBody}>
-                {/* Executive Patient Hero */}
-                {selectedPatientInfo && (
-                  <div className={styles.dossierPatientHero}>
-                    <div className={styles.dossierAvatar} aria-hidden="true">
-                      {selectedPatientInfo.displayName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </div>
-                    <div className={styles.dossierPatientMeta}>
-                      <div className={styles.dossierPatientName}>{selectedPatientInfo.displayName}</div>
-                      <div className={styles.dossierPatientTags}>
-                        <span className={styles.dossierUmrnBadge}>UMRN {selectedPatientInfo.umrn}</span>
-                        <span className={styles.dossierStatusChip}>{selectedMovement.legalStatus}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Statutory Countdown / Status Banner */}
-                {selectedMovement.legalForm?.dueAt !== undefined && (
-                  <div
-                    className={styles.dossierCountdownBanner}
-                    data-breached={isLegalDeadlineBreached(selectedMovement, now)}
-                  >
-                    <Clock size={16} aria-hidden="true" />
-                    <span>{legalDeadlineText(selectedMovement, now)}</span>
-                  </div>
-                )}
-
-                {/* Dossier Card */}
-                <div className={styles.dossierCard}>
-                  <div className={styles.dossierCardHead}>
-                    <div>
-                      <span className={styles.dossierCode}>
-                        {selectedMovement.legalForm ? `FORM ${selectedMovement.legalForm.code}` : "VOLUNTARY"}
-                      </span>
-                      <div className={styles.dossierAct}>Recorded form</div>
-                    </div>
-                    <span
-                      className={styles.badge}
-                      data-tone={
-                        isLegalDeadlineBreached(selectedMovement, now)
-                          ? "danger"
-                          : selectedMovement.legalForm?.dueAt !== undefined
-                            ? "good"
-                            : "accent"
-                      }
-                    >
-                      {isLegalDeadlineBreached(selectedMovement, now)
-                        ? "Due Time Passed"
-                        : selectedMovement.legalForm?.dueAt !== undefined
-                          ? "Active Deadline"
-                          : "No Deadline Recorded"}
-                    </span>
-                  </div>
-
-                  <div className={styles.dossierGrid}>
-                    {selectedPatientInfo && (
-                      <>
-                        <div className={styles.dossierField}>
-                          <span className={styles.dossierLabel}>Patient Name</span>
-                          <span className={styles.dossierVal}>
-                            <b>{selectedPatientInfo.displayName}</b>
-                          </span>
-                        </div>
-                        <div className={styles.dossierField}>
-                          <span className={styles.dossierLabel}>UMRN</span>
-                          <span className={styles.dossierValMono}>
-                            <strong>{selectedPatientInfo.umrn}</strong>
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    {/* Owner, 26 Sept 2026: no WF journey number row; the patient is named above. */}
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Legal Status</span>
-                      <span className={styles.dossierVal}>{selectedMovement.legalStatus}</span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Origin Facility</span>
-                      <span className={styles.dossierVal}>
-                        {departmentLabel(selectedMovement.originEdId, edById(selectedMovement.originEdId)?.name)}
-                      </span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Flow Coordinator / Owner</span>
-                      <span className={styles.dossierVal}>{selectedMovement.owner}</span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Lodged Time</span>
-                      <span className={styles.dossierValMono}>
-                        <time className={styles.tabularTime}>
-                          {formatInstantWithDay(selectedMovement.openedAt, now)}
-                        </time>
-                      </span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Recorded deadline</span>
-                      <span
-                        className={styles.dossierValMono}
-                        style={{
-                          fontWeight: 700,
-                          color: isLegalDeadlineBreached(selectedMovement, now) ? "var(--danger)" : "var(--ink)",
-                        }}
-                      >
-                        {selectedMovement.legalForm?.dueAt !== undefined ? (
-                          <time className={styles.tabularTime}>
-                            {formatInstantWithDay(selectedMovement.legalForm.dueAt, now)}
-                          </time>
-                        ) : (
-                          "No deadline recorded on form"
-                        )}
-                      </span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Time written</span>
-                      <span className={styles.dossierValMono}>
-                        {selectedMovement.formedAt !== undefined
-                          ? formatInstantWithDay(selectedMovement.formedAt, now)
-                          : "Not recorded"}
-                      </span>
-                    </div>
-                    <div className={styles.dossierField}>
-                      <span className={styles.dossierLabel}>Form received</span>
-                      <span className={styles.dossierValMono}>
-                        {selectedMovement.legalFormReceivedAt !== undefined ? (
-                          <time className={styles.tabularTime}>
-                            {formatInstantWithDay(selectedMovement.legalFormReceivedAt, now)}
-                          </time>
-                        ) : (
-                          "Not marked received"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className={styles.dossierStatusNote}>{legalDeadlineText(selectedMovement, now)}</div>
-                </div>
-
-                {/* Authorized Practitioner Review Section */}
-                <div className={styles.practitionerSection}>
-                  <h3 className={styles.sectionHeading}>Practitioner actions</h3>
-
-                  <div className={styles.actionGroup}>
-                    <div className={styles.actionGroupHead}>
-                      <h4 className={styles.actionGroupTitle}>Record actions</h4>
-                      <p className={styles.actionGroupNote}>
-                        Available controls and this form&apos;s receipt status appear first.
-                      </p>
-                    </div>
-
-                    {isLegalDeadlineBreached(selectedMovement, now) && (
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.btnDanger} ${styles.actionBlockBtn}`}
-                        onClick={() => {
-                          setTargetMovementId(selectedMovement.id);
-                          setRenewModalOpen(true);
-                        }}
-                      >
-                        Extend recorded form
-                      </button>
-                    )}
-
-                    {receiptEventAccepts(selectedMovement.legalForm?.code) ? (
-                      selectedMovement.legalFormReceivedAt === undefined ? (
-                        <div className={styles.actionItem}>
-                          <button
-                            type="button"
-                            className={`${styles.btn} ${styles.btnPrimary} ${styles.actionBlockBtn}`}
-                            data-testid={`ward-legal-forms-mark-received-${selectedMovement.id}`}
-                            onClick={() => handleMarkFormReceived(selectedMovement.id)}
-                          >
-                            Mark Form {selectedMovement.legalForm?.code} received
-                          </button>
-                        </div>
+                          </ul>
+                        </>
                       ) : (
-                        <p className={styles.confirmNote}>
-                          Form {selectedMovement.legalForm?.code} received{" "}
-                          {formatInstantWithDay(selectedMovement.legalFormReceivedAt, now)}.
+                        <p className={styles.absent} data-testid="ward-legal-forms-none-with-deadline">
+                          {authorityFilter === "all"
+                            ? "No open movement carries a form with a deadline recorded on it."
+                            : "No open movements recorded for this category."}
                         </p>
-                      )
-                    ) : (
-                      <p className={styles.confirmNote}>
-                        Receipt is not offered for this form in this round. Confirm stays disabled for forms this screen
-                        does not own.
-                      </p>
-                    )}
+                      )}
+                    </Card>
 
-                    {isOwnedLegalFormCode(selectedMovement.legalForm?.code) ? (
-                      <form
-                        className={styles.actionItem}
-                        data-testid={`ward-legal-forms-written-form-${selectedMovement.id}`}
-                        onSubmit={(event) => handleRecordFormWritten(event, selectedMovement)}
-                      >
-                        <p className={styles.confirmNote}>
-                          Record when the form was written. This action does not calculate or record an expiry.
-                        </p>
-                        <div className={styles.formGroup}>
-                          <label
-                            className={styles.formLabel}
-                            htmlFor={`legal-forms-written-date-${selectedMovement.id}`}
-                          >
-                            Date the form was written
-                          </label>
-                          <input
-                            id={`legal-forms-written-date-${selectedMovement.id}`}
-                            type="date"
-                            className={styles.formInput}
-                            value={writtenDraft.date}
-                            onChange={(event) =>
-                              setWrittenDraft((current) => ({ ...current, date: event.target.value }))
-                            }
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label
-                            className={styles.formLabel}
-                            htmlFor={`legal-forms-written-time-${selectedMovement.id}`}
-                          >
-                            Time the form was written
-                          </label>
-                          <input
-                            id={`legal-forms-written-time-${selectedMovement.id}`}
-                            type="time"
-                            className={styles.formInput}
-                            value={writtenDraft.time}
-                            onChange={(event) =>
-                              setWrittenDraft((current) => ({ ...current, time: event.target.value }))
-                            }
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label
-                            className={styles.formLabel}
-                            htmlFor={`legal-forms-written-region-${selectedMovement.id}`}
-                          >
-                            Region
-                          </label>
-                          <select
-                            id={`legal-forms-written-region-${selectedMovement.id}`}
-                            className={styles.formSelect}
-                            value={writtenDraft.region}
-                            onChange={(event) =>
-                              setWrittenDraft((current) => ({
-                                ...current,
-                                region: event.target.value as LegalClockRegion,
-                              }))
-                            }
-                          >
-                            <option value="metro">Metro</option>
-                            <option value="country">Country</option>
-                          </select>
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label
-                            className={styles.formLabel}
-                            htmlFor={`legal-forms-written-age-${selectedMovement.id}`}
-                          >
-                            Age band
-                          </label>
-                          <select
-                            id={`legal-forms-written-age-${selectedMovement.id}`}
-                            className={styles.formSelect}
-                            value={writtenDraft.ageBand}
-                            onChange={(event) =>
-                              setWrittenDraft((current) => ({
-                                ...current,
-                                ageBand: event.target.value as LegalClockAgeBand,
-                              }))
-                            }
-                          >
-                            <option value="adult">Adult</option>
-                            <option value="under_18">Under 18</option>
-                          </select>
-                        </div>
-                        <p
-                          id={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
-                          className={styles.confirmNote}
-                          data-testid={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
-                        >
-                          {typedWrittenAt === undefined
-                            ? "Enter the time written on the form."
-                            : "Only the written time will be recorded. No expiry is calculated."}
-                        </p>
-                        {lastWrittenRefusal ? (
-                          <p
-                            className={styles.confirmNote}
-                            data-testid={`ward-legal-forms-written-refusal-${selectedMovement.id}`}
-                          >
-                            Not recorded: {lastWrittenRefusal.reason}
-                          </p>
-                        ) : null}
-                        <button
-                          type="submit"
-                          className={`${styles.btn} ${styles.btnPrimary} ${styles.actionBlockBtn}`}
-                          data-testid={`ward-legal-forms-written-confirm-${selectedMovement.id}`}
-                          aria-disabled={typedWrittenAt === undefined ? "true" : undefined}
-                          aria-describedby={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
-                          title={
-                            typedWrittenAt === undefined
-                              ? "Enter the time written on the form to enable saving"
-                              : undefined
+                    {urgencyFilter === "urgent" ? null : (
+                      <Card aria-labelledby="legal-group-unwritten">
+                        <CardHead
+                          id="legal-group-unwritten"
+                          title="No time written"
+                          level={2}
+                          aside={
+                            <span className={styles.meta}>
+                              {filteredNoDeadline.length} people · longest in ED first
+                            </span>
                           }
-                          onClick={typedWrittenAt === undefined ? ignoreUnavailableActivation : undefined}
-                        >
-                          Save time written
-                        </button>
-                      </form>
-                    ) : (
-                      <p className={styles.confirmNote}>
-                        Recording a written time is not offered for this form in this round.
-                      </p>
+                        />
+                        <span className={styles.srOnly}>Forms with no deadline recorded</span>
+                        {filteredNoDeadline.length > 0 ? (
+                          <>
+                            <DataRow head columns={ROW_COLUMNS_CLOCKLESS} aria-hidden="true" className={styles.headRow}>
+                              <span className={tableClasses.th}>Patient</span>
+                              <span className={tableClasses.th}>Form · site</span>
+                              <span className={cx(tableClasses.th, styles.end)}>In ED</span>
+                              <span />
+                            </DataRow>
+                            <ul className={styles.rowList}>
+                              {filteredNoDeadline.map((movement) => (
+                                <LegalFormRow
+                                  key={movement.id}
+                                  movement={movement}
+                                  now={now}
+                                  selected={movement.id === selectedMovement?.id}
+                                  onSelect={handleSelect}
+                                  onRecordTime={handleOpenInspector}
+                                  dayZero={dayZero}
+                                  patients={patients}
+                                  referrals={referrals}
+                                  edName={edNameOf(movement)}
+                                />
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
+                            Every open movement carrying a form has a deadline recorded on it.
+                          </p>
+                        )}
+                      </Card>
                     )}
-                  </div>
-
-                  <div className={`${styles.actionGroup} ${styles.unavailableActionGroup}`}>
-                    <div className={styles.actionGroupHead}>
-                      <h4 className={styles.actionGroupTitle}>Unavailable here</h4>
-                      <p className={styles.actionGroupNote}>
-                        These controls remain visible for context, but this screen cannot complete them.
-                      </p>
-                    </div>
-
-                    <div className={styles.actionItem}>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.actionBlockBtn}`}
-                        aria-disabled="true"
-                        aria-describedby="legal-forms-examination-unavailable"
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        Record Involuntary Psychiatric Examination
-                      </button>
-                      <span id="legal-forms-examination-unavailable" className={styles.confirmNote}>
-                        Not wired in this prototype. Examination recording is unavailable from Legal forms.
-                      </span>
-                    </div>
-
-                    <div className={styles.actionItem}>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.actionBlockBtn}`}
-                        aria-disabled="true"
-                        aria-describedby="legal-forms-officer-unavailable"
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        Custodial Transport Officer Verification
-                      </button>
-                      <span id="legal-forms-officer-unavailable" className={styles.confirmNote}>
-                        Not wired in this prototype. Officer verification is unavailable from Legal forms.
-                      </span>
-                    </div>
-
-                    <div className={styles.actionItem}>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.actionBlockBtn}`}
-                        aria-disabled="true"
-                        aria-describedby="legal-forms-review-unavailable"
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        Schedule a review date (demo)
-                      </button>
-                      <span id="legal-forms-review-unavailable" className={styles.confirmNote}>
-                        Not wired in this prototype. Review-date scheduling is unavailable from Legal forms.
-                      </span>
-                    </div>
-
-                    <div className={styles.actionItem}>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.actionBlockBtn}`}
-                        aria-disabled="true"
-                        aria-describedby="legal-forms-print-unavailable"
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        Print form summary (PDF)
-                      </button>
-                      <span id="legal-forms-print-unavailable" className={styles.confirmNote}>
-                        Not wired in this prototype. PDF generation is unavailable from Legal forms.
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
-            </aside>
+            </section>
           </div>
-        )}
 
-        {/* Record a form modal */}
-        {newFormModalOpen && (
-          <div
-            ref={newFormModalRef}
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="newform-modal-title"
-          >
-            <div className={styles.modalDialog}>
-              <div className={styles.modalHead}>
-                <h3 id="newform-modal-title">Record a form</h3>
-                <button
-                  type="button"
-                  className={styles.modalCloseBtn}
-                  onClick={handleCloseNewForm}
-                  aria-label="Close dialog"
-                >
-                  <X size={16} aria-hidden="true" />
-                </button>
-              </div>
-              <div className={styles.modalBody}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-new-instrument">
-                    Form type
-                  </label>
-                  <select
-                    id="legal-forms-new-instrument"
-                    className={styles.formSelect}
-                    defaultValue={SELECTABLE_LEGAL_FORMS[0]?.code}
+          {/* Right: the selected form, record a form, recorded today */}
+          <div className={styles.column}>
+            {selectedMovement && selectedPatientInfo ? (
+              <SelectedFormCard
+                movement={selectedMovement}
+                name={selectedPatientInfo.formalName}
+                umrn={selectedPatientInfo.umrn}
+                edName={edNameOf(selectedMovement)}
+                now={now}
+                nowMs={nowMs}
+                dayZero={dayZero}
+                onDossier={() => handleOpenInspector(selectedMovement)}
+                onExtend={() => handleOpenRenew(selectedMovement.id)}
+                onRecordNext={() => handleOpenRecordForm(selectedMovement.id)}
+              />
+            ) : null}
+
+            <Card aria-label="Record a form">
+              <CardHead title="Record a form" icon={FileText} level={2} />
+              <CardBody key={recordFormKey} className={styles.recordForm}>
+                <Field label="Form type" id="legal-forms-new-instrument">
+                  <Select
+                    ref={recordFormTypeRef}
+                    value={recordDraft.form}
+                    onChange={(event) => setRecordDraft((current) => ({ ...current, form: event.target.value }))}
                   >
                     {SELECTABLE_LEGAL_FORMS.map((form) => (
                       <option key={form.code} value={form.code}>
                         {legalFormName(form)}
                       </option>
                     ))}
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-new-movement">
-                    Target Movement Reference
-                  </label>
-                  <select
-                    id="legal-forms-new-movement"
-                    className={styles.formSelect}
-                    defaultValue={openMovements[0]?.id}
+                  </Select>
+                </Field>
+                <Field label="Movement" id="legal-forms-new-movement">
+                  <Select
+                    value={recordDraft.movement}
+                    onChange={(event) => setRecordDraft((current) => ({ ...current, movement: event.target.value }))}
                   >
+                    <option value="">Choose a movement</option>
                     {openMovements.map((m) => {
-                      const p = resolveSubjectPatient(m, { patients, referrals });
+                      const p = patientOf(m);
                       return (
                         // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
                         <option key={m.id} value={m.id}>
-                          {p.displayName} ({p.umrn}) — Current: {m.legalForm ? m.legalForm.code : "Voluntary"} (
-                          {m.legalStatus})
+                          {p.formalName} ({p.umrn}), {m.legalForm ? `Form ${m.legalForm.code}` : "Voluntary"}
                         </option>
                       );
                     })}
-                  </select>
+                  </Select>
+                </Field>
+                <div className={styles.fieldPair}>
+                  <Field label="Clinician" id="legal-forms-new-clinician">
+                    <TextInput placeholder="Name and role" autoComplete="off" />
+                  </Field>
+                  <Field label="Time on form" id="legal-forms-new-time">
+                    <TextInput icon={Clock} placeholder="HH:MM" inputMode="numeric" autoComplete="off" />
+                  </Field>
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-new-clinician">
-                    Authorising Clinician / Signatory
-                  </label>
-                  <input
-                    id="legal-forms-new-clinician"
-                    type="text"
-                    className={styles.formInput}
-                    placeholder="Clinician name and role"
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-new-notes">
-                    Clinical notes
-                  </label>
-                  <textarea
-                    id="legal-forms-new-notes"
-                    className={styles.formTextarea}
-                    placeholder="Enter clinical rationale and recorded grounds..."
+                <Field label="Notes" id="legal-forms-new-notes">
+                  <Textarea
+                    maxLength={280}
+                    rows={2}
+                    placeholder="Grounds as written on the form"
                     data-gramm="false"
                     data-enable-grammarly="false"
                     spellCheck={false}
                     autoComplete="off"
                   />
-                </div>
-              </div>
-              <div className={styles.modalFoot}>
-                <button type="button" className={styles.btn} onClick={handleCloseNewForm}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
+                </Field>
+              </CardBody>
+              <CardFoot>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setRecordDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+                    setRecordFormKey((key) => key + 1);
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="pri"
+                  size="sm"
                   data-testid="ward-legal-forms-register-confirm"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
-                  aria-disabled="true"
-                  aria-describedby="ward-legal-forms-register-confirm-note"
-                  title="Not wired in this prototype."
-                  onClick={ignoreUnavailableActivation}
+                  disabledReason={NOT_WIRED}
+                  title={NOT_WIRED}
                 >
-                  Save recorded form
-                </button>
-                <span id="ward-legal-forms-register-confirm-note" className={styles.confirmNote}>
-                  Not wired in this prototype.
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+                  Save form
+                </Button>
+              </CardFoot>
+            </Card>
 
-        {/* Re-Authorise Modal */}
-        {renewModalOpen && (
-          <div
-            ref={renewModalRef}
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="renew-modal-title"
-          >
-            <div className={styles.modalDialog}>
-              <div className={styles.modalHead}>
-                <h3 id="renew-modal-title">Extend recorded form</h3>
-                <button
-                  type="button"
-                  className={styles.modalCloseBtn}
-                  onClick={handleCloseRenew}
-                  aria-label="Close dialog"
+            <Card aria-label="Recorded today">
+              <CardHead
+                title="Recorded today"
+                level={2}
+                aside={<span className={styles.meta}>{today.length} today</span>}
+              />
+              <CardBody>
+                {today.length > 0 ? (
+                  <Timeline items={today} label="Legal forms recorded today" holdNew={false} />
+                ) : (
+                  <p className={styles.absent}>Nothing recorded today</p>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+
+        {/* Legal form dossier drawer */}
+        {selectedMovement && selectedPatientInfo ? (
+          <Drawer
+            open={inspectorDrawerOpen}
+            onClose={() => setInspectorDrawerOpen(false)}
+            ariaLabel="Legal form dossier"
+            headerHidden
+            portal={false}
+            contentClassName={styles.drawer}
+            testId="ward-legal-dossier"
+            footer={
+              <div className={styles.drawerFoot}>
+                <Button
+                  variant="ghost"
+                  icon={Copy}
+                  onClick={() =>
+                    copyText(
+                      "summary",
+                      `${selectedPatientInfo.formalName} (${selectedPatientInfo.umrn})\n${
+                        selectedMovement.legalForm ? legalFormName(selectedMovement.legalForm) : "Voluntary"
+                      }\n${legalDeadlineText(selectedMovement, now)}`,
+                    )
+                  }
                 >
-                  <X size={16} aria-hidden="true" />
-                </button>
+                  {copied === "summary" ? "Copied" : "Copy summary"}
+                </Button>
+                <span className={styles.footSpacer} />
+                <Button variant="sec" onClick={() => setInspectorDrawerOpen(false)}>
+                  Close
+                </Button>
               </div>
-              <div className={styles.modalBody}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-renew-movement">
-                    Target Movement / Patient
-                  </label>
-                  <input
-                    id="legal-forms-renew-movement"
-                    type="text"
-                    className={styles.formInput}
-                    value={(() => {
-                      const m = movements.find((x) => x.id === targetMovementId);
-                      if (!m) return targetMovementId;
-                      const p = resolveSubjectPatient(m, { patients, referrals });
-                      return `${targetMovementId} — ${p.displayName} (${p.umrn})`;
-                    })()}
-                    readOnly
-                  />
+            }
+          >
+            <div className={styles.drawerBody}>
+              <div className={styles.drawerHead}>
+                <Avatar name={selectedPatientInfo.formalName} initials={selectedPatientInfo.initials} decorative />
+                <div className={styles.drawerTitleBlock}>
+                  <span className={styles.eyebrow}>Legal form dossier</span>
+                  <h2 className={styles.drawerTitle}>{selectedPatientInfo.formalName}</h2>
+                  <span className={styles.drawerSub}>
+                    <span className={styles.mono}>{selectedPatientInfo.umrn}</span> ·{" "}
+                    {selectedMovement.legalForm ? legalFormName(selectedMovement.legalForm) : "Voluntary"}
+                  </span>
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-renew-specialist">
-                    Authorising Specialist
-                  </label>
-                  <input
-                    id="legal-forms-renew-specialist"
-                    type="text"
-                    className={styles.formInput}
-                    placeholder="Specialist name and role"
-                  />
+              </div>
+
+              {selectedMovement.legalForm?.dueAt !== undefined ? (
+                <div className={styles.dueLine}>
+                  {(() => {
+                    const state = windowState(selectedMovement, now);
+                    return state ? (
+                      <Badge tone={state.tone === "neutral" ? "neutral" : state.tone}>{state.text}</Badge>
+                    ) : null;
+                  })()}
+                  <span className={styles.dueValue}>
+                    <Timer
+                      at={selectedMovement.legalForm.dueAt * MS_PER_MINUTE}
+                      now={nowMs}
+                      direction="left"
+                      hideFlagWord
+                    />
+                    <span className={styles.meta}>
+                      expires {formatInstantWithDay(selectedMovement.legalForm.dueAt, now)}
+                    </span>
+                  </span>
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="legal-forms-renew-justification">
-                    Re-Authorisation Justification
-                  </label>
-                  <textarea
-                    id="legal-forms-renew-justification"
-                    className={styles.formTextarea}
-                    placeholder="Clinical justification for recorded extension..."
+              ) : null}
+
+              <dl className={styles.kv}>
+                <div>
+                  <dt>Legal status</dt>
+                  <dd>{selectedMovement.legalStatus}</dd>
+                </div>
+                <div>
+                  <dt>Origin</dt>
+                  <dd>{edNameOf(selectedMovement)}</dd>
+                </div>
+                <div>
+                  {/* Owner, 26 Sept 2026: no WF journey number row; the patient is named above. */}
+                  <dt>Owner</dt>
+                  <dd>{selectedMovement.owner}</dd>
+                </div>
+                <div>
+                  <dt>Lodged</dt>
+                  <dd className={styles.mono}>{formatInstantWithDay(selectedMovement.openedAt, now)}</dd>
+                </div>
+                <div>
+                  <dt>Recorded deadline</dt>
+                  <dd className={styles.mono}>
+                    {selectedMovement.legalForm?.dueAt !== undefined
+                      ? formatInstantWithDay(selectedMovement.legalForm.dueAt, now)
+                      : "No deadline recorded on form"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Time written</dt>
+                  <dd className={styles.mono}>
+                    {selectedMovement.formedAt !== undefined
+                      ? `${formatInstantWithDay(selectedMovement.formedAt, now)} on form`
+                      : "Not recorded"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Form received</dt>
+                  <dd>
+                    {selectedMovement.legalFormReceivedAt !== undefined ? (
+                      <span className={styles.mono}>
+                        {formatInstantWithDay(selectedMovement.legalFormReceivedAt, now)}
+                      </span>
+                    ) : (
+                      <span className={styles.withGlyph}>
+                        <StatusGlyph tone="neutral" size={9} />
+                        Not marked received
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+
+              {(() => {
+                const reading = actPeriodReading(selectedMovement, dayZero);
+                return reading ? (
+                  <p className={styles.note}>
+                    {reading.text} {actPeriodCountdownText(reading, now)}
+                  </p>
+                ) : null;
+              })()}
+
+              <section aria-labelledby="dossier-history" className={styles.drawerSection}>
+                <h3 id="dossier-history" className={styles.sectionHead}>
+                  Form history
+                </h3>
+                <Timeline
+                  items={asTimeline(formEvents(selectedMovement, edNameOf(selectedMovement)), now)}
+                  label="Form history"
+                  holdNew={false}
+                />
+              </section>
+
+              <section aria-labelledby="dossier-actions" className={styles.drawerSection}>
+                <h3 id="dossier-actions" className={styles.sectionHead}>
+                  Practitioner actions
+                </h3>
+                {isLegalDeadlineBreached(selectedMovement, now) ? (
+                  <Button variant="danger" onClick={() => handleOpenRenew(selectedMovement.id)}>
+                    Extend recorded form
+                  </Button>
+                ) : null}
+                {receiptEventAccepts(selectedMovement.legalForm?.code) ? (
+                  selectedMovement.legalFormReceivedAt === undefined ? (
+                    <div>
+                      <Button
+                        variant="pri"
+                        data-testid={`ward-legal-forms-mark-received-${selectedMovement.id}`}
+                        onClick={() => handleMarkFormReceived(selectedMovement.id)}
+                      >
+                        Mark Form {selectedMovement.legalForm?.code} received
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className={styles.note}>
+                      Form {selectedMovement.legalForm?.code} received{" "}
+                      {formatInstantWithDay(selectedMovement.legalFormReceivedAt, now)}.
+                    </p>
+                  )
+                ) : (
+                  <p className={styles.note}>Receipt is not offered for this form here.</p>
+                )}
+
+                {isOwnedLegalFormCode(selectedMovement.legalForm?.code) ? (
+                  <form
+                    className={styles.writtenForm}
+                    data-testid={`ward-legal-forms-written-form-${selectedMovement.id}`}
+                    onSubmit={(event) => handleRecordFormWritten(event, selectedMovement)}
+                  >
+                    <h4 className={styles.subHead}>Record the time written</h4>
+                    <div className={styles.dateTime}>
+                      <Field label="Date written" id={`legal-forms-written-date-${selectedMovement.id}`}>
+                        <TextInput
+                          type="date"
+                          value={writtenDraft.date}
+                          onChange={(event) => setWrittenDraft((current) => ({ ...current, date: event.target.value }))}
+                        />
+                      </Field>
+                      <Field label="Time" id={`legal-forms-written-time-${selectedMovement.id}`}>
+                        <TextInput
+                          type="time"
+                          icon={Clock}
+                          value={writtenDraft.time}
+                          onChange={(event) => setWrittenDraft((current) => ({ ...current, time: event.target.value }))}
+                        />
+                      </Field>
+                    </div>
+                    <div className={styles.choiceRow}>
+                      <span className={styles.choiceLabel} id={`legal-forms-written-region-${selectedMovement.id}`}>
+                        Region
+                      </span>
+                      <Segmented
+                        label="Region"
+                        value={writtenDraft.region}
+                        onChange={(region) => setWrittenDraft((current) => ({ ...current, region }))}
+                        items={[
+                          { id: "metro", label: "Metro" },
+                          { id: "country", label: "Country" },
+                        ]}
+                      />
+                    </div>
+                    <div className={styles.choiceRow}>
+                      <span className={styles.choiceLabel}>Age band</span>
+                      <Segmented
+                        label="Age band"
+                        value={writtenDraft.ageBand}
+                        onChange={(ageBand) => setWrittenDraft((current) => ({ ...current, ageBand }))}
+                        items={[
+                          { id: "adult", label: "Adult" },
+                          { id: "under_18", label: "Under 18" },
+                        ]}
+                      />
+                    </div>
+                    <div className={styles.writtenFoot}>
+                      <p
+                        id={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
+                        className={styles.note}
+                        data-testid={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
+                      >
+                        {typedWrittenAt === undefined
+                          ? "Enter the time written on the form."
+                          : "Only the written time is recorded. No expiry is calculated."}
+                      </p>
+                      <Button
+                        type="submit"
+                        variant="sec"
+                        data-testid={`ward-legal-forms-written-confirm-${selectedMovement.id}`}
+                        aria-describedby={`ward-legal-forms-clock-preview-${selectedMovement.id}`}
+                        disabledReason={typedWrittenAt === undefined ? "Enter the time written on the form" : undefined}
+                        reasonDisplay="tooltip"
+                      >
+                        Save time written
+                      </Button>
+                    </div>
+                    {lastWrittenRefusal ? (
+                      <p
+                        className={styles.note}
+                        data-testid={`ward-legal-forms-written-refusal-${selectedMovement.id}`}
+                      >
+                        Not recorded: {lastWrittenRefusal.reason}
+                      </p>
+                    ) : null}
+                  </form>
+                ) : (
+                  <p className={styles.note}>Recording a written time is not offered for this form here.</p>
+                )}
+
+                <div className={styles.unavailable}>
+                  <p className={styles.note}>Unavailable here, not wired in this prototype</p>
+                  {[
+                    "Record involuntary examination",
+                    "Transport officer verification",
+                    "Schedule a review date",
+                    "Print form summary",
+                  ].map((label) => (
+                    <Button
+                      key={label}
+                      variant="sec"
+                      disabledReason={NOT_WIRED}
+                      reasonDisplay="tooltip"
+                      title={NOT_WIRED}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </Drawer>
+        ) : null}
+
+        {/* Extend recorded form dialog */}
+        <Sheet
+          open={renewModalOpen}
+          onClose={() => setRenewModalOpen(false)}
+          title="Extend recorded form"
+          description="Re-authorisation is recorded, not legally checked"
+          portal={false}
+          testId="ward-legal-extend"
+          footer={
+            <div className={styles.drawerFoot}>
+              <Button variant="ghost" onClick={() => setRenewModalOpen(false)}>
+                Cancel
+              </Button>
+              <span className={styles.footSpacer} />
+              <Button
+                variant="pri"
+                data-testid="ward-legal-forms-renew-confirm"
+                disabledReason={NOT_WIRED}
+                title={NOT_WIRED}
+              >
+                Confirm re-authorisation
+              </Button>
+            </div>
+          }
+        >
+          {(() => {
+            const target = movements.find((x) => x.id === targetMovementId);
+            if (!target) return <p className={styles.note}>Choose a form first.</p>;
+            const p = patientOf(target);
+            const state = windowState(target, now);
+            return (
+              <div className={styles.extendBody}>
+                {target.legalForm?.dueAt !== undefined ? (
+                  <div className={styles.dueLine}>
+                    {state ? <Badge tone={state.tone}>{state.text}</Badge> : null}
+                    <Timer at={target.legalForm.dueAt * MS_PER_MINUTE} now={nowMs} direction="left" hideFlagWord />
+                    <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
+                  </div>
+                ) : null}
+                <Field label="Target movement" id="legal-forms-renew-movement">
+                  <TextInput locked readOnly value={`${target.id} · ${p.formalName} · ${p.umrn}`} />
+                </Field>
+                <Field label="Authorising specialist" id="legal-forms-renew-specialist">
+                  <TextInput placeholder="Specialist name and role" autoComplete="off" />
+                </Field>
+                <Field label="Justification" id="legal-forms-renew-justification">
+                  <Textarea
+                    maxLength={280}
+                    rows={3}
+                    placeholder="Clinical justification for the recorded extension"
                     data-gramm="false"
                     data-enable-grammarly="false"
                     spellCheck={false}
                     autoComplete="off"
                   />
-                </div>
+                </Field>
+                <Checkbox label={`Tell the owner, ${target.owner}`} defaultChecked />
               </div>
-              <div className={styles.modalFoot}>
-                <button type="button" className={styles.btn} onClick={handleCloseRenew}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  data-testid="ward-legal-forms-renew-confirm"
-                  className={`${styles.btn} ${styles.btnDanger}`}
-                  aria-disabled="true"
-                  aria-describedby="ward-legal-forms-renew-confirm-note"
-                  title="Not wired in this prototype."
-                  onClick={ignoreUnavailableActivation}
-                >
-                  Confirm Re-Authorisation
-                </button>
-                <span id="ward-legal-forms-renew-confirm-note" className={styles.confirmNote}>
-                  Not wired in this prototype.
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+            );
+          })()}
+        </Sheet>
       </main>
       <WardPrototypeFooter testId="ward-legal-forms-governance" />
     </div>
   );
 }
 
+const ROW_COLUMNS = "minmax(0, 1.1fr) minmax(0, 1.4fr) 96px";
+const ROW_COLUMNS_CLOCKLESS = "minmax(0, 1.1fr) minmax(0, 1.4fr) 84px 36px";
+
+/** The warning windows on an 8h-to-now scale, with a tick at each window. */
+function WindowScale({ urgentMinutes, soonMinutes }: { urgentMinutes: number; soonMinutes: number }) {
+  const span = CHART_WINDOW_MINUTES;
+  const pos = (minutes: number) => `${Math.max(0, Math.min(100, 100 - (minutes / span) * 100))}%`;
+  return (
+    <div className={styles.scale} aria-hidden="true">
+      <div className={styles.scaleTrack}>
+        <span className={styles.scaleTick} style={{ left: pos(soonMinutes) }} />
+        <span className={styles.scaleTick} style={{ left: pos(urgentMinutes) }} />
+      </div>
+      <div className={styles.scaleLabels}>
+        <span style={{ left: "0%" }}>8h</span>
+        <span style={{ left: pos(soonMinutes) }}>{Math.round(soonMinutes / 60)}h</span>
+        <span style={{ left: pos(urgentMinutes) }}>{Math.round(urgentMinutes / 60)}h</span>
+        <span style={{ left: "100%" }}>0</span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * One row. `legalFormRowClassification` decides the tone, chip and reason level.
- * Shows tabular countdown clock when dueAt is recorded, and provides row actions to inspect dossier.
+ * The next eight hours as one axis: a glyph at each recorded expiry, labelled with the form code
+ * and family name, the second warning window dashed. Page-local; no shared chart draws a strip.
+ */
+/** Axis tick: the clock face, with the day named once, on the first tick of a day other than today. */
+function hourTick(h: Instant, previous: Instant | undefined, now: Instant): string {
+  const label = formatInstantWithDay(h, now);
+  const face = label.slice(0, 5);
+  const day = label.slice(5).trim();
+  const previousDay = previous === undefined ? "" : formatInstantWithDay(previous, now).slice(5).trim();
+  return day !== "" && day !== previousDay ? label : face;
+}
+
+function ExpiryStrip({
+  rows,
+  now,
+  soonMinutes,
+}: {
+  rows: { id: string; dueAt: Instant; label: string; tone: WfTone }[];
+  now: Instant;
+  soonMinutes: number;
+}) {
+  if (rows.length === 0) return <p className={styles.absent}>Nothing expires in the next 8h</p>;
+  const start = Math.ceil(now / 60) * 60 - 60;
+  const end = start + CHART_WINDOW_MINUTES + 60;
+  const x = (instant: Instant) => ((instant - start) / (end - start)) * 100;
+  const hours: Instant[] = [];
+  for (let h = start + 60; h < end; h += 60) hours.push(h);
+  return (
+    <figure className={styles.strip}>
+      <div className={styles.stripPlot} aria-hidden="true">
+        <span className={styles.stripAxis} />
+        <span className={styles.stripWindow} style={{ left: `${x(now + soonMinutes)}%` }}>
+          <span className={styles.stripWindowLabel}>{Math.round(soonMinutes / 60)}h</span>
+        </span>
+        {rows.map((row, index) => (
+          <span
+            key={row.id}
+            className={styles.stripMark}
+            style={{ left: `${x(row.dueAt)}%`, ["--lane" as string]: index % 3 }}
+          >
+            <span className={styles.stripLabel}>{row.label}</span>
+            <span className={styles.stripStem} />
+            <StatusGlyph tone={row.tone} size={9} />
+          </span>
+        ))}
+        {hours.map((h, index) => (
+          <span key={h} className={styles.stripHour} style={{ left: `${x(h)}%` }}>
+            {hourTick(h, index === 0 ? undefined : hours[index - 1], now)}
+          </span>
+        ))}
+      </div>
+      <ul className={styles.srOnly} aria-label="Expiring next 8h">
+        {rows.map((row) => (
+          <li key={row.id}>
+            {row.label} expires {formatInstantWithDay(row.dueAt, now)}
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
+function SelectedFormCard({
+  movement,
+  name,
+  umrn,
+  edName,
+  now,
+  nowMs,
+  dayZero,
+  onDossier,
+  onExtend,
+  onRecordNext,
+}: {
+  movement: Movement;
+  name: string;
+  umrn: string;
+  edName: string;
+  now: Instant;
+  nowMs: number;
+  dayZero: Date;
+  onDossier: () => void;
+  onExtend: () => void;
+  onRecordNext: () => void;
+}) {
+  const legalForm = movement.legalForm;
+  const state = windowState(movement, now);
+  const breached = isLegalDeadlineBreached(movement, now);
+  const reading = actPeriodReading(movement, dayZero);
+  const history = asTimeline(formEvents(movement, edName).slice(0, 3), now);
+  return (
+    <Card aria-label="Selected form" data-testid="ward-legal-selected">
+      <div className={styles.selHead}>
+        <div className={styles.selName}>
+          <h2 className={styles.selTitle}>{name}</h2>
+          <span className={styles.meta}>
+            <span className={styles.mono}>{umrn}</span> · {edName}
+          </span>
+        </div>
+        {state && state.text !== "Later" ? <Badge tone={state.tone}>{state.text}</Badge> : null}
+      </div>
+      <CardBody className={styles.selBody}>
+        <StatGroup>
+          {legalForm?.dueAt !== undefined ? (
+            <>
+              <Stat
+                value={
+                  <Timer
+                    at={legalForm.dueAt * MS_PER_MINUTE}
+                    now={nowMs}
+                    direction="left"
+                    hideFlagWord
+                    hideDirection
+                    className={styles.bigTimer}
+                  />
+                }
+                label={breached ? "Overdue" : "Left"}
+              />
+              <Stat value={formatInstantWithDay(legalForm.dueAt, now)} label="Expires" />
+            </>
+          ) : (
+            <Stat
+              value={
+                <Timer
+                  at={movement.openedAt * MS_PER_MINUTE}
+                  now={nowMs}
+                  direction="waiting"
+                  hideDirection
+                  className={styles.bigTimer}
+                />
+              }
+              label="In ED"
+            />
+          )}
+          {legalForm ? (
+            <Stat value={legalForm.code} label={formTitleForCode(legalForm.code) ?? `Form ${legalForm.code}`} />
+          ) : null}
+        </StatGroup>
+        {reading ? (
+          <p className={styles.demoNote} data-testid="ward-legal-act-period">
+            <Info size={14} aria-hidden="true" />
+            <span>
+              {reading.text} {actPeriodCountdownText(reading, now)}
+            </span>
+          </p>
+        ) : null}
+        <h3 className={styles.sectionHead}>Form history</h3>
+        <Timeline items={history} label={`Form history for ${name}`} holdNew={false} />
+        <p className={styles.ownerLine}>
+          <span>
+            Owner <strong>{movement.owner}</strong>
+          </span>
+        </p>
+      </CardBody>
+      <CardFoot>
+        <Button variant="sec" size="sm" icon={FileText} onClick={onDossier} aria-label={`Open dossier for ${name}`}>
+          Dossier
+        </Button>
+        {breached ? (
+          <Button variant="danger" size="sm" onClick={onExtend} aria-label="Re-Authorise Order">
+            Extend
+          </Button>
+        ) : (
+          <Link
+            href={`/mockups/ward-flow/people/${movement.id}`}
+            className={buttonClass({ variant: "ghost", size: "sm" })}
+          >
+            Open move
+          </Link>
+        )}
+        <span className={styles.footSpacer} />
+        <Button variant="pri" size="sm" onClick={onRecordNext}>
+          Record next form
+        </Button>
+      </CardFoot>
+    </Card>
+  );
+}
+
+/**
+ * One row. `legalFormRowClassification` decides the tone; the row keeps the record-row hooks
+ * (`data-record-key` for the movement id, `record-id` for the patient's formal name) that the
+ * population tests read.
  */
 function LegalFormRow({
   movement,
   now,
-  onInspect,
-  onRenew,
+  selected,
+  onSelect,
+  onRecordTime,
   dayZero,
   patients,
   referrals,
+  edName,
 }: {
   movement: Movement;
   now: Instant;
-  onInspect: (movement: Movement) => void;
-  onRenew: (movement: Movement) => void;
+  selected: boolean;
+  onSelect: (movement: Movement) => void;
+  onRecordTime: (movement: Movement) => void;
   dayZero: Date;
   patients?: Patient[];
   referrals?: Referral[];
+  edName: string;
 }) {
   const legalForm = movement.legalForm;
   if (!legalForm) {
@@ -1581,76 +1436,89 @@ function LegalFormRow({
   }
 
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
-  const originEd = edById(movement.originEdId);
-  const originLabel = departmentLabel(movement.originEdId, originEd?.name);
   const classification = legalFormRowClassification(movement, now);
-  const breached = isLegalDeadlineBreached(movement, now);
+  const state = windowState(movement, now);
   // Owner ruling 4 Oct 2026: the Act period beside the typed record, as a labelled synthetic demo.
-  const actPeriod = actPeriodReading(movement, dayZero);
+  const period = periodShort(actPeriodReading(movement, dayZero));
+  const title = formTitleForCode(legalForm.code) ?? `Form ${legalForm.code}`;
+  const clockless = legalForm.dueAt === undefined;
+  const reason = legalDeadlineText(movement, now);
 
-  let clock: { value: string; sub: string; urgent?: boolean } | undefined;
+  let left: ReactNode = null;
   if (legalForm.dueAt !== undefined) {
     const remaining = minutesUntil(legalForm.dueAt, now);
-    const absRemaining = Math.abs(remaining);
-    const hours = Math.floor(absRemaining / 60);
-    const mins = absRemaining % 60;
-    const timeStr = `${hours > 0 ? `${hours}h ` : ""}${mins}m`;
-    clock = {
-      value: timeStr,
-      sub: breached ? "past due" : "remaining",
-      urgent: clockState(legalForm.dueAt, now) !== "clear",
-    };
+    left = (
+      <>
+        <span className={styles.leftValue}>{remaining < 0 ? `${durText(-remaining)} over` : durText(remaining)}</span>
+        {state ? (
+          <span className={styles.leftState}>
+            <StatusGlyph tone={state.tone} size={9} />
+            {state.text}
+          </span>
+        ) : null}
+      </>
+    );
+  } else {
+    left = <span className={styles.leftValue}>{durText(now - movement.openedAt)}</span>;
   }
 
   return (
-    // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    <WardRecordRow
-      id={patientInfo.formalName}
-      recordKey={movement.id}
-      tone={classification.tone}
-      states={classification.chip ? [classification.chip] : []}
-      clock={clock}
-      attributes={[
-        `UMRN: ${patientInfo.umrn}`,
-        legalFormName(legalForm),
-        movement.legalStatus,
-        originLabel,
-        `Owner: ${movement.owner}`,
-      ]}
-      annotation={
-        actPeriod ? (
-          <span className={styles.actPeriodDemo} data-testid="ward-legal-act-period">
-            {actPeriod.text} {actPeriodCountdownText(actPeriod, now)}
-          </span>
-        ) : undefined
-      }
-      reason={{
-        level: classification.reasonLevel,
-        text: legalDeadlineText(movement, now),
-      }}
-      actions={
-        <div className={styles.rowActions}>
-          {breached && (
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnSm} ${styles.btnDanger}`}
-              onClick={() => onRenew(movement)}
-            >
-              Re-Authorise
-            </button>
-          )}
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnSm}`}
-            onClick={() => onInspect(movement)}
-            // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-            aria-label={`Open dossier for ${patientInfo.formalName}`}
-          >
-            <span>Open</span>
-            <ChevronRight size={14} className={styles.actionChevron} aria-hidden="true" />
-          </button>
+    <DataRow
+      as="li"
+      columns={clockless ? ROW_COLUMNS_CLOCKLESS : ROW_COLUMNS}
+      selected={selected}
+      interactive
+      className={styles.row}
+      data-ward-primitive="record-row"
+      data-record-key={movement.id}
+      data-tone={classification.tone}
+    >
+      <button
+        type="button"
+        className={styles.rowButton}
+        aria-pressed={selected}
+        aria-label={`${patientInfo.formalName}, ${legalFormName(legalForm)}, ${reason}`}
+        onClick={() => onSelect(movement)}
+      />
+      <div className={styles.cellStack}>
+        <span className={styles.name} data-ward-primitive="record-id">
+          {patientInfo.formalName}
+        </span>
+        <span className={cx(styles.sub, styles.mono)}>{patientInfo.umrn}</span>
+      </div>
+      <div className={styles.cellStack}>
+        <span className={styles.formLine}>
+          <strong>{legalForm.code}</strong> {title}
+        </span>
+        <span className={styles.sub}>
+          {edName}
+          {clockless && period ? ` · ${period}` : ""}
+        </span>
+      </div>
+      <div className={cx(styles.cellStack, styles.end)}>
+        {left}
+        <span className={styles.srOnly}>{reason}</span>
+      </div>
+      {clockless ? (
+        <div className={styles.rowAction}>
+          <Button
+            variant="sec"
+            size="sm"
+            iconOnly
+            icon={Clock}
+            aria-label={`Record time written for ${patientInfo.formalName}`}
+            onClick={() => onRecordTime(movement)}
+          />
         </div>
-      }
-    />
+      ) : null}
+    </DataRow>
   );
+}
+
+/** Minutes as `1h 28m`, `58m`, `2d 22h`: the v6 duration format, minute precision. */
+function durText(minutes: number): string {
+  const v = Math.max(0, Math.round(minutes));
+  if (v < 60) return `${v}m`;
+  if (v < 24 * 60) return `${Math.floor(v / 60)}h ${String(v % 60).padStart(2, "0")}m`;
+  return `${Math.floor(v / (24 * 60))}d ${Math.floor((v % (24 * 60)) / 60)}h`;
 }

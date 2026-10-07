@@ -146,7 +146,7 @@ describe("the patient-now screen", () => {
     renderScreen();
     const root = screen.getByTestId("ward-person-screen");
     expect(root).toBeInTheDocument();
-    expect(root).toHaveAttribute("data-ward-design", "third-edition");
+    expect(root).toHaveAttribute("data-ward-design", "v6");
     // Scoped to the identity block — the "Details" tab pane also states the name, present in the
     // DOM but visually hidden, so an unscoped query throws on multiple matches.
     expect(
