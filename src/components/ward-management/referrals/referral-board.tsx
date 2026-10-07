@@ -306,8 +306,8 @@ type ClinicalSynopsis = {
 function getClinicalSummary(referral: Referral): ClinicalSynopsis {
   return {
     synopsis: referral.history?.trim() ? referral.history : "Clinical narrative not recorded.",
-    clinician: "Not recorded",
-    legalDoc: "Legal document details are not recorded on this referral.",
+    clinician: referral.intake?.referrer.name ?? "Not recorded",
+    legalDoc: referral.intake?.legalStatus ?? "Legal document details are not recorded on this referral.",
   };
 }
 
@@ -341,7 +341,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
         ? queued[0]?.id
         : undefined
       : (chosenReferralId ?? undefined);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "accepted" | "declined">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "accepted" | "declined" | "waitlisted">("all");
+  const [streamFilter, setStreamFilter] = useState<
+    "all" | "community_team" | "emergency_department" | "psychiatric_ward"
+  >("all");
   const [chipFilter, setChipFilter] = useState<"all" | "tier1" | "beds" | "older" | "community_ed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [denseView, setDenseView] = useState(false);
@@ -367,6 +370,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     setSearchQuery("");
     setChipFilter("all");
     setStatusFilter("all");
+    setStreamFilter("all");
   }, []);
 
   useEffect(() => {
@@ -389,6 +393,16 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedReferralId, closeDetail]);
 
+  const matchesStream = (referral: Referral) =>
+    streamFilter === "all" || referral.destinations.some((arm) => arm.destination.kind === streamFilter);
+  const isWaitlisted = (referral: Referral) =>
+    referral.destinations.some(
+      (arm) =>
+        arm.state === "queued" &&
+        arm.withdrawnAt === undefined &&
+        arm.waitlistedAt !== undefined &&
+        (streamFilter === "all" || arm.destination.kind === streamFilter),
+    );
   const decided = recentlyDecidedReferrals(referrals);
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
   // length names how many rows are shown and cannot name how many have been decided.
@@ -407,10 +421,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           .length
       : 0;
 
-  const pendingCount = queued.length;
-  const allCount = referrals.length;
-  const acceptedTotal = allDecided.filter((r) => referralState(r) === "accepted").length;
-  const declinedTotal = allDecided.filter((r) => referralState(r) === "declined").length;
+  const pendingCount = queued.filter((r) => matchesStream(r) && !isWaitlisted(r)).length;
+  const allCount = referrals.filter(matchesStream).length;
+  const acceptedTotal = allDecided.filter((r) => matchesStream(r) && referralState(r) === "accepted").length;
+  const declinedTotal = allDecided.filter((r) => matchesStream(r) && referralState(r) === "declined").length;
 
   const oldestQueuedWait =
     queued.length > 0
@@ -426,7 +440,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   ).length;
   const olderAdultCount = queued.filter((r) => r.ageBand === "Older adult").length;
 
-  const showQueued = statusFilter === "all" || statusFilter === "pending";
+  const showQueued = statusFilter === "all" || statusFilter === "pending" || statusFilter === "waitlisted";
   const showDecided = statusFilter === "all" || statusFilter === "accepted" || statusFilter === "declined";
 
   const filteredDecided =
@@ -438,9 +452,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
   const filteredDecidedTotal =
     statusFilter === "accepted"
-      ? allDecided.filter((r) => referralState(r) === "accepted").length
+      ? allDecided.filter((r) => matchesStream(r) && referralState(r) === "accepted").length
       : statusFilter === "declined"
-        ? allDecided.filter((r) => referralState(r) === "declined").length
+        ? allDecided.filter((r) => matchesStream(r) && referralState(r) === "declined").length
         : decidedTotal;
 
   const matchesSearch = (referral: Referral) => {
@@ -478,8 +492,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     }
   };
 
-  const displayQueued = queued.filter((r) => matchesSearch(r) && matchesChip(r));
-  const displayDecided = filteredDecided.filter((r) => matchesSearch(r) && matchesChip(r));
+  const displayQueued = queued.filter(
+    (r) =>
+      matchesSearch(r) &&
+      matchesChip(r) &&
+      matchesStream(r) &&
+      (statusFilter === "waitlisted" ? isWaitlisted(r) : statusFilter !== "pending" || !isWaitlisted(r)),
+  );
+  const displayDecided = filteredDecided.filter((r) => matchesSearch(r) && matchesChip(r) && matchesStream(r));
 
   return (
     <div
@@ -580,6 +600,35 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
         </header>
 
         <section className={styles.registerControlBar} aria-label="Referral register controls">
+          <div className={styles.filterGroup} role="group" aria-label="Referral streams">
+            {(
+              [
+                ["all", "All streams"],
+                ["community_team", "Community"],
+                ["emergency_department", "Emergency"],
+                ["psychiatric_ward", "Ward"],
+              ] as const
+            ).map(([kind, label]) => (
+              <button
+                key={kind}
+                type="button"
+                className={streamFilter === kind ? styles.filterPillActive : styles.filterPill}
+                aria-pressed={streamFilter === kind}
+                onClick={() => {
+                  setStreamFilter(kind);
+                  setSelectedReferralId(null);
+                }}
+              >
+                <span>{label}</span>
+                <span className={styles.filterPillCount}>
+                  {kind === "all"
+                    ? referrals.length
+                    : referrals.filter((referral) => referral.destinations.some((arm) => arm.destination.kind === kind))
+                        .length}
+                </span>
+              </button>
+            ))}
+          </div>
           <div className={styles.toolbarTopRow}>
             <div className={styles.filterGroup} role="group" aria-label="Filter referrals by status">
               <button
@@ -597,8 +646,19 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 aria-pressed={statusFilter === "pending"}
                 onClick={() => setStatusFilter("pending")}
               >
-                <span>Pending triage</span>
+                <span>Awaiting review</span>
                 <span className={styles.filterPillCount}>{pendingCount}</span>
+              </button>
+              <button
+                type="button"
+                className={statusFilter === "waitlisted" ? styles.filterPillActive : styles.filterPill}
+                aria-pressed={statusFilter === "waitlisted"}
+                onClick={() => setStatusFilter("waitlisted")}
+              >
+                <span>Waitlisted</span>
+                <span className={styles.filterPillCount}>
+                  {queued.filter((referral) => matchesStream(referral) && isWaitlisted(referral)).length}
+                </span>
               </button>
               <button
                 type="button"

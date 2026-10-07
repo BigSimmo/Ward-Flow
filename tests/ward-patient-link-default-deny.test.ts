@@ -101,6 +101,16 @@ const PATIENT_LINK_READ =
  */
 const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   {
+    file: "referrals/referral-inbox.ts",
+    reason:
+      "User-approved four-tab referral task: project identity only after an exact named ward recipient match, never other recipients or cross-referral history. Negative scoping cases are exercised in ward-referral-drawer-submission.test.ts.",
+  },
+  {
+    file: "referrals/ward-referral-inbox.tsx",
+    reason:
+      "User-approved recipient inbox: resolve only its own projected patient identity; no whole referral destinations, network outcomes or patient referral history.",
+  },
+  {
     file: "ward-flow-storage-validation.ts",
     reason:
       "Ward Lead recovery decision, 2026-09-23: restore-only consistency checks compare explicit " +
@@ -249,7 +259,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 11 → 14 on 2026-09-21: owner mandate for universal name and UMRN display.
     // 14 → 15 on 2026-09-23: restore-only identity consistency, exact decision above.
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(16);
+    // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(18);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
