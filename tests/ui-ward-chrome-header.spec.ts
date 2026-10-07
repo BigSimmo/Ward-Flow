@@ -662,7 +662,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   const lastCard = tasks.locator("li").last();
   await expect(lastCard).toBeInViewport();
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
-  await lastCard.getByRole("button", { name: "Open movement" }).click();
+  await lastCard.getByRole("button", { name: "Open patient" }).click();
   await expect(page).toHaveURL(/\/movements\/WF-/u);
   await expect(tasks).toHaveCount(0);
 });
