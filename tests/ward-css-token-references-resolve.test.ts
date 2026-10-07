@@ -74,7 +74,12 @@ const WARD_CSS = "src/components/ward-management/**/*.css";
  * stylesheet's tokens are, so it must never leak onto `:root` and repaint elements outside a
  * shell subtree that opts in by composing the class.
  */
-const TOKEN_LAYERS = ["src/app/globals.css", "src/app/ckb-v2-tokens.css", "src/app/ward-flow-shell-tokens.module.css"];
+const TOKEN_LAYERS = [
+  "src/app/globals.css",
+  "src/app/ckb-v2-tokens.css",
+  "src/app/ward-flow-shell-tokens.module.css",
+  "src/app/ward-flow-v6-tokens.css",
+];
 
 /** A declaration: `--name:` at the start of a rule, after a brace, or after a semicolon. */
 const DECLARATION = /(^|[;{\s])(--[A-Za-z0-9_-]+)\s*:/g;

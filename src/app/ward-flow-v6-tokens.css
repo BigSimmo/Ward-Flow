@@ -1,0 +1,230 @@
+/*
+ * Ward Flow design system v6 tokens (approved 7 October 2026). Synthetic prototype.
+ * Source: the v6 token sheet and spec, design/v6/ward-flow-v6.css and design-system-v6.md in the
+ * project files. Day values sit on :root and .day. Night values sit on html.dark (the app's theme
+ * class) and .night, so a subtree can force either theme. Components read these through CSS
+ * Modules in src/components/wf/. Never hard-code a colour, radius or shadow beside them.
+ */
+:root,
+.day {
+  --wf-canvas: #e8ecf0;
+  --wf-surface: #fdfdfe;
+  --wf-surface-2: #f6f8fa;
+  --wf-track: #eceff3;
+  --wf-hover: #f2f5f8;
+  --wf-selected: #eef3f8;
+  --wf-line: rgba(22, 30, 40, 0.08);
+  --wf-line-2: rgba(22, 30, 40, 0.15);
+  --wf-line-3: rgba(22, 30, 40, 0.26);
+  --wf-hl: rgba(255, 255, 255, 0.9);
+  --wf-ink-1: #161a20;
+  --wf-ink-2: #414953;
+  --wf-ink-3: #5b646f;
+  --wf-ink-off: #828a94;
+  --wf-line-ctl: #828a94;
+  --wf-accent: #2f4c66;
+  --wf-accent-strong: #2b4762;
+  --wf-accent-tint: #e6edf4;
+  --wf-accent-ink: #27405a;
+  --wf-on-accent: #fff;
+  --wf-pri-1: #3a5b7b;
+  --wf-pri-2: #2b4762;
+  --wf-pri-edge: #223a51;
+  --wf-hero-1: #22384d;
+  --wf-hero-2: #1c2f41;
+  --wf-hero-edge: #172736;
+  --wf-hero-ink: #fff;
+  --wf-hero-ink-2: #c3d1de;
+  --wf-hero-ink-3: #a3b8cc;
+  --wf-danger: #c4513f;
+  --wf-danger-ink: #9a3424;
+  --wf-warning: #ac720a;
+  --wf-warning-ink: #7a5208;
+  --wf-success: #2f8a5f;
+  --wf-success-ink: #1c6343;
+  --wf-info: #4f7398;
+  --wf-info-ink: #27405a;
+  --wf-neutral: #6b7f93;
+  --wf-data-1: #2f4c66;
+  --wf-data-2: #7c96af;
+  --wf-data-3: #c9d3dd;
+  --wf-data-ready: #2f8a5f;
+  --wf-data-closed: #a99058;
+  --wf-glass-thin: rgba(253, 253, 254, 0.86);
+  --wf-glass: rgba(253, 253, 254, 0.88);
+  --wf-glass-thick: rgba(250, 251, 253, 0.92);
+  --wf-glass-rim: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.22) 45%,
+    rgba(255, 255, 255, 0.08)
+  );
+  --wf-scrim: rgba(22, 30, 40, 0.12);
+  --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 46%);
+  --wf-backdrop:
+    radial-gradient(1200px 520px at 8% -10%, rgba(143, 176, 212, 0.32), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(150, 196, 180, 0.2), transparent 55%), #e8ecf0;
+  --wf-e1:
+    inset 0 1px 0 var(--wf-hl), 0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
+    0 12px 28px -20px rgba(16, 24, 40, 0.22);
+  --wf-e2: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 24px -10px rgba(16, 24, 40, 0.24);
+  --wf-e3:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 0.5px rgba(16, 24, 40, 0.14), 0 2px 4px rgba(16, 24, 40, 0.06),
+    0 24px 48px -12px rgba(16, 24, 40, 0.3);
+  --wf-focus-ring: var(--wf-accent);
+  --wf-r-xs: 6px;
+  --wf-r-sm: 8px;
+  --wf-r-md: 10px;
+  --wf-r-lg: 14px;
+  --wf-r-xl: 20px;
+  --wf-r-pill: 999px;
+  --wf-s-1: 4px;
+  --wf-s-2: 8px;
+  --wf-s-3: 12px;
+  --wf-s-4: 16px;
+  --wf-h-chip: 22px;
+  --wf-h-sm: 30px;
+  --wf-h-md: 36px;
+  --wf-h-lg: 44px;
+  --wf-row: 52px;
+  --wf-row-compact: 44px;
+  --wf-m-fast: 120ms;
+  --wf-m-base: 200ms;
+  --wf-m-slow: 320ms;
+  --wf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --wf-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --wf-font: var(--font-geist-sans), Geist, "Segoe UI", system-ui, sans-serif;
+  --wf-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+
+html.dark,
+.night {
+  --wf-canvas: #0d141b;
+  --wf-surface: #141d26;
+  --wf-surface-2: #18232e;
+  --wf-track: #223040;
+  --wf-hover: #1b2733;
+  --wf-selected: #1f2e3c;
+  --wf-line: rgba(255, 255, 255, 0.07);
+  --wf-line-2: rgba(255, 255, 255, 0.13);
+  --wf-line-3: rgba(255, 255, 255, 0.24);
+  --wf-hl: rgba(255, 255, 255, 0.06);
+  --wf-ink-1: #e9eef3;
+  --wf-ink-2: #bcc8d4;
+  --wf-ink-3: #93a4b5;
+  --wf-ink-off: #6e7d8d;
+  --wf-line-ctl: #6e7d8d;
+  --wf-accent: #8fb0d4;
+  --wf-accent-strong: #8fb0d4;
+  --wf-accent-tint: #1f3042;
+  --wf-accent-ink: #b9cfe6;
+  --wf-on-accent: #fff;
+  --wf-pri-1: #4b6f93;
+  --wf-pri-2: #3a5b7b;
+  --wf-pri-edge: #56799d;
+  --wf-hero-1: #22374d;
+  --wf-hero-2: #1c2e41;
+  --wf-hero-edge: rgba(143, 176, 212, 0.18);
+  --wf-hero-ink-2: #c3d1de;
+  --wf-hero-ink-3: #a3b8cc;
+  --wf-danger: #e27a68;
+  --wf-danger-ink: #f2a495;
+  --wf-warning: #d9a441;
+  --wf-warning-ink: #f0cc85;
+  --wf-success: #4cb383;
+  --wf-success-ink: #8fd6b3;
+  --wf-info: #7fa3c8;
+  --wf-info-ink: #b9cfe6;
+  --wf-neutral: #8fa0b1;
+  --wf-data-1: #8fb0d4;
+  --wf-data-2: #4f6d8c;
+  --wf-data-3: #2a3a4b;
+  --wf-data-ready: #4cb383;
+  --wf-data-closed: #a88f55;
+  --wf-glass-thin: rgba(20, 29, 38, 0.86);
+  --wf-glass: rgba(22, 32, 42, 0.88);
+  --wf-glass-thick: rgba(24, 34, 45, 0.92);
+  --wf-glass-rim: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.24),
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(255, 255, 255, 0.02)
+  );
+  --wf-scrim: rgba(0, 0, 0, 0.35);
+  --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%);
+  --wf-backdrop:
+    radial-gradient(1200px 520px at 8% -10%, rgba(79, 115, 152, 0.28), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(76, 179, 131, 0.08), transparent 55%), #0d141b;
+  --wf-e1: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+  --wf-e2: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
+  --wf-e3: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+  --wf-focus-ring: var(--wf-accent);
+  color-scheme: dark;
+}
+
+html.dark .day {
+  color-scheme: light;
+}
+
+/* Type scale (7 sizes) and line heights. Theme independent. */
+:root {
+  --wf-fs-11: 11px;
+  --wf-fs-12: 12px;
+  --wf-fs-13: 13px;
+  --wf-fs-14: 14px;
+  --wf-fs-16: 16px;
+  --wf-fs-20: 20px;
+  --wf-fs-28: 28px;
+  --wf-lh-11: 14px;
+  --wf-lh-12: 16px;
+  --wf-lh-13: 18px;
+  --wf-lh-14: 20px;
+  --wf-lh-16: 22px;
+  --wf-lh-20: 26px;
+  --wf-lh-28: 32px;
+}
+
+/* Touch: 44px targets on tablets. */
+@media (pointer: coarse) {
+  :root,
+  .day,
+  .night {
+    --wf-h-sm: 44px;
+    --wf-h-md: 44px;
+    --wf-h-chip: 32px;
+  }
+}
+
+@keyframes wfPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes wfSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wfShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes wfFlash {
+  0% {
+    background-color: var(--wf-accent-tint);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
