@@ -1459,10 +1459,9 @@ describe("arrival capacity floor", () => {
     expect(final.rejections.some((rejection) => rejection.attempted === "PATIENT_ARRIVED")).toBe(false);
     expect(after.empty.value).toBe(0);
     const pulledAdm = final.admissions.find((a) => a.id === movement(final, thirdId).admissionId);
-    if (pulledAdm) {
-      expect(pulledAdm.state).toBe("occupied");
-      expect(pulledAdm.blockReason).toBe("Awaiting clean");
-    }
+    expect(pulledAdm).toBeDefined();
+    expect(pulledAdm?.state).toBe("occupied");
+    expect(pulledAdm?.blockReason).toBe("Awaiting clean");
   });
 });
 

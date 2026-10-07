@@ -52,14 +52,16 @@ export function bedStates(
   // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
   // the four past the ward's beds.
   const pulledFromEmpty = Math.min(livePulled, capacity.held);
+  const remainingLivePulled = livePulled - pulledFromEmpty;
+  const overflowFromAvailable = Math.min(remainingLivePulled, capacity.available);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
   return {
-    ready: capacity.available,
-    pulled: pulledFromEmpty + pulledFromOccupied,
+    ready: capacity.available - overflowFromAvailable,
+    pulled: pulledFromEmpty + overflowFromAvailable + pulledFromOccupied,
     closed: capacity.held - pulledFromEmpty + capacity.blocked,
     occupied,
-    beingMadeReady: Math.min(bedsPendingPreparation(unit.id, bedReleases), capacity.available),
+    beingMadeReady: Math.min(bedsPendingPreparation(unit.id, bedReleases), capacity.available - overflowFromAvailable),
     onLeave: Math.min(leaveBeds.filter((bed) => bed.unitId === unit.id).length, occupied),
   };
 }

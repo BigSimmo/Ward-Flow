@@ -466,4 +466,36 @@ describe("WardNotificationCenter DOM Component", () => {
     setAudioBuzzPreference(false);
     expect(() => triggerUrgentBuzzAlert()).not.toThrow();
   });
+
+  it("resolves patient display name from patients collection when movement lacks patientName", () => {
+    const patients = [
+      {
+        id: "PT-001" as const,
+        givenName: "John",
+        familyName: "Doe",
+        sex: "Male" as const,
+        dateOfBirth: "1985-05-15",
+        umrn: "UM100001",
+        suburb: "Perth",
+      },
+    ];
+    const movements = [
+      makeMovement({
+        id: "WF-001",
+        acceptedUnitId: "ward-alpha",
+        patientId: "PT-001",
+        arrivalDetails: {
+          estimatedArrivalAt: 600,
+          recordedAt: 500,
+          mode: "ambulance",
+          recordedBy: "coordinator",
+        },
+      }),
+    ];
+
+    render(<WardNotificationCenter {...defaultProps} now={700} movements={movements} patients={patients} />);
+
+    expect(screen.getByText(/Overdue Inbound Arrival: John Doe/)).toBeInTheDocument();
+    expect(screen.queryByText(/Unknown Patient/)).not.toBeInTheDocument();
+  });
 });

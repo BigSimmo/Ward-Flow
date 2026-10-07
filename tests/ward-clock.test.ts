@@ -32,6 +32,7 @@ describe("ward clock", () => {
     expect(clockState(NOW + 30, NOW)).toBe("critical");
     expect(clockState(NOW + 120, NOW)).toBe("due");
     expect(clockState(NOW + 400, NOW)).toBe("clear");
+    expect(clockState(NaN, NOW)).toBe("due");
   });
 
   it("formats a remaining duration for a coordinator, not a machine", () => {

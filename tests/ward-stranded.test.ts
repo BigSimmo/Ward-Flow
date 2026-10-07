@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 import {
   LONG_STAY_PROMPT_DAYS,
   STRANDED_WAITING_BLOCKERS,
@@ -28,6 +29,24 @@ function base(): Admission {
 
 function stay(days: number, changes: Partial<Admission> = {}): Admission {
   return { ...base(), arrivedAt: NOW - days * MINUTES_PER_DAY - 1, ...changes };
+}
+
+function release(admissionId: string, changes: Partial<BedRelease> = {}): BedRelease {
+  return {
+    id: `rel-${admissionId}`,
+    unitId: "unit-1",
+    admissionId,
+    state: "confirmed",
+    expectedAt: NOW,
+    waitingOn: null,
+    blocker: null,
+    blockedBy: null,
+    preparing: false,
+    preparationNote: null,
+    confirmedAt: NOW,
+    confirmedBy: "ward",
+    ...changes,
+  };
 }
 
 describe("stranded-patient prompts", () => {
@@ -85,5 +104,34 @@ describe("stranded-patient prompts", () => {
 
   it("finds at least one prompt in the synthetic seed, so the panel has something to show", () => {
     expect(strandedFlags(wardAdmissions, NOW).length).toBeGreaterThan(0);
+  });
+
+  it("triggers ready-but-waiting from an active bed release blocker", () => {
+    const admission = stay(1, { blockReason: null, expectedDischargeAt: NOW });
+    const activeRelease = release(admission.id, { blocker: "Awaiting accommodation" });
+    const [flag] = strandedFlags([admission], NOW, [activeRelease]);
+    expect(flag?.reasons).toEqual(["ready-but-waiting"]);
+    expect(flag?.waitingOn).toBe("Awaiting accommodation");
+    expect(strandedPromptText(flag!)).toBe("Ready but waiting: accommodation");
+  });
+
+  it("prefers the live release blocker over a cleaning hold left on the admission at arrival", () => {
+    const admission = stay(1, { blockReason: "Awaiting clean", expectedDischargeAt: NOW });
+    const activeRelease = release(admission.id, { blocker: "Awaiting accommodation" });
+    const [flag] = strandedFlags([admission], NOW, [activeRelease]);
+    expect(flag?.reasons).toEqual(["ready-but-waiting"]);
+    expect(flag?.waitingOn).toBe("Awaiting accommodation");
+  });
+
+  it("ignores bed release blocker when the release is already discharged", () => {
+    const admission = stay(1, { blockReason: null, expectedDischargeAt: NOW });
+    const dischargedRelease = release(admission.id, { state: "discharged", blocker: "Awaiting accommodation" });
+    expect(strandedFlags([admission], NOW, [dischargedRelease])).toEqual([]);
+  });
+
+  it("ignores bed release blocker when it is a same-day logistics hold", () => {
+    const admission = stay(1, { blockReason: null, expectedDischargeAt: NOW });
+    const cleanRelease = release(admission.id, { blocker: "Awaiting clean" });
+    expect(strandedFlags([admission], NOW, [cleanRelease])).toEqual([]);
   });
 });

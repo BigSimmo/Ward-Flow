@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -263,5 +263,24 @@ describe("settings screen elevations: 44px touch envelopes, focus-visible, and h
     const callout = thresholdsPanel.querySelector('[data-tone="accent"]');
     expect(callout).toBeInTheDocument();
     expect(callout?.textContent).toContain("Figures here change only through the controls above");
+  });
+});
+
+describe("accessibility switches when browser storage refuses writes", () => {
+  it("still turns reduced motion on for this session", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+    try {
+      renderSettings();
+      const control = screen.getByRole("switch", { name: /Reduce motion/ });
+      expect(control).toHaveAttribute("aria-checked", "false");
+      fireEvent.click(control);
+      expect(screen.getByRole("switch", { name: /Reduce motion/ })).toHaveAttribute("aria-checked", "true");
+      expect(document.documentElement).toHaveAttribute("data-reduced-motion", "true");
+      fireEvent.click(screen.getByRole("switch", { name: /Reduce motion/ }));
+    } finally {
+      setItem.mockRestore();
+    }
   });
 });
