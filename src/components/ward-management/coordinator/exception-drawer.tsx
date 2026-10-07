@@ -23,7 +23,7 @@ const REGISTER_TABS: { id: RegisterTabId; label: string }[] = [
   { id: "declines", label: "Declines" },
   { id: "overrides", label: "Overrides" },
   { id: "exceptions", label: "Exceptions" },
-  { id: "refused", label: "Refused actions" },
+  { id: "refused", label: "Refused" },
 ];
 
 type ExceptionDrawerProps = {
@@ -214,7 +214,7 @@ export function ExceptionDrawer({
         onClick={onToggle}
       >
         {open ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
-        <span id="ward-exceptions-toggle-label">Registers</span>
+        <span id="ward-exceptions-toggle-label">Today’s answers</span>
         {/*
           Owner ruling, 2026-09-07 ("yes do the four counts"): the override register used to sit
           openly on the page, below the statewide flow, before Task 5 folded all four registers
@@ -242,7 +242,11 @@ export function ExceptionDrawer({
             className={`${styles.exceptionsToggleRecordCount} ${shortlistStyles.tabularNum}`}
             data-testid="ward-exceptions-toggle-override-count"
           >
-            {overrides.length === 1 ? "1 override" : `${overrides.length} overrides`}
+            {overrides.length === 0
+              ? "No overrides"
+              : overrides.length === 1
+                ? "1 override"
+                : `${overrides.length} overrides`}
           </span>
           <span
             className={`${styles.exceptionsToggleCount} ${shortlistStyles.tabularNum}`}
@@ -293,7 +297,7 @@ export function ExceptionDrawer({
         role="region"
         aria-labelledby="ward-exceptions-toggle-label"
       >
-        <div className={styles.registersTabs} role="tablist" aria-label="Registers" onKeyDown={onTabsKeyDown}>
+        <div className={styles.registersTabs} role="tablist" aria-label="Today’s answers" onKeyDown={onTabsKeyDown}>
           {REGISTER_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -436,12 +440,12 @@ export function ExceptionDrawer({
         <section
           role="tabpanel"
           id="ward-register-panel-refused"
-          aria-label="Refused actions"
+          aria-label="Refused"
           hidden={activeTab !== "refused"}
           className={styles.registerPanelBody}
           data-testid="ward-refusals"
         >
-          <h3 className={styles.refusalsHeading}>Refused actions</h3>
+          <h3 className={styles.refusalsHeading}>Refused</h3>
           {refusalsNewestFirst.length === 0 ? (
             <p className={styles.placeholder}>No refused actions recorded yet.</p>
           ) : (

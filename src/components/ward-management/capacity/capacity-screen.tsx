@@ -306,7 +306,7 @@ export function CapacityScreen() {
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleBlock}>
             <h1 className={styles.pageTitle}>Capacity</h1>
-            <span className={styles.pageSubtitle}>Statewide inpatient directory · synthetic current state</span>
+            <span className={styles.pageSubtitle}>Every ward · synthetic current state</span>
             {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
              *  waiting in ED and the top delays, scoped to the service chosen here. */}
             <BedMeetingSheetLauncher
@@ -648,7 +648,7 @@ export function CapacityScreen() {
                             unscoped ("Across the whole network, not only {S}.") — labelled here too
                             while a service is chosen. */}
                         <h3 className={styles.sidebarSectionTitle}>
-                          Worth your attention{service !== null ? " across the whole network" : ""}{" "}
+                          Needs you{service !== null ? " across the whole network" : ""}{" "}
                           <span>
                             {shortfalls.length} of {gapRows.length}
                           </span>
@@ -1872,7 +1872,7 @@ function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () 
               <p className={styles.sidebarWarning}>Bed records are mid-update. Sex mix may not be settled.</p>
             ) : null}
             <section className={styles.confirmationSection}>
-              <h3>Confirmation</h3>
+              <h3>Confirmed beds</h3>
               <WardFreshness
                 confirmedAt={row.confirmedAt}
                 confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
@@ -1951,7 +1951,7 @@ function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () 
                     ))}
                   </ul>
                 )}
-                <h3 className={styles.sidebarSectionTitle}>Anonymous bed releases</h3>
+                <h3 className={styles.sidebarSectionTitle}>Bed frees (no name)</h3>
                 {anonymousReleases.length === 0 ? (
                   <p className={styles.absent}>No anonymous bed releases recorded.</p>
                 ) : (

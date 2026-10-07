@@ -816,7 +816,7 @@ export function SettingsScreen() {
                       <div className={styles.popoverSection}>
                         <span className={styles.popoverLabel}>CLINICAL DELEGATION</span>
                         <div className={styles.popoverRow}>
-                          <span>Operational Scope:</span>
+                          <span>Where they work:</span>
                           <span>Statewide Bed Desk</span>
                         </div>
                         <div className={styles.popoverRow}>
@@ -952,7 +952,7 @@ export function SettingsScreen() {
         {/* Dynamic Island micro-HUD — reads the SAVED configuration, never the draft below */}
         <WardDynamicIsland
           testId="ward-settings-hud-island"
-          title="System Operations"
+          title="Now"
           status={hasUnsavedRules ? "warning" : "nominal"}
           statusText={
             hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized"
@@ -1178,7 +1178,7 @@ export function SettingsScreen() {
                       <header className={styles.sectionHeader}>
                         <div>
                           <h2 id="appearance-title" className={styles.secTitle}>
-                            Appearance &amp; Theme
+                            Look
                           </h2>
                         </div>
                       </header>
@@ -1332,7 +1332,7 @@ export function SettingsScreen() {
                       <header className={styles.sectionHeader}>
                         <div>
                           <h2 id="thresholds-title" className={styles.secTitle}>
-                            Operational Thresholds
+                            Timings
                           </h2>
                         </div>
                       </header>
@@ -1363,7 +1363,7 @@ export function SettingsScreen() {
                             aria-label={isSurge ? "Restore standard preset" : "Apply emergency surge preset"}
                             onClick={handleToggleSurge}
                           >
-                            {isSurge ? "Restore Standard" : "Apply Surge Preset"}
+                            {isSurge ? "Restore usual" : "Busy-day timings"}
                           </button>
                         </div>
 
@@ -1406,7 +1406,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Emergency Department Access Target</span>
+                                  <span className={styles.paramCardTitle}>ED wait target</span>
                                   <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60}h</span>
                                   {draft.edAccessTargetMinutes <= 120 ? (
                                     <span className={styles.badge} data-tone="danger">
@@ -1502,7 +1502,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Parallel Referral Enquiry Limit</span>
+                                  <span className={styles.paramCardTitle}>How many wards to ask</span>
                                   <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
                                   {draft.parallelReferralCap >= 5 ? (
                                     <span className={styles.badge} data-tone="warn">
@@ -1596,7 +1596,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Pulled Bed Reservation Hold Duration</span>
+                                  <span className={styles.paramCardTitle}>How long a pull is held</span>
                                   <span className={styles.rowTag}>{draft.pullHoldMinutes}m</span>
                                   {draft.pullHoldMinutes <= 45 ? (
                                     <span className={styles.badge} data-tone="danger">
@@ -1694,7 +1694,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Morning roll-up time</span>
+                                  <span className={styles.paramCardTitle}>Morning count time</span>
                                   <span className={styles.rowTag}>
                                     {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                   </span>
@@ -1780,7 +1780,7 @@ export function SettingsScreen() {
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <div className={styles.paramTitleRow}>
-                                  <span className={styles.paramCardTitle}>Due-Time Warning Intervals</span>
+                                  <span className={styles.paramCardTitle}>Form warning times</span>
                                   <span className={styles.badge} data-tone="accent">
                                     Auto-Clamped
                                   </span>
@@ -2108,7 +2108,7 @@ export function SettingsScreen() {
                           <div className={styles.settingRow} data-testid="setting-auto-escalate-row">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
-                                Automated Multi-Service Escalation Broadcast
+                                Text all services
                                 <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-auto-escalate-desc">
@@ -2358,7 +2358,7 @@ export function SettingsScreen() {
                         <div>
                           <span className={styles.secEyebrow}>Domain 3 · Capacity &amp; Surge</span>
                           <h2 id="allocation-title" className={styles.secTitle}>
-                            Bed Allocation &amp; Capacity Rules
+                            Beds
                           </h2>
                           <p className={styles.secDesc}>Bay integrity and acuity limits.</p>
                         </div>
@@ -2371,7 +2371,7 @@ export function SettingsScreen() {
                           <div className={styles.settingRow} data-testid="setting-gender-mix-row">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
-                                Gender Designation &amp; Bay Integrity Enforcement
+                                Bay and gender rules
                                 <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-gender-mix-desc">
@@ -2402,7 +2402,7 @@ export function SettingsScreen() {
                           <div className={styles.settingRow} data-testid="setting-acuity-ceiling-row">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
-                                Ward Acuity &amp; 1:1 Specialling Ceiling
+                                Specialling limit
                                 <span className={styles.unwiredPill}>Prototype preview</span>
                               </span>
                               <span className={styles.rowDesc} data-testid="setting-acuity-ceiling-desc">
@@ -2447,9 +2447,9 @@ export function SettingsScreen() {
                     >
                       <header className={styles.sectionHeader}>
                         <div>
-                          <span className={styles.secEyebrow}>Domain 4 · Governance &amp; Telemetry</span>
+                          <span className={styles.secEyebrow}>Alerts &amp; access</span>
                           <h2 id="notifications-title" className={styles.secTitle}>
-                            Notifications, Access Matrix &amp; Telemetry
+                            Alerts &amp; access
                           </h2>
                           <p className={styles.secDesc}>
                             Urgent buzz alerts, wallboard timers, and clinical role scopes.
@@ -2463,7 +2463,7 @@ export function SettingsScreen() {
                         {isRowVisible("setting-buzz-alert") && (
                           <div className={styles.settingRow} data-testid="setting-buzz-alert-row">
                             <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Audio &amp; Visual Urgent Buzz Alerts</span>
+                              <span className={styles.rowTitle}>Buzz sound</span>
                               <span className={styles.rowDesc} data-testid="setting-buzz-alert-desc">
                                 Sound an audible chime and display a visual flash when an urgent buzz is received.
                               </span>
@@ -2483,7 +2483,7 @@ export function SettingsScreen() {
                                         : "Audio & visual urgent buzz alerts disabled.",
                                     );
                                   }}
-                                  aria-label="Audio & Visual Urgent Buzz Alerts"
+                                  aria-label="Buzz sound"
                                 />
                                 <span className={styles.switchSlider} />
                               </label>
@@ -2495,17 +2495,13 @@ export function SettingsScreen() {
                         {isRowVisible("setting-wallboard-refresh") && (
                           <div className={styles.settingRow} data-testid="setting-wallboard-refresh-row">
                             <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>Wallboard Auto-Refresh Timer</span>
+                              <span className={styles.rowTitle}>Board refresh</span>
                               <span className={styles.rowDesc} data-testid="setting-wallboard-refresh-desc">
                                 Auto-refresh interval for unattended displays.
                               </span>
                             </div>
                             <div className={styles.rowControl}>
-                              <div
-                                className={styles.segTrack}
-                                role="radiogroup"
-                                aria-label="Wallboard Auto-Refresh Timer"
-                              >
+                              <div className={styles.segTrack} role="radiogroup" aria-label="Board refresh">
                                 {(
                                   [
                                     { value: "off", label: "Off" },
@@ -2670,9 +2666,9 @@ export function SettingsScreen() {
                               <thead>
                                 <tr>
                                   <th scope="col">Clinical Role</th>
-                                  <th scope="col">Operational Scope</th>
+                                  <th scope="col">Where they work</th>
                                   <th scope="col">Legal Form Sign-off</th>
-                                  <th scope="col">Override Privilege</th>
+                                  <th scope="col">Can override</th>
                                   <th scope="col">Handover Sign-Off</th>
                                 </tr>
                               </thead>
@@ -2778,7 +2774,7 @@ export function SettingsScreen() {
                         <div>
                           <span className={styles.secEyebrow}>Domain 5 · Storage &amp; Defaults</span>
                           <h2 id="reset-domain-title" className={styles.secTitle}>
-                            Local Storage, Workspace &amp; Baseline Reset
+                            This browser
                           </h2>
                           <p className={styles.secDesc}>Session storage, handover export, and baseline reset.</p>
                         </div>
@@ -2808,7 +2804,7 @@ export function SettingsScreen() {
                               <p className={styles.body}>
                                 Point-in-Time Shift Handover &amp; Bedflow Snapshot includes: Longest waits, Beds
                                 pulled, In transit, Placement gone wrong, Outside this filter, Still open at 15:00,
-                                Shift and sign off, and Clinical Handover Details. Generated on demand.
+                                Shift and sign off, and Handover details. Generated on demand.
                               </p>
                               <Link className={styles.inlineLink} href="/mockups/ward-flow/handover">
                                 Open Handover
@@ -2834,7 +2830,7 @@ export function SettingsScreen() {
                           <div className={styles.telemetryHeader}>
                             <div className={styles.telemetryTitleGroup}>
                               <Database size={16} className={styles.telemetryIcon} aria-hidden="true" />
-                              <h3 className={styles.telemetryTitle}>Storage Telemetry &amp; Quota Diagnostics</h3>
+                              <h3 className={styles.telemetryTitle}>Browser storage</h3>
                             </div>
                             <span className={styles.cacheHealthBadge}>
                               <span className={styles.statusDotLive} aria-hidden="true" />
@@ -2946,7 +2942,7 @@ export function SettingsScreen() {
                               <AlertTriangle size={18} aria-hidden="true" />
                             </div>
                             <div className={styles.dangerZoneMeta}>
-                              <h3 className={styles.dangerZoneTitle}>Baseline Reset &amp; Disaster Recovery</h3>
+                              <h3 className={styles.dangerZoneTitle}>Reset demo</h3>
                               <p className={styles.dangerZoneDesc}>
                                 Restores all coordination thresholds, theme, and rail preferences to standard.
                               </p>

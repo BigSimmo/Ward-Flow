@@ -2263,3 +2263,384 @@
     color: HighlightText;
   }
 }
+
+/* Approved four-tab flow: compact materials and explicit recipient selection. */
+.refCard {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
+    0 6px 20px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.sectionNav {
+  border-radius: 12px;
+}
+.sectionNav button {
+  border-radius: 9px;
+  min-width: 0;
+}
+.fieldInput,
+.fieldSelect,
+.clinicalTextarea,
+.patientChipBtn {
+  border-radius: 9px;
+}
+.patientChipBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.triagePriorityCard,
+.patientChip,
+.consequenceCard,
+.arrivalPlanCard {
+  border-radius: 10px;
+}
+.flowField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--t-0);
+  font-weight: 550;
+}
+.flowField small {
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.flowField input,
+.flowField select {
+  width: 100%;
+  min-width: 0;
+}
+.answerGroup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.answerGroup legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+.answerOptions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.answerOptions label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+.answerOptions label[data-selected="true"],
+.answerOptions button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.answerOptions input,
+.locationCard input,
+.checkLabel input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.checkLabel {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--t-0);
+}
+.catchmentSuggestion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.catchmentSuggestion span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.catchmentSuggestion small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+.nextStepButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-end;
+  padding: 11px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+.flowError {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+  color: var(--danger);
+  font-size: var(--t-0);
+  line-height: 1.5;
+  margin: 0;
+}
+.uploadRow {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.uploadStatus {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.uploadStatus[data-complete="true"] {
+  background: var(--good);
+  color: white;
+}
+.uploadDescription {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  font-size: var(--t-0);
+}
+.uploadDescription label {
+  font-weight: 600;
+}
+.uploadDescription span {
+  color: var(--muted);
+  font-size: var(--t-0);
+  overflow-wrap: anywhere;
+}
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.removeFile {
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.locationCard {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 75px 65px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--muted);
+  border-radius: 10px;
+  background: var(--surface-2);
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 60%, transparent);
+}
+.locationCard[data-catchment="in"] {
+  border-color: color-mix(in srgb, var(--good) 65%, var(--line));
+  border-left-color: var(--good);
+}
+.locationCard[data-catchment="out"] {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+  border-left-color: var(--danger);
+}
+.locationCard[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+.locationCard:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.locationIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--t-0);
+}
+.locationIdentity strong {
+  font-size: var(--t-1);
+  font-weight: 650;
+  line-height: 1.4;
+}
+.locationIdentity small {
+  color: var(--muted);
+  font-size: var(--t-0);
+  overflow-wrap: anywhere;
+}
+.catchmentLabel {
+  color: var(--muted);
+  line-height: 1.4;
+  font-size: var(--t-0);
+}
+[data-catchment="in"] .catchmentLabel {
+  color: var(--good);
+}
+[data-catchment="out"] .catchmentLabel {
+  color: var(--danger);
+}
+.locationMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
+  align-self: stretch;
+  justify-content: center;
+}
+.locationMetric span {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+.locationMetric strong {
+  font-size: var(--t-4);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.locationNote {
+  grid-column: 2 / -1;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.confirmationPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.confirmationTitle {
+  font-size: var(--t-4);
+  line-height: 1.3;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+.confirmationFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.confirmationFacts span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.recipientSummary {
+  margin: 6px 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--t-0);
+  line-height: 1.5;
+}
+.recipientSummary li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deliveryNote {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 0 8px;
+}
+.documentLinks {
+  padding-left: 18px;
+  font-size: var(--t-0);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.documentLinks a {
+  color: var(--accent);
+}
+.btnSendReferral,
+.btnCancelReferral {
+  border-radius: 9px;
+}
+.sendTargetName {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 480px) {
+  .locationCard {
+    grid-template-columns: 20px minmax(0, 1fr) 58px 51px;
+    gap: 7px;
+    padding: 10px 8px;
+  }
+  .locationMetric {
+    padding-left: 7px;
+  }
+  .locationMetric strong {
+    font-size: var(--t-3);
+  }
+  .confirmationFacts {
+    gap: 8px;
+  }
+  .nextStepButton {
+    width: 100%;
+  }
+  .sectionNav button {
+    font-size: var(--t-0);
+    padding: 8px 4px;
+    gap: 4px;
+  }
+}
+
+.patientStory {
+  white-space: pre-wrap;
+  font-size: var(--t-0);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

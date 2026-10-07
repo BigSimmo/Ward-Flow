@@ -39,7 +39,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "bed coordinator",
     sub: "Runs the priority queue and places people across the network.",
     opens: "Command, the priority queue",
-    scopeBadge: "Statewide Command",
+    scopeBadge: "Statewide",
     targetChip: "command-third-edition.html",
   },
   {
@@ -49,7 +49,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "coordinator on call",
     sub: "Holds the queue out of hours, and owns movements alongside the bed coordinator.",
     opens: "Command, the priority queue",
-    scopeBadge: "Specialist On-Call",
+    scopeBadge: "On call",
     targetChip: "on-call-third-edition.html",
   },
   {
@@ -59,7 +59,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "ED liaison",
     sub: "Raises referrals from an emergency department and records what is decided on them.",
     opens: "Emergency departments",
-    scopeBadge: "Emergency Liaison",
+    scopeBadge: "ED",
     targetChip: "patient-now-third-edition.html",
   },
   {
@@ -69,7 +69,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "duty consultant",
     sub: "Triages the referrals waiting, oldest first.",
     opens: "Referrals",
-    scopeBadge: "Specialist Triage",
+    scopeBadge: "Triage",
     targetChip: "referrals-third-edition.html",
   },
   {
@@ -79,7 +79,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "governance lead",
     sub: "Reviews every override recorded, and reads the period's figures.",
     opens: "Governance",
-    scopeBadge: "Clinical Governance",
+    scopeBadge: "Governance",
     targetChip: "governance-third-edition.html",
   },
   {
@@ -89,7 +89,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "service lead",
     sub: "Reads the period's figures for the service, and reviews the overrides in it.",
     opens: "Statistics",
-    scopeBadge: "Service Leadership",
+    scopeBadge: "Service",
     targetChip: "statistics-third-edition.html",
   },
   {
@@ -99,7 +99,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "the ward",
     sub: "Answers what the ward can take, holds a bed on it, and records a decision on a move into it.",
     opens: "Wards",
-    scopeBadge: "Inpatient Ward",
+    scopeBadge: "Ward",
     targetChip: "ward-answer-third-edition.html",
   },
 ] as const;
@@ -117,8 +117,8 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
     roles: ["bed", "oncall"],
   },
   {
-    words: "Raise a referral",
-    where: "The New referral control sits on every screen, and the Raise a referral flow opens behind it.",
+    words: "New referral",
+    where: "The New referral control sits on every screen, and the New referral flow opens behind it.",
     roles: ["bed", "oncall", "ed"],
   },
   {
@@ -186,7 +186,7 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
  */
 export const SIGN_IN_ACTION_NAMED: Readonly<Record<string, string>> = {
   "Open the priority queue": "the bed coordinator and the coordinator on call",
-  "Raise a referral": "the bed coordinator, the coordinator on call, the ED liaison and a community team",
+  "New referral": "the bed coordinator, the coordinator on call, the ED liaison and a community team",
   "Record a decision on a movement": "the bed coordinator, the ED liaison and the ward",
   "Hold a bed": "the bed coordinator and the ward",
   "Ask a ward": "the bed coordinator and the ward",
@@ -257,7 +257,7 @@ export interface ThirdEditionRole {
 export const THIRD_EDITION_ROLES: readonly ThirdEditionRole[] = [
   {
     id: "coordinator",
-    scopeBadge: "Statewide Command",
+    scopeBadge: "Statewide",
     title: "State Bed Flow Coordinator",
     desc: "Statewide demand and capacity oversight, allocation triage, and priority trajectory across all 23 acute units.",
     targetChip: "command-third-edition.html",
@@ -275,7 +275,7 @@ export const THIRD_EDITION_ROLES: readonly ThirdEditionRole[] = [
   },
   {
     id: "ed",
-    scopeBadge: "Emergency Liaison",
+    scopeBadge: "ED",
     title: "ED Mental Health Liaison Nurse",
     desc: "Emergency department acute assessment, patient registration, Form 1A verification, and referral triage.",
     targetChip: "patient-now-third-edition.html",
@@ -293,7 +293,7 @@ export const THIRD_EDITION_ROLES: readonly ThirdEditionRole[] = [
   },
   {
     id: "ward",
-    scopeBadge: "Inpatient Ward",
+    scopeBadge: "Ward",
     title: "Acute Inpatient NUM / Shift Lead",
     desc: "Unit bed availability, referral acceptance, bed reservation holds, census management, and departure planning.",
     targetChip: "ward-answer-third-edition.html",
@@ -347,7 +347,7 @@ export const THIRD_EDITION_ROLES: readonly ThirdEditionRole[] = [
   },
   {
     id: "consultant",
-    scopeBadge: "Specialist On-Call",
+    scopeBadge: "On call",
     title: "On-Call Consultant Psychiatrist",
     desc: "Statutory Mental Health Act 2014 Form 3B orders, clinical exception reviews, HDU placements, and telehealth consults.",
     targetChip: "on-call-third-edition.html",
@@ -365,8 +365,8 @@ export const THIRD_EDITION_ROLES: readonly ThirdEditionRole[] = [
   },
   {
     id: "governance",
-    scopeBadge: "Clinical Governance",
-    title: "Clinical Governance & Review Officer",
+    scopeBadge: "Governance",
+    title: "Governance lead",
     desc: "Audit trail inspection, catchment override reviews, clinical threshold breaches, and statutory compliance manifests.",
     targetChip: "governance-third-edition.html",
     can: [

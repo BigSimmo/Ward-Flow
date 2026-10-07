@@ -7,6 +7,7 @@ import {
   Ambulance,
   ArrowRight,
   Clock,
+  CheckCircle2,
   Lock,
   MapPin,
   Plus,
@@ -39,6 +40,14 @@ import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   URGENCY_LEVELS,
+  HEALTH_SERVICES,
+  HOME_REGIONS,
+  RECORDED_SEXES,
+  REFERRAL_GENDERS,
+  type HomeRegion,
+  type RecordedSex,
+  type ReferralGender,
+  type ReferralDestination,
   type Cohort,
   type HealthService,
   type Movement,
@@ -52,8 +61,25 @@ import {
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
+import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
+import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
+import { TENTATIVE_DIAGNOSIS_BLOCKS, isTentativeDiagnosisBlock } from "../ward-diagnosis";
+import {
+  DocumentationPanel,
+  ContactFields,
+  documentationError,
+  EMPTY_DOCUMENTATION,
+  type DocumentationDraft,
+} from "./referral-flow-panels";
+import {
+  REFERRAL_RISK_FLAGS,
+  referralContactError,
+  referralIntakeError,
+  type ReferralContact,
+  type ReferralIntakeDetails,
+} from "./referral-submission";
 
 /**
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
@@ -319,16 +345,19 @@ function WardReferralDrawerContent({
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<"patient" | "referral" | "clinical" | "placement">("patient");
+  const [activeSection, setActiveSection] = useState<"patient" | "referral" | "documentation" | "placement">("patient");
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
-  const [selectedDestUnitId, setSelectedDestUnitId] = useState<string | null>(null);
-  const [expandedGates, setExpandedGates] = useState<Record<string, boolean>>({});
-  function toggleGates(unitId: string) {
-    setExpandedGates((prev) => ({ ...prev, [unitId]: !prev[unitId] }));
-  }
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState("");
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [sendPending, setSendPending] = useState(false);
+  const [sentReferralId, setSentReferralId] = useState<string | null>(null);
+  const [flowError, setFlowError] = useState<string | null>(null);
+  const submissionRef = useRef<{ intake: ReferralIntakeDetails; rejectionCount: number } | null>(null);
+  const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  const { movements, patients, referrals, dayZero, dispatch } = useWardFlow();
+  const { movements, patients, referrals, rejections, configuration, dayZero, dispatch } = useWardFlow();
   const now = useWardFlowClock();
   const sampleProfiles = useMemo(
     () =>
@@ -341,29 +370,34 @@ function WardReferralDrawerContent({
     [movements, patients, referrals, dayZero, now],
   );
   const defaultPatient = sampleProfiles[initialPatientKey]!;
-  const [localMedicalCleared, setLocalMedicalCleared] = useState<Record<string, boolean>>({});
   const [arrivalPlanOpen, setArrivalPlanOpen] = useState(false);
   const liveMovement = movements.find((m) => m.id === activePatientKey);
+  const patientRecord = liveMovement
+    ? resolveSubjectPatient(liveMovement, { patients, referrals, movements }).patient
+    : undefined;
   const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
-  const isMedicalCleared = localMedicalCleared[activePatientKey] ?? liveMovement?.medicalClearance?.cleared ?? false;
-
-  function handleToggleMedicalClearance() {
-    const nextVal = !isMedicalCleared;
-    setLocalMedicalCleared((prev) => ({ ...prev, [activePatientKey]: nextVal }));
-    if (liveMovement) {
-      dispatch({
-        type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-        role: "ed",
-        now,
-        movementId: liveMovement.id,
-        cleared: nextVal,
-      });
-    }
-    announceToWardShell(
-      `Pre-admission medical clearance for ${currentPatient.name} marked as ${nextVal ? "CLEARED" : "PENDING"}.`,
-    );
-  }
-
+  const [documentation, setDocumentation] = useState<DocumentationDraft>(EMPTY_DOCUMENTATION);
+  const isMedicalCleared = documentation.medical === "yes";
+  const [contact, setContact] = useState<ReferralContact>({ name: "", email: "", phone: "", role: "", location: "" });
+  const initialLookup = lookupCatchment(defaultPatient.suburb);
+  const initialTeams = catchmentRoutingDestinations(initialLookup);
+  const [catchmentSuburb, setCatchmentSuburb] = useState(defaultPatient.suburb);
+  const [catchmentTeam, setCatchmentTeam] = useState(
+    initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment,
+  );
+  const [catchmentService, setCatchmentService] = useState<HealthService | "">("");
+  const [catchmentConfirmed, setCatchmentConfirmed] = useState(false);
+  const [catchmentEditing, setCatchmentEditing] = useState(false);
+  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(liveMovement?.homeRegion ?? "");
+  const [sourceKind, setSourceKind] = useState<"community" | "ed">(initialCategory === "ed" ? "ed" : "community");
+  const [originSiteCode, setOriginSiteCode] = useState("");
+  const [sendingTeam, setSendingTeam] = useState("");
+  const [referralSex, setReferralSex] = useState<RecordedSex>(
+    RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
+  );
+  const [referralGender, setReferralGender] = useState<ReferralGender | "">(patientRecord?.gender ?? "");
+  const [highAcuity, setHighAcuity] = useState(false);
+  const [arrivalEta, setArrivalEta] = useState("");
   // Form field state - fully synced and editable
   const [legalStatus, setLegalStatus] = useState(
     defaultPatient.legalStatus.startsWith("Form")
@@ -446,7 +480,27 @@ function WardReferralDrawerContent({
     setActivePatientKey(key);
     setSearchQuery("");
     setIsSearchOpen(false);
-    setSelectedDestUnitId(null);
+    setSelectedUnitIds([]);
+    setSelectedRecipient("");
+    setDocumentation(EMPTY_DOCUMENTATION);
+    setCatchmentSuburb(p.suburb);
+    const teams = catchmentRoutingDestinations(lookupCatchment(p.suburb));
+    setCatchmentTeam(teams?.length === 1 ? teams[0] : p.catchment);
+    setCatchmentService("");
+    setCatchmentConfirmed(false);
+    setCatchmentEditing(false);
+    setHomeRegion(movements.find((movement) => movement.id === key)?.homeRegion ?? "");
+    const record = resolveSubjectPatient(movements.find((movement) => movement.id === key) ?? {}, {
+      patients,
+      referrals,
+      movements,
+    }).patient;
+    setReferralSex(RECORDED_SEXES.find((sex) => sex === record?.sex) ?? "Not recorded");
+    setReferralGender(record?.gender ?? "");
+    setHighAcuity(false);
+    setArrivalEta("");
+    setConfirmationOpen(false);
+    setFlowError(null);
     setArrivalPlanOpen(false);
 
     // Synchronize all form fields with selected patient profile
@@ -548,10 +602,8 @@ function WardReferralDrawerContent({
     const pillTone = readyBedsCount > 0 ? ("good" as const) : ("danger" as const);
 
     const sortedUnits = [...matchingRecords].sort((a, b) => {
-      const aMatch =
-        a.healthService && currentPatient.catchment?.toLowerCase().includes(a.healthService.toLowerCase()) ? 1 : 0;
-      const bMatch =
-        b.healthService && currentPatient.catchment?.toLowerCase().includes(b.healthService.toLowerCase()) ? 1 : 0;
+      const aMatch = a.healthService === catchmentService && catchmentConfirmed ? 1 : 0;
+      const bMatch = b.healthService === catchmentService && catchmentConfirmed ? 1 : 0;
       if (aMatch !== bMatch) return bMatch - aMatch;
       return b.readyBeds - a.readyBeds;
     });
@@ -582,21 +634,172 @@ function WardReferralDrawerContent({
         `Eligible Wards: ${eligibleWards}`,
       ],
     };
-  }, [destType, security, legalStatus, urgency, transport, currentPatient, capacityRecords]);
+  }, [
+    destType,
+    security,
+    legalStatus,
+    urgency,
+    transport,
+    currentPatient,
+    capacityRecords,
+    catchmentService,
+    catchmentConfirmed,
+  ]);
 
-  const effectiveDestination = useMemo(() => {
-    if (destType === "ward" && selectedDestUnitId && realTimeMatch.sortedUnits) {
-      const matched = realTimeMatch.sortedUnits.find((u) => u.unitId === selectedDestUnitId);
-      if (matched) {
-        return `${matched.hospital} ${matched.name} (${matched.readyBeds} Bed${matched.readyBeds === 1 ? "" : "s"} Ready)`;
-      }
-    }
-    return realTimeMatch.targetDestination;
-  }, [destType, selectedDestUnitId, realTimeMatch.sortedUnits, realTimeMatch.targetDestination]);
+  const selectedDestinations: ReferralDestination[] =
+    destType === "ward"
+      ? selectedUnitIds
+          .filter((id) => realTimeMatch.sortedUnits?.some((unit) => unit.unitId === id))
+          .map((unitId) => ({
+            kind: "psychiatric_ward",
+            unitId,
+            sex: referralSex,
+            gender: referralGender || undefined,
+            secureBedNeeded: security === "Secure",
+            involuntaryBedNeeded: legalStatus !== "Voluntary",
+            highAcuityNursingNeeded: highAcuity,
+          }))
+      : !selectedRecipient
+        ? []
+        : destType === "community"
+          ? [{ kind: "community_team", teamName: selectedRecipient }]
+          : [{ kind: "emergency_department", edId: selectedRecipient, purpose: "psychiatric_review" }];
+  const recipientLabels =
+    destType === "ward"
+      ? selectedDestinations
+          .map((destination) =>
+            destination.kind === "psychiatric_ward"
+              ? capacityRecords.find((unit) => unit.unitId === destination.unitId)
+              : undefined,
+          )
+          .filter((unit): unit is WardCapacityRecord => !!unit)
+          .map((unit) => `${unit.hospital} · ${unit.name}`)
+      : selectedRecipient
+        ? [destType === "community" ? selectedRecipient : (edById(selectedRecipient)?.name ?? selectedRecipient)]
+        : [];
+  const effectiveDestination = recipientLabels.length ? recipientLabels.join("; ") : "Choose referral locations";
 
-  function handleDispatch() {
-    announceToWardShell("Sending the referral is not wired in this prototype.");
+  function patientError() {
+    if (!patientRecord) return "Select a registered patient. Use Full intake to register a new patient.";
+    if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
+    if (!homeRegion) return "Choose the patient's home region.";
+    return null;
   }
+  function referralError() {
+    if (
+      !originSiteCode ||
+      !wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
+    )
+      return "Choose the location of referral.";
+    if (sourceKind === "community" && !sendingTeam.trim()) return "Record the referring community service.";
+    if (!URGENCY_LEVELS.some((tier) => String(tier) === urgency)) return "Choose the referral urgency.";
+    return null;
+  }
+  function goNext(section: "patient" | "referral" | "documentation") {
+    const error =
+      patientError() ??
+      (section !== "patient" ? referralError() : null) ??
+      (section === "documentation" ? documentationError(documentation) : null);
+    setFlowError(error);
+    if (error) return;
+    setActiveSection(section === "patient" ? "referral" : section === "referral" ? "documentation" : "placement");
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+  }
+  function handleDispatch() {
+    const error =
+      patientError() ??
+      referralError() ??
+      documentationError(documentation) ??
+      (selectedDestinations.length ? null : "Select at least one referral location.");
+    setFlowError(error);
+    if (error) return;
+    setConfirmationOpen(true);
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    requestAnimationFrame(() => confirmationHeadingRef.current?.focus());
+  }
+  function confirmAndSend(event: React.FormEvent) {
+    event.preventDefault();
+    if (sendPending || sentReferralId) return;
+    const validation =
+      patientError() ?? referralError() ?? documentationError(documentation) ?? referralContactError(contact);
+    if (validation) {
+      setFlowError(validation);
+      return;
+    }
+    const intake: ReferralIntakeDetails = {
+      catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
+      reasonForReferral: doctorNote,
+      legalStatus,
+      riskFlags: REFERRAL_RISK_FLAGS.filter((flag) => riskFlags[flag]),
+      medicalClearance: {
+        cleared: isMedicalCleared,
+        ...(isMedicalCleared
+          ? {}
+          : {
+              expectedAt: `${documentation.expectedAt}+08:00`,
+              contactName: documentation.contactName,
+              contactPhone: documentation.contactPhone,
+            }),
+      },
+      triageAndRampCompleted: documentation.triage === "yes",
+      charts: documentation.charts,
+      additionalDocuments: documentation.additional === "yes",
+      referrer: contact,
+      ...(destType === "ward"
+        ? {
+            arrival: { transport, reference: transitNote, estimatedAt: arrivalEta ? `${arrivalEta}+08:00` : undefined },
+          }
+        : {}),
+    };
+    const intakeError = referralIntakeError(intake);
+    if (intakeError) {
+      setFlowError(intakeError);
+      return;
+    }
+    const cohort = liveMovement?.cohort;
+    const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
+    if (!cohort || !tier || !homeRegion || !selectedDestinations.length) {
+      setFlowError("Check the patient, urgency and selected recipients.");
+      return;
+    }
+    submissionRef.current = { intake, rejectionCount: rejections.length };
+    setSendPending(true);
+    setFlowError(null);
+    dispatch({
+      type: "RECEIVE_REFERRAL",
+      role: sourceKind === "ed" ? "ed" : "community",
+      now,
+      patientId: patientRecord?.id,
+      ageBand: cohort,
+      homeRegion,
+      suburb:
+        catchmentSuburb && suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.toLowerCase())
+          ? { kind: "named", name: catchmentSuburb }
+          : { kind: "unknown", reason: "not_known" },
+      destinations: selectedDestinations,
+      source: sourceKind === "ed" ? "ed_medical" : "community",
+      originSiteCode,
+      sendingTeamName: sourceKind === "community" ? sendingTeam : undefined,
+      urgency: tier,
+      transportNeeded: destType === "ward" && transport !== "carer",
+      history: clinicalSummary,
+      tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
+      intake,
+    });
+  }
+  useEffect(() => {
+    const submitted = submissionRef.current;
+    if (!sendPending || !submitted) return;
+    const created = referrals.find((referral) => referral.intake === submitted.intake);
+    if (created) {
+      setSentReferralId(created.id);
+      setSendPending(false);
+      announceToWardShell(`Referral ${created.id} sent to the selected locations.`);
+    } else if (rejections.length > submitted.rejectionCount) {
+      setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
+      setSendPending(false);
+    }
+  }, [sendPending, referrals, rejections, patientRecord?.id]);
 
   return (
     <>
@@ -624,11 +827,7 @@ function WardReferralDrawerContent({
                 <Send className={styles.headingIcon} aria-hidden="true" />
                 <span>Referrals</span>
                 <span className={styles.categoryBadge} data-testid="ward-referral-drawer-category-badge">
-                  {destType === "community"
-                    ? "Community Referral"
-                    : destType === "ed"
-                      ? "ED Referral"
-                      : "Ward Referral"}
+                  {destType === "community" ? "From community" : destType === "ed" ? "From ED" : "From a ward"}
                 </span>
               </h2>
               <div className={styles.drawerSubhead}>Patient details, referral draft and live placement options.</div>
@@ -650,8 +849,8 @@ function WardReferralDrawerContent({
             [
               ["patient", "Patient", User],
               ["referral", "Referral", ShieldCheck],
-              ["clinical", "Clinical", Activity],
-              ["placement", "Placement", MapPin],
+              ["documentation", "Documentation", Activity],
+              ["placement", "Locations", MapPin],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -660,6 +859,9 @@ function WardReferralDrawerContent({
               aria-pressed={activeSection === id}
               aria-controls={`${sectionId}-${id}`}
               onClick={() => {
+                if (sendPending || sentReferralId) return;
+                setConfirmationOpen(false);
+                setFlowError(null);
                 setActiveSection(id);
                 setIsSearchOpen(false);
                 if (bodyRef.current) bodyRef.current.scrollTop = 0;
@@ -671,7 +873,72 @@ function WardReferralDrawerContent({
           ))}
         </div>
         <div ref={bodyRef} className={styles.drawerBody}>
-          <div id={`${sectionId}-patient`} className={styles.sectionPanel} hidden={activeSection !== "patient"}>
+          {flowError && (
+            <p className={styles.flowError} role="alert">
+              {flowError}
+            </p>
+          )}
+          {confirmationOpen && (
+            <form id="referralConfirmForm" onSubmit={confirmAndSend} className={styles.confirmationPanel}>
+              <section className={styles.refCard}>
+                <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.confirmationTitle}>
+                  {sentReferralId ? "Referral sent" : "Confirm and send"}
+                </h3>
+                <p className={styles.refCardSubtitle}>
+                  {sentReferralId
+                    ? `Reference: ${sentReferralId}. The selected recipients can now review this referral.`
+                    : "Review the recipients and your contact details before sending."}
+                </p>
+                <div className={styles.confirmationFacts}>
+                  <span>
+                    <strong>Patient</strong>
+                    {currentPatient.name}
+                  </span>
+                  <span>
+                    <strong>Catchment</strong>
+                    {catchmentTeam} · confirmed
+                  </span>
+                  <span>
+                    <strong>Medical clearance</strong>
+                    {isMedicalCleared ? "Cleared" : "Pending"}
+                  </span>
+                  <span>
+                    <strong>Charts</strong>
+                    {documentation.charts.length} attached
+                  </span>
+                </div>
+                <h4 className={styles.refCardTitle}>Recipients ({recipientLabels.length})</h4>
+                <ul className={styles.recipientSummary}>
+                  {recipientLabels.map((label) => (
+                    <li key={label}>
+                      <CheckCircle2 size={15} aria-hidden="true" />
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              {!sentReferralId && (
+                <section className={styles.refCard}>
+                  <h3 className={styles.refCardTitle}>Your contact details</h3>
+                  <ContactFields contact={contact} onChange={setContact} />
+                </section>
+              )}
+              <p className={styles.deliveryNote}>
+                Each selected location receives this referral in its inbox. The coordinator can review all referrals.
+                Sending does not reserve a bed or confirm medical clearance.
+              </p>
+              {sentReferralId && (
+                <Link className={styles.patientChipBtn} href="/mockups/ward-flow/referrals">
+                  View referrals board
+                </Link>
+              )}
+            </form>
+          )}
+          <div
+            id={`${sectionId}-patient`}
+            className={styles.sectionPanel}
+            hidden={confirmationOpen || activeSection !== "patient"}
+          >
             {/* 1. PATIENT SELECTION & CLINICAL IDENTITY DOSSIER */}
             <section className={styles.refCard}>
               <div className={styles.refCardHead}>
@@ -806,7 +1073,7 @@ function WardReferralDrawerContent({
                         </div>
                         <LegalLimitsNotChecked variant="tag" />
                       </div>
-                      <div className={styles.triagePillarFoot}>Order status: {legalStatus} compliance</div>
+                      <div className={styles.triagePillarFoot}>Recorded order: {legalStatus}</div>
                     </div>
                   </div>
 
@@ -924,9 +1191,9 @@ function WardReferralDrawerContent({
                           className={styles.medicalClearanceToggleBtn}
                           data-cleared={isMedicalCleared}
                           data-testid="ward-referral-medical-clearance-toggle"
-                          onClick={handleToggleMedicalClearance}
+                          onClick={() => setActiveSection("documentation")}
                         >
-                          {isMedicalCleared ? "✓ Medical Cleared (Toggle)" : "○ Mark Medically Cleared"}
+                          Review medical clearance
                         </button>
                       </div>
                     </div>
@@ -935,56 +1202,191 @@ function WardReferralDrawerContent({
               </div>
             </section>
 
-            {liveMovement && canSetArrivalPlan(liveMovement) ? (
-              <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
-                <div className={styles.refCardHead}>
-                  <h3 className={styles.refCardTitle}>
-                    <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
-                    <span>Arrival plan</span>
-                  </h3>
-                  <span className="badgePill">Ward ETA</span>
+            <section className={styles.refCard}>
+              <h3 className={styles.refCardTitle}>Patient catchment</h3>
+              <p className={styles.refCardSubtitle}>
+                {patientRecord?.address
+                  ? `Recorded address: ${patientRecord.address}`
+                  : "Address not recorded. Search for the patient's suburb or catchment."}
+              </p>
+              <div className={styles.catchmentSuggestion}>
+                <span>
+                  <strong>{catchmentTeam || "Catchment needs confirmation"}</strong>
+                  <small>
+                    {catchmentConfirmed
+                      ? "Catchment confirmed"
+                      : "Suggested from the recorded suburb. Confirm before continuing."}
+                  </small>
+                </span>
+                <button
+                  type="button"
+                  className={styles.patientChipBtn}
+                  onClick={() => {
+                    setCatchmentEditing(true);
+                    setCatchmentConfirmed(false);
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+              {(!catchmentTeam || catchmentEditing) && (
+                <div className={styles.fieldGrid}>
+                  <label className={styles.flowField}>
+                    Patient suburb
+                    <input
+                      className={styles.fieldInput}
+                      list={`${sectionId}-suburbs`}
+                      value={catchmentSuburb}
+                      onChange={(e) => {
+                        setCatchmentSuburb(e.target.value);
+                        setCatchmentConfirmed(false);
+                        const teams = catchmentRoutingDestinations(lookupCatchment(e.target.value));
+                        setCatchmentTeam(teams?.length === 1 ? teams[0] : "");
+                      }}
+                    />
+                  </label>
+                  <label className={styles.flowField}>
+                    Search catchment
+                    <input
+                      className={styles.fieldInput}
+                      list={`${sectionId}-teams`}
+                      value={catchmentTeam}
+                      maxLength={200}
+                      onChange={(e) => {
+                        setCatchmentTeam(e.target.value);
+                        setCatchmentConfirmed(false);
+                      }}
+                    />
+                  </label>
                 </div>
-                <div className={styles.arrivalPlanCard}>
-                  {liveMovement.arrivalDetails ? (
-                    <ul className={styles.arrivalPlanFacts}>
-                      <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
-                      <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
-                      <li>
-                        Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST
-                      </li>
-                    </ul>
-                  ) : (
-                    <p className={styles.refCardSubtitle}>
-                      No arrival plan recorded. Setting one records how they are arriving and the estimated ward time,
-                      and clears the pull clock.
-                    </p>
-                  )}
-                  {isArrivalLate(liveMovement, now) ? (
-                    <p
-                      className={styles.arrivalLate}
-                      role="status"
-                      data-testid="ward-referral-arrival-late"
-                      title={OPERATIONAL_DEFAULT_LABEL}
-                    >
-                      Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
-                      marked arrived.
-                    </p>
-                  ) : null}
-                  <div className={styles.arrivalPlanAction}>
-                    <button
-                      type="button"
-                      className={styles.patientChipBtn}
-                      data-testid="ward-referral-arrival-plan-toggle"
-                      onClick={() => setArrivalPlanOpen(true)}
-                    >
-                      {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
-                    </button>
-                  </div>
-                </div>
-              </section>
-            ) : null}
+              )}
+              <datalist id={`${sectionId}-suburbs`}>
+                {suburbOptions().map((suburb) => (
+                  <option key={suburb} value={suburb} />
+                ))}
+              </datalist>
+              <datalist id={`${sectionId}-teams`}>
+                {communityTeamOptions().map((team) => (
+                  <option key={team} value={team} />
+                ))}
+              </datalist>
+              {lookupCatchment(catchmentSuburb).state === "contested" && (
+                <p className={styles.flowError}>
+                  Catchment sources disagree for this suburb. Select and confirm the catchment manually.
+                </p>
+              )}
+              <div className={styles.fieldGrid}>
+                <label className={styles.flowField}>
+                  Home region
+                  <select
+                    className={styles.fieldSelect}
+                    value={homeRegion}
+                    onChange={(e) => {
+                      setHomeRegion(e.target.value as HomeRegion);
+                      setCatchmentConfirmed(false);
+                    }}
+                  >
+                    <option value="">Choose region</option>
+                    {HOME_REGIONS.map((region) => (
+                      <option key={region}>{region}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.flowField}>
+                  Confirm catchment service area
+                  <select
+                    className={styles.fieldSelect}
+                    value={catchmentService}
+                    onChange={(e) => {
+                      setCatchmentService(e.target.value as HealthService | "");
+                      setCatchmentConfirmed(false);
+                    }}
+                  >
+                    <option value="">Not known / confirm later</option>
+                    {HEALTH_SERVICES.map((service) => (
+                      <option key={service}>{service}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className={styles.refCardSubtitle}>
+                Hospital catchment is shown by the service area you confirm here. The suburb table identifies community
+                clinics.
+              </p>
+              <button
+                type="button"
+                className={styles.patientChipBtn}
+                disabled={!catchmentTeam.trim() || !homeRegion}
+                onClick={() => {
+                  setCatchmentConfirmed(true);
+                  setCatchmentEditing(false);
+                  setFlowError(null);
+                }}
+              >
+                {catchmentConfirmed ? "✓ Catchment confirmed" : "Confirm catchment"}
+              </button>
+            </section>
+            {catchmentConfirmed && (
+              <button type="button" className={styles.nextStepButton} onClick={() => goNext("patient")}>
+                Next: Referral <ArrowRight aria-hidden="true" size={15} />
+              </button>
+            )}
           </div>
-          <div id={`${sectionId}-referral`} className={styles.sectionPanel} hidden={activeSection !== "referral"}>
+          <div
+            id={`${sectionId}-referral`}
+            className={styles.sectionPanel}
+            hidden={confirmationOpen || activeSection !== "referral"}
+          >
+            <section className={styles.refCard}>
+              <h3 className={styles.refCardTitle}>Location of referral</h3>
+              <div className={styles.answerOptions} role="group" aria-label="Referral origin type">
+                {(["community", "ed"] as const).map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className={styles.patientChipBtn}
+                    aria-pressed={sourceKind === kind}
+                    onClick={() => {
+                      setSourceKind(kind);
+                      setOriginSiteCode("");
+                    }}
+                  >
+                    {kind === "community" ? "Community" : "Emergency"}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.fieldGrid}>
+                {sourceKind === "community" && (
+                  <label className={styles.flowField}>
+                    Referring community service
+                    <input
+                      className={styles.fieldInput}
+                      list={`${sectionId}-teams`}
+                      value={sendingTeam}
+                      maxLength={200}
+                      onChange={(e) => setSendingTeam(e.target.value)}
+                    />
+                  </label>
+                )}
+                <label className={styles.flowField}>
+                  {sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
+                  <select
+                    className={styles.fieldSelect}
+                    value={originSiteCode}
+                    onChange={(e) => setOriginSiteCode(e.target.value)}
+                  >
+                    <option value="">Choose location</option>
+                    {wardSites
+                      .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
+                      .map((site) => (
+                        <option key={site.code} value={site.code}>
+                          {sourceKind === "ed" ? site.emergencyDepartment?.name : site.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+            </section>
             {/* 2. STATUTORY LEGAL STATUS & PLACEMENT URGENCY */}
             <section className={styles.refCard}>
               <div className={styles.refCardHead}>
@@ -992,10 +1394,10 @@ function WardReferralDrawerContent({
                   <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
                   <span>2. Legal status &amp; Placement Urgency</span>
                 </h3>
-                <span className="badgePill">WA Recorded forms Compliance</span>
+                <LegalLimitsNotChecked variant="tag" />
               </div>
               <p className={styles.refCardSubtitle}>
-                Statutory orders establish mandatory examination timelines, escort authority, and locked ward criteria.
+                Record the legal status and referral urgency. Legal limits are not checked by this prototype.
               </p>
 
               <div className={styles.fieldGrid}>
@@ -1056,11 +1458,15 @@ function WardReferralDrawerContent({
                     className={styles.fieldSelect}
                     id="refDestTypeSelect"
                     value={destType}
-                    onChange={(e) => setDestType(e.target.value)}
+                    onChange={(e) => {
+                      setDestType(e.target.value);
+                      setSelectedUnitIds([]);
+                      setSelectedRecipient("");
+                    }}
                   >
                     <option value="ward">Inpatient Acute Psychiatric Ward Bed</option>
                     <option value="community">Community Mental Health Team (CMHT Assertive Transfer)</option>
-                    <option value="ed">Specialist ED Mental Health Observation Unit</option>
+                    <option value="ed">Emergency department psychiatry</option>
                   </select>
                 </div>
 
@@ -1073,7 +1479,10 @@ function WardReferralDrawerContent({
                     className={styles.fieldSelect}
                     id="refSecuritySelect"
                     value={security}
-                    onChange={(e) => setSecurity(e.target.value)}
+                    onChange={(e) => {
+                      setSecurity(e.target.value);
+                      setSelectedUnitIds([]);
+                    }}
                   >
                     <option value="Secure">Secure Unit (Locked High-Dependency Bay)</option>
                     <option value="Open">Open Acute Ward (Standard Observation Bay)</option>
@@ -1081,16 +1490,15 @@ function WardReferralDrawerContent({
                 </div>
               </div>
             </section>
-          </div>
-          <div id={`${sectionId}-clinical`} className={styles.sectionPanel} hidden={activeSection !== "clinical"}>
+
             {/* 3. CLINICAL PRESENTATION & DIAGNOSTIC DOSSIER */}
             <section className={styles.refCard}>
               <div className={styles.refCardHead}>
                 <h3 className={styles.refCardTitle}>
                   <Activity aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>3. Clinical Presentation &amp; Diagnostic Dossier</span>
+                  <span>Clinical presentation</span>
                 </h3>
-                <span className="badgePill">Clinical Assessment</span>
+                <span className={styles.fieldLabelHint}>Referral assessment</span>
               </div>
 
               <div className={styles.fieldGrid}>
@@ -1106,23 +1514,24 @@ function WardReferralDrawerContent({
                     onChange={(e) => setProvisionalDiag(e.target.value)}
                   >
                     <option value="">Not recorded</option>
-                    <option value="psychosis">Schizophreniform Disorder / Acute Psychotic Episode</option>
-                    <option value="bipolar">Bipolar I Disorder · Acute Mania with Psychosis</option>
-                    <option value="depression">Major Depressive Episode · Severe with Suicide Risk</option>
-                    <option value="delirium">Delirium / Organic Mental Disorder</option>
-                    <option value="substance">Substance-Induced Psychotic Disorder</option>
+                    {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                      <option key={block.code} value={block.code}>
+                        {block.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel} htmlFor="refDocInput">
-                    <span>Referring Clinician &amp; Origin Unit</span>
-                    <span className={styles.fieldLabelHint}>AHPRA Practitioner</span>
+                    <span>Reason for referral</span>
+                    <span className={styles.fieldLabelHint}>Why this service is needed</span>
                   </label>
                   <input
                     type="text"
                     className={styles.fieldInput}
                     id="refDocInput"
+                    maxLength={1000}
                     value={doctorNote}
                     onChange={(e) => setDoctorNote(e.target.value)}
                     data-gramm="false"
@@ -1135,12 +1544,13 @@ function WardReferralDrawerContent({
 
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel} htmlFor="refSummaryText">
-                  <span>Mental State Examination &amp; Presentation Summary</span>
+                  <span>Patient story</span>
                   <span className={styles.fieldLabelHint}>Clinical Narrative</span>
                 </label>
                 <textarea
                   className={styles.clinicalTextarea}
                   id="refSummaryText"
+                  maxLength={10000}
                   rows={3}
                   value={clinicalSummary}
                   onChange={(e) => setClinicalSummary(e.target.value)}
@@ -1161,6 +1571,7 @@ function WardReferralDrawerContent({
                     type="button"
                     className={styles.riskTagChip}
                     data-checked={riskFlags.aggression}
+                    aria-pressed={riskFlags.aggression}
                     onClick={() => toggleRisk("aggression")}
                   >
                     <AlertTriangle aria-hidden="true" style={{ width: 13, height: 13 }} />
@@ -1170,6 +1581,7 @@ function WardReferralDrawerContent({
                     type="button"
                     className={styles.riskTagChip}
                     data-checked={riskFlags.absconding}
+                    aria-pressed={riskFlags.absconding}
                     onClick={() => toggleRisk("absconding")}
                   >
                     <ArrowRight aria-hidden="true" style={{ width: 13, height: 13 }} />
@@ -1179,6 +1591,7 @@ function WardReferralDrawerContent({
                     type="button"
                     className={styles.riskTagChip}
                     data-checked={riskFlags.medical}
+                    aria-pressed={riskFlags.medical}
                     onClick={() => toggleRisk("medical")}
                   >
                     <Activity aria-hidden="true" style={{ width: 13, height: 13 }} />
@@ -1188,6 +1601,7 @@ function WardReferralDrawerContent({
                     type="button"
                     className={styles.riskTagChip}
                     data-checked={riskFlags.vulnerable}
+                    aria-pressed={riskFlags.vulnerable}
                     onClick={() => toggleRisk("vulnerable")}
                   >
                     <ShieldAlert aria-hidden="true" style={{ width: 13, height: 13 }} />
@@ -1197,6 +1611,7 @@ function WardReferralDrawerContent({
                     type="button"
                     className={styles.riskTagChip}
                     data-checked={riskFlags.suicide}
+                    aria-pressed={riskFlags.suicide}
                     onClick={() => toggleRisk("suicide")}
                   >
                     <AlertCircle aria-hidden="true" style={{ width: 13, height: 13 }} />
@@ -1205,64 +1620,73 @@ function WardReferralDrawerContent({
                 </div>
               </div>
             </section>
+            {destType === "ward" && (
+              <section className={styles.refCard}>
+                <h3 className={styles.refCardTitle}>Bed requirements</h3>
+                <div className={styles.fieldGrid}>
+                  <label className={styles.flowField}>
+                    Recorded sex
+                    <select
+                      className={styles.fieldSelect}
+                      value={referralSex}
+                      onChange={(e) => setReferralSex(e.target.value as RecordedSex)}
+                    >
+                      {RECORDED_SEXES.map((sex) => (
+                        <option key={sex}>{sex}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={styles.flowField}>
+                    Gender identity
+                    <select
+                      className={styles.fieldSelect}
+                      value={referralGender}
+                      onChange={(e) => setReferralGender(e.target.value as ReferralGender | "")}
+                    >
+                      <option value="">Not recorded</option>
+                      {REFERRAL_GENDERS.map((gender) => (
+                        <option key={gender}>{gender}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={styles.checkLabel}>
+                    <input type="checkbox" checked={highAcuity} onChange={(e) => setHighAcuity(e.target.checked)} />
+                    High-acuity nursing needed
+                  </label>
+                </div>
+              </section>
+            )}
+            <button type="button" className={styles.nextStepButton} onClick={() => goNext("referral")}>
+              Next: Documentation <ArrowRight aria-hidden="true" size={15} />
+            </button>
           </div>
-          <div id={`${sectionId}-placement`} className={styles.sectionPanel} hidden={activeSection !== "placement"}>
-            {/* 4. AUTHORIZED TRANSPORT & ESCORT LOGISTICS */}
-            <section className={styles.refCard}>
-              <div className={styles.refCardHead}>
-                <h3 className={styles.refCardTitle}>
-                  <Ambulance aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>4. Authorized Transport &amp; Escort Logistics</span>
-                </h3>
-                <span className="badgePill">Escort Authority</span>
-              </div>
-
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refTransportSelect">
-                    <span>Authorized Transport Provider</span>
-                    <span className={styles.fieldLabelHint}>Escort Tier</span>
-                  </label>
-                  <select
-                    className={styles.fieldSelect}
-                    id="refTransportSelect"
-                    value={transport}
-                    onChange={(e) => setTransport(e.target.value)}
-                  >
-                    <option value="mht">Mental Health Transport Service (Contracted MHT)</option>
-                    <option value="police">Police Escort (WAPOL Involuntary Transit)</option>
-                    <option value="rfds">RFDS Aeromedical Flight Escort</option>
-                    <option value="stjohn">St John Ambulance (Priority 2 Clinical Escort)</option>
-                    <option value="carer">Patient / Carer Accompanied Transport</option>
-                  </select>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="refTransitInput">
-                    <span>Dispatch Reference / Staging Bay</span>
-                    <span className={styles.fieldLabelHint}>Transport Coordination</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.fieldInput}
-                    id="refTransitInput"
-                    value={transitNote}
-                    onChange={(e) => setTransitNote(e.target.value)}
-                    data-gramm="false"
-                    data-enable-grammarly="false"
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            </section>
-
+          <div
+            id={`${sectionId}-documentation`}
+            className={styles.sectionPanel}
+            hidden={confirmationOpen || activeSection !== "documentation"}
+          >
+            <DocumentationPanel
+              key={activePatientKey}
+              draft={documentation}
+              onChange={setDocumentation}
+              referrerName={contact.name}
+              onReferrerNameChange={(name) => setContact((current) => ({ ...current, name }))}
+            />
+            <button type="button" className={styles.nextStepButton} onClick={() => goNext("documentation")}>
+              Next: Locations <ArrowRight aria-hidden="true" size={15} />
+            </button>
+          </div>
+          <div
+            id={`${sectionId}-placement`}
+            className={styles.sectionPanel}
+            hidden={confirmationOpen || activeSection !== "placement"}
+          >
             {/* 5. REAL-TIME INPATIENT CAPACITY MATCH */}
             <section className={styles.refCard}>
               <div className={styles.refCardHead}>
                 <h3 className={styles.refCardTitle}>
                   <Users aria-hidden="true" style={{ width: 14, height: 14 }} />
-                  <span>5. Real-Time Inpatient Capacity Match</span>
+                  <span>Locations to refer</span>
                 </h3>
                 <span
                   className="badgePill"
@@ -1294,217 +1718,258 @@ function WardReferralDrawerContent({
                 </p>
               ) : null}
 
-              {/* Destination Rows with Distinct Card Borders & Status Indicators (Alternative 2 3-Tier Status Matrix) */}
               <div className={styles.destinationList} role="list" aria-label="Placement Destination Options">
-                {destType === "ward" && realTimeMatch.sortedUnits && realTimeMatch.sortedUnits.length > 0 ? (
-                  (() => {
-                    const tier1Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds > 0);
-                    const tier2Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds === 0);
-
-                    const renderUnitCard = (u: WardCapacityRecord, isTier1: boolean) => {
-                      const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
-                      const isGateExpanded = expandedGates[u.unitId] ?? false;
-
-                      return (
-                        <div
-                          key={u.unitId}
-                          role="listitem"
-                          className={`${styles.destinationRowCard} ${isTier1 ? styles.destinationRowCardReady : styles.destinationRowCardTurnaround}`}
-                          data-selected={isSelected}
-                          onClick={() => setSelectedDestUnitId(u.unitId)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setSelectedDestUnitId(u.unitId);
-                            }
-                          }}
-                        >
-                          <div className={styles.destRowMain}>
-                            <div className={styles.destRowHeader}>
-                              <span
-                                className={styles.destStatusIndicator}
-                                data-available={u.readyBeds > 0}
-                                aria-hidden="true"
-                              />
-                              <span className={styles.destRowHospital}>{u.hospital}</span>
-                              <span className={styles.destAllocationId}>{u.unitId}</span>
-                            </div>
-                            <div className={styles.destRowUnitName}>{u.name}</div>
-                            <div className={styles.destRowTags}>
-                              <span className={styles.destTag}>{u.healthService}</span>
-                              <span className={styles.destTag}>{u.cohort}</span>
-                              <span className={styles.destTag}>{u.security} Unit</span>
-                            </div>
-                          </div>
-
-                          <div className={styles.destRowCapacity}>
-                            <div className={styles.destBedCountGroup}>
-                              <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
-                                <strong>{u.readyBeds}</strong> Ready
-                              </span>
-                              <span className={styles.destHeldCount}>
-                                <strong>{u.pulledBeds}</strong> Pulled
-                              </span>
-                              <span className={styles.destHeldCount}>
-                                <strong>{u.closedBeds}</strong> Closed
-                              </span>
-                            </div>
-                            {(u.pendingPreparation ?? 0) > 0 ? (
-                              <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
-                            ) : null}
-                            <span className={styles.destSelectIndicator}>
-                              {isSelected ? "Selected Target" : "Select Target"}
-                            </span>
-                          </div>
-
-                          {/* Interactive Criteria Gate Dropdown */}
-                          <div className={styles.gateSummary} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              className={`${styles.gateToggle} ${isTier1 ? "" : styles.gateToggleWarn}`}
-                              onClick={() => toggleGates(u.unitId)}
-                              aria-expanded={isGateExpanded}
-                            >
-                              <span>
-                                {isTier1
-                                  ? "✓ 10/10 Statutory & Clinical Criteria Met"
-                                  : "✓ 10/10 Clinical Criteria Met · Bed Turnaround in Progress"}
-                              </span>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {isGateExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
-                              </span>
-                            </button>
-                            {isGateExpanded ? (
-                              <div className={styles.gateGrid}>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Clinical Acuity: {u.security} Unit Appropriate
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
-                                <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
-                                  {isMedicalCleared
-                                    ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
-                                    : "⏳ Medical Clearance: Pending MO Signoff"}
-                                </div>
-                                <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
-                                </div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
-                                </div>
-                                <div className={styles.gatePillPassed}>
-                                  ✓ Physical Mobility: Ground Floor Direct Access
-                                </div>
-                                <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
-                                  {isTier1
-                                    ? "✓ Bed Availability: Ready to Admit"
-                                    : "⏳ Bed Status: Awaiting Bed Turnover"}
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      );
-                    };
-
+                {destType === "ward" ? (
+                  realTimeMatch.sortedUnits?.map((unit) => {
+                    const selected = selectedUnitIds.includes(unit.unitId);
+                    const inCatchment =
+                      catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;
+                    const waiting =
+                      referrals.filter((referral) =>
+                        referral.destinations.some(
+                          (arm) =>
+                            arm.destination.kind === "psychiatric_ward" &&
+                            arm.destination.unitId === unit.unitId &&
+                            arm.state === "queued" &&
+                            arm.waitlistedAt !== undefined &&
+                            arm.withdrawnAt === undefined,
+                        ),
+                      ).length +
+                      movements.filter(
+                        (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
+                      ).length;
                     return (
-                      <>
-                        {tier1Units.length > 0 ? (
-                          <div className={styles.tierSection}>
-                            <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
-                                <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
-                              </div>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {tier1Units.length} Available
-                              </span>
-                            </div>
-                            {tier1Units.map((u) => renderUnitCard(u, true))}
-                          </div>
-                        ) : null}
-
-                        {tier2Units.length > 0 ? (
-                          <div className={styles.tierSection}>
-                            <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span className={styles.pulseDot} />
-                                <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
-                              </div>
-                              <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
-                                {tier2Units.length} Units Full
-                              </span>
-                            </div>
-                            {tier2Units.map((u) => renderUnitCard(u, false))}
-                          </div>
-                        ) : null}
-                      </>
+                      <label
+                        key={unit.unitId}
+                        role="listitem"
+                        className={styles.locationCard}
+                        data-catchment={inCatchment === null ? "unknown" : inCatchment ? "in" : "out"}
+                        data-selected={selected}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => {
+                            if (!selected && selectedUnitIds.length >= configuration.parallelReferralCap) {
+                              setFlowError(`Choose up to ${configuration.parallelReferralCap} referral locations.`);
+                              return;
+                            }
+                            setSelectedUnitIds((ids) =>
+                              selected ? ids.filter((id) => id !== unit.unitId) : [...ids, unit.unitId],
+                            );
+                            setFlowError(null);
+                          }}
+                        />
+                        <div className={styles.locationIdentity}>
+                          <strong>{unit.hospital || unit.name}</strong>
+                          <span>{unit.name}</span>
+                          <small>
+                            {unit.cohort} · {unit.security} · {unit.unitId}
+                          </small>
+                          <span className={styles.catchmentLabel}>
+                            {inCatchment === null
+                              ? "Catchment not confirmed"
+                              : inCatchment
+                                ? "In catchment · confirmed service area"
+                                : "Outside catchment · different service area"}
+                          </span>
+                        </div>
+                        <div className={styles.locationMetric}>
+                          <span>Beds available</span>
+                          <strong>{unit.readyBeds}</strong>
+                        </div>
+                        <div className={styles.locationMetric}>
+                          <span>Waitlist</span>
+                          <strong>{waiting}</strong>
+                        </div>
+                        {(unit.pendingPreparation ?? 0) > 0 && (
+                          <small className={styles.locationNote}>
+                            {unit.pendingPreparation} offered beds still being prepared
+                          </small>
+                        )}
+                      </label>
                     );
-                  })()
-                ) : destType === "community" ? (
-                  <div className={styles.destinationRowCard} data-selected={true}>
-                    <div className={styles.destRowMain}>
-                      <div className={styles.destRowHeader}>
-                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                        <span className={styles.destRowHospital}>Catchment CMHT</span>
-                        <span className={styles.destAllocationId}>cmht-outreach</span>
-                      </div>
-                      <div className={styles.destRowUnitName}>Community Mental Health Team</div>
-                      <div className={styles.destRowTags}>
-                        <span className={styles.destTag}>{currentPatient.catchment || "South Metropolitan"}</span>
-                        <span className={styles.destTag}>Assertive Outreach</span>
-                      </div>
-                    </div>
-                    <div className={styles.destRowCapacity}>
-                      <span className={styles.destReadyCount} data-has-beds={true}>
-                        <strong>Community</strong> Transfer
-                      </span>
-                      <span className={styles.destSelectIndicator}>Active Route</span>
-                    </div>
-                  </div>
+                  })
                 ) : (
-                  <div className={styles.destinationRowCard} data-selected={true}>
-                    <div className={styles.destRowMain}>
-                      <div className={styles.destRowHeader}>
-                        <span className={styles.destStatusIndicator} data-available={true} aria-hidden="true" />
-                        <span className={styles.destRowHospital}>{currentPatient.origin.split("·")[0].trim()}</span>
-                        <span className={styles.destAllocationId}>ed-obs-tier</span>
-                      </div>
-                      <div className={styles.destRowUnitName}>Specialist ED Mental Health Observation Unit</div>
-                      <div className={styles.destRowTags}>
-                        <span className={styles.destTag}>Observation Tier</span>
-                        <span className={styles.destTag}>Rapid Stabilization</span>
-                      </div>
-                    </div>
-                    <div className={styles.destRowCapacity}>
-                      <span className={styles.destReadyCount} data-has-beds={true}>
-                        <strong>1 Bed</strong> Ready
-                      </span>
-                      <span className={styles.destSelectIndicator}>Active Route</span>
-                    </div>
-                  </div>
+                  <label className={styles.flowField}>
+                    {destType === "community" ? "Community team to refer to" : "Emergency department to refer to"}
+                    <select
+                      className={styles.fieldSelect}
+                      value={selectedRecipient}
+                      onChange={(e) => {
+                        setSelectedRecipient(e.target.value);
+                        setFlowError(null);
+                      }}
+                    >
+                      <option value="">Choose recipient</option>
+                      {destType === "community"
+                        ? Array.from(new Set([catchmentTeam, ...communityTeamOptions()].filter(Boolean)))
+                            .sort(
+                              (a, b) => Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b),
+                            )
+                            .map((team) => (
+                              <option key={team} value={team}>
+                                {team}
+                                {team === catchmentTeam ? " · In catchment" : " · Outside confirmed catchment"}
+                              </option>
+                            ))
+                        : allEmergencyDepartments().map((ed) => (
+                            <option key={ed.id} value={ed.id}>
+                              {ed.name}
+                            </option>
+                          ))}
+                    </select>
+                    <small>
+                      {destType === "community"
+                        ? "Community referrals do not request beds. Select the team that will receive this referral."
+                        : "ED observation bed capacity is not recorded. The referral goes to psychiatry at the selected department."}
+                    </small>
+                  </label>
+                )}
+                {destType === "ward" && !realTimeMatch.sortedUnits?.length && (
+                  <p className={styles.refCardSubtitle}>
+                    No locations match this cohort and security requirement. Review the referral requirements.
+                  </p>
                 )}
               </div>
 
               <div className={styles.consequenceCard}>
-                <div className={styles.cqHeader}>
-                  <span>Matching Inpatient Capacity in Catchment</span>
-                  <span className="badgePill" style={{ color: "var(--accent)", fontWeight: 600 }}>
-                    {realTimeMatch.catchmentTitle}
-                  </span>
-                </div>
-                <ul className={styles.cqList}>
-                  {realTimeMatch.consequences.map((c, i) => (
-                    <li key={i}>{c}</li>
+                <div className={styles.cqHeader}>Referral summary</div>
+                <p>
+                  {currentPatient.name} · {catchmentTeam || "Catchment needs confirmation"}
+                </p>
+                <p>
+                  {documentation.charts.length} documents attached · Medical clearance{" "}
+                  {isMedicalCleared ? "complete" : "pending"}
+                </p>
+                <p>
+                  <strong>
+                    {recipientLabels.length} {recipientLabels.length === 1 ? "location" : "locations"} selected
+                  </strong>
+                </p>
+                <ul className={styles.recipientSummary}>
+                  {recipientLabels.map((label) => (
+                    <li key={label}>{label}</li>
                   ))}
                 </ul>
               </div>
             </section>
+            {destType === "ward" && selectedDestinations.length > 0 && (
+              <>
+                {" "}
+                {/* 4. AUTHORIZED TRANSPORT & ESCORT LOGISTICS */}
+                <section className={styles.refCard}>
+                  <div className={styles.refCardHead}>
+                    <h3 className={styles.refCardTitle}>
+                      <Ambulance aria-hidden="true" style={{ width: 14, height: 14 }} />
+                      <span>Arrival plan</span>
+                    </h3>
+                    <span className="badgePill">Proposed plan</span>
+                  </div>
+
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel} htmlFor="refTransportSelect">
+                        <span>Authorized Transport Provider</span>
+                        <span className={styles.fieldLabelHint}>Escort Tier</span>
+                      </label>
+                      <select
+                        className={styles.fieldSelect}
+                        id="refTransportSelect"
+                        value={transport}
+                        onChange={(e) => setTransport(e.target.value)}
+                      >
+                        <option value="mht">Mental Health Transport Service (Contracted MHT)</option>
+                        <option value="police">Police Escort (WAPOL Involuntary Transit)</option>
+                        <option value="rfds">RFDS Aeromedical Flight Escort</option>
+                        <option value="stjohn">St John Ambulance (Priority 2 Clinical Escort)</option>
+                        <option value="carer">Patient / Carer Accompanied Transport</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel} htmlFor="refTransitInput">
+                        <span>Dispatch Reference / Staging Bay</span>
+                        <span className={styles.fieldLabelHint}>Transport Coordination</span>
+                      </label>
+                      <input
+                        type="text"
+                        className={styles.fieldInput}
+                        id="refTransitInput"
+                        value={transitNote}
+                        onChange={(e) => setTransitNote(e.target.value)}
+                        data-gramm="false"
+                        data-enable-grammarly="false"
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                    </div>
+                    <label className={styles.flowField}>
+                      Estimated arrival (AWST)
+                      <input
+                        type="datetime-local"
+                        className={styles.fieldInput}
+                        value={arrivalEta}
+                        onChange={(e) => setArrivalEta(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <p className={styles.refCardSubtitle}>
+                    Proposed arrival details travel with the referral. A bed must be accepted before the live movement
+                    plan changes.
+                  </p>
+                </section>
+                {selectedDestinations.length > 0 && liveMovement && canSetArrivalPlan(liveMovement) ? (
+                  <section className={styles.refCard} data-testid="ward-referral-arrival-plan-card">
+                    <div className={styles.refCardHead}>
+                      <h3 className={styles.refCardTitle}>
+                        <Clock aria-hidden="true" style={{ width: 14, height: 14 }} />
+                        <span>Existing journey arrival plan</span>
+                      </h3>
+                      <span className="badgePill">Ward ETA</span>
+                    </div>
+                    <div className={styles.arrivalPlanCard}>
+                      {liveMovement.arrivalDetails ? (
+                        <ul className={styles.arrivalPlanFacts}>
+                          <li>Mode: {arrivalModeLabel(liveMovement.arrivalDetails.mode)}</li>
+                          <li>Tracking: {liveMovement.arrivalDetails.trackingNumber ?? "Not recorded"}</li>
+                          <li>
+                            Estimated ward time: {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)}{" "}
+                            AWST
+                          </li>
+                        </ul>
+                      ) : (
+                        <p className={styles.refCardSubtitle}>
+                          No arrival plan recorded. Setting one records how they are arriving and the estimated ward
+                          time, and clears the pull clock.
+                        </p>
+                      )}
+                      {isArrivalLate(liveMovement, now) ? (
+                        <p
+                          className={styles.arrivalLate}
+                          role="status"
+                          data-testid="ward-referral-arrival-late"
+                          title={OPERATIONAL_DEFAULT_LABEL}
+                        >
+                          Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time.
+                          Not marked arrived.
+                        </p>
+                      ) : null}
+                      <div className={styles.arrivalPlanAction}>
+                        <button
+                          type="button"
+                          className={styles.patientChipBtn}
+                          data-testid="ward-referral-arrival-plan-toggle"
+                          onClick={() => setArrivalPlanOpen(true)}
+                        >
+                          {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
         {/* 6. SEND REFERRAL STICKY ACTION FOOTER */}
@@ -1512,23 +1977,62 @@ function WardReferralDrawerContent({
           <div className={styles.sendTargetSummary}>
             <span className={styles.sendTargetLabel}>
               <MapPin aria-hidden="true" style={{ width: 14, height: 14 }} />
-              <span>Destination preview · demo draft</span>
+              <span>
+                {sentReferralId ? "Referral sent" : confirmationOpen ? "Final confirmation" : "Referral draft"}
+              </span>
             </span>
             <span className={styles.sendTargetName}>{effectiveDestination}</span>
           </div>
           <div className={styles.sendActionCluster}>
-            <button type="button" className={styles.btnCancelReferral} onClick={onClose}>
-              Cancel
-            </button>
             <button
               type="button"
-              className={styles.btnSendReferral}
-              onClick={handleDispatch}
-              title="Not wired in this prototype."
+              className={styles.btnCancelReferral}
+              disabled={sendPending}
+              onClick={
+                confirmationOpen && !sentReferralId
+                  ? () => {
+                      setConfirmationOpen(false);
+                      setFlowError(null);
+                    }
+                  : onClose
+              }
             >
-              <Send aria-hidden="true" style={{ width: 15, height: 15 }} />
-              <span>Send referral</span>
+              {confirmationOpen && !sentReferralId ? "Back to referral" : sentReferralId ? "Close" : "Cancel"}
             </button>
+            {(activeSection !== "patient" || catchmentConfirmed || confirmationOpen) && (
+              <button
+                className={styles.btnSendReferral}
+                onClick={
+                  sentReferralId
+                    ? onClose
+                    : confirmationOpen
+                      ? undefined
+                      : activeSection === "placement"
+                        ? handleDispatch
+                        : () => goNext(activeSection)
+                }
+                type={confirmationOpen && !sentReferralId ? "submit" : "button"}
+                form={confirmationOpen && !sentReferralId ? "referralConfirmForm" : undefined}
+                disabled={sendPending}
+              >
+                <Send aria-hidden="true" style={{ width: 15, height: 15 }} />
+                <span>
+                  {sentReferralId
+                    ? "Done"
+                    : sendPending
+                      ? "Sending…"
+                      : confirmationOpen
+                        ? "Confirm and send"
+                        : activeSection === "placement"
+                          ? "Send referral"
+                          : activeSection === "patient"
+                            ? "Next: Referral"
+                            : activeSection === "referral"
+                              ? "Next: Documentation"
+                              : "Next: Locations"}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

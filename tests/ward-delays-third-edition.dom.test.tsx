@@ -115,7 +115,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     // Choosing the Wait timeline view places the timeline inside the overview panel, ahead of the worklist.
     fireEvent.click(
       within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", {
-        name: "Wait Timeline",
+        name: "Waits",
       }),
     );
     expect(panelTitlesInOrder()).toEqual([

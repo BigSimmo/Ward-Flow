@@ -737,7 +737,7 @@ test.describe("@mockup Emergency department screen", () => {
     if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
       await page.getByTestId("ward-ed-raise-referral-toggle").click();
     }
-    await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
@@ -745,7 +745,7 @@ test.describe("@mockup Emergency department screen", () => {
     if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
       await page.getByTestId("ward-ed-raise-referral-toggle").click();
     }
-    await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
@@ -1254,7 +1254,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // ambiguity: the diagram's scroll container carries a second, more specific
     // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
     // visual upgrade (883ecfdfb4).
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     await page

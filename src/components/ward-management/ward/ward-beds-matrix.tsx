@@ -311,7 +311,7 @@ export function WardBedsMatrix({
         badgeTone: "purple",
         tag: "Pulled earlier",
         desc: "Pulled for Hazelle Ferrowmoor; taken, not yet arrived.",
-        actions: [{ label: "View Transit", primary: false }],
+        actions: [{ label: "See the move", primary: false }],
         borderTone: "purple",
       },
       {
@@ -323,7 +323,7 @@ export function WardBedsMatrix({
         badgeTone: "purple",
         tag: "Pulled earlier",
         desc: "Pulled for Bramwen Ferrowmoor; taken, not yet arrived.",
-        actions: [{ label: "View Transit", primary: false }],
+        actions: [{ label: "See the move", primary: false }],
         borderTone: "purple",
       },
     ];

@@ -76,10 +76,10 @@ afterEach(() => {
 });
 
 describe("the rail's chosen-service word (item 52)", () => {
-  it("keeps all pages reachable from the desktop More pages control", () => {
+  it("keeps all pages reachable from the desktop All Pages control", () => {
     renderRail();
     expect(screen.getAllByRole("button", { name: "Menu" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "More pages" }));
+    fireEvent.click(screen.getByRole("button", { name: "All Pages" }));
     const navigation = screen.getByRole("dialog", { name: "Ward Flow navigation" });
     expect(within(navigation).getByRole("link", { name: /Statistics/i })).toHaveAttribute(
       "href",
@@ -162,11 +162,11 @@ describe("rail bed alerts (live figures)", () => {
       trigger.click();
     });
 
-    expect(screen.getByText(`${expected.totalFreeBeds} Free Beds`)).toBeInTheDocument();
-    expect(screen.queryByText("18 Free Beds")).not.toBeInTheDocument();
+    expect(screen.getByText(`${expected.totalFreeBeds} Unoccupied Beds`)).toBeInTheDocument();
+    expect(screen.queryByText("18 Unoccupied Beds")).not.toBeInTheDocument();
 
     for (const row of expected.services) {
-      expect(screen.getByText(`${row.freeBeds} free (${row.occupiedBeds}/${row.totalBeds})`)).toBeInTheDocument();
+      expect(screen.getByText(`${row.freeBeds} unoccupied (${row.occupiedBeds}/${row.totalBeds})`)).toBeInTheDocument();
     }
   });
 

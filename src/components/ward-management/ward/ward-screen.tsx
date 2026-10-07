@@ -1,5 +1,7 @@
 "use client";
 
+import { WardReferralInbox } from "../referrals/ward-referral-inbox";
+
 import Link from "next/link";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
@@ -1715,6 +1717,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           </p>
         ) : null}
 
+        <WardReferralInbox unitId={unit.id} />
         <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
           <header className={styles.commandIdentity}>
             <div className={styles.commandIdentityCopy}>
@@ -1763,7 +1766,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   onClick={() => setNotificationCenterOpen((prev) => !prev)}
                   aria-expanded={notificationCenterOpen}
                   data-testid="ward-notifications-toggle-btn"
-                  title="View ward tasks, coordinator buzzes and census alerts"
+                  title="Buzzes, urgent tasks and notices"
                 >
                   <span>Tasks &amp; Buzzes</span>
                   {unreadAlertsCount > 0 ? (
@@ -2360,7 +2363,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Currently Confirmed Allocatable</dt>
+                        <dt>Confirmed free</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",
@@ -2408,7 +2411,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         </dd>
                       </div>
                       <div>
-                        <dt>Allocatable Delta</dt>
+                        <dt>Unoccupied change</dt>
                         <dd
                           style={{
                             fontFamily: "var(--mono, monospace)",

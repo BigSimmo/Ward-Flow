@@ -58,7 +58,7 @@ export type DelayGroup = { cause: DelayCause; title: string; note: string; movem
 const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
     cause: "legal_breached",
-    title: "Form due time already passed",
+    title: "Form overdue",
     note: "nothing else on this page outranks it",
   },
   {
@@ -66,7 +66,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
     title: "Form due time running out",
     note: "",
   },
-  { cause: "no_eligible_bed", title: "No suitable bed anywhere in the network", note: "" },
+  { cause: "no_eligible_bed", title: "No suitable bed", note: "" },
   { cause: "awaiting_ward_answer", title: "Awaiting a ward's answer", note: "" },
   // ⚠️ The note said "the hold lapsed" until 2026-09-06 — the same event named two ways inside one
   // object literal, with the title already calling it a pull. That was recorded as an open question
@@ -80,8 +80,8 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   },
   { cause: "awaiting_bed_ready", title: "Awaiting the bed itself", note: "each has a named bed" },
   { cause: "awaiting_transport", title: "Awaiting transport", note: "" },
-  { cause: "patient_or_family", title: "Patient or family factors", note: "" },
-  { cause: "awaiting_coordinator", title: "Awaiting a decision from the coordinator", note: "that is you" },
+  { cause: "patient_or_family", title: "Patient or family", note: "" },
+  { cause: "awaiting_coordinator", title: "Waiting on you", note: "that is you" },
 ];
 
 /** Every cause, worst first — the ranking itself, so a caller can reason about position rather than

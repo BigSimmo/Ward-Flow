@@ -110,9 +110,9 @@ describe("WardBar primary action — the five kinds, D-16", () => {
   });
 
   it.each([
-    ["community", "Community Referral", "community"],
-    ["ed_medical", "ED Referral", "ed"],
-    ["inter_hospital", "Ward Referral", "ward"],
+    ["community", "From community", "community"],
+    ["ed_medical", "From ED", "ed"],
+    ["inter_hospital", "From a ward", "ward"],
   ] as const)(
     'opens the referral drawer with "%s" auto-selected when clicking "%s"',
     async (source, label, expectedDestType) => {

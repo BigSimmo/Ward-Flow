@@ -540,7 +540,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 </span>
                 All wards
               </h1>
-              <span className={styles.pageSubtitleNote}>Statewide inpatient directory</span>
+              <span className={styles.pageSubtitleNote}>Every ward</span>
             </div>
 
             {/* Accessible text contract for automated suites */}
@@ -1074,7 +1074,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         <section className={styles.cardGrid} id="wardCardsGrid" aria-label="Inpatient Ward Cards">
           {filteredUnits.length === 0 ? (
             <div className={styles.emptyState}>
-              <h3 className={styles.emptyStateTitle}>No Matching Inpatient Units</h3>
+              <h3 className={styles.emptyStateTitle}>No wards match</h3>
               <p className={styles.emptyStateSub}>
                 No hospital wards matched your current active filter combination. Clear your search or reset filters to
                 view all statewide units.

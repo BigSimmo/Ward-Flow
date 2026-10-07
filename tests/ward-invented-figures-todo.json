@@ -8,31 +8,13 @@
   {
     "file": "alerts/ward-broadcast-model.ts",
     "rule": "hour window",
-    "text": "CRITICAL: Multiple patients exceeding 24 hours in emergency departments at Fiona",
+    "text": "Demo alert. Not a live broadcast. Several ED waits at Fiona Stanley, Sir Charles",
     "owner": "Remove invented data"
   },
   {
     "file": "alerts/ward-broadcast-model.ts",
     "rule": "hour window",
-    "text": "Metropolitan ED Inflow / Acute Overcrowding (>24h Wait)",
-    "owner": "Remove invented data"
-  },
-  {
-    "file": "alerts/ward-broadcast-model.ts",
-    "rule": "hour window",
-    "text": "REGIONAL LOGISTICS: Royal Flying Doctor Service (RFDS) and WACHS aeromedical pat",
-    "owner": "Remove invented data"
-  },
-  {
-    "file": "alerts/ward-broadcast-model.ts",
-    "rule": "typed percentage",
-    "text": "Metropolitan HDU 100% Occupancy (Statewide Bed Gridlock)",
-    "owner": "Remove invented data"
-  },
-  {
-    "file": "alerts/ward-broadcast-model.ts",
-    "rule": "typed percentage",
-    "text": "URGENT: Metropolitan High Dependency Unit (HDU) capacity at 100% across NMHS, SM",
+    "text": "Demo: ED waits over 24 hours",
     "owner": "Remove invented data"
   },
   {

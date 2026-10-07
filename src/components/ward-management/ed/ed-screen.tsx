@@ -1,5 +1,7 @@
 "use client";
 
+import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
@@ -2680,13 +2682,13 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         <section
           id="ward-ed-referral-intake"
-          aria-label="Raise a referral"
+          aria-label="New referral"
           hidden={!referralOpen}
           className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
           tabIndex={0}
         >
           <div className={styles.ph}>
-            <h2>Raise a referral</h2>
+            <h2>New referral</h2>
             <button
               type="button"
               className={styles.inboxBtn}
@@ -3007,7 +3009,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         <section className={styles.departmentWorkspace} aria-label="Selected department work">
           <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-attention-heading">
             <div className={styles.ph}>
-              <h2 id="ward-ed-attention-heading">Needs attention</h2>
+              <h2 id="ward-ed-attention-heading">Needs you</h2>
 
               <span className={styles.count}>
                 {priorityFlags.length === 0
@@ -3092,7 +3094,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           </section>
           <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-lists-heading">
             <div className={styles.ph}>
-              <h2 id="ward-ed-lists-heading">Department lists</h2>
+              <h2 id="ward-ed-lists-heading">Lists</h2>
 
               <span className={styles.count}>
                 {departmentListTab === "review"
@@ -3109,7 +3111,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             <div
               className={`${styles.tabbar} ${styles.departmentListTabs}`}
               role="tablist"
-              aria-label="Department lists"
+              aria-label="Lists"
               onKeyDown={onDepartmentListKeyDown}
             >
               <button
@@ -3293,6 +3295,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             View referral <span aria-hidden="true">›</span>
                           </button>
                           <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
+                            <ReferralIntakeSummary intake={referral.intake} />
                             <div className={styles.inboxActionRow}>
                               <button
                                 type="button"
@@ -4003,7 +4006,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           tabIndex={0}
         >
           <div className={styles.ph}>
-            <h2>ED psychiatry board</h2>
+            <h2>ED psychiatry</h2>
             <div className={styles.phActions}>
               <button
                 type="button"
@@ -5879,7 +5882,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                   ) : null}
                 </section>
                 <section className={styles.pxBlock}>
-                  <h3>Clinical notes & Handover</h3>
+                  <h3>Notes</h3>
                   <p className={styles.pxP}>
                     <b>Presenting:</b> {outstandingItem(selectedPatient).label} —{" "}
                     {outstandingItem(selectedPatient).detail}

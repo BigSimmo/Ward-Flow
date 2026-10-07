@@ -52,7 +52,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     fireEvent.change(templateSelect, { target: { value: "wa-forensic-full-advisory" } });
 
     const titleInput = screen.getByLabelText(/Directive Headline \/ Title/i) as HTMLInputElement;
-    expect(titleInput.value).toContain("State Forensic Service High-Security Beds");
+    expect(titleInput.value).toContain("Demo: forensic beds full");
 
     const messageInput = screen.getByLabelText(/Message Body & Clinical Instructions/i) as HTMLTextAreaElement;
     expect(messageInput.value).toContain("Graylands Frankland Centre secure beds fully committed");

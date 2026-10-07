@@ -88,7 +88,7 @@ const UNWIRED_CONTROLS: readonly UnwiredControl[] = [
   {
     rowTestId: "setting-auto-escalate-row",
     descTestId: "setting-auto-escalate-desc",
-    title: "Automated Multi-Service Escalation Broadcast",
+    title: "Text all services",
     role: "checkbox",
   },
   {
@@ -101,13 +101,13 @@ const UNWIRED_CONTROLS: readonly UnwiredControl[] = [
   {
     rowTestId: "setting-gender-mix-row",
     descTestId: "setting-gender-mix-desc",
-    title: "Gender Designation & Bay Integrity Enforcement",
+    title: "Bay and gender rules",
     role: "checkbox",
   },
   {
     rowTestId: "setting-acuity-ceiling-row",
     descTestId: "setting-acuity-ceiling-desc",
-    title: "Ward Acuity & 1:1 Specialling Ceiling",
+    title: "Specialling limit",
     role: "combobox",
   },
   // Domain 3 · Mental Health Act 2014 Parameters

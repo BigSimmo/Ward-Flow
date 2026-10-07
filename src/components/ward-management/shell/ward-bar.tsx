@@ -431,8 +431,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
-    (pathname === officerHref() ? "Transport Hub" : undefined) ??
-    (pathname === onCallHref() ? "On-call and contacts" : undefined) ??
+    (pathname === officerHref() ? "Transport" : undefined) ??
+    (pathname === onCallHref() ? "On-call" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
     (/^\/mockups\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
@@ -455,7 +455,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       if (place.kind === "team") return "Community Team";
     }
     if (/^\/mockups\/ward-flow\/board\//u.test(pathname)) return "Live Bed Board";
-    if (pathname === WARD_HOME_HREF || routeTitle === "Command") {
+    if (pathname === WARD_HOME_HREF || routeTitle === "Home") {
       return "Statewide Bed Coordination";
     }
     if (pathname.includes("/movements") || routeTitle === "Movements") {
@@ -471,9 +471,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       return "Transfer & Placement Delays";
     }
     if (pathname.includes("/governance") || routeTitle === "Governance") {
-      return "Registers & Compliance";
+      return "Today’s answers";
     }
-    if (pathname.includes("/transport") || routeTitle === "Transport Hub") {
+    if (pathname.includes("/transport") || routeTitle === "Transport") {
       return "Patient Transfers & Fleet";
     }
     if (pathname.includes("/network") || routeTitle === "Network") {
@@ -493,7 +493,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     if (routeTitle === "Settings") {
       return "System Preferences & Thresholds";
     }
-    if (routeTitle === "On-call and contacts") {
+    if (routeTitle === "On-call") {
       return "Directory & Rosters";
     }
     if (routeTitle === "Add a patient") {
@@ -1370,7 +1370,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                         {tone === "danger"
                           ? "Deadline or refused action"
                           : tone === "warning"
-                            ? "Needs attention"
+                            ? "Needs you"
                             : "Recorded update"}
                       </span>
                       <span className={styles.feedText}>{change.text}</span>
@@ -1390,7 +1390,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
                 </span>
                 <span>
                   <i data-tone="warning" aria-hidden="true" />
-                  Needs attention
+                  Needs you
                 </span>
                 <span>
                   <i data-tone="danger" aria-hidden="true" />
@@ -1617,7 +1617,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             >
               <Plus aria-hidden="true" />
               <span>
-                Raise a referral<em>Review details and choose a destination</em>
+                New referral<em>Review details and choose a destination</em>
               </span>
               <ChevronRight aria-hidden="true" />
             </button>

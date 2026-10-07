@@ -166,7 +166,7 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     // element is absent, not that the string never occurs anywhere on the page.
     renderCoordinatorRoute();
     expect(screen.queryByTestId("ward-bar-place")).toBeNull();
-    expect(screen.getByTestId("ward-bar-route-title")).toHaveTextContent("Command");
+    expect(screen.getByTestId("ward-bar-route-title")).toHaveTextContent("Home");
     expect(screen.getByTestId("ward-bar-subtitle")).toHaveTextContent("Statewide Bed Coordination");
     expect(screen.queryByTestId("ward-shell-header")).toBeNull();
     expect(screen.queryByTestId("ward-shell-place")).toBeNull();

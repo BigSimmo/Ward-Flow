@@ -64,12 +64,17 @@ type Graph = "catchment" | "radar" | "timeline" | "runway";
 const GRAPHS: { id: Graph; label: string; title: string; subtitle: string }[] = [
   {
     id: "catchment",
-    label: "Catchment pressure",
-    title: "Catchment pressure",
+    label: "By catchment",
+    title: "By catchment",
     subtitle: `Recorded waits, who was already waiting, and who crosses ${severeWaitHours}h and ${twelveWaitHours}h if nothing changes`,
   },
-  { id: "radar", label: "Crisis radar", title: "Crisis radar", subtitle: "Each person by recorded ED wait" },
-  { id: "timeline", label: "Wait Timeline", title: "Wait timeline", subtitle: "Elapsed wait and last recorded change" },
+  {
+    id: "radar",
+    label: "Legal & ED waits",
+    title: "Legal & ED waits",
+    subtitle: "Each person by recorded ED wait",
+  },
+  { id: "timeline", label: "Waits", title: "Waits", subtitle: "Elapsed wait and last recorded change" },
   {
     id: "runway",
     label: "Action runway",
@@ -521,7 +526,7 @@ function CatchmentPressure({ rows, now, onViewQueue }: Props) {
             setSelected(null);
             setHover(null);
           }}
-          label="Catchment pressure owner"
+          label="By catchment owner"
         />
         <div className={styles.serviceMarks} role="group" aria-label="Health service">
           <button type="button" aria-pressed={service === "all"} onClick={() => setService("all")}>

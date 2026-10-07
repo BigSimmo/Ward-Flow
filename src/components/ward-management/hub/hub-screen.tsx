@@ -302,7 +302,7 @@ export function HubScreen() {
             Command (`/mockups/ward-flow`) is the job board. An earlier "Start of shift" job strip
             made this page read as a second dashboard; the served drawing has no such strip.
           */}
-          <h1 className={styles.pageTitle}>Search hub</h1>
+          <h1 className={styles.pageTitle}>Places</h1>
         </header>
 
         <div className={styles.hubShell}>

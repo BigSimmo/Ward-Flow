@@ -56,7 +56,7 @@ import styles from "./ward-chrome-header.module.css";
 function roleAction(role: WardChromeRole): { href: string; label: string } {
   if (role === "ward") return { href: "/mockups/ward-flow/movements", label: "Answer bed offers" };
   if (role === "ed") return { href: WARD_REFERRAL_INTAKE_HREF, label: "New referral" };
-  return { href: "/mockups/ward-flow/referrals", label: "Referral board" };
+  return { href: "/mockups/ward-flow/referrals", label: "Referrals" };
 }
 
 /**

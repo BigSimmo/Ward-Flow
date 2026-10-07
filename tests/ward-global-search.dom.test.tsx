@@ -383,7 +383,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Fiona Stanley" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Emergency Departments")).toBeInTheDocument();
+    expect(within(popup).getAllByText("ED").length).toBeGreaterThan(0);
     const edItem = screen.getByTestId("ward-global-search-result-ed-fsh-ed");
     expect(edItem).toHaveAttribute("href", "/mockups/ward-flow/ed/fsh-ed");
     expect(edItem).toHaveTextContent("ED");
@@ -394,7 +394,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Mead Centre (Armadale)" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Community Teams")).toBeInTheDocument();
+    expect(within(popup).getAllByText("Community").length).toBeGreaterThan(0);
     const teamItem = screen.getByTestId("ward-global-search-result-community-mead-centre-armadale");
     expect(teamItem).toHaveAttribute("href", "/mockups/ward-flow/community/mead-centre-armadale");
     expect(teamItem).toHaveTextContent("Community");
@@ -405,7 +405,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Form 1A" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Legal Forms")).toBeInTheDocument();
+    expect(within(popup).getByText("Legal")).toBeInTheDocument();
     const formItem = screen.getByTestId("ward-global-search-result-form-1a");
     expect(formItem).toHaveAttribute("href", "/mockups/ward-flow/legal-forms");
     expect(formItem).toHaveTextContent("Legal Form");
@@ -416,7 +416,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Shift Handover" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Core Views")).toBeInTheDocument();
+    expect(within(popup).getByText("Screens")).toBeInTheDocument();
     const viewItem = screen.getByTestId("ward-global-search-result-view-handover");
     expect(viewItem).toHaveAttribute("href", "/mockups/ward-flow/handover");
     expect(viewItem).toHaveTextContent("View");
@@ -427,7 +427,8 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "task" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Action Tasks")).toBeInTheDocument();
+    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Tasks");
+    expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Tasks");
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
     expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/mockups\/ward-flow\/movements\//));
