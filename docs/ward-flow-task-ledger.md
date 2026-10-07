@@ -8416,3 +8416,41 @@ Completed local mockup, awaiting owner design review. Owner requested a mockup b
 Further polish for WF-TOOLS-PREVIEW-20261007: refined the five-option glass selector, proportionate icon wells and active indicator; added tab/tabpanel semantics, roving focus, Left/Right/Home/End navigation; harmonised nested cards, figure category selectors, directory search, utility selection and coordination actions. Retained the layout and shared calculations. Browser checks passed for all five desktop/mobile sections, keyboard navigation, figure filters, capacity calculations, contact search and telephone links, light/dark rendering, and mobile bounds, with no browser errors. Final per-tab screenshots are `/workspace/artifacts/tools-polished-{overview,figures,utilities,directory,coordination}.png`. Contact coverage remains bounded by published repository reference data; no operational directory completeness is claimed.
 
 Compact-figures refinement for WF-TOOLS-PREVIEW-20261007: figure cards now place the value beside the label and measure 53–58px tall on desktop (previously at least 100px). Tightened group spacing and figure heading; all 16 metrics fit without body scrolling at 1440×1000. The Figures drawer sizes to content when a category is selected, removing unused space below. Other panels retain their existing geometry. Browser checks passed for category filtering, content height and mobile overflow; scoped ESLint passed. Evidence: `/workspace/artifacts/tools-compact-figures.png`, `/workspace/artifacts/tools-compact-capacity.png`, `/workspace/artifacts/tools-compact-figures-mobile.png`.
+
+### TASK-DRAWER-POLISH-2026-10-07 — compact patient task inbox
+
+Completed local implementation on `codex/tasks-polish`, based on verified Ward Flow main
+`20105cfe75cf0a0f8be80d270cb4d25afb593aff`. Scope: retain the accepted drawer and palette while
+removing task search, tightening spacing and curves, bordering action buttons, and refining the
+state select and urgency badges. Explicit patient resolution supplies name and UMRN, origin,
+current stage and recorded escalation; redundant owner text is omitted. Task category icons and
+separate Critical/Past due labels avoid describing every critical issue as an overdue deadline.
+
+Refer opens the same patient's live ward shortlist; Contact opens their coordination contacts.
+Escalate records a contact through `RECORD_ESCALATION` and does not transmit a message.
+Acknowledged and completed states are selectable. All currently derived categories are standing
+facts: acknowledgement never resolves them and the completed view explains its empty state.
+Existing commitment completion/reopening controls and reducer restrictions remain intact.
+
+Validation: 40 tests passed across task drawer, shell role visibility, patient flight deck and
+inbox reducer suites; full TypeScript check and scoped ESLint passed. Chromium interaction and
+visual checks covered light/dark desktop, narrow/short phones, actual touch emulation with 48px
+controls, search removal, filters, acknowledgement retained during client navigation, escalation
+recording, referral/contact destinations, scrolling, overflow and keyboard focus return. Evidence
+is local to this worktree at `.local/tasks-polish/result.json` and its accompanying screenshots.
+The synthetic provider's existing session behaviour is retained; no save/reload or backend
+persistence claim is made. Local engineering only; no publication or deployment performed.
+
+Follow-up on the same task, 7 October 2026: added restrained ambient elevation, theme-aware
+inner highlights, frosted surfaces and consistent header alignment without changing the task
+layout or actions. The task Sheet has a moderate 20px corner, with proportionally smaller card,
+icon and button corners. Forced-colour controls retain explicit borders.
+
+Production `npm run build` passed (installed Next.js 16.3.3, including its TypeScript check and
+49 generated static pages). Reused the passing 40-test behaviour evidence because this follow-up
+changes only CSS. Re-ran the browser interaction/visual probe on the refined source: light/dark
+desktop, narrow/short phones, real touch emulation, 48px touch targets, state filters, acknowledgement,
+escalation, referral/contact navigation, overflow, scrolling and keyboard focus return passed
+with no page errors. Updated screenshots and `.local/tasks-polish/result.json`; build output is
+`.local/tasks-polish/build.log`. Publication to a task-branch PR is now explicitly requested;
+merge/deployment are not part of this task.
