@@ -2,6 +2,13 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+// The answer view's back link goes through contextual history (ContextualBackLink), which reads
+// the app router; jsdom has none mounted.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -232,8 +239,8 @@ describe("Ward answer current facts", () => {
     renderAnswer();
 
     // Initially has an incoming movement (WF-002, urgency tier 1)
-    expect(screen.getByText("Emergency Department Origin")).toBeInTheDocument();
-    expect(screen.queryByText("0 Pending")).not.toBeInTheDocument();
+    expect(screen.getByText("Emergency department origin")).toBeInTheDocument();
+    expect(screen.queryByText("none waiting")).not.toBeInTheDocument();
 
     // Decline the incoming movement so incoming is empty
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${MOVEMENT.id}`));
@@ -244,12 +251,11 @@ describe("Ward answer current facts", () => {
     fireEvent.click(within(form).getByRole("radio", { name: "capability mismatch" }));
     fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
 
-    // Empty state: panel header shows 0 Pending with neutral tone and Bed request title
-    const zeroPendingBadge = screen.getByText("0 Pending");
-    expect(zeroPendingBadge).toBeInTheDocument();
-    expect(zeroPendingBadge).toHaveAttribute("data-tone", "neutral");
+    // Empty state: the v6 card head reads "Bed request" with a quiet "none waiting" count
+    // (design/pages-v6/Ward_answer.png), not a coloured badge.
+    expect(screen.getByText("none waiting")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bed request" })).toBeInTheDocument();
-    expect(screen.queryByText("Emergency Department Origin")).not.toBeInTheDocument();
+    expect(screen.queryByText("Emergency department origin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Tier\b/)).not.toBeInTheDocument();
   });
 });

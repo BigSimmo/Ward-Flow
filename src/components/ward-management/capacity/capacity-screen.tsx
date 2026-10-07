@@ -7,11 +7,13 @@ import { LEAVING_DESTINATIONS } from "../ward-admissions";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { FilterChip, Hero, HeroStat, SrOnly, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
+import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
-import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
+import { WardChip } from "@/components/ward-management/ward-chip";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -78,7 +80,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  */
 export function CapacityScreen() {
   const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration } = useWardFlow();
-  const now = useWardFlowClock();
+  const { now, paused, togglePause } = usePageLive();
   const patientOf = usePatientOf();
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -289,7 +291,7 @@ export function CapacityScreen() {
   const excludedBeyondToday = releasesBeyondToday(bedReleases, now);
 
   return (
-    <div className={styles.screen} data-testid="ward-capacity-page" data-ward-design="third-edition">
+    <div className={styles.screen} data-testid="ward-capacity-page" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         {/*
           🔴 **THE SYNTHETIC-DATA DISCLOSURE, ADDED 2026-09-06.** This screen shipped without
@@ -303,98 +305,68 @@ export function CapacityScreen() {
           every ward ROUTE and requires the tree it renders to disclose somewhere — a route is
           what a reader opens, and a component nothing routes to cannot disclose to anybody.
         */}
-        <header className={styles.pageHeader}>
-          <div className={styles.pageTitleBlock}>
-            <h1 className={styles.pageTitle}>Capacity</h1>
-            <span className={styles.pageSubtitle}>Every ward · synthetic current state</span>
-            {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
-             *  waiting in ED and the top delays, scoped to the service chosen here. */}
-            <BedMeetingSheetLauncher
-              now={now}
-              buildSheet={() =>
-                bedMeetingSheet({
-                  units,
-                  movements,
-                  bedReleases,
-                  admissions,
-                  leaveBeds,
-                  now,
-                  service,
-                  nameOf: (movement) => patientOf(movement).displayName,
-                })
-              }
-            />
-          </div>
-
-          <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">
-            <span
-              className={styles.telemetryLive}
-              role="img"
-              aria-label="Live synthetic board clock"
-              title="Live synthetic board clock; capacity follows recorded updates"
-            >
-              <span className={styles.liveDot} data-live="true" aria-hidden="true" />
-            </span>
-            <button
-              type="button"
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => highlightWards("all")}
-              aria-pressed={networkFilterId === "all"}
-              title="Show the ward table and clear highlights"
-            >
-              <span className={styles.telemetryLabel}>Wards</span>
-              <span className={styles.telemetryVal}>{networkRows.length}</span>
-              <span className={styles.telemetrySub}>
-                {networkServiceGroups.filter((group) => group.wards.length > 0).length} services
-              </span>
-            </button>
-
-            <div
-              className={styles.telemetryItem}
-              title={`${netTotals.beds} total staffed beds, ${totalOccupied} occupied (${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% occupancy)`}
-            >
-              <span className={styles.telemetryLabel}>Beds</span>
-              <span className={styles.telemetryVal}>{netTotals.beds}</span>
-              <div
-                className={styles.microMeter}
-                aria-hidden="true"
-                title={`${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% Occupancy`}
+        <Hero
+          className={styles.capacityHero}
+          level={1}
+          eyebrow="Capacity"
+          title={
+            <>
+              <SrOnly>Capacity, </SrOnly>
+              {netTotals.ready} beds ready of {netTotals.beds}
+            </>
+          }
+          stats={
+            <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
+              <button
+                type="button"
+                className={styles.heroStatButton}
+                onClick={() => highlightWards("all")}
+                aria-pressed={networkFilterId === "all"}
+                title="Show the ward table and clear highlights"
               >
-                <div
-                  className={styles.microMeterBar}
-                  style={{
-                    width: `${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}%`,
-                  }}
-                />
-              </div>
-              <span className={styles.telemetrySub}>
-                {netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% occ
-              </span>
+                <HeroStat value={networkRows.length} label="Wards" />
+              </button>
+              <HeroStat
+                value={`${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : "0.0"}%`}
+                label="Occupied"
+              />
+              <button
+                type="button"
+                className={styles.heroStatButton}
+                onClick={() => highlightWards("locked-ready")}
+                aria-pressed={networkFilterId === "locked-ready"}
+                title="Highlight wards with locked beds ready in the ward table"
+              >
+                <HeroStat value={totalLockedReady} label="Locked ready" />
+              </button>
+              <HeroStat value={totalOpenReady} label="Open ready" />
+              <HeroStat value={netTotals.pendingPreparation ?? 0} label="Being made ready" tone="neutral" />
             </div>
-
-            <button
-              type="button"
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => highlightWards("ready")}
-              aria-pressed={networkFilterId === "ready"}
-              title="Highlight wards with beds ready in the ward table"
-            >
-              <span className={styles.telemetryLabel}>Available</span>
-              <span className={styles.telemetryPillGood}>{netTotals.ready} Ready</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => highlightWards("locked-ready")}
-              aria-pressed={networkFilterId === "locked-ready"}
-              title="Highlight wards with locked beds ready in the ward table"
-            >
-              <span className={styles.telemetryLabel}>Locked ready</span>
-              <span className={styles.telemetryPillDanger}>{totalLockedReady}</span>
-            </button>
-          </div>
-        </header>
+          }
+          aside={
+            <>
+              <PageLiveChip paused={paused} onTogglePause={togglePause} />
+              {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
+               *  waiting in ED and the top delays, scoped to the service chosen here. */}
+              <BedMeetingSheetLauncher
+                now={now}
+                buttonClassName={buttonClass({ variant: "light" })}
+                buildSheet={() =>
+                  bedMeetingSheet({
+                    units,
+                    movements,
+                    bedReleases,
+                    admissions,
+                    leaveBeds,
+                    now,
+                    service,
+                    nameOf: (movement) => patientOf(movement).displayName,
+                  })
+                }
+              />
+            </>
+          }
+        />
 
         {/*
           🔴 **TASK 2, PART ONE — REORDERED ON THE OWNER'S OWN INSTRUCTION, 2026-09-07.**
@@ -486,12 +458,7 @@ export function CapacityScreen() {
                   data-testid="ward-capacity-gap-total"
                 >
                   <th scope="row">
-                    <div className={styles.gapHeader}>
-                      <span className={styles.cohortIconWrap} aria-hidden="true">
-                        <CohortIcon need="All four together" />
-                      </span>
-                      <strong className={styles.gapNeedText}>All four together</strong>
-                    </div>
+                    <strong className={styles.gapNeedText}>All four together</strong>
                   </th>
                   <td data-testid="ward-capacity-waiting">{gapTotals.waiting}</td>
                   <td data-testid="ward-capacity-beds-that-fit">{gapTotals.bedsThatFit}</td>
@@ -547,6 +514,28 @@ export function CapacityScreen() {
                   service={service}
                 />
               </div>
+              <div className={styles.highlightRow} role="group" aria-label="Ward table shortcuts">
+                <span className={styles.highlightLabel} aria-hidden="true">
+                  Highlight
+                </span>
+                {networkFilters.slice(1).map((filter) => (
+                  <FilterChip
+                    key={filter.id}
+                    pressed={networkFilterId === filter.id}
+                    onPressedChange={(pressed) => highlightWards(pressed ? filter.id : "all")}
+                    count={scopedNetworkRows.filter(filter.predicate).length}
+                  >
+                    {filter.id === "ready"
+                      ? "Bed ready"
+                      : filter.id === "locked-ready"
+                        ? "Locked ready"
+                        : "Unconfirmed"}
+                  </FilterChip>
+                ))}
+                <Link className={styles.highlightLink} href="/mockups/ward-flow/discharges">
+                  Discharge board
+                </Link>
+              </div>
             </WardPanel>
 
             <aside className={styles.secondary} aria-label="Network summary and ward detail">
@@ -554,6 +543,7 @@ export function CapacityScreen() {
                 <CapacityWardSidebar
                   key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}
                   row={selectedRow}
+                  now={now}
                   onBack={clearWard}
                 />
               ) : (
@@ -564,16 +554,6 @@ export function CapacityScreen() {
                     </h2>
                     <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
                   </div>
-                  <ReadyNowSection
-                    service={service}
-                    netTotals={netTotals}
-                    totalLockedReady={totalLockedReady}
-                    totalOpenReady={totalOpenReady}
-                    scopedReady={scopedReady}
-                    scopedLockedReady={scopedLockedReady}
-                    scopedOpenReady={scopedOpenReady}
-                    scopedPendingPreparation={scopedPendingPreparation}
-                  />
                   <BedsForecastPanel forecast={forecast} />
                   <CapacityTabs
                     id="capacity-network"
@@ -679,28 +659,16 @@ export function CapacityScreen() {
                       </>
                     )}
                   </div>
-                  <div className={styles.networkActions} aria-label="Ward table shortcuts">
-                    {networkFilters.slice(1).map((filter) => (
-                      <button
-                        type="button"
-                        key={filter.id}
-                        aria-pressed={networkFilterId === filter.id}
-                        onClick={() => highlightWards(filter.id)}
-                      >
-                        <span>
-                          {filter.id === "ready"
-                            ? "Highlight ready wards"
-                            : filter.id === "locked-ready"
-                              ? "Locked beds ready"
-                              : "Check confirmations"}
-                        </span>
-                        <strong>{scopedNetworkRows.filter(filter.predicate).length}</strong>
-                      </button>
-                    ))}
-                    <Link href="/mockups/ward-flow/discharges">
-                      Open discharge board <span aria-hidden="true">→</span>
-                    </Link>
-                  </div>
+                  <ReadyNowSection
+                    service={service}
+                    netTotals={netTotals}
+                    totalLockedReady={totalLockedReady}
+                    totalOpenReady={totalOpenReady}
+                    scopedReady={scopedReady}
+                    scopedLockedReady={scopedLockedReady}
+                    scopedOpenReady={scopedOpenReady}
+                    scopedPendingPreparation={scopedPendingPreparation}
+                  />
                 </>
               )}
             </aside>
@@ -995,91 +963,18 @@ function formatGap(gap: number): string {
  */
 function GapWord({ gap }: { gap: number }) {
   const word = gapWord(gap);
-  return <WardChip level={word.level}>{word.text}</WardChip>;
-}
-
-function gapWord(gap: number): { level: WardChipLevel; text: string } {
-  if (gap < 0) return { level: "urgent", text: "Shortfall" };
-  if (gap === 0) return { level: "routine", text: "Exactly enough" };
-  return { level: "accepted", text: "Spare capacity" };
-}
-
-function CohortIcon({ need }: { need: string }) {
-  const n = need.toLowerCase();
-  if (n.includes("locked")) {
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    );
-  }
-  if (n.includes("open")) {
-    return (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        aria-hidden="true"
-      >
-        <path d="M4 18v3M20 18v3M2 12h20M4 12V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4" />
-      </svg>
-    );
-  }
-  if (n.includes("older")) {
-    return (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="7" r="4" />
-        <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
-      </svg>
-    );
-  }
-  if (n.includes("youth")) {
-    return (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="8" r="5" />
-        <path d="M12 13v8M9 17l3-4 3 4" />
-      </svg>
-    );
-  }
   return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="2" y1="12" x2="22" y2="12" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
+    <span className={styles.gapWord}>
+      <StatusGlyph tone={word.tone} size={9} />
+      {word.text}
+    </span>
   );
+}
+
+function gapWord(gap: number): { tone: WfTone; text: string } {
+  if (gap < 0) return { tone: "warning", text: "Short" };
+  if (gap === 0) return { tone: "success", text: "Exactly enough" };
+  return { tone: "success", text: "Spare" };
 }
 
 function GapRow({ row }: { row: BedKindGap }) {
@@ -1092,13 +987,8 @@ function GapRow({ row }: { row: BedKindGap }) {
       className={isDeficit ? styles.gapCardDeficit : isBalanced ? styles.gapCardBalanced : styles.gapCardSurplus}
     >
       <td>
-        <div className={styles.gapHeader}>
-          <span className={styles.cohortIconWrap} aria-hidden="true">
-            <CohortIcon need={row.need} />
-          </span>
-          <strong className={styles.gapNeedText}>{row.need}</strong>
-        </div>
-        <div className={styles.who}>{row.who}</div>
+        <strong className={styles.gapNeedText}>{row.need}</strong>
+        <span className={styles.gapWho}>{row.who}</span>
       </td>
       <td data-testid="ward-capacity-waiting">{row.waiting}</td>
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
@@ -1737,10 +1627,10 @@ function CapacityTabs({
 }
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
-function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () => void }) {
+/** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
+function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlow();
-  const now = useWardFlowClock();
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);

@@ -497,8 +497,9 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
 
       expect(hud).toBeDefined();
       expect(gapTable).toBeDefined();
-      expect(within(hud).getByRole("img", { name: "Live synthetic board clock" })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /available\s*\d+\s+ready/iu })).toBeDefined();
+      // v6: the hero carries the Live chip with its pause control, and the counts are hero stats.
+      expect(screen.getByRole("button", { name: "Pause live updates" })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /^\d+\s*locked ready$/iu })).toBeDefined();
     });
   });
 });

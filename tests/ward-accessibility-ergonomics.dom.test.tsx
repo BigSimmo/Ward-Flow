@@ -4,6 +4,13 @@ import { readFileSync } from "node:fs";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// The answer view's back link goes through contextual history (ContextualBackLink), which reads
+// the app router; jsdom has none mounted.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -271,7 +278,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       const onCallCss = readFileSync("src/components/ward-management/on-call/on-call.module.css", "utf8");
       expect(onCallCss).toMatch(/\.routingLink\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(onCallCss).toMatch(/\.filterBtn,[\s\S]*?min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      // v6: the service filter is the shared HeroTrack (heights from --wf-h-*, lifted to 44px on
+      // coarse pointers); the row's own star control sizes from the same control token.
+      expect(onCallCss).toMatch(/\.favouriteButton\s*\{[^}]*height:\s*var\(--wf-h-sm\);/);
     });
   });
 

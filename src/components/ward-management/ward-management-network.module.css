@@ -1,23 +1,37 @@
 .networkPage {
   composes: descendantKill from "./ward-reduced-motion.module.css";
   composes: wardTokens from "./ward-tokens.module.css";
-  --net-canvas: var(--surface);
-  --net-subtle: var(--surface-2);
-  --net-chrome: var(--surface-2);
-  --net-border: var(--neutral-500);
-  --net-border-strong: var(--text-muted);
-  --net-text: var(--ink);
-  --net-heading: var(--ink);
-  --net-muted: var(--muted);
-  --net-blue: var(--accent);
-  --net-blue-soft: var(--accent-soft);
-  --net-blue-border: var(--line-strong);
-  --net-good: var(--good);
-  --net-good-soft: var(--good-soft);
-  --net-warn: var(--warn);
-  --net-warn-soft: var(--warn-soft);
-  --net-danger: var(--danger);
-  --net-danger-soft: var(--danger-soft);
+  /* v6: the placement workspace reads the v6 tokens through its own aliases, so its many rules
+   * re-skin without a second copy of each. Soft tints map to plain surfaces: colour is a glyph,
+   * never a fill. */
+  --net-canvas: var(--wf-surface);
+  --net-subtle: var(--wf-surface-2);
+  --net-chrome: var(--wf-surface-2);
+  --net-border: var(--wf-line);
+  --net-border-strong: var(--wf-line-3);
+  --net-text: var(--wf-ink-1);
+  --net-heading: var(--wf-ink-1);
+  --net-muted: var(--wf-ink-2);
+  --net-blue: var(--wf-data-1);
+  --net-blue-soft: var(--wf-selected);
+  --net-blue-border: var(--wf-line-3);
+  --net-good: var(--wf-success-ink);
+  --net-good-soft: var(--wf-surface-2);
+  --net-warn: var(--wf-warning-ink);
+  --net-warn-soft: var(--wf-surface-2);
+  --net-danger: var(--wf-danger-ink);
+  --net-danger-soft: var(--wf-surface-2);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-3);
+  --ink: var(--wf-ink-1);
+  --muted: var(--wf-ink-2);
+  --e0: var(--wf-e1);
+  --radius-lg: var(--wf-r-lg);
+  --radius-md: var(--wf-r-md);
+  --radius-sm: var(--wf-r-sm);
+  font-family: var(--wf-font);
   --net-space-2: var(--ward-space-2);
   --net-space-4: var(--ward-space-4);
   --net-space-6: var(--ward-space-6);
@@ -1458,5 +1472,116 @@
     height: auto;
     max-height: none;
     overflow: visible;
+  }
+}
+
+/* v6 placement workspace (design/pages-v6/Network-placement.png): stage tiles, the waiting list
+ * beside the shortlist, and the operational constellation below them at full width. */
+@media screen {
+  .pipeline {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    box-shadow: var(--wf-e1);
+  }
+
+  .pipelineStage,
+  .pipelineStage:first-child {
+    align-self: stretch;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .pipelineStage[aria-pressed="true"] {
+    outline: 0;
+    border-color: var(--wf-line-3);
+    background: var(--wf-selected);
+  }
+
+  .pipelineStage:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .pipelineLabel,
+  .pipelineSplit {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .pipelineStage strong,
+  .pipelineLeftPathway strong {
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-20);
+    line-height: var(--wf-lh-20);
+    font-weight: 600;
+  }
+
+  .pipelineLeftPathway {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .queuePanel,
+  .canvasPanel,
+  .shortlistPanel {
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    box-shadow: var(--wf-e1);
+  }
+
+  .panelHeader h2 {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+  }
+
+  .networkGrid {
+    grid-template-columns: 22.5rem minmax(0, 1fr);
+    grid-template-areas:
+      "queue shortlist"
+      "canvas canvas";
+  }
+
+  .networkPage[data-shortlist="collapsed"] .networkGrid {
+    grid-template-columns: 22.5rem minmax(0, 1fr);
+    grid-template-areas: "queue canvas";
+  }
+
+  .queueColumn {
+    grid-area: queue;
+  }
+
+  .canvasPanel {
+    grid-area: canvas;
+  }
+
+  .shortlistPanel {
+    grid-area: shortlist;
+  }
+
+  @media (max-width: 80rem) {
+    .networkGrid,
+    .networkPage[data-shortlist="collapsed"] .networkGrid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "queue"
+        "shortlist"
+        "canvas";
+    }
+  }
+
+  @media (min-width: 80.001rem) {
+    .networkPage {
+      height: auto;
+    }
+
+    .queueColumn,
+    .canvasPanel,
+    .shortlistPanel {
+      height: auto;
+      max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    }
   }
 }

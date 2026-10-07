@@ -71,7 +71,7 @@ describe("a movement linked to nobody says so", () => {
 
   it("the handover card for that movement says the patient is unknown and the record number is not recorded", () => {
     render(<HandoverPage />);
-    fireEvent.click(screen.getByRole("radio", { name: /ISBAR Cards/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /ISBAR cards/ }));
     const card = screen.getByTestId(`patient-card-${UNLINKED.id}`);
     expect(card.textContent).toContain("Unknown Patient");
     expect(card.textContent).toContain("UMRN not recorded");
