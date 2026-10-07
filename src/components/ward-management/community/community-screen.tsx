@@ -7,6 +7,8 @@ import { CommunityFollowUp } from "./community-follow-up";
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode } from "react";
 
 import Link from "next/link";
+import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
+import { Badge, Button, Count, Hero, HeroStat, Icon, Menu, Popover, SrOnly, TextInput } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import {
@@ -84,6 +86,7 @@ import {
   type PatientId,
 } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
+import v6 from "./community-team-v6.module.css";
 import {
   DEMO_COMMUNITY_REFERRALS,
   DEMO_COMMUNITY_INPATIENTS,
@@ -98,6 +101,18 @@ const NOT_RECORDED_IN_WARD_FLOW = "Not recorded in Ward Flow";
 
 /** Search results shown at once; the rest are reached by typing more of the name or UMRN. */
 const SEARCH_RESULT_LIMIT = 8;
+
+/**
+ * The hero's four lists, in the mockup's order. Ids are the panels' own. The team's own facts (how
+ * to reach it, the sample deployment) are no longer a fifth tab: the v6 page keeps them in view
+ * under every list, as the mockup's side column does.
+ */
+const TEAM_TABS = [
+  { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
+  { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
+  { id: "tab-egress", buttonId: "tabBtn-egress", label: "Expected back", section: "ward-community-expected-back" },
+  { id: "tab-caseload", buttonId: "tabBtn-caseload", label: "Caseload and CTOs", section: "section-caseload" },
+] as const;
 
 /**
  * 🔴 **THE CONFIRM CONTROL IS WIRED — engine fix, 2026-09-17, closing audit finding ISSUE-P1-83
@@ -190,7 +205,7 @@ function transportAnswersBlockedReason(draft: TransportDraftState, now: Instant)
   return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
 }
 
-type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload" | "tab-team";
+type ActiveTabType = "tab-triage" | "tab-inpatients" | "tab-expected" | "tab-egress" | "tab-caseload";
 
 type DrawerType =
   | "px"
@@ -205,7 +220,6 @@ type DrawerType =
   | "toolsDrawer"
   | null;
 type ModalType = "intake" | "contact" | "handover" | "crisis" | null;
-type ServiceFilterType = "east" | "south" | "north" | "all";
 
 /**
  * Clinical contact is the contact itself, not a sent message — team, time, and role only. Wired only
@@ -228,19 +242,6 @@ function recordClinicalContact(
     return null;
   }
   return { role, at: now, teamId };
-}
-
-function serviceFilterLabel(service: ServiceFilterType): string {
-  switch (service) {
-    case "east":
-      return "East Metropolitan (EMHS)";
-    case "south":
-      return "South Metropolitan (SMHS)";
-    case "north":
-      return "North Metropolitan (NMHS)";
-    case "all":
-      return "All WA Services";
-  }
 }
 
 type CaseloadFilter = "all" | "5A" | "5B" | "cto" | "high" | "depot";
@@ -453,11 +454,7 @@ export function CommunityScreen({
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
-  const [teamMenuOpen, setTeamMenuOpen] = useState<boolean>(false);
   const [triageFilter, setTriageFilter] = useState<"all" | "p1" | "p2" | "p3" | "ed">("all");
-  const [serviceFilter, setServiceFilter] = useState<ServiceFilterType>("east");
-  const [serviceMenuOpen, setServiceMenuOpen] = useState<boolean>(false);
-  const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [caseloadFilter, setCaseloadFilter] = useState<CaseloadFilter>("all");
   // The search and the dossier read the patient records themselves. Until 25 Sept 2026 both read a
@@ -475,13 +472,6 @@ export function CommunityScreen({
 
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode = demonstration && !hasExplicitProps;
-
-  // Apply dark theme by default on initial mount for prototype demonstration
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      applyAppearance("dark");
-    }
-  }, []);
 
   const demoTeamReferrals = useMemo(() => {
     return DEMO_COMMUNITY_REFERRALS.filter((r) => {
@@ -543,14 +533,6 @@ export function CommunityScreen({
     }
   }, []);
 
-  function handleToggleTheme() {
-    if (typeof document === "undefined") return;
-    const cur = document.documentElement.getAttribute("data-theme") || "light";
-    const next = cur === "dark" ? "light" : "dark";
-    applyAppearance(next);
-    setToastMessage(`Theme switched to ${next} mode.`);
-  }
-
   function handleSetThemeExplicit(theme: "light" | "dark" | "auto") {
     applyAppearance(theme);
     setToastMessage(`Appearance set to ${theme}.`);
@@ -583,20 +565,15 @@ export function CommunityScreen({
         setActiveModal(null);
         setActiveModalType(null);
         setActiveDrawer(null);
-        setSearchOpen(false);
-        setServiceMenuOpen(false);
-        setTeamMenuOpen(false);
       } else if (
         e.key === "/" &&
         (e.target as HTMLElement)?.tagName !== "INPUT" &&
         (e.target as HTMLElement)?.tagName !== "TEXTAREA"
       ) {
         e.preventDefault();
-        setSearchOpen(true);
-        setTimeout(() => {
-          const input = document.getElementById("q");
-          if (input) input.focus();
-        }, 10);
+        // The hero's search popover opens from its own trigger and focuses its input itself.
+        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
+        document.getElementById("q")?.focus();
       } else if (e.key === "[") {
         const current = document.documentElement.getAttribute("data-rail");
         document.documentElement.setAttribute("data-rail", current === "closed" ? "open" : "closed");
@@ -907,6 +884,7 @@ export function CommunityScreen({
   // answered — oldest raised first, so position alone carries "who has waited longest" with no
   // colour or threshold doing it instead.
   const waitingReferrals = [...referralsWaitingOnTeam(sourceReferrals, team)].sort((a, b) => a.raisedAt - b.raisedAt);
+  const urgentWaitingCount = waitingReferrals.filter((r) => r.urgency === 1 || r.urgency === 2).length;
   const p1ReferralsCount = waitingReferrals.filter((r) => r.urgency === 1).length;
   const p2ReferralsCount = waitingReferrals.filter((r) => r.urgency === 2).length;
   const p3ReferralsCount = waitingReferrals.filter((r) => r.urgency === 3).length;
@@ -1039,602 +1017,257 @@ export function CommunityScreen({
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
-        <div className={styles.standing}>
-          {/* Accessible screen reader markers and statutory limits check */}
-          {isDemoMode && (
-            <div className="sr-only">
-              <span>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</span>
-            </div>
-          )}
-
-          {!isDemoMode && (
-            <>
-              <header className={`${styles.pageHeader} ${styles.sovereignHeader}`} role="banner">
-                <div className={styles.hdrPlace}>
-                  {/* "What kind of thing it is" — the identity block the second-edition layout asks for,
-                  above the team's own name. A category label, not a claim, so it carries no sentence
-                  this file's own rules govern the wording of. */}
-                  <p className={styles.eyebrow}>Community team</p>
-                  <h1 id="pageTitle" className={styles.pageTitle}>
-                    {isDemoMode && team.id === "fremantle"
-                      ? "Fremantle Hospital · Alma Street · Fremantle Adult CMHT (SMHS)"
-                      : team.name}
-                  </h1>
-                  <span className="sr-only">
-                    The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.
-                  </span>
-                  <span
-                    id="hdrTelemetryChip"
-                    className={styles.hdrChip}
-                    title="Synthetic clinical demonstration data only. Not a medical device."
-                  >
-                    Synthetic prototype
-                  </span>
-                </div>
-
-                <details className={styles.exampleMenu}>
-                  <summary className={styles.exampleMenuSummary}>Illustrative drawers</summary>
-                  <div className={styles.exampleMenuActions}>
-                    <p>Sample interface content. These items are not a live team feed.</p>
-                    <button type="button" className={styles.iconBtn} onClick={() => setActiveDrawer("activityDrawer")}>
-                      Activity sample
-                    </button>
-                    <button type="button" className={styles.iconBtn} onClick={() => setActiveDrawer("tasksDrawer")}>
-                      Tasks sample
-                    </button>
-                    <button type="button" className={styles.iconBtn} onClick={() => setActiveDrawer("toolsDrawer")}>
-                      Tools sample
-                    </button>
-                  </div>
-                </details>
-
-                <div className={styles.menu} id="svcMenu">
+        <div className={v6.standing}>
+          {/*
+           * THE V6 HERO, 7 October 2026 — `design/pages-v6/CommunityTeam.png`. One band carries the
+           * team's name with its team menu, the six counts, the four tabs and the four team actions.
+           * It replaces the inner header (whose Activity, Tasks, Tools and Theme buttons repeated the
+           * shell's own), the action bar and the telemetry ribbon. Every count reads the same
+           * expression the ribbon and tab badges read, so no figure changed.
+           */}
+          <Hero
+            level={1}
+            eyebrow="Community team"
+            title={team.name}
+            titleMeta={
+              <Popover
+                label="WA community mental health teams"
+                panelClassName={v6.teamPanel}
+                trigger={(props) => (
                   <button
+                    {...props}
                     type="button"
-                    className={styles.menuBtn}
-                    id="svcBtn"
-                    onClick={() => setServiceMenuOpen(!serviceMenuOpen)}
-                    aria-expanded={serviceMenuOpen}
+                    className={v6.heroMenuButton}
+                    aria-label="Change team"
+                    title="Switch community team"
                   >
-                    <span className={styles.dotSvc} data-svc={serviceFilter} id="svcDot" />
-                    <span id="svcLabel">{serviceFilterLabel(serviceFilter)}</span>
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="12"
-                      height="12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 6l4 4 4-4" />
-                    </svg>
+                    <Icon icon={ChevronDown} size={14} />
                   </button>
-                  {serviceMenuOpen && (
-                    <div className={styles.menuDropdown}>
-                      <p className={styles.menuHead}>Filter Service Scope</p>
-                      <button
-                        type="button"
-                        className={styles.menuItem}
-                        aria-pressed={serviceFilter === "east"}
-                        onClick={() => {
-                          setServiceFilter("east");
-                          setServiceMenuOpen(false);
-                        }}
-                      >
-                        <span>East Metropolitan (EMHS)</span>
-                        <span className={styles.dotSvc} data-svc="east" />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.menuItem}
-                        aria-pressed={serviceFilter === "south"}
-                        onClick={() => {
-                          setServiceFilter("south");
-                          setServiceMenuOpen(false);
-                        }}
-                      >
-                        <span>South Metropolitan (SMHS)</span>
-                        <span className={styles.dotSvc} data-svc="south" />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.menuItem}
-                        aria-pressed={serviceFilter === "north"}
-                        onClick={() => {
-                          setServiceFilter("north");
-                          setServiceMenuOpen(false);
-                        }}
-                      >
-                        <span>North Metropolitan (NMHS)</span>
-                        <span className={styles.dotSvc} data-svc="north" />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.menuItem}
-                        aria-pressed={serviceFilter === "all"}
-                        onClick={() => {
-                          setServiceFilter("all");
-                          setServiceMenuOpen(false);
-                        }}
-                      >
-                        <span>All WA Services</span>
-                        <span className={styles.dotSvc} data-svc="all" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.hdrEnd}>
-                  <button
-                    type="button"
-                    className={styles.iconBtn}
-                    onClick={() => setActiveDrawer("activityDrawer")}
-                    title="Live Activity Feed"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      aria-hidden="true"
-                    >
-                      <path d="M1.5 8.5h3l2-5 3 9 2-4h3" />
-                    </svg>
-                    <span>Activity</span>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--good)" }} />
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.iconBtn}
-                    onClick={() => setActiveDrawer("tasksDrawer")}
-                    title="Coordination Tasks"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      aria-hidden="true"
-                    >
-                      <path d="M2.5 4.5l1.5 1.5 3-3M2.5 9.5l1.5 1.5 3-3M9 4h5M9 9h5M9 13h3" />
-                    </svg>
-                    <span>Tasks</span>
-                    <span id="taskCountBadge" className={styles.badgePill}>
-                      {Math.max(0, 3 - dismissedTaskIds.size)}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.iconBtn}
-                    onClick={() => setActiveDrawer("toolsDrawer")}
-                    title="Developer & State Tools"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      aria-hidden="true"
-                    >
-                      <path d="M9.5 2.5a3 3 0 0 0-3.6 3.9L2 10.3V14h3.7l3.9-3.9a3 3 0 0 0 3.9-3.6l-2 2-2-.5-.5-2z" />
-                    </svg>
-                    <span>Tools</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.iconBtn}
-                    id="themeToggleBtn"
-                    onClick={handleToggleTheme}
-                    title="Toggle Light / Dark Theme"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      aria-hidden="true"
-                    >
-                      <circle cx="8" cy="8" r="3.5" />
-                      <path d="M8 1v2M8 13v2M1 8h2M13 8h2" />
-                    </svg>
-                    <span id="themeToggleText">Theme</span>
-                  </button>
-                </div>
-              </header>
-            </>
-          )}
-
-          {/* ── Sovereign Catchment Actions and Telemetry Ribbon ── */}
-          <section className={styles.topActionBarWrap} aria-label="Catchment Actions and Telemetry">
-            {/* Unified Sovereign Command Toolbar */}
-            <div className={styles.actionBar}>
-              <div className={styles.actionLeftGroup}>
-                {/* Team Scope Selector Menu */}
-                <div className={styles.scopeTeamDropdown} id="teamScopeMenu">
-                  <button
-                    type="button"
-                    className={`${styles.btnActionSec} ${styles.teamSelectorBtn}`}
-                    id="currentTeamLabel"
-                    onClick={() => setTeamMenuOpen(!teamMenuOpen)}
-                    aria-expanded={teamMenuOpen}
-                    aria-haspopup="true"
-                    title="Switch Western Australia CMHT Catchment Team"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="15"
-                      height="15"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      aria-hidden="true"
-                    >
-                      <path d="M2.5 4h11M2.5 8h11M2.5 12h7" />
-                    </svg>
-                    <span id="teamSelectorText">{team.name}</span>
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="12"
-                      height="12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 6l4 4 4-4" />
-                    </svg>
-                  </button>
-
-                  {teamMenuOpen && (
-                    <div className={styles.scopeDropdownMenu} id="teamDropdown" role="menu">
-                      <div className={styles.scopeDropdownHead}>
-                        <span>WA Community Mental Health Teams</span>
-                        <span className={styles.badgePill}>{COMMUNITY_TEAM_PAGES.length} Active</span>
-                      </div>
+                )}
+              >
+                {(close) => (
+                  <div className={v6.teamMenu}>
+                    <p className={v6.teamMenuHead}>
+                      <span>WA community mental health teams</span>
+                      <span>{COMMUNITY_TEAM_PAGES.length} teams</span>
+                    </p>
+                    <ul className={v6.teamMenuList}>
                       {COMMUNITY_TEAM_PAGES.map((other) => (
-                        <Link
-                          key={other.id}
-                          className={styles.scopeDropdownItem}
-                          href={communityTeamHref(other)}
-                          data-selected={other.id === team.id ? "true" : undefined}
-                          onClick={() => setTeamMenuOpen(false)}
-                          role="menuitem"
-                        >
-                          <span>{other.name}</span>
-                          {other.id === team.id ? <span className={styles.badgePill}>Active</span> : null}
-                        </Link>
+                        <li key={other.id}>
+                          <Link
+                            className={v6.teamMenuItem}
+                            href={communityTeamHref(other)}
+                            aria-current={other.id === team.id ? "page" : undefined}
+                            onClick={close}
+                          >
+                            <span>{other.name}</span>
+                            {other.id === team.id ? <Badge size="sm">Active</Badge> : null}
+                          </Link>
+                        </li>
                       ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.catchmentScopeChip} id="catchmentScopeBadge">
-                  <span className={styles.dotSvc} data-svc={teamConfig.svcDot} id="scopeSvcDot" />
-                  <span id="scopeCatchmentText">{teamConfig.scope}</span>
-                </div>
+                    </ul>
+                  </div>
+                )}
+              </Popover>
+            }
+            stats={
+              <div className={v6.heroStats}>
+                <HeroStat value={isDemoMode ? teamConfig.caseload : caseloadRows.length} label="Caseload" />
+                <HeroStat
+                  value={isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
+                  trend={
+                    isDemoMode && !hasAnyReferralsForTeam
+                      ? `${teamConfig.urgentTriage} urgent`
+                      : urgentWaitingCount > 0
+                        ? `${urgentWaitingCount} urgent`
+                        : undefined
+                  }
+                  label="Waiting answer"
+                />
+                <HeroStat
+                  value={isDemoMode ? teamConfig.inpatients : inBedCount}
+                  trend={`of ${isDemoMode ? teamConfig.inpatientsTotal : lists.currentlyAdmitted.length}`}
+                  label="In a bed"
+                />
+                <HeroStat value={isDemoMode ? teamConfig.egress : lists.expectedBack.length} label="Expected back" />
+                <HeroStat value={isDemoMode ? teamConfig.cto : form5ACount} label="On a CTO" />
+                <HeroStat value={isDemoMode ? teamConfig.crisis : 2} label="Crisis open" tone="info" />
               </div>
-
-              <div className={styles.actionRightGroup}>
-                <div className={styles.searchWrap} id="searchWrap" data-open={searchOpen ? "true" : "false"}>
-                  <button
-                    type="button"
-                    className={styles.searchBox}
-                    onClick={() => setSearchOpen(true)}
-                    aria-label="Search sample patients by name or UMRN"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      aria-hidden="true"
-                    >
-                      <circle cx="7" cy="7" r="4.5" />
-                      <path d="M10.5 10.5L14 14" />
-                    </svg>
-                    <span className={styles.searchInputPlaceholder}>Search sample patients by name or UMRN...</span>
-                    <kbd className={styles.searchKbd}>/</kbd>
-                  </button>
-                  {searchOpen && (
-                    <div className={styles.qPop} id="qPop" role="listbox">
-                      <div className={styles.searchPopInputWrap}>
-                        <input
-                          type="search"
-                          id="q"
-                          autoFocus
-                          className={styles.searchInput}
-                          placeholder="Type UMRN or name..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          className={styles.searchPopClose}
-                          onClick={() => setSearchOpen(false)}
-                          aria-label="Close search"
-                        >
-                          &times;
-                        </button>
-                      </div>
+            }
+            aside={
+              <>
+                <Menu
+                  label="Illustrative drawers"
+                  align="end"
+                  items={[
+                    { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
+                    { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
+                    { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
+                  ]}
+                  trigger={(props) => (
+                    <Button {...props} variant="onHero" size="sm" iconEnd={ChevronDown}>
+                      Samples
+                    </Button>
+                  )}
+                />
+                <Popover
+                  label="Search sample patients"
+                  align="end"
+                  panelClassName={v6.searchPanel}
+                  trigger={(props) => (
+                    <Button
+                      {...props}
+                      variant="onHero"
+                      size="sm"
+                      iconOnly
+                      icon={Search}
+                      id="ward-community-search-trigger"
+                      aria-label="Search sample patients by name or UMRN"
+                      title="Search sample patients by name or UMRN"
+                    />
+                  )}
+                >
+                  {(close) => (
+                    <div className={v6.search}>
+                      <TextInput
+                        type="search"
+                        id="q"
+                        icon={Search}
+                        aria-label="Search sample patients"
+                        placeholder="Type UMRN or name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onClear={() => setSearchQuery("")}
+                      />
                       {searchQuery.trim() === "" ? (
-                        <p className={styles.qHitMeta} data-testid="ward-community-search-hint">
+                        <p className={v6.searchNote} data-testid="ward-community-search-hint">
                           Type a name or UMRN to search the sample patients.
                         </p>
                       ) : searchResults.length === 0 ? (
-                        <p className={styles.qHitMeta} data-testid="ward-community-search-empty">
+                        <p className={v6.searchNote} data-testid="ward-community-search-empty">
                           No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
                         </p>
                       ) : (
-                        searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
-                          <div
-                            key={patient.id}
-                            className={styles.qHit}
-                            role="option"
-                            aria-selected={false}
-                            data-testid={`ward-community-search-hit-${patient.id}`}
-                            onClick={() => {
-                              setSelectedPatientId(patient.id);
-                              setActiveDrawer("pxDrawer");
-                              setSearchOpen(false);
-                            }}
-                          >
-                            <div className={styles.qHitTop}>
-                              <span>
-                                {patientDisplayName(patient)} · {patient.umrn}
-                              </span>
-                              <span className={`${styles.statusPillBadge} ${styles.neutral}`}>
-                                {patient.legalStatus ?? "Legal status not recorded"}
-                              </span>
-                            </div>
-                            <span className={styles.qHitMeta}>
-                              {patient.catchmentCommunityTeam ?? "Community team not recorded"}
-                            </span>
-                          </div>
-                        ))
+                        <ul className={v6.searchList}>
+                          {searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
+                            <li key={patient.id}>
+                              <button
+                                type="button"
+                                className={v6.searchHit}
+                                data-testid={`ward-community-search-hit-${patient.id}`}
+                                onClick={() => {
+                                  setSelectedPatientId(patient.id);
+                                  setActiveDrawer("pxDrawer");
+                                  close();
+                                }}
+                              >
+                                <span className={v6.searchHitTop}>
+                                  <strong>
+                                    {patientDisplayName(patient)} · {patient.umrn}
+                                  </strong>
+                                  <Badge size="sm">{patient.legalStatus ?? "Legal status not recorded"}</Badge>
+                                </span>
+                                <span className={v6.searchHitMeta}>
+                                  {patient.catchmentCommunityTeam ?? "Community team not recorded"}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   )}
+                </Popover>
+              </>
+            }
+            bar={
+              <div className={v6.trackScroll}>
+                <div className={v6.track} role="tablist" aria-label="Community team lists">
+                  {TEAM_TABS.map((tab) => {
+                    const selected = activeTab === tab.id;
+                    const count =
+                      tab.id === "tab-triage"
+                        ? isDemoMode && !hasAnyReferralsForTeam
+                          ? teamConfig.triage
+                          : waitingReferrals.length
+                        : tab.id === "tab-inpatients"
+                          ? isDemoMode
+                            ? teamConfig.inpatients
+                            : lists.currentlyAdmitted.length
+                          : tab.id === "tab-egress"
+                            ? isDemoMode
+                              ? teamConfig.egress
+                              : lists.expectedBack.length
+                            : isDemoMode
+                              ? teamConfig.caseload
+                              : caseloadRows.length;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        id={tab.buttonId}
+                        aria-selected={selected}
+                        aria-controls={tab.id}
+                        tabIndex={selected ? 0 : -1}
+                        className={v6.trackItem}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          scrollToSection(tab.section);
+                        }}
+                        onKeyDown={(event) => {
+                          const index = TEAM_TABS.findIndex((item) => item.id === tab.id);
+                          const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+                          if (step === 0) return;
+                          event.preventDefault();
+                          const next = TEAM_TABS[(index + step + TEAM_TABS.length) % TEAM_TABS.length]!;
+                          setActiveTab(next.id);
+                          document.getElementById(next.buttonId)?.focus();
+                        }}
+                      >
+                        <span>{tab.label}</span>
+                        <Count n={count} className={v6.trackCount} />
+                      </button>
+                    );
+                  })}
                 </div>
-
-                <button
-                  type="button"
-                  className={styles.btnPrimaryAction}
+              </div>
+            }
+            barAside={
+              <div className={v6.actions}>
+                <Button variant="onHero" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
+                  Record contact
+                </Button>
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={FileText}
+                  onClick={() => {
+                    setActiveTab("tab-caseload");
+                    scrollToSection("section-caseload");
+                  }}
+                >
+                  CTO register
+                </Button>
+                <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
+                  Catchment MDT
+                </Button>
+                <Button
+                  variant="light"
+                  size="sm"
+                  icon={Plus}
                   id="btnMainIntake"
                   onClick={() => {
                     setIntakeDraft(BLANK_INTAKE_DRAFT);
                     setActiveModalType("intake");
                   }}
-                  title="Intake new community referral into triage"
                 >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="15"
-                    height="15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path d="M8 2.5v11M2.5 8h11" />
-                  </svg>
-                  <span>Intake New Referral</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnActionSec}
-                  onClick={() => setActiveModalType("contact")}
-                  title="Log telephone, home visit, or clinic contact"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path d="M13 4L6 11l-3-3" />
-                  </svg>
-                  <span>Record Contact</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnActionSec}
-                  onClick={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                  title="View Community Treatment Orders statutory register"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 2h7l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" />
-                  </svg>
-                  <span>CTO Register</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnActionSec}
-                  onClick={() => setActiveModalType("handover")}
-                  title="Open MDT morning huddle handover summary"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    aria-hidden="true"
-                  >
-                    <path d="M4 5V2h8v3M4 11H3a1 1 0 01-1-1V7a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 01-1 1h-1M4 9h8v5H4V9z" />
-                  </svg>
-                  <span>Catchment MDT</span>
-                </button>
+                  Intake referral
+                </Button>
               </div>
-            </div>
-
-            {/* Sovereign Catchment Telemetry Capsule Ribbon (Image 2 Endorsed) */}
-            <div className={styles.telemetryCapsuleWrap}>
-              <div className={styles.telemetryCapsule} role="region" aria-label="Catchment Telemetry Ribbon">
-                {/* 1. Active Caseload */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                  title={`Active Caseload: ${isDemoMode ? teamConfig.caseload : caseloadRows.length} Patients (All Allocated)`}
-                >
-                  <span className={styles.telemetryLabel}>Caseload</span>
-                  <span className={styles.telemetryVal} id="cardCaseloadVal">
-                    {isDemoMode ? teamConfig.caseload : caseloadRows.length}
-                  </span>
-                  <span className={styles.telemetryPillNeutral} id="cardCaseloadBadge">
-                    Allocated
-                  </span>
-                </div>
-
-                {/* 2. Triage Waiting */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => {
-                    setActiveTab("tab-triage");
-                    scrollToSection("ward-community-waiting");
-                  }}
-                  title={`Priority Referral Triage Queue: ${isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length} Waiting`}
-                >
-                  <span className={styles.telemetryLabel}>Triage</span>
-                  <span className={styles.telemetryVal} id="cardTriageVal">
-                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
-                  </span>
-                  {isDemoMode && !hasAnyReferralsForTeam ? (
-                    <span
-                      className={styles.telemetryPillWarn}
-                      id="cardTriageBadge"
-                      style={{ color: "var(--danger-ink)" }}
-                    >
-                      {teamConfig.urgentTriage} Urgent
-                    </span>
-                  ) : (
-                    <span
-                      className={
-                        waitingReferrals.some((r) => r.urgency === 1)
-                          ? styles.telemetryPillWarn
-                          : styles.telemetryPillGood
-                      }
-                      id="cardTriageBadge"
-                    >
-                      {waitingReferrals.filter((r) => r.urgency === 1 || r.urgency === 2).length > 0
-                        ? `${waitingReferrals.filter((r) => r.urgency === 1 || r.urgency === 2).length} Urgent`
-                        : "Within KPI"}
-                    </span>
-                  )}
-                </div>
-
-                {/* 3. Catchment Inpatients */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => {
-                    setActiveTab("tab-inpatients");
-                    scrollToSection("ward-community-admitted");
-                  }}
-                  title={`Catchment Acute Inpatients: ${isDemoMode ? teamConfig.inpatients : inBedCount} In Bed / ${isDemoMode ? teamConfig.inpatientsTotal : lists.currentlyAdmitted.length} Total`}
-                >
-                  <span className={styles.telemetryLabel}>Inpatients</span>
-                  <span className={styles.telemetryVal} id="cardInpatientsVal">
-                    {isDemoMode ? (
-                      <>
-                        {teamConfig.inpatients}
-                        <small>/{teamConfig.inpatientsTotal}</small>
-                      </>
-                    ) : (
-                      <>
-                        {inBedCount}
-                        <small>/{lists.currentlyAdmitted.length}</small>
-                      </>
-                    )}
-                  </span>
-                  <span className={styles.telemetryPillNeutral} id="cardInpatientsBadge">
-                    In Bed
-                  </span>
-                </div>
-
-                {/* 4. 7-Day Egress Follow-Up */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => {
-                    setActiveTab("tab-egress");
-                    scrollToSection("ward-community-expected-back");
-                  }}
-                  title={`7-Day Post-Discharge Follow-Up: ${isDemoMode ? teamConfig.egress : lists.expectedBack.length} Discharged`}
-                >
-                  <span className={styles.telemetryLabel}>Egress</span>
-                  <span className={styles.telemetryVal} id="cardEgressVal">
-                    {isDemoMode ? teamConfig.egress : lists.expectedBack.length}
-                  </span>
-                  <span className={styles.telemetryPillGood} id="cardEgressBadge">
-                    On Track
-                  </span>
-                </div>
-
-                {/* 5. Active CTO Orders */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                  title={`Community Treatment Orders: ${isDemoMode ? teamConfig.cto : form5ACount} Active Statutory Orders`}
-                >
-                  <span className={styles.telemetryLabel}>CTOs</span>
-                  <span className={styles.telemetryVal} id="cardCtoVal">
-                    {isDemoMode ? teamConfig.cto : form5ACount}
-                  </span>
-                  <span className={styles.telemetryPillAccent} id="cardCtoBadge">
-                    Form 5A
-                  </span>
-                </div>
-
-                {/* 6. Crisis Response Duty */}
-                <div
-                  className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-                  onClick={() => setActiveModalType("crisis")}
-                  title={`Catchment Crisis Response: ${teamConfig.crisis} In Field · Outreach Car 2`}
-                >
-                  <span className={styles.telemetryLabel}>Crisis</span>
-                  <span className={styles.telemetryVal} id="cardCrisisVal">
-                    {isDemoMode ? teamConfig.crisis : 2}
-                  </span>
-                  <span className={styles.telemetryPillGood} id="cardCrisisBadge">
-                    Active
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
+            }
+          />
+          <SrOnly>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</SrOnly>
 
           {teamNotices.length > 0 ? (
             <section aria-label="Notices for this team" data-testid="ward-community-notices">
@@ -1676,103 +1309,6 @@ export function CommunityScreen({
               </ol>
             </section>
           ) : null}
-
-          {/* ── Operational Tab Bar ── */}
-          <nav className={styles.tabBarWrap} aria-label="Community Operational Tabs">
-            <ul className={styles.tabList} role="tablist">
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-triage"
-                  aria-selected={activeTab === "tab-triage"}
-                  aria-controls="tab-triage"
-                  onClick={() => {
-                    setActiveTab("tab-triage");
-                    scrollToSection("ward-community-waiting");
-                  }}
-                >
-                  <span>Waiting for the team&apos;s answer</span>
-                  <span className={styles.tabBadge}>
-                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
-                  </span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-inpatients"
-                  aria-selected={activeTab === "tab-inpatients"}
-                  aria-controls="tab-inpatients"
-                  onClick={() => {
-                    setActiveTab("tab-inpatients");
-                    scrollToSection("ward-community-admitted");
-                  }}
-                >
-                  <span>In a bed or holding one</span>
-                  <span className={styles.tabBadge}>
-                    {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                  </span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-egress"
-                  aria-selected={activeTab === "tab-egress"}
-                  aria-controls="tab-egress"
-                  onClick={() => {
-                    setActiveTab("tab-egress");
-                    scrollToSection("ward-community-expected-back");
-                  }}
-                >
-                  <span>Expected back</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? teamConfig.egress : lists.expectedBack.length}</span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-caseload"
-                  aria-selected={activeTab === "tab-caseload"}
-                  aria-controls="tab-caseload"
-                  onClick={() => {
-                    setActiveTab("tab-caseload");
-                    scrollToSection("section-caseload");
-                  }}
-                >
-                  <span>Active Caseload &amp; CTOs</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-team"
-                  aria-selected={activeTab === "tab-team"}
-                  aria-controls="tab-team"
-                  onClick={() => {
-                    setActiveTab("tab-team");
-                    scrollToSection("section-team-workspace");
-                  }}
-                >
-                  <span>This team</span>
-                  <span className={styles.tabBadge} style={{ color: "var(--good)" }}>
-                    {isDemoMode ? `${teamConfig.staff} Staff` : "7 Staff"}
-                  </span>
-                </button>
-              </li>
-            </ul>
-          </nav>
 
           {/* ── Figures across the top ── */}
           <div className={styles.legacyFigureStrip}>
@@ -3467,13 +3003,8 @@ export function CommunityScreen({
             </div>
           </div>
 
-          {/* ── Tab 5: Team Deployment, Clinic Rooms and Response Fleet ── */}
-          <div
-            className={activeTab === "tab-team" ? styles.tabPanelActive : styles.tabPanelHidden}
-            id="tab-team"
-            role="tabpanel"
-            aria-labelledby="tabBtn-team"
-          >
+          {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
+          <div className={styles.tabPanelActive} id="tab-team">
             {/* ── How to reach this team ── */}
             <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
               {(() => {
