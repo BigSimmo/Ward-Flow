@@ -9,7 +9,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
+  type SetStateAction,
 } from "react";
 
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -534,6 +536,25 @@ export function WardNetworkWorkspace() {
   const [view, setView] = useState<NetworkView>("overview");
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
+  /*
+   * The Placement workspace's subject, held here so the overview's State Bedflow can route it
+   * (the routed diagram Home used to carry). The workspace still opens on the first open movement,
+   * but the overview routes a movement only once a coordinator has CHOSEN one in the waiting list
+   * (`patientChosen`), and never while a referral is the subject. Until then it draws the network
+   * with no subject, exactly as before (`movement={undefined}`).
+   */
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
+  const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
+  const [patientChosen, setPatientChosen] = useState(false);
+  const overviewMovement =
+    patientChosen && selectedReferralId === null
+      ? movements.find((movement) => movement.id === selectedPatientId && isOpen(movement))
+      : undefined;
+
+  function choosePatient(movementId: string) {
+    setSelectedPatientId(movementId);
+    setPatientChosen(true);
+  }
 
   function onViewTabsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const order: NetworkView[] = ["overview", "placement"];
@@ -603,7 +624,7 @@ export function WardNetworkWorkspace() {
           </header>
           <div className={thirdEdition.flowBody} role="region" aria-label="Network flow diagram" tabIndex={0}>
             <FlowDiagram
-              movement={undefined}
+              movement={overviewMovement}
               movements={movements}
               now={now}
               units={units}
@@ -629,7 +650,12 @@ export function WardNetworkWorkspace() {
         aria-labelledby="ward-network-placement-tab"
         hidden={view !== "placement"}
       >
-        <WardNetworkPlacementWorkspace />
+        <WardNetworkPlacementWorkspace
+          selectedPatientId={selectedPatientId}
+          onSelectPatient={choosePatient}
+          selectedReferralId={selectedReferralId}
+          setSelectedReferralId={setSelectedReferralId}
+        />
       </div>
     </div>
   );
@@ -658,11 +684,20 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
   return movements.find(isOpen)?.id ?? null;
 }
 
-function WardNetworkPlacementWorkspace() {
+function WardNetworkPlacementWorkspace({
+  selectedPatientId,
+  onSelectPatient,
+  selectedReferralId,
+  setSelectedReferralId,
+}: {
+  /** Held by `WardNetworkWorkspace`, which also routes the chosen movement on the overview. */
+  selectedPatientId: string | null;
+  onSelectPatient: (movementId: string) => void;
+  selectedReferralId: string | null;
+  setSelectedReferralId: Dispatch<SetStateAction<string | null>>;
+}) {
   const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlow();
   const now = useWardFlowClock();
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
-  const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [factorsOpen, setFactorsOpen] = useState(false);
   const [shortlistOpen, setShortlistOpen] = useState(true);
@@ -988,7 +1023,7 @@ function WardNetworkPlacementWorkspace() {
                   type="button"
                   key={candidate.id}
                   onClick={() => {
-                    setSelectedPatientId(candidate.id);
+                    onSelectPatient(candidate.id);
                     setSelectedReferralId(null);
                     setSelectedUnitId(null);
                   }}

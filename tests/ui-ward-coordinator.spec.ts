@@ -28,6 +28,39 @@ async function gotoCoordinator(page: Page) {
 }
 
 /**
+ * 2026-10-07 (v6 Home): Home's State bedflow is now a grouped ward list that draws no routes, so the
+ * routed State Bedflow the diagram journeys below check is the Network page's overview. It routes
+ * the movement a coordinator chooses in the Placement workspace's waiting list
+ * (`WardNetworkWorkspace`), and draws no subject until one is chosen, exactly as Home's did before
+ * a queue click. Only how these journeys reach the diagram and select a movement changed; every
+ * diagram assertion is the same.
+ */
+async function gotoNetworkDiagram(page: Page) {
+  await page.goto("/mockups/ward-flow/network", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("tab", { name: "Network overview" })).toHaveAttribute("aria-selected", "true", {
+    timeout: 15_000,
+  });
+  // Same reason as `gotoCoordinator`: let the dev route settle before the first interaction.
+  await page.waitForLoadState("networkidle");
+  return page.getByRole("region", { name: "State Bedflow", exact: true });
+}
+
+/** The Network page's waiting list, on the Placement workspace tab. */
+function networkWaitingList(page: Page) {
+  return page.getByTestId("ward-network-view").getByRole("region", { name: "Waiting list" });
+}
+
+/** Chooses a movement in the Placement workspace, then returns to the overview's State Bedflow. */
+async function selectNetworkMovement(page: Page, movementId: string) {
+  await page.getByRole("tab", { name: "Placement workspace" }).click();
+  const row = networkWaitingList(page).locator(`[data-testid="ward-network-queue-${movementId}"]`);
+  await row.click();
+  await expect(row).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("tab", { name: "Network overview" }).click();
+  await expect(page.getByRole("tab", { name: "Network overview" })).toHaveAttribute("aria-selected", "true");
+}
+
+/**
  * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
  * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
  * inside them; idempotent, so it is safe after every queue selection.
@@ -450,9 +483,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
   test("draws the selected movement's routes from its department to its shortlisted units", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
+    const diagram = await gotoNetworkDiagram(page);
 
     // Connector paths are drawn by a client layout effect — this is the hydration signal.
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
@@ -484,14 +515,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // and the contrast this test needs below only holds if the two clicked movements are
     // genuinely different. Without the exclusion, "row 1" and "WF-009" could silently become the
     // same movement and the second assertion would pass by tautology rather than by proof.
-    const firstRow = page
-      .getByRole("region", { name: "Priority queue" })
-      .locator('[data-testid^="ward-queue-row-"]:not([data-testid="ward-queue-row-WF-009"])')
+    await page.getByRole("tab", { name: "Placement workspace" }).click();
+    const firstRow = networkWaitingList(page)
+      .locator('[data-testid^="ward-network-queue-"]:not([data-testid="ward-network-queue-WF-009"])')
       .first();
-    const movementId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    const movementId = (await firstRow.getAttribute("data-testid"))?.replace("ward-network-queue-", "");
     expect(movementId, "the first queue row must carry a real movement id").toBeTruthy();
     expect(movementId, "the exclusion above must keep this genuinely different from WF-009").not.toBe("WF-009");
-    await firstRow.click();
+    await selectNetworkMovement(page, String(movementId));
 
     const { movement } = await assertRoutedMatchesShortlist(diagram, String(movementId));
 
@@ -506,7 +537,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // ineligible-routes test below, to also be an entirely different eligibility outcome) — a
     // hard-coded routed set that coincidentally matched the first movement's shortlist would
     // fail here instead of passing by coincidence.
-    await page.getByRole("region", { name: "Priority queue" }).locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await selectNetworkMovement(page, "WF-009");
     await assertRoutedMatchesShortlist(diagram, "WF-009");
   });
 
@@ -514,9 +545,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
+    const diagram = await gotoNetworkDiagram(page);
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     const movement = requireMovement("WF-009");
@@ -530,7 +559,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(shortlist.length).toBeGreaterThan(0);
     expect(shortlist.every((candidate) => !candidate.verdict.eligible)).toBe(true);
 
-    await page.getByRole("region", { name: "Priority queue" }).locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await selectNetworkMovement(page, "WF-009");
 
     // Every routed node is marked not-eligible on the node itself...
     const routed = diagram.locator('[data-routed="true"]');
@@ -626,11 +655,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    */
   test("draws the recorded destination as its own connector and says so at the hub", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
+    const diagram = await gotoNetworkDiagram(page);
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
-    const queue = page.getByRole("region", { name: "Priority queue" });
 
     const wf005 = requireMovement("WF-005");
     const acceptedUnitId = wf005.acceptedUnitId;
@@ -643,7 +669,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-005's accepted unit is not one of its candidates, so only the destination connector can reach it",
     ).not.toContain(acceptedUnitId);
 
-    await queue.locator('[data-testid="ward-queue-row-WF-005"]').click();
+    await selectNetworkMovement(page, "WF-005");
 
     const destinationConnectors = diagram.locator('svg path[data-connector-kind="destination"]');
     await expect(destinationConnectors).toHaveCount(1);
@@ -658,7 +684,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // WF-013 carries two, so a single-referral implementation (`referredUnitIds[0]`) fails here.
     const wf013 = requireMovement("WF-013");
     expect(wf013.referredUnitIds.length, "fixture assumption: WF-013 carries two parallel referrals").toBe(2);
-    await queue.locator('[data-testid="ward-queue-row-WF-013"]').click();
+    await selectNetworkMovement(page, "WF-013");
     await expect(diagram.locator('svg path[data-connector-kind="destination"]')).toHaveCount(2);
     await expect(diagram.locator('svg path[data-connector-kind="destination"]').first()).toHaveAttribute(
       "data-recorded",
@@ -670,7 +696,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const wf009 = requireMovement("WF-009");
     expect(wf009.acceptedUnitId).toBeUndefined();
     expect(wf009.referredUnitIds).toHaveLength(0);
-    await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
+    await selectNetworkMovement(page, "WF-009");
     await expect(diagram.locator('svg path[data-connector-kind="destination"]')).toHaveCount(0);
   });
 
