@@ -7025,9 +7025,12 @@ input.historyField:focus-visible {
   outline-offset: -2px;
 }
 
+/* Answer 13: the Tier reads bold and dark, unlike the muted facts on the same card. */
 .v6RowTier {
   display: inline-flex;
   align-items: center;
+  color: var(--wf-ink-1);
+  font-weight: 700;
 }
 
 .v6RowMain {

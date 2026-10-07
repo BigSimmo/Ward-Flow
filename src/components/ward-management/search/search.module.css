@@ -5110,6 +5110,17 @@
   .screen[data-ward-design="v6"] a[href] {
     min-height: 3rem;
   }
+
+  /* The filter selects fill their box, so the box carries the tap floor plus its hairline. */
+  .v6SelectBox {
+    height: calc(var(--ward-tap) + 2px);
+  }
+}
+
+@media (pointer: coarse) {
+  .v6SelectBox {
+    height: calc(var(--ward-tap) + 2px);
+  }
 }
 
 @media (min-width: 64rem) {
