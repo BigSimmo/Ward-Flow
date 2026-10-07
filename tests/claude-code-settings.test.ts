@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -40,7 +40,11 @@ function describeConfiguredClaude(name: string, body: () => void) {
 if (!hasClaudeSettings) {
   describe("public Claude configuration boundary", () => {
     it("does not ship a partial permission or hook configuration", () => {
-      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
+      // Repository skills (`.claude/skills/<name>/SKILL.md`) carry no permissions or hooks, so
+      // they are the only thing allowed under `.claude` until a full settings file exists.
+      const claudeDir = join(repoRoot, ".claude");
+      const entries = existsSync(claudeDir) ? readdirSync(claudeDir) : [];
+      expect(entries.filter((name) => name !== "skills")).toEqual([]);
       const workflow = readFileSync(join(repoRoot, ".github/workflows/ward-flow.yml"), "utf8");
       expect(workflow).toContain("contents: read");
       expect(workflow).not.toContain("contents: write");
