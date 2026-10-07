@@ -332,14 +332,18 @@
 
 /* Body */
 .drawerBody {
-  display: grid;
+  display: flex;
   min-height: 0;
   flex: 1;
-  align-content: start;
+  flex-direction: column;
   gap: var(--wf-s-3);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 var(--wf-s-4) var(--wf-s-4);
+}
+
+.drawerBody > * {
+  flex: none;
 }
 
 .section {
