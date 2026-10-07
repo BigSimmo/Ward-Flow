@@ -317,7 +317,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
       `could not read the ward's own Occupied figure before admission (got "${occupiedBeforeText}")`,
     ).toBe(false);
 
-    await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
+    // v6 ward home: Awaiting your answer is its own card beside Every bed, always shown (no switch).
     const acceptButton = wardScreen.getByTestId(`ward-accept-${movementId}`);
     await expect(acceptButton).toBeVisible();
     await expect(acceptButton).not.toHaveAttribute("aria-disabled", "true");

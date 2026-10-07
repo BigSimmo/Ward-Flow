@@ -34,7 +34,8 @@ describe("capacity review corrections", () => {
     const table = screen.getByTestId("ward-capacity-network-table");
     const before = table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]').length;
     expect(before).toBeGreaterThan(0);
-    const available = screen.getByRole("button", { name: /Available.*Ready/u });
+    // v6: the summary shortcuts are the "Highlight" chips under the bed map.
+    const available = screen.getByRole("button", { name: /^Bed ready/u });
     expect(available.tagName).toBe("BUTTON");
     available.focus();
     await user.keyboard(" ");
@@ -42,7 +43,7 @@ describe("capacity review corrections", () => {
     expect(document.getElementById("capacity-wards")).toHaveFocus();
     expect(within(table).getAllByText("Matches this filter").length).toBeGreaterThan(0);
     expect(table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]')).toHaveLength(before);
-    const all = screen.getByRole("button", { name: /^Wards/u });
+    const all = screen.getByRole("button", { name: /^\d+\s*Wards$/u });
     all.focus();
     await user.keyboard("{Enter}");
     expect(all).toHaveAttribute("aria-pressed", "true");
@@ -58,8 +59,8 @@ describe("capacity review corrections", () => {
     expect(within(wards).getByRole("button", { name: /^Has a bed ready/u })).toHaveTextContent("3");
     expect(within(wards).getByRole("button", { name: /^Has a locked bed ready/u })).toHaveTextContent("1");
     expect(within(wards).getByRole("button", { name: /^Needs confirming/u })).toHaveTextContent("1");
-    expect(screen.getByRole("button", { name: /^Highlight ready wards/u })).toHaveTextContent("3");
-    expect(screen.getByRole("button", { name: /^Locked beds ready/u })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Bed ready/u })).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: /^Locked ready/u })).toHaveTextContent("1");
   });
 
   it("reports an empty service with zero matching wards and zero highlight counts", () => {
@@ -67,7 +68,7 @@ describe("capacity review corrections", () => {
     renderCapacity();
     const wards = screen.getByRole("region", { name: "Wards" });
     expect(wards).toHaveTextContent("0 wards in CAHS, 0 matching");
-    expect(screen.getByRole("button", { name: /^Highlight ready wards/u })).toHaveTextContent("0");
+    expect(screen.getByRole("button", { name: /^Bed ready/u })).toHaveTextContent("0");
     for (const button of within(wards).getAllByRole("button", {
       name: /^(All|Has a bed ready|Has a locked bed ready|Needs confirming)/u,
     })) {
