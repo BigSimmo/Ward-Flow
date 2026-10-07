@@ -3,6 +3,7 @@
 import { useContext, useEffect, useId, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
+import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -16,6 +17,7 @@ export interface WardNotificationCenterProps {
   unitName: string;
   now: Instant;
   movements: Movement[];
+  patients?: readonly Patient[];
   notices: Notice[];
   refreshRequests?: {
     unitId: string;
@@ -55,6 +57,7 @@ function getPatientDisplayName(
   movement: Movement,
   movements: Movement[],
   resolveIdentity: ((subject: Movement) => ResolvedPatientInfo) | undefined,
+  patients?: readonly Patient[],
 ): string {
   // Some explicitly supplied notification DTOs carry a display name; validate that boundary without an unchecked cast.
   const customName =
@@ -65,7 +68,9 @@ function getPatientDisplayName(
         : undefined;
   if (customName) return customName;
   try {
-    const resolved = resolveIdentity ? resolveIdentity(movement) : resolveSubjectPatient(movement, { movements });
+    const resolved = resolveIdentity
+      ? resolveIdentity(movement)
+      : resolveSubjectPatient(movement, { movements, patients });
     return resolved.displayName;
   } catch {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -78,6 +83,7 @@ export function WardNotificationCenter({
   unitName,
   now,
   movements,
+  patients,
   notices,
   refreshRequests = [],
   morningRollupConfirmed = false,
@@ -90,7 +96,9 @@ export function WardNotificationCenter({
 }: WardNotificationCenterProps) {
   // Read the provider when present (the ward screen); a bare render (component tests) has none, and
   // the resolver then falls back exactly as before.
-  const resolveIdentity = useContext(WardFlowContext)?.resolvePatientIdentity;
+  const context = useContext(WardFlowContext);
+  const resolveIdentity = context?.resolvePatientIdentity;
+  const effectivePatients = patients ?? context?.patients;
   const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
   const rollupMin = morningRollupDeadlineMinutes % 60;
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
@@ -318,7 +326,7 @@ export function WardNotificationCenter({
 
             {/* Overdue Inbound Arrivals */}
             {overdueArrivals.map((m) => {
-              const patientName = getPatientDisplayName(m, movements, resolveIdentity);
+              const patientName = getPatientDisplayName(m, movements, resolveIdentity, effectivePatients);
               const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
               const alertText = `Overdue Inbound Arrival: ${patientName} (ETA was ${eta}, >60m overdue)`;
 
@@ -337,7 +345,7 @@ export function WardNotificationCenter({
 
             {/* Missing Pre-Admission Medical Clearance */}
             {missingClearances.map((m) => {
-              const patientName = getPatientDisplayName(m, movements, resolveIdentity);
+              const patientName = getPatientDisplayName(m, movements, resolveIdentity, effectivePatients);
 
               return (
                 <div key={`clearance-${m.id}`} className={`${styles.card} ${styles.cardDanger}`}>

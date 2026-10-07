@@ -1654,6 +1654,10 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
           admission.careJourney.followUp.serviceId !== event.actingTeamId))
     )
       return deny("scope");
+    // Decision D-30 (6 October 2026): Inter-ward bed transfers require central bed coordinator approval;
+    // local wards cannot unilaterally accept inter-ward transfers.
+    if (event.change.kind === "transfer" && event.change.step === "accepted" && event.role !== "coordinator")
+      return deny("role");
     const refusal = careChangeRefusal(admission, event.change, event.now);
     if (refusal) return deny("transition", "denied", refusal);
     if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))

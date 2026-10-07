@@ -426,6 +426,33 @@ describe("complete guarded local care journey", () => {
       ).units,
     ).toBe(next.units);
   });
+
+  it("enforces D-30: refuses transfer acceptance from a ward role and requires coordinator approval", () => {
+    const { state, admission } = fixture();
+    const target = state.units.find((u) => u.id !== admission.unitId)!;
+
+    // Ward role attempting to accept inter-ward transfer is denied
+    const wardAttempt = wardFlowReducer(
+      state,
+      command(
+        state,
+        admission.id,
+        { kind: "transfer", receivingUnitId: target.id, step: "accepted" },
+        { role: "ward", actingUnitId: admission.unitId },
+      ),
+    );
+    expect(wardAttempt.admissions).toBe(state.admissions);
+    expect(wardAttempt.rejections.length).toBeGreaterThan(state.rejections.length);
+    expect(wardAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer).toBeUndefined();
+
+    // Coordinator role successfully accepts transfer
+    const coordAttempt = wardFlowReducer(
+      state,
+      command(state, admission.id, { kind: "transfer", receivingUnitId: target.id, step: "accepted" }),
+    );
+    expect(coordAttempt.rejections).toEqual([]);
+    expect(coordAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer?.step).toBe("accepted");
+  });
 });
 
 describe("care restore and paper provenance review boundaries", () => {
