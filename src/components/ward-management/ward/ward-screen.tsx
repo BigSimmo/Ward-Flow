@@ -36,28 +36,12 @@ import {
   stageCopy,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
-import { WardChip } from "@/components/ward-management/ward-chip";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
-/**
- * ⚠️ **OWNER RULING, CLINICIAN CHECK R7 (2026-09-06), AND THE SCREEN IS OBLIGED TO SAY IT.**
- * He confirmed a ward is routinely waiting on more than one thing, and chose to keep recording
- * exactly ONE — *"defined as the one that will take longest. Say so on screen, or a reader will
- * think the others are unknown."*
- *
- * **The distinction is between unrecorded and unknown.** A single value with no explanation reads
- * as the ward's complete answer; it is the ward's LONGEST answer. Saying nothing here would make
- * this screen state something more definite than the data supports.
- *
- * One constant for two pickers: the same sentence written twice drifts, and this one is his.
- */
-const WAITING_ON_LONGEST = "One only — the one that will take longest. A ward is often waiting on several.";
-
 import {
   BED_RELEASE_WAITING_ON,
   type BedReleaseWaitingOn,
@@ -343,9 +327,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     function syncTabWithHash() {
       if (typeof window === "undefined") return;
       const hash = window.location.hash;
-      if (["#bed-capacity", "#ward-daily-return", "#ward-flag-bed-release", "#ward-leave-bed-form"].includes(hash)) {
-        setActiveTab("return");
-      }
+      if (hash === "#bed-capacity") setActiveTab("attn");
+      else if (hash === "#ward-daily-return") setActiveTab("return");
+      else if (hash === "#ward-flag-bed-release" || hash === "#ward-leave-bed-form") setActiveTab("out");
     }
     syncTabWithHash();
     window.addEventListener("hashchange", syncTabWithHash);
@@ -1330,7 +1314,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             >
               Start a new capacity observation from the current count
             </button>
-          )}
+          )}{" "}
           Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}. Writes to{" "}
           {unit.name} only &mdash; never any other ward.
         </p>
@@ -1641,6 +1625,31 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dispatch({ type: "END_LEAVE_BED", role: "ward", now, leaveBedId, actingUnitId: unitId });
   }
 
+  const departureDecisions = pendingBedReleases
+    .filter((release) => release.state === "expected" || release.blocker !== null)
+    .map((release) => ({
+      id: release.id,
+      title: bedRecordLabel(release.admissionId),
+      badge: (release.blocker ? "Blocked" : "Ready") as "Blocked" | "Ready",
+      onConfirm: release.state === "expected" ? () => confirmBedRelease(release.id) : undefined,
+      onClear: release.blocker ? () => clearBedReleaseBlock(release.id) : undefined,
+    }));
+  const leaveDecisions = unitLeaveBeds.map((leaveBed) => ({
+    id: leaveBed.id,
+    title: `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
+  }));
+  const intakeDecisions = visibleIncoming.map((movement) => ({
+    id: movement.id,
+    title: resolvePatientIdentity(movement).displayName,
+    onAccept: () => handleAcceptInPrinciple(movement.id, unit.id),
+  }));
+  const decisionsDue =
+    intakeDecisions.length +
+    departureDecisions.filter((row) => row.badge === "Ready").length +
+    (!isRollupConfirmedToday && morningRollupDeadlinePassed ? 1 : 0);
+  const decisionsDueLabel =
+    decisionsDue > 0 ? `${decisionsDue} decisions due this shift` : "No decisions due this shift";
+
   function toggleRelease(movementId: string) {
     setReleaseOpenFor((current) => (current === movementId ? undefined : movementId));
     setReleaseReason(undefined);
@@ -1691,13 +1700,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <header className={styles.topIdentityBanner}>
               <div className={styles.topIdentityLeft}>
                 <h2 className={styles.sectionHeading}>This ward</h2>
-                <h3
-                  className={styles.unitName}
-                  style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, display: "inline-block" }}
-                >
-                  {unit.name}
-                </h3>
-                <span className={styles.unitMeta} style={{ fontSize: "0.85rem" }}>
+                <h3 className={styles.unitName}>{unit.name}</h3>
+                <span className={styles.unitMeta}>
                   {site ? `${site.name} (${site.code})` : unit.siteCode} &middot; {unit.cohort} &middot;{" "}
                   {designationSummary(unit)}
                   {unit.authorised ? "" : " · Not set up for involuntary admissions (demo)"}
@@ -1947,78 +1951,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   <span
                     className={styles.tabBadge}
                     id="badgeReturn"
-                    style={{ color: "var(--danger)", fontWeight: 700 }}
-                    title="2 decisions due this shift"
-                    aria-label="2 decisions due this shift"
+                    style={decisionsDue > 0 ? { color: "var(--danger)", fontWeight: 700 } : undefined}
+                    title={decisionsDueLabel}
+                    aria-label={decisionsDueLabel}
                   >
-                    2 Due
+                    {decisionsDue > 0 ? `${decisionsDue} Due` : "Done"}
                   </span>
                 </button>
               </li>
             </ul>
           </nav>
         </section>
-
-        {/* 09:30 Morning Bed Rollup Deadline Banner */}
-        {!isRollupConfirmedToday && morningRollupDeadlinePassed ? (
-          <aside
-            className={styles.morningRollupOverdueBanner}
-            role="alert"
-            aria-atomic="true"
-            data-testid="ward-morning-rollup-overdue-banner"
-          >
-            {/* The planned-discharges count below is announced; this sentence travels with it
-                (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
-            <span className="sr-only">These counts are invented figures.</span>
-            <div className={styles.morningRollupBannerContent}>
-              <span className={styles.morningRollupBannerIcon} aria-hidden="true">
-                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10 2L1 18h18L10 2z" />
-                  <path d="M10 8v5M10 15h.01" />
-                </svg>
-              </span>
-              <div className={styles.morningRollupBannerText}>
-                <span className={styles.morningRollupPill}>Action Required</span>
-                <strong>{morningRollupTimeLabel} Morning Bed Rollup Overdue</strong>
-                <span className={styles.morningRollupDesc}>
-                  Today&rsquo;s planned discharge numbers and allocatable beds have not yet been confirmed for{" "}
-                  {unit.name}. State Bed Flow Coordination is awaiting morning census.
-                </span>
-              </div>
-            </div>
-            <div className={styles.morningRollupBannerActions}>
-              <button
-                type="button"
-                className={styles.btnConfirmMorningRollup}
-                data-testid="ward-confirm-morning-rollup-btn"
-                onClick={handleConfirmMorningRollup}
-              >
-                Confirm Morning Rollup ({releasesCountedToday.length} Planned Discharges)
-              </button>
-            </div>
-          </aside>
-        ) : isRollupConfirmedToday ? (
-          <div className={styles.morningRollupConfirmedBanner} data-testid="ward-morning-rollup-confirmed-banner">
-            <div className={styles.morningRollupConfirmedText}>
-              <span className={styles.morningRollupCheckIcon} aria-hidden="true">
-                ✓
-              </span>
-              <span>
-                <strong>{morningRollupTimeLabel} Morning Bed Rollup Confirmed</strong> at{" "}
-                {formatInstantWithDay(rollupConfirmation!.confirmedAt, now)} by {rollupConfirmation!.confirmedByRole}{" "}
-                &middot; {rollupConfirmation!.expectedDischarges} discharges scheduled today
-              </span>
-            </div>
-            <button
-              type="button"
-              className={styles.btnActionSec}
-              onClick={() => setConfirmNumbersOpen(true)}
-              style={{ minHeight: "36px", fontSize: "0.85rem" }}
-            >
-              Update Census
-            </button>
-          </div>
-        ) : null}
 
         {/* ───────── TAB 1: WORTH YOUR ATTENTION ───────── */}
         <section
@@ -2028,6 +1971,161 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-attn"
           data-active={activeTab === "attn"}
         >
+          <section
+            aria-label="Ward figures, right now"
+            id="bed-capacity"
+            className={`${styles.bedSection} ${styles.censusCommandCard}`}
+            tabIndex={0}
+            data-ward-primitive="panel"
+          >
+            <div className={styles.commandHeader} data-ward-primitive="panel-header">
+              <div className={styles.commandTitleGroup}>
+                <h2 className={styles.commandMainTitle}>
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="3" width="12" height="10" rx="1" />
+                    <path d="M6 3v10M2 8h4" />
+                  </svg>
+                  <span>Ward figures, right now</span>
+                </h2>
+                <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
+              </div>
+              <div
+                className={styles.capacityFreshnessRow}
+                data-testid="ward-unit-capacity-freshness"
+                style={{ margin: 0 }}
+              >
+                <WardFreshness
+                  confirmedAt={unit.allocatable.confirmedAt}
+                  confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+                  now={now}
+                  derived={unit.allocatable.source !== "ward"}
+                />
+                {latestRefreshRequest ? (
+                  <span className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
+                    Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className={styles.capacitySection}>
+              <div className={styles.capacityTrackTitleRow}>
+                <span className={styles.capacityTrackLabel}>Capacity distribution</span>
+                <span className={styles.capacityTrackMeta}>
+                  {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} · {states.closed}{" "}
+                  {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
+                </span>
+              </div>
+
+              <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
+                {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
+                    not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="available"
+                  title={BED_STATE_DETAILS.ready}
+                >
+                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
+                  <strong className={styles.statBoxVal} style={{ color: "var(--good)" }}>
+                    {states.ready}
+                  </strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="pulled"
+                  title={BED_STATE_DETAILS.pulled}
+                >
+                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
+                  <strong className={styles.statBoxVal}>{states.pulled}</strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="closed"
+                  title={BED_STATE_DETAILS.closed}
+                >
+                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
+                  <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
+                    {states.closed}
+                  </strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="occupied"
+                  title={BED_STATE_DETAILS.occupied}
+                >
+                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
+                  <strong className={styles.statBoxVal}>{states.occupied}</strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="confirmed"
+                >
+                  <span className={styles.statBoxLabel}>Confirmed</span>{" "}
+                  <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
+                    {breakdown.confirmedToday}
+                  </strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="expected"
+                >
+                  <span className={styles.statBoxLabel}>Expected</span>{" "}
+                  <strong className={styles.statBoxVal} style={{ color: "var(--warn)" }}>
+                    {breakdown.expectedToday}
+                  </strong>
+                </span>
+                <span
+                  className={`${styles.bedChip} ${styles.statBox}`}
+                  data-ward-primitive="chip"
+                  data-state="blocked-release"
+                  data-testid="ward-unit-blocked-releases"
+                >
+                  <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
+                  <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
+                </span>
+                <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">
+                  <span className={styles.statBoxLabel}>On leave</span>{" "}
+                  <strong className={styles.statBoxVal} style={{ color: "var(--gilt)" }}>
+                    {breakdown.onLeave}
+                  </strong>
+                </span>
+              </div>
+
+              {pendingPreparation > 0 ? (
+                <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="8" cy="8" r="6" />
+                    <path d="M8 5v3.5l2 1" />
+                  </svg>
+                  <span>
+                    <strong>
+                      {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"}{" "}
+                      at {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                    </strong>{" "}
+                    The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the ward
+                    cannot admit into it yet.
+                  </span>
+                </div>
+              ) : null}
+
+              <details className={styles.clinicalDisclosure}>
+                <summary>What these bed figures mean</summary>
+                <p className={styles.bedNote}>
+                  Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled means
+                  allocated to a patient who has not arrived yet. Beds being made ready are counted inside Ready, and
+                  beds held for a patient on leave inside Occupied. Confirmed, expected, held-up discharge and leave are
+                  flow counts and are not added to that total.
+                </p>
+              </details>
+            </div>
+          </section>
+
           <WardHomeTab
             unit={unit}
             onAcceptInPrinciple={handleAcceptInPrinciple}
@@ -2072,1461 +2170,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-return"
           data-active={activeTab === "return"}
         >
-          <WardDecisionsCockpit unit={unit} demonstration />
-          <div className={styles.censusCommandCard} style={{ marginTop: "1rem" }}>
-            <details
-              className={styles.clinicalDisclosure}
-              open
-              style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}
-            >
-              <summary
-                className={styles.commandHeader}
-                style={{
-                  cursor: "pointer",
-                  listStyle: "none",
-                  userSelect: "none",
-                }}
-              >
-                <div className={styles.commandTitleGroup}>
-                  <h2 className={styles.commandMainTitle}>
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="3" width="12" height="10" rx="1" />
-                      <path d="M5 8h6M8 5v6" />
-                    </svg>
-                    <span>Update allocatable count directly</span>
-                  </h2>
-                  <span className={styles.commandSubTitle}>Fast capacity override for {unit.name}</span>
-                </div>
-                <span className={styles.returnStatusChip}>Quick override</span>
-              </summary>
-              <div style={{ padding: "16px 20px" }}>
-                {presentation !== "answer" ? capacityConfirmationForm() : null}
-              </div>
-            </details>
-          </div>
-          {/* Operational controls remain visible and keyboard reachable alongside the summary. */}
-          <div>
-            {/*
-          🔴 **THE COUNT SAYS "SINCE THIS PAGE OPENED", NOT "TODAY", AND THE FILE ALREADY KNEW.**
-          `confirmedToday` is `useState` (:252) — it counts taps in THIS SESSION and resets on
-          reload. The row chips below say exactly that ("Confirmed since this page opened" / "Not
-          confirmed since this page opened"), and the comment above the state records that the chips
-          "are now what they say" — a sweep that reached the chips and missed this line, nine lines
-          away.
-
-          ⚠️ **It was a day label over a session count, on the panel a ward uses to confirm its
-          numbers.** Nobody chose the wrong word; somebody corrected the halves they were looking at.
-
-          The denominator stays 3 deliberately. Rows 4 and 5 record an ITEM, never an answer act, so
-          they can never increment it — see their own comments. An absent item is not an absent
-          answer, and a ward with nobody going on leave has not failed to answer.
-        */}
-            <div
-              id="ward-daily-return"
-              className={`${styles.dailyReturn} ${styles.censusCommandCard}`}
-              role="region"
-              aria-label="Today’s return"
-              tabIndex={0}
-            >
-              <div className={styles.commandHeader}>
-                <div className={styles.commandTitleGroup}>
-                  <h2 className={styles.commandMainTitle}>
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 8l3 3 7-7" />
-                    </svg>
-                    <span>Morning Census &amp; Capacity Confirmation</span>
-                  </h2>
-                  <span className={styles.commandSubTitle}>Your morning roll-up, your default, not a legal limit</span>
-                </div>
-                <span
-                  className={`${styles.returnStatusChip} ${confirmedToday.size >= 3 ? styles.returnStatusChipConfirmed : ""}`}
-                  id="censusVerificationStatus"
-                >
-                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M3 8l3 3 7-7" />
-                  </svg>
-                  <span id="censusStatusText">
-                    {confirmedToday.size >= 3 ? "Both figures verified today" : "Census verification pending"}
-                  </span>
-                </span>
-              </div>
-
-              <WardPanel
-                title="Today’s return"
-                count={`${confirmedToday.size} of ${DAILY_RETURN_QUESTIONS.length} confirmed since this page opened`}
-                blurb="If nothing has changed, confirm with one tap — you do not need to re-enter anything."
-              >
-                <div className={styles.affirmationBanner}>
-                  <div className={styles.affirmationLeft}>
-                    <div className={styles.affirmationIcon} aria-hidden="true">
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                      >
-                        <path d="M3 8l3 3 7-7" />
-                      </svg>
-                    </div>
-                    <div className={styles.affirmationText}>
-                      <strong>Routine Census Affirmation:</strong> If physical vacancy and allocatable beds match ward
-                      reality, confirm both in one tap.
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`${styles.confirmAllButton} ${styles.btnMasterAffirm}`}
-                    onClick={confirmBothBedCounts}
-                    data-testid="ward-confirm-all"
-                    data-confirmed={confirmedToday.has("empty") && confirmedToday.has("allocatable") ? "true" : "false"}
-                  >
-                    Confirm both bed counts &mdash; nothing has changed
-                  </button>
-                </div>
-
-                <ul className={styles.confirmRows}>
-                  <li
-                    className={styles.confirmRow}
-                    data-fresh={confirmedToday.has("empty") ? "confirmed" : "waiting"}
-                    data-testid="ward-confirm-row-empty"
-                  >
-                    <div className={styles.confirmRowHead}>
-                      <span className={styles.confirmRowLabel}>Beds empty right now</span>
-                      <span className={styles.confirmRowValue}>{unit.empty.value}</span>
-                    </div>
-                    <div className={styles.confirmRowMeta}>
-                      <WardChip level={confirmedToday.has("empty") ? "accepted" : "stalled"}>
-                        {confirmedToday.has("empty")
-                          ? "Confirmed since this page opened"
-                          : "Not confirmed since this page opened"}
-                      </WardChip>
-                      <WardFreshness
-                        confirmedAt={unit.empty.confirmedAt}
-                        confirmedByRole={unit.empty.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                        derived={unit.empty.source !== "ward"}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className={`${styles.confirmRowButton} ${styles.btnInlineConfirm}`}
-                      onClick={confirmEmptyToday}
-                      data-testid="ward-confirm-empty"
-                    >
-                      Confirm &mdash; nothing has changed
-                    </button>
-                  </li>
-
-                  <li
-                    className={styles.confirmRow}
-                    data-fresh={confirmedToday.has("allocatable") ? "confirmed" : "waiting"}
-                    data-testid="ward-confirm-row-allocatable"
-                  >
-                    <div className={styles.confirmRowHead}>
-                      <span className={styles.confirmRowLabel}>Of those, how many can you actually allocate</span>
-                      <span className={styles.confirmRowValue}>{unit.allocatable.value}</span>
-                    </div>
-                    <div className={styles.confirmRowMeta}>
-                      <WardChip level={confirmedToday.has("allocatable") ? "accepted" : "stalled"}>
-                        {confirmedToday.has("allocatable")
-                          ? "Confirmed just now"
-                          : "Not confirmed since this page opened"}
-                      </WardChip>
-                      <WardFreshness
-                        confirmedAt={unit.allocatable.confirmedAt}
-                        confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                        now={now}
-                      />
-                    </div>
-                    <div className={styles.censusValueRow}>
-                      <div className={styles.stepperUnit}>
-                        <button
-                          type="button"
-                          className={styles.stepperBtn}
-                          onClick={() => {
-                            const cur = Number.parseInt(capacityValue, 10);
-                            const next = Math.max(0, (Number.isNaN(cur) ? unit.allocatable.value : cur) - 1);
-                            setCapacityValue(String(next));
-                          }}
-                          title="Decrease allocatable count"
-                          aria-label="Decrease allocatable count"
-                        >
-                          -
-                        </button>
-                        <span className={styles.stepperDisplay}>{capacityValue}</span>
-                        <button
-                          type="button"
-                          className={styles.stepperBtn}
-                          onClick={() => {
-                            const cur = Number.parseInt(capacityValue, 10);
-                            const next = Math.min(unit.beds, (Number.isNaN(cur) ? unit.allocatable.value : cur) + 1);
-                            setCapacityValue(String(next));
-                          }}
-                          title="Increase allocatable count"
-                          aria-label="Increase allocatable count"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        className={`${styles.confirmRowButton} ${styles.btnInlineConfirm}`}
-                        onClick={confirmAllocatableToday}
-                        data-testid="ward-confirm-allocatable"
-                      >
-                        Confirm &mdash; nothing has changed
-                      </button>
-                    </div>
-                  </li>
-
-                  <li
-                    className={styles.confirmRow}
-                    data-fresh={confirmedToday.has("constraints") ? "confirmed" : "waiting"}
-                    data-testid="ward-confirm-row-constraints"
-                  >
-                    <div className={styles.confirmRowHead}>
-                      <span className={styles.confirmRowLabel}>Anything limiting who can come in right now</span>
-                    </div>
-                    <div className={styles.confirmRowMeta}>
-                      <WardChip level={confirmedToday.has("constraints") ? "accepted" : "stalled"}>
-                        {confirmedToday.has("constraints")
-                          ? "Answered since this page opened"
-                          : "Not answered since this page opened"}
-                      </WardChip>
-                    </div>
-                    {confirmedToday.has("constraints") ? (
-                      <p className={styles.confirmSkipNote} data-testid="ward-confirm-constraints-answer">
-                        {(unit.intakeConstraints ?? []).length > 0
-                          ? (unit.intakeConstraints ?? []).map((code) => wardIntakeConstraintLabels[code]).join(", ")
-                          : "Nothing limiting intake."}
-                      </p>
-                    ) : null}
-                    <form className={styles.confirmAnswerRow} onSubmit={saveConstraints}>
-                      <fieldset
-                        className={styles.confirmConstraintsFieldset}
-                        data-testid="ward-confirm-constraints-options"
-                      >
-                        <legend className="sr-only">Anything limiting who can come in right now</legend>
-                        <div className={styles.constraintsPillsGrid}>
-                          {WARD_INTAKE_CONSTRAINTS.map((code) => (
-                            <label
-                              key={code}
-                              className={styles.constraintChip}
-                              data-active={constraintsDraft.includes(code) ? "true" : "false"}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={constraintsDraft.includes(code)}
-                                onChange={(event) => toggleConstraintOption(code, event.target.checked)}
-                                data-testid={`ward-confirm-constraints-option-${code}`}
-                                style={{ width: "16px", height: "16px", accentColor: "var(--warn)" }}
-                              />
-                              <span>{wardIntakeConstraintLabels[code]}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                      <button
-                        type="submit"
-                        className={`${styles.confirmRowButton} ${styles.btnInlineConfirm}`}
-                        data-testid="ward-confirm-constraints-save"
-                      >
-                        Save answer
-                      </button>
-                    </form>
-                    <p className={styles.confirmSkipNote}>Choose none if nothing is limiting intake right now.</p>
-                  </li>
-
-                  <li className={styles.confirmRow} data-kind="record" data-testid="ward-confirm-row-release">
-                    <div className={styles.confirmRowHead}>
-                      <span className={styles.confirmRowLabel}>A bed coming free</span>
-                      <span className={styles.confirmRowValue}>{releasesComingFree}</span>
-                    </div>
-                    <div className={styles.confirmRowMeta}>
-                      <span className={styles.recordStamp} data-testid="ward-confirm-release-stamp">
-                        {lastFlaggedRelease
-                          ? `Last flagged ${formatInstantWithDay(lastFlaggedRelease.confirmedAt, now)} · ${lastFlaggedRelease.confirmedBy}`
-                          : "No bed flagged here yet"}
-                      </span>
-                    </div>
-                    <p className={styles.confirmSkipNote} data-testid="ward-confirm-release-note">
-                      {lastFlaggedRelease
-                        ? "Most recent flag; this does not establish that the list is complete or checked today."
-                        : "No bed is still flagged to come free. Discharged beds move to the made-ready list; no record shows whether this was checked today."}
-                    </p>
-                    <Link
-                      className={styles.confirmRowLink}
-                      href="#ward-flag-bed-release"
-                      data-testid="ward-confirm-release-link"
-                    >
-                      Flag a bed coming free
-                    </Link>
-                  </li>
-
-                  <li className={styles.confirmRow} data-kind="record" data-testid="ward-confirm-row-leave">
-                    <div className={styles.confirmRowHead}>
-                      <span className={styles.confirmRowLabel}>A bed going on leave</span>
-                      <span className={styles.confirmRowValue}>{breakdown.onLeave}</span>
-                    </div>
-                    <div className={styles.confirmRowMeta}>
-                      <span className={styles.recordStamp} data-testid="ward-confirm-leave-stamp">
-                        {lastRecordedLeaveBed
-                          ? `Last recorded ${formatInstantWithDay(lastRecordedLeaveBed.confirmedAt, now)} · ${lastRecordedLeaveBed.confirmedBy}`
-                          : "No bed recorded here yet"}
-                      </span>
-                    </div>
-                    <p className={styles.confirmSkipNote} data-testid="ward-confirm-leave-note">
-                      {lastRecordedLeaveBed
-                        ? "Most recent leave-bed record; this does not establish that the list is complete or checked today."
-                        : "No leave bed is recorded. No record shows whether this was checked today."}
-                    </p>
-                    <Link
-                      className={styles.confirmRowLink}
-                      href="#ward-leave-bed-form"
-                      data-testid="ward-confirm-leave-link"
-                    >
-                      Record a bed on leave
-                    </Link>
-                  </li>
-                </ul>
-              </WardPanel>
-            </div>
-
-            <section
-              aria-label="Ward figures, right now"
-              id="bed-capacity"
-              className={`${styles.bedSection} ${styles.censusCommandCard}`}
-              tabIndex={0}
-              style={{ marginTop: "1.5rem" }}
-            >
-              <div className={styles.commandHeader}>
-                <div className={styles.commandTitleGroup}>
-                  <h2 className={styles.commandMainTitle}>
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="3" width="12" height="10" rx="1" />
-                      <path d="M6 3v10M2 8h4" />
-                    </svg>
-                    <span>Ward figures, right now</span>
-                  </h2>
-                  <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
-                </div>
-                <div
-                  className={styles.capacityFreshnessRow}
-                  data-testid="ward-unit-capacity-freshness"
-                  style={{ margin: 0 }}
-                >
-                  <WardFreshness
-                    confirmedAt={unit.allocatable.confirmedAt}
-                    confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                    now={now}
-                    derived={unit.allocatable.source !== "ward"}
-                  />
-                  {latestRefreshRequest ? (
-                    <span className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
-                      Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className={styles.capacitySection}>
-                <div className={styles.capacityTrackTitleRow}>
-                  <span className={styles.capacityTrackLabel}>Capacity distribution</span>
-                  <span style={{ fontSize: "11.5px", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-                    {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} ·{" "}
-                    {states.closed} {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
-                  </span>
-                </div>
-
-                <div className={styles.capacityTrack} aria-hidden="true" title="Proportional Bed Distribution">
-                  <div
-                    className={styles.capSeg}
-                    data-state="available"
-                    style={{ flexGrow: states.ready, width: `${(states.ready / unit.beds) * 100}%` }}
-                  />
-                  <div
-                    className={styles.capSeg}
-                    data-state="pulled"
-                    style={{ flexGrow: states.pulled, width: `${(states.pulled / unit.beds) * 100}%` }}
-                  />
-                  <div
-                    className={styles.capSeg}
-                    data-state="closed"
-                    style={{ flexGrow: states.closed, width: `${(states.closed / unit.beds) * 100}%` }}
-                  />
-                  <div
-                    className={styles.capSeg}
-                    data-state="occupied"
-                    style={{ flexGrow: states.occupied, width: `${(states.occupied / unit.beds) * 100}%` }}
-                  />
-                </div>
-
-                <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
-                  {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
-                    not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
-                  <span
-                    className={`${styles.bedChip} ${styles.statBox}`}
-                    data-state="available"
-                    title={BED_STATE_DETAILS.ready}
-                  >
-                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
-                    <strong className={styles.statBoxVal} style={{ color: "var(--good)" }}>
-                      {states.ready}
-                    </strong>
-                  </span>
-                  <span
-                    className={`${styles.bedChip} ${styles.statBox}`}
-                    data-state="pulled"
-                    title={BED_STATE_DETAILS.pulled}
-                  >
-                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
-                    <strong className={styles.statBoxVal}>{states.pulled}</strong>
-                  </span>
-                  <span
-                    className={`${styles.bedChip} ${styles.statBox}`}
-                    data-state="closed"
-                    title={BED_STATE_DETAILS.closed}
-                  >
-                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
-                    <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
-                      {states.closed}
-                    </strong>
-                  </span>
-                  <span
-                    className={`${styles.bedChip} ${styles.statBox}`}
-                    data-state="occupied"
-                    title={BED_STATE_DETAILS.occupied}
-                  >
-                    <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
-                    <strong className={styles.statBoxVal}>{states.occupied}</strong>
-                  </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="confirmed">
-                    <span className={styles.statBoxLabel}>Confirmed</span>{" "}
-                    <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
-                      {breakdown.confirmedToday}
-                    </strong>
-                  </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="expected">
-                    <span className={styles.statBoxLabel}>Expected</span>{" "}
-                    <strong className={styles.statBoxVal} style={{ color: "var(--warn)" }}>
-                      {breakdown.expectedToday}
-                    </strong>
-                  </span>
-                  <span
-                    className={`${styles.bedChip} ${styles.statBox}`}
-                    data-state="blocked-release"
-                    data-testid="ward-unit-blocked-releases"
-                  >
-                    <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
-                    <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
-                  </span>
-                  <span className={`${styles.bedChip} ${styles.statBox}`} data-state="leave">
-                    <span className={styles.statBoxLabel}>On leave</span>{" "}
-                    <strong className={styles.statBoxVal} style={{ color: "var(--gilt)" }}>
-                      {breakdown.onLeave}
-                    </strong>
-                  </span>
-                </div>
-
-                {pendingPreparation > 0 ? (
-                  <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="8" cy="8" r="6" />
-                      <path d="M8 5v3.5l2 1" />
-                    </svg>
-                    <span>
-                      <strong>
-                        {pendingPreparation} of the {capacity.available} ready{" "}
-                        {capacity.available === 1 ? "bed" : "beds"} at {unit.name}{" "}
-                        {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                      </strong>{" "}
-                      The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
-                      ward cannot admit into it yet.
-                    </span>
-                  </div>
-                ) : null}
-
-                <details className={styles.clinicalDisclosure}>
-                  <summary>What these bed figures mean</summary>
-                  <p className={styles.bedNote}>
-                    Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled
-                    means allocated to a patient who has not arrived yet. Beds being made ready are counted inside
-                    Ready, and beds held for a patient on leave inside Occupied. Confirmed, expected, held-up discharge
-                    and leave are flow counts and are not added to that total.
-                  </p>
-                </details>
-              </div>
-            </section>
-
-            {/* ═════ SECTION 3: BED TURNOVER PIPELINE (3-STAGE FLOW) ═════ */}
-            <section className={styles.pipelineSection} aria-label="Bed Turnover &amp; Release Pipeline">
-              <div className={styles.pipelineHead}>
-                <h2 className={styles.pipelineTitle}>
-                  <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M2 4h12M2 8h12M2 12h12" />
-                  </svg>
-                  <span>Bed Turnover &amp; Release Pipeline</span>
-                </h2>
-              </div>
-
-              <form
-                id="ward-flag-bed-release"
-                className={styles.capacityForm}
-                onSubmit={submitBedRelease}
-                data-testid="ward-flag-bed-release"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r1, 10px)",
-                  padding: "16px 18px",
-                  boxShadow: "var(--lift)",
-                  margin: "0 0 16px 0",
-                }}
-              >
-                <span className={styles.capacityLabel}>Flag a bed coming free at {unit.name}</span>
-                <div className={styles.capacityRow}>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-bed-release-admission">
-                      Patient
-                    </label>
-                    {/* Not `required`: with nobody chosen the submit reaches the handler, which refuses
-                      with a plain message rather than the browser's own bubble. */}
-                    <select
-                      id="ward-bed-release-admission"
-                      className={styles.capacityInput}
-                      value={bedReleaseAdmissionId ?? ""}
-                      onChange={(event) => setBedReleaseAdmissionId(event.target.value || undefined)}
-                      data-testid="ward-bed-release-admission"
-                    >
-                      <option value="" disabled>
-                        {bedReleaseCandidates.length === 0
-                          ? "Nobody in a bed here can be flagged"
-                          : "Choose whose bed is coming free"}
-                      </option>
-                      {bedReleaseCandidates.map((candidate) => (
-                        <option key={candidate.admissionId} value={candidate.admissionId}>
-                          {candidate.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-bed-release-waiting-on">
-                      Waiting on
-                    </label>
-                    <p className={styles.declineHint} data-testid="ward-bed-release-waiting-on-hint">
-                      {WAITING_ON_LONGEST}
-                    </p>
-                    <select
-                      id="ward-bed-release-waiting-on"
-                      required
-                      className={styles.capacityInput}
-                      value={bedReleaseWaitingOn ?? ""}
-                      onChange={(event) => setBedReleaseWaitingOn(event.target.value as BedReleaseWaitingOn)}
-                    >
-                      <option value="" disabled>
-                        Choose what it is waiting on
-                      </option>
-                      {BED_RELEASE_WAITING_ON.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-bed-release-expected-at">
-                      Expected free
-                    </label>
-                    <input
-                      id="ward-bed-release-expected-at"
-                      data-testid="ward-bed-release-expected-at"
-                      type="time"
-                      required
-                      className={styles.capacityInput}
-                      value={bedReleaseExpectedAt}
-                      onChange={(event) => setBedReleaseExpectedAt(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <fieldset className={styles.declineFieldset}>
-                      <legend className={styles.declineLegend}>Day</legend>
-                      {RELEASE_DAYS.map((day) => (
-                        <label key={day} className={styles.declineOption}>
-                          <input
-                            type="radio"
-                            name="ward-bed-release-day"
-                            value={day}
-                            checked={bedReleaseDay === day}
-                            onChange={() => setBedReleaseDay(day)}
-                            data-testid={`ward-bed-release-day-${day}`}
-                          />
-                          {day === "today" ? "Today" : "Tomorrow"}
-                        </label>
-                      ))}
-                    </fieldset>
-                    {releaseTimeAlreadyPassed(now, bedReleaseDay, bedReleaseExpectedAt) ? (
-                      <p className={styles.declineHint} data-testid="ward-bed-release-day-hint">
-                        That time has already passed today, so this bed will show as due now.
-                      </p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-bed-release-blocker">
-                      Blocker
-                    </label>
-                    <select
-                      id="ward-bed-release-blocker"
-                      className={styles.capacityInput}
-                      value={bedReleaseBlocker ?? ""}
-                      onChange={(event) =>
-                        setBedReleaseBlocker(
-                          event.target.value === "" ? undefined : (event.target.value as BedReleaseBlocker),
-                        )
-                      }
-                    >
-                      <option value="">No blocker</option>
-                      {BED_RELEASE_BLOCKERS.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    data-testid="ward-flag-bed-release-submit"
-                    className={styles.capacitySubmit}
-                    disabled={!bedReleaseWaitingOn}
-                  >
-                    Flag bed coming free
-                  </button>
-                </div>
-                <p className={styles.capacityConfirmed}>
-                  Records the person, the expected free time, what it is waiting on and any blocker for {unit.name}.
-                </p>
-              </form>
-
-              <div className={styles.pipelineGrid}>
-                {/* Stage 1: Expected to Free */}
-                <div className={styles.pipelineColumn}>
-                  <div className={styles.pipelineColHeader}>
-                    <span className={styles.pipelineColTitle}>
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "var(--warn)",
-                          display: "inline-block",
-                        }}
-                      />
-                      <span>1. Expected to Free</span>
-                    </span>
-                    <span className={styles.colCountPill}>
-                      {pendingBedReleases.filter((r) => r.state === "expected").length}
-                    </span>
-                  </div>
-                  <div className={styles.pipelineColBody}>
-                    {pendingBedReleases.filter((r) => r.state === "expected").length === 0 ? (
-                      <div className={styles.pipelineEmptyState}>
-                        No beds currently expected to free at {unit.name}.
-                      </div>
-                    ) : (
-                      <ul className={styles.cardList} data-testid="ward-bed-release-list">
-                        {pendingBedReleases
-                          .filter((r) => r.state === "expected")
-                          .map((release) => {
-                            const isBlocked = release.blocker !== null;
-                            const blockOpen = blockOpenFor === release.id;
-                            const dischargeOpen = dischargeOpenFor === release.id;
-                            const dischargeWho = resolvePatientIdentity(
-                              admissions.find((admission) => admission.id === release.admissionId),
-                            ).displayName;
-                            return (
-                              <li
-                                key={release.id}
-                                data-testid={`ward-bed-release-${release.id}`}
-                                className={`${styles.card} ${styles.pipelineCard}`}
-                                data-blocked={isBlocked ? "true" : "false"}
-                              >
-                                <header className={`${styles.cardHeader} ${styles.cardTopRow}`}>
-                                  <span className={styles.cardBedName}>{bedRecordLabel(release.admissionId)}</span>
-                                  <span> · </span>
-                                  <strong className={styles.bedReleaseStateLabel}>
-                                    {bedReleaseStateLabels[release.state]}
-                                  </strong>
-                                  {isBlocked ? (
-                                    <strong
-                                      data-testid={`ward-bed-release-blocked-flag-${release.id}`}
-                                      className={styles.cardBlockerAlert}
-                                    >
-                                      {BED_RELEASE_BLOCKED_LABEL}
-                                    </strong>
-                                  ) : null}
-                                  <span className={styles.cardTimeBadge}>
-                                    Expected {formatInstant(release.expectedAt)}
-                                  </span>
-                                </header>
-                                <div className={styles.cardWaitingRow}>
-                                  <span className={styles.cardWaitingLabel}>Waiting on:</span>
-                                  <span className={styles.cardWaitingVal}>{release.waitingOn ?? "Not recorded"}</span>
-                                </div>
-                                {release.blocker ? (
-                                  <div className={styles.cardBlockerAlert}>Blocker: {release.blocker}</div>
-                                ) : null}
-                                {release.blockedBy ? (
-                                  <span className={styles.cardMeta}>Blocked by {release.blockedBy}</span>
-                                ) : null}
-                                <div className={styles.cardFreshness}>
-                                  <WardFreshness
-                                    confirmedAt={release.confirmedAt}
-                                    confirmedByRole={release.confirmedBy}
-                                    now={now}
-                                  />
-                                </div>
-                                <div className={`${styles.actionRow} ${styles.cardActionsRow}`}>
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-bed-release-confirm-${release.id}`}
-                                    className={`${styles.btnCardAction} ${styles.btnCardActionPrimary}`}
-                                    onClick={() => confirmBedRelease(release.id)}
-                                  >
-                                    Confirm
-                                  </button>
-                                  {!isBlocked ? (
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-bed-release-block-toggle-${release.id}`}
-                                      aria-expanded={blockOpen}
-                                      className={styles.btnCardAction}
-                                      onClick={() => toggleBlockRelease(release.id)}
-                                    >
-                                      Blocked
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-bed-release-unblock-${release.id}`}
-                                      className={styles.btnCardAction}
-                                      onClick={() => clearBedReleaseBlock(release.id)}
-                                    >
-                                      No longer blocked
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-bed-release-release-${release.id}`}
-                                    className={styles.btnCardAction}
-                                    aria-expanded={dischargeOpen}
-                                    onClick={() => toggleDischargeRelease(release.id)}
-                                  >
-                                    Discharged
-                                  </button>
-                                </div>
-                                {dischargeOpen ? (
-                                  <form
-                                    className={styles.declineForm}
-                                    onSubmit={(event) =>
-                                      submitDischargeRelease(event, release.admissionId, dischargeWho)
-                                    }
-                                    data-testid={`ward-bed-release-discharge-form-${release.id}`}
-                                  >
-                                    <label
-                                      className={styles.declineLegend}
-                                      htmlFor={`ward-bed-release-discharge-destination-${release.id}`}
-                                    >
-                                      Where is {dischargeWho} going?
-                                    </label>
-                                    <select
-                                      id={`ward-bed-release-discharge-destination-${release.id}`}
-                                      data-testid={`ward-bed-release-discharge-destination-${release.id}`}
-                                      required
-                                      className={styles.capacityInput}
-                                      value={dischargeDestination ?? ""}
-                                      onChange={(event) =>
-                                        setDischargeDestination(event.target.value as LeavingDestination)
-                                      }
-                                    >
-                                      <option value="" disabled>
-                                        Choose where they are going
-                                      </option>
-                                      {LEAVING_DESTINATIONS.map((destination) => (
-                                        <option key={destination.id} value={destination.id}>
-                                          {destination.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <button
-                                      type="submit"
-                                      data-testid={`ward-bed-release-discharge-submit-${release.id}`}
-                                      disabled={!dischargeDestination}
-                                      className={styles.declineSubmit}
-                                    >
-                                      Record that they have left
-                                    </button>
-                                  </form>
-                                ) : null}
-                                {blockOpen ? (
-                                  <form
-                                    className={styles.declineForm}
-                                    onSubmit={(event) => submitBlockRelease(event, release.id)}
-                                    data-testid={`ward-bed-release-block-form-${release.id}`}
-                                  >
-                                    <label
-                                      className={styles.declineLegend}
-                                      htmlFor={`ward-bed-release-blocker-select-${release.id}`}
-                                    >
-                                      Blocker for this release
-                                    </label>
-                                    <select
-                                      id={`ward-bed-release-blocker-select-${release.id}`}
-                                      data-testid={`ward-bed-release-blocker-${release.id}`}
-                                      required
-                                      className={styles.capacityInput}
-                                      value={blockChoice ?? ""}
-                                      onChange={(event) => setBlockChoice(event.target.value as BedReleaseBlocker)}
-                                    >
-                                      <option value="" disabled>
-                                        Choose a blocker
-                                      </option>
-                                      {BED_RELEASE_BLOCKERS.map((item) => (
-                                        <option key={item} value={item}>
-                                          {item}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <button
-                                      type="submit"
-                                      data-testid={`ward-bed-release-block-submit-${release.id}`}
-                                      disabled={!blockChoice}
-                                      className={styles.declineSubmit}
-                                    >
-                                      Confirm blocked
-                                    </button>
-                                  </form>
-                                ) : null}
-                              </li>
-                            );
-                          })}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stage 2: Confirmed Discharges */}
-                <div className={styles.pipelineColumn}>
-                  <div className={styles.pipelineColHeader}>
-                    <span className={styles.pipelineColTitle}>
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "var(--accent)",
-                          display: "inline-block",
-                        }}
-                      />
-                      <span>2. Confirmed Discharges</span>
-                    </span>
-                    <span className={styles.colCountPill}>
-                      {pendingBedReleases.filter((r) => r.state === "confirmed").length}
-                    </span>
-                  </div>
-                  <div className={styles.pipelineColBody}>
-                    {pendingBedReleases.filter((r) => r.state === "confirmed").length === 0 ? (
-                      <div className={styles.pipelineEmptyState}>No confirmed discharges pending at {unit.name}.</div>
-                    ) : (
-                      <ul className={styles.cardList}>
-                        {pendingBedReleases
-                          .filter((r) => r.state === "confirmed")
-                          .map((release) => {
-                            const revertOpen = revertOpenFor === release.id;
-                            const isBlocked = release.blocker !== null;
-                            const blockOpen = blockOpenFor === release.id;
-                            const dischargeOpen = dischargeOpenFor === release.id;
-                            const dischargeWho = resolvePatientIdentity(
-                              admissions.find((admission) => admission.id === release.admissionId),
-                            ).displayName;
-                            return (
-                              <li
-                                key={release.id}
-                                data-testid={`ward-bed-release-${release.id}`}
-                                className={`${styles.card} ${styles.pipelineCard}`}
-                                data-blocked={isBlocked ? "true" : "false"}
-                              >
-                                <header className={`${styles.cardHeader} ${styles.cardTopRow}`}>
-                                  <span className={styles.cardBedName}>
-                                    {bedRecordLabel(release.admissionId)} ·{" "}
-                                    <strong>{bedReleaseStateLabels[release.state]}</strong>
-                                  </span>
-                                  {isBlocked ? (
-                                    <strong
-                                      data-testid={`ward-bed-release-blocked-flag-${release.id}`}
-                                      className={styles.cardBlockerAlert}
-                                    >
-                                      {BED_RELEASE_BLOCKED_LABEL}
-                                    </strong>
-                                  ) : null}
-                                  <span
-                                    className={styles.cardTimeBadge}
-                                    style={{ background: "var(--accent)", color: "var(--on-accent)" }}
-                                  >
-                                    Confirmed {formatInstant(release.expectedAt)}
-                                  </span>
-                                </header>
-                                <div className={styles.cardWaitingRow}>
-                                  <span className={styles.cardWaitingLabel}>Waiting on:</span>
-                                  <span className={styles.cardWaitingVal}>{release.waitingOn ?? "Not recorded"}</span>
-                                </div>
-                                {release.blocker ? (
-                                  <div className={styles.cardBlockerAlert}>Blocker: {release.blocker}</div>
-                                ) : null}
-                                <div className={styles.cardFreshness}>
-                                  <WardFreshness
-                                    confirmedAt={release.confirmedAt}
-                                    confirmedByRole={release.confirmedBy}
-                                    now={now}
-                                  />
-                                </div>
-                                <div className={`${styles.actionRow} ${styles.cardActionsRow}`}>
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-bed-release-release-${release.id}`}
-                                    className={`${styles.btnCardAction} ${styles.btnCardActionSuccess}`}
-                                    aria-expanded={dischargeOpen}
-                                    onClick={() => toggleDischargeRelease(release.id)}
-                                  >
-                                    Discharged
-                                  </button>
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-bed-release-revert-toggle-${release.id}`}
-                                    aria-expanded={revertOpen}
-                                    className={styles.btnCardAction}
-                                    onClick={() => toggleRevertRelease(release.id)}
-                                  >
-                                    Back to expected
-                                  </button>
-                                  {!isBlocked ? (
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-bed-release-block-toggle-${release.id}`}
-                                      aria-expanded={blockOpen}
-                                      className={styles.btnCardAction}
-                                      onClick={() => toggleBlockRelease(release.id)}
-                                    >
-                                      Blocked
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      data-testid={`ward-bed-release-unblock-${release.id}`}
-                                      className={styles.btnCardAction}
-                                      onClick={() => clearBedReleaseBlock(release.id)}
-                                    >
-                                      No longer blocked
-                                    </button>
-                                  )}
-                                </div>
-                                {dischargeOpen ? (
-                                  <form
-                                    className={styles.declineForm}
-                                    onSubmit={(event) =>
-                                      submitDischargeRelease(event, release.admissionId, dischargeWho)
-                                    }
-                                    data-testid={`ward-bed-release-discharge-form-${release.id}`}
-                                  >
-                                    <label
-                                      className={styles.declineLegend}
-                                      htmlFor={`ward-bed-release-discharge-destination-${release.id}`}
-                                    >
-                                      Where is {dischargeWho} going?
-                                    </label>
-                                    <select
-                                      id={`ward-bed-release-discharge-destination-${release.id}`}
-                                      data-testid={`ward-bed-release-discharge-destination-${release.id}`}
-                                      required
-                                      className={styles.capacityInput}
-                                      value={dischargeDestination ?? ""}
-                                      onChange={(event) =>
-                                        setDischargeDestination(event.target.value as LeavingDestination)
-                                      }
-                                    >
-                                      <option value="" disabled>
-                                        Choose where they are going
-                                      </option>
-                                      {LEAVING_DESTINATIONS.map((destination) => (
-                                        <option key={destination.id} value={destination.id}>
-                                          {destination.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <button
-                                      type="submit"
-                                      data-testid={`ward-bed-release-discharge-submit-${release.id}`}
-                                      disabled={!dischargeDestination}
-                                      className={styles.declineSubmit}
-                                    >
-                                      Record that they have left
-                                    </button>
-                                  </form>
-                                ) : null}
-                                {revertOpen ? (
-                                  <form
-                                    className={styles.declineForm}
-                                    onSubmit={(event) => revertBedRelease(event, release.id)}
-                                    data-testid={`ward-bed-release-revert-form-${release.id}`}
-                                  >
-                                    <label
-                                      className={styles.declineLegend}
-                                      htmlFor={`ward-bed-release-revert-select-${release.id}`}
-                                    >
-                                      Waiting on, once reverted
-                                    </label>
-                                    <p
-                                      className={styles.declineHint}
-                                      data-testid={`ward-bed-release-revert-waiting-on-hint-${release.id}`}
-                                    >
-                                      {WAITING_ON_LONGEST}
-                                    </p>
-                                    <select
-                                      id={`ward-bed-release-revert-select-${release.id}`}
-                                      data-testid={`ward-bed-release-revert-waiting-on-${release.id}`}
-                                      required
-                                      className={styles.capacityInput}
-                                      value={revertChoice ?? ""}
-                                      onChange={(event) => setRevertChoice(event.target.value as BedReleaseWaitingOn)}
-                                    >
-                                      <option value="" disabled>
-                                        Choose what it is waiting on
-                                      </option>
-                                      {BED_RELEASE_WAITING_ON.map((item) => (
-                                        <option key={item} value={item}>
-                                          {item}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <button
-                                      type="submit"
-                                      data-testid={`ward-bed-release-revert-submit-${release.id}`}
-                                      disabled={!revertChoice}
-                                      className={styles.declineSubmit}
-                                    >
-                                      Confirm reversal
-                                    </button>
-                                  </form>
-                                ) : null}
-                                {blockOpen ? (
-                                  <form
-                                    className={styles.declineForm}
-                                    onSubmit={(event) => submitBlockRelease(event, release.id)}
-                                    data-testid={`ward-bed-release-block-form-${release.id}`}
-                                  >
-                                    <label
-                                      className={styles.declineLegend}
-                                      htmlFor={`ward-bed-release-blocker-select-${release.id}`}
-                                    >
-                                      Blocker for this release
-                                    </label>
-                                    <select
-                                      id={`ward-bed-release-blocker-select-${release.id}`}
-                                      data-testid={`ward-bed-release-blocker-${release.id}`}
-                                      required
-                                      className={styles.capacityInput}
-                                      value={blockChoice ?? ""}
-                                      onChange={(event) => setBlockChoice(event.target.value as BedReleaseBlocker)}
-                                    >
-                                      <option value="" disabled>
-                                        Choose a blocker
-                                      </option>
-                                      {BED_RELEASE_BLOCKERS.map((item) => (
-                                        <option key={item} value={item}>
-                                          {item}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <button
-                                      type="submit"
-                                      data-testid={`ward-bed-release-block-submit-${release.id}`}
-                                      disabled={!blockChoice}
-                                      className={styles.declineSubmit}
-                                    >
-                                      Confirm blocked
-                                    </button>
-                                  </form>
-                                ) : null}
-                              </li>
-                            );
-                          })}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stage 3: Beds Being Made Ready (Terminal Cleaning) */}
-                <div className={styles.pipelineColumn}>
-                  <div className={styles.pipelineColHeader}>
-                    <span className={styles.pipelineColTitle}>
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "var(--good)",
-                          display: "inline-block",
-                        }}
-                      />
-                      <span>3. Cleaning &amp; Turnaround</span>
-                    </span>
-                    <span className={styles.colCountPill}>{dischargedBedReleases.length}</span>
-                  </div>
-                  <div className={styles.pipelineColBody}>
-                    {dischargedBedReleases.length === 0 ? (
-                      <div className={styles.pipelineEmptyState}>
-                        No beds currently in turnaround cleaning at {unit.name}.
-                      </div>
-                    ) : (
-                      <ul className={styles.cardList} data-testid="ward-bed-preparation-list">
-                        {dischargedBedReleases.map((release) => {
-                          const preparationOpen = preparationOpenFor === release.id;
-                          return (
-                            <li
-                              key={release.id}
-                              data-testid={`ward-bed-preparation-${release.id}`}
-                              className={`${styles.card} ${styles.pipelineCard}`}
-                            >
-                              <header className={`${styles.cardHeader} ${styles.cardTopRow}`}>
-                                <strong className={styles.cardBedName}>
-                                  Bed not recorded · {bedReleaseStateLabels[release.state]}
-                                </strong>
-                                {release.preparing ? (
-                                  <strong
-                                    data-testid={`ward-bed-preparation-flag-${release.id}`}
-                                    className={styles.cardTimeBadge}
-                                    style={{ background: "var(--warn-soft)", color: "var(--warn)" }}
-                                  >
-                                    Being made ready
-                                  </strong>
-                                ) : (
-                                  <span className={styles.cardTimeBadge}>Still available</span>
-                                )}
-                              </header>
-                              {release.preparationNote ? (
-                                <div className={styles.cardWaitingRow}>
-                                  <span className={styles.cardWaitingLabel}>Status:</span>
-                                  <span
-                                    className={styles.cardWaitingVal}
-                                    data-testid={`ward-bed-preparation-note-${release.id}`}
-                                  >
-                                    {release.preparationNote}
-                                  </span>
-                                </div>
-                              ) : null}
-                              <div className={styles.cardFreshness}>
-                                <WardFreshness
-                                  confirmedAt={release.confirmedAt}
-                                  confirmedByRole={release.confirmedBy}
-                                  now={now}
-                                />
-                              </div>
-                              <div className={`${styles.actionRow} ${styles.cardActionsRow}`}>
-                                <button
-                                  type="button"
-                                  data-testid={`ward-bed-preparation-toggle-${release.id}`}
-                                  aria-expanded={preparationOpen}
-                                  className={styles.btnCardAction}
-                                  onClick={() => toggleBedPreparation(release.id)}
-                                >
-                                  {release.preparing ? "Change what it is waiting on" : "Being made ready"}
-                                </button>
-                                {release.preparing ? (
-                                  <button
-                                    type="button"
-                                    data-testid={`ward-bed-preparation-finish-${release.id}`}
-                                    className={`${styles.btnCardAction} ${styles.btnCardActionSuccess}`}
-                                    onClick={() => finishBedPreparation(release.id)}
-                                  >
-                                    Ready
-                                  </button>
-                                ) : null}
-                              </div>
-                              {preparationOpen ? (
-                                <form
-                                  className={styles.declineForm}
-                                  onSubmit={(event) => submitBedPreparation(event, release.id)}
-                                  data-testid={`ward-bed-preparation-form-${release.id}`}
-                                >
-                                  <label
-                                    className={styles.declineLegend}
-                                    htmlFor={`ward-bed-preparation-select-${release.id}`}
-                                  >
-                                    What this bed is waiting on
-                                  </label>
-                                  <select
-                                    id={`ward-bed-preparation-select-${release.id}`}
-                                    data-testid={`ward-bed-preparation-note-select-${release.id}`}
-                                    required
-                                    className={styles.capacityInput}
-                                    value={preparationChoice ?? ""}
-                                    onChange={(event) => setPreparationChoice(event.target.value as BedPreparationNote)}
-                                  >
-                                    <option value="" disabled>
-                                      Choose what it is waiting on
-                                    </option>
-                                    {BED_PREPARATION_NOTES.map((item) => (
-                                      <option key={item} value={item}>
-                                        {item}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    type="submit"
-                                    data-testid={`ward-bed-preparation-submit-${release.id}`}
-                                    disabled={!preparationChoice}
-                                    className={styles.declineSubmit}
-                                  >
-                                    Confirm being made ready
-                                  </button>
-                                </form>
-                              ) : null}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ═════ SECTION 4: AUTHORIZED PATIENT LEAVE CARD ═════ */}
-            <section className={styles.leaveSectionCard} aria-label="Beds on leave tracker">
-              <div className={styles.leaveHead}>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "15px",
-                    fontWeight: 700,
-                    color: "var(--ink)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M3 2h10v12H3zM6 5h4M6 8h4" />
-                  </svg>
-                  <span>Beds on leave</span>
-                </h3>
-              </div>
-
-              <div className={styles.leaveStatutoryAlert}>
-                {unitLeaveBeds.length} bed
-                {unitLeaveBeds.length === 1 ? "" : "s"} currently on leave at {unit.name}. Beds on leave remain reserved
-                for the patient and are <strong>NEVER</strong> merged into available beds.
-              </div>
-
-              <form
-                id="ward-leave-bed-form"
-                className={styles.capacityForm}
-                onSubmit={submitLeaveBed}
-                data-testid="ward-leave-bed-form"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r1, 10px)",
-                  padding: "16px 18px",
-                  boxShadow: "var(--lift)",
-                  margin: "0 0 16px 0",
-                }}
-              >
-                <span className={styles.capacityLabel}>Record a bed on leave at {unit.name}</span>
-                <div className={styles.capacityRow}>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-leave-bed-patient">
-                      Patient on leave
-                    </label>
-                    <select
-                      id="ward-leave-bed-patient"
-                      data-testid="ward-leave-bed-patient"
-                      className={styles.capacityInput}
-                      value={leaveAdmissionId}
-                      onChange={(event) => setLeaveAdmissionId(event.target.value)}
-                      disabled={otherOccupants.length === 0}
-                    >
-                      <option value="">
-                        {otherOccupants.length === 0 ? "No admitted patients available" : "Choose a patient..."}
-                      </option>
-                      {otherOccupants.map((adm) => {
-                        const linkedMovement = adm.referralId
-                          ? movements.find((m) => m.id === adm.referralId)
-                          : undefined;
-                        const identity = resolvePatientIdentity(linkedMovement ?? adm);
-                        return (
-                          <option key={adm.id} value={adm.id}>
-                            {identity.displayName} ({adm.id})
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={styles.declineLegend} htmlFor="ward-leave-bed-expected-return">
-                      Expected return
-                    </label>
-                    <input
-                      id="ward-leave-bed-expected-return"
-                      data-testid="ward-leave-bed-expected-return"
-                      type="time"
-                      required
-                      className={styles.capacityInput}
-                      value={leaveExpectedReturn}
-                      onChange={(event) => setLeaveExpectedReturn(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <fieldset className={styles.declineFieldset}>
-                      <legend className={styles.declineLegend}>Day</legend>
-                      {RELEASE_DAYS.map((day) => (
-                        <label key={day} className={styles.declineOption}>
-                          <input
-                            type="radio"
-                            name="ward-leave-bed-day"
-                            value={day}
-                            checked={leaveDay === day}
-                            onChange={() => setLeaveDay(day)}
-                            data-testid={`ward-leave-bed-day-${day}`}
-                          />
-                          {day === "today" ? "Today" : "Tomorrow"}
-                        </label>
-                      ))}
-                    </fieldset>
-                    {releaseTimeAlreadyPassed(now, leaveDay, leaveExpectedReturn) ? (
-                      <p className={styles.declineHint} data-testid="ward-leave-bed-day-hint">
-                        That time has already passed today, so this bed will show as due back now.
-                      </p>
-                    ) : null}
-                  </div>
-                  <button type="submit" data-testid="ward-leave-bed-submit" className={styles.capacitySubmit}>
-                    Record leave bed
-                  </button>
-                </div>
-                <p className={styles.capacityConfirmed}>
-                  {unitLeaveBeds.length} bed{unitLeaveBeds.length === 1 ? "" : "s"} currently on leave at {unit.name}.
-                  Never merged into available beds. Shows nothing about the person on leave.
-                </p>
-              </form>
-
-              <div
-                className={styles.capacityForm}
-                data-testid="ward-leave-bed-list"
-                style={{ border: "none", padding: 0, margin: 0 }}
-              >
-                <span className={styles.capacityLabel}>Beds currently on leave at {unit.name}</span>
-                {unitLeaveBeds.length === 0 ? (
-                  <p className={styles.placeholder}>No bed currently on leave at {unit.name}.</p>
-                ) : (
-                  <ul className={styles.leaveCardsList}>
-                    {unitLeaveBeds.map((leaveBed) => (
-                      <li
-                        key={leaveBed.id}
-                        data-testid={`ward-leave-bed-${leaveBed.id}`}
-                        className={styles.leaveItemCard}
-                      >
-                        <div className={styles.leaveItemInfo}>
-                          <strong className={styles.leaveItemTitle}>Bed not recorded &middot; Bed on leave</strong>
-                          <span className={styles.leaveItemMeta}>
-                            Expected return {formatInstant(leaveBed.expectedReturn)}
-                          </span>
-                          <WardFreshness
-                            confirmedAt={leaveBed.confirmedAt}
-                            confirmedByRole={leaveBed.confirmedBy}
-                            now={now}
-                          />
-                        </div>
-                        <div className={styles.actionRow}>
-                          <button
-                            type="button"
-                            data-testid={`ward-leave-bed-end-${leaveBed.id}`}
-                            className={styles.btnInlineConfirm}
-                            onClick={() => endLeaveBed(leaveBed.id)}
-                          >
-                            Ended
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
-
-            {/* ═════ SECTION 5: SHIFT COORDINATOR AUDIT LEDGER ═════ */}
-            <section className={styles.ledgerCard} aria-label="Ward activity">
-              <div className={styles.ledgerHead}>
-                <h3 className={styles.ledgerTitle}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="8" cy="8" r="6" />
-                    <path d="M8 5v3.5l2.5 1.5" />
-                  </svg>
-                  <span>Ward activity</span>
-                </h3>
-                <span className={`${styles.returnStatusChip} ${styles.returnStatusChipConfirmed}`}>Ward log</span>
-              </div>
-
-              <div className={styles.ledgerFeed}>
-                {unit.allocatable.confirmedAt ? (
-                  <div className={styles.ledgerRow}>
-                    <span className={styles.ledgerTime}>{formatInstant(unit.allocatable.confirmedAt)}</span>
-                    <span className={styles.ledgerText}>
-                      <strong>Allocatable capacity confirmed at {unit.allocatable.value}</strong> by NUM {unit.name}.
-                    </span>
-                  </div>
-                ) : null}
-                {pendingBedReleases.map((release) => (
-                  <div key={`ledger-${release.id}`} className={styles.ledgerRow}>
-                    <span className={styles.ledgerTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
-                    <span className={styles.ledgerText}>
-                      <strong>
-                        {bedRecordLabel(release.admissionId)} flagged as {bedReleaseStateLabels[release.state]}
-                      </strong>{" "}
-                      (Expected {formatInstant(release.expectedAt)})
-                      {release.waitingOn ? ` waiting on ${release.waitingOn}` : ""}.
-                    </span>
-                  </div>
-                ))}
-                {dischargedBedReleases.map((release) => (
-                  <div key={`ledger-clean-${release.id}`} className={styles.ledgerRow}>
-                    <span className={styles.ledgerTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
-                    <span className={styles.ledgerText}>
-                      <strong>A bed (bed not recorded) freed by a departure</strong>. Preparation:{" "}
-                      {release.preparationNote ??
-                        (release.preparing ? "being made ready, no reason recorded" : "not recorded")}
-                      .
-                    </span>
-                  </div>
-                ))}
-                {unitLeaveBeds.map((leaveBed) => (
-                  <div key={`ledger-leave-${leaveBed.id}`} className={styles.ledgerRow}>
-                    <span className={styles.ledgerTime}>{formatInstantWithDay(leaveBed.confirmedAt, now)}</span>
-                    <span className={styles.ledgerText}>
-                      <strong>A leave bed (bed not recorded) recorded</strong> (Expected return{" "}
-                      {formatInstant(leaveBed.expectedReturn)}) by {leaveBed.confirmedBy}.
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Synthetic Prototype Disclaimer (Invariant FF8) */}
-            <footer className={styles.protoBanner}>
-              SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot;
-              Not a medical device
-            </footer>
-          </div>
+          <WardDecisionsCockpit
+            unit={unit}
+            rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
+            rollupConfirmed={isRollupConfirmedToday}
+            rollupTimeLabel={morningRollupTimeLabel}
+            plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
+            onConfirmRollup={handleConfirmMorningRollup}
+            staffingFact={`${unit.allocatable.value} allocatable`}
+            intakes={intakeDecisions}
+            departures={departureDecisions}
+            leaves={leaveDecisions}
+          />
+          <footer className={styles.protoBanner}>
+            SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot;
+            Not a medical device
+          </footer>
         </section>
 
         {/* ───────── TAB 2: COMING IN ───────── */}
@@ -3574,7 +2233,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             confirmBedRelease={confirmBedRelease}
             clearBedReleaseBlock={clearBedReleaseBlock}
             endLeaveBed={endLeaveBed}
-            onOpenDecisions={() => setActiveTab("return")}
           />
         </section>
 

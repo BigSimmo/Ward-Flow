@@ -420,18 +420,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // stay it belongs to, and this form has no patient picker yet, so planning a discharge here is
     // refused with a plain message and records nothing. When the picker lands, restore: choose the
     // patient, submit, and exactly one new bed-release row appears.
-    const releaseRows = wardScreenAfterArrival.locator('li[data-testid^="ward-bed-release-"]');
+    const releaseRows = wardScreenAfterArrival.locator('[data-testid^="ward-today-release-"]');
     const releaseCountBefore = await releaseRows.count();
 
     const decisionsTab = page.getByRole("tab", { name: "Decisions (Ward record)" });
     await decisionsTab.click();
     await expect(decisionsTab).toHaveAttribute("aria-selected", "true");
-    await wardScreenAfterArrival.locator("#ward-bed-release-waiting-on").selectOption("Nothing outstanding");
-    await wardScreenAfterArrival.locator("#ward-bed-release-expected-at").fill("16:30");
-    await wardScreenAfterArrival.getByTestId("ward-flag-bed-release-submit").click();
-
-    await expect(page.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toBeVisible();
-    await expect(releaseRows, "a refused plan records no bed release").toHaveCount(releaseCountBefore);
+    await expect(wardScreenAfterArrival.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
+    await expect(wardScreenAfterArrival.locator("#ward-bed-release-waiting-on")).toHaveCount(0);
+    await expect(wardScreenAfterArrival.getByTestId("ward-flag-bed-release-submit")).toHaveCount(0);
+    await expect(page.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toHaveCount(0);
+    await expect(releaseRows, "opening Decisions records no bed release").toHaveCount(releaseCountBefore);
     await expectNoReloadSince(page, "planning the discharge");
   });
 });
