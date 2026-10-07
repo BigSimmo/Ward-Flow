@@ -454,17 +454,16 @@
   white-space: nowrap;
 }
 
-.sideTable th,
-.sideTable td {
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line-2);
+/* Cell padding and hairlines come from the wf table; only the compact height and text role differ. */
+.sideTableWrap .sideTable th,
+.sideTableWrap .sideTable td {
+  height: var(--wf-row-compact);
+  max-width: none;
+  overflow: visible;
   text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.sideTable tbody tr:last-child th,
-.sideTable tbody tr:last-child td {
-  border-bottom: 0;
 }
 
 .sideTable th[scope="row"],

@@ -22,6 +22,7 @@ import {
   StatusGlyph,
   TextInput,
   buttonClass,
+  tableClasses,
   type BarListRow,
 } from "@/components/wf";
 import {
@@ -1038,7 +1039,7 @@ function FamilySideBySide({
   return (
     <div className={styles.family} hidden={hidden} data-testid="community-gateway-family-card">
       <div className={styles.sideTableWrap}>
-        <table className={styles.sideTable}>
+        <table className={`${tableClasses.table} ${styles.sideTable}`}>
           <caption className="sr-only">
             {lead}, {total} entries read alike
           </caption>
