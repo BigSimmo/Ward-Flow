@@ -565,6 +565,7 @@ export function OnCallScreen() {
             roster={roster}
             windows={windows}
             referenceMinute={referenceMinute}
+            atLabel={coverAt === "now" ? "now" : `at ${hhmm(referenceMinute)}`}
             onCopy={copyRoute}
             copyNotice={copyNotice}
           />
@@ -699,6 +700,7 @@ function RolePanel({
   roster,
   windows,
   referenceMinute,
+  atLabel,
   onCopy,
   copyNotice,
 }: {
@@ -707,6 +709,8 @@ function RolePanel({
   roster: RosterItem[];
   windows: Map<string, ShiftWindow | undefined>;
   referenceMinute: number;
+  /** "now", or "at 18:00" when Cover at picks another time. */
+  atLabel: string;
   onCopy: (item: RosterItem) => void;
   copyNotice: string;
 }) {
@@ -725,13 +729,15 @@ function RolePanel({
    * "If not reached" lists the other recorded roles for the same service, then the statewide
    * roles, in roster order. It is derived from the roster; no fallback procedure is recorded.
    */
-  const sameService = roster.filter((role) => role.service === item.service);
+  const sameService = roster.filter((role) => role.service === item.service && role.id !== item.id);
   const network = roster.filter((role) => role.service === NETWORK_SERVICE);
-  const chain = [...sameService, ...network.filter((role) => role.id === "bed-coordinator")]
+  const chain = [...sameService, ...network.filter((role) => role.id === "bed-coordinator" && role.id !== item.id)]
     .filter((role, index, all) => all.findIndex((other) => other.id === role.id) === index)
     .slice(0, 2);
   const governance = network.find((role) => role.id === "governance-lead");
-  if (governance && !chain.some((role) => role.id === governance.id)) chain.push(governance);
+  if (governance && governance.id !== item.id && !chain.some((role) => role.id === governance.id)) {
+    chain.push(governance);
+  }
 
   return (
     <Card id={id} className={styles.panel} aria-labelledby={`${id}-title`} data-testid="ward-on-call-role-panel">
@@ -748,7 +754,7 @@ function RolePanel({
             {window ? ` · ${window.kind.toLowerCase()}` : ""}
           </span>
         </div>
-        <Badge tone={on ? "success" : "neutral"}>{on ? "On now" : "Off now"}</Badge>
+        <Badge tone={on ? "success" : "neutral"}>{`${on ? "On" : "Off"} ${atLabel}`}</Badge>
       </div>
       <div className={styles.panelBody}>
         <Inset className={styles.facts}>
