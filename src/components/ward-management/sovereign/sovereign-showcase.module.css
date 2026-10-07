@@ -395,6 +395,9 @@
 }
 
 .exampleTableScroll {
+  /* Contains the timers' absolutely placed screen-reader text, so it scrolls with the table
+     instead of widening the page. */
+  position: relative;
   min-width: 0;
   overflow-x: auto;
 }

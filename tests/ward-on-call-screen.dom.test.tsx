@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
@@ -25,11 +25,11 @@ import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/wa
  */
 
 function renderOnCall() {
-  // The screen reads board time from the provider clock, as every screen does.
+  // The screen reads board time from the provider clock, as every screen does; the test pins it.
   return render(
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
+    <WardFlowClockContext.Provider value={NOW_ANCHOR}>
       <OnCallScreen />
-    </WardFlowProvider>,
+    </WardFlowClockContext.Provider>,
   );
 }
 

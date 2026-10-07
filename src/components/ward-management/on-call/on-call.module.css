@@ -719,8 +719,11 @@
     cursor: default;
   }
 
-  .printRow[hidden] {
-    display: table-row;
+  /* Tailwind's base-layer hidden rule is important; match that layer for print only. */
+  @layer base {
+    .printRow[hidden] {
+      display: table-row !important;
+    }
   }
 
   .panel,
