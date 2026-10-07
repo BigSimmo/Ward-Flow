@@ -42,3 +42,50 @@ it("keeps toggles usable when storage is blocked", () => {
   act(() => hook.result.current[1](false));
   expect(hook.result.current[0]).toBe(false);
 });
+
+it.each(["reduced-motion", "high-contrast"] as const)(
+  "retains %s across remounts when only writes fail, then restores storage authority",
+  (preference) => {
+    const key = `ward-flow-${preference}`;
+    const attribute = `data-${preference}`;
+    // Start through the public setter to clear any session fallback left by another test.
+    const initial = renderHook(() => useWardAccessibilityPreference(preference));
+    act(() => initial.result.current[1](false));
+    initial.unmount();
+
+    const writes = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota exhausted");
+    });
+    const layout = render(<WardAccessibility />);
+    const hook = renderHook(() => useWardAccessibilityPreference(preference));
+    act(() => hook.result.current[1](true));
+    expect(localStorage.getItem(key)).toBe("false");
+    expect(hook.result.current[0]).toBe(true);
+    expect(document.documentElement.hasAttribute(attribute)).toBe(true);
+
+    hook.unmount();
+    layout.unmount();
+    const remountedLayout = render(<WardAccessibility />);
+    const remounted = renderHook(() => useWardAccessibilityPreference(preference));
+    expect(remounted.result.current[0]).toBe(true);
+    expect(document.documentElement.hasAttribute(attribute)).toBe(true);
+    act(() => remounted.result.current[1](false));
+    expect(remounted.result.current[0]).toBe(false);
+    expect(document.documentElement.hasAttribute(attribute)).toBe(false);
+    act(() => remounted.result.current[1](true));
+    expect(remounted.result.current[0]).toBe(true);
+
+    writes.mockRestore();
+    act(() => remounted.result.current[1](true));
+    expect(localStorage.getItem(key)).toBe("true");
+    // A later storage update must win once the successful setter clears the fallback.
+    act(() => {
+      localStorage.setItem(key, "false");
+      window.dispatchEvent(new StorageEvent("storage", { key, newValue: "false" }));
+    });
+    expect(remounted.result.current[0]).toBe(false);
+    expect(document.documentElement.hasAttribute(attribute)).toBe(false);
+    remounted.unmount();
+    remountedLayout.unmount();
+  },
+);
