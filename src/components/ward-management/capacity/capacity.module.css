@@ -178,8 +178,6 @@
 .screen .gapTable td {
   display: block;
   min-width: 0;
-  padding: 0;
-  border: 0;
   background: transparent;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
@@ -879,8 +877,11 @@
   overflow-x: auto;
 }
 
+/* The shared ward table cell rule, with the v6 divider. */
 .networkTable {
+  composes: table from "../ward-table/ward-table.module.css";
   --ward-table-min-width: 68rem;
+  --ward-divider: var(--wf-line);
 }
 
 .screen .networkTable {
@@ -891,8 +892,6 @@
 
 .screen .networkTable th,
 .screen .networkTable td {
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);

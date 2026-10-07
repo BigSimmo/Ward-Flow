@@ -259,6 +259,7 @@ export function HubScreen() {
             pulled: entry.pulled ?? 0,
             closed: entry.closed ?? 0,
             occupied: entry.occupied ?? 0,
+            pendingPreparation: entry.pendingPreparation,
           }
         : undefined;
     return (

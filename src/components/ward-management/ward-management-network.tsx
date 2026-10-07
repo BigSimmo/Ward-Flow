@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Info, ListChecks, Network } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Clock3, Info, ListChecks, Network, Search } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -34,7 +34,7 @@ import {
   wardServiceOrder,
 } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { formatElapsed, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatElapsed, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import type {
   BedRelease,
@@ -69,8 +69,22 @@ import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
 } from "@/components/ward-management/reference/ward-reference-distances";
-import { FlowDiagram } from "@/components/ward-management/coordinator/flow-diagram";
 import { PressureStrip } from "@/components/ward-management/coordinator/pressure-strip";
+import { Count, Hero, HeroStat, buttonClass } from "@/components/wf";
+import { edPressure } from "@/components/ward-management/ward-pressure";
+import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
+import {
+  largestShortfall,
+  networkUnitRows,
+  readyGap,
+  serviceGroups,
+  waitingByService,
+} from "@/components/ward-management/network/network-overview-derivations";
+import {
+  ReadyByRoadTime,
+  NetworkBedflow,
+  NetworkUnitDetail,
+} from "@/components/ward-management/network/network-overview";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
@@ -529,11 +543,29 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
-  const now = useWardFlowClock();
+  const { movements, units, bedReleases, leaveBeds, admissions } = useWardFlow();
+  const { now, paused, togglePause } = usePageLive();
   const [view, setView] = useState<NetworkView>("overview");
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
+
+  const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
+  const rows = useMemo(
+    () => networkUnitRows({ units, admissions, bedReleases, leaveBeds, now }),
+    [units, admissions, bedReleases, leaveBeds, now],
+  );
+  const groups = useMemo(() => serviceGroups(rows, waitingByService(pressure)), [rows, pressure]);
+  const shortfall = largestShortfall(groups);
+  const waitingInEd = pressure.reduce((sum, row) => sum + row.waiting, 0);
+  const longestInEd = Math.max(0, ...pressure.map((row) => row.longestWaitMinutes));
+  const readyNow = rows.reduce((sum, row) => sum + row.states.ready, 0);
+  const pulledNow = rows.reduce((sum, row) => sum + row.states.pulled, 0);
+  const expectedToday = rows.reduce((sum, row) => sum + row.expected, 0);
+  const openMovements = movements.filter(isOpen).length;
+  // The department the road-time list measures from: the one pressed on the strip, otherwise
+  // the department `edPressure` ranks first.
+  const fromEd = (pressure.find((row) => row.ed.id === selectedEdId) ?? pressure[0])?.ed;
+  const detailRow = rows.find((row) => row.unit.id === selectedUnitId);
 
   function onViewTabsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const order: NetworkView[] = ["overview", "placement"];
@@ -552,35 +584,78 @@ export function WardNetworkWorkspace() {
   }
 
   return (
-    <div className={thirdEdition.networkRoute}>
-      <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
-        <button
-          type="button"
-          id="ward-network-overview-tab"
-          className={thirdEdition.viewTab}
-          role="tab"
-          aria-selected={view === "overview"}
-          aria-controls="ward-network-overview-panel"
-          tabIndex={view === "overview" ? 0 : -1}
-          data-network-tab="overview"
-          onClick={() => setView("overview")}
-        >
-          Network overview
-        </button>
-        <button
-          type="button"
-          id="ward-network-placement-tab"
-          className={thirdEdition.viewTab}
-          role="tab"
-          aria-selected={view === "placement"}
-          aria-controls="ward-network-placement-panel"
-          tabIndex={view === "placement" ? 0 : -1}
-          data-network-tab="placement"
-          onClick={() => setView("placement")}
-        >
-          Placement workspace
-        </button>
-      </div>
+    <div className={thirdEdition.networkRoute} data-ward-design="v6">
+      <Hero
+        className={thirdEdition.networkHero}
+        eyebrow="Network · Statewide"
+        title={
+          shortfall === undefined ? "Ready beds cover the wait" : `${shortfall.service} short ${-readyGap(shortfall)}`
+        }
+        stats={
+          <>
+            <HeroStat value={waitingInEd} label="Waiting in ED" />
+            <HeroStat value={readyNow} label="Ready now" tone="success" />
+            <HeroStat value={pulledNow} label="Pulled" tone="warning" />
+            <HeroStat value={expectedToday} label="Expected today" />
+            <HeroStat value={units.length} label="Units" />
+          </>
+        }
+        bar={
+          <div className={thirdEdition.viewTabs} role="tablist" aria-label="Network view" onKeyDown={onViewTabsKeyDown}>
+            <button
+              type="button"
+              id="ward-network-overview-tab"
+              className={thirdEdition.viewTab}
+              role="tab"
+              aria-selected={view === "overview"}
+              aria-controls="ward-network-overview-panel"
+              tabIndex={view === "overview" ? 0 : -1}
+              data-network-tab="overview"
+              onClick={() => setView("overview")}
+            >
+              Network overview{" "}
+              <span aria-hidden="true">
+                <Count n={units.length} label="units" />
+              </span>
+            </button>
+            <button
+              type="button"
+              id="ward-network-placement-tab"
+              className={thirdEdition.viewTab}
+              role="tab"
+              aria-selected={view === "placement"}
+              aria-controls="ward-network-placement-panel"
+              tabIndex={view === "placement" ? 0 : -1}
+              data-network-tab="placement"
+              onClick={() => setView("placement")}
+            >
+              Placement workspace{" "}
+              <span aria-hidden="true">
+                <Count n={openMovements} label="open movements" />
+              </span>
+            </button>
+          </div>
+        }
+        barAside={
+          <>
+            <PageLiveChip paused={paused} onTogglePause={togglePause} />
+            {longestInEd > 0 ? (
+              <span className={thirdEdition.longestChip}>
+                <Clock3 size={13} aria-hidden="true" />
+                <b>{splitDuration(longestInEd)}</b> longest in ED
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className={buttonClass({ variant: "light", size: "sm" })}
+              onClick={() => setView("placement")}
+            >
+              <Search size={14} aria-hidden="true" />
+              Find a bed
+            </button>
+          </>
+        }
+      />
 
       <div
         id="ward-network-overview-panel"
@@ -590,36 +665,29 @@ export function WardNetworkWorkspace() {
         hidden={view !== "overview"}
         data-testid="ward-network-overview"
       >
-        <div className={thirdEdition.pressureFrame}>
-          <PressureStrip now={now} movements={movements} selectedEdId={selectedEdId} onSelectEd={setSelectedEdId} />
-          <div className={thirdEdition.pressureContext}>
-            <p>No common deadline scale, because these departments don&apos;t share one.</p>
-          </div>
-        </div>
-        <section className={thirdEdition.flowPanel} aria-labelledby="ward-network-flow-heading">
-          <header className={thirdEdition.flowHeader}>
-            <h2 id="ward-network-flow-heading">State Bedflow</h2>
-            <p>{units.length} inpatient units drawn</p>
-          </header>
-          <div className={thirdEdition.flowBody} role="region" aria-label="Network flow diagram" tabIndex={0}>
-            <FlowDiagram
-              movement={undefined}
-              movements={movements}
-              now={now}
-              units={units}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
+        <PressureStrip
+          now={now}
+          movements={movements}
+          selectedEdId={selectedEdId}
+          onSelectEd={setSelectedEdId}
+          foot={<span>No common deadline scale, because these departments don&apos;t share one.</span>}
+        />
+        <div className={thirdEdition.overviewGrid}>
+          <NetworkBedflow
+            groups={groups}
+            selectedUnitId={selectedUnitId}
+            onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+          />
+          <div className={thirdEdition.overviewSide}>
+            <ReadyByRoadTime
+              ed={fromEd}
+              rows={rows}
               selectedUnitId={selectedUnitId}
               onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
-              parallelReferralCap={configuration.parallelReferralCap}
             />
+            <NetworkUnitDetail row={detailRow} now={now} />
           </div>
-          <footer className={thirdEdition.flowFoot}>
-            <span>All inpatient units are included.</span>
-            <strong>Schematic, not geographic</strong>
-          </footer>
-        </section>
+        </div>
       </div>
 
       <div

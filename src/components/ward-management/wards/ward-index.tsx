@@ -22,7 +22,7 @@ import {
   cx,
   dur,
 } from "@/components/wf";
-import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   designationSummary,
@@ -354,6 +354,8 @@ type WardRow = {
   states: ReturnType<typeof bedStates>;
   occupancy: number;
   ready: number;
+  /** Inside `ready`: released beds still being made ready. */
+  pendingPreparation: number;
   out: number;
   incoming: number;
   confirmedAt: Instant;
@@ -406,6 +408,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           states,
           occupancy: unit.beds > 0 ? capacity.occupied / unit.beds : 0,
           ready: states.ready,
+          pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
           out: breakdown.confirmedToday + breakdown.expectedToday,
           incoming,
           confirmedAt: unit.allocatable.confirmedAt,
@@ -750,7 +753,11 @@ function WardCard({ row, now }: { row: WardRow; now: Instant }) {
       <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
         {row.service} · {row.siteShort} · {cohortLabel(unit)}
       </p>
-      <BedStrip counts={row.states} wardName={unit.name} className={styles.strip} />
+      <BedStrip
+        counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
+        wardName={unit.name}
+        className={styles.strip}
+      />
       <div className={styles.figures}>
         <OccupancyFigure row={row} />
         <span className={styles.flow}>
@@ -831,6 +838,12 @@ function WardProfile({ row }: { row: WardRow }) {
               {designationSummary(unit)}
               {unitHasLockedBeds(unit) ? `, ${lockedBedsFree(unit)} locked free` : ""}
             </dd>
+            {row.pendingPreparation > 0 ? (
+              <>
+                <dt>Being made ready</dt>
+                <dd>{row.pendingPreparation} of the ready beds</dd>
+              </>
+            ) : null}
             <dt>Admits</dt>
             <dd>{meta.criteria}</dd>
             <dt>Forms held</dt>
@@ -911,7 +924,10 @@ function WardTable({ rows, now }: { rows: WardRow[]; now: Instant }) {
                 <SecurityLabel unit={row.unit} />
               </span>
               <span role="cell">
-                <BedStrip counts={row.states} wardName={row.unit.name} />
+                <BedStrip
+                  counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
+                  wardName={row.unit.name}
+                />
               </span>
               <span role="cell">
                 <span className={styles.figure}>

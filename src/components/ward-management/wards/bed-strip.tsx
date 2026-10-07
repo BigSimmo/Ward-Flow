@@ -5,7 +5,10 @@ import type { BedStateCounts } from "@/components/ward-management/ward-bed-state
 
 import styles from "./bed-strip.module.css";
 
-type StripCounts = Pick<BedStateCounts, "ready" | "pulled" | "closed" | "occupied">;
+type StripCounts = Pick<BedStateCounts, "ready" | "pulled" | "closed" | "occupied"> & {
+  /** Inside `ready`: released beds still being made ready, stated in the accessible name. */
+  pendingPreparation?: number;
+};
 
 const ORDER = ["ready", "pulled", "closed", "occupied"] as const;
 
@@ -28,7 +31,9 @@ export function BedStrip({
   bar?: boolean;
   className?: string;
 }) {
-  const label = `${wardName}: ${counts.ready} ready, ${counts.pulled} pulled, ${counts.closed} closed, ${counts.occupied} occupied`;
+  const preparing = counts.pendingPreparation ?? 0;
+  const readyText = preparing > 0 ? `${counts.ready} ready (${preparing} being made ready)` : `${counts.ready} ready`;
+  const label = `${wardName}: ${readyText}, ${counts.pulled} pulled, ${counts.closed} closed, ${counts.occupied} occupied`;
   if (bar) {
     return (
       <span
