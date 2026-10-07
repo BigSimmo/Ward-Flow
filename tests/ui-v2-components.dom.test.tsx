@@ -1225,6 +1225,41 @@ describe("Toast", () => {
     expect(screen.getAllByTestId("toast")).toHaveLength(1);
     expect(screen.getByTestId("toast")).toHaveAttribute("data-announce-key", "1");
   });
+
+  it("carries the newest meta and action onto a refreshed duplicate", async () => {
+    const onUndo = vi.fn();
+    function MetaHarness() {
+      const { push } = useToast();
+      return (
+        <>
+          <button type="button" onClick={() => push({ tone: "info", title: "Bed moved", meta: "first", duration: 0 })}>
+            First
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              push({ tone: "info", title: "Bed moved", meta: "second", action: { label: "Undo", onAction: onUndo } })
+            }
+          >
+            Second
+          </button>
+        </>
+      );
+    }
+
+    render(
+      <ToastProvider>
+        <MetaHarness />
+      </ToastProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "First" }));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+    expect(screen.getAllByTestId("toast")).toHaveLength(1);
+    expect(screen.getByText("second")).toBeInTheDocument();
+    expect(screen.queryByText("first")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(onUndo).toHaveBeenCalledOnce();
+  });
 });
 
 describe("Links tone contract", () => {
