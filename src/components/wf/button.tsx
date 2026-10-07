@@ -43,8 +43,6 @@ export type ButtonProps = ButtonOwnProps &
   NativeButtonProps &
   ({ iconOnly?: false } | { iconOnly: true; icon: LucideIcon; "aria-label": string });
 
-const SIZE_CLASS: Record<ButtonSize, string | undefined> = { sm: styles.sm, md: undefined, lg: styles.lg };
-
 /** Class names for a v6 button look, for links and other elements styled as buttons. */
 export function buttonClass({
   variant = "sec",
@@ -57,7 +55,13 @@ export function buttonClass({
   iconOnly?: boolean;
   className?: string;
 } = {}): string {
-  return cx(styles.b, styles[variant], SIZE_CLASS[size], iconOnly && styles.iconOnly, className);
+  return cx(
+    styles.b,
+    styles[variant],
+    size === "md" ? undefined : styles[size],
+    iconOnly && styles.iconOnly,
+    className,
+  );
 }
 
 /**
