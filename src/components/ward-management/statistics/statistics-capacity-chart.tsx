@@ -490,7 +490,7 @@ export function StatisticsCapacityChart({
       </CardBody>
       <CardFoot
         meta={
-          <span data-testid="ward-statistics-capacity-showing">
+          <span className={styles.showing} data-testid="ward-statistics-capacity-showing">
             Showing <b>{rows.length}</b> of {allCount} {noun}
             {hasFilters ? " matched" : ` ${scopeLabel}`}
             {scale === "share" ? (

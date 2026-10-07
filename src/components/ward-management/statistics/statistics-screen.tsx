@@ -3,18 +3,7 @@
 import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  ChevronDown,
-  ChevronsUpDown,
-  ChevronUp,
-  Clock,
-  Lock,
-  Search,
-  TrendingUp,
-  Truck,
-  X,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -69,7 +58,7 @@ import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { occupiedBeds } from "./statistics-occupancy";
+import { hoursText, occupiedBeds } from "./statistics-occupancy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -102,6 +91,15 @@ const sentenceCase = (text: string) => {
 
 /** Minutes as a duration, or "none" when nothing is waiting. */
 const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
+
+/** A median wait to the nearest hour ("6h", "1d 4h"), or "none" when nothing is waiting. */
+const medianText = (minutes: number | null) => (minutes === null ? "none" : hoursText(Math.round(minutes / 60)));
+
+/** "Royal Perth Hospital" reads "Royal Perth" in the narrow ED table; the site code leads the row. */
+const shortSiteName = (name: string) =>
+  name
+    .replace(/ Emergency Department$/, "")
+    .replace(/ (Memorial |General )?(Hospital|Health Campus|Health Service)$/, "");
 
 const median = (values: number[]): number | null => {
   if (values.length === 0) return null;
@@ -150,7 +148,7 @@ function SortTh<K extends string>({
     >
       <button type="button" onClick={() => onSort(id)}>
         {label}
-        <Icon icon={active ? (asc ? ChevronUp : ChevronDown) : ChevronsUpDown} size={14} />
+        {active ? <Icon icon={asc ? ChevronUp : ChevronDown} size={14} /> : null}
       </button>
     </th>
   );
@@ -214,7 +212,7 @@ export function StatisticsScreen({
         const waits = figures.waitingMovements.map((w) => w.waitMinutes);
         return {
           id: ed.id,
-          name: ed.name.replace(/ Emergency Department$/, ""),
+          name: shortSiteName(ed.name),
           site: ed.siteCode,
           waiting: figures.onTheList,
           longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
@@ -728,9 +726,11 @@ export function StatisticsScreen({
                 <tbody>
                   {filteredAndSortedEds.map((d) => (
                     <tr key={d.id}>
-                      <th scope="row">
+                      <th scope="row" className={styles.siteCell}>
                         <b className={styles.codeLead}>{d.site}</b>
-                        {d.name}
+                        <span className={styles.siteName} title={d.name}>
+                          {d.name}
+                        </span>
                       </th>
                       <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
                       <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
@@ -743,7 +743,9 @@ export function StatisticsScreen({
                           {waitText(d.longest)}
                         </span>
                       </td>
-                      <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>{waitText(d.median)}</td>
+                      <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>
+                        {medianText(d.median)}
+                      </td>
                       <td className={`${styles.num} ${d.over8 === 0 ? styles.zero : ""}`}>{d.over8}</td>
                       <td className={`${styles.num} ${d.over24 === 0 ? styles.zero : ""}`}>{d.over24}</td>
                     </tr>
@@ -754,7 +756,7 @@ export function StatisticsScreen({
                     <th scope="row">All {emergencyDepts.length} departments</th>
                     <td className={styles.num}>{totalEdWaiting}</td>
                     <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
-                    <td className={styles.num}>{waitText(networkMedianWait)}</td>
+                    <td className={styles.num}>{medianText(networkMedianWait)}</td>
                     <td className={styles.num}>{totalEdOver8}</td>
                     <td className={styles.num}>{totalEdOver24}</td>
                   </tr>
@@ -782,6 +784,7 @@ export function StatisticsScreen({
             <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
               <BarList
                 label="Blocked discharges by blocker"
+                labelWidth="10.5rem"
                 axis
                 mean={blockedMean}
                 rows={blocked.tallies.map((tally) => ({
@@ -817,12 +820,15 @@ export function StatisticsScreen({
                   {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
                   <span data-testid="ward-statistics-declines-by-reason-movements-with">
                     {declinesReadout.value.movementsWithDeclinesCount}
+                  </span>
+                  <span className={styles.srOnly}>
+                    {" "}
+                    of{" "}
+                    <span data-testid="ward-statistics-declines-by-reason-movements">
+                      {declinesReadout.value.movementCount}
+                    </span>
                   </span>{" "}
-                  of{" "}
-                  <span data-testid="ward-statistics-declines-by-reason-movements">
-                    {declinesReadout.value.movementCount}
-                  </span>{" "}
-                  {declinesReadout.value.movementCount === 1 ? "movement" : "movements"}
+                  {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
                 </span>
               ) : undefined
             }
@@ -836,6 +842,7 @@ export function StatisticsScreen({
                 <div data-testid="ward-statistics-declines-by-reason-list">
                   <BarList
                     label="Declines by reason"
+                    labelWidth="10.5rem"
                     axis
                     mean={
                       declinesReadout.value.vocabularySize > 0

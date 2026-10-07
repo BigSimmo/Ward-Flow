@@ -188,9 +188,8 @@ it("derives the network ED median from individual waits, including an even popul
     cell.textContent?.trim().startsWith("Median"),
   );
   expect(medianColumn).toBeGreaterThan(-1);
-  // v6 duration format (wf `dur`): hours always carry their minutes.
-  expect(row.cells[medianColumn].textContent).toBe("6h 00m");
-  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6h 00m");
+  expect(row.cells[medianColumn].textContent).toBe("6h");
+  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6h");
 });
 
 it("counts today's bed referrals once across parallel bed criteria, with recorded outcomes", () => {

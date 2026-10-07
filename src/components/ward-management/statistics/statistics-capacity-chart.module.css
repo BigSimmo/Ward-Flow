@@ -414,7 +414,7 @@
 }
 
 .footOver b,
-[data-testid="ward-statistics-capacity-showing"] > b {
+.showing > b {
   color: var(--wf-ink-1);
   font-family: var(--wf-mono);
   font-weight: 600;
