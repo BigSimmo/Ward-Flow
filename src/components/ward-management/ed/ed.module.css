@@ -24,6 +24,43 @@
   --ward-divider: var(--line);
   --surface-chrome: var(--surface-2);
   --radius-sm: var(--r2);
+
+  /* v6: the department screen reads the v6 tokens through the shell names its rules already use, so
+   * it follows the v6 day and night themes without a second copy of each rule. Soft status tints
+   * map to plain surfaces: colour is a glyph or dot, never a fill. */
+  --ground: var(--wf-canvas);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --surface-3: var(--wf-hover);
+  --sunk: var(--wf-surface-2);
+  --ink: var(--wf-ink-1);
+  --ink-soft: var(--wf-ink-2);
+  --muted: var(--wf-ink-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-2);
+  --border: var(--wf-line);
+  --accent: var(--wf-accent);
+  --accent-ink: var(--wf-accent-ink);
+  --accent-soft: var(--wf-accent-tint);
+  --accent-press: var(--wf-accent-strong);
+  --on-accent: var(--wf-surface);
+  --good: var(--wf-success-ink);
+  --good-ink: var(--wf-success-ink);
+  --good-soft: var(--wf-surface-2);
+  --warn: var(--wf-warning-ink);
+  --warn-ink: var(--wf-warning-ink);
+  --warn-soft: var(--wf-surface-2);
+  --danger: var(--wf-danger-ink);
+  --danger-ink: var(--wf-danger-ink);
+  --danger-soft: var(--wf-surface-2);
+  --lift: var(--wf-e1);
+  --lift-sm: var(--wf-e1);
+  --r1: var(--wf-r-lg);
+  --r1i: var(--wf-r-md);
+  --r2: var(--wf-r-sm);
+  --body: var(--wf-font);
+  --display: var(--wf-font);
+  --mono: var(--wf-mono);
 }
 
 .main {
@@ -6096,5 +6133,116 @@ tr.qRow:focus-visible {
   }
   .patientDialog .popHead {
     padding: 14px;
+  }
+}
+
+/* v6 (design/pages-v6/Emergency.png): card heads, the board, Needs you as compact rows, and the
+ * list tabs. Status is a glyph or a word, never a filled row. */
+@media screen {
+  .main {
+    gap: var(--wf-s-3);
+  }
+
+  .ph {
+    align-items: center;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    background: var(--wf-surface);
+    box-shadow: none;
+  }
+
+  .ph h2,
+  .ph h3 {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--wf-ink-1);
+  }
+
+  .ph .count {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .boardTable th {
+    font-size: var(--wf-fs-11);
+    letter-spacing: 0.07em;
+    color: var(--wf-ink-3);
+  }
+
+  .attentionList {
+    gap: 0;
+    padding: 0;
+  }
+
+  .attentionRow,
+  .attentionRow[data-tone] {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-left: 0;
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+
+  .attentionRow:hover,
+  .attentionRow[data-tone="danger"]:hover {
+    background: var(--wf-hover);
+    filter: none;
+  }
+
+  .attentionBadge,
+  .attentionBadge[data-tone] {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .attentionTitle {
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  .attentionStamp,
+  .attentionStamp[data-tone] {
+    padding: 1px 6px;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-11);
+    color: var(--wf-ink-1);
+  }
+
+  .attentionWhy {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .tabbar {
+    padding: 0 var(--wf-s-3);
+    background: var(--wf-surface);
+  }
+
+  .tabBtn,
+  .tabBtn:hover,
+  .tabBtn[aria-selected="true"] {
+    background: transparent;
+    font-size: var(--wf-fs-13);
+  }
+
+  .tabBtn[aria-selected="true"] {
+    border-bottom-color: var(--wf-ink-1);
+  }
+
+  .tabNum,
+  .tabBtn[aria-selected="true"] .tabNum {
+    border-radius: var(--wf-r-xs);
+    background: var(--wf-line);
+    box-shadow: none;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-11);
   }
 }
