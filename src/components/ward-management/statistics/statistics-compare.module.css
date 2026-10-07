@@ -66,14 +66,16 @@
 /*
  * Below these widths the Data tables scroll sideways and hold their row headers in place.
  * Measured at 1440px on 7 October 2026: wards 581px and departments 511px max-content, so each
- * pin sits just above its table's own content (592px and 520px) and is never inert.
+ * pin sits just above its table's own content (592px and 520px) and is never inert. The browser
+ * threshold sweep then measured the departments table's min-content at 528px in CI, above the
+ * 520px pin, so that pin moved to 560px (35rem).
  */
 .wardTable {
   min-width: 37rem;
 }
 
 .edTable {
-  min-width: 32.5rem;
+  min-width: 35rem;
 }
 
 .stickyCell {

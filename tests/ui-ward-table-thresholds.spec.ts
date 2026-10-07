@@ -108,12 +108,13 @@ import { expect, test } from "playwright/test";
  * ⚠️ UPDATED AGAIN, 2026-10-07, for the v6 rebuild: both tables moved behind each card's Data view
  * and onto the v6 table. Re-measured at 1440px: wards 581px and departments 511px max-content, so
  * the pins are 592px (37rem) and 520px (32.5rem) in `statistics-compare.module.css`. The sweep opens
- * the Data views before it measures this route.
+ * the Data views before it measures this route. CI then measured the departments table's
+ * min-content at 528px, at or above its 520px pin, so that pin is now 560px (35rem).
  */
 const OWNED = "/mockups/ward-flow/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
   { testId: "ward-statistics-compare-wards", columns: 5, minWidthPx: 592 },
-  { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 520 },
+  { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
 ];
 
 /**

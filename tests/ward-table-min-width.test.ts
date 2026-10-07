@@ -268,8 +268,10 @@ const PINNED: Record<string, string | readonly string[] | null> = {
    * 36rem (576px), 21px clear of max-content. */
   "statistics/statistics-third-edition.module.css": ["47.5rem", "36rem"],
   /* v6 comparisons (7 October 2026): the ward and department Data tables, measured at 1440px at
-     581px and 511px max-content, pinned at 37rem (592px) and 32.5rem (520px) so neither is inert. */
-  "statistics/statistics-compare.module.css": ["37rem", "32.5rem"],
+     581px and 511px max-content, pinned at 37rem (592px) and 32.5rem (520px) so neither is inert.
+     The CI browser sweep then measured the department table's min-content at 528px, so its pin
+     moved to 35rem (560px). */
+  "statistics/statistics-compare.module.css": ["37rem", "35rem"],
   // Pinned 2026-09-25 (test fixer). NOT a table threshold: `.tableSearch { min-width: 16rem }` is
   // the ward statistics table's search box, which the discovery sweep collects because its class
   // name contains "table". Pinned so it cannot change silently rather than narrowing the sweep.
