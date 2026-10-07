@@ -1,10 +1,31 @@
 "use client";
-/* eslint-disable jsx-a11y/role-supports-aria-props */
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { Car, ChevronLeft, ChevronRight, Clock, Download, Map as MapIcon, Plane, Search, X } from "lucide-react";
 
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFoot,
+  CardHead,
+  EmptyState,
+  Field,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  Icon,
+  Radio,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  StatusLine,
+  TextInput,
+  buttonClass,
+  tableClasses,
+} from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
@@ -21,9 +42,9 @@ import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-manageme
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
+import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
-import styles from "./out-of-area.module.css";
-import pageStyles from "./out-of-area-third-edition.module.css";
+import styles from "./out-of-area-v6.module.css";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -219,6 +240,27 @@ function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
   return null;
 }
 
+type TransportFilter = "all" | "air_transport_only" | "three_hours_or_more";
+type SortOrder = "ledger" | "patient" | "catchment";
+
+/** The short travel word for the hero, the plan's figures and the phone card. */
+function travelWord(entry: OutOfAreaEntry): string {
+  return entry.band === "air_transport_only" ? "Air" : "Road";
+}
+
+/**
+ * THE V6 REBUILD, 7 October 2026 — `design/pages-v6/OutOfArea.png`. One hero band counts the people
+ * away from home and switches the travel band; the "Away from home" card is the ledger with search,
+ * sort and the home-catchment filter; the "Return plan" card holds the selected person's facts and
+ * the repatriation form inline, so the form is a step of the plan rather than a separate dialog; the
+ * "Home catchments" card counts people by home region and filters the ledger.
+ *
+ * **Left out, because the record cannot support it:** a return status per person (the reducer keeps
+ * `repatriations` but the provider does not expose them to screens), whether a home bed is ready,
+ * the next transport slot, how many can return now or declined home, and the time-away bands (any
+ * band edge would be a threshold nobody has set, and this screen keeps "no colour that changes at a
+ * threshold").
+ */
 export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const { units, admissions: liveAdmissions, patients, referrals, movements, dispatch } = useWardFlow();
   const now = useWardFlowClock();
@@ -231,17 +273,19 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
 
-  const [isRepatModalOpen, setIsRepatModalOpen] = useState(false);
   const [repatDraft, setRepatDraft] = useState<RepatDraft>(BLANK_REPAT_DRAFT);
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
   const [repatFormNotice, setRepatFormNotice] = useState<string | null>(null);
 
-  const triggerRef = useRef<HTMLElement | null>(null);
   const selectionOriginRef = useRef<HTMLElement | null>(null);
   const detailColumnRef = useRef<HTMLDivElement | null>(null);
 
   const selectPlacement = (id: string, origin?: HTMLElement) => {
     if (origin) selectionOriginRef.current = origin;
+    if (id !== selectedId) {
+      setRepatDraft(BLANK_REPAT_DRAFT);
+      setRepatFormNotice(null);
+    }
     setSelectedId(id);
   };
 
@@ -261,20 +305,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }, [selectedId]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isRepatModalOpen) {
-          setIsRepatModalOpen(false);
-          triggerRef.current?.focus();
-        } else if (selectedId !== null) {
-          setSelectedId(null);
-          selectionOriginRef.current?.focus();
-        }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selectedId !== null) {
+        setSelectedId(null);
+        selectionOriginRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRepatModalOpen, selectedId]);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!repatNotice) return;
@@ -290,19 +329,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     return currentDays > maxDays ? current : max;
   }, undefined);
 
-  const longestDays = maxDaysEntry ? `${daysInBed(maxDaysEntry.admission, now) ?? 0}d` : "0d";
-  const longestSub = maxDaysEntry
-    ? `${resolvePatient(maxDaysEntry.admission).displayName} · ${maxDaysEntry.admission.homeRegion}`
-    : "Not recorded";
-
   const airCount = entries.filter((e) => e.band === "air_transport_only").length;
   const roadCount = entries.filter((e) => e.band === "three_hours_or_more").length;
 
-  const [transportFilter, setTransportFilter] = useState<"all" | "air_transport_only" | "three_hours_or_more">("all");
+  const [transportFilter, setTransportFilter] = useState<TransportFilter>("all");
   const [catchmentFilter, setCatchmentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"ledger" | "patient" | "catchment">("ledger");
-  const [compactRows, setCompactRows] = useState(true);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
 
   const homeRegionCounts = entries.reduce<Record<string, number>>((acc, entry) => {
     const region = entry.admission.homeRegion ?? "Not recorded";
@@ -310,6 +343,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     return acc;
   }, {});
   const homeRegionSummary = Object.entries(homeRegionCounts).sort((a, b) => b[1] - a[1]);
+  const largestRegion = homeRegionSummary[0]?.[1] ?? 0;
 
   const filteredEntries = entries.filter((entry) => {
     if (transportFilter !== "all" && entry.band !== transportFilter) {
@@ -350,882 +384,533 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setCatchmentFilter("all");
   };
 
-  const openRepatriation = (origin: HTMLElement) => {
-    if (!selected) return;
-    triggerRef.current = origin;
-    setRepatDraft(BLANK_REPAT_DRAFT);
-    setRepatFormNotice(null);
-    setIsRepatModalOpen(true);
-  };
-
   const patientInfo = selected ? resolvePatient(selected.admission) : undefined;
   const profileHref = patientInfo ? getPatientProfileHref(patientInfo) : null;
   const site = selected ? siteByCode(selected.unit.siteCode) : undefined;
-  const selectedStayDays = selected ? daysInBed(selected.admission, now) : null;
   const longestPatientInfo = maxDaysEntry ? resolvePatient(maxDaysEntry.admission) : undefined;
 
+  function recordReturn() {
+    const admissionId = selected?.admission.id;
+    const blocked = repatriationBlockedReason(repatDraft, admissionId, now);
+    if (blocked !== undefined) {
+      setRepatFormNotice(blocked);
+      return;
+    }
+    const estimatedAt = instantFromEstimatedTimeInputs(repatDraft.estimatedTime, repatDraft.estimatedDay, now);
+    if (
+      admissionId === undefined ||
+      estimatedAt === undefined ||
+      repatDraft.receivingWardAgreed === undefined ||
+      (repatDraft.mode !== "road" && repatDraft.mode !== "flight") ||
+      repatDraft.provider === undefined ||
+      repatDraft.transportLegalStatus === undefined
+    ) {
+      return;
+    }
+    dispatch({
+      type: "RECORD_REPATRIATION",
+      role: "coordinator",
+      now,
+      admissionId,
+      homeHospital: repatDraft.homeHospital,
+      receivingWardAgreed: repatDraft.receivingWardAgreed,
+      mode: repatDraft.mode,
+      provider: repatDraft.provider,
+      cadNumber: repatDraft.cadNumber.trim(),
+      transportLegalStatus: repatDraft.transportLegalStatus,
+      estimatedAt,
+    });
+    setRepatFormNotice(null);
+    setRepatDraft(BLANK_REPAT_DRAFT);
+    const targetHospitalName = siteByCode(repatDraft.homeHospital)?.name ?? repatDraft.homeHospital;
+    const movementFeedback = repatDraft.receivingWardAgreed
+      ? " Return transfer movement queued for bed placement at home health service."
+      : " Return movement pending receiving ward agreement.";
+    setRepatNotice(
+      `Repatriation transfer order recorded for ${admissionId} to ${targetHospitalName}.${movementFeedback}`,
+    );
+  }
+
+  function exportList() {
+    const lines: (string | number)[][] = [["Admission", "Home region", "Unit", "Site", "Travel time", "Since arrival"]];
+    for (const entry of filteredEntries) {
+      lines.push([
+        entry.admission.id,
+        entry.admission.homeRegion ?? "",
+        entry.unit.name,
+        siteByCode(entry.unit.siteCode)?.name ?? "",
+        TRAVEL_BAND_LABELS[entry.band],
+        sinceArrivalLabel(entry, now),
+      ]);
+    }
+    const url = URL.createObjectURL(
+      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ward-flow-synthetic-out-of-area.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const regionItems = [
+    { id: "all", label: "All", count: entries.length },
+    ...homeRegionSummary.map(([region, count]) => ({ id: region, label: region, count })),
+  ];
+
   return (
-    <div
-      className={`${styles.screen} ${pageStyles.screen}`}
-      data-testid="ward-out-of-area-board"
-      data-ward-design="third-edition"
-    >
-      <main id="main-content" className={`${styles.main} ${pageStyles.workspace}`}>
-        {/* Screen reader and landmark page title (visually redundant below WardBar chrome) */}
-        <h1 className={pageStyles.localTitle}>Out-of-Area Repatriation Ledger</h1>
+    <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v6">
+      <main id="main-content" className={styles.main}>
+        <Hero
+          level={1}
+          eyebrow="Out of area"
+          title={`${entries.length} away from home`}
+          stats={
+            <>
+              <HeroStat value={airCount} label="Air only" />
+              <HeroStat value={roadCount} label="Road" />
+              <HeroStat value={maxDaysEntry ? sinceArrivalLabel(maxDaysEntry, now) : "None"} label="Longest away" />
+            </>
+          }
+          aside={
+            <HeroTrack
+              label="Travel band"
+              value={transportFilter}
+              onChange={setTransportFilter}
+              items={[
+                { id: "all", label: "All", count: entries.length },
+                { id: "air_transport_only", label: "Air", count: airCount },
+                { id: "three_hours_or_more", label: "Road", count: roadCount },
+              ]}
+            />
+          }
+        />
 
-        {repatNotice ? (
-          <div
-            className={pageStyles.toast}
-            role="status"
-            aria-live="polite"
-            data-testid="ward-out-of-area-repat-notice"
+        <div className={styles.layout}>
+          <Card
+            className={styles.ledgerCard}
+            aria-labelledby="ward-out-of-area-entries-title"
+            data-testid="ward-out-of-area-entries"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--good)", flexShrink: 0 }}
-              aria-hidden="true"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span>{repatNotice}</span>
-            <button
-              type="button"
-              className={`${pageStyles.btn} ${pageStyles.btnSm}`}
-              style={{ marginLeft: "8px", minHeight: "28px", height: "28px" }}
-              onClick={() => setRepatNotice(null)}
-              aria-label="Dismiss notice"
-            >
-              Dismiss
-            </button>
-          </div>
-        ) : null}
-
-        {/* Compact floating summary island; actions use the existing cohort and selection. */}
-        <div className={pageStyles.kpiStrip} role="region" aria-label="Executive Out-of-Area KPIs">
-          <button
-            type="button"
-            className={`${pageStyles.kpiCard} ${transportFilter === "all" && catchmentFilter === "all" && !searchQuery ? pageStyles.kpiCardActive : ""}`}
-            onClick={resetFilters}
-            aria-pressed={transportFilter === "all" && catchmentFilter === "all" && !searchQuery}
-            aria-label={`Total Out-of-Area: ${entries.length} active placements. Click to view all.`}
-          >
-            <span className={pageStyles.kpiVal}>{entries.length}</span>
-            <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
-          </button>
-          <button
-            type="button"
-            className={`${pageStyles.kpiCard} ${transportFilter === "air_transport_only" ? pageStyles.kpiCardActive : ""}`}
-            onClick={() => setTransportFilter(transportFilter === "air_transport_only" ? "all" : "air_transport_only")}
-            aria-pressed={transportFilter === "air_transport_only"}
-            aria-label={`Air Transport Only: ${airCount} patients. Click to filter.`}
-          >
-            <span className={pageStyles.kpiVal}>{airCount}</span>
-            <span className={pageStyles.kpiLabel}>Air only</span>
-          </button>
-          <button
-            type="button"
-            className={`${pageStyles.kpiCard} ${transportFilter === "three_hours_or_more" ? pageStyles.kpiCardActive : ""}`}
-            onClick={() =>
-              setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
-            }
-            aria-pressed={transportFilter === "three_hours_or_more"}
-            aria-label={`Road Travel: ${roadCount} patients. Click to filter.`}
-          >
-            <span className={pageStyles.kpiVal}>{roadCount}</span>
-            <span className={pageStyles.kpiLabel}>Road travel</span>
-          </button>
-          <button
-            type="button"
-            className={`${pageStyles.kpiCard} ${maxDaysEntry && selectedId === maxDaysEntry.admission.id ? pageStyles.kpiCardActive : ""}`}
-            onClick={(e) => {
-              if (maxDaysEntry) selectPlacement(maxDaysEntry.admission.id, e.currentTarget);
-            }}
-            aria-label={`Longest Out-of-Area: ${longestDays}, ${longestSub}. Click to inspect case.`}
-          >
-            <span className={pageStyles.kpiVal}>{longestDays}</span>
-            <span className={pageStyles.kpiLabel}>Longest stay</span>
-          </button>
-        </div>
-
-        {/* Main Workbench Grid: Inpatients Ledger Table (Left) & Case Inspector (Right) */}
-        <div
-          className={`${pageStyles.boardGrid} ${pageStyles.ledgerGrid}`}
-          data-row-density={compactRows ? "compact" : "comfortable"}
-        >
-          <div className={pageStyles.registerColumn}>
-            <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-entries">
-              <div className={pageStyles.ph}>
-                <div className={pageStyles.phLeft}>
-                  <h2>Cross-Catchment Inpatients</h2>
-                  <span className={pageStyles.countBadge}>
-                    {filteredEntries.length === entries.length
-                      ? `${entries.length} Active ${entries.length === 1 ? "Placement" : "Placements"}`
-                      : `Showing ${filteredEntries.length} of ${entries.length}`}
-                  </span>
-                </div>
-                <div className={pageStyles.phRight}>
-                  <label className={pageStyles.sortControl}>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 6h16M4 12h11M4 18h6" />
-                    </svg>
-                    <select
-                      aria-label="Sort placements"
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
-                    >
-                      <option value="ledger">Ledger order</option>
-                      <option value="patient">Patient A–Z</option>
-                      <option value="catchment">Home region A–Z</option>
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    className={pageStyles.densityToggle}
-                    aria-label="Compact rows"
-                    aria-pressed={compactRows}
-                    title={compactRows ? "Switch to comfortable rows" : "Switch to compact rows"}
-                    onClick={() => setCompactRows(!compactRows)}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 5h16v4H4zM4 15h16v4H4zM4 12h16" />
-                    </svg>
-                  </button>
-                  <button
-                    className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
-                    type="button"
-                    aria-disabled={!selected}
-                    tabIndex={0}
-                    aria-label="Initiate Repatriation"
-                    title={
-                      selected ? "Arrange return for the selected patient" : "Select a patient to arrange their return"
-                    }
-                    onClick={selected ? (e) => openRepatriation(e.currentTarget) : ignoreUnavailableActivation}
-                  >
-                    + Arrange return
-                  </button>
-                </div>
+            <div className={styles.ledgerHead}>
+              <CardHead id="ward-out-of-area-entries-title" icon={MapIcon} title="Away from home" />
+              <div className={styles.headControls}>
+                <TextInput
+                  icon={Search}
+                  boxClassName={styles.searchBox}
+                  placeholder="Patient or UMRN"
+                  aria-label="Filter out-of-area placements"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onClear={() => setSearchQuery("")}
+                />
+                <Segmented
+                  label="Sort placements"
+                  value={sortOrder}
+                  onChange={setSortOrder}
+                  items={[
+                    { id: "ledger", label: "Ledger" },
+                    { id: "patient", label: "Name" },
+                    { id: "catchment", label: "Region" },
+                  ]}
+                />
               </div>
-
-              {/* In-page search and cohort filter toolbar */}
-              <div className={pageStyles.tableToolbar}>
-                <div className={pageStyles.filterChips}>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "all"}
-                    onClick={() => setTransportFilter("all")}
-                  >
-                    All ({entries.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "air_transport_only"}
-                    onClick={() => setTransportFilter("air_transport_only")}
-                  >
-                    <PlacementStatusGlyph tone="danger" />
-                    <span>Air ({airCount})</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "three_hours_or_more"}
-                    onClick={() => setTransportFilter("three_hours_or_more")}
-                  >
-                    <PlacementStatusGlyph tone="warn" />
-                    <span>Road ({roadCount})</span>
-                  </button>
-                </div>
-
-                <div className={pageStyles.searchBox}>
-                  <svg
-                    className={pageStyles.searchIcon}
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <input
-                    type="text"
-                    inputMode="search"
-                    placeholder="Search patient, UMRN or hospital…"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label="Filter out-of-area placements"
-                    className={pageStyles.searchInput}
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("")}
-                      className={pageStyles.searchClearBtn}
-                      aria-label="Clear search"
-                    >
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                <div className={pageStyles.filterSelectWrap}>
-                  <select
-                    aria-label="Filter by home catchment"
-                    className={pageStyles.filterSelect}
-                    value={catchmentFilter}
-                    onChange={(e) => setCatchmentFilter(e.target.value)}
-                    data-testid="ward-out-of-area-catchment-filter"
-                  >
-                    <option value="all">All Catchments ({entries.length})</option>
-                    {homeRegionSummary.map(([region, count]) => (
-                      <option key={region} value={region}>
-                        {region} ({count})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            </div>
+            <div className={styles.toolbar}>
+              <div className={styles.segScroll}>
+                <Segmented
+                  label="Filter by home catchment"
+                  value={catchmentFilter}
+                  onChange={setCatchmentFilter}
+                  items={regionItems}
+                />
               </div>
-
-              {hasFilters && (
-                <div className={pageStyles.filterContext}>
-                  <span role="status">
-                    {filteredEntries.length} of {entries.length} synthetic records match your filters
-                  </span>
-                  <button type="button" className={pageStyles.textButton} onClick={resetFilters}>
-                    Clear filters
-                  </button>
-                </div>
-              )}
-
-              <p className="sr-only" data-testid="ward-out-of-area-counts">
-                <span data-testid="ward-out-of-area-count-people">
-                  {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far
-                  from home.
-                </span>{" "}
-                <span data-testid="ward-out-of-area-count-not-banded">
-                  {notBanded} more could not be placed in a band because the combined count does not separate a missing
-                  home area from a missing travel-time pair.
+              <span className={styles.resultLine}>
+                <span aria-live="polite">
+                  <b>{filteredEntries.length}</b> synthetic records shown
                 </span>
-              </p>
-              <div
-                className={pageStyles.panelBody}
-                role="region"
-                aria-label="Out-of-area placement register"
-                tabIndex={0}
-              >
-                {entries.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
-                    Nobody on these records is in a bed far from home.
-                  </p>
-                ) : filteredEntries.length === 0 ? (
-                  <div className={pageStyles.noMatches}>
-                    <p>No placements match the current search or filters.</p>
-                    <button
-                      type="button"
-                      className={`${pageStyles.btn} ${pageStyles.btnSm}`}
-                      onClick={() => {
-                        setSearchQuery("");
-                        setTransportFilter("all");
-                        setCatchmentFilter("all");
-                      }}
-                    >
-                      Reset filters
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className={`${pageStyles.printTable} ${pageStyles.tableWrap}`}>
-                      <WardTable
-                        className={`${styles.table} ${pageStyles.table}`}
-                        wrapperClassName={styles.tableScroll}
-                        testId="ward-out-of-area-table"
-                      >
-                        <thead>
-                          <tr>
-                            <th scope="col">Patient</th>
-                            <th scope="col">Home region</th>
-                            <th scope="col">Unit</th>
-                            <th scope="col">Travel time</th>
-                            <th scope="col">Since arrival</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {/* All matching entries; alphabetical sorting is an explicit view choice. */}
-                          {filteredEntries.map((entry) => {
-                            const site = siteByCode(entry.unit.siteCode);
-                            const tone = entry.band === "air_transport_only" ? "danger" : "warn";
-                            const patientInfo = resolvePatient(entry.admission);
-                            const profileHref = getPatientProfileHref(patientInfo);
+                {hasFilters ? (
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>
+                    Clear filters
+                  </Button>
+                ) : null}
+              </span>
+            </div>
 
-                            return (
-                              <tr
-                                key={entry.admission.id}
-                                data-testid={`ward-out-of-area-row-${entry.admission.id}`}
-                                className={
-                                  entry.admission.id === selectedId
-                                    ? `${styles.rowSelected} ${pageStyles.rowSelected}`
-                                    : undefined
-                                }
-                                aria-selected={entry.admission.id === selectedId}
-                                tabIndex={0}
-                                aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                                onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
-                                onKeyDown={(event) => {
-                                  if (
-                                    event.target === event.currentTarget &&
-                                    (event.key === "Enter" || event.key === " ")
-                                  ) {
-                                    event.preventDefault();
-                                    selectPlacement(entry.admission.id, event.currentTarget);
-                                  }
-                                }}
-                              >
-                                <td>
-                                  <div className={pageStyles.patientNameCell}>
-                                    <strong>{patientInfo.displayName}</strong>
-                                  </div>
-                                  <div className={pageStyles.patientMetaCell}>
-                                    {profileHref ? (
-                                      <Link
-                                        href={profileHref}
-                                        className={pageStyles.umrnLink}
-                                        onClick={(e) => e.stopPropagation()}
-                                        title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
-                                      >
-                                        {patientInfo.umrn}
-                                      </Link>
-                                    ) : (
-                                      <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
-                                    )}
-                                    <span className={pageStyles.metaDot}>&bull;</span>
-                                    <span
-                                      className={pageStyles.mono}
-                                      style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
-                                    >
-                                      {entry.admission.id}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className={pageStyles.homeRegionText}>
-                                    <strong>{entry.admission.homeRegion}</strong>
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className={pageStyles.unitNameText}>{entry.unit.name}</div>
-                                  <div style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                                    {site?.name ?? "Site not recorded"}
-                                  </div>
-                                </td>
-                                <td>
-                                  <span
-                                    className={pageStyles.travelBadge}
-                                    title={TRAVEL_BAND_LABELS[entry.band]}
-                                    data-tone={tone}
-                                    data-ward-type-floor="badge"
-                                  >
-                                    <PlacementStatusGlyph tone={tone} />
-                                    <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
-                                  </span>
-                                </td>
-                                <td className={`${pageStyles.mono} ${pageStyles.stayCell}`}>
-                                  {sinceArrivalLabel(entry, now)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </WardTable>
-                    </div>
-
-                    {/* Mobile Phone Card List */}
-                    <ul className={`${styles.cardList} ${pageStyles.recordList}`} data-testid="ward-out-of-area-cards">
-                      {filteredEntries.map((entry) => {
-                        const site = siteByCode(entry.unit.siteCode);
-                        const tone = entry.band === "air_transport_only" ? "danger" : "warn";
-                        const patientInfo = resolvePatient(entry.admission);
-                        const profileHref = getPatientProfileHref(patientInfo);
-
-                        return (
-                          <li
-                            key={entry.admission.id}
-                            className={
-                              entry.admission.id === selectedId
-                                ? `${styles.card} ${styles.cardSelected} ${pageStyles.recordCard} ${pageStyles.recordSelected}`
-                                : `${styles.card} ${pageStyles.recordCard}`
-                            }
-                            data-testid={`ward-out-of-area-card-${entry.admission.id}`}
-                            aria-selected={entry.admission.id === selectedId}
-                            tabIndex={0}
-                            role="button"
-                            aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                            onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
-                            onKeyDown={(event) => {
-                              if (
-                                event.target === event.currentTarget &&
-                                (event.key === "Enter" || event.key === " ")
-                              ) {
-                                event.preventDefault();
-                                selectPlacement(entry.admission.id, event.currentTarget);
-                              }
-                            }}
-                          >
-                            <div className={pageStyles.recordTop}>
-                              <div>
-                                <div className={pageStyles.recordPatientRow}>
-                                  <span className={pageStyles.recordPatientName}>{patientInfo.displayName}</span>
-                                  {profileHref ? (
-                                    <Link
-                                      href={profileHref}
-                                      className={pageStyles.umrnLink}
-                                      onClick={(e) => e.stopPropagation()}
-                                      title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
-                                    >
-                                      {patientInfo.umrn}
-                                    </Link>
-                                  ) : (
-                                    <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
-                                  )}
-                                </div>
-                                <p className={`${styles.cardUnit} ${pageStyles.recordUnit}`}>{entry.unit.name}</p>
-                                <p className={pageStyles.recordSite}>
-                                  {site?.service ?? "Health service not recorded"} &bull;{" "}
-                                  {site?.name ?? "Site not recorded"}
-                                </p>
-                              </div>
-                              <span className={`${styles.cardElapsed} ${pageStyles.recordElapsed}`}>
-                                {sinceArrivalLabel(entry, now)} since arrival
-                              </span>
-                            </div>
-                            <div className={pageStyles.recordBottom}>
-                              <p className={pageStyles.recordFacts}>
-                                Home: <b>{entry.admission.homeRegion}</b> &bull;{" "}
-                                <span className={pageStyles.mono}>{entry.admission.id}</span>
-                              </p>
-                              <span className={pageStyles.travelBadge} data-tone={tone} data-ward-type-floor="badge">
-                                <PlacementStatusGlyph tone={tone} />
-                                <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
-                              </span>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </>
-                )}
-              </div>
-            </section>
-          </div>
-
-          <div ref={detailColumnRef} className={pageStyles.detailColumn}>
-            <section
-              className={`${styles.section} ${pageStyles.panel} ${pageStyles.inspectorPanel}`}
-              data-testid="ward-out-of-area-subject"
-            >
-              <div className={pageStyles.inspectorHead}>
-                <h2>{selected ? "Case inspector" : "Repatriation"}</h2>
-                {selected ? (
-                  <button
-                    type="button"
-                    className={pageStyles.iconButton}
-                    onClick={returnToOverview}
-                    aria-label="Return to cohort overview"
-                    title="Return to overview (Escape)"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      aria-hidden="true"
-                    >
-                      <path d="m6 6 12 12M6 18 18 6" />
-                    </svg>
-                  </button>
-                ) : (
-                  <span className={pageStyles.overviewCount}>{entries.length} placements</span>
-                )}
-              </div>
-              {!selected || !patientInfo ? (
-                <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.overviewBody}>
-                  <div className={pageStyles.catchmentSection}>
-                    <div className={pageStyles.sectionHeading}>
-                      <h3>Home catchments</h3>
-                      <span>{homeRegionSummary.length} regions</span>
-                    </div>
-                    <div className={pageStyles.catchmentList}>
-                      {homeRegionSummary.map(([region, count]) => (
-                        <button
-                          key={region}
-                          type="button"
-                          className={pageStyles.catchmentRow}
-                          onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
-                          aria-pressed={catchmentFilter === region}
-                          aria-label={`Filter by ${region}: ${count} placements`}
-                        >
-                          <span className={pageStyles.catchmentName}>{region}</span>
-                          <span className={pageStyles.catchmentBar} aria-hidden="true">
-                            <span style={{ width: `${entries.length ? (count / entries.length) * 100 : 0}%` }} />
-                          </span>
-                          <strong>{count}</strong>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {maxDaysEntry && longestPatientInfo && (
-                    <div className={pageStyles.longestSpotlight}>
-                      <div className={pageStyles.sectionHeading}>
-                        <h3>Longest current stay</h3>
-                        <span className={pageStyles.stayPill}>{longestDays}</span>
-                      </div>
-                      <button
-                        type="button"
-                        className={pageStyles.spotlightAction}
-                        onClick={(event) => selectPlacement(maxDaysEntry.admission.id, event.currentTarget)}
-                        aria-label={`Inspect longest case: ${longestPatientInfo.displayName}`}
-                      >
-                        <span>
-                          <strong className={pageStyles.spotlightName}>{longestPatientInfo.displayName}</strong>
-                          <span className={pageStyles.spotlightMeta}>
-                            {maxDaysEntry.admission.homeRegion} ·{" "}
-                            {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
-                          </span>
-                        </span>
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M7 17 17 7M7 7h10v10" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  <p className={pageStyles.selectionHint}>Select a patient to review their return.</p>
+            <p className="sr-only" data-testid="ward-out-of-area-counts">
+              <span data-testid="ward-out-of-area-count-people">
+                {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far from
+                home.
+              </span>{" "}
+              <span data-testid="ward-out-of-area-count-not-banded">
+                {notBanded} more could not be placed in a band because the combined count does not separate a missing
+                home area from a missing travel-time pair.
+              </span>
+            </p>
+            <div className={styles.registerBody}>
+              {entries.length === 0 ? (
+                <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
+                  Nobody on these records is in a bed far from home.
+                </p>
+              ) : filteredEntries.length === 0 ? (
+                <div className={styles.noMatches}>
+                  <EmptyState
+                    icon={Search}
+                    title="No placements match the current search or filters."
+                    action={
+                      <Button variant="sec" size="sm" onClick={resetFilters}>
+                        Reset filters
+                      </Button>
+                    }
+                  />
                 </div>
               ) : (
-                <div className={pageStyles.caseBody}>
-                  <div className={pageStyles.caseNavigation}>
-                    <span role="status">
-                      {selectedIndex >= 0
-                        ? `Synthetic patient ${selectedIndex + 1} of ${filteredEntries.length}`
-                        : "Outside current filters"}
-                    </span>
-                    <div>
-                      <button
-                        type="button"
-                        className={pageStyles.iconButton}
-                        disabled={selectedIndex <= 0}
-                        aria-label="Inspect previous patient"
-                        onClick={() => selectPlacement(filteredEntries[selectedIndex - 1].admission.id)}
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        className={pageStyles.iconButton}
-                        disabled={selectedIndex < 0 || selectedIndex >= filteredEntries.length - 1}
-                        aria-label="Inspect next patient"
-                        onClick={() => selectPlacement(filteredEntries[selectedIndex + 1].admission.id)}
-                      >
-                        →
-                      </button>
-                    </div>
+                <>
+                  <div className={styles.tableWrap}>
+                    <WardTable
+                      className={`${tableClasses.table} ${styles.table}`}
+                      wrapperClassName={styles.tableScroll}
+                      testId="ward-out-of-area-table"
+                      ariaLabel="Out-of-area placement register"
+                    >
+                      <thead>
+                        <tr>
+                          <th scope="col">Patient</th>
+                          <th scope="col">Home region</th>
+                          <th scope="col">Unit</th>
+                          <th scope="col">Travel time</th>
+                          <th scope="col" className={tableClasses.num}>
+                            Since arrival
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* All matching entries; sorting by name or region is an explicit view choice. */}
+                        {filteredEntries.map((entry) => {
+                          const entrySite = siteByCode(entry.unit.siteCode);
+                          const entryPatient = resolvePatient(entry.admission);
+                          const entryProfileHref = getPatientProfileHref(entryPatient);
+                          const isSelected = entry.admission.id === selectedId;
+                          return (
+                            <tr
+                              key={entry.admission.id}
+                              data-testid={`ward-out-of-area-row-${entry.admission.id}`}
+                              className={isSelected ? `${tableClasses.selected} ${styles.row}` : styles.row}
+                              aria-selected={isSelected}
+                              tabIndex={0}
+                              aria-label={`View placement detail for ${entryPatient.displayName} (${entryPatient.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                              onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.target === event.currentTarget &&
+                                  (event.key === "Enter" || event.key === " ")
+                                ) {
+                                  event.preventDefault();
+                                  selectPlacement(entry.admission.id, event.currentTarget);
+                                }
+                              }}
+                            >
+                              <td>
+                                <span className={styles.primary}>{entryPatient.displayName}</span>
+                                <span className={styles.secondary}>
+                                  {entryProfileHref ? (
+                                    <Link
+                                      href={entryProfileHref}
+                                      className={styles.umrnLink}
+                                      onClick={(event) => event.stopPropagation()}
+                                      title={`Open profile for ${entryPatient.displayName} (${entryPatient.umrn})`}
+                                    >
+                                      {entryPatient.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span>{entryPatient.umrn}</span>
+                                  )}
+                                  <span aria-hidden="true"> · </span>
+                                  <span className={styles.mono}>{entry.admission.id}</span>
+                                </span>
+                              </td>
+                              <td>
+                                <span className={styles.primaryPlain}>{entry.admission.homeRegion}</span>
+                              </td>
+                              <td>
+                                <span className={styles.primaryPlain}>{entry.unit.name}</span>
+                                <span className={styles.secondary}>{entrySite?.name ?? "Site not recorded"}</span>
+                              </td>
+                              <td>
+                                <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
+                                  <Icon icon={entry.band === "air_transport_only" ? Plane : Car} size={14} />
+                                  {TRAVEL_BAND_LABELS[entry.band]}
+                                </span>
+                              </td>
+                              <td className={`${tableClasses.num} ${styles.away}`}>{sinceArrivalLabel(entry, now)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </WardTable>
                   </div>
-                  <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.patientHero}>
-                    <div className={pageStyles.patientHeading}>
-                      <div className={pageStyles.patientIdentity}>
-                        <h3>{patientInfo.displayName}</h3>
-                        <div className={pageStyles.patientIdentifiers}>
-                          {profileHref ? (
-                            <Link href={profileHref} className={pageStyles.inspectorUmrnLink}>
-                              {patientInfo.umrn}
-                            </Link>
-                          ) : (
-                            <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
-                          )}
-                          <span className={pageStyles.admissionIdText}>{selected.admission.id}</span>
-                        </div>
-                      </div>
-                      <div className={pageStyles.staySummary}>
-                        <strong>{selectedStayDays === null ? "—" : `${selectedStayDays}d`}</strong>
-                        <span>in this bed</span>
-                        <span className="sr-only">{sinceArrivalLabel(selected, now)}</span>
-                      </div>
+
+                  {/* Phone card list: a second, independently keyed rendering of every entry. */}
+                  <ul className={styles.cardList} data-testid="ward-out-of-area-cards">
+                    {filteredEntries.map((entry) => {
+                      const entrySite = siteByCode(entry.unit.siteCode);
+                      const entryPatient = resolvePatient(entry.admission);
+                      const entryProfileHref = getPatientProfileHref(entryPatient);
+                      const isSelected = entry.admission.id === selectedId;
+                      return (
+                        <li
+                          key={entry.admission.id}
+                          className={isSelected ? `${styles.card} ${styles.cardSelected}` : styles.card}
+                          data-testid={`ward-out-of-area-card-${entry.admission.id}`}
+                          aria-selected={isSelected}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`View placement detail for ${entryPatient.displayName} (${entryPatient.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                          onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
+                          onKeyDown={(event) => {
+                            if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+                              event.preventDefault();
+                              selectPlacement(entry.admission.id, event.currentTarget);
+                            }
+                          }}
+                        >
+                          <span className={styles.cardTop}>
+                            <span className={styles.primary}>{entryPatient.displayName}</span>
+                            <span className={styles.cardAway}>{sinceArrivalLabel(entry, now)} since arrival</span>
+                          </span>
+                          <span className={styles.secondary}>
+                            {entryProfileHref ? (
+                              <Link
+                                href={entryProfileHref}
+                                className={styles.umrnLink}
+                                onClick={(event) => event.stopPropagation()}
+                                title={`Open profile for ${entryPatient.displayName} (${entryPatient.umrn})`}
+                              >
+                                {entryPatient.umrn}
+                              </Link>
+                            ) : (
+                              <span>{entryPatient.umrn}</span>
+                            )}
+                            <span aria-hidden="true"> · </span>
+                            {entry.admission.homeRegion}
+                          </span>
+                          <span className={styles.secondary}>
+                            {entry.unit.name} · {entrySite?.name ?? "Site not recorded"}
+                          </span>
+                          <span className={styles.travel}>
+                            <Icon icon={entry.band === "air_transport_only" ? Plane : Car} size={14} />
+                            {TRAVEL_BAND_LABELS[entry.band]}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+            </div>
+            <CardFoot
+              meta={
+                <span className={styles.footNote}>
+                  <StatusGlyph tone="neutral" size={9} />
+                  <b>{notBanded}</b> records lack a home area or travel time
+                </span>
+              }
+            >
+              <Button
+                variant="sec"
+                size="sm"
+                icon={Download}
+                onClick={exportList}
+                disabled={filteredEntries.length === 0}
+              >
+                Export list
+              </Button>
+            </CardFoot>
+          </Card>
+
+          <div ref={detailColumnRef} className={styles.side}>
+            <Card
+              className={styles.planCard}
+              aria-labelledby="ward-out-of-area-plan-title"
+              data-testid="ward-out-of-area-subject"
+            >
+              <CardHead
+                id="ward-out-of-area-plan-title"
+                title="Return plan"
+                eyebrow
+                aside={
+                  selected ? (
+                    <span className={styles.planNav}>
+                      <span role="status" className={styles.planPosition}>
+                        {selectedIndex >= 0 ? (
+                          <>
+                            <SrOnly>Synthetic patient </SrOnly>
+                            {selectedIndex + 1} of {filteredEntries.length}
+                          </>
+                        ) : (
+                          "Outside current filters"
+                        )}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        icon={ChevronLeft}
+                        aria-label="Inspect previous patient"
+                        disabled={selectedIndex <= 0}
+                        onClick={() => selectPlacement(filteredEntries[selectedIndex - 1].admission.id)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        icon={ChevronRight}
+                        aria-label="Inspect next patient"
+                        disabled={selectedIndex < 0 || selectedIndex >= filteredEntries.length - 1}
+                        onClick={() => selectPlacement(filteredEntries[selectedIndex + 1].admission.id)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        icon={X}
+                        aria-label="Return to cohort overview"
+                        title="Return to overview (Escape)"
+                        onClick={returnToOverview}
+                      />
+                    </span>
+                  ) : undefined
+                }
+              />
+              {repatNotice ? (
+                <div className={styles.notice} data-testid="ward-out-of-area-repat-notice">
+                  <StatusLine
+                    tone="success"
+                    title={repatNotice}
+                    actions={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRepatNotice(null)}
+                        aria-label="Dismiss notice"
+                      >
+                        Dismiss
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : null}
+              {!selected || !patientInfo ? (
+                <CardBody data-testid="ward-out-of-area-subject-empty" className={styles.planEmpty}>
+                  <EmptyState icon={MapIcon} title="Select a person to plan their return" />
+                  {maxDaysEntry && longestPatientInfo ? (
+                    <button
+                      type="button"
+                      className={styles.longest}
+                      onClick={(event) => selectPlacement(maxDaysEntry.admission.id, event.currentTarget)}
+                      aria-label={`Inspect longest case: ${longestPatientInfo.displayName}`}
+                    >
+                      <span className={styles.longestText}>
+                        <span className={styles.secondary}>Longest away</span>
+                        <span className={styles.primary}>{longestPatientInfo.displayName}</span>
+                        <span className={styles.secondary}>
+                          {maxDaysEntry.admission.homeRegion} ·{" "}
+                          {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
+                        </span>
+                      </span>
+                      <span className={styles.longestFigure}>{sinceArrivalLabel(maxDaysEntry, now)}</span>
+                    </button>
+                  ) : null}
+                </CardBody>
+              ) : (
+                <>
+                  <div data-testid="ward-out-of-area-subject-facts" className={styles.planFacts}>
+                    <div className={styles.planIdentity}>
+                      <h3 className={styles.planName}>{patientInfo.displayName}</h3>
+                      <span className={styles.secondary}>
+                        {profileHref ? (
+                          <Link href={profileHref} className={styles.umrnLink}>
+                            {patientInfo.umrn}
+                          </Link>
+                        ) : (
+                          <span>{patientInfo.umrn}</span>
+                        )}
+                        <span aria-hidden="true"> · </span>
+                        <span className={styles.mono}>{selected.admission.id}</span>
+                      </span>
                     </div>
-                    <dl className={pageStyles.placementFacts}>
+                    <dl className={styles.planFigures}>
                       <div>
-                        <dt>Current placement</dt>
-                        <dd>
-                          <strong>{selected.unit.name}</strong>
-                          <span>{site?.name ?? "Site not recorded"}</span>
-                        </dd>
+                        <dt>Away</dt>
+                        <dd>{sinceArrivalLabel(selected, now)}</dd>
+                      </div>
+                      <div>
+                        <dt>Travel</dt>
+                        <dd>{travelWord(selected)}</dd>
                       </div>
                       <div>
                         <dt>Home catchment</dt>
                         <dd>{selected.admission.homeRegion}</dd>
                       </div>
+                    </dl>
+                    <dl className={styles.planFacts2}>
+                      <div>
+                        <dt>Current placement</dt>
+                        <dd>
+                          {selected.unit.name} · {site?.name ?? "Site not recorded"}
+                        </dd>
+                      </div>
                       <div>
                         <dt>Travel band</dt>
-                        <dd
-                          className={pageStyles.travelRequirement}
-                          data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
-                        >
-                          <PlacementStatusGlyph tone={selected.band === "air_transport_only" ? "danger" : "warn"} />
-                          <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
-                        </dd>
+                        <dd>{TRAVEL_BAND_LABELS[selected.band]}</dd>
                       </div>
                     </dl>
                   </div>
-                  <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.returnPlanning}>
-                    <p>Choose a receiving hospital and confirm ward agreement.</p>
-                  </div>
-                  <div className={pageStyles.caseActions}>
-                    <button
-                      type="button"
-                      className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
-                      onClick={(event) => openRepatriation(event.currentTarget)}
-                    >
-                      Initiate repatriation <span aria-hidden="true">→</span>
-                    </button>
-                    {profileHref && (
-                      <Link className={pageStyles.profileAction} href={profileHref} aria-label="Open patient profile">
-                        Profile{" "}
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M7 17 17 7M7 7h10v10" />
-                        </svg>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-
-        {/* Repatriation Modal */}
-        {isRepatModalOpen && (
-          <div
-            className={pageStyles.modalOverlay}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modalTitle"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsRepatModalOpen(false);
-                triggerRef.current?.focus();
-              }
-            }}
-          >
-            <div className={pageStyles.modalDialog}>
-              <div className={pageStyles.modalHead}>
-                <h3 id="modalTitle">Initiate Repatriation Transfer</h3>
-                <button
-                  type="button"
-                  className={`${pageStyles.btn} ${pageStyles.btnSm}`}
-                  onClick={() => {
-                    setIsRepatModalOpen(false);
-                    triggerRef.current?.focus();
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-              <div className={pageStyles.modalBody}>
-                <div className={pageStyles.modalTwoColGrid}>
-                  {/* Left Column: Context & Receiving Destination */}
-                  <div className={pageStyles.modalCol}>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-patient">
-                        Patient (URM &amp; Catchment)
-                      </label>
-                      <input
-                        id="repat-patient"
-                        type="text"
-                        className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
-                        value={
-                          selected
-                            ? `${resolvePatient(selected.admission).displayName} · ${resolvePatient(selected.admission).umrn} · ${selected.admission.id} (${selected.admission.homeRegion})`
-                            : "General Referral"
-                        }
-                        readOnly
-                      />
-                    </div>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-home-hospital">
-                        Home hospital
-                      </label>
-                      <select
-                        id="repat-home-hospital"
-                        className={pageStyles.modalSelect}
+                  <p data-testid="ward-out-of-area-subject-caveat" className={styles.caveat}>
+                    Choose a receiving hospital and confirm ward agreement.
+                  </p>
+                  <CardBody className={styles.planForm}>
+                    <Field label="Home hospital" className={styles.formRow}>
+                      <Select
                         data-testid="ward-out-of-area-repat-home-hospital"
                         value={repatDraft.homeHospital}
-                        onChange={(e) => setRepatDraft((current) => ({ ...current, homeHospital: e.target.value }))}
+                        onChange={(event) =>
+                          setRepatDraft((current) => ({ ...current, homeHospital: event.target.value }))
+                        }
                       >
                         <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
                         {HOME_HOSPITAL_GROUPS.map((group) => (
                           <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
-                            {group.sites.map((site) => (
-                              <option key={site.code} value={site.code}>
-                                {site.name}
+                            {group.sites.map((hospital) => (
+                              <option key={hospital.code} value={hospital.code}>
+                                {hospital.name}
                               </option>
                             ))}
                           </optgroup>
                         ))}
-                      </select>
-                    </div>
-                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-ward-agreed">
-                      <legend className={pageStyles.modalLabel}>Has the receiving ward agreed?</legend>
-                      <div className={pageStyles.segmentedControl}>
-                        {(
-                          [
-                            { value: true, label: "Yes — receiving ward has agreed" },
-                            { value: false, label: "Not yet agreed" },
-                          ] as const
-                        ).map((answer) => (
-                          <label
-                            key={answer.label}
-                            className={`${pageStyles.segmentedOption} ${repatDraft.receivingWardAgreed === answer.value ? pageStyles.segmentedOptionActive : ""}`}
-                          >
-                            <input
-                              type="radio"
-                              name="repat-ward-agreed"
-                              className={pageStyles.accessibleHiddenInput}
-                              checked={repatDraft.receivingWardAgreed === answer.value}
-                              onChange={() =>
-                                setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))
-                              }
-                            />
-                            <span>{answer.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-legal">
-                      <legend className={pageStyles.modalLabel}>Is the transport voluntary or involuntary?</legend>
-                      <div className={pageStyles.segmentedControl}>
-                        {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                          <label
-                            key={status}
-                            className={`${pageStyles.segmentedOption} ${repatDraft.transportLegalStatus === status ? pageStyles.segmentedOptionActive : ""}`}
-                          >
-                            <input
-                              type="radio"
-                              name="repat-legal"
-                              className={pageStyles.accessibleHiddenInput}
-                              value={status}
-                              checked={repatDraft.transportLegalStatus === status}
-                              onChange={() =>
-                                setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))
-                              }
-                            />
-                            <span>{TRANSPORT_LEGAL_STATUS_LABELS[status]}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  </div>
-
-                  {/* Right Column: Transport Logistics & Timing */}
-                  <div className={pageStyles.modalCol}>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-mode">
-                        Road or flight
-                      </label>
-                      <select
-                        id="repat-mode"
-                        className={pageStyles.modalSelect}
-                        data-testid="ward-out-of-area-repat-mode"
-                        value={repatDraft.mode}
-                        onChange={(e) =>
-                          setRepatDraft((current) => ({
-                            ...current,
-                            mode: (REPAT_MODES as readonly string[]).includes(e.target.value)
-                              ? (e.target.value as RepatMode)
-                              : "",
-                          }))
-                        }
-                      >
-                        <option value={NO_REPAT_MODE_VALUE}>Choose road or flight</option>
+                      </Select>
+                    </Field>
+                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-mode">
+                      <legend>Travel by</legend>
+                      <span className={styles.choices}>
                         {REPAT_MODES.map((mode) => (
-                          <option key={mode} value={mode}>
-                            {mode === "road" ? "Road" : "Flight"}
-                          </option>
+                          <Radio
+                            key={mode}
+                            name="repat-mode"
+                            value={mode}
+                            label={mode === "road" ? "Road" : "Flight"}
+                            checked={repatDraft.mode === mode}
+                            onChange={() => setRepatDraft((current) => ({ ...current, mode }))}
+                          />
                         ))}
-                      </select>
-                    </div>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-provider">
-                        Transport provider
-                      </label>
-                      <select
-                        id="repat-provider"
-                        className={pageStyles.modalSelect}
+                      </span>
+                    </fieldset>
+                    <Field label="Provider" className={styles.formRow}>
+                      <Select
                         data-testid="ward-out-of-area-repat-provider"
                         value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                        onChange={(e) => {
-                          const next = e.target.value;
+                        onChange={(event) => {
+                          const next = event.target.value;
                           setRepatDraft((current) => ({
                             ...current,
                             provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
@@ -1240,133 +925,142 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             {provider}
                           </option>
                         ))}
-                      </select>
-                    </div>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-cad">
-                        CAD (dispatch) number
-                      </label>
-                      <input
-                        id="repat-cad"
-                        type="text"
-                        className={pageStyles.modalInput}
+                      </Select>
+                    </Field>
+                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-ward-agreed">
+                      <legend>Ward agreed</legend>
+                      <span className={styles.choices}>
+                        {(
+                          [
+                            { value: true, label: "Agreed" },
+                            { value: false, label: "Not yet" },
+                          ] as const
+                        ).map((answer) => (
+                          <Radio
+                            key={answer.label}
+                            name="repat-ward-agreed"
+                            label={answer.label}
+                            checked={repatDraft.receivingWardAgreed === answer.value}
+                            onChange={() =>
+                              setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))
+                            }
+                          />
+                        ))}
+                      </span>
+                    </fieldset>
+                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-legal">
+                      <legend>Legal status</legend>
+                      <span className={styles.choices}>
+                        {TRANSPORT_LEGAL_STATUSES.map((status) => (
+                          <Radio
+                            key={status}
+                            name="repat-legal"
+                            value={status}
+                            label={TRANSPORT_LEGAL_STATUS_LABELS[status]}
+                            checked={repatDraft.transportLegalStatus === status}
+                            onChange={() => setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))}
+                          />
+                        ))}
+                      </span>
+                    </fieldset>
+                    <Field label="CAD number" className={styles.formRow}>
+                      <TextInput
                         data-testid="ward-out-of-area-repat-cad"
+                        placeholder="CAD number"
+                        autoComplete="off"
                         value={repatDraft.cadNumber}
-                        onChange={(e) => setRepatDraft((current) => ({ ...current, cadNumber: e.target.value }))}
+                        onChange={(event) =>
+                          setRepatDraft((current) => ({ ...current, cadNumber: event.target.value }))
+                        }
                       />
-                    </div>
-                    <div className={pageStyles.modalField}>
-                      <label className={pageStyles.modalLabel} htmlFor="repat-estimated-time">
-                        Estimated time (24-hour, HH:MM)
-                      </label>
-                      <input
-                        id="repat-estimated-time"
-                        type="text"
+                    </Field>
+                    <Field label="Depart" className={styles.formRow}>
+                      <TextInput
+                        icon={Clock}
                         inputMode="numeric"
                         placeholder="HH:MM"
-                        className={pageStyles.modalInput}
                         data-testid="ward-out-of-area-repat-estimated-time"
                         value={repatDraft.estimatedTime}
-                        onChange={(e) => setRepatDraft((current) => ({ ...current, estimatedTime: e.target.value }))}
+                        onChange={(event) =>
+                          setRepatDraft((current) => ({ ...current, estimatedTime: event.target.value }))
+                        }
                       />
-                    </div>
-                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-estimated-day">
-                      <legend className={pageStyles.modalLabel}>Today or tomorrow?</legend>
-                      <div className={pageStyles.segmentedControl}>
+                    </Field>
+                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-estimated-day">
+                      <legend>Depart day</legend>
+                      <span className={styles.choices}>
                         {(["today", "tomorrow"] as const).map((day) => (
-                          <label
+                          <Radio
                             key={day}
-                            className={`${pageStyles.segmentedOption} ${repatDraft.estimatedDay === day ? pageStyles.segmentedOptionActive : ""}`}
-                          >
-                            <input
-                              type="radio"
-                              name="repat-estimated-day"
-                              className={pageStyles.accessibleHiddenInput}
-                              value={day}
-                              checked={repatDraft.estimatedDay === day}
-                              onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
-                            />
-                            <span>{day === "today" ? "Today" : "Tomorrow"}</span>
-                          </label>
+                            name="repat-estimated-day"
+                            value={day}
+                            label={day === "today" ? "Today" : "Tomorrow"}
+                            checked={repatDraft.estimatedDay === day}
+                            onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
+                          />
                         ))}
-                      </div>
+                      </span>
                     </fieldset>
-                  </div>
-                </div>
-                {repatFormNotice ? (
-                  <p className={pageStyles.modalNotice} role="alert" data-testid="ward-out-of-area-repat-blocked">
-                    {repatFormNotice}
-                  </p>
-                ) : null}
-              </div>
-              <div className={pageStyles.modalFoot}>
-                <button
-                  type="button"
-                  className={pageStyles.btn}
-                  onClick={() => {
-                    setIsRepatModalOpen(false);
-                    triggerRef.current?.focus();
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
-                  data-testid="ward-out-of-area-repat-submit"
-                  onClick={() => {
-                    const admissionId = selected?.admission.id;
-                    const blocked = repatriationBlockedReason(repatDraft, admissionId, now);
-                    if (blocked !== undefined) {
-                      setRepatFormNotice(blocked);
-                      return;
-                    }
-                    const estimatedAt = instantFromEstimatedTimeInputs(
-                      repatDraft.estimatedTime,
-                      repatDraft.estimatedDay,
-                      now,
-                    );
-                    if (
-                      admissionId === undefined ||
-                      estimatedAt === undefined ||
-                      repatDraft.receivingWardAgreed === undefined ||
-                      (repatDraft.mode !== "road" && repatDraft.mode !== "flight") ||
-                      repatDraft.provider === undefined ||
-                      repatDraft.transportLegalStatus === undefined
-                    ) {
-                      return;
-                    }
-                    dispatch({
-                      type: "RECORD_REPATRIATION",
-                      role: "coordinator",
-                      now,
-                      admissionId,
-                      homeHospital: repatDraft.homeHospital,
-                      receivingWardAgreed: repatDraft.receivingWardAgreed,
-                      mode: repatDraft.mode,
-                      provider: repatDraft.provider,
-                      cadNumber: repatDraft.cadNumber.trim(),
-                      transportLegalStatus: repatDraft.transportLegalStatus,
-                      estimatedAt,
-                    });
-                    setIsRepatModalOpen(false);
-                    setRepatFormNotice(null);
-                    const targetHospitalName = siteByCode(repatDraft.homeHospital)?.name ?? repatDraft.homeHospital;
-                    const movementFeedback = repatDraft.receivingWardAgreed
-                      ? " Return transfer movement queued for bed placement at home health service."
-                      : " Return movement pending receiving ward agreement.";
-                    setRepatNotice(
-                      `Repatriation transfer order recorded for ${admissionId} to ${targetHospitalName}.${movementFeedback}`,
-                    );
-                    triggerRef.current?.focus();
-                  }}
-                >
-                  Record repatriation
-                </button>
-              </div>
-            </div>
+                    {repatFormNotice ? (
+                      <p className={styles.blocked} role="alert" data-testid="ward-out-of-area-repat-blocked">
+                        <StatusGlyph tone="warning" size={9} />
+                        {repatFormNotice}
+                      </p>
+                    ) : null}
+                  </CardBody>
+                  <CardFoot>
+                    {profileHref ? (
+                      <Link
+                        className={buttonClass({ variant: "ghost" })}
+                        href={profileHref}
+                        aria-label="Open patient profile"
+                      >
+                        Profile
+                      </Link>
+                    ) : null}
+                    <Button variant="pri" data-testid="ward-out-of-area-repat-submit" onClick={recordReturn}>
+                      Record return
+                    </Button>
+                  </CardFoot>
+                </>
+              )}
+            </Card>
+
+            <Card className={styles.sideCard} aria-labelledby="ward-out-of-area-catchments-title">
+              <CardHead
+                id="ward-out-of-area-catchments-title"
+                title="Home catchments"
+                aside={<span className={styles.headNote}>People away</span>}
+              />
+              <CardBody>
+                {homeRegionSummary.length === 0 ? (
+                  <p className={styles.emptyNote}>Nobody is away from a recorded home catchment.</p>
+                ) : (
+                  <ul className={styles.regionList}>
+                    {homeRegionSummary.map(([region, count]) => (
+                      <li key={region}>
+                        <button
+                          type="button"
+                          className={styles.regionRow}
+                          onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
+                          aria-pressed={catchmentFilter === region}
+                          aria-label={`Filter by ${region}: ${count} placements`}
+                        >
+                          <span className={styles.regionName}>{region}</span>
+                          <span className={styles.regionBar} aria-hidden="true">
+                            <span style={{ width: `${largestRegion ? (count / largestRegion) * 100 : 0}%` }} />
+                          </span>
+                          <b className={styles.regionCount}>{count}</b>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardBody>
+            </Card>
           </div>
-        )}
+        </div>
+
         <WardPrototypeFooter
           testId="ward-out-of-area-governance"
           note="People in a bed away from home · Synthetic demonstration figures · Not a medical device"
@@ -1384,30 +1078,4 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   if (days === null) return "Arrival not recorded";
   if (days === 0) return "Under a day";
   return `${days} ${days === 1 ? "day" : "days"}`;
-}
-
-/**
- * Geometric, non-color status glyph for placement status pills.
- */
-export function PlacementStatusGlyph({ tone }: { tone: "accent" | "danger" | "warn" }) {
-  const glyphClass = `${pageStyles.placementGlyph} ${styles.placementGlyph}`;
-  if (tone === "danger") {
-    return (
-      <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
-        <path d="M6 1.5 1 10.5h10L6 1.5Z" />
-      </svg>
-    );
-  }
-  if (tone === "warn") {
-    return (
-      <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
-        <path d="M6 1 11 6 6 11 1 6Z" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
-      <circle cx="6" cy="6" r="4" />
-    </svg>
-  );
 }
