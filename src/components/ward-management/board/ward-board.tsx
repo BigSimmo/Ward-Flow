@@ -1944,6 +1944,7 @@ export function WardBoard({
                   data-testid={`ward-board-figure-${key}`}
                   data-figure-key={key}
                   data-figure-led={led ? "true" : "false"}
+                  data-has-alert={key === "blockedBeds" && value > 0 ? "true" : undefined}
                 >
                   <dt className={styles.triageLabel}>{label}</dt>
                   <dd className={styles.triageValue}>{value}</dd>

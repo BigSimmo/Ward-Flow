@@ -401,7 +401,7 @@ export function SettingsScreen() {
     percent: number;
   }>({
     usedFormatted: "48 KB",
-    quotaFormatted: "5.0 MB",
+    quotaFormatted: "5 MB",
     percent: 1,
   });
 
@@ -416,7 +416,7 @@ export function SettingsScreen() {
             const quotaMB = Math.round(estimate.quota / (1024 * 1024));
             const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
             setStorageEstimate({
-              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
+              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1).replace(/\.0$/, "")} MB`,
               quotaFormatted: `${quotaMB} MB`,
               percent: Math.max(1, pct),
             });
@@ -444,7 +444,7 @@ export function SettingsScreen() {
         if (mounted) {
           setStorageEstimate({
             usedFormatted: `${kb} KB`,
-            quotaFormatted: "5.0 MB",
+            quotaFormatted: "5 MB",
             percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
           });
         }
@@ -2331,6 +2331,7 @@ export function SettingsScreen() {
                                                 type="button"
                                                 className={styles.defaultResetItemBtn}
                                                 title={`Reset "${item.name}" to standard default`}
+                                                aria-label={`Reset "${item.name}" to standard default`}
                                                 onClick={() => handleResetSingleDefault(item.name)}
                                               >
                                                 <RotateCcw size={12} aria-hidden="true" />

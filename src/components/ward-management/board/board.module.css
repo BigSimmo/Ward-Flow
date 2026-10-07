@@ -3142,7 +3142,7 @@
   color: var(--warn);
 }
 
-.triageFigure[data-figure-key="blockedBeds"] .triageValue {
+.triageFigure[data-figure-key="blockedBeds"][data-has-alert="true"] .triageValue {
   color: var(--danger);
 }
 

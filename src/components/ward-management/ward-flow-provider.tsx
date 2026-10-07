@@ -715,6 +715,11 @@ function WardFlowWorld({
   const now =
     NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
+
   const [, setTick] = useState(0);
   useEffect(() => {
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
@@ -893,13 +898,20 @@ function WardFlowWorld({
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
         const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
         if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
-          dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
+          dispatch({
+            type: "RECORD_LEAVING",
+            role: "ward",
+            now: nowRef.current,
+            admissionId,
+            actingUnitId,
+            leavingDestination,
+          });
           return;
         }
         dispatch({
           type: "RECORD_PATIENT_DISCHARGE",
           role: "ward",
-          now,
+          now: nowRef.current,
           admissionId,
           actingUnitId,
           leavingDestination,
@@ -923,7 +935,7 @@ function WardFlowWorld({
         dispatch({
           ...declaredActor,
           type: "OPEN_DISCHARGE_RECORD",
-          now,
+          now: nowRef.current,
           admissionId,
           expectedGeneration: handle.generation,
           requestId: handle.requestId,
@@ -950,7 +962,9 @@ function WardFlowWorld({
         }),
       patients: state.patients,
       admissions: state.admissions,
-      now,
+      get now() {
+        return nowRef.current;
+      },
       dayZero,
       scenario: state.scenario,
       configuration: state.configuration,
@@ -976,7 +990,6 @@ function WardFlowWorld({
       state,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
-      now,
       dayZero,
       dispatch,
       focusMovementId,
