@@ -5,7 +5,9 @@ import type { LucideIcon } from "lucide-react";
 
 import { Card, CardHead, Hero, LiveChip, cx } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import type { StatisticsSection } from "./statistics-sections";
 
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
 import styles from "./statistics-hero.module.css";
@@ -107,5 +109,59 @@ export function StatCard({
       </div>
       {children}
     </Card>
+  );
+}
+
+/**
+ * The v6 frame for a statistics section page: one hero band (section name and clock in the
+ * eyebrow), the page's cards, and the synthetic-data footer.
+ */
+export function StatisticsPage({
+  section,
+  navSection,
+  slug,
+  testId,
+  title,
+  titleAction,
+  stats,
+  now,
+  paused,
+  onTogglePause,
+  children,
+}: {
+  section: StatisticsSection;
+  navSection: StatisticsNavSection;
+  slug?: string;
+  testId: string;
+  title: ReactNode;
+  titleAction?: ReactNode;
+  stats?: ReactNode;
+  now: Instant;
+  paused: boolean;
+  onTogglePause: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={styles.page} data-testid={testId} data-ward-design="v6">
+      <main id="main-content" className={styles.main}>
+        <StatisticsHero
+          section={navSection}
+          slug={slug}
+          eyebrow={
+            <>
+              <span data-testid="ward-statistics-section-eyebrow">{section.label}</span>
+              {` · as at ${formatInstant(now)}`}
+            </>
+          }
+          title={title}
+          titleAction={titleAction}
+          stats={stats}
+          paused={paused}
+          onTogglePause={onTogglePause}
+        />
+        {children}
+        <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
+      </main>
+    </div>
   );
 }

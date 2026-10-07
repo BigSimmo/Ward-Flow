@@ -126,9 +126,13 @@ describe("every statistics section page carries the disclaimer", () => {
 
   it.each(pages)("$name offers a way back to the statistics hub", ({ node }) => {
     renderInProvider(node);
-    expect(screen.getByTestId("ward-statistics-section-back").getAttribute("href")).toBe(
-      "/mockups/ward-flow/statistics",
-    );
+    // v6: the hero's section track leads with Summary, the statistics hub.
+    const back =
+      screen.queryByTestId("ward-statistics-section-back") ??
+      within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" })).getByRole("link", {
+        name: "Summary",
+      });
+    expect(back.getAttribute("href")).toBe("/mockups/ward-flow/statistics");
   });
 
   /**

@@ -25,3 +25,20 @@
 .card {
   min-width: 0;
 }
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--wf-s-4);
+  box-sizing: border-box;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}

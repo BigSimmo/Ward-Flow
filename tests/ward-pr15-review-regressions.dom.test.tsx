@@ -104,14 +104,15 @@ describe("PR15 recorded facts and unavailable data", () => {
     ];
     render(<HospitalCapacityMatrix units={units} bedReleases={[]} />);
     const held = screen.getByText(units[0].name).closest("tr")!;
-    expect(within(held).getByText("No ready beds")).toBeTruthy();
+    // v6 "Beds by ward" status wording: None ready, Near limit, Has ready.
+    expect(within(held).getByText("None ready")).toBeTruthy();
     expect(
       within(held)
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
     ).toContain("3");
-    expect(within(screen.getByText("Zero-bed ward").closest("tr")!).getByText("No ready beds")).toBeTruthy();
-    expect(within(screen.getByText("Available ward").closest("tr")!).getByText("Ready beds recorded")).toBeTruthy();
+    expect(within(screen.getByText("Zero-bed ward").closest("tr")!).getByText("None ready")).toBeTruthy();
+    expect(within(screen.getByText("Available ward").closest("tr")!).getByText("Has ready")).toBeTruthy();
     expect(screen.queryByText("Open Intake")).toBeNull();
   });
 

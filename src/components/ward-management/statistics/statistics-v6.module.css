@@ -110,13 +110,10 @@
 .table thead th {
   height: 32px;
   background: transparent;
-  border-top: 1px solid var(--wf-line);
 }
 
 .table tbody th,
 .table tfoot th {
-  padding: 0 var(--wf-s-3) 0 var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   letter-spacing: 0;
   text-transform: none;
@@ -127,19 +124,6 @@
 
 .table td {
   max-width: none;
-  padding: 0 var(--wf-s-3);
-}
-
-.table thead th {
-  padding: 0 var(--wf-s-3);
-}
-
-.table tr > :first-child {
-  padding-left: var(--wf-s-4);
-}
-
-.table tr > :last-child {
-  padding-right: var(--wf-s-4);
 }
 
 .siteCell {
@@ -161,7 +145,6 @@
 .table tfoot th,
 .table tfoot td {
   font-weight: 600;
-  border-bottom: 0;
 }
 
 .num {
@@ -246,8 +229,8 @@
 
 .occTrack {
   position: relative;
-  flex: 0 0 72px;
-  width: 72px;
+  flex: 0 0 64px;
+  width: 64px;
   height: 6px;
   border-radius: var(--wf-r-pill);
   background: var(--wf-track);
@@ -273,7 +256,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 46px;
+  min-width: 40px;
   font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
 }
 
@@ -458,4 +441,143 @@
 
 .footer {
   margin-top: var(--wf-s-1);
+}
+
+/* Row link inside a table: reads as the row's name, underlines on hover. */
+.rowLink {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.rowLink:hover {
+  text-decoration: underline;
+}
+
+.statusCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.legendEnd {
+  justify-content: flex-end;
+}
+
+/* Occupancy by health service: one tile per service, each a toggle that filters the table. */
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1px solid var(--wf-line);
+}
+
+.serviceTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 0;
+  border-left: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.serviceTile:first-child {
+  border-left: 0;
+}
+
+.serviceTile:hover {
+  background: var(--wf-hover);
+}
+
+.serviceTile[aria-pressed="true"] {
+  background: var(--wf-surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--wf-ink-2);
+}
+
+.serviceTile:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.serviceTop {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.serviceText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.serviceName {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  white-space: nowrap;
+}
+
+.serviceBeds {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.serviceOver {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.serviceFigures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-1);
+}
+
+.serviceFigures span {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.serviceFigures b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.serviceSites {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .serviceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* A ward name cell that keeps long names on one line. */
+.wardCell {
+  max-width: 180px;
+}
+
+.wardCell > * {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import { StatisticsInsightChart } from "./statistics-insight-chart";
-import { StatisticsDetailPanel } from "./statistics-detail-panel";
-import family from "./statistics-family.module.css";
-
+import { useState } from "react";
 import Link from "next/link";
+import { Clock, Network, Activity, Filter, X } from "lucide-react";
 
+import { BarList, CardBody, Donut, HeroStat, Legend, Segmented, StatusGlyph, tableClasses } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionStagePosition,
@@ -14,23 +13,37 @@ import {
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
-import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
 import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
-import { WardPanel } from "@/components/ward-management/ward-panel";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
-import { StatewideAllocationHeadroom } from "./statewide-allocation-headroom";
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
+import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { occupiedBeds } from "./statistics-occupancy";
+import styles from "./statistics-v6.module.css";
 
-import styles from "./statistics-third-edition.module.css";
+/** The five services the network reports, in the order the overview has always shown them. */
+const OVERVIEW_SERVICES = [
+  { id: "NMHS", name: "North Metro", service: "North Metro" },
+  { id: "SMHS", name: "South Metro", service: "South Metro" },
+  { id: "EMHS", name: "East Metro", service: "East Metro" },
+  { id: "WACHS", name: "Country (WACHS)", service: "WACHS" },
+  { id: "PRIV", name: "Private", service: "Private" },
+] as const;
+
+/** "no_specialling" reads "No specialling". */
+const sentenceCase = (text: string) => {
+  const spaced = text.replace(/_/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
+
+const wardsWord = (n: number) => (n === 1 ? "ward" : "wards");
 
 /**
  * ACROSS ALL SERVICES — the whole-of-prototype and Western Australia section.
@@ -73,161 +86,88 @@ import styles from "./statistics-third-edition.module.css";
  */
 export function StatisticsOverviewScreen() {
   usePrintableDisclosures();
-  // `statisticsSectionById` returns `undefined` for an unknown id, so this cannot silently resolve
-  // to a different section. The non-null assertion is avoided in favour of a thrown error: this id
-  // is a literal in this file and in `statistics-sections.ts`, so a miss means the two have been
-  // edited apart, and failing loudly at render is the only way that shows up at all.
   const section = statisticsSectionById("overview");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
-  const { admissions, movements, bedReleases, leaveBeds, units } = useWardFlow();
-  const now = useWardFlowClock();
+  const live = useStatisticsLive();
+  const { admissions, movements, bedReleases, leaveBeds, units } = live.state;
+  const now = live.now;
   const service = useServiceScope();
+  const [serviceFilter, setServiceFilter] = useState<string | null>(null);
+  const [stagesView, setStagesView] = useState<"chart" | "data">("chart");
 
   const stageTallies = admissionStageTallies(admissions);
-  /*
-   * ⚠️ **REPORTED IN PLACE, NOT THROWN.** `declinesByReason` throws when a movement carries a
-   * decline reason outside `DECLINE_REASONS`, and that throw is right — a categorical breakdown
-   * must not quietly shrink its own total. But this screen calls it during render, so on this page
-   * the throw costs the reader the stage distribution, the capacity figures and the prose about
-   * what this prototype cannot support, none of which depend on the decline vocabulary at all.
-   * **One malformed field would blank a page whose other nine tenths are still true.**
-   *
-   * Ward Lead's ruling, 2026-09-07, applied identically at all three call sites. Bounded to this
-   * class — a malformed value in a categorical breakdown that the rest of the screen is independent
-   * of. See `statistics-decline-reporting.ts` for why it catches only this error and rethrows
-   * everything else.
-   */
   const declinesReadout = readDeclinesByReason(movements);
-  /*
-   * 🔴 **OWNER RULING, 2026-09-07: this figure counts beds the patient has already LEFT, not every
-   * bed carrying the flag.** He was asked directly which of the two populations a screen should
-   * name and chose the narrower one, because a bed with somebody still in it is not a bed anyone
-   * can plan around tonight.
-   *
-   * ⚠️ **`bedsBeingPrepared` is NOT narrowed to match, and that is deliberate.** Its own doc comment
-   * refuses the filter, on the ground that dropping such a record from the count would hide a real
-   * invariant violation rather than fix it — "the flag is the fact, and it is counted... if the
-   * invariant needs enforcing, it is enforced in the reducer, not concealed in a statistic." Both
-   * things are therefore true at once: the SCREEN shows the population the owner ruled for, and the
-   * wider derivation stays honest. `tests/ward-pending-preparation-populations.test.ts` asserts the
-   * two agree, so a divergence goes red instead of disappearing between them.
-   *
-   * ⚠️ **The word is "made ready", not "cleaned".** The owner corrected that on 2026-09-07: cleaning
-   * is one of `BED_PREPARATION_NOTES`' two entries, the other is maintenance or repair, and a bed
-   * may carry the flag with no reason stated at all.
-   */
   const preparingCount = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
-  /*
-   * 🔴 **READY IS NOT THE NUMBER A COORDINATOR CAN ACT ON.** `PULL_PATIENT` refuses — *"a patient
-   * cannot be pulled to a bed that is not open"* — when every free bed at a ward is being made
-   * ready. Summed PER WARD through `openBedsNow`, never subtracted from the network total, because
-   * the clamp is per ward: a ward with more pending beds than free ones must not borrow headroom
-   * from another.
-   */
   const openNow = units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0);
   const refused = refusedAndNothingPending(movements, units, now);
   const capacity = networkCapacity(units, bedReleases);
 
-  const healthServicesData = [
-    {
-      id: "NMHS",
-      name: "North Metro (NMHS)",
-      service: "North Metro",
-      color: "var(--svc-north)",
-    },
-    {
-      id: "SMHS",
-      name: "South Metro (SMHS)",
-      service: "South Metro",
-      color: "var(--svc-south)",
-    },
-    {
-      id: "EMHS",
-      name: "East Metro (EMHS)",
-      service: "East Metro",
-      color: "var(--svc-east)",
-    },
-    {
-      id: "WACHS",
-      name: "Country Health (WACHS)",
-      service: "WACHS",
-      color: "var(--svc-wachs)",
-    },
-    {
-      id: "PRIV",
-      name: "Private",
-      service: "Private",
-      color: "var(--svc-private)",
-    },
-  ].map((hs) => {
-    const hsUnits = units.filter((u) => siteByCode(u.siteCode)?.service === hs.service);
-    const sites = Array.from(new Set(hsUnits.map((u) => siteByCode(u.siteCode)?.name ?? u.siteCode)));
-    let beds = 0;
-    let occupied = 0;
-    let ready = 0;
-    let pulled = 0;
-    let closed = 0;
-    // The ruled boxes (`ward-bed-states.ts`), summed over the service's units: Ready · Pulled ·
-    // Closed · Occupied add up to its beds.
-    for (const u of hsUnits) {
-      const states = bedStates(u, admissions, bedReleases, leaveBeds);
-      beds += u.beds;
-      occupied += states.occupied;
-      ready += states.ready;
-      pulled += states.pulled;
-      closed += states.closed;
-    }
-    const occPct = beds > 0 ? Math.round((occupied / beds) * 100) : 0;
-    // No occupancy target until one has a source (Josh, 26 Sept 2026, question 14: the 85% target
-    // line comes off). The 92% "Critical Load" line and "High Load / Balanced" words went earlier.
-    const badgeTone = "var(--accent)";
-    const badgeBg = "var(--accent-soft)";
-    const badgeText = `${ready} ready`;
-    const strokeColor = hs.color;
+  const occupancy = occupiedBeds(units, admissions, bedReleases, leaveBeds);
+  const totalBeds = units.reduce((sum, unit) => sum + unit.beds, 0);
+  const occupiedShare = totalBeds > 0 ? (occupancy.occupied / totalBeds) * 100 : 0;
 
-    const totalArc = 157.08;
-    const frac = Math.min(Math.max(occPct / 100, 0), 1);
-    const dashoffset = (totalArc * (1 - frac)).toFixed(1);
-    const angle = Math.PI - frac * Math.PI;
-    const hx = (70 + 50 * Math.cos(angle)).toFixed(1);
-    const hy = (70 - 50 * Math.sin(angle)).toFixed(1);
+  const unitRows = units.map((unit) => {
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    const rate = unit.beds > 0 ? Math.round((states.occupied / unit.beds) * 100) : 0;
+    return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
+  });
+  const wardsOverLine = unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length;
+  const closedTotal = unitRows.reduce((sum, row) => sum + row.states.closed, 0);
 
+  const services = OVERVIEW_SERVICES.map((entry) => {
+    const rows = unitRows.filter((row) => row.service === entry.service);
+    const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
+    const beds = sum((row) => row.unit.beds);
+    const occupied = sum((row) => row.states.occupied);
+    const ready = sum((row) => row.states.ready);
+    const closed = sum((row) => row.states.closed);
+    const sites = Array.from(
+      new Set(rows.map((row) => shortSite(siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode))),
+    );
     return {
-      ...hs,
-      hospitals: sites.length > 0 ? sites.join(" · ") : "Regional units",
+      ...entry,
       beds,
       occupied,
       ready,
-      pulled,
+      pulled: sum((row) => row.states.pulled),
       closed,
-      occPct,
-      badgeTone,
-      badgeBg,
-      badgeText,
-      strokeColor,
-      totalArc,
-      dashoffset,
-      hx,
-      hy,
+      headroom: ready + closed,
+      over: rows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
+      share: beds > 0 ? occupied / beds : 0,
+      hospitals: sites.length > 0 ? sites.join(", ") : "Regional units",
     };
   });
 
   return (
-    <StatisticsSectionFrame
+    <StatisticsPage
       section={section}
-      subtitle=""
+      navSection="overview"
       testId="ward-statistics-overview-screen"
-      design="third-edition"
+      title={`${occupancy.occupied} of ${totalBeds} beds in use`}
+      now={now}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+      stats={
+        <>
+          <HeroStat value={totalBeds} label="Inpatient beds" />
+          <HeroStat value={occupancy.occupied} label={`${occupiedShare.toFixed(1)}% occupied`} />
+          <HeroStat value={capacity.ready} label="Ready now" />
+          <HeroStat value={preparingCount} label="Being made ready" />
+          <HeroStat
+            value={wardsOverLine}
+            label={
+              <span className={styles.flagged}>
+                {wardsOverLine > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                {`Wards over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+              </span>
+            }
+          />
+        </>
+      }
     >
-      {/*
-       * ── SERVICE SCOPE SENTENCE (item 44, §2 rule S4 / §3 "Statistics") ─────────────────────────
-       * Same rule as the statistics home page: this page is never scoped, and says so rather than
-       * leaving a reader who has chosen a service elsewhere in the shell to wonder whether the
-       * figures below just narrowed. See `statistics-screen.tsx`'s own comment on this sentence.
-       */}
       {service === null ? null : (
-        <p className={styles.body} data-testid="ward-statistics-service-scope-sentence">
+        <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
           {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
           <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
             {`Open ${service} statistics`}
@@ -235,207 +175,227 @@ export function StatisticsOverviewScreen() {
         </p>
       )}
 
-      {/* ══════════ STATEWIDE ALLOCATION HEADROOM ══════════ */}
-      <StatewideAllocationHeadroom
-        units={units}
-        admissions={admissions}
-        bedReleases={bedReleases}
-        leaveBeds={leaveBeds}
-        capacityReady={capacity.ready}
-      />
-
-      {/* ══════════ HEALTH SERVICE CAPACITY & UTILIZATION GAUGES ══════════ */}
-      <section className={styles.chartCard} aria-labelledby="gaugesH">
-        <div className={styles.chartHeader}>
-          <h2 id="gaugesH" className={styles.chartTitle}>
-            Occupancy by health service
-          </h2>
-          <span className={styles.chartCount}>{healthServicesData.length} health services</span>
-        </div>
-        <div className={styles.gaugeGrid} id="gaugeGrid" data-testid="ward-statistics-overview-gauges">
-          {healthServicesData.map((s) => (
-            <Link
-              key={s.id}
-              href={serviceStatisticsHref(s.service)}
-              className={styles.gaugeCard}
-              style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}
-            >
-              <div className={styles.gaugeCardHeader}>
-                <div className={styles.gaugeTitle} style={{ color: s.color }}>
-                  {s.name}
-                </div>
-                <span className={styles.gaugeBadge} style={{ background: s.badgeBg, color: s.badgeTone }}>
-                  {s.badgeText}
+      <StatCard
+        icon={Network}
+        title="Occupancy by health service"
+        aside={
+          <span className={styles.muted}>
+            {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to filter the table
+          </span>
+        }
+      >
+        <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
+          {services.map((entry) => {
+            const pressed = serviceFilter === entry.service;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                className={styles.serviceTile}
+                aria-pressed={pressed}
+                onClick={() => setServiceFilter(pressed ? null : entry.service)}
+              >
+                <span className={styles.serviceTop}>
+                  <Donut value={entry.share} label={`${entry.name} occupancy`} />
+                  <span className={styles.serviceText}>
+                    <span className={styles.serviceName}>{entry.name}</span>
+                    <span className={styles.serviceBeds}>
+                      {entry.occupied}/{entry.beds} beds
+                    </span>
+                    <span className={styles.serviceOver}>
+                      {entry.over === 0
+                        ? `No ward over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                        : `${entry.over} ${wardsWord(entry.over)} over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                    </span>
+                  </span>
                 </span>
-              </div>
-              <div className={styles.gaugeHospitals}>{s.hospitals}</div>
-              <div className={styles.gaugeRadialWrap}>
-                <svg
-                  className={styles.gaugeRadialSvg}
-                  viewBox="0 0 140 82"
-                  role="img"
-                  aria-label={`${s.name}: ${s.occPct}% occupancy`}
+                <span className={styles.serviceFigures}>
+                  <span>
+                    <b>{entry.ready}</b>
+                    {BED_STATE_LABELS.ready}
+                  </span>
+                  <span>
+                    <b>{entry.pulled}</b>
+                    {BED_STATE_LABELS.pulled}
+                  </span>
+                  <span>
+                    <b>{entry.closed}</b>
+                    {BED_STATE_LABELS.closed}
+                  </span>
+                  <span>
+                    <b>{entry.headroom}</b>
+                    Headroom
+                  </span>
+                </span>
+                <span className={styles.serviceSites}>{entry.hospitals}</span>
+              </button>
+            );
+          })}
+        </div>
+      </StatCard>
+
+      <div className={styles.gridMain}>
+        <HospitalCapacityMatrix
+          units={units}
+          bedReleases={bedReleases}
+          admissions={admissions}
+          leaveBeds={leaveBeds}
+          service={serviceFilter}
+        />
+
+        <div className={styles.stack}>
+          <StatCard
+            icon={Filter}
+            title="Empty to ready"
+            aside={<span className={styles.muted}>Feed vs ward</span>}
+            data-testid="ward-statistics-overview-capacity-disclosure"
+          >
+            <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
+              <BarList
+                label="Empty to ready, across the network"
+                track
+                labelWidth="9.5rem"
+                max={Math.max(1, capacity.empty, capacity.allocatable, openNow)}
+                rows={[
+                  {
+                    id: "empty",
+                    label: "Physically empty",
+                    value: capacity.empty,
+                    display: <span data-testid="ward-statistics-overview-capacity-empty">{capacity.empty}</span>,
+                  },
+                  {
+                    id: "allocatable",
+                    label: "Allocatable",
+                    value: capacity.allocatable,
+                    display: (
+                      <span data-testid="ward-statistics-overview-capacity-allocatable">{capacity.allocatable}</span>
+                    ),
+                  },
+                  { id: "open", label: "Open for placement", value: openNow },
+                ]}
+              />
+              <Legend
+                className={styles.legendEnd}
+                items={[
+                  {
+                    id: "ready",
+                    fill: "ready",
+                    label: (
+                      <>
+                        <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready
+                      </>
+                    ),
+                  },
+                  { id: "closed", fill: "closed", label: `${closedTotal} closed` },
+                  { id: "pending", fill: "data-1", label: `${preparingCount} pending` },
+                ]}
+              />
+            </CardBody>
+          </StatCard>
+
+          <StatCard
+            icon={Activity}
+            title="Admission stages"
+            action={
+              <Segmented
+                size="sm"
+                label="Admission stages view"
+                value={stagesView}
+                onChange={setStagesView}
+                items={[
+                  { id: "chart", label: "Chart" },
+                  { id: "data", label: "Data" },
+                ]}
+              />
+            }
+            data-testid="statistics-overview-stages-chart"
+          >
+            {stagesView === "chart" ? (
+              <CardBody>
+                <BarList
+                  label="Admissions by stage"
+                  axis
+                  labelWidth="10.5rem"
+                  rows={stageTallies.map((stage) => ({
+                    id: stage.position,
+                    label: stage.label,
+                    value: stage.count,
+                  }))}
+                />
+              </CardBody>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table
+                  className={`${tableClasses.table} ${styles.table}`}
+                  data-testid="ward-statistics-overview-stage-table"
                 >
-                  <path
-                    d="M 20 70 A 50 50 0 0 1 120 70"
-                    fill="none"
-                    stroke="var(--sunk)"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                  />
-                  {/* The 85% target tick came off with the target (Josh, 26 Sept 2026, question 14). */}
-                  {/* A red "92% surge" tick stood here with no source behind it (26 September 2026 sweep, A5). */}
-                  <path
-                    d="M 20 70 A 50 50 0 0 1 120 70"
-                    fill="none"
-                    stroke={s.strokeColor}
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    strokeDasharray={s.totalArc.toFixed(1)}
-                    strokeDashoffset={s.dashoffset}
-                  />
-                  <circle cx={s.hx} cy={s.hy} r="3.5" fill="var(--surface)" stroke={s.strokeColor} strokeWidth="2" />
-                </svg>
-                <div className={styles.gaugeRadialText}>
-                  <div className={styles.gaugeRadialPct}>{s.occPct}%</div>
-                  <div className={styles.gaugeRadialBeds}>
-                    {s.occupied} / {s.beds} beds
-                  </div>
-                </div>
-              </div>
-              <div className={styles.gaugeFoot}>
-                <span>
-                  <strong>{s.ready}</strong> Ready
-                </span>
-                <span title={BED_STATE_DETAILS.pulled}>
-                  <strong>{s.pulled}</strong> {BED_STATE_LABELS.pulled}
-                </span>
-                <span title={BED_STATE_DETAILS.closed}>
-                  <strong>{s.closed}</strong> {BED_STATE_LABELS.closed}
-                </span>
-                <span title="Empty beds: ready plus closed">
-                  <strong>{s.ready + s.closed}</strong> Headroom
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════ HOSPITAL & INPATIENT UNIT CAPACITY MATRIX ══════════ */}
-      <HospitalCapacityMatrix units={units} bedReleases={bedReleases} admissions={admissions} leaveBeds={leaveBeds} />
-
-      <StatisticsInsightChart
-        title="Admission stages"
-        variant="distribution"
-        testId="statistics-overview-stages-chart"
-        metrics={[
-          {
-            id: "count",
-            label: "Admissions",
-            unit: "admissions",
-            note: "Current recorded admission states, including ended admissions. Each admission appears once.",
-          },
-        ]}
-        rows={stageTallies.map((stage) => ({
-          id: stage.position,
-          name: stage.label,
-          values: { count: stage.count },
-          detail: "Admission states are separate from open ED movements and bed preparation records.",
-        }))}
-      />
-      <div className={`${styles.overviewGrid} ${family.modules}`}>
-        <div className={styles.overviewColumn}>
-          <StatisticsDetailPanel
-            title="Capacity across the network, right now"
-            count={`${capacity.ready} ready`}
-            testId="ward-statistics-overview-capacity"
-          >
-            <div
-              className={styles.panelBody}
-              role="group"
-              aria-label="Capacity across the network content"
-              tabIndex={0}
-            >
-              <dl className={styles.kv} data-testid="ward-statistics-overview-capacity-kv">
-                <div className={styles.kvItem}>
-                  <dt>Ready to admit into, across the network</dt>
-                  <dd className={styles.kvValue} data-testid="ward-statistics-overview-capacity-ready">
-                    {capacity.ready}
-                  </dd>
-                </div>
-                <div className={styles.kvItem}>
-                  <dt>Physically empty, per the feed</dt>
-                  <dd className={styles.kvValue} data-testid="ward-statistics-overview-capacity-empty">
-                    {capacity.empty}
-                  </dd>
-                </div>
-                <div className={styles.kvItem}>
-                  <dt>Confirmed allocatable by the ward</dt>
-                  <dd className={styles.kvValue} data-testid="ward-statistics-overview-capacity-allocatable">
-                    {capacity.allocatable}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </StatisticsDetailPanel>
-
-          <StatisticsDetailPanel
-            title="Where admissions sit in the bed lifecycle"
-            count={`${admissions.length} admissions`}
-            testId="ward-statistics-overview-stages"
-          >
-            <div className={styles.panelBody} role="group" aria-label="Admission bed lifecycle content" tabIndex={0}>
-              {/* Interactive Bed Lifecycle Pipeline */}
-              <WardTable className={styles.dtable} testId="ward-statistics-overview-stage-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Stage</th>
-                    <th scope="col" className={styles.n}>
-                      Admissions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stageTallies.map((tally) => (
-                    <tr key={tally.position}>
-                      <th scope="row">{tally.label}</th>
-                      <td className={styles.n} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
-                        {tally.count}
-                      </td>
+                  <caption className={styles.srOnly}>Admissions by stage, synthetic</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Stage</th>
+                      <th scope="col" className={styles.num}>
+                        Admissions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th scope="row">All stages</th>
-                    <td className={styles.n}>{admissions.length}</td>
-                  </tr>
-                </tfoot>
-              </WardTable>
-            </div>
-          </StatisticsDetailPanel>
-        </div>
-        <div className={styles.overviewColumn}>
-          <WardPanel
-            title="Declines by reason across the network"
-            count={declinesReadout.ok ? `${declinesReadout.value.totalCount} declines` : "Unavailable"}
-            testId="ward-statistics-overview-declines"
+                  </thead>
+                  <tbody>
+                    {stageTallies.map((tally) => (
+                      <tr key={tally.position}>
+                        <th scope="row">{tally.label}</th>
+                        <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
+                          {tally.count}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="row">All stages</th>
+                      <td className={styles.num}>{admissions.length}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </StatCard>
+
+          {/*
+           * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
+           * reader this page could not be reached from the statistics hub, and that the linking index was work
+           * still to be done. It is described here rather than quoted back word for word, so the retired
+           * wording exists nowhere in the tree and no scan can mistake this record for a relapse.
+           *
+           * It was TRUE the day it was written and FALSE within the same session, when the hub index landed:
+           * `STATISTICS_SECTIONS` in `statistics-sections.ts` makes `STATISTICS_OVERVIEW_HREF` its first entry,
+           * and the v6 hero track on every statistics page links it. So a reader who arrived here by that link
+           * was being told the navigation they had just used does not exist.
+           *
+           * **There is no corrected wording, which is why this is a deletion and not a rewrite.** The absence the
+           * sentence described no longer obtains, so the conclusion falls with the reason.
+           * `tests/ward-statistics-sections.dom.test.tsx` asserts the old wording cannot return.
+           */}
+          <StatCard
+            icon={X}
+            title="Declines by reason"
+            data-testid="ward-statistics-overview-declines"
+            aside={
+              declinesReadout.ok ? (
+                <span className={styles.muted}>
+                  {declinesReadout.value.totalCount} {declinesReadout.value.totalCount === 1 ? "decline" : "declines"}
+                </span>
+              ) : (
+                <span className={styles.muted}>Unavailable</span>
+              )
+            }
           >
-            <div className={styles.panelBody} role="group" aria-label="Network declines content" tabIndex={0}>
+            <CardBody>
               {!declinesReadout.ok ? (
-                /*
-                 * ⚠️ The three figure-bearing blocks below are the only part of this panel that depends
-                 * on the decline vocabulary. The prose that follows — who this count misses — stays true
-                 * whether or not the breakdown can be computed, so it is deliberately outside this
-                 * branch. Reporting in place means losing the figures, not the explanation.
-                 */
-                <p className={styles.body} data-testid="ward-statistics-overview-declines-unavailable">
+                <p className={styles.notice} data-testid="ward-statistics-overview-declines-unavailable">
                   {declinesReadout.statement}
                 </p>
               ) : (
-                <>
-                  <p className={styles.body} data-testid="ward-statistics-overview-declines-population">
+                <div data-testid="ward-statistics-overview-declines-table">
+                  <p className={styles.srOnly} data-testid="ward-statistics-overview-declines-population">
                     <span data-testid="ward-statistics-overview-declines-total">
                       {declinesReadout.value.totalCount}
                     </span>{" "}
@@ -447,126 +407,93 @@ export function StatisticsOverviewScreen() {
                     <span data-testid="ward-statistics-overview-declines-movements">
                       {declinesReadout.value.movementCount}
                     </span>{" "}
-                    {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
-                  </p>
-
-                  <p className={styles.body}>
+                    {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined, across{" "}
                     <span data-testid="ward-statistics-overview-declines-vocabulary-size">
-                      {declinesReadout.ok ? declinesReadout.value.vocabularySize : 0}
+                      {declinesReadout.value.vocabularySize}
                     </span>{" "}
-                    reason categories
+                    reason categories.
                   </p>
-                  <WardTable className={styles.dtable} testId="ward-statistics-overview-declines-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Reason</th>
-                        <th scope="col" className={styles.n}>
-                          Declines
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {declinesReadout.value.tallies.map((tally) => (
-                        <tr key={tally.reason}>
-                          <th scope="row">{tally.reason.replace(/_/g, " ")}</th>
-                          <td className={styles.n} data-testid={`ward-statistics-overview-decline-${tally.reason}`}>
-                            {tally.count}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <th scope="row">All reasons</th>
-                        <td className={styles.n}>{declinesReadout.value.totalCount}</td>
-                      </tr>
-                    </tfoot>
-                  </WardTable>
-                </>
+                  <BarList
+                    label="Declines by reason across the network"
+                    axis
+                    labelWidth="10.5rem"
+                    mean={
+                      declinesReadout.value.vocabularySize > 0
+                        ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
+                        : 0
+                    }
+                    rows={declinesReadout.value.tallies.map((tally) => ({
+                      id: tally.reason,
+                      label: sentenceCase(tally.reason),
+                      value: tally.count,
+                      display: (
+                        <span data-testid={`ward-statistics-overview-decline-${tally.reason}`}>
+                          {tally.count === 0 ? "none" : tally.count}
+                        </span>
+                      ),
+                    }))}
+                  />
+                </div>
               )}
+            </CardBody>
+          </StatCard>
 
-              {/*
-               * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
-               * reader this page could not be reached from the statistics hub, and that the linking index was work
-               * still to be done. It is described here rather than quoted back word for word, so the retired
-               * wording exists nowhere in the tree and no scan can mistake this record for a relapse.
-               *
-               * It was TRUE the day it was written and FALSE within the same session, when the hub index landed: `STATISTICS_SECTIONS` in `statistics-sections.ts` makes `STATISTICS_OVERVIEW_HREF` its first
-               * entry, and `statistics-screen.tsx` renders every entry as a `<Link>` inside its index `<nav>`. So a
-               * reader who arrived here by clicking that link was being told the navigation they had just used does
-               * not exist — on a page whose whole character is that it never says anything it cannot support.
-               *
-               * **There is no corrected wording, which is why this is a deletion and not a rewrite.** The absence the
-               * sentence described no longer obtains, so the conclusion falls with the reason.
-               * `tests/ward-statistics-sections.dom.test.tsx` asserts the old wording cannot return.
-               *
-               * ⚠️ **AND THE SHAPE IS NOT CONFINED TO THIS FILE.** A "not built yet" note is a claim with an expiry
-               * date, and nothing connects it to the work that expires it. A note of that shape belongs beside a test
-               * that goes red the day the gap closes — the pattern `tests/ward-community-index.dom.test.tsx` uses —
-               * or it does not belong in rendered prose at all.
-               */}
-
-              {/*
-               * ⚠️ **THIS NAMED NEITHER THE FIGURE NOR THE FIELDS UNTIL FIX ROUND 1**, and a sentence about
-               * "one figure recorded in two places that mean different things" is true of almost any
-               * codebase — which is what makes it worthless. The home page's own withheld figure names
-               * both records and says exactly why one of them cannot answer the question; a page that
-               * gestures at that standard instead of meeting it is claiming a rigour it is not applying.
-               */}
-            </div>
-          </WardPanel>
-
-          <WardPanel
-            title="Referrals waiting on a decision, and beds pending"
-            count={`${refused.count} refused, ${preparingCount === 0 ? "nothing pending" : `${preparingCount} pending`}`}
-            testId="ward-statistics-overview-worklist"
-          >
-            <div className={styles.panelBody} role="group" aria-label="Referral and bed worklist content" tabIndex={0}>
-              <p className={styles.body}>
-                <span data-testid="ward-statistics-overview-refused-so-far-escalated">{refused.escalatedCount}</span>{" "}
-                recorded escalations
-              </p>
-              <p className={styles.body} data-testid="ward-statistics-overview-refused-so-far-count">
-                <span data-testid="ward-statistics-overview-refused-so-far-value">{refused.count}</span> of{" "}
+          <StatCard
+            icon={Clock}
+            title="Awaiting a decision"
+            data-testid="ward-statistics-overview-worklist"
+            aside={
+              <span className={styles.muted}>
+                of{" "}
                 <span data-testid="ward-statistics-overview-refused-so-far-open-count">
                   {refused.openMovementCount}
                 </span>{" "}
-                open {refused.openMovementCount === 1 ? "movement" : "movements"}: every ward asked so far has refused.
-              </p>
-
-              <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
-                <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>{" "}
-                {preparingCount === 1 ? "bed" : "beds"} pending preparation · <strong>{openNow}</strong> open for
-                placement
-              </p>
-            </div>
-          </WardPanel>
-          {/*
-           * 🔴 **THE DRAWING'S SIXTH PANEL, AND THIS PAGE HAS BEEN SHIPPING WITHOUT IT.** Five panels are
-           * built; the approved drawing has six. **The missing one is the page's own provenance** — and on a
-           * statistics screen inside a prototype, that is the panel most worth having and the one most
-           * likely to be screenshotted without it.
-           *
-           * ⚠️ **THE FIRST PARAGRAPH NAMES SEVEN FIGURES, SO IT IS A CLAIM ABOUT THE REST OF THE PAGE, NOT
-           * A DISCLAIMER.** All seven were checked against what this component actually renders before the
-           * sentence was reproduced — capacity, the four stage counts, the decline counts and reasons, the
-           * movements examined, the worklist and its escalated count, the beds pending, and the thirty
-           * daily points behind the chart (`DEFAULT_TREND_LENGTH = 30`, a real constant, not the drawing's
-           * sample). 🔴 **A sentence listing a figure the page does not show would be false ABOUT THE
-           * PAGE**, and its test reaches for each figure's own testid rather than for this panel's prose,
-           * so dropping a panel elsewhere reddens this one.
-           *
-           * ⚠️ **THE DRAWING'S MIDDLE "What is real" PARAGRAPH IS DELIBERATELY NOT REPRODUCED, AND THAT IS
-           * A §7.0(2) DIVERGENCE RATHER THAN AN OVERSIGHT.** It is built entirely from the mockup's own
-           * sample world — health-service names, a ward count, and the Command screen's fixed day, clock
-           * and shift. **This screen renders none of those**, so quoting it puts claims on the page about
-           * things the page does not show, and rewriting it with live figures would be the paraphrase this
-           * lane has already been bitten by. **Dropped openly; recorded for the owner to veto.**
-           */}
+                open {refused.openMovementCount === 1 ? "movement" : "movements"}
+              </span>
+            }
+          >
+            <CardBody>
+              <dl className={styles.tiles}>
+                <div className={styles.tile} data-testid="ward-statistics-overview-refused-so-far-count">
+                  <dt className={styles.tileLabel}>All refused</dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-value">
+                    {refused.count}
+                  </dd>
+                </div>
+                <div className={styles.tile} data-testid="ward-statistics-overview-preparing-count">
+                  <dt className={styles.tileLabel}>
+                    <StatusGlyph tone="neutral" size={9} />
+                    Pending
+                  </dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-preparing-value">
+                    {preparingCount}
+                  </dd>
+                </div>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>
+                    <StatusGlyph tone="warning" size={9} />
+                    Escalated
+                  </dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-overview-refused-so-far-escalated">
+                    {refused.escalatedCount}
+                  </dd>
+                </div>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>Placeable</dt>
+                  <dd className={styles.tileValue}>{openNow}</dd>
+                </div>
+              </dl>
+            </CardBody>
+          </StatCard>
         </div>
       </div>
-    </StatisticsSectionFrame>
+    </StatisticsPage>
   );
+}
+
+/** "Sir Charles Gairdner Hospital" reads "Sir Charles Gairdner" in a service's hospital list. */
+function shortSite(name: string): string {
+  return name.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/, "");
 }
 
 const ADMISSION_STAGE_LABELS: Record<AdmissionStagePosition, string> = {
