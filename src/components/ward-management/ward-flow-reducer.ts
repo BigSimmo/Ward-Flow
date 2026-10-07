@@ -54,7 +54,6 @@ import {
   eligibility,
   adjustSexMix,
   mixSexOf,
-  sexDesignationAccepts,
   referralEligibility,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
@@ -4760,13 +4759,24 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
       const arriverSex = mixSexOf(movement.gender, movement.sex);
 
-      if (unit.sexDesignation !== "Undesignated") {
-        if (!arriverSex || !sexDesignationAccepts(unit.sexDesignation, arriverSex)) {
-          return reject(
-            state,
-            event,
-            `cannot arrive patient on ${unit.name}: unit is ${unit.sexDesignation.toLowerCase()} and does not accept ${arriverSex ?? "unspecified sex"} patient (gender mismatch)`,
-          );
+      /*
+       * A no-transport arrival jumps from `pulled` or `handover_ready` straight here and skips
+       * `HANDOVER_READY`, `TRANSPORT_ACCEPTED` and `PATIENT_COLLECTED`, which already call
+       * `heldUnitGenderRefusal`. Re-ask only `gender_designation` on that shortcut, using the same
+       * refusal those steps use. Do not call the full helper: its placement-record check would
+       * refuse a non-binary arrival on an undesignated ward, which the 2026-09-25 sex-mix ruling
+       * still counts under recorded sex.
+       *
+       * A patient already `moving` is not refused here. `heldUnitGenderRefusal` documents why:
+       * blocking arrival strands someone already in transit, and `RECORD_MOVEMENT_GENDER` has
+       * already notified the coordinator.
+       */
+      if (movement.stage !== "moving") {
+        const genderGate = eligibility(movement, unit, event.now).gates.find(
+          (gate) => gate.gate === "gender_designation",
+        );
+        if (genderGate && !genderGate.pass) {
+          return reject(state, event, GENDER_NO_LONGER_SUITS_REFUSAL);
         }
       }
 

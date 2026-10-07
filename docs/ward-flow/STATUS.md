@@ -1,6 +1,6 @@
 # Ward Flow — status
 
-**Current as of 4 October 2026, `main` at `7e7af74` (pull request #36).** This top section is the
+**Current as of 6 October 2026, `main` at `1695b40` (pull request #79 / #80).** This top section is the
 current "what is built and what is left" page. Everything under
 [Historical record](#historical-record-25-september-2026) is the older 25 September snapshot from the
 former Database repository, kept as evidence only. When this page and the code disagree, the code
@@ -15,65 +15,65 @@ Ward Flow is a working browser prototype for coordinating psychiatric beds acros
 mental health services. Patients, beds, referrals and other scenario data are invented and held only
 in each user's browser. Some reference content is real public information: the community directory
 shows published contact details and catchment counts for real WA services, which are not call-tested
-and may be out of date. Since moving to this repository on 27 September, pull requests #1 to #37
-have been opened: 35 merged, #4 closed as replaced, and #37 still open. There are no open GitHub
-issues. The most recent merge (#36) passed static checks, five unit-test shards, three
-browser-journey groups and the GitGuardian secret scan. Nothing is known to be broken or urgent.
-The main gaps are a shared backend with proper log-in, and the outside reviews that must happen
-before any real patient.
+and may be out of date. Since moving to this repository on 27 September, 80 pull requests have been
+opened: 79 merged (#1 to #3, #5 to #80), and #4 closed as replaced. There are no open GitHub
+issues. The recent merges (#79, #80) passed static checks, balanced five unit-test shards, three
+browser-journey groups, production build, full-tree lint, and the Gitleaks secret scan. Nothing is
+known to be broken or urgent. The main gaps are a shared backend with proper log-in, and the outside
+reviews that must happen before any real patient.
 
 ## What is built
 
 **Screens** (routes under `src/app/mockups/ward-flow/`; engine and components under
 `src/components/ward-management/`):
 
-| Area                   | Screens                                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| Coordinator day        | Home and hub, coordinator queue, referrals, movements, transport, delays, discharges                   |
-| Beds and wards         | Bed board, ward view, wards list, capacity, network view and placement shortlist, out-of-area register |
-| Pressure and safety    | ED pressure strip, alerts centre, escalation, exceptions, governance                                   |
-| People and directories | Patient search, people, community directory, on-call directory                                         |
-| Records and reports    | Handover (with print), legal forms, statistics dashboards and charts (with CSV export)                 |
-| Other                  | Settings, design-system showcase                                                                       |
+| Area                   | Screens                                                                                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coordinator day        | Home and master hub, coordinator Command horizon ("Since you last looked"), queue, referrals, movements, transport, delays runway, discharges                  |
+| Beds and wards         | Bed board (with stranded prompts), ward view, wards directory, capacity (with bed-meeting sheet and tomorrow's forecast), network view, shortlist, out-of-area |
+| Pressure and safety    | ED pressure strip, individual ED psychiatry hub, alerts centre, escalation, exceptions, governance                                                             |
+| People and directories | Patient search (Floating Glass Command Horizon), unified Patient Now flight deck, people, community directory, on-call directory                               |
+| Records and reports    | Handover (Command Horizon flight deck and print), legal forms (with MHA expiry reminders), statistics dashboards and charts (with CSV export)                  |
+| Other                  | Settings, compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase                               |
 
-**Recent work since the move (27 September to 4 October), by theme:**
+**Recent work since the move (27 September to 6 October), by theme:**
 
-- **Screen polish:** design refinements across all main screens and hubs (#12, #15, #16, #17, #19),
-  then focused passes on Community directory (#24), out-of-area (#25), on-call (#26, #29), alerts
-  (#27) and Statistics (#33).
-- **Safety and correctness:** patient-safety and statutory-capacity fixes from the audit (#2);
-  legal-language wording, dialog focus traps and simulation fixes (#20); WA ward disposition and
-  care-journey wiring (#22); a guard so unsaved clinical text is not silently lost (#32, #34);
-  spreadsheet formula neutralising in CSV exports (#35).
-- **Accessibility:** keyboard, tablet and phone ergonomics (#8), keyboard navigation in alerts (#27),
-  dialog accessibility (#34).
+- **Patient flight deck & search (#66, #69):** Unified Patient Now flight deck consolidating patient dossier and transit operations into a 3-column brief with live journey tracking (`usePatientNow`, #69); Direction 3 Floating Glass Command Horizon for patient search console (#66); perfected referral detail inspector with a 4-column demographic strip, live ready badge, and clear placement rationale (#66).
+- **Handover Command Horizon & print (#42, #72):** 3-tier flight deck and shift switcher, rapid snapshot sections, KPI tiles (caseload, vacancies, form expiries, 1:1s), and verified table sheet (#42, #72); dedicated print stylesheet with `CanvasText` and D7 landmark compliance (#72); restored legal notice HUD tag (#42).
+- **Compact floating drawers (#70):** Redesigned Tools, Tasks, Activity, and Referrals drawers as curved floating panels with layered theme-aware surfaces, backdrop focus trapping, and Escape key dismissal (#70); Figures feature integrated into Tools; Tasks severity filtering; Activity status pills and horizontal mobile scrolling (#70).
+- **Delays runway, timeline & analytics (#47, #48, #67, #68):** Executive view modes and standalone crisis radar (#48); Delays action runway and tabbed delay tables with named wait timeline (#47, #67, #68); three visual analytics graph views: Catchment breakdown, Wait Histogram, and Delay Matrix (#67); paginated waiting tables with absolute caption scroll wrappers (#68).
+- **Discharges board & wave runway (#45, #66):** Live discharges board overhaul with Wave Runway, external header, segmented tabs, resting-state dashboard, telemetry bar, and compact inspector (#45, #66); stark sticky table header with elevation shadow and separate collapse toggle (#66).
+- **Capacity bed-meeting sheet & forecast (#54, #55, #61):** Printable one-page morning bed-meeting sheet with live incoming/outgoing/departure counts (#54); 24-hour predictive tomorrow's beds forecast with sentence headlines (#55), repositioned for optimal operational hierarchy (#61).
+- **Bed states, stranded patients & shortlist (#56, #58):** Standardized whole-system bed taxonomy across Capacity, Statistics, Hub, Referral, Ward screen, and Bed Board to four mutually exclusive states: Ready, Pulled, Closed, Occupied (#58); explainable placement shortlist detailing clinical and operational fit rationale for candidate wards (#58); visual stranded-patient prompts on the ward board (#56).
+- **Universal prototype banner & estate anchoring (#46, #65, #66):** Universal curved synthetic prototype banner anchored at the bottom of every page across the estate (#46, #65, #66); symmetrical search hub headers, resolved search hub spacing, and 48px touch targets at 375px (#66).
+- **Referrals self-withdrawal & MHA reminders (#49, #52):** Referring ED or community teams can self-withdraw their own referrals before allocation (#49); synthetic MHA statutory reminders warning of approaching form expiry before typed authorizations lapse (#52).
+- **Coordinator Command Horizon (#53):** "Since you last looked" delta stream on the coordinator Command screen highlighting movements since last check (#53).
+- **Screen polish across the estate (#12, #15, #16, #17, #19, #24–#29, #33, #41, #57, #62, #71, #74):** Design refinements across all main screens, community directory (#24), out-of-area (#25), on-call (#26, #29), alerts (#27), individual ED psychiatry screen (#71), and all seven Statistics dashboards (#33, #74); All Wards directory styling without census box highlight (#62); ward screen action bar, tabs, telemetry ribbon, beds matrix, shift coordinator log, and `WardBedDossierDrawer` (#57, #67); elimination of the 1-second ward layout remount on load (#41).
+- **Safety, persistence and scenarios (#2, #20, #22, #32, #34, #35, #41, #50):** Patient safety and statutory capacity fixes (#2); legal wording and simulation fixes (#20); WA ward disposition and care-journey wiring (#22); unsaved clinical text guard (#32, #34); session adoption action replay and day restart synchronization (#41); demo scenario save and load to local files from the demo menu (#50); spreadsheet formula neutralizing in CSV exports (#35).
+- **Accessibility (#8, #27, #34, #66, #68, #70):** Keyboard, tablet and phone ergonomics (#8), keyboard navigation in alerts (#27), dialog and drawer focus trapping (#34, #70), 48px touch targets on mobile viewports (#66).
+- **Checks, CI & operations (#1, #3, #9–#11, #13, #14, #23, #30, #31, #36, #37, #40, #44, #51, #59, #60, #63, #75–#78):** Automated GitHub CI on push to `main` with Gitleaks secret scanning and production build verification (#37); whole-tree ESLint fixes and PR enforcement (#40, #77); unit test shard balancing by measured CI runtime (#44, #78); coverage recording across shards with identical PR verdict reuse on `main` (#75); Playwright Chromium caching and Next.js build cache from `main` (#76, #77); Railway healthcheck diagnostics, cloud agent Node 24 setup, and recovery documentation (#7, #59, #60, #63); archival of 53 historical docs to `docs/archive/` (#51); removal of PsychSift leftovers (#36, #40).
 - **Backend (not connected to the screens):** a synthetic Azure session service (#5) and a cloud
   scenario vault with a synthetic-data guard (#32). See [the backend guide](../../backend/ward-flow/README.md).
-- **Checks and tooling:** GitHub checks for every pull request, run as parallel jobs (#1, #3, #9,
-  #10, #11); Railway health route and removal of a developer key (#7); repository-only safeguards
-  (#13, #14); repaired hooks and workflow documents (#23, #30, #31); removal of PsychSift leftovers
-  and committed chat transcripts (#36).
 - **Rules:** owner-approved prototype operating mode recorded in `AGENTS.md` on 3 October (#32).
 
 ## What is not done
 
 1. **Shared backend and log-in.** Data lives only in each browser. It survives a page refresh
    through `sessionStorage` until someone types free text (for example adding a patient); from then
-   on nothing is saved for the rest of the session, by design (owner decision D-18). The Azure
-   backend is code-complete but deliberately not connected to the UI; that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
+   on nothing is saved for the rest of the session, by design (owner decision D-18). Demo scenarios
+   can now be saved to and loaded from local JSON files (#50). The Azure backend is code-complete but
+   deliberately not connected to the UI; that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
    "ready" until an authenticated shared save, reload and conflict case are proven.
-2. **Live site not rechecked.** The Railway site (https://ward-flow-production.up.railway.app/) has
-   not been looked at since the recent merges. Several pull requests (#25, #27) say the hosted page
-   was not verified. Railway actions need Josh's go-ahead; see [hosting](../hosting.md).
-3. **Checks on `main` itself.** GitHub checks run on pull requests only, and each run picks the tests
-   relevant to the change. Pull request #37 (open) proposes running checks on `main`, adding a secret
-   scan and a production-build check. A full local run of every test on current `main` has not been
-   recorded.
-4. **Known screen follow-ups:** global search started from the Delays page and the network placement
-   shortlist were flagged unresolved in #33; a brief page re-draw on load in the ward layout was worked
-   around in a test (#31) but not fixed at its cause.
-5. **Housekeeping:** most of the roughly 80 files at the top of `docs/` and many in `docs/ward-flow/`
-   are historical. Leftover branches of merged pull requests remain on GitHub.
+2. **Live site not rechecked.** The Railway production site (https://ward-flow-production.up.railway.app/)
+   has not been verified since recent merges. A separate preview service was deployed on 5 October to verify
+   the compact drawers (#70), and healthcheck diagnostics were documented (#60, #63), but deploying or updating
+   the production Railway service requires Josh's go-ahead; see [hosting](../hosting.md).
+3. **Checks on `main` itself (resolved).** Automated GitHub checks now run on every push to `main`,
+   including Gitleaks secret scanning, production build verification, and full-tree lint (#37). Test-shard
+   rebalancing, coverage aggregation, and Next.js / Playwright caching (#75–#78) keep `main` verification fast
+   without duplicate CI execution.
+4. **Known screen follow-ups (fully resolved).** All screen follow-ups are completed: the unprovable aggregate guarantee copy ("nobody goes without today") on the Capacity screen was replaced with truthful operational wording ("net available capacity today", WF-51); the comprehensive 10-minute guided demonstration script across 5 clinical acts was authored in `docs/ward-flow/DEMO-SCRIPT.md` (WF-60); clinical decisions D-30 through D-36 resolved or formally deferred inter-ward transfers, gender-diverse placement safety, ATS priority sorting, ward note privacy, deterioration escalation, and regional transport; sending a referral remains an unwired prototype action by design (#70).
+5. **Housekeeping.** 53 historical top-level documents were moved into `docs/archive/` (#51). Residual historical documents in `docs/ward-flow/` and leftover remote PR branches on GitHub remain to be cleaned up as routine housekeeping.
 
 ## Before any real patient
 
@@ -81,7 +81,7 @@ These are hard gates, not tasks for now. The owner has parked them; do not re-as
 safety review (R2-6).
 
 - Outside reviews: Aboriginal cultural safety, medical device (TGA), clinical safety officer, privacy,
-  WA legal advice on forms, catchment data, and post-incident review (owner item 63).
+  WA legal advice on forms, catchment data, and post-incident review (owner item 63, D-36; operational postures and compliance dossiers ratified in D-37; execution scheduled pre-pilot).
 - Internal patient codes (item 58) to be decided again.
 - On-call roster data is illustrative only.
 - Reverse the prototype-mode relaxations in `AGENTS.md` (#32): clinical-safety and legal sign-off
