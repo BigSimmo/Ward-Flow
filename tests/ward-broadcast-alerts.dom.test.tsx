@@ -35,32 +35,32 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   });
   it("renders the broadcast trigger button and opens the modal", () => {
     renderAlertsScreen();
-    const trigger = screen.getByRole("button", { name: "Broadcast Network Alert" });
+    const trigger = screen.getByRole("button", { name: "Broadcast alert" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
-    expect(screen.getByRole("dialog", { name: /Broadcast Statewide Network Alert/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/WA Clinical Protocol & Flow Template/i)).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /Broadcast network alert/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start from$/i)).toBeInTheDocument();
   });
 
   it("populates form fields when changing the WA Mental Health template", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
-    const templateSelect = screen.getByLabelText(/WA Clinical Protocol & Flow Template/i);
+    const templateSelect = screen.getByLabelText(/^Start from$/i);
     // Switch to Graylands Forensic Surge template
     fireEvent.change(templateSelect, { target: { value: "wa-forensic-full-advisory" } });
 
-    const titleInput = screen.getByLabelText(/Directive Headline \/ Title/i) as HTMLInputElement;
+    const titleInput = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
     expect(titleInput.value).toContain("Demo: forensic beds full");
 
-    const messageInput = screen.getByLabelText(/Message Body & Clinical Instructions/i) as HTMLTextAreaElement;
+    const messageInput = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
     expect(messageInput.value).toContain("Graylands Frankland Centre secure beds fully committed");
   });
 
   it("requires clinical confirmation safeguard before enabling dispatch", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
     const confirmBtn = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirmBtn).toBeDisabled();
@@ -75,7 +75,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
     const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
     fireEvent.click(safeguard);
@@ -92,7 +92,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // Active directive card rendered in Alerts view
     expect(screen.getByLabelText("Active Statewide Directive")).toBeInTheDocument();
     // 0 of 22 units have acknowledged immediately after initial broadcast dispatch
-    expect(screen.getByText("0 of 22 Clinical Units Acknowledged")).toBeInTheDocument();
+    expect(screen.getByText("0 of 22 units acknowledged")).toBeInTheDocument();
 
     // Global broadcast banner rendered
     const banner = screen.getByTestId("ward-broadcast-banner");
@@ -104,12 +104,12 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen();
 
     // Dispatch alert first
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
     // Before ack: nobody has acknowledged yet.
-    expect(screen.getByText(/^0 of \d+ Clinical Units Acknowledged$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^0 of \d+ units acknowledged$/i)).toBeInTheDocument();
 
     // Global banner acknowledge button
     const banner = screen.getByTestId("ward-broadcast-banner");
@@ -124,7 +124,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // The banner is mounted with no currentUnitId (as the real app mounts it), so the only
     // unitId it can have sent is COORDINATOR_DESK_ACKNOWLEDGER_ID -- proving the reducer
     // accepted that sender rather than refusing it as an unrecognised unit.
-    expect(screen.getByText(/^1 of \d+ Clinical Units Acknowledged$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^1 of \d+ units acknowledged$/i)).toBeInTheDocument();
 
     // Stand down directive from alerts screen
     const standDownBtn = screen.getByRole("button", { name: /Stand down this alert/i });

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
+import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 **WHAT A READER ACTUALLY SEES ON THE SCREEN THEY WOULD RING.**
@@ -24,7 +25,22 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  */
 
 function renderOnCall() {
-  return render(<OnCallScreen />);
+  // The screen reads board time from the provider clock, as every screen does; the test pins it.
+  return render(
+    <WardFlowClockContext.Provider value={NOW_ANCHOR}>
+      <OnCallScreen />
+    </WardFlowClockContext.Provider>,
+  );
+}
+
+/** The service filter is the hero track: radios whose names end in their role count. */
+function serviceFilter(name: string) {
+  return screen.getByRole("radio", { name: new RegExp(`^${name}\\s*\\d+$`, "u") });
+}
+
+/** The favourites chip carries its count after the word. */
+function favouritesChip(count: number) {
+  return screen.getByRole("button", { name: new RegExp(`^Favourites\\s*${count}$`, "u") });
 }
 
 beforeEach(() => {
@@ -70,7 +86,7 @@ describe("the on-call screen", () => {
     renderOnCall();
     expect(screen.queryByText(/Coverage boundary note/iu)).not.toBeInTheDocument();
     for (const service of servicesWithNoRoleRecorded()) {
-      fireEvent.click(screen.getByRole("button", { name: service }));
+      fireEvent.click(serviceFilter(service));
       expect(
         screen.getByText(
           `No on-call roles recorded for ${service} in this prototype. Use the current site directory to confirm cover.`,
@@ -118,8 +134,8 @@ describe("the on-call screen", () => {
 
   it("filters both tables by service and clears the selection", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
-    expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(serviceFilter("East Metro"));
+    expect(serviceFilter("East Metro")).toHaveAttribute("aria-checked", "true");
     expect(within(screen.getByTestId("ward-on-call-service-table")).getAllByRole("row")).toHaveLength(3);
     for (const row of within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row").slice(1)) {
       expect(row).toHaveTextContent("East Metro");
@@ -166,7 +182,7 @@ describe("the on-call screen", () => {
     expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
       allEmergencyDepartments().length + 1,
     );
-    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    fireEvent.click(serviceFilter("East Metro"));
     expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getByRole("combobox", { name: "Filter on-call roles" })).toHaveValue("all");
@@ -175,7 +191,7 @@ describe("the on-call screen", () => {
 
   it("finds statewide roles and searches by the reason for contact", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("button", { name: "Statewide" }));
+    fireEvent.click(serviceFilter("Statewide"));
     expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
     expect(screen.getByText("Statewide bed placement")).toBeVisible();
     expect(screen.getByText("Senior operational escalation")).toBeVisible();
@@ -203,13 +219,11 @@ describe("the on-call screen", () => {
 
   it("remembers the service on remount and persists a clear-filters reset", async () => {
     const first = renderOnCall();
-    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    fireEvent.click(serviceFilter("East Metro"));
     expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("East Metro");
     first.unmount();
     renderOnCall();
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true"),
-    );
+    await waitFor(() => expect(serviceFilter("East Metro")).toHaveAttribute("aria-checked", "true"));
     expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("all");
@@ -221,8 +235,8 @@ describe("the on-call screen", () => {
       throw new Error("Unavailable");
     });
     try {
-      fireEvent.click(screen.getByRole("button", { name: "South Metro" }));
-      expect(screen.getByRole("button", { name: "South Metro" })).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(serviceFilter("South Metro"));
+      expect(serviceFilter("South Metro")).toHaveAttribute("aria-checked", "true");
       expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
       fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
       expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
@@ -264,8 +278,8 @@ describe("on-call favourites and coverage details", () => {
     expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["em-consultant"]);
     first.unmount();
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
-    fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+    await waitFor(() => expect(favouritesChip(1)).toBeVisible());
+    fireEvent.click(favouritesChip(1));
     expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
     expect(screen.getByTestId("ward-on-call-role-em-consultant")).toBeVisible();
     expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(11);
@@ -276,7 +290,7 @@ describe("on-call favourites and coverage details", () => {
       "true",
     );
     fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
-    fireEvent.click(screen.getByRole("button", { name: "Favourites (0)" }));
+    fireEvent.click(favouritesChip(0));
     expect(screen.getByText(/No favourite roles match/)).toBeVisible();
   });
 
@@ -286,11 +300,11 @@ describe("on-call favourites and coverage details", () => {
       JSON.stringify(["em-consultant", "obsolete", 42, "em-consultant"]),
     );
     const first = renderOnCall();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (1)" })).toBeVisible());
+    await waitFor(() => expect(favouritesChip(1)).toBeVisible());
     first.unmount();
     localStorage.setItem("ward-flow:on-call:favourites", "broken");
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Favourites (0)" })).toBeVisible());
+    await waitFor(() => expect(favouritesChip(0)).toBeVisible());
   });
 
   it("keeps favourites usable and reports visit-only persistence when storage fails", () => {
@@ -301,7 +315,7 @@ describe("on-call favourites and coverage details", () => {
     try {
       fireEvent.click(screen.getByRole("button", { name: "Favourite Bed coordinator for Statewide Network" }));
       expect(screen.getByText(/Favourites are available for this visit only/)).toHaveAttribute("role", "status");
-      fireEvent.click(screen.getByRole("button", { name: "Favourites (1)" }));
+      fireEvent.click(favouritesChip(1));
       expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
     } finally {
       storage.mockRestore();
@@ -310,25 +324,32 @@ describe("on-call favourites and coverage details", () => {
 
   it("reveals truthful coverage gaps and illustrative handover, and closes the previous role", () => {
     renderOnCall();
+    /*
+     * v6 (approved mockup, October 2026): the expanding coverage row became the role panel beside
+     * the table. Selecting a role shows its cover in the one panel; the previous role's details
+     * leave it. Cover stays "Not verified" and "Not recorded" because no roster source exists.
+     */
     const bed = screen.getByRole("button", { name: "Coverage and handover for Bed coordinator for Statewide Network" });
-    expect(bed).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(bed);
+    expect(bed).toHaveAttribute("aria-pressed", "true");
     const details = document.getElementById(bed.getAttribute("aria-controls")!)!;
     expect(details).toBeVisible();
+    expect(within(details).getByRole("heading", { name: "Bed coordinator" })).toBeVisible();
     expect(within(details).getByText("Not verified")).toBeVisible();
-    expect(within(details).getByText("08:00")).toBeVisible();
-    expect(within(details).getByText("Next confirmed contact")).toBeVisible();
-    expect(within(details).getAllByText("Not recorded")).toHaveLength(2);
+    expect(within(details).getByText("20:00 to 08:00")).toBeVisible();
+    expect(within(details).getByText("Last confirmed")).toBeVisible();
+    expect(within(details).getAllByText("Not recorded")).toHaveLength(1);
     const privateRole = screen.getByRole("button", {
       name: "Coverage and handover for Coordinator on call for Private",
     });
     fireEvent.click(privateRole);
-    expect(details).not.toBeVisible();
-    const privateDetails = document.getElementById(privateRole.getAttribute("aria-controls")!)!;
-    expect(within(privateDetails).getByText("17:00")).toBeVisible();
-    fireEvent.click(privateRole);
-    expect(privateDetails).not.toBeVisible();
-    expect(screen.getByText(/No service-specific fallback procedure is recorded here/)).toBeVisible();
+    expect(bed).toHaveAttribute("aria-pressed", "false");
+    expect(privateRole).toHaveAttribute("aria-pressed", "true");
+    expect(within(details).queryByRole("heading", { name: "Bed coordinator" })).not.toBeInTheDocument();
+    expect(within(details).getByText("08:00 to 17:00")).toBeVisible();
+    // The fallback list is derived from the roster, never a recorded procedure.
+    const chain = within(details).getByRole("heading", { name: "If not reached" }).parentElement!;
+    expect(within(chain).getByText("Governance lead")).toBeVisible();
   });
   it("reveals every collapsed coverage row for printing and restores them afterwards", () => {
     renderOnCall();
