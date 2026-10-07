@@ -46,7 +46,7 @@ function confirmCatchment() {
   fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
   fireEvent.change(screen.getByLabelText("Search catchment"), { target: { value: "Inner City Clinic" } });
   fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
-  fireEvent.change(screen.getByLabelText("Confirm catchment service area"), { target: { value: "East Metro" } });
+  fireEvent.change(screen.getByLabelText("Service area"), { target: { value: "East Metro" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirm catchment" }));
 }
 function answer(label: string, answer: string) {
@@ -56,7 +56,8 @@ function answer(label: string, answer: string) {
 describe("approved four-tab referral drawer journey", () => {
   it("requires catchment confirmation and places the story in Referral, documents in Documentation", () => {
     setup();
-    expect(screen.queryByRole("button", { name: "Next: Referral" })).not.toBeInTheDocument();
+    // v6 (ReferralDrawer.webp): the footer always offers "Next: Referral"; it checks the patient step when pressed.
+    expect(screen.getByRole("button", { name: "Next: Referral" })).toBeInTheDocument();
     tab("Locations");
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Confirm the patient's catchment");
@@ -66,7 +67,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Medical clearance" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mental State Examination/)).not.toBeInTheDocument();
-    tab("Documentation");
+    tab("Documents");
     expect(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).toBeVisible();
     expect(screen.queryByRole("textbox", { name: /Patient story/ })).not.toBeInTheDocument();
   });
@@ -76,9 +77,9 @@ describe("approved four-tab referral drawer journey", () => {
     confirmCatchment();
     tab("Referral");
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic story retained" } });
-    tab("Documentation");
+    tab("Documents");
     answer("Has the patient been medically cleared?", "No");
-    fireEvent.change(screen.getByLabelText("Clarification contact name"), { target: { value: "Demo Doctor" } });
+    fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("Synthetic story retained");
     tab("Patient");
@@ -88,7 +89,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("");
-    tab("Documentation");
+    tab("Documents");
     expect(
       within(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).getByLabelText("No"),
     ).not.toBeChecked();
@@ -103,11 +104,11 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.change(screen.getByLabelText(/Patient story/), {
       target: { value: "Synthetic patient story for inbox review" },
     });
-    next("Next: Documentation");
+    next("Next: Documents");
     answer("Has the patient been medically cleared?", "No");
-    fireEvent.change(screen.getByLabelText("Expected medical clearance"), { target: { value: "2026-10-07T18:00" } });
-    fireEvent.change(screen.getByLabelText("Clarification contact name"), { target: { value: "Demo Doctor" } });
-    fireEvent.change(screen.getByLabelText("Clarification contact phone"), { target: { value: "0412345678" } });
+    fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
+    fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
+    fireEvent.change(screen.getByLabelText("Contact phone"), { target: { value: "0412345678" } });
     answer("Triage and RAMP completed", "Yes");
     answer("Anything else to attach?", "No");
     for (const label of ["Medication chart", "Observation chart"]) {
@@ -122,7 +123,7 @@ describe("approved four-tab referral drawer journey", () => {
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
     fireEvent.click(first);
-    expect(screen.getByLabelText("Estimated arrival (AWST)")).toBeVisible();
+    expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("0");
@@ -130,7 +131,7 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "sender@example.com" } });
     fireEvent.change(screen.getByLabelText("Phone number"), { target: { value: "0412345678" } });
     fireEvent.change(screen.getByLabelText("Your role"), { target: { value: "Nurse" } });
-    fireEvent.change(screen.getByLabelText("Location / service"), { target: { value: "Royal Perth ED" } });
+    fireEvent.change(screen.getByLabelText("Location or service"), { target: { value: "Royal Perth ED" } });
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
     expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
