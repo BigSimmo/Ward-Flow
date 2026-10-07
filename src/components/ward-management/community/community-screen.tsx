@@ -1099,7 +1099,14 @@ export function CommunityScreen({
                 />
                 <HeroStat value={isDemoMode ? teamConfig.egress : lists.expectedBack.length} label="Expected back" />
                 <HeroStat value={isDemoMode ? teamConfig.cto : form5ACount} label="On a CTO" />
-                <HeroStat value={isDemoMode ? teamConfig.crisis : 2} label="Crisis open" tone="info" />
+                {/* No record in the model holds a team's open crisis episodes, so outside the
+                    demonstration the count is not shown rather than invented. */}
+                <HeroStat
+                  value={isDemoMode ? teamConfig.crisis : <span aria-hidden="true">–</span>}
+                  trend={isDemoMode ? undefined : "Not recorded"}
+                  label="Crisis open"
+                  tone="info"
+                />
               </div>
             }
             aside={
