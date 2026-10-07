@@ -489,4 +489,14 @@
   .shownCount {
     margin-left: 0;
   }
+
+  /* Phone tap targets: every link and button on the page keeps 48px. */
+  .main a,
+  .main button {
+    min-height: 3rem;
+  }
+
+  .iconButton {
+    width: 3rem;
+  }
 }

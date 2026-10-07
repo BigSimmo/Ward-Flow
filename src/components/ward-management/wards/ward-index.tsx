@@ -31,7 +31,7 @@ import {
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
 import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -520,7 +520,10 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 label="Occupied"
               />
               <HeroStat value={readyNow} label="Ready now" tone="success" />
-              <HeroStat value={readyNow + freeingByShiftEnd} label={`Ready by ${formatInstant(shiftEnd)}`} />
+              <HeroStat
+                value={readyNow + freeingByShiftEnd}
+                label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
+              />
               <HeroStat value={pulled} label="Pulled" />
               <HeroStat value={specialling} label="1:1 specialling" />
               <HeroStat value={staleCount} label="Stale counts" tone={staleCount > 0 ? "warning" : undefined} />
