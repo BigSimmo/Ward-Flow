@@ -47,7 +47,6 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
-  PULL_HOLD_MINUTES,
   type BedRelease,
   type Movement,
   type Referral,
@@ -380,12 +379,13 @@ export function StatisticsScreen({
       .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
       .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
       .filter((gap) => Number.isFinite(gap) && gap >= 0);
-    return arrivalBandsFor(PULL_HOLD_MINUTES).map((band) => ({
+    // The hold window comes from the live configuration, so a changed setting moves the bands.
+    return arrivalBandsFor(configuration.pullHoldMinutes).map((band) => ({
       id: band.id,
       label: band.label,
       value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
     }));
-  }, [sourceAdmissions]);
+  }, [sourceAdmissions, configuration.pullHoldMinutes]);
 
   const finderLists = useMemo(
     () => ({
