@@ -210,19 +210,23 @@ const SQUARE_LABEL: Record<BedSquareState, string> = {
  * mislabelled "held" box always had; Pulled is a bed spoken for, so it takes the occupied fill and
  * is told apart by its own glyph and words. No new colour is introduced for either.
  */
-const SQUARE_CLASS: Record<BedSquareState, string | undefined> = {
-  ready: styles.ready,
-  pulled: styles.occupied,
-  closed: styles.held,
-  occupied: styles.occupied,
-};
+function squareClass(state: BedSquareState): string | undefined {
+  // Read at render, never at module load: browser specs import this module without its CSS.
+  const classes: Record<BedSquareState, string | undefined> = {
+    ready: styles.ready,
+    pulled: styles.occupied,
+    closed: styles.held,
+    occupied: styles.occupied,
+  };
+  return classes[state];
+}
 
 function squareLabel(square: BedSquare): string {
   return square.preparing ? "Ready bed — still being made ready" : SQUARE_LABEL[square.state];
 }
 
 function squareClassName(square: BedSquare): string {
-  const base = `${styles.square} ${SQUARE_CLASS[square.state]}`;
+  const base = `${styles.square} ${squareClass(square.state)}`;
   return square.preparing ? `${base} ${styles.preparing}` : base;
 }
 
@@ -254,8 +258,8 @@ function BedMapLegend() {
             data-bed-map-state={item.state}
             className={
               item.preparing
-                ? `${styles.legendSwatch} ${SQUARE_CLASS[item.state]} ${styles.preparing}`
-                : `${styles.legendSwatch} ${SQUARE_CLASS[item.state]}`
+                ? `${styles.legendSwatch} ${squareClass(item.state)} ${styles.preparing}`
+                : `${styles.legendSwatch} ${squareClass(item.state)}`
             }
           />
           {item.label}

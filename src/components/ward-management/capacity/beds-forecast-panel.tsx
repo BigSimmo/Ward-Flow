@@ -44,17 +44,19 @@ export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
     { id: "now", label: "Now" },
     ...forecast.horizons.map((horizon) => ({ id: `${horizon.hours}h`, label: `+${horizon.hours}h` })),
   ];
+  // The window is the forecast's own longest horizon, never a typed figure.
+  const windowHours = Math.max(0, ...forecast.horizons.map((horizon) => horizon.hours));
   const columnX = (index: number) =>
     PLOT_LEFT + ((index + 0.5) / columns.length) * (PLOT_RIGHT - PLOT_LEFT) - BOX_WIDTH / 2 - 12;
 
   return (
     <section
       className={styles.forecastSection}
-      aria-label="Next 48 hours forecast"
+      aria-label={`Next ${windowHours} hours forecast`}
       data-testid="ward-capacity-beds-forecast"
     >
       <div className={styles.forecastHeader}>
-        <h3 className={styles.forecastTitle}>Next 48 hours</h3>
+        <h3 className={styles.forecastTitle}>{`Next ${windowHours} hours`}</h3>
         <span className={styles.forecastScope}>whole network</span>
         {tomorrow ? (
           <span className={styles.forecastChip}>
