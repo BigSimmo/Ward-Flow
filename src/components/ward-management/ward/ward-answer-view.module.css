@@ -11,6 +11,29 @@
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   padding-bottom: 3rem;
+
+  /* v6: the answer view reads the v6 tokens through the shell names its rules already use, so it
+   * follows the v6 day and night themes. Soft status tints map to plain surfaces. */
+  --ground: var(--wf-canvas);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --sunk: var(--wf-surface-2);
+  --ink: var(--wf-ink-1);
+  --ink-soft: var(--wf-ink-2);
+  --muted: var(--wf-ink-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-2);
+  --accent: var(--wf-accent);
+  --accent-ink: var(--wf-accent-ink);
+  --accent-soft: var(--wf-accent-tint);
+  --good: var(--wf-success-ink);
+  --good-soft: var(--wf-surface-2);
+  --warn: var(--wf-warning-ink);
+  --warn-soft: var(--wf-surface-2);
+  --danger: var(--wf-danger-ink);
+  --danger-soft: var(--wf-surface-2);
+  --body: var(--wf-font);
+  --mono: var(--wf-mono);
 }
 
 /* Prototype Governance Banner (FF8) */
@@ -1151,5 +1174,603 @@
 
   .bedCell {
     min-height: var(--ward-tap, 48px);
+  }
+}
+
+/* v6 (design/pages-v6/Ward_answer.png): the ward's hero band on top, sentence-case card heads. */
+@media screen {
+  .answerTop {
+    padding: var(--wf-s-3) clamp(0.75rem, 2vw, 1.5rem) 0;
+  }
+
+  .answerTop .backLink {
+    padding: 0;
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .answerTop .backLink:hover {
+    background: transparent;
+    color: var(--wf-hero-ink);
+  }
+
+  .answerTop .backLink:focus-visible {
+    outline-color: var(--wf-hero-ink);
+  }
+
+  .panelTitle {
+    font-size: var(--wf-fs-14);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-1);
+  }
+}
+
+/* v6 two-column answer (design/pages-v6/Ward_answer.png): the referral on the left, this ward's gates
+   with the decline reasons and the answer buttons on the right, then Confirm your beds, Census and
+   Recent answers in one row. Plain cards, colour only as a glyph. */
+@media screen {
+  .answerGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+  }
+
+  .answerSplit {
+    min-width: 0;
+    scroll-margin-top: 12rem;
+  }
+
+  .answerSplit:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .splitGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--wf-s-3);
+    align-items: stretch;
+  }
+
+  .panel,
+  .referralCard,
+  .gatesCard {
+    min-width: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    overflow: hidden;
+  }
+
+  .referralCard,
+  .gatesCard {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panelHeader {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: var(--wf-surface);
+    flex-wrap: nowrap;
+  }
+
+  .panelSub {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+    white-space: nowrap;
+  }
+
+  .answerTier {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+  }
+
+  .answerTier[data-flagged-urgent="true"] {
+    border-color: var(--wf-danger);
+    color: var(--wf-danger-ink);
+  }
+
+  /* Referral body: SBAR as labelled rows, then the facts in a four-column grid. */
+  .sbarCard {
+    gap: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .patientDossierBanner {
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .patientNameLine {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  .patientMetaLine {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .sbarSection {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: var(--wf-s-3);
+    align-items: baseline;
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .sbarTag {
+    font-size: var(--wf-fs-11);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--wf-ink-3);
+    white-space: nowrap;
+  }
+
+  .sbarContent {
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .answerFacts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--wf-s-3) var(--wf-s-4);
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .answerFacts > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .answerFacts dt {
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-3);
+  }
+
+  .answerFacts dd {
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+    overflow-wrap: anywhere;
+  }
+
+  .answerIdentityAbsence {
+    margin: 0;
+    padding: 0 var(--wf-s-4) var(--wf-s-3);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  /* Gates card: a pass list, then any form, then the answer buttons as the card's foot. */
+  .answerGates {
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .answerGatesHeading {
+    min-height: 0;
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .answerGatesHeading h3 {
+    font-size: var(--wf-fs-14);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+
+  .answerGatesHeading span {
+    padding: 1px 6px;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+
+  .answerGates ul {
+    gap: 0;
+    padding: var(--wf-s-1) var(--wf-s-4);
+  }
+
+  .answerGates li {
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    gap: var(--wf-s-2);
+    min-height: 0;
+    padding: 6px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .answerGates li[data-pass="false"] {
+    border: 0;
+    background: transparent;
+  }
+
+  .answerGateMark {
+    color: var(--wf-success);
+  }
+
+  .answerGates li[data-pass="false"] .answerGateMark {
+    color: var(--wf-warning);
+  }
+
+  .answerGateCopy > strong {
+    font-size: var(--wf-fs-13);
+    font-weight: 400;
+    color: var(--wf-ink-1);
+  }
+
+  .answerGateCopy > span {
+    font-size: var(--wf-fs-11);
+    color: var(--wf-ink-3);
+  }
+
+  .answerGateVerdict {
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-3);
+  }
+
+  .answerGates li[data-pass="false"] .answerGateVerdict {
+    font-weight: 600;
+    color: var(--wf-warning-ink);
+  }
+
+  .gatesCard > .badge,
+  .gatesCard > .noticeProminent {
+    margin: 0 var(--wf-s-4) var(--wf-s-2);
+  }
+
+  .gatesCard .declineForm {
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .gatesCard .declineFieldset {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--wf-s-3);
+    margin: 0 0 var(--wf-s-2);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .gatesCard .declineLegend {
+    grid-column: 1 / -1;
+    margin-bottom: var(--wf-s-1);
+    padding: 0;
+    font-size: var(--wf-fs-11);
+    font-weight: 600;
+    color: var(--wf-ink-3);
+  }
+
+  .declineOption {
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .decisionArea {
+    margin: auto 0 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface-2);
+    justify-content: flex-end;
+    gap: var(--wf-s-2);
+    flex-wrap: wrap;
+  }
+
+  .askButton {
+    margin-right: auto;
+  }
+
+  /* Lower row: three equal cards. */
+  .lowerRow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--wf-s-3);
+    align-items: start;
+    min-width: 0;
+  }
+
+  .bedGrid {
+    grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+    gap: 4px;
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+  }
+
+  .bedCell {
+    min-height: 2rem;
+    padding: 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-xs);
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-2);
+    opacity: 1;
+  }
+
+  .bedCell > span:not(.bedNum) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .bedCell .bedNum {
+    font-size: var(--wf-fs-11);
+    font-weight: 600;
+    color: var(--wf-ink-2);
+  }
+
+  .bedCell.closed {
+    border: 1px dashed var(--wf-line-ctl);
+    background: transparent;
+  }
+
+  .bedCell.pulled {
+    border-color: var(--wf-info);
+  }
+
+  .bedCell.vacant {
+    border: 1px solid var(--wf-success);
+    background: var(--wf-surface);
+  }
+
+  .bedCell.vacant .bedNum {
+    color: var(--wf-success-ink);
+  }
+
+  .bedCell.vacant:hover {
+    transform: none;
+    background: var(--wf-hover);
+  }
+
+  .milieuList {
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+    background: transparent;
+  }
+
+  .milieuLabel {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+    white-space: nowrap;
+  }
+
+  .milieuValue {
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+
+  .capacityPanelBody,
+  .historyPanelBody {
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .capacityFacts {
+    grid-template-columns: minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .patientDossierBadges .badge {
+    padding: 1px 6px;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* From and Referred are sentences, so they take two columns each. */
+  .answerFacts > div:nth-last-child(-n + 2) {
+    grid-column: span 2;
+  }
+
+  .answerFacts > div:nth-last-child(-n + 2) dd {
+    font-weight: 400;
+  }
+
+  .freshnessRow {
+    gap: var(--wf-s-2);
+  }
+
+  .freshnessCard {
+    gap: 2px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-inline-start: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-sm);
+    background: transparent;
+    font-size: var(--wf-fs-12);
+  }
+
+  .freshnessCard strong {
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  .capacityForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+  }
+
+  .capacityLabel {
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  .capacityRow {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+  }
+
+  .capacityInput {
+    width: 5rem;
+    min-height: var(--wf-h-sm);
+    padding: 0 var(--wf-s-2);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-sm);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-13);
+    text-align: center;
+  }
+
+  .capacityInput:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  .capacityRow .btn {
+    min-height: var(--wf-h-sm);
+    margin-left: auto;
+    font-size: var(--wf-fs-12);
+  }
+
+  .capacityConfirmed {
+    margin: 0;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .historyScopeNote {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .historyList {
+    gap: 0;
+  }
+
+  .historyList li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 2px var(--wf-s-2);
+    padding: var(--wf-s-2) 0;
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .historyList li > span:nth-of-type(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    color: var(--wf-ink-3);
+  }
+
+  .historyList li strong {
+    font-family: var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .capacityFacts > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    padding: 6px 0;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .capacityFacts dt {
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-2);
+  }
+
+  .capacityFacts dd {
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+}
+
+@media screen and (max-width: 75rem) {
+  .lowerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media screen and (max-width: 64rem) {
+  .splitGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .answerFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sbarSection {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+@media screen and (max-width: 48rem) {
+  .gatesCard .declineFieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .decisionArea > button,
+  .bedCell {
+    min-height: var(--spacing-tap, 3rem);
   }
 }

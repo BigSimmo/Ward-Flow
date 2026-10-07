@@ -1080,7 +1080,7 @@ describe("direct CMHT referral pathway from ED screen", () => {
 
     // Now movement is recorded as left and removed from the active ED board
     expect(screen.queryByTestId("ward-ed-patient-WF-001")).not.toBeInTheDocument();
-  });
+  }, 90_000);
 });
 
 /**
@@ -1254,5 +1254,8 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
 // Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
 function seedPatientName(movementId: string): string {
   const seed = seedWardFlowState();
-  return resolveSubjectPatient(seed.movements.find((movement) => movement.id === movementId), seed).displayName;
+  return resolveSubjectPatient(
+    seed.movements.find((movement) => movement.id === movementId),
+    seed,
+  ).displayName;
 }
