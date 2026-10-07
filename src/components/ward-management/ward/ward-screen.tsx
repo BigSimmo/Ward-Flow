@@ -1943,161 +1943,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-labelledby="tabBtn-attn"
           data-active={activeTab === "attn"}
         >
-          <section
-            aria-label="Ward figures, right now"
-            id="bed-capacity"
-            className={`${styles.bedSection} ${styles.censusCommandCard}`}
-            tabIndex={0}
-            data-ward-primitive="panel"
-          >
-            <div className={styles.commandHeader} data-ward-primitive="panel-header">
-              <div className={styles.commandTitleGroup}>
-                <h2 className={styles.commandMainTitle}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="12" height="10" rx="1" />
-                    <path d="M6 3v10M2 8h4" />
-                  </svg>
-                  <span>Ward figures, right now</span>
-                </h2>
-                <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
-              </div>
-              <div
-                className={styles.capacityFreshnessRow}
-                data-testid="ward-unit-capacity-freshness"
-                style={{ margin: 0 }}
-              >
-                <WardFreshness
-                  confirmedAt={unit.allocatable.confirmedAt}
-                  confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
-                  now={now}
-                  derived={unit.allocatable.source !== "ward"}
-                />
-                {latestRefreshRequest ? (
-                  <span className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
-                    Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className={styles.capacitySection}>
-              <div className={styles.capacityTrackTitleRow}>
-                <span className={styles.capacityTrackLabel}>Capacity distribution</span>
-                <span className={styles.capacityTrackMeta}>
-                  {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} · {states.closed}{" "}
-                  {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
-                </span>
-              </div>
-
-              <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
-                {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
-                    not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="available"
-                  title={BED_STATE_DETAILS.ready}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
-                  <strong className={styles.statBoxVal} style={{ color: "var(--good)" }}>
-                    {states.ready}
-                  </strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="pulled"
-                  title={BED_STATE_DETAILS.pulled}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.pulled}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="closed"
-                  title={BED_STATE_DETAILS.closed}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
-                  <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
-                    {states.closed}
-                  </strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="occupied"
-                  title={BED_STATE_DETAILS.occupied}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.occupied}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="confirmed"
-                >
-                  <span className={styles.statBoxLabel}>Confirmed</span>{" "}
-                  <strong className={styles.statBoxVal} style={{ color: "var(--accent-ink)" }}>
-                    {breakdown.confirmedToday}
-                  </strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="expected"
-                >
-                  <span className={styles.statBoxLabel}>Expected</span>{" "}
-                  <strong className={styles.statBoxVal} style={{ color: "var(--warn)" }}>
-                    {breakdown.expectedToday}
-                  </strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="blocked-release"
-                  data-testid="ward-unit-blocked-releases"
-                >
-                  <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
-                  <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
-                </span>
-                <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">
-                  <span className={styles.statBoxLabel}>On leave</span>{" "}
-                  <strong className={styles.statBoxVal} style={{ color: "var(--gilt)" }}>
-                    {breakdown.onLeave}
-                  </strong>
-                </span>
-              </div>
-
-              {pendingPreparation > 0 ? (
-                <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="8" cy="8" r="6" />
-                    <path d="M8 5v3.5l2 1" />
-                  </svg>
-                  <span>
-                    <strong>
-                      {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"}{" "}
-                      at {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                    </strong>{" "}
-                    The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the ward
-                    cannot admit into it yet.
-                  </span>
-                </div>
-              ) : null}
-
-              <details className={styles.clinicalDisclosure}>
-                <summary>What these bed figures mean</summary>
-                <p className={styles.bedNote}>
-                  Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled means
-                  allocated to a patient who has not arrived yet. Beds being made ready are counted inside Ready, and
-                  beds held for a patient on leave inside Occupied. Confirmed, expected, held-up discharge and leave are
-                  flow counts and are not added to that total.
-                </p>
-              </details>
-            </div>
-          </section>
-
           <WardHomeTab
             unit={unit}
             onAcceptInPrinciple={handleAcceptInPrinciple}
@@ -2136,6 +1981,153 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onOpenConfirmNumbers={() => setConfirmNumbersOpen(true)}
             onOpenArrival={openArrival}
             onOpenDischarges={openDischargesTab}
+            bedsList={bedsList}
+            onSelectBed={(bedNumber) => setSelectedBed(bedNumber)}
+            figures={
+              <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">
+                <div className={styles.commandHeader} data-ward-primitive="panel-header">
+                  <div className={styles.commandTitleGroup}>
+                    <h2 className={styles.commandMainTitle}>
+                      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="3" width="12" height="10" rx="1" />
+                        <path d="M6 3v10M2 8h4" />
+                      </svg>
+                      <span>Ward figures, right now</span>
+                    </h2>
+                    <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
+                  </div>
+                  <div
+                    className={styles.capacityFreshnessRow}
+                    data-testid="ward-unit-capacity-freshness"
+                    style={{ margin: 0 }}
+                  >
+                    <WardFreshness
+                      confirmedAt={unit.allocatable.confirmedAt}
+                      confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+                      now={now}
+                      derived={unit.allocatable.source !== "ward"}
+                    />
+                    {latestRefreshRequest ? (
+                      <span className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
+                        Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={styles.capacitySection}>
+                  <div className={styles.capacityTrackTitleRow}>
+                    <span className={styles.capacityTrackLabel}>Capacity distribution</span>
+                    <span className={styles.capacityTrackMeta}>
+                      {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} ·{" "}
+                      {states.closed} {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
+                    </span>
+                  </div>
+
+                  <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
+                    {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
+                        not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="available"
+                      title={BED_STATE_DETAILS.ready}
+                    >
+                      <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
+                      <strong className={styles.statBoxVal}>{states.ready}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="pulled"
+                      title={BED_STATE_DETAILS.pulled}
+                    >
+                      <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
+                      <strong className={styles.statBoxVal}>{states.pulled}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="closed"
+                      title={BED_STATE_DETAILS.closed}
+                    >
+                      <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
+                      <strong className={styles.statBoxVal}>{states.closed}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="occupied"
+                      title={BED_STATE_DETAILS.occupied}
+                    >
+                      <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
+                      <strong className={styles.statBoxVal}>{states.occupied}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="confirmed"
+                    >
+                      <span className={styles.statBoxLabel}>Confirmed</span>{" "}
+                      <strong className={styles.statBoxVal}>{breakdown.confirmedToday}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="expected"
+                    >
+                      <span className={styles.statBoxLabel}>Expected</span>{" "}
+                      <strong className={styles.statBoxVal}>{breakdown.expectedToday}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="blocked-release"
+                      data-testid="ward-unit-blocked-releases"
+                    >
+                      <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
+                      <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
+                    </span>
+                    <span
+                      className={`${styles.bedChip} ${styles.statBox}`}
+                      data-ward-primitive="chip"
+                      data-state="leave"
+                    >
+                      <span className={styles.statBoxLabel}>On leave</span>{" "}
+                      <strong className={styles.statBoxVal}>{breakdown.onLeave}</strong>
+                    </span>
+                  </div>
+
+                  {pendingPreparation > 0 ? (
+                    <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
+                      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="8" cy="8" r="6" />
+                        <path d="M8 5v3.5l2 1" />
+                      </svg>
+                      <span>
+                        <strong>
+                          {pendingPreparation} of the {capacity.available} ready{" "}
+                          {capacity.available === 1 ? "bed" : "beds"} at {unit.name}{" "}
+                          {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                        </strong>{" "}
+                        The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the
+                        ward cannot admit into it yet.
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <details className={styles.clinicalDisclosure}>
+                    <summary>What these bed figures mean</summary>
+                    <p className={styles.bedNote}>
+                      Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled
+                      means allocated to a patient who has not arrived yet. Beds being made ready are counted inside
+                      Ready, and beds held for a patient on leave inside Occupied. Confirmed, expected, held-up
+                      discharge and leave are flow counts and are not added to that total.
+                    </p>
+                  </details>
+                </div>
+              </section>
+            }
           />
         </section>
 

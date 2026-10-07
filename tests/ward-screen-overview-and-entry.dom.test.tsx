@@ -232,7 +232,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const wardBeds = unitById("rph-adult-secure")?.beds;
     expect(wardBeds, "rph-adult-secure is not in the fixture — this assertion would prove nothing").toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: new RegExp(`All beds \\(${wardBeds}\\)`, "i") })).toBeInTheDocument();
-    const bed01Card = screen.getByRole("button", { name: /Bed 01/i });
+    // Scoped to the Bed Board panel: the v6 ward home also draws Bed 01 as an Every bed tile.
+    const bed01Card = within(document.getElementById("tab-beds")!).getByRole("button", { name: /Bed 01/i });
     expect(bed01Card).toBeInTheDocument();
 
     // Clicking a bed opens the bed drawer
@@ -258,17 +259,33 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
   });
 
-  it("switches the full-height column from the shift log to awaiting answers", () => {
+  it("shows the shift log and awaiting answers side by side, with no switch between them (v6 ward home)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId={RPH_ADULT_SECURE} />
       </WardFlowProvider>,
     );
 
-    const awaiting = screen.getByRole("region", { name: "Awaiting your answer", hidden: true });
-    expect(awaiting).toHaveAttribute("data-active", "false");
-    fireEvent.click(screen.getByRole("tab", { name: /Awaiting your answer/i }));
-    expect(awaiting).toHaveAttribute("data-active", "true");
-    expect(screen.getByRole("tab", { name: "Shift log" })).toHaveAttribute("aria-selected", "false");
+    const awaiting = screen.getByRole("region", { name: "Awaiting your answer" });
+    expect(awaiting).not.toHaveAttribute("data-active");
+    expect(screen.getByRole("heading", { name: "Shift log" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /Awaiting your answer/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Shift log" })).not.toBeInTheDocument();
+  });
+
+  it("draws every bed as a tile that opens its dossier, with the ward figures as the card's foot", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId={RPH_ADULT_SECURE} />
+      </WardFlowProvider>,
+    );
+
+    const everyBed = document.getElementById("bed-capacity")!;
+    expect(within(everyBed).getByRole("heading", { name: "Every bed" })).toBeInTheDocument();
+    expect(within(everyBed).getByRole("region", { name: "Ward figures, right now" })).toBeInTheDocument();
+    const tiles = within(everyBed).getAllByRole("button", { name: /^Bed \d{2},/ });
+    expect(tiles.length).toBeGreaterThan(0);
+    fireEvent.click(tiles[0]);
+    expect(screen.getByTestId("bed-telemetry-drawer")).toBeInTheDocument();
   });
 });

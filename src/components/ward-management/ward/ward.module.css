@@ -6038,3 +6038,154 @@
     text-transform: none;
   }
 }
+
+/* v6 ward home: the ward figures sit as the quiet foot of the Every bed card, one legend line of
+   counts. Colour is a glyph on the four bed states, never a fill. */
+@media screen {
+  .figuresFoot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+    background: var(--wf-surface);
+  }
+
+  .figuresFoot .commandHeader {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    gap: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .figuresFoot .commandTitleGroup {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+    flex-wrap: wrap;
+  }
+
+  .figuresFoot .commandMainTitle {
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+    white-space: nowrap;
+  }
+
+  .figuresFoot .commandMainTitle svg {
+    display: none;
+  }
+
+  .figuresFoot .commandSubTitle {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+    white-space: nowrap;
+  }
+
+  .figuresFoot .capacitySection {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    gap: var(--wf-s-2);
+  }
+
+  .figuresFoot .capacityTrackTitleRow {
+    display: none;
+  }
+
+  .figuresFoot .bedGrid.breakdownStatsGrid {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-1) var(--wf-s-4);
+  }
+
+  .figuresFoot .bedGrid .bedChip.statBox {
+    border-right: 0;
+    font-weight: 400;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-1);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: left;
+    min-height: 0;
+  }
+
+  .figuresFoot .bedGrid .bedChip > .statBoxLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-1);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-2);
+  }
+
+  .figuresFoot .bedGrid .bedChip > .statBoxVal {
+    line-height: 1.3;
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  .figuresFoot .statBox[data-state] .statBoxLabel::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--wf-ink-3);
+  }
+
+  .figuresFoot .statBox[data-state="available"] .statBoxLabel::before {
+    border-color: var(--wf-success);
+    background: var(--wf-success);
+  }
+
+  .figuresFoot .statBox[data-state="pulled"] .statBoxLabel::before {
+    border-color: var(--wf-info);
+    background: var(--wf-info);
+  }
+
+  .figuresFoot .statBox[data-state="closed"] .statBoxLabel::before {
+    border-color: var(--wf-ink-3);
+    background: var(--wf-ink-3);
+  }
+
+  .figuresFoot .statBox[data-state="occupied"] .statBoxLabel::before {
+    border-color: var(--wf-ink-1);
+    background: var(--wf-ink-1);
+  }
+
+  .figuresFoot .pendingCleanBanner {
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-sm);
+    background: transparent;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .figuresFoot .pendingCleanBanner strong {
+    color: var(--wf-ink-1);
+  }
+
+  .figuresFoot .clinicalDisclosure {
+    margin: 0;
+    padding-top: var(--wf-s-2);
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .figuresFoot .clinicalDisclosure summary {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+}
