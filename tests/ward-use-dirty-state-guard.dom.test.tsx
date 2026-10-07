@@ -52,6 +52,8 @@ describe("useDirtyStateGuard", () => {
     );
 
     expect(onRestore).toHaveBeenCalledWith("Draft note content");
+    // Ensure the restored draft is not immediately erased from sessionStorage by the mount commit
+    expect(window.sessionStorage.getItem("wf-draft:test-form")).toBe("Draft note content");
   });
 
   it("updates and clears draft in sessionStorage when dirtiness changes", () => {

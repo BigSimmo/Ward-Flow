@@ -1139,7 +1139,7 @@ export function LegalFormsScreen() {
           open={renewModalOpen}
           onClose={() => setRenewModalOpen(false)}
           title="Extend recorded form"
-          description="Re-authorisation is recorded, not legally checked"
+          description="Extension is recorded, not legally checked"
           portal={false}
           testId="ward-legal-extend"
           footer={
@@ -1154,7 +1154,7 @@ export function LegalFormsScreen() {
                 disabledReason={NOT_WIRED}
                 title={NOT_WIRED}
               >
-                Confirm re-authorisation
+                Confirm extension
               </Button>
             </div>
           }
@@ -1384,7 +1384,7 @@ function SelectedFormCard({
           Dossier
         </Button>
         {breached ? (
-          <Button variant="danger" size="sm" onClick={onExtend} aria-label="Re-Authorise Order">
+          <Button variant="danger" size="sm" onClick={onExtend} aria-label="Extend recorded form">
             Extend
           </Button>
         ) : (
