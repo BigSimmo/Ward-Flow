@@ -1,88 +1,132 @@
+/* Next 48 hours, v6. Tokens only. */
 .forecastSection {
-  flex: none;
-  padding: 1.125rem;
-  border-bottom: 1px solid var(--line);
   display: flex;
+  flex: none;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
 }
 
 .forecastHeader {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .forecastTitle {
   margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.forecastScope {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-family: var(--body);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
   white-space: nowrap;
 }
 
+.forecastScope {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecastChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.forecastChipValue {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.tickLabel,
+.columnLabel {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  fill: var(--wf-ink-3);
+}
+
+.columnLabel {
+  font-family: var(--wf-font);
+}
+
+.zeroLine {
+  stroke: var(--wf-ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.nowBar {
+  fill: var(--wf-data-1);
+}
+
+.likelyBox {
+  fill: var(--wf-data-2);
+}
+
+.whisker {
+  stroke: var(--wf-ink-3);
+  stroke-width: 1.5;
+}
+
+.valueLabel {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  fill: var(--wf-ink-1);
+}
+
+.markWarning {
+  fill: var(--wf-warning);
+}
+
+.markSuccess {
+  fill: none;
+  stroke: var(--wf-success);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.caption {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* The exact figures and ranges, for screen readers; the drawing above shows the same values. */
 .horizons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  list-style: none;
 }
 
 .horizon {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-}
-
-.horizonHeadingRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.horizonLabel {
-  color: var(--ink-soft);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.until {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-}
-
-.headline {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--good);
-  line-height: 1.25;
-}
-
-.headline[data-short="true"] {
-  color: var(--danger);
-}
-
-.range {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: 1.35;
+  display: block;
 }

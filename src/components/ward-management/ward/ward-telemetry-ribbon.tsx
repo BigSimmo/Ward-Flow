@@ -1,12 +1,13 @@
 "use client";
 
+import { HeroStat, durMinutes } from "@/components/wf";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import React from "react";
-import Link from "next/link";
-import styles from "./ward-telemetry-ribbon.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
+
+import styles from "./ward-telemetry-ribbon.module.css";
 
 interface WardTelemetryRibbonProps {
   unit: Unit;
@@ -15,83 +16,44 @@ interface WardTelemetryRibbonProps {
     occupied: number;
   };
   staffedSpecialling: number;
-  acceptedCount: number;
-  onOpenBedList?: () => void;
+  now: Instant;
 }
 
-export function WardTelemetryRibbon({
-  unit,
-  capacity,
-  staffedSpecialling,
-  acceptedCount,
-  onOpenBedList,
-}: WardTelemetryRibbonProps) {
+/**
+ * The ward's counts on the v6 hero band (design/pages-v6/Ward.png): Ready now, Occupied, 1:1
+ * specialling, ready by the end of the day shift, and how long since the figure was confirmed.
+ * Every value is derived from the record; the ready-bed figure carries how many of those beds are
+ * still being made ready, for a screen reader, as every ready figure on this screen does.
+ */
+export function WardTelemetryRibbon({ unit, capacity, staffedSpecialling, now }: WardTelemetryRibbonProps) {
   const { bedReleases } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  const occPercent = unit.beds > 0 ? Math.round((capacity.occupied / unit.beds) * 100) : 0;
-  const constraints = unit.intakeConstraints ?? [];
+  const shiftEnd = dayShiftEndInstant(now);
+  const freeingByShiftEnd = bedReleases.filter(
+    (release) => release.unitId === unit.id && release.state !== "discharged" && release.expectedAt <= shiftEnd,
+  ).length;
+  const confirmedByWard = unit.allocatable.source === "ward";
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
-      <span className="sr-only">{pendingPreparation} being made ready</span>
-      <div className={styles.cell} data-state="accent">
-        <span className={styles.label}>Staffed beds</span>
-        <span className={styles.mainVal}>{unit.beds}</span>
-        <span className={styles.subRow}>Roster not recorded</span>
+      <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+      <div className={styles.cell} data-testid="ward-hero" aria-labelledby="ward-hero-title">
+        <HeroStat
+          value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
+          label={<span id="ward-hero-title">Ready now</span>}
+          tone="success"
+        />
       </div>
-      <div className={styles.cell} data-state={occPercent >= 90 ? "warn" : "accent"}>
-        <span className={styles.label}>Occupancy</span>
-        <span className={styles.mainVal}>
-          {capacity.occupied}
-          <span className={styles.unit}>/{unit.beds}</span>
-        </span>
-        <span className={styles.subRow}>
-          {occPercent}% full · {acceptedCount} inbound
-        </span>
-      </div>
-      <div className={styles.cell} data-state="good" data-testid="ward-hero" aria-labelledby="ward-hero-title">
-        <span className={styles.label} id="ward-hero-title">
-          Ready now
-        </span>
-        <span className={styles.mainVal} data-tone="good">
-          <span data-testid="ward-hero-ready">{capacity.available}</span>
-        </span>
-        <Link
-          className={styles.actionLink}
-          href="#bed-capacity"
-          data-testid="ward-hero-open-bed-list"
-          onClick={(event) => {
-            if (onOpenBedList) {
-              event.preventDefault();
-              onOpenBedList();
-            }
-          }}
-        >
-          Open bed list · {unit.beds} beds · {capacity.available} ready →
-        </Link>
-      </div>
-      <div className={styles.cell} data-state={staffedSpecialling > 0 ? "warn" : undefined}>
-        <span className={styles.label}>1:1 specialling</span>
-        <span className={styles.mainVal} data-tone={staffedSpecialling > 0 ? "warn" : undefined}>
-          {staffedSpecialling}
-        </span>
-        <span className={styles.subRow}>
-          {constraints.length > 0
-            ? constraints.map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint).join(", ")
-            : staffedSpecialling > 0
-              ? "Active watch"
-              : "None recorded"}
-        </span>
-      </div>
-      <div className={styles.cell} data-state={unit.lockedBeds > 0 ? "danger" : undefined}>
-        <span className={styles.label}>Boundary</span>
-        <span className={styles.mainVal} data-tone={unit.lockedBeds > 0 ? "danger" : undefined}>
-          {unit.lockedBeds > 0 ? "Secure" : "Open"}
-        </span>
-        <span className={styles.subRow}>
-          {unit.lockedBeds > 0 ? "Secure boundary · seclusion ready" : "Standard security boundary"}
-        </span>
-      </div>
+      <HeroStat value={capacity.occupied} label="Occupied" />
+      <HeroStat value={staffedSpecialling} label="1:1 specialling" />
+      <HeroStat
+        value={capacity.available + freeingByShiftEnd}
+        label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
+      />
+      <HeroStat
+        value={durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}
+        label={confirmedByWard ? "since confirmed" : "since last figure"}
+      />
     </div>
   );
 }

@@ -92,10 +92,24 @@ const SJGS_ADULT_SECURE = unitById("sjgs-adult-secure");
 const JOONDALUP_ED = edById("jhc-ed");
 const JOONDALUP_SITE = siteByCode("JHC");
 
+/** v6: the category filter is a segmented radio group ("All 96", "Wards 22", …). */
+const CATEGORY_LABEL: Record<string, RegExp> = {
+  all: /^All\s*\d+$/u,
+  ward: /^Wards\s*\d+$/u,
+  ed: /^EDs\s*\d+$/u,
+  community: /^Community\s*\d+$/u,
+};
+function categoryRadio(value: string): HTMLElement {
+  const label = CATEGORY_LABEL[value];
+  if (label === undefined) throw new Error(`no category radio for ${value}`);
+  return screen.getByRole("radio", { name: label });
+}
+
 describe("Ward Flow Master Search Hub — fixture assumptions (floors the discriminating population)", () => {
   it("keeps Search hub as a place directory, not a second job board (Wave 4 item 14)", () => {
     renderHub();
-    expect(screen.getByRole("heading", { level: 1, name: "Places" })).toBeInTheDocument();
+    // v6: the h1 reads "Places, 22 wards, …" — the page name leads, the network sentence follows.
+    expect(screen.getByRole("heading", { level: 1, name: /^Places\b/u })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Start of shift" })).not.toBeInTheDocument();
   });
   it("Mental Health Unit has two DIFFERENT non-zero capacity figures, so a collapsed-into-one screen has something to disagree with", () => {
@@ -164,11 +178,9 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
   it("the count in the category filter option is how many rows selecting that category actually shows, not how many exist", () => {
     renderHub();
     const results = () => within(screen.getByRole("region", { name: /search results/i }));
-    const categorySelect = () => screen.getByRole("combobox", { name: /filter by category/i }) as HTMLSelectElement;
+    // v6: the category control is a segmented radio group; each radio carries its count in `.k`.
     const categoryOptionCount = (value: string) => {
-      const select = categorySelect();
-      const option = Array.from(select.options).find((opt) => opt.value === value);
-      const match = option?.textContent?.match(/\((\d+)\)/);
+      const match = categoryRadio(value).textContent?.match(/(\d+)$/u);
       return match ? Number(match[1]) : 0;
     };
 
@@ -188,14 +200,13 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
       'the query "metro" no longer matches any emergency department — this case can no longer tell a ward count from a total',
     ).toBeGreaterThan(0);
 
-    fireEvent.change(categorySelect(), { target: { value: "ward" } });
+    fireEvent.click(categoryRadio("ward"));
     expect(results().getAllByRole("listitem")).toHaveLength(claimed);
   });
 
   it("restricts the list to one kind when that kind is selected in the category dropdown, with an empty query", () => {
     renderHub();
-    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
-    fireEvent.change(categorySelect, { target: { value: "ward" } });
+    fireEvent.click(categoryRadio("ward"));
 
     // Wards are still there...
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
@@ -396,9 +407,11 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
 describe("Ward Flow Master Search Hub — a search must not change what the screen says the network is", () => {
   it("the glance pane states one ward count, not one filtered and one not, while a query is narrowing the list", () => {
     renderHub();
-    const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
+    // v6: the network sentence moved from the glance pane's subtitle to the hero title.
+    const networkSentence = () => screen.getByRole("heading", { level: 1 });
 
-    const initialSubtitle = glance().getByText(/wards,.*EDs,.*community teams/i).textContent ?? "";
+    const initialSubtitle = networkSentence().textContent ?? "";
+    expect(initialSubtitle).toMatch(/wards,.*EDs,.*community teams/i);
     const initialWards = Number(/(\d+)\s+wards/i.exec(initialSubtitle)?.[1]);
 
     // Before any query the two are trivially equal, so this is measured only after narrowing —
@@ -410,7 +423,7 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
       'the query "fremantle" no longer narrows the list — this case can no longer tell a filtered figure from an unfiltered one',
     ).toBeLessThan(10);
 
-    const subtitle = glance().getByText(/wards,.*EDs,.*community teams/i).textContent ?? "";
+    const subtitle = networkSentence().textContent ?? "";
     const subtitleWards = Number(/(\d+)\s+wards/i.exec(subtitle)?.[1]);
 
     expect(Number.isNaN(subtitleWards), `could not read a ward count from the glance subtitle: "${subtitle}"`).toBe(
@@ -425,11 +438,16 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
 
 describe("Ward Flow Master Search Hub — the keyboard reaches everything the mouse does", () => {
   const search = () => screen.getByRole("searchbox", { name: /search/i });
-  const previewed = () =>
-    within(screen.getByRole("complementary", { name: /at a glance/i }))
+  // v6: the preview is its own card above "At a glance", which now stays on screen. Nothing
+  // previewed reads as the overview alone.
+  const previewed = () => {
+    const preview = screen.queryByRole("region", { name: /^preview,/i });
+    if (preview === null) return "at a glance";
+    return within(preview)
       .getAllByRole("heading")
       .map((node) => node.textContent)
       .join(" | ");
+  };
 
   it("arrow keys move the preview through the results, and the preview follows", () => {
     renderHub();
@@ -462,20 +480,20 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
 
   it("selecting different categories in the dropdown updates the list accordingly", () => {
     renderHub();
-    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
-    fireEvent.change(categorySelect, { target: { value: "ward" } });
+    fireEvent.click(categoryRadio("ward"));
     expect(screen.getByText("Dabakarn")).toBeInTheDocument();
 
-    fireEvent.change(categorySelect, { target: { value: "ed" } });
+    fireEvent.click(categoryRadio("ed"));
     expect(screen.queryByText("Dabakarn")).not.toBeInTheDocument();
     expect(screen.getByText(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
   });
 
-  it("the category dropdown is in the tab order as a single focus stop", () => {
+  it("the category control is in the tab order as a single focus stop", () => {
     renderHub();
-    const categorySelect = screen.getByRole("combobox", { name: /filter by category/i });
-    expect(categorySelect).toBeInTheDocument();
-    expect(categorySelect.tabIndex).toBe(0);
+    // v6: a radio group with roving focus — only the checked radio is a tab stop.
+    const radios = within(screen.getByRole("radiogroup", { name: /^show$/i })).getAllByRole("radio");
+    expect(radios.filter((radio) => radio.tabIndex === 0)).toHaveLength(1);
+    expect(categoryRadio("all").tabIndex).toBe(0);
   });
 
   it("toggling the ready beds quick filter restricts the results to wards with available beds", () => {
@@ -723,7 +741,10 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
       screen.queryByText(/reconciled with each other/i),
       "the hub is asserting that invented figures reconcile, over a check array that does not exist",
     ).not.toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/Live/);
+    // v6: the hero's Live chip is the one "Live" on the page; nothing else may claim live figures.
+    const liveChip = screen.getByRole("button", { name: "Pause live updates" }).parentElement;
+    const outsideChip = (document.body.textContent ?? "").replace(liveChip?.textContent ?? "", "");
+    expect(outsideChip).not.toMatch(/Live/);
   });
 
   it("carries no form of the retired snapshot wording", () => {
@@ -777,7 +798,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives every ward row both its place link and a statistics link built from its own id", () => {
     expect(WARD_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "ward" } });
+    fireEvent.click(categoryRadio("ward"));
 
     for (const entry of WARD_ENTRIES) {
       clickResultRow(entry.name);
@@ -798,7 +819,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives every ED row both its place link and a statistics link built from its own id", () => {
     expect(ED_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "ed" } });
+    fireEvent.click(categoryRadio("ed"));
 
     for (const entry of ED_ENTRIES) {
       clickResultRow(entry.name);
@@ -817,7 +838,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   it("gives no community row a statistics link, and states the absence in words instead", () => {
     expect(COMMUNITY_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
-    fireEvent.change(screen.getByRole("combobox", { name: /filter by category/i }), { target: { value: "community" } });
+    fireEvent.click(categoryRadio("community"));
 
     for (const entry of COMMUNITY_ENTRIES) {
       clickResultRow(entry.name);
