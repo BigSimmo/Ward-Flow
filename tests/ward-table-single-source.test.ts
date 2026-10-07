@@ -231,9 +231,8 @@ describe("the Ward Flow `.table` rule set is declared in exactly one file", () =
     "src/components/ward-management/ed/ed.module.css",
     "src/components/ward-management/ward-management-modes.module.css",
     "src/components/ward-management/ward-management-network.module.css",
-    // Recorded 2026-09-25 (test fixer). `.govTable` has a sticky header needing
-    // `border-collapse: separate`, the same structural reason as ward-management-modes.
-    "src/components/ward-management/governance-third-edition.module.css",
+    // governance-third-edition.module.css left this list on 7 Oct 2026: the v6 rebuild moved
+    // `.govTable` onto the wf table primitive (`tableClasses.table`), so it no longer redeclares the cell rule.
     // Recorded 2026-09-25 (test fixer). `.dataTable` uses its own padding and divider; moving it onto
     // the canonical table would change how it looks, which is a design decision for Josh.
     "src/components/ward-management/statistics/statistics-ward-third-edition.module.css",

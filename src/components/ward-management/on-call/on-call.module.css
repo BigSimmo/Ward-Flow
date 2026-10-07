@@ -101,7 +101,7 @@
 }
 
 .rosterTable th:nth-child(2) {
-  width: 16%;
+  width: 15%;
 }
 
 .rosterTable th:nth-child(3) {
@@ -120,13 +120,9 @@
   width: 14%;
 }
 
+/* Wide enough for the star with the table's own cell inset; the cell rule stays the primitive's. */
 .starCol {
-  width: 6%;
-}
-
-.rosterTable td.starCol,
-.rosterTable th.starCol {
-  padding-right: 0;
+  width: 7%;
 }
 
 .rosterRow {
