@@ -1180,6 +1180,17 @@ function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlow
   return { ...state, units: state.units.map((candidate) => (candidate.id === unitId ? next : candidate)) };
 }
 
+/** A recorded sending ward is the only exception to the one-current-stay placement rule. */
+function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
+  if (movement.repatriationSourceAdmissionId) return findAdmission(state, movement.repatriationSourceAdmissionId);
+  const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+  if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
+  const patientId = movement.patientId ?? referral.patientId;
+  return state.admissions.find(
+    (a) => a.patientId === patientId && a.unitId === referral.originUnitId && a.state === "occupied",
+  );
+}
+
 /**
  * REFUNDS A HELD BED AND DELETES THE `Admission` `PULL_PATIENT` CREATED FOR IT (if one exists) — the
  * exact inverse of `PULL_PATIENT`'s own writes (ruling P4-1), extracted so `RELEASE_PULL` and, since
@@ -3882,13 +3893,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * held admission is itself one of the places those checks count, so re-asking them would refuse
        * a patient for occupying their own bed.
        */
-      const patientId = movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId;
-      const source = movement.repatriationSourceAdmissionId
-        ? findAdmission(state, movement.repatriationSourceAdmissionId)
-        : undefined;
+      const patientId =
+        movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
+      const source = movementSourceAdmission(state, movement);
       if (
-        movement.repatriationSourceAdmissionId &&
-        (!source || source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId)
+        (movement.repatriationSourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
       ) {
         return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");
       }
@@ -4789,13 +4799,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
-      const patientId = movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId;
-      const source = movement.repatriationSourceAdmissionId
-        ? findAdmission(state, movement.repatriationSourceAdmissionId)
-        : undefined;
+      const patientId =
+        movement.patientId ??
+        state.referrals.find((r) => r.id === movement.referralId)?.patientId ??
+        (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
+      const source = movementSourceAdmission(state, movement);
       if (
-        movement.repatriationSourceAdmissionId &&
-        (!source || source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id)
+        (movement.repatriationSourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
       ) {
         return reject(
           state,

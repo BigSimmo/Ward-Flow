@@ -21,3 +21,9 @@ Draft persistence, expected departure editing, Settings operational defaults, bo
 The dirty-state guard retains unload warnings and in-memory drafts; it no longer reads, writes or restores typed browser caches. The provider purges legacy `wf-draft:` keys on mount and reset, so visiting a draft editor is unnecessary. Existing draft tests now assert the D18 privacy contract, and a real provider remount test checks both cache cleanup and preservation of a safe care transport arrangement.
 
 Locked dependencies were installed independently in the patch worktree after detecting that the supplied shared installation had Next.js 16.3.3 instead of locked 16.3.8. No lockfile or original checkout dependencies were changed. Twenty-six audit-focused tests passed on the exact installation; final broad checks are in progress.
+
+## Transfer compatibility and defensive release
+
+The duplicate-stay guard recognises recorded psychiatric-ward referrals as transfers, preserving the sending stay through reservation and departing it on receiving arrival. Older saves with a completed incoming care transfer can start a new transfer. Defensive release is tested against the legacy occupied-source alias, independently of the corrected producer. Broadcast validation preserves producer-valid fractional durations and rejects stale ID counters.
+
+Focused state and compatibility regressions passed; the broad run is underway. No runtime logging or diagnostic instrumentation was added.

@@ -206,6 +206,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     ["movements", /^WF-9(\d+)$/, state.referralSequence],
     ["referrals", /^RF-9(\d+)$/, state.frontDoorReferralSequence],
     ["leaveBeds", /^WL-9(\d+)$/, state.leaveBedSequence],
+    ["broadcastAlerts", /^BCAST-(\d+)$/, state.broadcastSequence],
   ] as const;
   for (const [collection, pattern, sequence] of runtimeSequences) {
     for (const row of value[collection] as RecordValue[]) {
@@ -545,7 +546,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !["active", "stood_down", "expired"].includes(row.status as string) ||
       !finite(row.dispatchedAt) ||
       !finite(row.expiresAt) ||
-      !counter(row.durationMinutes) ||
+      !finite(row.durationMinutes) ||
+      row.durationMinutes <= 0 ||
       !strings(row.acknowledgedUnits)
     )
       return false;
