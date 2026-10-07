@@ -4,6 +4,8 @@
   align-items: center;
   position: sticky;
   --statistics-header-offset: 3.5rem;
+  /* Default until StatisticsNav measures the bar + nav against the scroll container. */
+  --statistics-anchor-offset: 7.5rem;
   top: var(--statistics-header-offset);
   z-index: 20;
   flex-shrink: 0;

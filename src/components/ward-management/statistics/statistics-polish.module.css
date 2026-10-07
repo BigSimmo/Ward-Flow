@@ -2,6 +2,8 @@
 
 .root {
   display: contents;
+  /* Default until StatisticsNav measures; keeps sticky section jumps off the chrome. */
+  --statistics-anchor-offset: 8rem;
 }
 
 .root :global([data-ward-primitive="panel"]) {
