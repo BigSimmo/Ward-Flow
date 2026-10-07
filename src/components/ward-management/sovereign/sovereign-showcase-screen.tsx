@@ -221,8 +221,6 @@ export function SovereignShowcaseScreen() {
   function toggleNight() {
     const next = night ? "light" : "dark";
     applyAppearance(next);
-    // The v6 tokens switch on html.dark; keep it in step with the shared appearance choice.
-    document.documentElement.classList.toggle("dark", next === "dark");
     announceToWardShell(next === "dark" ? "Night theme on." : "Day theme on.");
   }
 
