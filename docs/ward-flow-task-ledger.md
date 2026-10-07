@@ -8424,3 +8424,41 @@ Verification close-out for WF-REFERRAL-DRAWER-2026-10-07:
 - Browser evidence: system Chromium at `/usr/bin/chromium` on verified localhost project (port 4240). Completed catchment → Referral/story → actual chart uploads → two ward recipients → contact confirmation → sent receipt, client navigation to exact ward inbox, waitlist action and Ward → Waitlisted board. No browser errors. Confirmation checked at 1440×1050 and 390×844; no horizontal drawer overflow. Screenshots: `/workspace/generated_images/referral-locations-built.png`, `referral-confirmation-built.png`, `referral-confirmation-mobile.png`, `referral-sent-built.png`, `referral-inbox-built.png`, `referral-board-waitlisted-built.png`.
 - Standard pinned Playwright lane was not run: its Chromium executable was unavailable and browser download returned HTTP 403. The browser evidence above is the explicitly scoped system-Chromium journey, not a full browser-lane or publication readiness claim.
 - Session-only shared engine submission; chart bytes and contact data are not refresh-persisted under D-18. No hosted database, Azure interaction, GitHub publication or deployment. Only the task-owned localhost server was stopped after browser verification. No outstanding product-code edits.
+
+### TASK-DRAWER-POLISH-2026-10-07 — compact patient task inbox
+
+Completed local implementation on `codex/tasks-polish`, based on verified Ward Flow main
+`20105cfe75cf0a0f8be80d270cb4d25afb593aff`. Scope: retain the accepted drawer and palette while
+removing task search, tightening spacing and curves, bordering action buttons, and refining the
+state select and urgency badges. Explicit patient resolution supplies name and UMRN, origin,
+current stage and recorded escalation; redundant owner text is omitted. Task category icons and
+separate Critical/Past due labels avoid describing every critical issue as an overdue deadline.
+
+Refer opens the same patient's live ward shortlist; Contact opens their coordination contacts.
+Escalate records a contact through `RECORD_ESCALATION` and does not transmit a message.
+Acknowledged and completed states are selectable. All currently derived categories are standing
+facts: acknowledgement never resolves them and the completed view explains its empty state.
+Existing commitment completion/reopening controls and reducer restrictions remain intact.
+
+Validation: 40 tests passed across task drawer, shell role visibility, patient flight deck and
+inbox reducer suites; full TypeScript check and scoped ESLint passed. Chromium interaction and
+visual checks covered light/dark desktop, narrow/short phones, actual touch emulation with 48px
+controls, search removal, filters, acknowledgement retained during client navigation, escalation
+recording, referral/contact destinations, scrolling, overflow and keyboard focus return. Evidence
+is local to this worktree at `.local/tasks-polish/result.json` and its accompanying screenshots.
+The synthetic provider's existing session behaviour is retained; no save/reload or backend
+persistence claim is made. Local engineering only; no publication or deployment performed.
+
+Follow-up on the same task, 7 October 2026: added restrained ambient elevation, theme-aware
+inner highlights, frosted surfaces and consistent header alignment without changing the task
+layout or actions. The task Sheet has a moderate 20px corner, with proportionally smaller card,
+icon and button corners. Forced-colour controls retain explicit borders.
+
+Production `npm run build` passed (installed Next.js 16.3.3, including its TypeScript check and
+49 generated static pages). Reused the passing 40-test behaviour evidence because this follow-up
+changes only CSS. Re-ran the browser interaction/visual probe on the refined source: light/dark
+desktop, narrow/short phones, real touch emulation, 48px touch targets, state filters, acknowledgement,
+escalation, referral/contact navigation, overflow, scrolling and keyboard focus return passed
+with no page errors. Updated screenshots and `.local/tasks-polish/result.json`; build output is
+`.local/tasks-polish/build.log`. Publication to a task-branch PR is now explicitly requested;
+merge/deployment are not part of this task.

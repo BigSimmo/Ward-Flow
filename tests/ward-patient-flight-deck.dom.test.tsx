@@ -131,4 +131,23 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Coordinate placement" }));
     expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
   });
+  it("opens the ward shortlist directly from a task referral action", async () => {
+    const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
+    const page = await Page({
+      params: Promise.resolve({ movementId: "WF-012" }),
+      searchParams: Promise.resolve({ taskAction: "refer" }),
+    });
+    render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
+    expect(screen.getByRole("region", { name: "Network ward shortlist" })).toBeVisible();
+  });
+  it("opens coordination contacts directly from a task contact action", async () => {
+    const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
+    const page = await Page({
+      params: Promise.resolve({ movementId: "WF-012" }),
+      searchParams: Promise.resolve({ taskAction: "contact" }),
+    });
+    render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
+    expect(screen.getByRole("tab", { name: /Community/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Transfer coordination contacts" })).toBeVisible();
+  });
 });
