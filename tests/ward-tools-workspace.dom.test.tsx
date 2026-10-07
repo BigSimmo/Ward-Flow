@@ -47,7 +47,7 @@ describe("whole-network tools figures", () => {
     expect(totalLabel.parentElement?.querySelector("dd")).toHaveTextContent(
       String(allUnits().reduce((sum, unit) => sum + unit.beds, 0)),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Flow & discharges" }));
+    fireEvent.click(screen.getByRole("button", { name: "Flow" }));
     expect(screen.queryByText("Total beds")).toBeNull();
     expect(screen.getByText("Admissions today")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "All figures" }));

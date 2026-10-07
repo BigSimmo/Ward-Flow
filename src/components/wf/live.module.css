@@ -1,0 +1,171 @@
+/* v6 live chip (`.lv`) and timers. Mono, tabular figures. */
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+}
+
+.u {
+  font: 500 var(--wf-fs-11) / 1 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.onHero {
+  color: var(--wf-hero-ink);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+}
+
+.onHero .u {
+  color: var(--wf-hero-ink-3);
+}
+
+.pulse {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  animation: wfLivePulse 2s ease-out infinite;
+}
+
+.ring {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-ink-off);
+}
+
+.onHero .ring {
+  border-color: var(--wf-hero-ink-3);
+}
+
+.spin {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  animation: wfLiveSpin 0.8s linear infinite;
+}
+
+/* Timer. The value stays ink-1; the threshold word and glyph carry the state. */
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.digits {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  color: var(--wf-ink-1);
+  letter-spacing: -0.01em;
+}
+
+.word {
+  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.chip {
+  height: 22px;
+  align-items: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+}
+
+.chip .digits {
+  font-size: var(--wf-fs-12);
+}
+
+.chip .word {
+  font-size: var(--wf-fs-11);
+}
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.soon {
+  color: var(--wf-warning-ink);
+}
+
+.over {
+  color: var(--wf-danger-ink);
+}
+
+@keyframes wfLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes wfLiveSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+  .spin {
+    animation-duration: 1.6s;
+  }
+}
+
+@media (forced-colors: active) {
+  .lv,
+  .chip {
+    border-color: CanvasText;
+  }
+}
