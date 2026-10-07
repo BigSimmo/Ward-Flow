@@ -1,4 +1,6 @@
 "use client";
+
+import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 
 import {
@@ -103,6 +105,8 @@ type WardFlowContextValue = {
    *  success banner (`referral-intake.tsx`) could not echo the referral it had just raised,
    *  because nothing on this context carried it. */
   referrals: Referral[];
+  /** A recipient projection; other wards and their answers never leave this selector. */
+  wardReferralInbox(unitId: string): WardReferralInboxEntry[];
   rejections: Rejection[];
   /** Task 11 (spec item 9): beds expected to free up, live from reducer state so a ward's own
    *  `FLAG_BED_RELEASE` shows up on every screen reading `unitCapacity()`'s `potential` figure. */
@@ -929,6 +933,7 @@ function WardFlowWorld({
       movements: state.movements,
       units: state.units,
       referrals: state.referrals,
+      wardReferralInbox: (unitId: string) => wardReferralInboxEntries(state.referrals, unitId),
       rejections: state.rejections,
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,

@@ -85,10 +85,14 @@ export function wardAddressings(referral: Referral): WardAddressing[] {
   );
 }
 
-/** The single ward addressing, or `undefined`. A referral may hold at most one — `RECEIVE_REFERRAL`
- *  refuses two destinations of the same kind, since asking one kind twice is asking twice. */
+/** First live ward request, or first recorded ward request when all have been answered.
+ * Named ward recipients may coexist; recipient-specific decisions must select the exact unit. */
 export function wardAddressing(referral: Referral): WardAddressing | undefined {
-  return wardAddressings(referral)[0];
+  return (
+    wardAddressings(referral).find(
+      (addressing) => addressing.state === "queued" && addressing.withdrawnAt === undefined,
+    ) ?? wardAddressings(referral)[0]
+  );
 }
 
 /**
