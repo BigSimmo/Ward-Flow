@@ -13,12 +13,34 @@ import { blankCssComments } from "./helpers/strip-source-comments";
  */
 const files = globSync("src/components/ward-management/**/*.css");
 
-function count(pattern: RegExp): number {
+/** Drops `var(...)` so a token's fallback (`var(--radius-pill, 9999px)`) is not counted as a literal. */
+function withoutVars(value: string): string {
+  let previous: string;
+  do {
+    previous = value;
+    value = value.replace(/var\([^()]*\)/g, "");
+  } while (value !== previous);
+  return value;
+}
+
+/**
+ * Counts declarations of `property` whose whole value still holds a matching literal, so
+ * `clamp(10px, 2vw, 16px)`, `calc(12px - 2px)` and `0 12px` are caught as well as `12px`.
+ */
+function count(property: RegExp, literal: RegExp): number {
+  const declaration = new RegExp(`(?:^|[;{\\s])(?:${property.source})\\s*:([^;{}]*)`, "g");
   return files.reduce((total, file) => {
     const css = blankCssComments(readFileSync(file, "utf8"));
-    return total + (css.match(pattern) ?? []).length;
+    let found = 0;
+    for (const match of css.matchAll(declaration)) {
+      if (literal.test(withoutVars(match[1]))) found += 1;
+    }
+    return total + found;
   }, 0);
 }
+
+const radius = /border(?:-[a-z]+)*-radius/;
+const sizeLiteral = /(?:^|[^\w.-])[0-9]*\.?[0-9]+(?:px|rem)\b/;
 
 describe("ward styling drift ratchet", () => {
   it("scans the ward stylesheets", () => {
@@ -26,14 +48,14 @@ describe("ward styling drift ratchet", () => {
   });
 
   it("writes every pill radius through --radius-pill", () => {
-    expect(count(/border-radius:\s*(9999|999)px/g)).toBe(0);
+    expect(count(radius, /\b(?:9999|999)px\b/)).toBe(0);
   });
 
   it("does not add literal font sizes", () => {
-    expect(count(/font-size:\s*[0-9.]+(px|rem)\b/g)).toBeLessThanOrEqual(1208);
+    expect(count(/font-size/, sizeLiteral)).toBeLessThanOrEqual(1216);
   });
 
   it("does not add literal border radii", () => {
-    expect(count(/border-radius:\s*[0-9.]+(px|rem)\b/g)).toBeLessThanOrEqual(676);
+    expect(count(radius, sizeLiteral)).toBeLessThanOrEqual(699);
   });
 });
