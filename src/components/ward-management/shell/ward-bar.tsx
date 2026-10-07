@@ -86,15 +86,7 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import {
-  digestHref,
-  edHref,
-  handoverHref,
-  movementHref,
-  officerHref,
-  onCallHref,
-  settingsHref,
-} from "./ward-facade";
+import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
 import type {
   WardActivityCategory,
   WardActivityChange,

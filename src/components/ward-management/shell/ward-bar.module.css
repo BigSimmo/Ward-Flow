@@ -2540,7 +2540,7 @@
 }
 .drawerScope {
   padding: 0.25rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--sunk);
   font-family: var(--body);
   font-size: var(--t-0);
@@ -2811,7 +2811,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--feature-ink) 12%, transparent);
 }
 .figuresLaunch small::before {
@@ -2941,7 +2941,7 @@
   flex: none;
   min-height: 3rem;
   padding-inline: 0.625rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border-color: transparent;
   background: transparent;
 }
@@ -3002,7 +3002,7 @@
 .eventLabel {
   align-self: flex-start;
   padding: 0.125rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-soft);
   font-size: var(--t-0);
   font-weight: 550;
@@ -3315,4 +3315,3 @@
     display: none;
   }
 }
-
