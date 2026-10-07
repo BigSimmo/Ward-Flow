@@ -390,7 +390,7 @@ const ACCEPTING_UNITS = 13;
  * journey then asserts against the wrong card. `SEEDED_QUEUED` above is what makes an omission
  * visible: the fixture-assumption block checks this set against the real queue, by name.
  *
- * Ordered as `referralQueueOrder` orders it (urgency tier, then longest wait), matching the pin in
+ * Ordered as `referralQueueOrder` orders it (longest wait first, Decision D-32), matching the pin in
  * `tests/ward-referral-model.test.ts`, so the two files can be read against each other.
  */
 // RF-011 appended 2026-09-03. It joined the seed as the one multi-destination referral, so
@@ -399,20 +399,15 @@ const ACCEPTING_UNITS = 13;
 // than a rendering fault. The order matches the pin in tests/ward-referral-model.test.ts,
 // which the doc comment above says these two files should be readable against.
 //
-// RF-014 and RF-015 appended here 2026-09-11, six hours after they joined the seed (2026-09-07)
-// as the two invented EXPECTS rows (`ward-movements.ts`, "TWO EXPECTS — INVENTED"). Both are
-// addressed to an emergency department, state "queued", urgency 3 (the lowest tier, following
-// RF-011's precedent so an unrelated tier's order does not move) — which is exactly why they sort
-// last, and why RF-015 (raised 4,500 minutes ago) precedes RF-014 (raised 150 minutes ago): longest
-// wait first within a tier. This is not re-derived from `referrals` with `referralQueueOrder`
-// itself, for the same reason `SEEDED_DECIDED_STRUCTURAL` above stays a literal rather than a call
-// to `recentlyDecidedReferrals` — that would make the fixture-assumption assertion below true by
-// construction against the very function it exists to check. The order is instead copied from the
-// independent pin in `tests/ward-referral-model.test.ts` ("orders the real fixture's queued
-// referrals by urgency, then by longest wait"), which this file's own doc comment above says these
-// two files should be readable against — so a future divergence between the two pins is a
-// discrepancy somebody can find by reading, not a silent one.
-const SEEDED_QUEUED_IDS = new Set(["RF-RD06", "RF-001", "RF-009", "RF-005", "RF-015", "RF-014", "RF-011"]);
+// RF-014 and RF-015 appended here 2026-09-11 as the two invented EXPECTS rows. Since Decision
+// D-32 (6 October 2026) the queue runs longest wait first, so RF-015 (raised 4,500 minutes ago)
+// leads and RF-005 (20 minutes) is last. This is not re-derived from `referrals` with
+// `referralQueueOrder` itself, for the same reason `SEEDED_DECIDED_STRUCTURAL` above stays a
+// literal — that would make the fixture-assumption assertion below true by construction against
+// the very function it exists to check. The order is copied from the independent pin in
+// `tests/ward-referral-model.test.ts` ("orders the real fixture's queued referrals by waiting
+// time, longest first"), so a divergence between the two pins can be found by reading.
+const SEEDED_QUEUED_IDS = new Set(["RF-015", "RF-014", "RF-RD06", "RF-011", "RF-001", "RF-009", "RF-005"]);
 if (SEEDED_QUEUED_IDS.size !== SEEDED_QUEUED) {
   throw new Error(
     `SEEDED_QUEUED is ${SEEDED_QUEUED} and SEEDED_QUEUED_IDS now holds ${SEEDED_QUEUED_IDS.size} ids. Update ` +
@@ -589,10 +584,10 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       recentlyDecidedReferrals(BOARD_SEED_REFERRALS),
       "fixture assumption: the board shows min(decided, the display cap), NOT every decided referral",
     ).toHaveLength(SEEDED_DECIDED_SHOWN);
-    // The referral this journey raises leads the queue on urgency alone, and the assertion that it
-    // does (further down) is only meaningful while nothing seeded is as urgent. Checked here so a
-    // seed that gained a tier-1 referral fails by name, rather than as an unexplained ordering
-    // failure two hundred lines later.
+    // The referral this journey raises is newer than every seeded one, so under Decision D-32 it
+    // joins the back of the queue. The assertion that it does (further down) only proves urgency
+    // does not jump the queue while nothing seeded is as urgent — an urgency-first sort would then
+    // put it at the front. Checked here so a seed that gained a tier-1 referral fails by name.
     // Written as "which ones break the rule", not "do all of them hold it": `.every()` on an empty
     // array is `true`, and this list being non-empty is already pinned by the assertion above.
     expect(
@@ -700,21 +695,18 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     expect(raisedIds, "exactly one new referral must appear on the board").toHaveLength(1);
     const referralId = raisedIds[0];
 
-    // The queue ranks by urgency tier first (`referralQueueOrder`), and this referral was raised
-    // at a more urgent tier than every seeded queued referral — so it leads the queue. That
-    // relation is not asserted here in prose: the fixture-assumption block above checks it against
-    // the real seed, so a fixture whose queue gained a tier-1 referral fails there by name rather
-    // than here as a confusing off-by-one in the ordering.
+    // Decision D-32: the queue runs longest wait first (`referralQueueOrder`). This referral was
+    // raised last, so it joins the back of the queue even though it is more urgent than every
+    // seeded queued referral (checked by name in the fixture-assumption block above).
     //
-    // Ordering, not merely membership: a board that appended it at the bottom would still
-    // "contain" it.
-    expect(queuedAfter[0], "the most urgent referral leads the queue").toBe(referralId);
+    // Ordering, not merely membership: a board that put it at the top would still "contain" it.
+    expect(queuedAfter.at(-1), "the newest referral joins the back of the queue, whatever its tier").toBe(referralId);
 
     const raisedCard = page.getByTestId(`ward-referral-board-card-select-${referralId}`);
     await expect(raisedCard).toContainText("Tier 1");
     await expect(raisedCard).toContainText(`${RAISED.ageBand} · ${RAISED.sex} · ${RAISED.homeRegion}`);
-    // Length of wait is rendered on the card in its own right (D11) — the queue ranks by urgency,
-    // but the wait is what carries the moral weight, so it is never left implicit.
+    // Length of wait is rendered on the card in its own right (D11), so the order the queue runs in
+    // is never left implicit.
     await expect(page.getByTestId(`ward-referral-board-card-wait-${referralId}`)).toContainText("waiting");
 
     // --- Step 4: match it against the network. ---
