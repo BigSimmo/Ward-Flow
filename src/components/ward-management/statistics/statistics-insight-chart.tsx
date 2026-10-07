@@ -60,7 +60,10 @@ export function StatisticsInsightChart({
   const [group, setGroup] = useState(defaultGroup);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<"chart" | "table">("chart");
-  const metric = metrics.find((item) => item.id === metricId) ?? metrics[0];
+  const availableMetrics = metrics.filter((item) =>
+    rows.some((row) => typeof row.values[item.id] === "number" && Number.isFinite(row.values[item.id])),
+  );
+  const metric = availableMetrics.find((item) => item.id === metricId) ?? availableMetrics[0];
   if (!metric) return null;
   const valueOf = (row: InsightRow) => row.values[metric.id] ?? null;
   const visible = rows.filter(
@@ -166,6 +169,7 @@ export function StatisticsInsightChart({
       <header className={styles.header}>
         <div>
           <h2 id={headingId}>{title}</h2>
+          {metric?.note ? <p className={styles.note}>{metric.note}</p> : null}
         </div>
         <div className={styles.actions}>
           <span className={styles.count} aria-live="polite" aria-atomic="true">
@@ -202,7 +206,7 @@ export function StatisticsInsightChart({
           )}
         </div>
       </header>
-      {(metrics.length > 1 || groups || rows.length > 6 || variant !== "distribution") && (
+      {(availableMetrics.length > 1 || groups || rows.length > 6 || variant !== "distribution") && (
         <div className={styles.toolbar}>
           {metrics.length > 1 && (
             <label>
@@ -215,7 +219,7 @@ export function StatisticsInsightChart({
                   setSelectedId(null);
                 }}
               >
-                {metrics.map((item) => (
+                {availableMetrics.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
@@ -274,7 +278,6 @@ export function StatisticsInsightChart({
           )}
         </div>
       )}
-      <p className={styles.note}>{metric.note}</p>
       <div className={styles.workspace}>
         {view === "chart" ? (
           <div
@@ -376,7 +379,7 @@ export function StatisticsInsightChart({
             )}
           </div>
         ) : (
-          <div className={styles.dataView}>
+          <div className={styles.dataView} tabIndex={0} role="region" aria-label={title + " data"}>
             <table>
               <caption className={styles.srOnly}>
                 {title}: {metric.label} ({metric.unit})

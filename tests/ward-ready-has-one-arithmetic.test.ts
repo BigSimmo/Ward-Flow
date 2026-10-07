@@ -215,7 +215,7 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
       // the one line moved into a small `readyBedsNow(unit)` helper above `eligibility()`, and both
       // `eligibility()` and `referralEligibility()` call it. Still exactly one executable copy in the
       // file (plus its one prose mention); a second inline copy is what this guard refused.
-      "src/components/ward-management/ward-eligibility.ts:160",
+      "src/components/ward-management/ward-eligibility.ts:164",
     ]);
   });
 });

@@ -116,7 +116,7 @@ async function ensureToolsOpen(page: Page) {
   await page
     .getByRole("dialog", { name: "Tools" })
     .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Demo", exact: true })
+    .getByRole("button", { name: "Shift desk", exact: true })
     .click();
 }
 
@@ -171,8 +171,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await goViaRail(page, "/mockups/ward-flow/referrals/new", "ward-referral-intake-screen");
     await expectNoReloadSince(page, "community team -> new referral");
 
-    await page.getByTestId("ward-referral-intake-ageBand").selectOption("Adult");
-    await page.getByTestId("ward-referral-intake-sex").selectOption("Female");
+    // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
+    await page
+      .getByTestId("ward-referral-intake-ageBand")
+      .locator("label")
+      .filter({ has: page.getByRole("radio", { name: "Adult", exact: true }) })
+      .click();
+    await page
+      .getByTestId("ward-referral-intake-sex")
+      .locator("label")
+      .filter({ has: page.getByRole("radio", { name: "Female", exact: true }) })
+      .click();
     // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate required
     // question from Sex above it, added to REQUIRED_FIELDS after this spec was first written.
     await page.getByTestId("ward-referral-intake-gender").selectOption("Female");
@@ -308,6 +317,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
       `could not read the ward's own Occupied figure before admission (got "${occupiedBeforeText}")`,
     ).toBe(false);
 
+    await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
     const acceptButton = wardScreen.getByTestId(`ward-accept-${movementId}`);
     await expect(acceptButton).toBeVisible();
     await expect(acceptButton).not.toHaveAttribute("aria-disabled", "true");
@@ -420,18 +430,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // stay it belongs to, and this form has no patient picker yet, so planning a discharge here is
     // refused with a plain message and records nothing. When the picker lands, restore: choose the
     // patient, submit, and exactly one new bed-release row appears.
-    const releaseRows = wardScreenAfterArrival.locator('li[data-testid^="ward-bed-release-"]');
+    const releaseRows = wardScreenAfterArrival.locator('[data-testid^="ward-today-release-"]');
     const releaseCountBefore = await releaseRows.count();
 
     const decisionsTab = page.getByRole("tab", { name: "Decisions (Ward record)" });
     await decisionsTab.click();
     await expect(decisionsTab).toHaveAttribute("aria-selected", "true");
-    await wardScreenAfterArrival.locator("#ward-bed-release-waiting-on").selectOption("Nothing outstanding");
-    await wardScreenAfterArrival.locator("#ward-bed-release-expected-at").fill("16:30");
-    await wardScreenAfterArrival.getByTestId("ward-flag-bed-release-submit").click();
-
-    await expect(page.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toBeVisible();
-    await expect(releaseRows, "a refused plan records no bed release").toHaveCount(releaseCountBefore);
+    await expect(wardScreenAfterArrival.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
+    await expect(wardScreenAfterArrival.locator("#ward-bed-release-waiting-on")).toHaveCount(0);
+    await expect(wardScreenAfterArrival.getByTestId("ward-flag-bed-release-submit")).toHaveCount(0);
+    await expect(page.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toHaveCount(0);
+    await expect(releaseRows, "opening Decisions records no bed release").toHaveCount(releaseCountBefore);
     await expectNoReloadSince(page, "planning the discharge");
   });
 });

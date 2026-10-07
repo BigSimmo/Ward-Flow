@@ -15,7 +15,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { refusalFor } from "@/components/ward-management/search/search-refusals";
+import {
+  searchGroupOrder,
+  searchIntentLabel,
+  searchWardFlow,
+} from "@/components/ward-management/search/ward-smart-search";
 
 import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -248,8 +253,10 @@ export function WardGlobalSearch({
     [trimmed, patients, movements, units],
   );
 
+  const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
+
   const groups = useMemo(() => {
-    if (!smartResults) return [];
+    if (!smartResults || refusal) return [];
     const g: SearchResultGroup[] = [];
 
     if (smartResults.people.length > 0) {
@@ -308,7 +315,7 @@ export function WardGlobalSearch({
     if (smartResults.emergencyDepartments.length > 0) {
       g.push({
         key: "eds",
-        heading: "Emergency Departments",
+        heading: "ED",
         items: smartResults.emergencyDepartments.map((e) => ({
           kind: "ed",
           kindLabel: "ED",
@@ -323,7 +330,7 @@ export function WardGlobalSearch({
     if (smartResults.communityTeams.length > 0) {
       g.push({
         key: "teams",
-        heading: "Community Teams",
+        heading: "Community",
         items: smartResults.communityTeams.map((c) => ({
           kind: "community",
           kindLabel: "Community",
@@ -338,7 +345,7 @@ export function WardGlobalSearch({
     if (smartResults.legalForms.length > 0) {
       g.push({
         key: "forms",
-        heading: "Legal Forms",
+        heading: "Legal",
         items: smartResults.legalForms.map((f) => ({
           kind: "form",
           kindLabel: "Legal Form",
@@ -353,7 +360,7 @@ export function WardGlobalSearch({
     if (smartResults.views.length > 0) {
       g.push({
         key: "views",
-        heading: "Core Views",
+        heading: "Screens",
         items: smartResults.views.map((v) => ({
           kind: "view",
           kindLabel: "View",
@@ -368,7 +375,7 @@ export function WardGlobalSearch({
     if (smartResults.tasks.length > 0) {
       g.push({
         key: "tasks",
-        heading: "Action Tasks",
+        heading: "Tasks",
         items: smartResults.tasks.map((t) => ({
           kind: "task",
           kindLabel: "Task",
@@ -380,8 +387,11 @@ export function WardGlobalSearch({
       });
     }
 
+    const order = searchGroupOrder(smartResults.intent, trimmed);
+    const position = new Map<string, number>(order.map((key, index) => [key, index]));
+    g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
     return g;
-  }, [smartResults, units, patients, movements]);
+  }, [smartResults, refusal, trimmed, units, patients, movements]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
@@ -578,16 +588,27 @@ export function WardGlobalSearch({
       {/* Announced for a screen-reader user, the same reason `PatientTypeahead` announces its own
           count: the list changes under someone who cannot see it change. */}
       <p className="sr-only" role="status" aria-live="polite">
-        {trimmed.length === 0
-          ? ""
-          : options.length === 0
-            ? "No matches."
-            : `${options.length} invented ${options.length === 1 ? "result" : "results"} found.`}
+        {refusal
+          ? refusal.sentence
+          : trimmed.length === 0
+            ? ""
+            : options.length === 0
+              ? "No matches."
+              : `${options.length} invented ${options.length === 1 ? "result" : "results"} found.`}
       </p>
 
       {showPopup ? (
         <div className={styles.popup} data-testid="ward-global-search-popup">
-          {options.length === 0 ? (
+          {refusal ? null : (
+            <p className={styles.intent} data-testid="ward-global-search-intent">
+              {smartResults ? searchIntentLabel(smartResults.intent, trimmed) : ""}
+            </p>
+          )}
+          {refusal ? (
+            <p className={styles.refusal} data-testid="ward-global-search-refusal">
+              {refusal.sentence}
+            </p>
+          ) : options.length === 0 ? (
             <div className={styles.empty} data-testid="ward-global-search-empty">
               <Search className={styles.emptyIcon} aria-hidden="true" />
               <span className={styles.emptyTitle}>No matches found</span>
@@ -601,7 +622,7 @@ export function WardGlobalSearch({
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   <li role="presentation" className={styles.groupItem}>
-                    <span className={styles.group}>
+                    <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                       <span>{group.heading}</span>
                       <span className={styles.groupCount}>{group.items.length}</span>
                     </span>
@@ -663,25 +684,6 @@ export function WardGlobalSearch({
             </ul>
           )}
 
-          {/*
-           * STANDARD §8.6'S FIXED RESULTS FOOTER, VERBATIM, BOTH HALVES — this is the surface
-           * §8.6 governs, so it takes the whole sentence: "Names are invented. Search never
-           * returns a risk score, an acuity score or a best match." Shown every time the popup is
-           * shown, matched or empty — the empty state is exactly where the "nobody matches" claim
-           * most needs a marker beside it, not less.
-           *
-           * §8.3's page-level markers (the bar's prototype tooltip, the rail foot) are both VISUAL
-           * and both OUTSIDE this popup, so neither stands in for a marker inside it — that gap is
-           * the reason this footer exists rather than a reason to skip it (BRIEF-AV-search-marker.md).
-           */}
-          {/*
-           * ⚠️ THE TWO `<span>`S SIT ON ONE JSX LINE, SEPARATED BY A LITERAL SPACE, NOT TWO. JSX
-           * strips a run of whitespace between elements when it contains a newline, so writing
-           * these on separate lines (as the flex layout alone would suggest) renders the two
-           * halves with NO space between them — "invented.Search" — which is not the verbatim
-           * sentence §8.6 requires. Kept on one line so the source itself carries the fix rather
-           * than relying on a reader to remember it.
-           */}
           <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
             <div className={styles.footerHints} aria-hidden="true">
               <span className={styles.hintItem}>
@@ -698,10 +700,6 @@ export function WardGlobalSearch({
                 <span className={styles.hintLabel}>Dismiss</span>
               </span>
             </div>
-            <p className={styles.footerDisclaimer}>
-              <span>Names are invented.</span>{" "}
-              <span>Search never returns a risk score, an acuity score or a best match.</span>
-            </p>
           </div>
         </div>
       ) : null}

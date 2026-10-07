@@ -390,7 +390,7 @@ export function FlowDiagram({
         data-testid="ward-diagram-scroll"
         data-overflowing={diagramOverflowing ? "true" : undefined}
         role="region"
-        aria-label="Statewide flow diagram"
+        aria-label="State Bedflow diagram"
         aria-describedby={diagramOverflowing ? "ward-diagram-scroll-instructions" : undefined}
         tabIndex={0}
       >
@@ -505,7 +505,7 @@ export function FlowDiagram({
 
             <div className={`${styles.diagramHub} ${flowStyles.hub}`} ref={hubRef}>
               <Network aria-hidden="true" />
-              <strong>Statewide flow hub</strong>
+              <strong>Route</strong>
               <span>{hubStatusText(movement, shortlist, units, now, hubWho)}</span>
             </div>
 
@@ -578,21 +578,21 @@ export function FlowDiagram({
         <LegendItem state="closed" label={BED_STATE_LABELS.closed} />
         <LegendItem state="occupied" label="Occupied" />
         <details className={`${flowStyles.advancedKey} source-print`} data-flow-key>
-          <summary>More key</summary>
+          <summary>Key</summary>
           <div className={flowStyles.advancedKeyItems}>
             <LegendItem state="confirmed" label="Confirmed today" />
             <LegendItem state="expected" label="Expected today" />
             <span>
               <i data-line="eligible" />
-              Eligible route
+              Fits
             </span>
             <span>
               <i data-line="ineligible" />
-              Route needing review
+              Needs a look
             </span>
             <span>
               <i data-line="recorded" />
-              Recorded destination
+              Recorded
             </span>
           </div>
         </details>

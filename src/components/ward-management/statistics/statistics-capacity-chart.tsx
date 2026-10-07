@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { unitCapacity } from "../ward-derivations";
 import { bedsPendingPreparation } from "../ward-bed-availability";
-import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "../ward-bed-states";
+import { BED_STATE_LABELS, bedStates } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, LeaveBed, Unit } from "../ward-model";
@@ -424,10 +424,7 @@ export function StatisticsCapacityChart({
                 <dd>{selected.beds}</dd>
               </div>
             </dl>
-            <p className={styles.definition}>
-              Pulled: {BED_STATE_DETAILS.pulled.toLowerCase()}. Closed: {BED_STATE_DETAILS.closed.toLowerCase()}. On
-              leave is already counted in Occupied.
-            </p>
+
             <div className={styles.wardList}>
               {selected.units.map((unit) => {
                 const capacity = unitCapacity(unit, bedReleases);

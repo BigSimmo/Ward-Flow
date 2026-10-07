@@ -31,7 +31,7 @@ const auditMovement: Movement = {
     ageBand: "adult",
   },
 };
-const inspectButtonName = `Inspect dossier for ${resolveSubjectPatient(auditMovement, context).formalName}`;
+const inspectButtonName = `Open dossier for ${resolveSubjectPatient(auditMovement, context).formalName}`;
 
 beforeEach(() => {
   context.dispatch.mockClear();
@@ -50,8 +50,8 @@ describe("Legal Forms current paper facts", () => {
   it("records an entered written time without calculating or gating on a statutory expiry", () => {
     render(<LegalFormsScreen />);
     fireEvent.click(screen.getByRole("button", { name: inspectButtonName }));
-    fireEvent.change(screen.getByLabelText("Date the form was written"), { target: { value: "2026-09-23" } });
-    fireEvent.change(screen.getByLabelText("Time the form was written"), { target: { value: "09:30" } });
+    fireEvent.change(screen.getByLabelText("Date written"), { target: { value: "2026-09-23" } });
+    fireEvent.change(screen.getByLabelText("Time"), { target: { value: "09:30" } });
     expect(screen.getByTestId("ward-legal-forms-clock-preview-WF-AUDIT-LEGAL")).toHaveTextContent(
       "No expiry is calculated.",
     );

@@ -88,10 +88,10 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  * legitimately taller control never reddens this file.
  *
  * FIXTURE: `/mockups/ward-flow/delays` is the exact route the original audit measured faults 1-3
- * against. The query "a" matches all eight seeded patients in fixture order (verified against
- * `ward-patients-seed.ts`, and the same fact `ui-ward-search.spec.ts` already documents) plus
- * every open movement whose id or metadata contains the letter. The first is always
- * `ward-global-search-result-person-PT-001` (Talia Halloway), which is what the click test uses.
+ * against. The click test searches "Halloway", the family name on PT-001 (Talia Halloway,
+ * `ward-patients-seed.ts`). A single letter "a" now ranks word-start names ahead of a buried
+ * match and keeps six people, so Talia is no longer in that short list. The family name still
+ * renders `ward-global-search-result-person-PT-001` and is what the click follows.
  *
  * Selectors are `data-testid` hooks (this codebase's own established convention — see every
  * `ui-ward-*.spec.ts`) or ARIA role/name, never a CSS Module class name, because those are hashed.
@@ -295,34 +295,20 @@ test.describe("@mockup Ward shell bar", () => {
           ).toHaveCount(0);
         }
 
-        // Keep the approved compact neutral status distinct from a published verdict.
-        // Movements publishes actual checks, so its result must still appear once.
-        const reconciliation = page.getByTestId("ward-reconciliation-line");
-        if (route === PUBLISHED_CHECKS_ROUTE) {
-          await expect(reconciliation, "the published reconciliation verdict must appear once").toHaveCount(1);
-          await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
-          await expect(reconciliation).toHaveAttribute("data-tone", "good");
-          if (width === 800) {
-            await page.getByRole("button", { name: "Menu", exact: true }).focus();
-            await page.keyboard.press("Enter");
-            await expect(reconciliation).toHaveCount(1);
-            await expect(reconciliation).toBeVisible();
-            await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
-            await expect(reconciliation).toHaveAttribute("data-tone", "good");
-            await page.keyboard.press("Escape");
-            await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
-          }
-        } else {
-          await expect(reconciliation, "the unpublished status must appear once").toHaveCount(1);
-          await expect(reconciliation).toHaveText("Reconciliation not published");
-          await expect(reconciliation).toHaveAttribute("data-tone", "neutral");
-        }
+        // v6 rail (header and sidebar boards 02, 03 and 03b, 7 October 2026): the rail no longer
+        // carries a reconciliation line on any route, published or not. Published checks surface
+        // in the Activity drawer (`tests/ward-checks-publication.dom.test.tsx`).
+        await expect(
+          page.getByTestId("ward-reconciliation-line"),
+          `the rail must carry no reconciliation line on ${route} at ${width}px`,
+        ).toHaveCount(0);
         await expect(page.getByText("No reconciliation is available for this page yet.", { exact: true })).toHaveCount(
           0,
         );
       }
 
-      // Compact layouts keep shift context in Menu; measure the status where users read it.
+      // Compact layouts keep shift context in Menu; check it where users read it. The v6 Menu sheet
+      // carries board time and handover and no reconciliation line.
       // Tablet coverage uses keyboard activation: its existing Menu pointer target sits outside the viewport.
       await gotoWardChrome(page, DELAYS_ROUTE);
       const menu = page.getByRole("button", { name: "Menu", exact: true });
@@ -330,37 +316,14 @@ test.describe("@mockup Ward shell bar", () => {
         await menu.focus();
         await page.keyboard.press("Enter");
       } else if (width === 375) await menu.click();
-      await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
-      const visibleStatus = page.getByTestId("ward-reconciliation-line").filter({ visible: true });
-      await expect(visibleStatus).toHaveCount(1);
-      await expect(visibleStatus).toHaveText("Reconciliation not published");
-      const fits = await visibleStatus.evaluate((line) => {
-        const text = line.querySelector("span:last-child");
-        if (!text) return false;
-        const range = document.createRange();
-        range.selectNodeContents(text);
-        const bounds = line.getBoundingClientRect();
-        const rects = Array.from(range.getClientRects());
-        return (
-          rects.length > 0 &&
-          rects.every(
-            (rect) =>
-              rect.width > 1 &&
-              rect.left >= bounds.left - 1 &&
-              rect.right <= bounds.right + 1 &&
-              rect.left >= 0 &&
-              rect.right <= window.innerWidth &&
-              line.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)),
-          )
-        );
-      });
-      expect(fits, "the reconciliation sentence must wrap within its line and remain unobscured").toBe(true);
+      await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
       if (width <= 1000) {
+        const sheet = page.getByTestId("ward-rail-more-pages");
+        await expect(sheet.getByText("Board time", { exact: true })).toBeVisible();
         await page.keyboard.press("Escape");
         await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
         await expect(menu).toBeFocused();
-        await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(1);
-        await expect(visibleStatus).toHaveCount(width === 800 ? 1 : 0);
+        await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
       }
     });
   }
@@ -383,7 +346,7 @@ test.describe("@mockup Ward shell bar", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoWardChrome(page);
 
-    await searchInput(page).fill("a");
+    await searchInput(page).fill("Halloway");
     await expect(searchPopup(page)).toBeVisible();
 
     const firstResult = page.getByTestId("ward-global-search-result-person-PT-001");
@@ -662,7 +625,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   const lastCard = tasks.locator("li").last();
   await expect(lastCard).toBeInViewport();
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
-  await lastCard.getByRole("button", { name: "Open movement" }).click();
+  await lastCard.getByRole("button", { name: "Open patient" }).click();
   await expect(page).toHaveURL(/\/movements\/WF-/u);
   await expect(tasks).toHaveCount(0);
 });
@@ -675,17 +638,17 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const tools = page.getByRole("dialog", { name: "Tools", exact: true });
   const toolsBox = await tools.boundingBox();
   expect(toolsBox?.height).toBeGreaterThanOrEqual(566);
-  await tools.getByRole("button", { name: /Raise a referral/u }).click();
+  await tools.getByRole("button", { name: /New referral/u }).click();
   const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
-  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
+  await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Placement", exact: true }).click();
-  await expect(referral.locator("#refTransportSelect")).toBeVisible();
-  await sections.getByRole("button", { name: "Clinical", exact: true }).click();
+  await sections.getByRole("button", { name: "Locations", exact: true }).click();
+  await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Placement", exact: true }).click();
+  await sections.getByRole("button", { name: "Locations", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(referral.getByRole("searchbox", { name: "Search sample patients" })).toBeFocused();

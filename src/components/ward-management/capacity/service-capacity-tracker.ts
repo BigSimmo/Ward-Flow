@@ -288,7 +288,7 @@ export function evaluateCompoundEscalation(
     return {
       level: "black",
       protocolTier: "Level 4 (Black Gridlock)",
-      title: `${service} Full Capacity Protocol Level 4`,
+      title: `${service}: no beds`,
       description: `Critical access block: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} waiting in ED (${edSummary.totalPastAccessTarget} past target). Immediate executive bed diversion protocol active.`,
       actionRequired: true,
     };
@@ -319,7 +319,7 @@ export function evaluateCompoundEscalation(
   return {
     level: "green",
     protocolTier: "Level 1 (Standard)",
-    title: `${service} Standard Operations`,
+    title: `${service}: usual`,
     description: `Bed flow stable: ${remainingBeds} free beds (${remainingPercent}% capacity), ED flow manageable.`,
     actionRequired: false,
   };

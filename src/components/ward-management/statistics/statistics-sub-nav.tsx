@@ -41,7 +41,7 @@ export function StatisticsSubNav({
   }> = [
     {
       id: "overview",
-      label: "Executive Overview",
+      label: "Overview",
       href: "/mockups/ward-flow/statistics/overview",
       icon: (
         <svg
@@ -62,7 +62,7 @@ export function StatisticsSubNav({
     },
     {
       id: "wards",
-      label: "Ward & Bed Flow",
+      label: "Wards",
       badge: counts.wards,
       href: "/mockups/ward-flow/statistics/compare",
       icon: (
@@ -81,7 +81,7 @@ export function StatisticsSubNav({
     },
     {
       id: "emergency",
-      label: "Emergency Pressure",
+      label: "ED",
       badge: counts.emergency,
       href: "/mockups/ward-flow/statistics/compare",
       icon: (
@@ -100,7 +100,7 @@ export function StatisticsSubNav({
     },
     {
       id: "community",
-      label: "Community Teams",
+      label: "Community",
       badge: counts.community,
       href: "/mockups/ward-flow/community",
       icon: (
@@ -119,7 +119,7 @@ export function StatisticsSubNav({
     },
     {
       id: "referrals",
-      label: "Referrals & Placement",
+      label: "Referrals",
       badge: counts.referrals,
       href: "/mockups/ward-flow/referrals",
       icon: (

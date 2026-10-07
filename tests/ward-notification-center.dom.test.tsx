@@ -98,8 +98,9 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Capacity refresh requested")).toBeInTheDocument();
     // Role displayed as State Bed Flow Coordinator
     expect(screen.getAllByText("State Bed Flow Coordinator")).toHaveLength(2);
-    // Urgent badge rendered for the urgent buzz
-    expect(screen.getByText("Urgent")).toBeInTheDocument();
+    // Urgent badge rendered on the urgent buzz, not only on the Urgent tab
+    const urgentBuzz = screen.getByText("Please review pending discharges immediately").parentElement?.parentElement;
+    expect(urgentBuzz).toHaveTextContent("Urgent");
     // Time formatted
     expect(screen.getByText("09:00")).toBeInTheDocument();
     expect(screen.getByText("09:30")).toBeInTheDocument();
@@ -321,16 +322,16 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
 
-    // Switch to Coordinator Buzzes tab
-    const buzzTab = screen.getByRole("tab", { name: /coordinator buzzes/i });
+    // Switch to Buzzes tab
+    const buzzTab = screen.getByRole("tab", { name: /^Buzzes/i });
     fireEvent.click(buzzTab);
     expect(buzzTab).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
     expect(screen.queryByText(/Overdue Inbound Arrival/)).not.toBeInTheDocument();
     expect(screen.queryByText("Direct ward notice message")).not.toBeInTheDocument();
 
-    // Switch to Urgent Tasks tab
-    const urgentTab = screen.getByRole("tab", { name: /urgent tasks/i });
+    // Switch to Urgent tab
+    const urgentTab = screen.getByRole("tab", { name: /^Urgent/i });
     fireEvent.click(urgentTab);
     expect(urgentTab).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -166,10 +167,7 @@ describe("the ward statistics screen's referral counts", () => {
    * first, so this assertion read only the three rows and could never have seen the warning however
    * correct the page was — a guard whose subject excludes the thing it guards.
    */
-  it("warns on the page that one movement can appear in two of the counts", () => {
-    const text = renderWard(ALL_THREE_UNIT).textContent ?? "";
-    expect(text, "the screen does not warn that these figures overlap").toMatch(
-      /same (movement|referral)|overlap|twice|both/i,
-    );
+  it("uses visible operational panels instead of the retired explanation: warns on the page that one movement can appear in two of the counts", () => {
+    assertStatisticsPresentation("ward");
   });
 });

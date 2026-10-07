@@ -1,5 +1,7 @@
 "use client";
 
+import { ReferralIntakeSummary } from "./referral-intake-summary";
+
 import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -17,7 +19,7 @@ import { formatInstant, formatInstantWithDay, type Instant } from "@/components/
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { wardAddressing, type EligibilityGate } from "@/components/ward-management/ward-eligibility";
+import { wardAddressing, wardAddressings, type EligibilityGate } from "@/components/ward-management/ward-eligibility";
 import {
   COMMUNITY_DECLINE_REASONS,
   ED_DECLINE_REASONS,
@@ -452,7 +454,15 @@ export function ReferralMatchView({
    * identically and mean opposite things: an empty list here reads as "the network has no bed for
    * this person", which for a community referral is not a shortage, it is a category error.
    */
-  const ward = wardAddressing(referral);
+  const [reviewUnitId, setReviewUnitId] = useState("");
+  const wardArms = wardAddressings(referral);
+  const selectedWard = wardArms.find(
+    (arm) => arm.destination.kind === "psychiatric_ward" && arm.destination.unitId === reviewUnitId,
+  );
+  const ward =
+    selectedWard?.destination.kind === "psychiatric_ward"
+      ? (selectedWard as import("../ward-model").WardAddressing)
+      : wardAddressing(referral);
   /**
    * Owner answer 25, 2026-09-17: *"GP referrals: the GP is told by phone or letter for now; add
    * 'GP' as a referral source."* `referralReferrer` (`ward-flow-reducer.ts`) resolves no addressee
@@ -900,6 +910,7 @@ export function ReferralMatchView({
       now,
       referralId: referral.id,
       destinationKind,
+      unitId: destinationKind === "psychiatric_ward" ? ward?.destination.unitId : undefined,
       reason: declineReason,
     });
     setCheckToken((token) => token + 1);
@@ -1006,6 +1017,27 @@ export function ReferralMatchView({
     const communityArmLive = communityAddressing?.state === "queued" && communityAddressing.withdrawnAt === undefined;
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
+        <ReferralIntakeSummary intake={referral.intake} />
+        {wardArms.length > 1 && (
+          <label className={styles.fieldLabel}>
+            Review recipient ward
+            <select
+              className={styles.select}
+              value={ward?.destination.unitId ?? ""}
+              onChange={(event) => setReviewUnitId(event.target.value)}
+            >
+              {wardArms.map(
+                (arm) =>
+                  arm.destination.kind === "psychiatric_ward" && (
+                    <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                      {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                      {arm.state}
+                    </option>
+                  ),
+              )}
+            </select>
+          </label>
+        )}
         {/*
          * ⚠️ **THE HEADING CARRIES NO STATE WORD, AND THAT IS DELIBERATE.** It used to render
          * `{referral.id} — {ward.state}`, which put the RAW UNION MEMBER on screen, lowercase and
@@ -1105,6 +1137,27 @@ export function ReferralMatchView({
 
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
+      <ReferralIntakeSummary intake={referral.intake} />
+      {wardArms.length > 1 && (
+        <label className={styles.fieldLabel}>
+          Review recipient ward
+          <select
+            className={styles.select}
+            value={ward?.destination.unitId ?? ""}
+            onChange={(event) => setReviewUnitId(event.target.value)}
+          >
+            {wardArms.map(
+              (arm) =>
+                arm.destination.kind === "psychiatric_ward" && (
+                  <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                    {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                    {arm.state}
+                  </option>
+                ),
+            )}
+          </select>
+        </label>
+      )}
       {!hideDossierHeader ? (
         <div className={styles.matchDossierHeader}>
           <div className={styles.matchDossierTop}>
@@ -1195,15 +1248,16 @@ export function ReferralMatchView({
             </div>
             <div className={styles.triagePillGroup}>
               <span className={`${styles.triageMiniPill} ${accepting.length > 0 ? styles.pillGood : styles.pillMuted}`}>
-                ● {tier1Candidates.length} Immediate Vacancies
+                <span className={styles.triageGlyph}>●</span> {tier1Candidates.length} immediate{" "}
+                {tier1Candidates.length === 1 ? "vacancy" : "vacancies"}
               </span>
               <span
                 className={`${styles.triageMiniPill} ${tier2Candidates.length > 0 ? styles.pillWarn : styles.pillMuted}`}
               >
-                ▲ {tier2Candidates.length} Blocked (No Bed)
+                <span className={styles.triageGlyph}>▲</span> {tier2Candidates.length} blocked, no bed
               </span>
               <span className={`${styles.triageMiniPill} ${styles.pillMuted}`}>
-                ✕ {tier3Candidates.length} Excluded
+                <span className={styles.triageGlyph}>✕</span> {tier3Candidates.length} excluded
               </span>
             </div>
           </div>
@@ -1272,7 +1326,7 @@ export function ReferralMatchView({
                 ▶
               </span>
               <div className={styles.tierTitleGroup}>
-                <span className={styles.tierTitleText}>Available Beds</span>
+                <span className={styles.tierTitleText}>Available beds</span>
                 <span className="sr-only">TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
                 <span className={styles.tierSubtitle}>Immediate confirmed vacancies</span>
               </div>
@@ -1309,7 +1363,6 @@ export function ReferralMatchView({
                   const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
                   const occPct =
                     c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
-                  const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
 
                   return (
                     <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
@@ -1317,36 +1370,29 @@ export function ReferralMatchView({
                         <div>
                           <div className={styles.unitName}>
                             <span>{c.unit.name}</span>
-                            <span
-                              className={styles.bandAvailableBadge}
-                              style={{ fontSize: "11px", padding: "1px 6px" }}
-                            >
-                              {bedLabel}
-                            </span>
+                            <span className={`${styles.unitStateBadge} ${styles.unitStateReady}`}>{bedLabel}</span>
                           </div>
                           <div className={styles.unitSub}>
-                            {hospitalName} · {c.unit.cohort} · Contact: Not recorded
+                            {hospitalName} · {c.unit.cohort} · Contact not recorded
                           </div>
                         </div>
                         <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
-                          ✓ Accept Bed at {shortName}
+                          Accept at {c.unit.name}
                         </button>
                       </div>
 
                       <div className={styles.unitIntelRow}>
                         <span>
-                          Bed Allocation: <strong>Allocatable bed recorded</strong>
+                          <strong>Allocatable bed recorded</strong>
                         </span>
                         <span className={styles.demoDot}>·</span>
-                        <span>
-                          Transit: <strong>Not recorded</strong>
-                        </span>
+                        <span>Transit not recorded</span>
                         <span className={styles.demoDot}>·</span>
                         <span>
-                          Census:{" "}
                           <strong>
-                            {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
-                          </strong>
+                            {c.unit.beds - c.unit.empty.value} of {c.unit.beds}
+                          </strong>{" "}
+                          beds occupied ({occPct}%)
                         </span>
                       </div>
 
@@ -1359,10 +1405,10 @@ export function ReferralMatchView({
                           aria-controls={`gate-grid-${gateKey}`}
                         >
                           <span>
-                            ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                            ✓ {passedGates.length} of {totalGates} criteria met
                           </span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                            {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                          <span className={styles.gateToggleHint}>
+                            {isGatesExpanded ? "Hide criteria" : "Show criteria"}
                           </span>
                         </button>
                         {isGatesExpanded ? (
@@ -1400,7 +1446,7 @@ export function ReferralMatchView({
                 ▶
               </span>
               <div className={styles.tierTitleGroup}>
-                <span className={styles.tierTitleText}>Capacity Pending</span>
+                <span className={styles.tierTitleText}>Capacity pending</span>
                 <span className="sr-only">TIER 2: CAPACITY CHECKS OUTSTANDING</span>
                 <span className={styles.tierSubtitle}>Outstanding capacity checks</span>
               </div>
@@ -1435,16 +1481,7 @@ export function ReferralMatchView({
                         <div>
                           <div className={styles.unitName}>
                             <span>{c.unit.name}</span>
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                padding: "1px 6px",
-                                borderRadius: "10px",
-                                background: "var(--warn-soft)",
-                                color: "var(--warn)",
-                                fontWeight: 700,
-                              }}
-                            >
+                            <span className={`${styles.unitStateBadge} ${styles.unitStatePending}`}>
                               Capacity unresolved
                             </span>
                           </div>
@@ -1490,8 +1527,8 @@ export function ReferralMatchView({
                           aria-controls={`gate-grid-${gateKey}`}
                         >
                           <span>Capacity checks outstanding · other recorded gates passed</span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                            {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                          <span className={styles.gateToggleHint}>
+                            {isGatesExpanded ? "Hide criteria" : "Show criteria"}
                           </span>
                         </button>
                         {isGatesExpanded ? (
@@ -1535,7 +1572,7 @@ export function ReferralMatchView({
                 ▶
               </span>
               <div className={styles.tierTitleGroup}>
-                <span className={styles.tierTitleText}>Ineligible Units</span>
+                <span className={styles.tierTitleText}>Ineligible units</span>
                 <span className="sr-only">TIER 3: INELIGIBLE CRITERIA EXCLUSIONS & STATUTORY POLICY LOCKOUTS</span>
                 <span className={styles.tierSubtitle}>Clinical & policy exclusions</span>
               </div>
@@ -1573,17 +1610,8 @@ export function ReferralMatchView({
                         <div>
                           <div className={styles.unitName}>
                             <span>{c.unit.name}</span>
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                padding: "1px 6px",
-                                borderRadius: "10px",
-                                background: "var(--danger-soft)",
-                                color: "var(--danger)",
-                                fontWeight: 700,
-                              }}
-                            >
-                              Statutory Exclusion
+                            <span className={`${styles.unitStateBadge} ${styles.unitStateExcluded}`}>
+                              Statutory exclusion
                             </span>
                           </div>
                           <div className={styles.unitSub}>
@@ -1609,9 +1637,10 @@ export function ReferralMatchView({
 
                       <div className={styles.unitIntelRow}>
                         <span>
-                          Statutory Barrier:{" "}
-                          <strong style={{ color: "var(--danger)" }}>
-                            ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
+                          Statutory barrier{" "}
+                          <strong>
+                            <span className={styles.intelGlyphExcluded}>✕</span>{" "}
+                            {failedGates[0]?.detail ?? "Statutory policy restriction"}
                           </strong>
                         </span>
                       </div>
@@ -1625,11 +1654,10 @@ export function ReferralMatchView({
                           aria-controls={`gate-grid-${gateKey}`}
                         >
                           <span>
-                            ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion
-                            Breakdown
+                            ✕ {failedGates.length} of {c.verdict.gates.length} criteria failed
                           </span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                            {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
+                          <span className={styles.gateToggleHint}>
+                            {isGatesExpanded ? "Hide criteria" : "Show criteria"}
                           </span>
                         </button>
                         {isGatesExpanded ? (
@@ -1656,8 +1684,8 @@ export function ReferralMatchView({
 
       <section className={styles.geographySection}>
         <div className={styles.geographyHeader}>
-          <span className={styles.geographyTitle}>Travel Band Network Triage &amp; Geography Breakdown</span>
-          <span className={styles.geographyBadge}>{groupedUnitCount} Units Mapped</span>
+          <span className={styles.geographyTitle}>Travel bands</span>
+          <span className={styles.geographyBadge}>{groupedUnitCount} units</span>
         </div>
         <div className={styles.matchList} data-testid="ward-referral-match-list">
           {bandGroups.map((group, index) => (
@@ -1951,10 +1979,10 @@ function MatchRow({
       <details className={styles.criteriaDisclosure} data-testid={`ward-referral-match-criteria-${unit.id}`}>
         <summary className={styles.criteriaSummary}>
           <span className={styles.criteriaSummaryTitle}>
-            Clinical criteria:{" "}
             <strong>
-              {passingGates} of {totalGates} gates met
-            </strong>
+              {passingGates} of {totalGates}
+            </strong>{" "}
+            criteria met
           </span>
           <span className={styles.criteriaSummaryHint}>{accepts ? "View gates" : "Inspect mismatch"}</span>
         </summary>

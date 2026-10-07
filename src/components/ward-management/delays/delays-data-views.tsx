@@ -51,14 +51,14 @@ import styles from "./delays-data-views.module.css";
 type DelayRecord = { movement: Movement; cause: DelayCause };
 type Sort = "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank";
 const SHORT_CAUSE: Record<DelayCause, string> = {
-  legal_breached: "Form due time already passed",
+  legal_breached: "Form overdue",
   legal_expiring: "Form due time running out",
   no_eligible_bed: "No suitable bed",
   awaiting_ward_answer: "Awaiting ward answer",
   bed_pull_expired: "Reserved time passed; bed held",
   awaiting_bed_ready: "Bed not ready",
   awaiting_transport: "Awaiting transport",
-  patient_or_family: "Patient or family factors",
+  patient_or_family: "Patient or family",
   awaiting_coordinator: "Awaiting coordinator decision",
 };
 function originName(m: Movement) {
@@ -887,6 +887,7 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
         aria-labelledby={`${id}-tab-${view}`}
         className={styles.layout}
         data-layout={view}
+        data-dossier={view === "workspace" && selected ? "open" : "closed"}
       >
         {view === "workspace" && (
           <aside className={styles.teamRail} aria-label="Responsible team queues">
@@ -1138,7 +1139,12 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                             <Urgency movement={movement} />
                           </td>
                         )}
-                        <td className={styles.cause} data-ward-type-floor="delays-cause" title={causeName(cause)}>
+                        <td
+                          className={view === "workspace" ? `${styles.cause} ${styles.workspaceMeasure}` : styles.cause}
+                          style={view === "workspace" ? { fontSize: "12px", transitionProperty: "none" } : undefined}
+                          data-ward-type-floor="delays-cause"
+                          title={causeName(cause)}
+                        >
                           {SHORT_CAUSE[cause]}
                           <LegalNote movement={movement} now={now} />
                         </td>
@@ -1149,7 +1155,10 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
                         )}
                         <td>
                           <span
-                            className={styles.update}
+                            className={
+                              view === "workspace" ? `${styles.update} ${styles.workspaceMeasure}` : styles.update
+                            }
+                            style={view === "workspace" ? { fontSize: "12px", transitionProperty: "none" } : undefined}
                             data-ward-type-floor="delays-since"
                             data-recorded={recordedUpdate(movement, now) !== "No update recorded"}
                           >
@@ -1232,15 +1241,9 @@ export function DelaysTableWorkspace(props: WorkspaceProps) {
             <PageControls page={currentPage} pages={pages} onChange={setPage} label="waiting" />
           </footer>
         </section>
-        {view === "workspace" &&
-          (selected ? (
-            <PatientDossier record={selected} now={now} onClose={props.onClose} detail={detail} />
-          ) : (
-            <aside className={`${styles.panel} ${styles.noSelection}`}>
-              <h3>Patient details</h3>
-              <p>Select a person to see their recorded delay and next step.</p>
-            </aside>
-          ))}
+        {view === "workspace" && selected && (
+          <PatientDossier record={selected} now={now} onClose={props.onClose} detail={detail} />
+        )}
       </div>
       {view === "focus" && selected && !shown.some(({ movement }) => movement.id === selectedId) && (
         <CompactStrip record={selected} now={now} onClose={props.onClose} />

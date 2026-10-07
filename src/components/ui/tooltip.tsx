@@ -12,6 +12,7 @@ import {
 } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
 import { cn } from "@/components/ui-primitives";
+import styles from "./tooltip.module.css";
 
 export type TooltipProps = {
   children: ReactElement<Record<string, unknown>>;
@@ -172,10 +173,7 @@ export function Tooltip({
               maxWidth: position.maxWidth ?? "min(20rem, calc(100vw - 1rem))",
               visibility: positioned ? "visible" : "hidden",
             }}
-            className={cn(
-              "pointer-events-none w-max max-w-xs rounded-md bg-[color:var(--surface-raised)] px-2 py-1 text-xs text-[color:var(--text)] shadow-[var(--shadow-hover)] ring-1 ring-[color:var(--border-lux)]",
-              className,
-            )}
+            className={cn(styles.tip, className)}
           >
             <span
               aria-hidden="true"

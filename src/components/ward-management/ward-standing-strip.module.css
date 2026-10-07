@@ -146,7 +146,7 @@
   min-height: var(--spacing-tap);
   padding: 0 var(--ward-space-14);
   border: 1px solid var(--ward-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   box-shadow: var(--ward-shadow);
   color: var(--ward-heading);
@@ -178,7 +178,7 @@
 .hudPipNominal {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-success);
   box-shadow: 0 0 0 var(--ward-space-2) var(--ward-success-soft);
   flex-shrink: 0;
@@ -187,7 +187,7 @@
 .hudPipAlarm {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-danger);
   box-shadow: 0 0 0 var(--ward-space-2) var(--ward-danger-soft);
   flex-shrink: 0;
@@ -218,7 +218,7 @@
   align-items: center;
   margin-left: var(--ward-space-6, 0.375rem);
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--ward-border);
   font-size: var(--text-xs);
@@ -417,7 +417,7 @@
 .telemetryFlagPip {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--ward-danger);
   box-shadow: 0 0 0 2px var(--ward-danger-soft);
   flex-shrink: 0;

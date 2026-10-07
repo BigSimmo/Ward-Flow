@@ -61,7 +61,7 @@ async function ensureToolsOpen(page: Page): Promise<void> {
   await page
     .getByRole("dialog", { name: "Tools" })
     .getByRole("group", { name: "Tools sections" })
-    .getByRole("button", { name: "Demo", exact: true })
+    .getByRole("button", { name: "Shift desk", exact: true })
     .click();
 }
 
@@ -107,6 +107,7 @@ test.describe("@mockup Ward screen", () => {
     // Unconditional: bty-adult-secure holds a live referral at seed (WF-017, verified against
     // the real fixture — see the task report), so this must not hide behind an `if (count())`
     // that can silently never run.
+    await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
     const incoming = wardScreen.locator('[data-testid^="ward-incoming-"]');
     await expect(incoming).not.toHaveCount(0);
     await incoming
@@ -215,10 +216,12 @@ test.describe("@mockup Ward screen", () => {
     const assertStructure = async () => {
       await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();
       await homeTab.click();
+      await wardScreen.getByRole("tab", { name: /Awaiting your answer/ }).click();
       await expect(wardScreen.getByRole("region", { name: "Awaiting your answer" })).toBeVisible();
-      await decisionsTab.click();
       await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
       await expect(wardScreen.getByRole("region", { name: "Ward figures, right now" })).toBeVisible();
+      await decisionsTab.click();
+      await expect(wardScreen.getByRole("region", { name: "Staffing" })).toBeVisible();
     };
 
     await assertStructure();
@@ -226,8 +229,9 @@ test.describe("@mockup Ward screen", () => {
     await page.emulateMedia({ forcedColors: "active" });
     await assertStructure();
 
-    // Print keeps whichever tab is active (Decisions, left by the pass above); the tab buttons
-    // themselves are hidden in print by globals.css, so no click happens here.
+    // Print keeps whichever tab is active, and the tab buttons are hidden, so Home is selected
+    // before print. The bed figures live on Home.
+    await homeTab.click();
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
     await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
     await expect(wardScreen.getByTestId("ward-unit-governance")).toBeVisible();
@@ -733,7 +737,7 @@ test.describe("@mockup Emergency department screen", () => {
     if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
       await page.getByTestId("ward-ed-raise-referral-toggle").click();
     }
-    await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
@@ -741,7 +745,7 @@ test.describe("@mockup Emergency department screen", () => {
     if ((await page.getByTestId("ward-ed-raise-referral-toggle").getAttribute("aria-expanded")) !== "true") {
       await page.getByTestId("ward-ed-raise-referral-toggle").click();
     }
-    await expect(page.getByRole("region", { name: "Raise a referral" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "New referral" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
 
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
@@ -1057,6 +1061,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
+    await page.getByRole("tab", { name: /Awaiting your answer/ }).click();
     const incoming = page.getByTestId("ward-incoming-WF-315");
     await expect(incoming).toBeVisible();
     await incoming.getByRole("button", { name: "Accept in principle" }).click();
@@ -1212,11 +1217,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(pullButton).not.toHaveAttribute("title");
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
-    // The capacity form lives on the Decisions tab (3ac951fcd1, 22 Sept), inside an "Update
-    // allocatable count directly" `<details>` that is rendered OPEN (53105ca6ea, 25 Sept, removed
-    // the old "Update ward figures and bed records" wrapper). Do NOT click that summary: on an open
-    // disclosure the click closes it and hides the input.
-    await page.locator("#tabBtn-return").click();
+    // The capacity form opens from "Confirm today's numbers". It is not on the Decisions queue.
+    await wardScreen.getByRole("button", { name: /Confirm today.s numbers/ }).click();
     await wardScreen.getByTestId("ward-capacity-input").fill("0");
     await wardScreen.getByTestId("ward-capacity-submit").click();
 
@@ -1226,6 +1228,10 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(bedGrid).toContainText("Ready 0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(wardScreen.getByText(/Currently confirmed 0 at/)).toBeVisible();
+    await wardScreen
+      .getByRole("dialog", { name: /Confirm capacity figures/ })
+      .getByRole("button", { name: "Done" })
+      .click();
 
     // --- Step 4: the Hold control must stop advertising an action the reducer would now
     // refuse — the reviewer's Proof 2 ("hold button ... aria-disabled = null ... nothing
@@ -1248,7 +1254,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // ambiguity: the diagram's scroll container carries a second, more specific
     // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
     // visual upgrade (883ecfdfb4).
-    const diagram = page.getByRole("region", { name: "Statewide flow", exact: true });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
 
     await page

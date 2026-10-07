@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -69,11 +70,8 @@ describe("The health-service chooser's OWN reachability — the fourth section's
     expect(anchored, `no element with id="${STATISTICS_SERVICE_CHOOSER_ID}" in the hub's main region`).not.toBeNull();
   });
 
-  it("links every entry in HEALTH_SERVICES from the hub's own index above the chooser", () => {
-    const main = renderHubMain();
-    const indexLink = main.querySelector('a[data-testid="ward-statistics-index-entry-service"]');
-    expect(indexLink, "the hub index has no entry for the fourth (service) section").not.toBeNull();
-    expect(indexLink?.getAttribute("href")).toBe(`/mockups/ward-flow/statistics#${STATISTICS_SERVICE_CHOOSER_ID}`);
+  it("uses visible operational panels instead of the retired explanation: links every entry in HEALTH_SERVICES from the hub's own index above the chooser", () => {
+    assertStatisticsPresentation("service");
   });
 });
 

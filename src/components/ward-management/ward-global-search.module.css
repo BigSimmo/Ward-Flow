@@ -168,7 +168,7 @@
   height: 1.75rem;
   padding: 0 var(--ward-space-8);
   border: 1px solid var(--ward-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   color: var(--ward-muted);
   cursor: pointer;
@@ -221,6 +221,24 @@
  * The popup. A floating surface over page content, so — as in `patient-typeahead.module.css` —
  * this is one of the few places in the layer that takes both an edge and a lift.
  */
+.intent {
+  margin: 0;
+  padding: 0 var(--ward-space-12) var(--ward-space-6);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ward-muted);
+}
+
+.refusal {
+  margin: 0;
+  padding: var(--ward-space-4) var(--ward-space-12) var(--ward-space-12);
+  font-size: var(--text-sm);
+  line-height: var(--ward-leading-prose);
+  color: var(--ward-text);
+}
+
 .popup {
   position: absolute;
   z-index: var(--ward-z-phone-bar, 30);
@@ -250,7 +268,7 @@
 
 .popup::-webkit-scrollbar-thumb {
   background: var(--ward-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 
 .popup::-webkit-scrollbar-thumb:hover {
@@ -291,7 +309,7 @@
   min-width: 1.125rem;
   height: 1.125rem;
   padding: 0 0.3125rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   border: 1px solid transparent;
   color: var(--ward-muted);
@@ -448,7 +466,7 @@
 
 .resultTitle {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ward-heading);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -473,7 +491,7 @@
   display: inline-block;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: var(--ward-text);
+  color: var(--ward-muted);
   background: var(--surface-subtle);
   padding: 0 var(--ward-space-4);
   border-radius: var(--ward-radius-pixel, 0.25rem);
@@ -487,7 +505,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   padding: 0 var(--ward-space-4);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-subtle);
   border: 1px solid var(--ward-border);
   color: var(--ward-muted);
@@ -502,25 +520,32 @@
 .resultEnd {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--ward-space-6);
-  flex-shrink: 0;
+  flex: none;
   margin-left: auto;
 }
 
 .resultKind {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 8rem;
+  height: 1.375rem;
+  flex: none;
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-align: center;
   color: var(--ward-muted);
   background: var(--surface-subtle);
-  padding: 0.125rem 0.4375rem;
-  border-radius: 9999px;
+  padding: 0 var(--ward-space-4);
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--ward-border);
   white-space: nowrap;
-  line-height: 1.25;
+  line-height: 1;
   transition:
     border-color 0.12s ease,
     color 0.12s ease,
@@ -559,12 +584,14 @@
 }
 
 .actionHint {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.25rem;
+  width: 1.5rem;
+  height: 1.375rem;
+  flex: none;
+  padding: 0;
   border-radius: 0.25rem;
   border: 1px solid var(--ward-border);
   background: var(--surface);
@@ -625,16 +652,10 @@
   margin: 0;
 }
 
-/*
- * The fixed §8.6 footer — see the doc comment above its call site in `ward-global-search.tsx` for
- * why it always renders, matched or empty. Two `<span>`s laid out with `flex-wrap` rather than one
- * run-on string, matching the mockup's own `.popFoot` shape (`third-edition-kit/shell/shell.css`),
- * so either half can wrap onto its own line on a narrow popup without breaking mid-sentence.
- */
+/* Keyboard hints only. The invented-names sentence stays on the full search page and the typeahead. */
 .resultsFooter {
   display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-6);
+  align-items: center;
   padding: var(--ward-space-8) var(--ward-space-12);
   border-top: 1px solid var(--ward-border);
   background: var(--surface-subtle);
@@ -675,13 +696,6 @@
 
 .hintLabel {
   font-size: var(--t-0, 0.75rem);
-  color: var(--ward-muted);
-}
-
-.footerDisclaimer {
-  margin: 0;
-  font-size: var(--t-0, 0.75rem);
-  line-height: var(--ward-leading-prose);
   color: var(--ward-muted);
 }
 

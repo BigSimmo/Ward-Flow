@@ -288,7 +288,7 @@ describe("Ward Flow sidebar, by role", () => {
     renderRail();
     fireEvent.click(screen.getByRole("button", { name: "Open Ward Flow menu" }));
     const drawer = screen.getByRole("dialog");
-    for (const label of ["Command", "Network", "Governance", "Handover", "Patient search"]) {
+    for (const label of ["Home", "Network", "Governance", "Handover", "Patients"]) {
       expect(
         within(drawer).getByRole("link", { name: new RegExp(`^${label}$`) }),
         `${label} has grown a count with no derivation behind it`,
@@ -353,7 +353,7 @@ describe("Ward Flow sidebar counts, against their own derivations", () => {
     ["Capacity", () => `Capacity, ${rollup.service.availableNow} beds ready now`],
     ["Delays", () => `Delays, ${severeDelays} at a time limit or with nowhere to go`],
     ["Discharges", () => `Discharges, ${rollup.service.blockedToday} discharges held up`],
-    ["Referral board", () => `Referral board, ${queuedReferrals} awaiting a decision`],
+    ["Referrals", () => `Referrals, ${queuedReferrals} awaiting a decision`],
   ])("states %s exactly as its own derivation computes it", (label, expected) => {
     cleanup();
     expect(nameOf(label)).toBe(expected());

@@ -114,11 +114,10 @@ describe("the average-stay sentence names the population the figure measures", (
   });
 
   it("the empty state fires on nobody ARRIVED, not on nobody left", () => {
-    // The mirror half of the same defect, and the rarer state — so the one nobody would have hit
-    // by accident.
+    // Unavailable averages stay off the page under the statistics presentation contract — an empty
+    // card or a fabricated zero would both misread as a measured stay. With no admissions there is
+    // nobody arrived, so the length-of-stay panel is absent rather than worded.
     renderWith([]);
-    const text = screen.getByTestId("ward-stat-length-of-stay").textContent ?? "";
-    expect(text, "the empty state should name arrival, which is what makes the figure absent").toMatch(/arrived/iu);
-    expect(text, "the empty state still describes a completed-stay population").not.toMatch(/both arrived and left/iu);
+    expect(screen.queryByTestId("ward-stat-length-of-stay")).toBeNull();
   });
 });

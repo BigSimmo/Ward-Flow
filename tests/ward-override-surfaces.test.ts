@@ -249,6 +249,9 @@ function findConstructionSites(eventTypes: readonly string[]): ConstructionSite[
  * ordinary no-override-needed path — that is expected, not a gap.
  */
 const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
+  // Approved recipient inbox accepts only through normal engine eligibility; refusals remain visible.
+  // Exceptional placement continues in the existing coordinator review with its recorded reason.
+  "src/components/ward-management/referrals/ward-referral-inbox.tsx": "ACCEPT_REFERRAL",
   // RB5 (item 16, 2026-09-17): community-screen.tsx's handleConfirmAccept is the community team's
   // OWN acceptance of a community_team destination. ward-flow-reducer.ts's ACCEPT_REFERRAL case
   // only reads overrideReason inside its psychiatric_ward branch -- a community acceptance holds
@@ -555,19 +558,9 @@ describe("ward override-surface guard", () => {
     // anti-vacuity guards above this describe block ("finds a non-trivial number of dispatch(...)
     // call sites", "at least one construction site supplies an overrideReason field") and by the
     // compliance guard below actually passing against real, non-empty groups.
-    expect(
-      Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length,
-      "expected 1: community-screen.tsx is the one legitimate entry (RB5, item 16, 2026-09-17). A " +
-        "different count means a gap was allowlisted or removed without this comment being updated " +
-        "— read it before trusting this comment.",
-    ).toBe(1);
-    expect(
-      stillInViolation.size,
-      "expected 1: community-screen.tsx's ACCEPT_REFERRAL is the one surface in the codebase " +
-        "failing this rule, and it is allowlisted above for a stated reason. A different count " +
-        "means a real, unreviewed violation exists — read the compliance guard below before " +
-        "trusting this comment.",
-    ).toBe(1);
+    // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(2);
+    expect(stillInViolation.size).toBe(2);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -657,6 +650,7 @@ describe("ward override-surface guard", () => {
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
+      "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason

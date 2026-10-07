@@ -95,7 +95,7 @@ const JOONDALUP_SITE = siteByCode("JHC");
 describe("Ward Flow Master Search Hub — fixture assumptions (floors the discriminating population)", () => {
   it("keeps Search hub as a place directory, not a second job board (Wave 4 item 14)", () => {
     renderHub();
-    expect(screen.getByRole("heading", { level: 1, name: "Search hub" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Places" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Start of shift" })).not.toBeInTheDocument();
   });
   it("Mental Health Unit has two DIFFERENT non-zero capacity figures, so a collapsed-into-one screen has something to disagree with", () => {

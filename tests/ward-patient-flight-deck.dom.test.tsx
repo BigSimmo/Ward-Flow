@@ -28,7 +28,7 @@ function setup() {
       <StateProbe />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate placement" }));
+  fireEvent.click(screen.getByRole("button", { name: "Place them" }));
 }
 function referAndAccept() {
   const shortlist = screen.getByRole("region", { name: "Network ward shortlist" });
@@ -128,7 +128,26 @@ describe("unified Patient Now clinical flight deck", () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
     const page = await Page({ params: Promise.resolve({ movementId: "WF-012" }) });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
-    fireEvent.click(screen.getByRole("button", { name: "Coordinate placement" }));
+    fireEvent.click(screen.getByRole("button", { name: "Place them" }));
     expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
+  });
+  it("opens the ward shortlist directly from a task referral action", async () => {
+    const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
+    const page = await Page({
+      params: Promise.resolve({ movementId: "WF-012" }),
+      searchParams: Promise.resolve({ taskAction: "refer" }),
+    });
+    render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
+    expect(screen.getByRole("region", { name: "Network ward shortlist" })).toBeVisible();
+  });
+  it("opens coordination contacts directly from a task contact action", async () => {
+    const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
+    const page = await Page({
+      params: Promise.resolve({ movementId: "WF-012" }),
+      searchParams: Promise.resolve({ taskAction: "contact" }),
+    });
+    render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
+    expect(screen.getByRole("tab", { name: /Community/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Transfer coordination contacts" })).toBeVisible();
   });
 });

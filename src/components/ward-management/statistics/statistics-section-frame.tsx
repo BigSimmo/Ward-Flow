@@ -69,6 +69,7 @@ export function StatisticsSectionFrame({
   section,
   title,
   subtitle,
+  metadata,
   testId,
   design,
   children,
@@ -80,6 +81,7 @@ export function StatisticsSectionFrame({
   title?: string;
   /** One line under the heading saying what this page is for. */
   subtitle: string;
+  metadata?: ReactNode;
   testId: string;
   /** Opts only this frame subtree into the third-edition token and presentation contract. */
   design?: "third-edition";
@@ -89,7 +91,7 @@ export function StatisticsSectionFrame({
 
   if (isThirdEdition) {
     return (
-      <ThirdEditionFrame section={section} title={title} subtitle={subtitle} testId={testId}>
+      <ThirdEditionFrame section={section} title={title} subtitle={subtitle} metadata={metadata} testId={testId}>
         {children}
       </ThirdEditionFrame>
     );
@@ -154,7 +156,7 @@ export function StatisticsSectionFrame({
         </p>
 
         {children}
-        <WardPrototypeFooter testId="ward-statistics-section-footer" />
+        <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
       </main>
     </div>
   );
@@ -163,13 +165,14 @@ export function StatisticsSectionFrame({
 function ThirdEditionFrame({
   section,
   title,
-  subtitle,
+  metadata,
   testId,
   children,
 }: {
   section: StatisticsSection;
   title?: string;
   subtitle: string;
+  metadata?: ReactNode;
   testId: string;
   children: ReactNode;
 }) {
@@ -205,38 +208,6 @@ function ThirdEditionFrame({
               </svg>
               <span>Back to statistics</span>
             </Link>
-
-            <details className={`${thirdEditionStyles.contextDetails} source-print`}>
-              <summary className={thirdEditionStyles.contextSummary}>
-                <span className={thirdEditionStyles.prototypePill}>Synthetic prototype</span>
-                <span className={thirdEditionStyles.summaryDivider}>·</span>
-                <span>no role restriction</span>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className={thirdEditionStyles.chevronIcon}
-                >
-                  <path d="M4 6l4 4 4-4" />
-                </svg>
-              </summary>
-              <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
-                <strong>Synthetic prototype</strong>
-                <p>
-                  <SyntheticFiguresDisclaimer />
-                </p>
-                <p data-testid="ward-statistics-section-access">
-                  <CoordinatorAccessDisclaimer />
-                </p>
-                {subtitle && <p>{subtitle}</p>}
-              </div>
-            </details>
           </div>
 
           <header className={thirdEditionStyles.semanticHeader}>
@@ -248,10 +219,11 @@ function ThirdEditionFrame({
               {section.label}
             </p>
             <h1 className={thirdEditionStyles.headerTitle}>{title ?? section.label}</h1>
+            {metadata && <p className={thirdEditionStyles.metadata}>{metadata}</p>}
           </header>
         </div>
         {children}
-        <WardPrototypeFooter testId="ward-statistics-section-footer" />
+        <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
       </main>
     </div>
   );

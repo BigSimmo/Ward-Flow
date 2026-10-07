@@ -11,3 +11,9 @@ dev asset, not a production font contract.
 
 License: SIL Open Font License 1.1 (`OFL.txt`). Copyright 2024 Vercel, Inc.
 Reserved Font Name: Geist.
+
+Figtree, used only by the work-mode mockup:
+
+- `figtree-wght.ttf` — variable weight, latin
+
+License: SIL Open Font License 1.1 (`FIGTREE-OFL.txt`). Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree). Reserved Font Name: Figtree.

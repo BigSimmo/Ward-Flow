@@ -56,7 +56,7 @@ import styles from "./ward-chrome-header.module.css";
 function roleAction(role: WardChromeRole): { href: string; label: string } {
   if (role === "ward") return { href: "/mockups/ward-flow/movements", label: "Answer bed offers" };
   if (role === "ed") return { href: WARD_REFERRAL_INTAKE_HREF, label: "New referral" };
-  return { href: "/mockups/ward-flow/referrals", label: "Referral board" };
+  return { href: "/mockups/ward-flow/referrals", label: "Referrals" };
 }
 
 /**
@@ -84,6 +84,8 @@ export function WardChromeHeader() {
   const router = useRouter();
   const {
     movements,
+    patients,
+    referrals,
     units,
     admissions,
     bedReleases,
@@ -111,7 +113,12 @@ export function WardChromeHeader() {
 
   const tasks = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
   const openMovement = useCallback(
-    (movementId: string) => router.push(`/mockups/ward-flow/movements/${movementId}`),
+    (movementId: string, action?: "refer" | "contact") => {
+      setTasksOpen(false);
+      router.push(
+        `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+      );
+    },
     [router],
   );
 
@@ -186,6 +193,7 @@ export function WardChromeHeader() {
           dispatch={dispatch}
           onClose={() => setTasksOpen(false)}
           onSelectMovement={openMovement}
+          records={{ movements, patients, referrals, units }}
         />
       ) : null}
     </>

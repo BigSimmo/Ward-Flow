@@ -299,7 +299,7 @@ export function RecordPreview({
 
     if (linkedMovement && movementSummary) {
       presenceStatus = "live";
-      bannerTitle = "CURRENTLY LIVE IN HOSPITAL";
+      bannerTitle = "In hospital now";
       bannerTag = movementSummary.departmentText.includes("ED")
         ? "Emergency Dept"
         : linkedMovement.stage === "moving"
@@ -336,7 +336,7 @@ export function RecordPreview({
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
-        bannerTitle = "CURRENTLY LIVE IN HOSPITAL";
+        bannerTitle = "In hospital now";
         bannerTag = "Emergency Dept";
         waitTimeHours = Math.max(0, (now - referral.raisedAt) / 60);
         disposition = "Unplaced";
@@ -876,7 +876,7 @@ export function RecordPreview({
   const linkedPatient = resolveSubjectPatient(movement, { patients, referrals, movements }).patient;
 
   const presenceStatus: "live" | "past" = isOpen(movement) ? "live" : "past";
-  const bannerTitle = isOpen(movement) ? "CURRENTLY LIVE IN HOSPITAL" : "PAST PATIENT · HISTORICAL RECORD";
+  const bannerTitle = isOpen(movement) ? "In hospital now" : "Not in hospital now";
   const bannerTag =
     movement.stage === "moving"
       ? "In-Transit"

@@ -56,7 +56,7 @@ describe("the stage strip filters the queue without disguising it", () => {
   }
 
   function queuePanel() {
-    return screen.getByRole("region", { name: "Priority queue" });
+    return screen.getByRole("region", { name: "Waiting" });
   }
 
   /** The stage with the most people waiting — the filter with the most to prove, and never zero. */

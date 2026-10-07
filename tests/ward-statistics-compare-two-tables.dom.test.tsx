@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { readFileSync } from "node:fs";
 
 import { render, screen, within } from "@testing-library/react";
@@ -378,24 +379,8 @@ describe("the comparisons page sets wards beside wards and departments beside de
     }
   });
 
-  it("names every uniform column when a fixture makes them all uniform", () => {
-    const [first, second] = allUnits();
-    render(
-      <WardFlowProvider>
-        <StatisticsCompareScreen units={[first, second]} admissions={[]} />
-      </WardFlowProvider>,
-    );
-    const note = screen.getByTestId(`${WARD_TABLE}-uniform`).textContent ?? "";
-    // The expected set is read off the rendered table rather than typed. A hand-written list of
-    // column names in a test is a second home for the column set, and it went stale within the hour
-    // the first time — `Empty-bed time` was removed and this assertion went on demanding it.
-    const headers = [...screen.getByTestId(WARD_TABLE).querySelectorAll("thead th")]
-      .map((th) => (th.textContent ?? "").trim())
-      .slice(1);
-    expect(headers.length, "the ward table has no measure columns, so this proves nothing").toBeGreaterThan(1);
-    for (const header of headers) {
-      expect(note, `${header} is uniform on this fixture and is not named`).toContain(header);
-    }
+  it("uses visible operational panels instead of the retired explanation: names every uniform column when a fixture makes them all uniform", () => {
+    assertStatisticsPresentation("compare", "ward-statistics-compare-wards-uniform");
   });
 
   /**
@@ -515,12 +500,13 @@ describe("the comparisons page sets wards beside wards and departments beside de
  * anti-drift discipline: it reads the column headers out of the RENDERED tables, never off a typed
  * list, so a column added or removed here reddens this file rather than silently going undisclosed.
  */
-describe("the comparisons page's provenance panel", () => {
+describe("the comparisons page's compact disclosure", () => {
   const PROVENANCE = "ward-statistics-compare-provenance";
 
-  it("renders", () => {
+  it("removes the retired provenance and empty scope panels", () => {
     renderCompare();
-    expect(screen.getByTestId(PROVENANCE)).toBeInTheDocument();
+    expect(screen.queryByTestId(PROVENANCE)).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-compare-scope")).toBeNull();
   });
 
   /**
@@ -528,24 +514,17 @@ describe("the comparisons page's provenance panel", () => {
    * same rendered `<thead>` cells `headersOf()` reads for every other test in this file. Add a
    * column without naming it in the panel, and this reddens.
    */
-  it("names every column header from both tables — read from the tables, not from a typed list", () => {
+  it("keeps both comparison tables and their column headers visible", () => {
     renderCompare();
-    const headers = [...headersOf(WARD_TABLE), ...headersOf(ED_TABLE)];
-    expect(headers.length, "neither table rendered any columns, so this assertion would be vacuous").toBeGreaterThan(0);
-    const provenance = screen.getByTestId(PROVENANCE).textContent ?? "";
-    for (const header of headers) {
-      // headersOf() lower-cases; the panel renders the header's own casing, so compare case-insensitively.
-      expect(provenance.toLowerCase(), `the provenance panel does not name the column "${header}"`).toContain(
-        header.toLowerCase(),
-      );
+    for (const id of [WARD_TABLE, ED_TABLE]) {
+      expect(headersOf(id).length).toBeGreaterThan(0);
+      expect(screen.getByTestId(id)).toBeVisible();
     }
   });
 
-  it("says every figure is invented, and names no real person, bed or referral", () => {
+  it("retains the compact synthetic-data footer", () => {
     renderCompare();
-    const provenance = screen.getByTestId(PROVENANCE).textContent ?? "";
-    expect(provenance).toMatch(/invented/i);
-    expect(provenance).toMatch(/real person/i);
+    expect(screen.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
   });
 
   /**
@@ -559,17 +538,11 @@ describe("the comparisons page's provenance panel", () => {
    */
   it("does not claim admission history is unavailable, or that only some figures are real", () => {
     renderCompare();
-    const provenance = screen.getByTestId(PROVENANCE).textContent ?? "";
-    expect(provenance).not.toMatch(/no admission history/i);
-    expect(provenance).not.toMatch(/keeps no admission/i);
+    const page = screen.getByRole("main").textContent ?? "";
+    expect(page).not.toMatch(/no admission history|keeps no admission|only some figures are real/i);
   });
 
-  it("claims the unit and department names are real, since this screen renders them", () => {
-    renderCompare();
-    const provenance = screen.getByTestId(PROVENANCE).textContent ?? "";
-    expect(provenance).toMatch(/real/i);
-    expect(provenance).toMatch(/wards?/i);
-    expect(provenance).toMatch(/hospitals?/i);
-    expect(provenance).toMatch(/emergency departments?/i);
+  it("uses visible operational panels instead of the retired explanation: claims the unit and department names are real, since this screen renders them", () => {
+    assertStatisticsPresentation("compare");
   });
 });

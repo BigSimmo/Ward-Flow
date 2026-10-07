@@ -346,7 +346,7 @@ export function PatientDetailsTab({
   const [missingOnly, setMissingOnly] = useState(false);
   const groups: { title: string; facts: Fact[] }[] = [
     {
-      title: "Identity & demographics",
+      title: "Who",
       facts: [
         ["Name", displayName],
         ["Preferred name", preferredName],
@@ -357,7 +357,7 @@ export function PatientDetailsTab({
       ],
     },
     {
-      title: "Address & ongoing care",
+      title: "Where they live",
       facts: [
         ["Address", patient?.address],
         ["Suburb", patient?.suburb],

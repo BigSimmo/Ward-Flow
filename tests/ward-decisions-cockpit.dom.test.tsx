@@ -14,157 +14,113 @@ describe("ward decisions cockpit", () => {
     service: "adult",
   } as unknown as Unit;
 
-  it("renders chronological shift milestone ribbon with 4 gates", () => {
+  it("renders four compact decision titles instead of gate numbers", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-    expect(screen.getByRole("button", { name: /GATE 1 · 07:00–09:30/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /GATE 2 · 09:30–13:00/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /GATE 3 · 11:00–14:00/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /GATE 4 · 14:00–18:00/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Intake, 09:30–13:00" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Departures, 11:00–14:00" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Leave, 14:00–18:00" })).toBeInTheDocument();
+    expect(screen.queryByText(/GATE 1/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Demonstration only/i)).not.toBeInTheDocument();
   });
 
-  it("renders action queue filter strip and toggles filter views", () => {
+  it("filters the queue without emoji labels", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-    const allButton = screen.getByRole("button", { name: /All Gates/i });
-    const urgentButton = screen.getByRole("button", { name: /Immediate Actions/i });
-    const barriersButton = screen.getByRole("button", { name: /Barriers & Escalation/i });
+    const allButton = screen.getByRole("button", { name: "All" });
+    const dueButton = screen.getByRole("button", { name: "Due now" });
+    const barriersButton = screen.getByRole("button", { name: "Barriers" });
+    const leaveButton = screen.getByRole("button", { name: "Leave", pressed: false });
 
     expect(allButton).toBeInTheDocument();
-    expect(urgentButton).toBeInTheDocument();
+    expect(dueButton).toBeInTheDocument();
     expect(barriersButton).toBeInTheDocument();
 
-    // Filter to Barriers
-    fireEvent.click(barriersButton);
-    expect(screen.getByText(/Rowan Ross/i)).toBeInTheDocument();
+    fireEvent.click(leaveButton);
+    expect(screen.getByRole("region", { name: "Leave" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Staffing" })).not.toBeInTheDocument();
 
-    // Switch back to all
     fireEvent.click(allButton);
-    expect(screen.getByText(/Physical vs Staffed Capacity Declaration/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Staffing" })).toBeInTheDocument();
+    expect(screen.queryByText(/Immediate Actions/i)).not.toBeInTheDocument();
   });
 
-  it("allows re-affirming staffing handshake and records audit log entry", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-    const confirmBtn = screen.getByRole("button", { name: /Re-affirm Handshake/i });
-    expect(confirmBtn).toBeInTheDocument();
-
-    fireEvent.click(confirmBtn);
-
-    // Toast and Audit log entries are present
-    const entries = screen.getAllByText(/Capacity Handshake Re-affirmed/i);
-    expect(entries.length).toBeGreaterThanOrEqual(1);
+  it("keeps status badges on one line", () => {
+    render(
+      <WardDecisionsCockpit
+        unit={mockUnit}
+        demonstration
+        departures={[{ id: "r1", title: "Keira P.", badge: "Ready", onConfirm: vi.fn() }]}
+      />,
+    );
+    expect(screen.getAllByText("Ready").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Release Ready/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Action Due/i)).not.toBeInTheDocument();
   });
 
-  it("allows accepting referral Aaron K to Bed 04", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-    const acceptBtn = screen.getByRole("button", { name: /✓ Accept to Bed 04/i });
-    expect(acceptBtn).toBeInTheDocument();
-
-    fireEvent.click(acceptBtn);
-
-    // Resolution banner appears with Undo button
-    expect(screen.getByText(/Inbound Referral Accepted · Allocated to Bed 04/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Undo Decision/i })).toBeInTheDocument();
+  it("shows the staffing controls when they are supplied", () => {
+    render(
+      <WardDecisionsCockpit unit={mockUnit} staffingFact="1 allocatable">
+        <button type="button">Confirm unchanged</button>
+      </WardDecisionsCockpit>,
+    );
+    expect(screen.getByRole("button", { name: "Confirm unchanged" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
   });
 
-  it("restores focus to trigger button when dialog is dismissed via Escape or close button", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-
-    const handoverBtn = screen.getByRole("button", { name: /📋 Handover Summary/i });
-    handoverBtn.focus();
-    expect(document.activeElement).toBe(handoverBtn);
-
-    fireEvent.click(handoverBtn);
-    expect(screen.getByRole("dialog", { name: /Shift Handover Summary/i })).toBeInTheDocument();
-
-    // Dismiss with Escape
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: /Shift Handover Summary/i })).not.toBeInTheDocument();
-    expect(document.activeElement).toBe(handoverBtn);
-
-    // Open decline modal
-    const declineBtn = screen.getByRole("button", { name: /✕ Decline/i });
-    declineBtn.focus();
-    expect(document.activeElement).toBe(declineBtn);
-
-    fireEvent.click(declineBtn);
-    expect(screen.getByRole("dialog", { name: /Decline Inbound Referral/i })).toBeInTheDocument();
-
-    // Dismiss with Close button
-    const closeBtn = screen.getByRole("button", { name: /^Close$/i });
-    fireEvent.click(closeBtn);
-    expect(screen.queryByRole("dialog", { name: /Decline Inbound Referral/i })).not.toBeInTheDocument();
-    expect(document.activeElement).toBe(declineBtn);
+  it("accepts a live intake from its row", () => {
+    const onAccept = vi.fn();
+    render(<WardDecisionsCockpit unit={mockUnit} intakes={[{ id: "m1", title: "Synthetic referral", onAccept }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    expect(onAccept).toHaveBeenCalledOnce();
   });
 
-  it("clears hidden decline draft when alternative decision (accept or ED MO review) wins", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-
-    const declineBtn = screen.getByRole("button", { name: /✕ Decline/i });
-    fireEvent.click(declineBtn);
-
-    const notesTextarea = screen.getByLabelText(/Clinical Explanatory Note/i);
-    fireEvent.change(notesTextarea, { target: { value: "Acuity too high for our nursing ratio" } });
-
-    // Close without submitting
-    const cancelBtn = screen.getByRole("button", { name: /Cancel/i });
-    fireEvent.click(cancelBtn);
-
-    // Accept to Bed 04 wins
-    const acceptBtn = screen.getByRole("button", { name: /✓ Accept to Bed 04/i });
-    fireEvent.click(acceptBtn);
-
-    // Draft is purged from sessionStorage
-    expect(window.sessionStorage.getItem(`cockpit-decline-${mockUnit.id}`)).toBeNull();
+  it("signs off a ready departure and clears a barrier", () => {
+    const onConfirm = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <WardDecisionsCockpit
+        unit={mockUnit}
+        departures={[
+          { id: "ready", title: "Bed coming free", badge: "Ready", onConfirm },
+          { id: "blocked", title: "Bed held", badge: "Blocked", onClear },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sign off" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+    expect(onClear).toHaveBeenCalledOnce();
+    expect(screen.getAllByText("Blocked").length).toBeGreaterThan(0);
   });
 
-  it("clears hidden barrier draft when postponing discharge", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
-
-    const barrierBtn = screen.getByRole("button", { name: /📞 Escalate to Social Work & Flow/i });
-    fireEvent.click(barrierBtn);
-
-    const actionTextarea = screen.getByLabelText(/Action Note/i);
-    fireEvent.change(actionTextarea, { target: { value: "Housing voucher delay" } });
-
-    // Close without submitting
-    const cancelBtn = screen.getByRole("button", { name: /Cancel/i });
-    fireEvent.click(cancelBtn);
-
-    // Postpone discharge wins
-    const postponeBtn = screen.getByRole("button", { name: /⏳ Postpone to Tomorrow/i });
-    fireEvent.click(postponeBtn);
-
-    // Draft is purged from sessionStorage
-    expect(window.sessionStorage.getItem(`cockpit-barrier-${mockUnit.id}`)).toBeNull();
+  it("puts the morning rollup confirm on the staffing row", () => {
+    const onConfirmRollup = vi.fn();
+    render(
+      <WardDecisionsCockpit unit={mockUnit} rollupOverdue rollupTimeLabel="09:30" onConfirmRollup={onConfirmRollup}>
+        <span>Counts</span>
+      </WardDecisionsCockpit>,
+    );
+    const banner = screen.getByTestId("ward-morning-rollup-overdue-banner");
+    expect(banner).toHaveTextContent("09:30 Morning Bed Rollup Overdue");
+    fireEvent.click(screen.getByTestId("ward-confirm-morning-rollup-btn"));
+    expect(onConfirmRollup).toHaveBeenCalledOnce();
   });
 
-  it("activates Gate Cards 1-4 via keyboard (Enter and Space)", () => {
+  it("activates the four summary cards via keyboard", () => {
     const scrollMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollMock;
 
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
 
-    const gate1 = screen.getByRole("button", { name: /GATE 1 · 07:00–09:30/i });
-    const gate2 = screen.getByRole("button", { name: /GATE 2 · 09:30–13:00/i });
-    const gate3 = screen.getByRole("button", { name: /GATE 3 · 11:00–14:00/i });
-    const gate4 = screen.getByRole("button", { name: /GATE 4 · 14:00–18:00/i });
-
-    // Press Enter on Gate 1
-    fireEvent.keyDown(gate1, { key: "Enter" });
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
-
-    // Press Space on Gate 2
-    scrollMock.mockClear();
-    fireEvent.keyDown(gate2, { key: " " });
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
-
-    // Press Enter on Gate 3
-    scrollMock.mockClear();
-    fireEvent.keyDown(gate3, { key: "Enter" });
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
-
-    // Press Space on Gate 4
-    scrollMock.mockClear();
-    fireEvent.keyDown(gate4, { key: " " });
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    for (const name of [
+      "Staffing, 07:00–09:30",
+      "Intake, 09:30–13:00",
+      "Departures, 11:00–14:00",
+      "Leave, 14:00–18:00",
+    ]) {
+      scrollMock.mockClear();
+      fireEvent.keyDown(screen.getByRole("button", { name }), { key: "Enter" });
+      expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    }
   });
 });
