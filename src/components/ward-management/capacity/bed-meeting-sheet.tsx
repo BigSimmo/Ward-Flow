@@ -256,12 +256,12 @@ export function BedMeetingSheetLauncher({
     <>
       <button
         type="button"
-        className={`${styles.openButton}${buttonClassName ? ` ${buttonClassName}` : ""}`}
+        className={buttonClassName ?? styles.openButton}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         data-testid="bed-meeting-sheet-open"
       >
-        Bed-meeting sheet
+        Bed meeting sheet
       </button>
       {open &&
         createPortal(

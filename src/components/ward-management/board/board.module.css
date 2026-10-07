@@ -5051,3 +5051,882 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/*
+ * v6 bed board (design/pages-v6/WardBoard.png), screen only: the printed sheet keeps its own
+ * layout. The board reads the v6 tokens through the shell names its rules use, so it follows the v6
+ * day and night themes; the ward's header and tools become one hero band; the ten figures sit in
+ * one row; status tints become plain surfaces, since colour is a glyph or a word, never a fill.
+ */
+@media screen {
+  .screen {
+    --ground: var(--wf-canvas);
+    --ground-hi: var(--wf-canvas);
+    --ground-2: var(--wf-canvas);
+    --surface: var(--wf-surface);
+    --surface-2: var(--wf-surface-2);
+    --sunk: var(--wf-surface-2);
+    --ink: var(--wf-ink-1);
+    --ink-soft: var(--wf-ink-2);
+    --muted: var(--wf-ink-2);
+    --line: var(--wf-line);
+    --line-strong: var(--wf-line-2);
+    --accent: var(--wf-accent);
+    --accent-ink: var(--wf-accent-ink);
+    --accent-soft: var(--wf-accent-tint);
+    --good: var(--wf-success-ink);
+    --good-soft: var(--wf-surface-2);
+    --warn: var(--wf-warning-ink);
+    --warn-soft: var(--wf-surface-2);
+    --danger: var(--wf-danger-ink);
+    --danger-soft: var(--wf-surface-2);
+    --lift: var(--wf-e1);
+    --lift-sm: var(--wf-e1);
+    --r1: var(--wf-r-lg);
+    --body: var(--wf-font);
+    --display: var(--wf-font);
+    --mono: var(--wf-mono);
+    background: var(--wf-canvas);
+  }
+
+  .screen::before {
+    display: none;
+  }
+
+  .main {
+    padding-top: var(--wf-s-3);
+  }
+
+  .header,
+  .wardTools {
+    --wf-focus-ring: var(--wf-hero-ink);
+    border-color: var(--wf-hero-edge);
+    background: var(--wf-hero-1);
+    box-shadow: none;
+    color: var(--wf-hero-ink);
+  }
+
+  .header {
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 2px var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+
+  .siteName {
+    order: -1;
+    flex-basis: 100%;
+    color: var(--wf-hero-ink-3);
+    font-size: var(--wf-fs-11);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .siteName strong {
+    color: inherit;
+    font-weight: inherit;
+  }
+
+  .unitName {
+    color: var(--wf-hero-ink);
+    font-family: var(--wf-font);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .designation {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+    font-weight: 400;
+  }
+
+  .beingMadeReady,
+  .constraint {
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+  }
+
+  .asAt {
+    padding: 2px var(--wf-s-2);
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+  }
+
+  .asAtValue,
+  .asAtNote {
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-11);
+  }
+
+  .asAtValue {
+    color: var(--wf-hero-ink);
+  }
+
+  .wardTools {
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+    border-top: 0;
+    border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
+    background: var(--wf-hero-2);
+    margin-bottom: var(--wf-s-3);
+  }
+
+  .wardScreenNav {
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+    border-radius: var(--wf-r-md);
+    background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
+    box-shadow: none;
+  }
+
+  .wardScreenNav a,
+  .wardScreenNav span {
+    min-height: 2rem;
+    padding: 0 var(--wf-s-3);
+    border-radius: var(--wf-r-sm);
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .wardScreenNav a:hover {
+    background: transparent;
+    color: var(--wf-hero-ink);
+  }
+
+  .wardScreenNav span[aria-current="page"] {
+    background: var(--wf-hero-ink);
+    box-shadow: none;
+    color: var(--wf-hero-2);
+  }
+
+  .topDailySheetButton,
+  .wardSwitch > summary {
+    min-height: 2rem;
+    height: auto;
+    padding: 0 var(--wf-s-3);
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+    border-radius: var(--wf-r-sm);
+    background: transparent;
+    box-shadow: none;
+    color: var(--wf-hero-ink);
+    font-size: var(--wf-fs-13);
+  }
+
+  .topDailySheetButton:hover,
+  .topDailySheetButtonOpen {
+    border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+    background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+    color: var(--wf-hero-ink);
+  }
+
+  .wardSwitch > summary span {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .triageFigures {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .triageFigure,
+  .triageFigure:hover {
+    min-height: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .triageFigure + .triageFigure {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .triageFigureLed,
+  .triageFigure[data-figure-led="true"] {
+    border-color: var(--wf-line);
+    background: var(--wf-selected);
+    box-shadow: none;
+  }
+
+  .triageFigures > .triageFigure {
+    justify-content: flex-start;
+    gap: 2px;
+  }
+
+  .triageFigures > .triageFigure > .triageValue {
+    order: -1;
+    margin-top: 0;
+  }
+
+  .triageLabel {
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .triageValue {
+    font-size: var(--wf-fs-20);
+    font-weight: 600;
+  }
+
+  .triageFigure[data-figure-key] .triageValue {
+    color: var(--wf-ink-1);
+  }
+
+  .screen .triageFigureLed,
+  .screen .triageFigure[data-figure-led="true"] {
+    border-color: var(--wf-line);
+    background: var(--wf-selected);
+    box-shadow: none;
+  }
+
+  .screen .triageLedNote {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .triageLedNote {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-11);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Bed tiles: a plain card per bed; the state is a word, stay length is the figure, and a past
+   * date or a blocked bed is its glyph and words rather than a coloured ring or fill. */
+  .screen .bed,
+  .screen .bedOccupied,
+  .screen .bedEmpty,
+  .screen .bedWaiting,
+  .screen .bedBlocked,
+  .screen .band1,
+  .screen .band2,
+  .screen .band3,
+  .screen .band4 {
+    border: 1px solid var(--wf-line-2);
+    background: var(--wf-surface);
+    background-image: none;
+    box-shadow: none;
+  }
+
+  .screen .bedHeld {
+    border: 1px dashed var(--wf-line-ctl);
+    background: var(--wf-surface);
+  }
+
+  .screen .bedPast {
+    outline: 0;
+    box-shadow: none;
+  }
+
+  .screen .pastMark,
+  .screen .awayMark,
+  .screen .selectedMark {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--wf-ink-1);
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .screen .pastMark .statusGlyph {
+    color: var(--wf-danger);
+  }
+
+  .screen .bed:hover {
+    transform: none;
+    border-color: var(--wf-line-3);
+    background: var(--wf-hover);
+  }
+
+  .screen .bed[aria-pressed="true"] {
+    border-color: var(--wf-ink-1);
+    background: var(--wf-selected);
+    box-shadow: inset 0 0 0 1px var(--wf-ink-1);
+  }
+
+  .screen .bedState,
+  .screen .bedEmpty .bedState,
+  .screen .bedWaiting .bedState,
+  .screen .bedHeld .bedState,
+  .screen .bedBlocked .bedState,
+  .screen .bedOccupied .bedState {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-2);
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  @media (max-width: 96rem) {
+    .triageFigures {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .triageFigure:nth-child(6) {
+      border-left: 0;
+    }
+
+    .triageFigure:nth-child(n + 6) {
+      border-top: 1px solid var(--wf-line);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .triageFigures {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .wardScreenNav a,
+    .wardScreenNav span,
+    .topDailySheetButton,
+    .wardSwitch > summary {
+      min-height: 3rem;
+    }
+  }
+}
+
+/* v6 bed board layout (design/pages-v6/WardBoard--bed-board.png): the band carries the ward's
+   figures; Every bed sits beside the chosen bed's dossier; Needs you this shift and Either side of
+   this ward sit beneath them. Needs you rows are plain rows with a glyph, never an accent stripe. */
+@media screen {
+  .bandStats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-1) 0;
+    margin: 0 0 0 auto;
+    align-self: center;
+  }
+
+  .bandStats > div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 2px;
+    padding: 0 var(--wf-s-4);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .bandStats dt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-1);
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .bandStats dd {
+    margin: 0;
+    color: var(--wf-hero-ink);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-20);
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bandGlyph {
+    color: var(--wf-hero-danger);
+    font-size: var(--wf-fs-11);
+  }
+
+  /* The headline was visually hidden; on the v6 band it is the first figure, "Ready now". */
+  .screen .headline {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+    margin: 0 0 0 auto;
+    padding: 0 var(--wf-s-4);
+    align-self: center;
+    border: 0;
+    background: transparent;
+  }
+
+  .screen .headline + .bandStats {
+    margin-left: 0;
+  }
+
+  .screen .headlineValue {
+    color: var(--wf-hero-ink);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-20);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .screen .headlineLabel {
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  /* Zones: row one is the beds and the dossier, row two the shift work and the flow column. */
+  .screen .zones,
+  .screen .zonesOpen {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: auto auto;
+    gap: var(--wf-s-3);
+    align-items: stretch;
+  }
+
+  .screen .gridColumn {
+    grid-column: 1;
+    grid-row: 1;
+    height: auto;
+    overflow: visible;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .screen .detail,
+  .screen .zonesOpen .detail {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .screen .workZone {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  .screen .flowColumn {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    height: auto;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+  }
+
+  /* Bed tiles: state on top, then the day figure with the person beside it, then the stay bar. */
+  .screen .beds {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .screen .bed {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 4px;
+    min-height: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-radius: var(--wf-r-md);
+    text-align: left;
+  }
+
+  .screen .bed > * {
+    margin: 0;
+    justify-self: auto;
+    align-self: stretch;
+    text-align: left;
+  }
+
+  .screen .bed .bedNote {
+    overflow: hidden;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    text-overflow: ellipsis;
+  }
+
+  .screen .bedFigureRow {
+    display: flex;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    width: 100%;
+  }
+
+  .screen .bedFigureRow .days {
+    flex: none;
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-20);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--wf-ink-1);
+  }
+
+  .screen .bedFigureRow .daysUnit {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    color: var(--wf-ink-3);
+  }
+
+  .screen .bedFigureRow .bedWho {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stayBar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    width: 100%;
+    max-width: 6rem;
+    height: 3px;
+  }
+
+  .stayBar > span {
+    border-radius: 1px;
+    background: var(--wf-track);
+  }
+
+  .stayBar[data-band="under-2-weeks"] > span:nth-child(-n + 1),
+  .stayBar[data-band="2-weeks-1-month"] > span:nth-child(-n + 2),
+  .stayBar[data-band="1-3-months"] > span:nth-child(-n + 3),
+  .stayBar[data-band="over-3-months"] > span {
+    background: var(--wf-data-1);
+  }
+
+  /* Needs you this shift: aligned rows (subgrid) with a tone glyph, no left stripe. */
+  .screen .shiftGrid {
+    display: grid;
+    grid-template-columns: minmax(9rem, max-content) minmax(0, 1fr) max-content max-content max-content;
+    gap: 0;
+    padding: 0;
+  }
+
+  .screen .shiftTile,
+  .screen .shiftTile[data-tone="warn"],
+  .screen .shiftTile[data-tone="danger"] {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    column-gap: var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .screen .shiftTile:last-child {
+    border-bottom: 0;
+  }
+
+  .screen .shiftTile:hover {
+    background: var(--wf-hover);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .screen .shiftTop {
+    display: contents;
+  }
+
+  .screen .shiftBedLink {
+    grid-column: 1;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .screen .shiftBedLink::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--wf-info);
+  }
+
+  .screen .shiftTile[data-tone="warn"] .shiftBedLink::before {
+    background: var(--wf-warning);
+  }
+
+  .screen .shiftTile[data-tone="danger"] .shiftBedLink::before {
+    width: 0;
+    height: 0;
+    border-radius: 0;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid var(--wf-danger);
+    border-left: 5px solid transparent;
+    background: transparent;
+  }
+
+  .screen .shiftSub {
+    grid-column: 2;
+    grid-row: 1;
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .screen .shiftTag,
+  .screen .shiftTile[data-tone="warn"] .shiftTag,
+  .screen .shiftTile[data-tone="danger"] .shiftTag {
+    grid-column: 3;
+    grid-row: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--wf-ink-1);
+    font-family: var(--wf-mono);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .screen .shiftTile[data-tone="warn"] .shiftTag {
+    color: var(--wf-warning-ink);
+  }
+
+  .screen .shiftTile[data-tone="danger"] .shiftTag {
+    color: var(--wf-danger-ink);
+  }
+
+  .screen .shiftWhen {
+    grid-column: 4;
+    grid-row: 1;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .screen .shiftRowActs {
+    grid-column: 5;
+    grid-row: 1;
+    justify-content: flex-end;
+    margin: 0;
+  }
+}
+
+@media screen {
+  /* The band: the ward's name block on the left, Ready now and the four figures on the right. */
+  .screen .header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    column-gap: 0;
+  }
+
+  .screen .header > * {
+    grid-column: 1 / -1;
+  }
+
+  .screen .header > .siteName,
+  .screen .header > .unitName,
+  .screen .header > .designation {
+    grid-column: 1;
+  }
+
+  .screen .header > .headline {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin: 0;
+  }
+
+  .screen .header > .bandStats {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    margin: 0;
+  }
+
+  .screen .header > .asAt {
+    justify-self: start;
+    margin-top: var(--wf-s-2);
+  }
+
+  /* The dossier takes the bed card's height and scrolls inside it, so the two cards end together
+     (size containment stops its own content setting the row height). */
+  .screen .detail,
+  .screen .zonesOpen .detail {
+    contain: size;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Dossier notes: a hairline box, never a coloured left stripe. */
+  .screen .dateMovedAlert,
+  .screen .personBlocker {
+    border: 1px solid var(--wf-line);
+    border-left: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-sm);
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
+  }
+}
+
+@media screen and (max-width: 70rem) {
+  .screen .header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen .header > .headline,
+  .screen .header > .bandStats {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    padding-left: 0;
+  }
+
+  .screen .header > .headline {
+    padding: 0;
+  }
+
+  .screen .detail,
+  .screen .zonesOpen .detail {
+    contain: none;
+    max-height: none;
+  }
+}
+
+@media screen and (max-width: 70rem) {
+  .screen .zones,
+  .screen .zonesOpen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen .gridColumn,
+  .screen .detail,
+  .screen .zonesOpen .detail,
+  .screen .workZone,
+  .screen .flowColumn {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .screen .gridColumn {
+    order: 1;
+  }
+
+  .screen .detail,
+  .screen .zonesOpen .detail {
+    order: 2;
+  }
+
+  .screen .workZone {
+    order: 3;
+  }
+
+  .screen .flowColumn {
+    order: 4;
+  }
+
+  .bandStats {
+    margin-left: 0;
+  }
+}
+
+@media screen and (max-width: 48rem) {
+  .screen .shiftGrid {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  .screen .shiftTile,
+  .screen .shiftTile[data-tone="warn"],
+  .screen .shiftTile[data-tone="danger"] {
+    row-gap: var(--wf-s-1);
+  }
+
+  .screen .shiftBedLink {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .screen .shiftTag {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .screen .shiftSub {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    white-space: normal;
+  }
+
+  .screen .shiftWhen {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .screen .shiftRowActs {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    justify-content: flex-start;
+  }
+
+  .screen .shiftCtl {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

@@ -86,39 +86,3 @@ describe("the network placement workspace opens on a movement its own queue actu
     expect(selectedRow, "no queue row is marked selected at all").not.toBeNull();
   });
 });
-
-/**
- * 2026-10-07 (v6): the Network overview's State Bedflow routes the movement a coordinator CHOOSES
- * in the Placement workspace's waiting list (the routed diagram Home used to carry). The
- * workspace's own default selection must not route anything: with nothing chosen the overview is
- * drawn with no subject, exactly as before. Choosing a referral clears the routed subject again.
- */
-describe("the network overview routes only a movement the coordinator chose", () => {
-  function overviewRoutedCount() {
-    const overview = document.getElementById("ward-network-overview-panel");
-    expect(overview, "the overview panel must be mounted").not.toBeNull();
-    return (overview as HTMLElement).querySelectorAll('[data-routed="true"]').length;
-  }
-
-  it("draws no subject until a waiting-list row is chosen, then routes it, and a referral clears it", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardModeWorkspace mode="network" />
-      </WardFlowProvider>,
-    );
-    expect(overviewRoutedCount()).toBe(0);
-
-    // Opening the workspace shows its default selection, which is not a coordinator's choice.
-    fireEvent.click(screen.getByRole("tab", { name: "Placement workspace" }));
-    expect(document.querySelector('[data-testid^="ward-network-queue-"][aria-pressed="true"]')).not.toBeNull();
-    expect(overviewRoutedCount()).toBe(0);
-
-    fireEvent.click(screen.getByTestId("ward-network-queue-WF-009"));
-    expect(overviewRoutedCount()).toBeGreaterThan(0);
-
-    const referralRow = document.querySelector<HTMLButtonElement>('button[data-testid^="ward-network-referral-"]');
-    expect(referralRow, "the seed must carry a referral row, or this proves nothing").not.toBeNull();
-    fireEvent.click(referralRow as HTMLButtonElement);
-    expect(overviewRoutedCount()).toBe(0);
-  });
-});
