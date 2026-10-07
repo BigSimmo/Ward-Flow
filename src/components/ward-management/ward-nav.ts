@@ -121,7 +121,7 @@ export type WardViewItem = {
  * type below, for the same reason `queue`/`exceptions` stayed untouched after MERGE 01.
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
-  { id: "command", href: "/mockups/ward-flow", label: "Command" },
+  { id: "command", href: "/mockups/ward-flow", label: "Home" },
   { id: "network", href: "/mockups/ward-flow/network", label: "Network" },
   { id: "delays", href: "/mockups/ward-flow/delays", label: "Delays" },
   { id: "capacity", href: "/mockups/ward-flow/capacity", label: "Capacity" },
@@ -257,28 +257,28 @@ export const WARD_NAV: readonly WardNavItem[] = [
   {
     id: "community",
     href: "/mockups/ward-flow/community",
-    label: "All community teams",
+    label: "Community",
     group: "role",
   },
   {
     id: "ward",
     href: "/mockups/ward-flow/ward/rph-adult-secure",
-    label: "Ward — Dabakarn",
+    label: "Example ward",
     group: "role",
     exampleOnly: true,
   },
   {
     id: "board",
     href: "/mockups/ward-flow/board/rph-adult-secure",
-    label: "Ward board — Ward 2K",
+    label: "Example bed board",
     group: "role",
     exampleOnly: true,
   },
-  { id: "officer", href: "/mockups/ward-flow/transport/officer", label: "Officer", group: "role" },
+  { id: "officer", href: "/mockups/ward-flow/transport/officer", label: "Transport", group: "role" },
   {
     id: "ed",
     href: "/mockups/ward-flow/ed/peel-ed",
-    label: "Emergency department",
+    label: "Example ED",
     group: "role",
     exampleOnly: true,
   },
@@ -290,7 +290,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * — and the `escalation` id stays a member of `WardNavId` even though nothing in this array
    * uses it any more, for the same reason `queue`/`exceptions` stay in `WardMode`: nothing else
    * in this file depends on removing it, and leaving it costs nothing. */
-  { id: "search", href: "/mockups/ward-flow/search", label: "Patient search", group: "board" },
+  { id: "search", href: "/mockups/ward-flow/search", label: "Patients", group: "board" },
   /*
    * THE MASTER SEARCH HUB, added 2026-09-06 from the owner-approved mockup.
    *
@@ -304,7 +304,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * derives its destination list from `WARD_VIEWS` alone, and a second chat was editing that array
    * at the time. Belonging here is why this is right; missing that guard is only a bonus.
    */
-  { id: "hub", href: "/mockups/ward-flow/hub", label: "Search hub", group: "board" },
+  { id: "hub", href: "/mockups/ward-flow/hub", label: "Places", group: "board" },
   { id: "discharges", href: "/mockups/ward-flow/discharges", label: "Discharges", group: "board" },
   /*
    * 🔴 **LISTED, NOT HIDDEN — AND THAT IS A JUDGEMENT ABOUT A DANGEROUS SCREEN.**
@@ -336,7 +336,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * array entry: the `morning` id is no longer a member of `WardNavId`, its
    * `WARD_NAV_INTENTIONALLY_UNLISTED` entry is gone, and the Morning route file and its
    * implementation module were deleted in the same commit. */
-  { id: "referrals", href: "/mockups/ward-flow/referrals", label: "Referral board", group: "board" },
+  { id: "referrals", href: "/mockups/ward-flow/referrals", label: "Referrals", group: "board" },
   /*
    * ⚠️ THIS ENTRY REVERSES A DELIBERATE DESIGN DECISION, BY OWNER RULING ON 2026-09-03:
    * "I would like the referral form/hub in the sidebar please."
@@ -523,9 +523,9 @@ export type WardReferralMenuEntry = {
 };
 
 export const WARD_NEW_REFERRAL_MENU: readonly WardReferralMenuEntry[] = [
-  { source: "community", label: "Community Referral", href: raiseReferralHref({ source: "community" }) },
-  { source: "ed_medical", label: "ED Referral", href: raiseReferralHref({ source: "ed_medical" }) },
-  { source: "inter_hospital", label: "Ward Referral", href: raiseReferralHref({ source: "inter_hospital" }) },
+  { source: "community", label: "From community", href: raiseReferralHref({ source: "community" }) },
+  { source: "ed_medical", label: "From ED", href: raiseReferralHref({ source: "ed_medical" }) },
+  { source: "inter_hospital", label: "From a ward", href: raiseReferralHref({ source: "inter_hospital" }) },
 ];
 
 /**
@@ -714,10 +714,10 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   const place = wardPlaceFor(normalized, units);
   if (place) return place.name;
 
-  if (normalized === "/mockups/ward-flow" || normalized === "/mockups/ward-flow/command") return "Command";
+  if (normalized === "/mockups/ward-flow" || normalized === "/mockups/ward-flow/command") return "Home";
   if (normalized.startsWith("/mockups/ward-flow/board")) return "Bed Board";
   if (normalized.startsWith("/mockups/ward-flow/ward")) return "Ward";
-  if (normalized.startsWith("/mockups/ward-flow/ed")) return "Emergency Department";
+  if (normalized.startsWith("/mockups/ward-flow/ed")) return "Emergency";
   if (normalized.startsWith("/mockups/ward-flow/community")) return "Community";
   if (normalized.startsWith("/mockups/ward-flow/movements")) return "Movements";
   if (normalized.startsWith("/mockups/ward-flow/statistics")) return "Statistics";
@@ -725,11 +725,11 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized.startsWith("/mockups/ward-flow/capacity")) return "Capacity";
   if (normalized.startsWith("/mockups/ward-flow/network")) return "Network";
   if (normalized.startsWith("/mockups/ward-flow/governance")) return "Governance";
-  if (normalized === "/mockups/ward-flow/referrals/new") return "Raise a referral";
+  if (normalized === "/mockups/ward-flow/referrals/new") return "New referral";
   if (normalized.startsWith("/mockups/ward-flow/referrals")) return "Referrals";
   if (normalized === "/mockups/ward-flow/people/new") return "Add a patient";
   if (normalized.startsWith("/mockups/ward-flow/people")) return "Patients";
-  if (normalized.startsWith("/mockups/ward-flow/transport/officer")) return "Transport Officer Console";
+  if (normalized.startsWith("/mockups/ward-flow/transport/officer")) return "Transport";
   if (normalized.startsWith("/mockups/ward-flow/transport")) return "Movements";
   if (normalized.startsWith("/mockups/ward-flow/settings")) return "Settings";
   if (normalized.startsWith("/mockups/ward-flow/sovereign")) return "Sovereign Health";
@@ -740,5 +740,5 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   const exactNav = WARD_NAV.find((n) => n.href === normalized);
   if (exactNav) return exactNav.label;
 
-  return "Command";
+  return "Home";
 }

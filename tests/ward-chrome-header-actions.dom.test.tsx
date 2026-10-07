@@ -164,6 +164,6 @@ describe("Ward Flow chrome header — role action", () => {
     renderHeader(COORDINATOR_ROUTE);
     const link = screen.getByTestId("ward-chrome-action");
     expect(link).toHaveAttribute("href", "/mockups/ward-flow/referrals");
-    expect(link).toHaveTextContent("Referral board");
+    expect(link).toHaveTextContent("Referrals");
   });
 });

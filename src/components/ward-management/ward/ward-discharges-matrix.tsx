@@ -285,7 +285,7 @@ export function WardDischargesMatrix({
 
       {/* Preserved test contract for handover link and summary */}
       <div className={styles.visuallyHidden} data-testid="ward-handover-block">
-        <h2 id="ward-handover-heading">Print the handover sheet</h2>
+        <h2 id="ward-handover-heading">Print handover</h2>
         <p>
           Ward census, movements, confirmed figures and discharge flags. Nothing about a person beyond what this ward
           already shows.

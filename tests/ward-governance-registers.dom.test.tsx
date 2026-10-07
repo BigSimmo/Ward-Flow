@@ -128,11 +128,13 @@ describe("GovernanceAccessRecordPanel", () => {
   });
 });
 
-describe("the Session Access Record tab", () => {
+describe("removed session, legacy, and effectiveness tabs", () => {
   it("is not offered, and the override table does not show an audit id or a route", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
+    expect(screen.queryByRole("tab", { name: "Session activity" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Session Access Record" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Older notes" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Legacy facts" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Effectiveness" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-governance-access-session-only")).not.toBeInTheDocument();
@@ -159,7 +161,7 @@ describe("the override and decision registers hold only what this session record
   it("opens the endorse form empty, so nobody records a review they did not write", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
-    fireEvent.click(screen.getByRole("button", { name: "Endorse current audit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
     expect((document.getElementById("endorseVerdict") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseRole") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseNotes") as HTMLTextAreaElement).value).toBe("");

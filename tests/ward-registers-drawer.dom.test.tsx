@@ -110,7 +110,7 @@ function Harness() {
 }
 
 function toggle() {
-  return screen.getByRole("button", { name: /Registers/ });
+  return screen.getByRole("button", { name: /Today’s answers/ });
 }
 
 describe("the coordinator's registers drawer", () => {
@@ -121,7 +121,7 @@ describe("the coordinator's registers drawer", () => {
     const declinesTab = screen.getByRole("tab", { name: /Declines/ });
     const overridesTab = screen.getByRole("tab", { name: /Overrides/ });
     const exceptionsTab = screen.getByRole("tab", { name: /Exceptions/ });
-    const refusedTab = screen.getByRole("tab", { name: /Refused actions/ });
+    const refusedTab = screen.getByRole("tab", { name: /Refused/ });
 
     // Ruling 3, checked directly rather than trusted: each tab's own displayed number and the
     // rows actually mounted in its panel must agree, the same "48 open movements" defect the
@@ -243,7 +243,7 @@ describe("the coordinator's registers drawer", () => {
     expect(exceptionsTab).toHaveAttribute("aria-selected", "true");
     exceptionsTab.focus();
     fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowRight" });
-    expect(screen.getByRole("tab", { name: /Refused actions/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Refused/ })).toHaveAttribute("aria-selected", "true");
     fireEvent.keyDown(exceptionsTab.parentElement as HTMLElement, { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: /Declines/ })).toHaveAttribute("aria-selected", "true");
 
@@ -287,11 +287,11 @@ describe("the coordinator's registers drawer", () => {
     );
 
     expect(screen.getByTestId("ward-exceptions-toggle-decline-count")).toHaveTextContent("0 declines");
-    expect(screen.getByTestId("ward-exceptions-toggle-override-count")).toHaveTextContent("0 overrides");
+    expect(screen.getByTestId("ward-exceptions-toggle-override-count")).toHaveTextContent("No overrides");
     expect(screen.getByTestId("ward-exceptions-toggle-count")).toHaveTextContent("0 exceptions");
     expect(screen.getByTestId("ward-exceptions-toggle-refusal-count")).toHaveTextContent("0 refused");
 
     // And still shut: all four are readable without opening anything, which is the whole request.
-    expect(screen.getByRole("button", { name: /Registers/ })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: /Today’s answers/ })).toHaveAttribute("aria-expanded", "false");
   });
 });

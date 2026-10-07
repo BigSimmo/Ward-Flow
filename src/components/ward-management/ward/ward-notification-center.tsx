@@ -42,8 +42,8 @@ interface TabDefinition {
 
 const TABS: TabDefinition[] = [
   { id: "all", label: "All" },
-  { id: "buzzes", label: "Coordinator Buzzes" },
-  { id: "urgent", label: "Urgent Tasks" },
+  { id: "buzzes", label: "Buzzes" },
+  { id: "urgent", label: "Urgent" },
   { id: "notices", label: "Notices" },
 ];
 
@@ -246,7 +246,7 @@ export function WardNotificationCenter({
         {showBuzzes && (
           <section className={styles.section} aria-labelledby={`${baseId}-heading-buzzes`}>
             <h3 id={`${baseId}-heading-buzzes`} className={styles.sectionTitle}>
-              Coordinator Buzzes
+              Buzzes
               <span className={styles.sectionCount}>
                 ({matchingBuzzes.length}
                 <span className="sr-only"> sample records</span>)
@@ -297,7 +297,7 @@ export function WardNotificationCenter({
         {showUrgent && (
           <section className={styles.section} aria-labelledby={`${baseId}-heading-urgent`}>
             <h3 id={`${baseId}-heading-urgent`} className={styles.sectionTitle}>
-              Urgent Tasks
+              Urgent
               <span className={styles.sectionCount}>
                 ({urgentTasksCount}
                 <span className="sr-only"> sample records</span>)
@@ -365,7 +365,7 @@ export function WardNotificationCenter({
         {showNotices && (
           <section className={styles.section} aria-labelledby={`${baseId}-heading-notices`}>
             <h3 id={`${baseId}-heading-notices`} className={styles.sectionTitle}>
-              Direct Ward Notices
+              Notices
               <span className={styles.sectionCount}>
                 ({wardNotices.length}
                 <span className="sr-only"> sample records</span>)

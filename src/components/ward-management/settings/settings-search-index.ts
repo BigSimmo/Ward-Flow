@@ -18,15 +18,15 @@ export interface SettingsDomain {
 export const SETTINGS_DOMAINS: readonly SettingsDomain[] = [
   {
     id: "cat-appearance",
-    navLabel: "Appearance & Theme",
-    title: "Appearance & Theme",
+    navLabel: "Look",
+    title: "Look",
     eyebrow: "Domain 1 · Presentation",
     description: "Console display presentation, daylight and dark contrast modes, and navigation rail density.",
   },
   {
     id: "cat-thresholds",
     navLabel: "Clinical Thresholds",
-    title: "Clinical Escalation & Operational Thresholds",
+    title: "Timings",
     eyebrow: "Domain 2 · Operational Limits",
     description:
       "Emergency department dwell targets, warning windows, medical clearance buffers, and published operational safeguards.",
@@ -34,7 +34,7 @@ export const SETTINGS_DOMAINS: readonly SettingsDomain[] = [
   {
     id: "cat-allocation",
     navLabel: "Bed Allocation Weights",
-    title: "Bed Allocation & Capacity Rules",
+    title: "Beds",
     eyebrow: "Domain 3 · Capacity & Surge",
     description:
       "Reservation hold duration, parallel referral enquiry limits, bay integrity, and ward acuity profile limits.",
@@ -42,15 +42,15 @@ export const SETTINGS_DOMAINS: readonly SettingsDomain[] = [
   {
     id: "cat-notifications",
     navLabel: "Notifications & Telemetry",
-    title: "Notifications, Access Matrix & Telemetry",
-    eyebrow: "Domain 4 · Governance & Telemetry",
+    title: "Alerts & access",
+    eyebrow: "Alerts & access",
     description:
       "Clinical escalation notifications, AHPRA-aligned role scopes, keyboard accelerators, and search access telemetry.",
   },
   {
     id: "cat-reset",
     navLabel: "Local Storage & Reset",
-    title: "Local Storage, Workspace & Baseline Reset",
+    title: "This browser",
     eyebrow: "Domain 5 · Storage & Defaults",
     description:
       "Browser session memory, clinical handover sheet output configuration, and audited configuration baseline restoration.",
@@ -83,7 +83,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-ed-threshold",
     domainId: "cat-thresholds",
-    label: "Emergency Department Access Target",
+    label: "ED wait target",
     keywords: "ed access target emergency dwell time wait ed screen ed-home movements board access target line",
   },
   {
@@ -102,7 +102,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-morning-rollup",
     domainId: "cat-thresholds",
-    label: "Morning roll-up time",
+    label: "Morning count time",
     keywords: "morning rollup deadline roll-up time census discharge confirm beds inpatient wards",
   },
   {
@@ -114,7 +114,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-auto-escalate",
     domainId: "cat-thresholds",
-    label: "Automated Multi-Service Escalation Broadcast",
+    label: "Text all services",
     keywords: "automated notification broadcast duty consultant state bed desk notification not wired prototype",
   },
   {
@@ -141,13 +141,13 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-hold-duration",
     domainId: "cat-thresholds",
-    label: "Pulled Bed Reservation Hold Duration",
+    label: "How long a pull is held",
     keywords: "bed hold duration reservation timer release pull expires accepting unit",
   },
   {
     id: "setting-parallel-cap",
     domainId: "cat-thresholds",
-    label: "Parallel Referral Enquiry Cap",
+    label: "How many wards to ask",
     keywords: "parallel referral cap units concurrent enquiry shortlist intake statistics",
   },
 
@@ -155,13 +155,13 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-gender-mix",
     domainId: "cat-allocation",
-    label: "Gender Designation & Bay Integrity Enforcement",
+    label: "Bay and gender rules",
     keywords: "gender mix bay integrity sex designation num override female male ward protection not wired prototype",
   },
   {
     id: "setting-acuity-ceiling",
     domainId: "cat-allocation",
-    label: "Ward Acuity & 1:1 Specialling Ceiling",
+    label: "Specialling limit",
     keywords: "acuity ceiling specialling nursing high dependency unit patient ratio not wired prototype",
   },
 
@@ -169,13 +169,13 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   {
     id: "setting-buzz-alert",
     domainId: "cat-notifications",
-    label: "Audio & Visual Urgent Buzz Alerts",
+    label: "Buzz sound",
     keywords: "audio visual urgent buzz alerts chime sound flash coordinator ward",
   },
   {
     id: "setting-wallboard-refresh",
     domainId: "cat-notifications",
-    label: "Wallboard Auto-Refresh Timer",
+    label: "Board refresh",
     keywords: "wallboard auto refresh timer unattended countdown telemetry ed coordinator desk",
   },
   {

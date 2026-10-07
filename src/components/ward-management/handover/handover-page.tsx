@@ -714,7 +714,7 @@ export function HandoverPage() {
 
     groups.push({
       tier: "critical",
-      title: "Priority 1: Form due times passed and long waits",
+      title: "Expired forms & Extended waits",
       subtitle: `Form due times passed, flagged urgent, or waiting ${LONG_WAIT_TEXT} (${OPERATIONAL_DEFAULT_LABEL})`,
       badgeText: `${critical.length} Critical`,
       badgeTone: "danger",
@@ -736,7 +736,7 @@ export function HandoverPage() {
 
     groups.push({
       tier: "inbound",
-      title: "Priority 2: Inbound Admissions & Active Transit",
+      title: "On the way",
       subtitle: "Accepted admissions en route via ambulance or secure escort",
       badgeText: `${inbound.length} Inbound`,
       badgeTone: "warn",
@@ -761,7 +761,7 @@ export function HandoverPage() {
 
     groups.push({
       tier: "referral",
-      title: "Priority 3: Crisis Referrals Seeking Inpatient Bed",
+      title: "Referrals still needing a bed",
       subtitle: "Acute presentations awaiting clinical assessment & allocation",
       badgeText: `${referralsList.length} Seeking Bed`,
       badgeTone: "accent",
@@ -787,7 +787,7 @@ export function HandoverPage() {
 
     groups.push({
       tier: "discharge",
-      title: "Priority 4: Planned Discharges & Bed Turnover",
+      title: "Going home / leaving",
       subtitle: "Scheduled shift egress creating inpatient vacancies",
       badgeText: `${discharges.length} Discharges`,
       badgeTone: "good",
@@ -832,7 +832,7 @@ export function HandoverPage() {
       `KEY BEDFLOW STATUS:`,
       `• Caseload in Scope: ${includedOpenCount} of ${totalOpenCount} open movements (${excludedOpenCount} excluded)`,
       `• Current Referrals Seeking Bed Placement: ${currentReferralsCount}`,
-      `• Allocatable Vacancies: ${allocatableVacancies}`,
+      `• Unoccupied Beds: ${allocatableVacancies}`,
       `• Form expiries passed over 24h ago: ${breachedOnSheetCount} on sheet, ${urgentOutsideFilter.length} outside filter`,
       `• Beds Pulled / Reserved: ${snapshot.pulledBeds.length}`,
       `• Active In Transit: ${snapshot.inTransit.length}`,
@@ -925,10 +925,10 @@ export function HandoverPage() {
               <div className={pageStyles.shiftTitleRow}>
                 <h1 className={pageStyles.shiftTitle}>
                   {selectedShift === "morning"
-                    ? "Morning Shift Handover"
+                    ? "Morning handover"
                     : selectedShift === "afternoon"
-                      ? "Afternoon Shift Handover"
-                      : "Night Shift Handover"}
+                      ? "Afternoon handover"
+                      : "Night handover"}
                 </h1>
                 <span className={pageStyles.shiftTime}>
                   {selectedShift === "morning"
@@ -1044,7 +1044,7 @@ export function HandoverPage() {
               <div className={pageStyles.metricItem}>
                 <span className={pageStyles.metricLabel}>
                   Allocatable Beds:
-                  <span className={pageStyles.srOnly}>Allocatable Vacancies</span>
+                  <span className={pageStyles.srOnly}>Unoccupied Beds</span>
                 </span>
                 <span className={`${pageStyles.metricVal} ${allocatableVacancies > 0 ? pageStyles.goodVal : ""}`}>
                   {allocatableVacancies}
@@ -1315,7 +1315,7 @@ export function HandoverPage() {
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
             <div className={pageStyles.snapshotHead}>
               <div className={pageStyles.snapshotTitleGroup}>
-                <h2>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h2>
+                <h2>Handover sheet</h2>
                 <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
               </div>
 
@@ -1449,9 +1449,7 @@ export function HandoverPage() {
                   <div className={pageStyles.officialEntity}>
                     Government of Western Australia · Department of Health
                   </div>
-                  <div className={pageStyles.officialDocTitle}>
-                    Statewide Mental Health Clinical Handover &amp; Bedflow Sheet
-                  </div>
+                  <div className={pageStyles.officialDocTitle}>Handover sheet</div>
                   <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
                     Scope: <b>{scopeLabel}</b> · Generated Point-in-Time: <b>{formatInstant(now)} AWST</b>
                   </div>
@@ -1704,7 +1702,7 @@ export function HandoverPage() {
                   {isTableEnlarged && (
                     <div className={pageStyles.enlargeHeaderBar} data-print-hide>
                       <div>
-                        <h2 className={pageStyles.enlargeTitle}>Statewide Mental Health Clinical Handover Table</h2>
+                        <h2 className={pageStyles.enlargeTitle}>Handover</h2>
                         <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
                           Showing {filteredMovements.length} records in scope · Press Esc or click Compress to return
                         </span>
@@ -1723,7 +1721,7 @@ export function HandoverPage() {
                       <thead>
                         <tr>
                           <th scope="col" style={{ width: "18%", minWidth: "160px" }}>
-                            Patient Alias &amp; UMRN
+                            Name &amp; UMRN
                           </th>
                           <th scope="col" style={{ width: "22%", minWidth: "180px" }}>
                             Current Unit / Origin
@@ -1738,7 +1736,7 @@ export function HandoverPage() {
                             Acuity / Obs
                           </th>
                           <th scope="col" style={{ width: "24%", minWidth: "200px" }}>
-                            Bedflow Handover &amp; Action
+                            Next step
                           </th>
                         </tr>
                       </thead>
@@ -2146,7 +2144,7 @@ export function HandoverPage() {
           <div className={pageStyles.panel}>
             <div className={pageStyles.panelHead}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <h3>Active Crisis Referrals Awaiting Inpatient Bed Placement</h3>
+                <h3>Referrals waiting for a bed</h3>
                 <span className={`${pageStyles.statusPill} ${pageStyles.warn}`}>
                   {currentReferralsCount} Seeking Beds
                 </span>
@@ -2231,7 +2229,7 @@ export function HandoverPage() {
           <div className={pageStyles.panel}>
             <div className={pageStyles.panelHead}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <h3>Incoming Admissions Pipeline (In Transit &amp; Pending Intake)</h3>
+                <h3>Coming in</h3>
                 <span className={`${pageStyles.statusPill} ${pageStyles.accent}`}>
                   {snapshot.inTransit.length} Confirmed
                 </span>
@@ -2600,7 +2598,7 @@ export function HandoverPage() {
             >
               <div>
                 <h3 style={{ fontSize: "var(--t-3)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-                  16:30 Afternoon Shift Handover &amp; Bedflow Rollup
+                  16:30 Afternoon handover
                 </h3>
                 <p style={{ margin: "4px 0 0", fontSize: "var(--t-1)", color: "var(--muted)" }}>
                   Shift-change checkpoint: Long-stay discharge barriers (LOS &ge; 7d), acute step-down candidates, and
@@ -3290,7 +3288,7 @@ export function HandoverPage() {
           <div className={pageStyles.drawerHead}>
             <div>
               <h2 id="movement-drawer-heading">
-                {selectedMovement ? `Movement · ${selectedMovement.id}` : "Clinical Handover Details"}
+                {selectedMovement ? `Movement · ${selectedMovement.id}` : "Handover details"}
               </h2>
               <span style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontFamily: "var(--mono)" }}>
                 {selectedMovement ? `Point-in-Time Handover State · ${selectedMovement.owner || "Unassigned"}` : ""}

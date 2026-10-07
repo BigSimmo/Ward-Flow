@@ -904,7 +904,7 @@ function DischargeWorkspace() {
                 <table className={pageStyles.workTable}>
                   <caption className={pageStyles.localTitle}>
                     {population === "releases"
-                      ? "Anonymous bed releases, blocked first. Completed releases cover the last 24 hours."
+                      ? "Bed frees (no name), blocked first. Completed releases cover the last 24 hours."
                       : "Admission records, blocked first. Expected dates do not imply confirmation."}
                   </caption>
                   <thead>

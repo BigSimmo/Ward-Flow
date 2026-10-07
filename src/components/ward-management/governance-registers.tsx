@@ -875,15 +875,15 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
 
   const tabs: { id: GovernanceRegisterTab; label: string; count?: number }[] = [
     { id: "overrides", label: "Overrides", count: totalMonitored },
-    { id: "decisions", label: "Decisions", count: decisionList.length },
+    { id: "decisions", label: "Outcomes", count: decisionList.length },
     {
       id: "restrictive",
-      label: "Restrictive practices",
+      label: "Forms 10 & 11",
       count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
     },
     {
       id: "search-seizure",
-      label: "Search and seizure",
+      label: "Form 8",
       count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0,
     },
   ];
@@ -1153,9 +1153,9 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
             className={`${thirdEdition.btn} ${thirdEdition.primary}`}
             id="btnEndorseHeader"
             onClick={openEndorseModal}
-            aria-label="Endorse current audit"
+            aria-label="Record review"
           >
-            Endorse audit
+            Record review
           </button>
         </div>
       </div>
@@ -1198,9 +1198,9 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
         >
           <section className={thirdEdition.tabsPanel} aria-label="Clinical governance registers">
             <div className={thirdEdition.ph}>
-              <h2>Clinical Gate Exceptions &amp; Allocation Overrides</h2>
+              <h2>Overrides &amp; Exceptions</h2>
               <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                WA Health Governance Standard
+                Demo list
               </span>
             </div>
             <div className={thirdEdition.tableWrap}>
@@ -1208,8 +1208,8 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                 <thead>
                   <tr>
                     <th scope="col">Patient</th>
-                    <th scope="col">Gate overridden</th>
-                    <th scope="col">Authorised by</th>
+                    <th scope="col">Override</th>
+                    <th scope="col">Who said yes</th>
                     <th scope="col">Status</th>
                   </tr>
                 </thead>
@@ -1281,7 +1281,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
             <section className={thirdEdition.registerPanel} aria-label="Captured event register">
               <header className={thirdEdition.panelHeader}>
                 <div>
-                  <h2>Captured Session Events</h2>
+                  <h2>This session</h2>
                   <p>
                     {allowed
                       ? `${visible.length} of ${events.length} captured events · newest first`
@@ -1500,13 +1500,13 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Gate overridden</span>
+                        <span className={thirdEdition.inspectorLabel}>Override</span>
                         <span className={thirdEdition.inspectorVal} id="inspGate">
                           {selectedOverride.category}
                         </span>
                       </div>
                       <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Authorising Role</span>
+                        <span className={thirdEdition.inspectorLabel}>Role</span>
                         <span className={thirdEdition.inspectorVal} id="inspAuthoriser">
                           {selectedOverride.by}
                         </span>
@@ -1520,7 +1520,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                     </div>
 
                     <div className={thirdEdition.formGroup}>
-                      <span className={thirdEdition.formLabel}>Recorded Clinical Justification</span>
+                      <span className={thirdEdition.formLabel}>Reason</span>
                       <div className={thirdEdition.inspectorText} id="inspJustification">
                         {selectedOverride.reason}
                       </div>
@@ -1543,7 +1543,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                         id="btnEndorseInsp"
                         onClick={openEndorseModal}
                       >
-                        Endorse Override
+                        Record review
                       </button>
                       <button
                         type="button"
@@ -1656,7 +1656,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Closed Governance Decisions &amp; Endorsements</h2>
+            <h2>Outcomes</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               Audited Exceptions
             </span>
@@ -1712,7 +1712,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Restrictive Practices (Forms 10/11)</h2>
+            <h2>Forms 10 &amp; 11</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               WA Mental Health Act Statutory Register
             </span>
@@ -1724,7 +1724,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                   <th scope="col">Practice</th>
                   <th scope="col">Patient · UMRN</th>
                   <th scope="col">Ward · Location</th>
-                  <th scope="col">Authorised By</th>
+                  <th scope="col">Who said yes</th>
                   <th scope="col">Start Time</th>
                   <th scope="col">Review Due</th>
                   <th scope="col">Status</th>
@@ -1771,7 +1771,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
           className={thirdEdition.tabsPanel}
         >
           <div className={thirdEdition.ph}>
-            <h2>Search &amp; Seizure (Form 8)</h2>
+            <h2>Form 8</h2>
             <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
               WA Mental Health Act Statutory Register
             </span>
@@ -1837,7 +1837,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
       >
         <div className={thirdEdition.modalDialog}>
           <div className={thirdEdition.modalHead}>
-            <h3 id="endorseModalTitle">Endorse Clinical Governance Override</h3>
+            <h3 id="endorseModalTitle">Record a review</h3>
             <button
               type="button"
               className={`${thirdEdition.btn} ${thirdEdition.sm}`}

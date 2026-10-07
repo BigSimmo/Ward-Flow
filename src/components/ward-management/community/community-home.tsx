@@ -84,7 +84,7 @@ function longestWaiting(entries: readonly CommunityBoundReferral[]): CommunityBo
  * is used rather than the design prototype's invented "16".
  */
 export function CommunityHome() {
-  const { referrals} = useWardFlow();
+  const { referrals } = useWardFlow();
   const now = useWardFlowClock();
   const [scope, setScope] = useState<Scope>({ kind: "all" });
 
@@ -188,7 +188,7 @@ export function CommunityHome() {
   return (
     <main className={styles.home}>
       <p className={styles.eyebrow}>Coordinator</p>
-      <h1>{scope.kind === "all" ? "All community teams" : (activeTeam?.name ?? "Unknown team")}</h1>
+      <h1>{scope.kind === "all" ? "Community teams" : (activeTeam?.name ?? "Unknown team")}</h1>
 
       <div className={styles.picker}>
         <button type="button" aria-pressed={scope.kind === "all"} onClick={() => setScope({ kind: "all" })}>

@@ -510,7 +510,7 @@ function queuedCardIds(page: Page): Promise<string[]> {
  * "More pages" button that is present but hidden no longer counts as the door.
  */
 async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean> {
-  const morePages = rail.getByRole("button", { name: /^More pages/u });
+  const morePages = rail.getByRole("button", { name: /^All Pages/u });
   const menu = rail.getByRole("button", { name: "Menu", exact: true });
   const opener = (await morePages.isVisible()) ? morePages : (await menu.isVisible()) ? menu : undefined;
   if (!opener) return false;
@@ -534,9 +534,9 @@ async function goToBoardViaPhoneRail(page: Page) {
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
   if (await openRailSheetIfNeeded(page, rail)) {
-    await page.getByRole("link", { name: /^Referral Board\b/iu }).click();
+    await page.getByRole("link", { name: /^Referrals\b/iu }).click();
   } else {
-    await rail.getByRole("link", { name: /^Referral Board\b/iu }).click();
+    await rail.getByRole("link", { name: /^Referrals\b/iu }).click();
   }
   await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
 }

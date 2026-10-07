@@ -2041,7 +2041,7 @@ export function ReferralIntakeForm() {
       >
         <main id="main-content" className={styles.main}>
           <header className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>This person is not on file</h1>
+            <h1 className={styles.pageTitle}>Not on the list</h1>
             <p className={styles.pageSubtitle} data-testid="ward-referral-intake-unknown-patient-reason">
               The link that opened this form names &ldquo;{patientIdFromUrl}&rdquo;, and nobody with that id is known to
               this system. A referral cannot be raised for a person who cannot be confirmed &mdash; search for them
@@ -2179,7 +2179,7 @@ export function ReferralIntakeForm() {
     >
       <header className={`${styles.pageHeader} ${pageStyles.hdr1}`}>
         <div className={pageStyles.hdrTitle}>
-          <h1 className={`${styles.pageTitle} ${pageStyles.hdrTitleText}`}>Raise a referral</h1>
+          <h1 className={`${styles.pageTitle} ${pageStyles.hdrTitleText}`}>New referral</h1>
           <span className={pageStyles.chipMark}>Intake front door</span>
         </div>
       </header>

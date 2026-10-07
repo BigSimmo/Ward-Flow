@@ -236,7 +236,7 @@ export function OnCallScreen() {
         <header className={styles.pageHeader}>
           <div className={styles.headerTitleBlock}>
             <p className={styles.eyebrow}>Statewide specialist coordination</p>
-            <h1 className={styles.pageTitle}>On-call and contacts</h1>
+            <h1 className={styles.pageTitle}>On-call</h1>
             <p className={styles.pageSubtitle}>Role directory · WA mental health services</p>
           </div>
           <WardDynamicIsland

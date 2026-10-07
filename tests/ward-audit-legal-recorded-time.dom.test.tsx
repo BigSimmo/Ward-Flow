@@ -31,7 +31,7 @@ const auditMovement: Movement = {
     ageBand: "adult",
   },
 };
-const inspectButtonName = `Inspect dossier for ${resolveSubjectPatient(auditMovement, context).formalName}`;
+const inspectButtonName = `Open dossier for ${resolveSubjectPatient(auditMovement, context).formalName}`;
 
 beforeEach(() => {
   context.dispatch.mockClear();

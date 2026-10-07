@@ -1466,12 +1466,12 @@ Clinical Note: ${p.clinicalNote}`;
                       <span className={`${styles.presenceDot} ${styles[selectedPatient.presence]}`} />
                       <strong>
                         {selectedPatient.presence === "live"
-                          ? "CURRENTLY LIVE IN HOSPITAL"
+                          ? "In hospital now"
                           : selectedPatient.presence === "community"
                             ? "NOT IN HOSPITAL · COMMUNITY OUTPATIENT"
                             : selectedPatient.presence === "scheduled"
                               ? "NOT IN SYSTEM TODAY · SCHEDULED"
-                              : "PAST PATIENT · HISTORICAL RECORD"}
+                              : "Not in hospital now"}
                       </strong>
                     </div>
                     <span className={styles.presenceSettingTag}>

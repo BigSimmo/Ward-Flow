@@ -362,7 +362,7 @@ export function MovementHorizonGantt({
                 id="horizonDiagWrap"
                 tabIndex={0}
                 role="region"
-                aria-label="48-Hour Bed Movement Horizon Timeline"
+                aria-label="Movements timeline"
               >
                 {/* Floating Tooltip */}
                 {tooltip && (

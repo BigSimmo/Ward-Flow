@@ -19,8 +19,8 @@ function renderDelays() {
 /** The persistent runway sits above the three graph tabs. */
 function showWaitTimeline(): HTMLElement {
   const switcher = screen.getByRole("tablist", { name: "Delay graph" });
-  fireEvent.click(within(switcher).getByRole("tab", { name: "Wait Timeline" }));
-  expect(within(switcher).getByRole("tab", { name: "Wait Timeline" })).toHaveAttribute("aria-selected", "true");
+  fireEvent.click(within(switcher).getByRole("tab", { name: "Waits" }));
+  expect(within(switcher).getByRole("tab", { name: "Waits" })).toHaveAttribute("aria-selected", "true");
   return screen.getByRole("region", { name: "Wait timeline" });
 }
 
