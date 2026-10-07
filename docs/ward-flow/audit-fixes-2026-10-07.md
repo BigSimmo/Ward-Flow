@@ -15,3 +15,9 @@ Evidence: nine new public-seam regressions failed before these changes; the regr
 ## Remaining patch groups
 
 Draft persistence, expected departure editing, Settings operational defaults, board-refresh disclosure and accessibility preference wiring. Final checks and evidence will be appended here.
+
+## Draft privacy
+
+The dirty-state guard retains unload warnings and in-memory drafts; it no longer reads, writes or restores typed browser caches. The provider purges legacy `wf-draft:` keys on mount and reset, so visiting a draft editor is unnecessary. Existing draft tests now assert the D18 privacy contract, and a real provider remount test checks both cache cleanup and preservation of a safe care transport arrangement.
+
+Locked dependencies were installed independently in the patch worktree after detecting that the supplied shared installation had Next.js 16.3.3 instead of locked 16.3.8. No lockfile or original checkout dependencies were changed. Twenty-six audit-focused tests passed on the exact installation; final broad checks are in progress.

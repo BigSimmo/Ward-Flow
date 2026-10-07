@@ -1,5 +1,6 @@
 "use client";
 
+import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 
@@ -436,6 +437,7 @@ function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, sa
 }
 
 export function clearWardFlowDemoState(): boolean {
+  clearWardFlowDraftCaches();
   if (typeof window === "undefined") return false;
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
@@ -533,6 +535,9 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  * **A visibly wrong clinical figure for one frame is worse than a rare console error.**
  */
 export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps) {
+  useEffect(() => {
+    clearWardFlowDraftCaches();
+  }, []);
   /**
    * `null` until the mount effect below runs. While null, the world is the deterministic anchor
    * night — identical on the server and in the hydration render, which is the whole point.
