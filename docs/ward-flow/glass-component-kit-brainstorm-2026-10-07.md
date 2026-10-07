@@ -55,3 +55,31 @@ This is a set of proposals for Josh to pick from. Nothing here is built yet.
 2. WardButton, StatusPill and SegmentedControl, previewed on a kit page.
 3. Remake the bed board tile as the reference, for Josh's approval.
 4. Roll out screen by screen, lowering the drift-ratchet caps as each lands.
+
+## Direction v2, after Josh's review (7 October 2026)
+
+Josh asked for a more compact layout, sharper buttons and well-defined badges, and no large empty areas.
+
+### Principles
+
+- **Dense but calm.** 4, 8, 12 and 16px spacing. Desktop controls are 36px, phone and primary controls 44px, and rows 52px. Card padding is 14 to 16px.
+- **No dead space.** Every panel is filled with useful content or collapses. Empty states are one line, never a large box.
+- **Edges you can see.** Every card, badge and input has a 1px hairline border plus a white top highlight. Shadow alone is never the only edge.
+- **Shape plus colour.** Status badges carry a shape (triangle urgent, square stalled, tick accepted, dot en route, ring routine), so they read without colour.
+- **One primary per area.** Primary has a soft top sheen and a darker edge. Secondary is a raised white key. Tint for in-row actions, ghost for tertiary.
+- **Monospace only for data.** Times, IDs, counts and codes. Never for labels or headings.
+- **Glass for chrome only.** The top bar, toasts and sheets. Data sits on solid cards. Deep slate is reserved for one hero band per page.
+- **Counts live inside controls.** Use a divider segment in the badge or a count chip in the button, instead of separate stat strips.
+
+### Further components worth adding
+
+- Command palette (press /) for jumping to a patient, ward or form
+- Split button for print and export options
+- Stage track: a segmented pipeline that also filters the list below
+- Inline alert with a single action (escalate, retry)
+- Metric tile with a sparkline and a 24-hour change badge
+- Before-departure checklist and a compact activity timeline in inspectors
+- Keyboard shortcut hints on primary actions
+- Service identity chips (a lettered colour square plus the name)
+- Sticky table header with zebra-free hairline rows and a hover-revealed row action
+- A "delivered this shift" strip that fills the space under short lists
