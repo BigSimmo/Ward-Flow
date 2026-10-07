@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -47,7 +47,8 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     // ⚠️ "since this page opened", NOT "today" — `confirmedToday` is `useState`, so it counts
     // taps in THIS session and resets on reload. The label was corrected 2026-09-07; these two
     // assertions pinned the false word and would have reddened on the truthfulness fix.
-    expect(screen.getByText("0 of 3 confirmed since this page opened")).toBeInTheDocument();
+    expect(screen.queryByText(/\bof 3 confirmed\b/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-daily-return")).not.toBeInTheDocument();
 
     const cta = screen.getByTestId("ward-hero-open-bed-list");
     // ⚠️ ASSERTION 1 of 2 — THE ATTRIBUTE CHECK.
@@ -67,13 +68,8 @@ describe("the ward screen — the bed-list control is never gated by the confirm
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByTestId("ward-confirm-all"));
-    // Owner Answer 18 (second round, 2026-09-17) replaced the free-text
-    // `ward-confirm-constraints-input` with a fixed-list checkbox group; the save button is now
-    // the stable handle onto the same form, submittable with nothing ticked (a valid answer).
-    fireEvent.submit(screen.getByTestId("ward-confirm-constraints-save").closest("form")!);
-
-    expect(screen.getByText("3 of 3 confirmed since this page opened")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Decisions (Ward record)" }));
+    expect(screen.queryByTestId("ward-confirm-all")).not.toBeInTheDocument();
 
     const cta = screen.getByTestId("ward-hero-open-bed-list");
     expect(cta).not.toHaveAttribute("disabled");
@@ -245,7 +241,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const drawer = screen.getByTestId("bed-telemetry-drawer");
     expect(drawer).toBeInTheDocument();
     expect(drawer).toHaveTextContent(/Bed 01/i);
-    expect(drawer).toHaveTextContent(/Patient Dossier/i);
+    expect(drawer).not.toHaveTextContent(/Patient Dossier/i);
+    const drawerTitle = within(drawer).getByRole("heading", { level: 2 });
+    expect(drawerTitle.textContent?.trim().length).toBeGreaterThan(0);
+    expect(drawerTitle).not.toHaveTextContent(/Bed 01/i);
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
     // it now says vital signs are not recorded, and no reading appears anywhere in it.

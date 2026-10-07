@@ -279,6 +279,7 @@ export function MovementsScreen() {
   const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
   const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
+  const [sideView, setSideView] = useState<"transport" | "shape">("transport");
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -897,367 +898,397 @@ export function MovementsScreen() {
           </div>
 
           <aside className={styles.secondary} aria-label="Movement details">
-            {/* The count read `${legs.length} legs` until 2026-09-06 and became redundant that day:
-                `WardBar` now RENDERS its caption rather than hiding it in the aria-label, and the caption
-                beneath this header already reads "8 transport legs booked or moving". The caption is the
-                one that stays — it is the only line saying what the RAIL is. Same removal as the Delays
-                panel, for the same reason, and made at the call site rather than suppressed in the
-                primitive: "render the caption only when it adds something" is not evaluable. */}
-            <WardPanel title="Transport right now">
-              {legs.length === 0 ? (
-                <p className={styles.absent}>No transport leg is booked or moving right now.</p>
-              ) : (
-                <div className={styles.transportWidget}>
-                  <div className={styles.transportBarWrap}>
-                    <WardBar
-                      segments={
-                        [
-                          { label: LEG_STATE_LABEL.Accepted, value: counts.Accepted, tone: "accent" },
-                          { label: LEG_STATE_LABEL["En route"], value: counts["En route"], tone: "warning" },
-                          { label: LEG_STATE_LABEL.Collected, value: counts.Collected, tone: "warning" },
-                          { label: LEG_STATE_LABEL.Arrived, value: counts.Arrived, tone: "good" },
-                          { label: LEG_STATE_LABEL.Cancelled, value: counts.Cancelled, tone: "danger" },
-                        ] satisfies WardBarSegment[]
-                      }
-                      caption={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
-                    />
-                  </div>
+            {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
+                the region name follows whichever view is showing. The transport count stays off
+                the header: the bar caption already says how many legs are booked or moving. */}
+            <WardPanel
+              title={sideView === "transport" ? "Transport right now" : "Shape of the day"}
+              count={
+                sideView === "shape"
+                  ? shapeTab === "resolved"
+                    ? `${closedToday.length} resolved today`
+                    : `${openMovements.length} open`
+                  : undefined
+              }
+              headerAction={
+                <div className={styles.sideViewToggle} role="group" aria-label="Movement side view">
+                  <button
+                    type="button"
+                    aria-pressed={sideView === "transport"}
+                    onClick={() => setSideView("transport")}
+                  >
+                    Transport
+                  </button>
+                  <button type="button" aria-pressed={sideView === "shape"} onClick={() => setSideView("shape")}>
+                    Shape of the day
+                  </button>
+                </div>
+              }
+            >
+              {sideView === "transport" ? (
+                legs.length === 0 ? (
+                  <p className={styles.absent}>No transport leg is booked or moving right now.</p>
+                ) : (
+                  <div className={styles.transportWidget}>
+                    <div className={styles.transportBarWrap}>
+                      <WardBar
+                        segments={
+                          [
+                            { label: LEG_STATE_LABEL.Accepted, value: counts.Accepted, tone: "accent" },
+                            { label: LEG_STATE_LABEL["En route"], value: counts["En route"], tone: "warning" },
+                            { label: LEG_STATE_LABEL.Collected, value: counts.Collected, tone: "warning" },
+                            { label: LEG_STATE_LABEL.Arrived, value: counts.Arrived, tone: "good" },
+                            { label: LEG_STATE_LABEL.Cancelled, value: counts.Cancelled, tone: "danger" },
+                          ] satisfies WardBarSegment[]
+                        }
+                        caption={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
+                      />
+                    </div>
 
-                  <div className={styles.transportFilterBar} role="group" aria-label="Filter transport legs by status">
-                    <button
-                      type="button"
-                      className={styles.transportFilterBtn}
-                      data-active={transportFilter === "all" ? "true" : undefined}
-                      onClick={() => setTransportFilter("all")}
+                    <div
+                      className={styles.transportFilterBar}
+                      role="group"
+                      aria-label="Filter transport legs by status"
                     >
-                      <span>All</span>
-                      <span className={styles.transportFilterCount}>{legs.length}</span>
-                    </button>
-                    {(
-                      [
-                        { id: "Accepted", label: "Booked", count: counts.Accepted, tone: "accent" },
-                        { id: "En route", label: "En route", count: counts["En route"], tone: "warning" },
-                        { id: "Collected", label: "Collected", count: counts.Collected, tone: "warning" },
-                        { id: "Arrived", label: "Arrived", count: counts.Arrived, tone: "good" },
-                        { id: "Cancelled", label: "Cancelled", count: counts.Cancelled, tone: "danger" },
-                      ] as const
-                    ).map((st) => (
                       <button
-                        key={st.id}
                         type="button"
                         className={styles.transportFilterBtn}
-                        data-tone={st.tone}
-                        data-active={transportFilter === st.id ? "true" : undefined}
-                        disabled={st.count === 0}
-                        onClick={() => setTransportFilter(st.id)}
+                        data-active={transportFilter === "all" ? "true" : undefined}
+                        onClick={() => setTransportFilter("all")}
                       >
-                        <span>{st.label}</span>
-                        <span className={styles.transportFilterCount}>{st.count === 0 ? "none" : st.count}</span>
+                        <span>All</span>
+                        <span className={styles.transportFilterCount}>{legs.length}</span>
+                      </button>
+                      {(
+                        [
+                          { id: "Accepted", label: "Booked", count: counts.Accepted, tone: "accent" },
+                          { id: "En route", label: "En route", count: counts["En route"], tone: "warning" },
+                          { id: "Collected", label: "Collected", count: counts.Collected, tone: "warning" },
+                          { id: "Arrived", label: "Arrived", count: counts.Arrived, tone: "good" },
+                          { id: "Cancelled", label: "Cancelled", count: counts.Cancelled, tone: "danger" },
+                        ] as const
+                      ).map((st) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          className={styles.transportFilterBtn}
+                          data-tone={st.tone}
+                          data-active={transportFilter === st.id ? "true" : undefined}
+                          disabled={st.count === 0}
+                          onClick={() => setTransportFilter(st.id)}
+                        >
+                          <span>{st.label}</span>
+                          <span className={styles.transportFilterCount}>{st.count === 0 ? "none" : st.count}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
+                      {filteredLegs.length === 0 ? (
+                        <p className={styles.transportRunsEmpty}>No transport legs in this status.</p>
+                      ) : (
+                        filteredLegs.map((leg) => {
+                          const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
+                          const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
+                          const legTone =
+                            leg.state === "Arrived"
+                              ? "good"
+                              : leg.state === "Cancelled"
+                                ? "danger"
+                                : leg.state === "Accepted"
+                                  ? "accent"
+                                  : "warning";
+                          const stateLabel =
+                            leg.state === "Accepted" ? "Booked" : (LEG_STATE_LABEL[leg.state] ?? leg.state);
+
+                          return (
+                            <button
+                              key={leg.movement.id}
+                              type="button"
+                              className={styles.transportRunCard}
+                              data-tone={legTone}
+                              onClick={() => {
+                                openDetail(leg.movement.id);
+                                revealMovement(leg.movement.id);
+                              }}
+                              aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
+                            >
+                              <div className={styles.transportRunHeader}>
+                                <div className={styles.transportRunIdentity}>
+                                  <span className={styles.transportRunName}>{patientInfo.formalName}</span>
+                                </div>
+                                <span className={styles[`transportRunPill_${legTone}`]}>{stateLabel}</span>
+                              </div>
+                              <div className={styles.transportRunCorridor}>
+                                <span className={styles.transportRunNode} title={originLabel}>
+                                  {originLabel}
+                                </span>
+                                <span className={styles.transportRunArrow} aria-hidden="true">
+                                  →
+                                </span>
+                                <span className={styles.transportRunNode} title={destinationLabel}>
+                                  {destinationLabel}
+                                </span>
+                              </div>
+                              <div className={styles.transportRunFooter}>
+                                <span className={styles.transportRunProvider}>{leg.provider}</span>
+                                <span className={styles.transportRunTime}>
+                                  Booked {splitDuration(leg.minutesSinceBooked)} ago
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )
+              ) : (
+                <>
+                  <div className={styles.shapeTabs} role="group" aria-label="Movement summary">
+                    {(
+                      [
+                        { id: "stage", label: "Stage", count: openMovements.length },
+                        { id: "transport", label: "Transport", count: legs.length },
+                        { id: "waiting", label: "Waiting", count: waitingMovements.length },
+                        { id: "resolved", label: "Resolved", count: closedToday.length },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        aria-pressed={shapeTab === tab.id}
+                        className={styles.shapeTab}
+                        onClick={() => setShapeTab(tab.id)}
+                      >
+                        <span>{tab.label}</span>
+                        <strong>{tab.count === 0 ? "none" : tab.count}</strong>
                       </button>
                     ))}
                   </div>
-
-                  <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
-                    {filteredLegs.length === 0 ? (
-                      <p className={styles.transportRunsEmpty}>No transport legs in this status.</p>
-                    ) : (
-                      filteredLegs.map((leg) => {
-                        const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
-                        const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-                        const legTone =
-                          leg.state === "Arrived"
-                            ? "good"
-                            : leg.state === "Cancelled"
-                              ? "danger"
-                              : leg.state === "Accepted"
-                                ? "accent"
-                                : "warning";
-                        const stateLabel =
-                          leg.state === "Accepted" ? "Booked" : (LEG_STATE_LABEL[leg.state] ?? leg.state);
-
-                        return (
-                          <button
-                            key={leg.movement.id}
-                            type="button"
-                            className={styles.transportRunCard}
-                            data-tone={legTone}
-                            onClick={() => {
-                              openDetail(leg.movement.id);
-                              revealMovement(leg.movement.id);
-                            }}
-                            aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
-                          >
-                            <div className={styles.transportRunHeader}>
-                              <div className={styles.transportRunIdentity}>
-                                <span className={styles.transportRunName}>{patientInfo.formalName}</span>
-                              </div>
-                              <span className={styles[`transportRunPill_${legTone}`]}>{stateLabel}</span>
-                            </div>
-                            <div className={styles.transportRunCorridor}>
-                              <span className={styles.transportRunNode} title={originLabel}>
-                                {originLabel}
-                              </span>
-                              <span className={styles.transportRunArrow} aria-hidden="true">
-                                →
-                              </span>
-                              <span className={styles.transportRunNode} title={destinationLabel}>
-                                {destinationLabel}
-                              </span>
-                            </div>
-                            <div className={styles.transportRunFooter}>
-                              <span className={styles.transportRunProvider}>{leg.provider}</span>
-                              <span className={styles.transportRunTime}>
-                                Booked {splitDuration(leg.minutesSinceBooked)} ago
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-            </WardPanel>
-
-            <WardPanel
-              title="Shape of the day"
-              count={shapeTab === "resolved" ? `${closedToday.length} resolved today` : `${openMovements.length} open`}
-            >
-              <div className={styles.shapeTabs} role="group" aria-label="Movement summary">
-                {(
-                  [
-                    { id: "stage", label: "Stage", count: openMovements.length },
-                    { id: "transport", label: "Transport", count: legs.length },
-                    { id: "waiting", label: "Waiting", count: waitingMovements.length },
-                    { id: "resolved", label: "Resolved", count: closedToday.length },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    aria-pressed={shapeTab === tab.id}
-                    className={styles.shapeTab}
-                    onClick={() => setShapeTab(tab.id)}
+                  <div
+                    className={styles.shapeBody}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Movement summary contents"
+                    aria-live="polite"
+                    aria-atomic="true"
                   >
-                    <span>{tab.label}</span>
-                    <strong>{tab.count === 0 ? "none" : tab.count}</strong>
-                  </button>
-                ))}
-              </div>
-              <div
-                className={styles.shapeBody}
-                tabIndex={0}
-                role="region"
-                aria-label="Movement summary contents"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                {shapeTab === "stage" ? (
-                  <>
-                    <ul className={styles.stageSummary}>
-                      {openStages.map((stage) => (
-                        <li key={stage.id}>
-                          <button
-                            type="button"
-                            className={styles.stageSummaryLink}
-                            disabled={stage.movements.length === 0}
-                            onClick={() => {
-                              // R2 item 7 (P3): `stage.movements` is `openStages` — deliberately
-                              // whole-network (this tab's own byte-identical-with-and-without-a-
-                              // service test depends on it staying that way) — so its first entry
-                              // can sit outside the chosen service even when another member of the
-                              // same stage does not. `jumpToMovement`'s own D-d handling already
-                              // degrades gracefully for an out-of-scope target (opens the drawer and
-                              // announces why, rather than doing nothing), but picking the first
-                              // IN-SCOPE member when one exists means a working scroll-to-row jump is
-                              // never skipped in favour of that fallback for no reason.
-                              const first =
-                                isInServiceScope !== null
-                                  ? (stage.movements.find(isInServiceScope) ?? stage.movements[0])
-                                  : stage.movements[0];
-                              if (first) jumpToMovement(first.id, true);
-                            }}
-                            aria-label={`${stage.label}: ${stage.movements.length} synthetic open movement records${stage.movements.length ? ", show in worklist" : ""}`}
-                          >
-                            <span>{stage.label}</span>
-                            <span className={styles.stageMeter} aria-hidden="true">
-                              <i
-                                style={{
-                                  width: `${openMovements.length ? (stage.movements.length / openMovements.length) * 100 : 0}%`,
+                    {shapeTab === "stage" ? (
+                      <>
+                        <ul className={styles.stageSummary}>
+                          {openStages.map((stage) => (
+                            <li key={stage.id}>
+                              <button
+                                type="button"
+                                className={styles.stageSummaryLink}
+                                disabled={stage.movements.length === 0}
+                                onClick={() => {
+                                  // R2 item 7 (P3): `stage.movements` is `openStages` — deliberately
+                                  // whole-network (this tab's own byte-identical-with-and-without-a-
+                                  // service test depends on it staying that way) — so its first entry
+                                  // can sit outside the chosen service even when another member of the
+                                  // same stage does not. `jumpToMovement`'s own D-d handling already
+                                  // degrades gracefully for an out-of-scope target (opens the drawer and
+                                  // announces why, rather than doing nothing), but picking the first
+                                  // IN-SCOPE member when one exists means a working scroll-to-row jump is
+                                  // never skipped in favour of that fallback for no reason.
+                                  const first =
+                                    isInServiceScope !== null
+                                      ? (stage.movements.find(isInServiceScope) ?? stage.movements[0])
+                                      : stage.movements[0];
+                                  if (first) jumpToMovement(first.id, true);
                                 }}
-                              />
+                                aria-label={`${stage.label}: ${stage.movements.length} synthetic open movement records${stage.movements.length ? ", show in worklist" : ""}`}
+                              >
+                                <span>{stage.label}</span>
+                                <span className={styles.stageMeter} aria-hidden="true">
+                                  <i
+                                    style={{
+                                      width: `${openMovements.length ? (stage.movements.length / openMovements.length) * 100 : 0}%`,
+                                    }}
+                                  />
+                                </span>
+                                <strong
+                                  className={stage.movements.length === 0 ? styles.glanceCountZero : styles.glanceCount}
+                                >
+                                  <span className="sr-only">Synthetic movement records: </span>
+                                  {stage.movements.length === 0 ? "none" : stage.movements.length}
+                                </strong>
+                                {stage.movements.length > 0 ? (
+                                  <small>
+                                    Longest journey{" "}
+                                    {splitDuration(
+                                      Math.max(
+                                        ...stage.movements.map((movement) => Math.max(now - movement.openedAt, 0)),
+                                      ),
+                                    )}
+                                  </small>
+                                ) : null}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className={styles.stageFollowUp}>
+                          <h3>Next to review</h3>
+                          <button type="button" onClick={() => setShapeTab("transport")}>
+                            Transport not accepted{" "}
+                            <strong>
+                              <span className="sr-only">Synthetic records: </span>
+                              {unacceptedTransport.length === 0 ? "none" : unacceptedTransport.length}
+                            </strong>
+                          </button>
+                        </div>
+                        <p className={styles.sDiv}>Left the pathway</p>
+                        <div className={styles.sRowStatic}>
+                          <span className={styles.sName}>Journeys arrived</span>
+                          <span className={styles.sMeter} aria-hidden="true">
+                            <i
+                              style={{
+                                width: `${
+                                  closedToday.length
+                                    ? (arrivedMovements.length /
+                                        Math.max(arrivedMovements.length, didNotProceedMovements.length || 1)) *
+                                      100
+                                    : 0
+                                }%`,
+                              }}
+                            />
+                          </span>
+                          <span className={styles.sVal}>
+                            {arrivedMovements.length === 0 ? "none" : arrivedMovements.length}
+                          </span>
+                        </div>
+                        <div className={styles.sRowStatic}>
+                          <span className={styles.sName}>Did not proceed</span>
+                          <span className={styles.sMeter} aria-hidden="true">
+                            <i
+                              style={{
+                                width: `${
+                                  closedToday.length
+                                    ? (didNotProceedMovements.length /
+                                        Math.max(arrivedMovements.length, didNotProceedMovements.length || 1)) *
+                                      100
+                                    : 0
+                                }%`,
+                              }}
+                            />
+                          </span>
+                          <span className={styles.sVal}>
+                            {didNotProceedMovements.length === 0 ? "none" : didNotProceedMovements.length}
+                          </span>
+                        </div>
+                        <p className={styles.paneScope}>
+                          No open movement stands at <b>arrived status</b>: arriving is what takes a movement out of the
+                          pathway, so it is counted below the divider instead. {openMovements.length} open plus{" "}
+                          {closedToday.length} that have left the pathway is {openMovements.length + closedToday.length}{" "}
+                          movements raised in the network today.
+                        </p>
+                      </>
+                    ) : null}
+                    {shapeTab === "transport" ? (
+                      <>
+                        <ul className={styles.glance}>
+                          <li className={styles.glanceItem}>
+                            <span>Transport legs</span>
+                            <span className={styles.glanceCount}>
+                              <span className="sr-only">Synthetic records: </span>
+                              {legs.length}
                             </span>
-                            <strong
-                              className={stage.movements.length === 0 ? styles.glanceCountZero : styles.glanceCount}
+                          </li>
+                          <li className={styles.glanceItem}>
+                            <span>Requested or cancelled before acceptance</span>
+                            <span
+                              className={unacceptedTransport.length === 0 ? styles.glanceCountZero : styles.glanceCount}
+                            >
+                              <span className="sr-only">Synthetic records: </span>
+                              {unacceptedTransport.length === 0 ? "none" : unacceptedTransport.length}
+                            </span>
+                          </li>
+                          <li className={styles.glanceItem}>
+                            <span>No transport record</span>
+                            <span
+                              className={noTransportRecord.length === 0 ? styles.glanceCountZero : styles.glanceCount}
                             >
                               <span className="sr-only">Synthetic movement records: </span>
-                              {stage.movements.length === 0 ? "none" : stage.movements.length}
-                            </strong>
-                            {stage.movements.length > 0 ? (
-                              <small>
-                                Longest journey{" "}
-                                {splitDuration(
-                                  Math.max(...stage.movements.map((movement) => Math.max(now - movement.openedAt, 0))),
-                                )}
-                              </small>
-                            ) : null}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className={styles.stageFollowUp}>
-                      <h3>Next to review</h3>
-                      <button type="button" onClick={() => setShapeTab("transport")}>
-                        Transport not accepted{" "}
-                        <strong>
-                          <span className="sr-only">Synthetic records: </span>
-                          {unacceptedTransport.length === 0 ? "none" : unacceptedTransport.length}
-                        </strong>
-                      </button>
-                    </div>
-                    <p className={styles.sDiv}>Left the pathway</p>
-                    <div className={styles.sRowStatic}>
-                      <span className={styles.sName}>Journeys arrived</span>
-                      <span className={styles.sMeter} aria-hidden="true">
-                        <i
-                          style={{
-                            width: `${
-                              closedToday.length
-                                ? (arrivedMovements.length /
-                                    Math.max(arrivedMovements.length, didNotProceedMovements.length || 1)) *
-                                  100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </span>
-                      <span className={styles.sVal}>
-                        {arrivedMovements.length === 0 ? "none" : arrivedMovements.length}
-                      </span>
-                    </div>
-                    <div className={styles.sRowStatic}>
-                      <span className={styles.sName}>Did not proceed</span>
-                      <span className={styles.sMeter} aria-hidden="true">
-                        <i
-                          style={{
-                            width: `${
-                              closedToday.length
-                                ? (didNotProceedMovements.length /
-                                    Math.max(arrivedMovements.length, didNotProceedMovements.length || 1)) *
-                                  100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </span>
-                      <span className={styles.sVal}>
-                        {didNotProceedMovements.length === 0 ? "none" : didNotProceedMovements.length}
-                      </span>
-                    </div>
-                    <p className={styles.paneScope}>
-                      No open movement stands at <b>arrived status</b>: arriving is what takes a movement out of the
-                      pathway, so it is counted below the divider instead. {openMovements.length} open plus{" "}
-                      {closedToday.length} that have left the pathway is {openMovements.length + closedToday.length}{" "}
-                      movements raised in the network today.
-                    </p>
-                  </>
-                ) : null}
-                {shapeTab === "transport" ? (
-                  <>
-                    <ul className={styles.glance}>
-                      <li className={styles.glanceItem}>
-                        <span>Transport legs</span>
-                        <span className={styles.glanceCount}>
-                          <span className="sr-only">Synthetic records: </span>
-                          {legs.length}
-                        </span>
-                      </li>
-                      <li className={styles.glanceItem}>
-                        <span>Requested or cancelled before acceptance</span>
-                        <span
-                          className={unacceptedTransport.length === 0 ? styles.glanceCountZero : styles.glanceCount}
-                        >
-                          <span className="sr-only">Synthetic records: </span>
-                          {unacceptedTransport.length === 0 ? "none" : unacceptedTransport.length}
-                        </span>
-                      </li>
-                      <li className={styles.glanceItem}>
-                        <span>No transport record</span>
-                        <span className={noTransportRecord.length === 0 ? styles.glanceCountZero : styles.glanceCount}>
-                          <span className="sr-only">Synthetic movement records: </span>
-                          {noTransportRecord.length === 0 ? "none" : noTransportRecord.length}
-                        </span>
-                      </li>
-                    </ul>
-                    {legs.length === 0 ? (
-                      <p className={styles.absent}>No transport leg is booked or moving right now.</p>
-                    ) : (
-                      <>
-                        <WardGroupHeading title="Accepted by a provider" people={legs.length} />
-                        <WardRecordList>
-                          {legs.map((leg) => (
-                            <TransportRow
-                              key={leg.movement.id}
-                              leg={leg}
-                              units={units}
-                              name={resolveSubjectPatient(leg.movement, { patients, referrals }).formalName}
+                              {noTransportRecord.length === 0 ? "none" : noTransportRecord.length}
+                            </span>
+                          </li>
+                        </ul>
+                        {legs.length === 0 ? (
+                          <p className={styles.absent}>No transport leg is booked or moving right now.</p>
+                        ) : (
+                          <>
+                            <WardGroupHeading title="Accepted by a provider" people={legs.length} />
+                            <WardRecordList>
+                              {legs.map((leg) => (
+                                <TransportRow
+                                  key={leg.movement.id}
+                                  leg={leg}
+                                  units={units}
+                                  name={resolveSubjectPatient(leg.movement, { patients, referrals }).formalName}
+                                />
+                              ))}
+                            </WardRecordList>
+                          </>
+                        )}
+                        {unacceptedTransport.length > 0 ? (
+                          <>
+                            <WardGroupHeading
+                              title="Unaccepted transport records"
+                              people={unacceptedTransport.length}
                             />
-                          ))}
-                        </WardRecordList>
-                      </>
-                    )}
-                    {unacceptedTransport.length > 0 ? (
-                      <>
-                        <WardGroupHeading title="Unaccepted transport records" people={unacceptedTransport.length} />
-                        <WardRecordList>
-                          {unacceptedTransport.map((movement) => (
-                            <UnacceptedTransportRow
-                              key={movement.id}
-                              movement={movement}
-                              units={units}
-                              name={resolveSubjectPatient(movement, { patients, referrals }).formalName}
-                            />
-                          ))}
-                        </WardRecordList>
+                            <WardRecordList>
+                              {unacceptedTransport.map((movement) => (
+                                <UnacceptedTransportRow
+                                  key={movement.id}
+                                  movement={movement}
+                                  units={units}
+                                  name={resolveSubjectPatient(movement, { patients, referrals }).formalName}
+                                />
+                              ))}
+                            </WardRecordList>
+                          </>
+                        ) : null}
+                        {noTransportRecord.length > 0 ? (
+                          <>
+                            <WardGroupHeading title="No transport record" people={noTransportRecord.length} />
+                            <WardRecordList>
+                              {noTransportRecord.map((movement) => (
+                                <NoTransportRecordRow
+                                  key={movement.id}
+                                  movement={movement}
+                                  units={units}
+                                  name={resolveSubjectPatient(movement, { patients, referrals }).formalName}
+                                />
+                              ))}
+                            </WardRecordList>
+                          </>
+                        ) : null}
                       </>
                     ) : null}
-                    {noTransportRecord.length > 0 ? (
-                      <>
-                        <WardGroupHeading title="No transport record" people={noTransportRecord.length} />
-                        <WardRecordList>
-                          {noTransportRecord.map((movement) => (
-                            <NoTransportRecordRow
-                              key={movement.id}
-                              movement={movement}
-                              units={units}
-                              name={resolveSubjectPatient(movement, { patients, referrals }).formalName}
-                            />
-                          ))}
-                        </WardRecordList>
-                      </>
+                    {shapeTab === "waiting" ? (
+                      <ShapeMovementList
+                        movements={waitingMovements}
+                        now={now}
+                        referrals={referrals}
+                        patients={patients}
+                        onOpenDetail={openDetail}
+                      />
                     ) : null}
-                  </>
-                ) : null}
-                {shapeTab === "waiting" ? (
-                  <ShapeMovementList
-                    movements={waitingMovements}
-                    now={now}
-                    referrals={referrals}
-                    patients={patients}
-                    onOpenDetail={openDetail}
-                  />
-                ) : null}
-                {shapeTab === "resolved" ? (
-                  <ShapeMovementList
-                    movements={closedToday}
-                    now={now}
-                    referrals={referrals}
-                    patients={patients}
-                    onOpenDetail={openDetail}
-                    resolved
-                  />
-                ) : null}
-              </div>
+                    {shapeTab === "resolved" ? (
+                      <ShapeMovementList
+                        movements={closedToday}
+                        now={now}
+                        referrals={referrals}
+                        patients={patients}
+                        onOpenDetail={openDetail}
+                        resolved
+                      />
+                    ) : null}
+                  </div>
+                </>
+              )}
             </WardPanel>
           </aside>
         </div>
