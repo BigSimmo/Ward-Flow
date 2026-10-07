@@ -633,7 +633,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // The seed, before anything is raised. Asserted so the counts below are a real change rather
     // than a number that happened to be right.
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
     // 🔴 THE HEADING NAMES BOTH NUMBERS SINCE THE OWNER'S 2026-09-06 RULING, because it used to
     // print the display cap in the grammatical position of a total: "Recently decided (10)" while
     // eighteen had been decided. Asserted as two separate containments rather than as one pinned
@@ -678,7 +678,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await goToBoardViaPhoneRail(page);
     await expectNoReloadSince(page, "intake form -> board via the phone rail");
 
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED + 1})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(
+      `Awaiting decision ${SEEDED_QUEUED + 1}`,
+    );
     const queuedAfter = await queuedCardIds(page);
     expect(queuedAfter).toHaveLength(SEEDED_QUEUED + 1);
 
@@ -800,7 +802,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // --- The board reflects the decision on the very next render: out of the queue, into
     // recently decided, with the outcome named. ---
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
     /*
      * 🔴 **THIS HAS NOW BEEN WRONG IN BOTH DIRECTIONS, AND THE HEADING CHANGE IS WHY IT IS RIGHT
      * NOW.** It first read `SEEDED_DECIDED + 1`, which was true only while the seed sat below the

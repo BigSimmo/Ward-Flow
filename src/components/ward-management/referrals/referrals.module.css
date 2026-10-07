@@ -6844,3 +6844,604 @@ input.historyField:focus-visible {
   flex: 1;
   min-width: 200px;
 }
+
+/* ═══ v6 (Referrals.png) ═══
+ * One hero band (queue counts, the stream and status tracks and the ordering note), a filter bar
+ * card, the queue card (awaiting decision, recently decided, decisions by hour) and the selected
+ * referral card with its three tabs. v6 tokens only; colour as a glyph beside a word, mono figures,
+ * labels that truncate rather than wrap. Scoped to the register so the intake form is untouched. */
+
+.screen[data-ward-design="v6"] {
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-referral-view="register"][data-ward-design="v6"] .main {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.v6HeroWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6Tracks {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* Local workaround: the shared hero track's hover colour outranks its selected colour, so a hovered
+ * selected item read white on white. Remove once the wf primitive's selected hover is fixed. */
+.v6Tracks [role="radio"][aria-checked="true"]:hover {
+  color: var(--wf-hero-2);
+}
+
+.v6OrderNote {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+/* Filter bar. The wf card is a column; the bar is one row. */
+.v6FilterBar.v6FilterBar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.v6Search {
+  flex: 0 1 15rem;
+  min-width: 10rem;
+  min-height: var(--wf-h-sm);
+}
+
+.v6Cohorts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.v6CohortLabel {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.v6FilterActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+/* The two columns: the queue card and the selected referral card. The register's older wide rules
+ * paint each column as a card; here the wf cards inside carry that paint instead. */
+.screen[data-referral-view="register"][data-ward-design="v6"] .registerQueue,
+.screen[data-referral-view="register"][data-ward-design="v6"] .registerDetail {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.v6QueueCard.v6QueueCard,
+.v6DetailCard.v6DetailCard {
+  min-width: 0;
+}
+
+.v6QueueCard.v6QueueCard {
+  flex-shrink: 0;
+}
+
+.v6Section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6Decided {
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6HeadNote {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6Note {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6Empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.v6EmptyState {
+  margin: var(--wf-s-3);
+}
+
+/* Queue rows: tier tile, who and where, then the wait and the due time. */
+.screen[data-referral-view="register"][data-ward-design="v6"] .v6List {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Item {
+  position: relative;
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6ItemOn {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent);
+}
+
+.v6Row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  width: 100%;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v6Row:hover {
+  background: var(--wf-hover);
+}
+
+.v6Row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.v6RowTier {
+  display: inline-flex;
+  align-items: center;
+}
+
+.v6RowMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6RowMain > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6RowName {
+  font-weight: 600;
+}
+
+.v6RowId {
+  margin-left: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6RowRoute {
+  color: var(--wf-ink-2);
+}
+
+.v6RowFacts {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6RowClock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.v6RowWait {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.v6Due {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.v6RowNote {
+  display: block;
+  padding: 0 var(--wf-s-3) var(--wf-s-2) calc(var(--wf-s-3) * 2 + 1.75rem);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* Dense: the same rows, one line shorter. The register tables stay print-only, as in comfort. */
+.screen[data-ward-design="v6"][data-dense-view="true"] .v6RowFacts {
+  display: none;
+}
+
+.screen[data-ward-design="v6"][data-dense-view="true"] .v6Row {
+  min-height: var(--wf-h-md);
+  padding-block: var(--wf-s-1);
+}
+
+.v6RowDecided {
+  min-height: var(--wf-h-md);
+}
+
+.v6RowLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6RowOutcome {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* OutcomeDetail's quieter parts stay on the same line in the compact decided list. */
+.v6RowOutcome > span + span::before {
+  content: " · ";
+}
+
+.v6RowTime {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  white-space: nowrap;
+}
+
+.v6Chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6Eyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Selected referral. */
+.v6DetailHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.v6DetailWho {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6DetailName {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  line-height: var(--wf-lh-16);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6DetailMeta {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6DetailTier {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.v6DetailWait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding-left: var(--wf-s-3);
+  border-left: 1px solid var(--wf-line);
+  white-space: nowrap;
+}
+
+.v6WaitFigure {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.v6Facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6Facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+
+.v6Facts > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+
+.v6Facts dt,
+.v6Grid dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.v6Facts dd,
+.v6Grid dd {
+  margin: 0;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6Facts dd.v6FactSub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6Tabs {
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6TabBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.v6SectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  margin-bottom: var(--wf-s-2);
+}
+
+.v6SectionHead h3 {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  white-space: nowrap;
+}
+
+.v6SectionHead > span {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6Grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.v6Grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6Grid > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.v6Grid > .v6GridWide {
+  grid-column: 1 / -1;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.v6Grid > .v6GridWide dd {
+  font-weight: 400;
+  white-space: normal;
+}
+
+.v6Badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Lead {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.v6Checks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Checks > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6CheckText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6CheckText > strong {
+  font-weight: 600;
+}
+
+.v6CheckText > span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6CheckState {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .screen[data-referral-view="register"][data-ward-design="v6"] .registerLayout {
+    grid-template-columns: minmax(22rem, 0.55fr) minmax(32rem, 1fr);
+    gap: var(--wf-s-3);
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"] .registerQueue {
+    display: block;
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"][data-dense-view="true"] .tableScroll {
+    display: none;
+  }
+
+  .v6DetailCard.v6DetailCard {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .v6DetailCard .registerDetailBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 48rem) {
+  .screen[data-referral-view="register"][data-ward-design="v6"] .main {
+    padding: var(--wf-s-3);
+  }
+
+  .v6Facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v6Facts > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .v6Grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v6Grid > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .v6DetailHead {
+    flex-wrap: wrap;
+  }
+
+  .screen[data-ward-design="v6"] .v6Row,
+  .screen[data-ward-design="v6"] .v6FilterBar button,
+  .screen[data-ward-design="v6"] .v6FilterBar a[href],
+  .screen[data-ward-design="v6"] .v6DetailHead button,
+  .screen[data-ward-design="v6"] .v6DetailHead a[href] {
+    min-height: 3rem;
+  }
+}
+
+@media print {
+  .v6FilterBar,
+  .v6Chart {
+    display: none;
+  }
+}
