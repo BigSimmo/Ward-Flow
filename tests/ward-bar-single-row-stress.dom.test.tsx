@@ -83,8 +83,13 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(css).toMatch(/\.primary\s*\{[^}]*min-width:\s*var\(--spacing-tap/u);
     });
 
-    it("hides triggerLabel in responsive media tiers", () => {
-      expect(css).toMatch(/@media\s*\(max-width:\s*1360px\)\s*\{[\s\S]*?\.triggerLabel\s*\{[^}]*clip-path/u);
+    it("hides mode labels from the bar's own width, tools first", () => {
+      expect(css).toMatch(
+        /@container\s+ward-bar\s*\(max-width:\s*72rem\)\s*\{[\s\S]*?\[data-bar-mode="tools"\]\s+\.triggerLabel/u,
+      );
+      expect(css).toMatch(
+        /@container\s+ward-bar\s*\(max-width:\s*60rem\)\s*\{[\s\S]*?\[data-bar-mode="activity"\]\s+\.triggerLabel/u,
+      );
     });
 
     it("omits the title clock and Activity time from the header", () => {

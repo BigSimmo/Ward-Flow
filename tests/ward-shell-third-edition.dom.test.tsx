@@ -614,8 +614,7 @@ describe("Activity distinguishes demo provenance from published figure checks", 
     expect(trigger.textContent ?? "").toContain("synthetic activity");
     expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
     expect(trigger.textContent ?? "").not.toMatch(/reconcil/i);
-    const dot = trigger.querySelector('[data-tone][aria-hidden="true"]');
-    expect(dot).toHaveAttribute("data-tone", "good");
+    expect(trigger.querySelector('[data-tone][aria-hidden="true"]')).toBeNull();
   });
 
   it("does not invent a figure-check result when no screen has published", async () => {
