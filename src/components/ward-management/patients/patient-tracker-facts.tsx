@@ -94,7 +94,7 @@ export function PatientTrackerFacts({
         </div>
       </div>
       <button type="button" onClick={onCoordinate}>
-        Open coordination controls ↗
+        Placement ↗
       </button>
       <p>{recent ? `Last stage update ${clock(recent.at)} · ${recent.by}` : "No stage transition recorded"}</p>
     </div>

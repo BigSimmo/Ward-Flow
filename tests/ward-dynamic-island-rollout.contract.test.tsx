@@ -86,7 +86,7 @@ export function buildHandoverHudProps(overrides?: {
       },
       {
         id: "kpi-vacancies",
-        label: "Allocatable Vacancies",
+        label: "Unoccupied Beds",
         value: vacancies,
         tone: vacancies > 0 ? "good" : "muted",
       },
@@ -280,7 +280,7 @@ export function buildSettingsHudProps(overrides?: {
 
   return {
     testId: "ward-settings-hud-island",
-    title: "System Operations",
+    title: "Now",
     status: hasUnsavedRules ? "warning" : "nominal",
     statusText: hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized",
     ariaLabel: "System operations status summary",
@@ -724,9 +724,9 @@ describe("Tier 1: Feature Coverage Across All 10 Target Screens", () => {
       expect(screen.getByText("of 50 open")).toBeDefined();
     });
 
-    it("renders 'Allocatable Vacancies' metric with confirmed capacity", () => {
+    it("renders 'Unoccupied Beds' metric with confirmed capacity", () => {
       render(<WardDynamicIsland {...buildHandoverHudProps({ vacancies: 7 })} />);
-      expect(screen.getByText("Allocatable Vacancies")).toBeDefined();
+      expect(screen.getByText("Unoccupied Beds")).toBeDefined();
       expect(document.getElementById("kpi-vacancies")?.textContent).toBe("7");
     });
 
@@ -854,11 +854,11 @@ describe("Tier 1: Feature Coverage Across All 10 Target Screens", () => {
 
   // Screen 4: Settings & Sync HUD
   describe("Screen 4: Settings & Sync HUD Contract", () => {
-    it("renders Settings & Sync HUD with Stage Title 'System Operations' and testId 'ward-settings-hud-island'", () => {
+    it("renders Settings & Sync HUD with Stage Title 'Now' and testId 'ward-settings-hud-island'", () => {
       render(<WardDynamicIsland {...buildSettingsHudProps()} />);
       const region = screen.getByTestId("ward-settings-hud-island");
       expect(region).toBeDefined();
-      expect(within(region).getByText("System Operations")).toBeDefined();
+      expect(within(region).getByText("Now")).toBeDefined();
     });
 
     it("renders 'Sync' metric indicating 'Synced' or 'Draft (Unsaved)'", () => {
@@ -1739,7 +1739,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       "utf8",
     );
     expect(source).toContain("Caseload in Scope");
-    expect(source).toContain("Allocatable Vacancies");
+    expect(source).toContain("Unoccupied Beds");
     expect(source).toContain("1:1 Specialling Roster");
     expect(source).toContain("Form expiries passed");
   });

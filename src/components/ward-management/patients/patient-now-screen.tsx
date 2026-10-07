@@ -437,7 +437,7 @@ export function PatientNowScreen({
                     className={`${styles.ctl} ${styles.ctlPrimary}`}
                     data-testid="ward-person-refer"
                   >
-                    Coordinate placement
+                    Place them
                   </button>
                 ) : (
                   <Link

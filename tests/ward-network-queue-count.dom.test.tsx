@@ -68,7 +68,7 @@ describe("the network's priority queue counts only people still waiting", () => 
 
   it("shows the OPEN count in the panel header, not every movement ever", () => {
     renderNetwork();
-    const panel = screen.getByRole("region", { name: "Priority queue" });
+    const panel = screen.getByRole("region", { name: "Waiting" });
     expect(
       within(panel).getByText(String(open.length)),
       `the panel must count the ${open.length} people still waiting, never all ${seeded.movements.length} ` +
@@ -83,7 +83,7 @@ describe("the network's priority queue counts only people still waiting", () => 
 
   it("does not list a patient who has already arrived as someone awaiting placement", () => {
     renderNetwork();
-    const panel = screen.getByRole("region", { name: "Priority queue" });
+    const panel = screen.getByRole("region", { name: "Waiting" });
     for (const movement of notOpen) {
       expect(
         within(panel).queryByText(movement.id),
@@ -95,7 +95,7 @@ describe("the network's priority queue counts only people still waiting", () => 
 
   it("still lists the people who ARE waiting, so the filter did not simply empty it", () => {
     renderNetwork();
-    const panel = screen.getByRole("region", { name: "Priority queue" });
+    const panel = screen.getByRole("region", { name: "Waiting" });
     // A filter that removed everything would satisfy both assertions above.
     const shown = open.filter((movement) => within(panel).queryByText(movement.id) !== null);
     expect(shown.length, "the queue must still show the people who are waiting").toBeGreaterThan(0);

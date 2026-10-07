@@ -138,17 +138,17 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(tally).toHaveTextContent(unitName);
   });
 
-  it("shows 'Command' live tally on the command root screen", async () => {
+  it("shows the Home live tally on the ward root screen", async () => {
     currentPathname = "/mockups/ward-flow";
     const { user, sheet } = await openActivityDrawer();
 
     const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
     expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toMatch(/Live tally\s*Command/u);
+    expect(segButtons[1].textContent).toMatch(/Live tally\s*Home/u);
 
     await user.click(segButtons[1]);
     const tally = sheet.querySelector("#ward-bar-activity-tally");
     expect(tally).toHaveTextContent("Where to look first");
-    expect(tally).toHaveTextContent("Command");
+    expect(tally).toHaveTextContent("Home");
   });
 });

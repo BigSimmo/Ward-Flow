@@ -2,19 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import {
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Menu,
-  Plus,
-  Search,
-  Settings,
-  SunMoon,
-} from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Menu, Plus, Settings, SunMoon } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -24,12 +13,6 @@ import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-mana
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
-import { edById } from "@/components/ward-management/ward-sites";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { byLongestWait } from "@/components/ward-management/movements/movements-derivations";
 import { type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_HOME_HREF,
@@ -47,7 +30,7 @@ import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-orde
 import { announceToWardShell } from "./ward-live-region";
 import { applyAppearance, useAppearanceStore } from "./ward-bar";
 import { useWardChecks } from "./ward-checks";
-import { edHref, handoverHref, movementHref, patientHref, settingsHref } from "./ward-facade";
+import { edHref, handoverHref, patientHref, settingsHref } from "./ward-facade";
 import { WardReconciliationLine } from "./ward-reconciliation-line";
 import { deriveServiceBedAlerts } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
@@ -196,37 +179,37 @@ type RailEntry = {
 // the complete route registry and contextual links remain available to the product.
 const RAIL_GROUPS = [
   {
-    label: "Operations",
+    label: "Today",
     entries: [
-      ["command", "Command"],
-      ["movements", "Movement"],
+      ["command", "Home"],
+      ["movements", "Movements"],
       ["capacity", "Capacity"],
       ["delays", "Delays"],
       ["network", "Network"],
     ],
   },
   {
-    label: "Service Hubs",
+    label: "Where",
     entries: [
-      ["hub", "Search Hub"],
-      ["ed", "ED Hub"],
-      ["wards", "Ward Hub"],
-      ["community", "Community Hub"],
-      ["officer", "Transport Hub"],
+      ["hub", "Places"],
+      ["ed", "Emergency"],
+      ["wards", "Wards"],
+      ["community", "Community"],
+      ["officer", "Transport"],
     ],
   },
   {
-    label: "Care Coordination",
+    label: "Work",
     entries: [
       ["search", "Patients"],
-      ["referral-intake", "Make Referrals"],
-      ["referrals", "Referral Board"],
+      ["referral-intake", "New referral"],
+      ["referrals", "Referrals"],
       ["handover", "Handover"],
       ["discharges", "Discharges"],
     ],
   },
   {
-    label: "Oversight",
+    label: "Checks",
     entries: [
       ["governance", "Governance"],
       ["statistics", "Statistics"],
@@ -246,7 +229,7 @@ const GOVERNANCE_HREF = WARD_VIEWS.find((view) => view.id === "governance")?.hre
 // Visual abbreviations for the drawing's compact strip. Full registry names and live counts
 // remain on the accessible link and its focus card; these never define destinations.
 const COMPACT_LABELS: Record<string, string> = {
-  hub: "Search",
+  hub: "Places",
   ed: "ED",
   wards: "Wards",
   community: "Community",
@@ -349,7 +332,7 @@ export type WardRailProps = {
 export function WardRail({ asAt }: WardRailProps) {
   const publication = useWardChecks();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, leaveBeds, movements, patients, referrals, configuration } = useWardFlow();
+  const { units, bedReleases, leaveBeds, movements, configuration } = useWardFlow();
   const now = useWardFlowClock();
   // The ">4h" count used a fixed 240 minutes until 25 Sept 2026; it now uses the configured target.
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
@@ -369,10 +352,6 @@ export function WardRail({ asAt }: WardRailProps) {
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState<boolean>(false);
   const [capacityToast, setCapacityToast] = useState<string | null>(null);
   const capacityToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchOpen, setSearchOpen] = useState<boolean>(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchBoxRef = useRef<HTMLDivElement>(null);
   const userCardRef = useRef<HTMLDivElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
     subscribeToClosedRailCards,
@@ -393,35 +372,9 @@ export function WardRail({ asAt }: WardRailProps) {
   const metroLabel = bedAlerts.metroOccupancyPercent === null ? "Metro —" : `Metro ${bedAlerts.metroOccupancyPercent}%`;
   const metroPipLabel =
     bedAlerts.metroOccupancyPercent === null ? "—" : `${Math.round(bedAlerts.metroOccupancyPercent)}%`;
-
-  /**
-   * The rail's "Quick Clinical Jumps" — the three longest-waiting open movements, read live from
-   * state through the same resolver every other screen uses (`resolveSubjectPatient`). Never a
-   * typed-in name: where no patient is linked, the row honestly says "Unknown Patient" rather than
-   * inventing one (seed-linking on other branches is what fixes the underlying data).
-   */
-  const quickClinicalHits = useMemo(() => {
-    return byLongestWait(movements.filter(isOpen), now)
-      .slice(0, 3)
-      .map((movement) => {
-        const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
-        const originEd = edById(movement.originEdId);
-        const destUnit = movement.acceptedUnitId
-          ? units.find((unit) => unit.id === movement.acceptedUnitId)
-          : undefined;
-        const destination = movement.acceptedUnitId
-          ? wardLabel(movement.acceptedUnitId, destUnit?.name)
-          : "Seeking bed";
-        return {
-          id: movement.id.toLowerCase(),
-          name: patientInfo.displayName,
-          stage: stageCopy[movement.stage].label,
-          route: `${departmentLabel(movement.originEdId, originEd?.name)} → ${destination}`,
-          stat: movement.legalForm ? legalFormNameLabelFirst(movement.legalForm) : movement.legalStatus,
-          href: movementHref(movement.id),
-        };
-      });
-  }, [movements, now, patients, referrals, units]);
+  const hottestOccupancyLabel = mostPressingAlert
+    ? `${mostPressingAlert.shortName} ${mostPressingAlert.occupancyPercent}%`
+    : "";
 
   const setOpen = useCallback((next: boolean) => {
     setRailOpenPreference(next);
@@ -449,24 +402,7 @@ export function WardRail({ asAt }: WardRailProps) {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "/") {
-        // The phone uses the header search; do not focus the hidden desktop quick search.
-        if (!searchInputRef.current?.getClientRects().length) return;
-        const target = event.target;
-        const tag = target instanceof HTMLElement ? target.tagName : "";
-        if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
-        if (target instanceof HTMLElement && target.isContentEditable) return;
-        event.preventDefault();
-        if (!open) setOpen(true);
-        setSearchOpen(true);
-        searchInputRef.current?.focus();
-        return;
-      }
       if (event.key === "Escape") {
-        if (searchOpen) {
-          setSearchOpen(false);
-          searchInputRef.current?.blur();
-        }
         if (roleSwitcherOpen) {
           setRoleSwitcherOpen(false);
         }
@@ -508,13 +444,10 @@ export function WardRail({ asAt }: WardRailProps) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, searchOpen, roleSwitcherOpen, appearanceOpen, alertsOpen]);
+  }, [open, setOpen, roleSwitcherOpen, appearanceOpen, alertsOpen]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
-      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target as Node)) {
-        setSearchOpen(false);
-      }
       if (userCardRef.current && !userCardRef.current.contains(event.target as Node)) {
         setRoleSwitcherOpen(false);
       }
@@ -685,83 +618,6 @@ export function WardRail({ asAt }: WardRailProps) {
         </button>
       </div>
 
-      <div ref={searchBoxRef} className={styles.railSearchBox}>
-        <div className={styles.railSearchInputWrap}>
-          <Search aria-hidden="true" className={styles.railSearchIcon} />
-          <input
-            ref={searchInputRef}
-            type="search"
-            className={styles.railSearchInput}
-            placeholder="Search patients, beds (/)"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSearchOpen(true);
-            }}
-            onFocus={() => setSearchOpen(true)}
-            aria-label="Quick search patients and beds"
-            role="combobox"
-            aria-expanded={searchOpen}
-            aria-controls="ward-rail-search-results"
-          />
-          <kbd aria-hidden="true" className={styles.railSearchKbd}>
-            /
-          </kbd>
-        </div>
-        <button
-          type="button"
-          className={styles.railSearchCompactBtn}
-          aria-label="Search patients and beds (/)"
-          title="Search patients and beds (/)"
-          onClick={() => {
-            if (!open) setOpen(true);
-            setSearchOpen(true);
-            setTimeout(() => searchInputRef.current?.focus(), 50);
-          }}
-        >
-          <Search aria-hidden="true" className={styles.railSearchIcon} />
-        </button>
-        <div
-          id="ward-rail-search-results"
-          className={styles.railSearchPop}
-          data-show={searchOpen ? "true" : undefined}
-          role="region"
-          aria-label="Search results and quick clinical jumps"
-        >
-          <div className={styles.railSearchPopHead}>
-            {searchQuery.trim() ? "Matching Records" : "Quick Clinical Jumps"}
-          </div>
-          {quickClinicalHits
-            .filter(
-              (hit) =>
-                !searchQuery.trim() ||
-                hit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                hit.route.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .map((hit) => (
-              <Link
-                key={hit.id}
-                href={hit.href}
-                className={styles.qHit}
-                onClick={() => {
-                  setSearchOpen(false);
-                  setSearchQuery("");
-                  // Privacy review, 27 Sept 2026: spoken announcements never carry the patient's name.
-                  announceToWardShell("Opening this patient.");
-                }}
-              >
-                <div className={styles.qHitTop}>
-                  <span>{hit.name}</span>
-                  <span className={styles.qHitMeta}>{hit.stage}</span>
-                </div>
-                <div className={styles.qHitMeta}>
-                  {hit.route} · {hit.stat}
-                </div>
-              </Link>
-            ))}
-        </div>
-      </div>
-
       {service ? (
         <p className={styles.serviceLine} data-testid="ward-rail-service">
           <span
@@ -818,7 +674,7 @@ export function WardRail({ asAt }: WardRailProps) {
           title="Open shift handover board"
           aria-label={`Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`}
         >
-          <span className={styles.shiftTimerLabel}>Handover Countdown</span>
+          <span className={styles.shiftTimerLabel}>Handover</span>
           <span className={styles.shiftTimeBadge}>
             <Clock aria-hidden="true" className={styles.shiftClockIcon} />
             <span>{shiftProgress.countdownStr}</span>
@@ -834,17 +690,17 @@ export function WardRail({ asAt }: WardRailProps) {
             className={styles.compactAlertPip}
             data-code={mostPressingAlert.code}
             data-testid="ward-rail-compact-alert-pip"
-            title={`Statewide Alert: ${metroLabel} (${mostPressingAlert.shortName}: ${mostPressingAlert.codeLabel} · ${mostPressingAlert.freeBeds} beds free)`}
-            aria-label={`Statewide Alert: ${metroLabel} (${mostPressingAlert.shortName}: ${mostPressingAlert.codeLabel} · ${mostPressingAlert.freeBeds} beds free)`}
+            title={`Bed alerts: ${metroLabel}. ${hottestOccupancyLabel} · ${mostPressingAlert.freeBeds} unoccupied`}
+            aria-label={`Bed alerts: ${metroLabel}. ${hottestOccupancyLabel} · ${mostPressingAlert.freeBeds} unoccupied`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={() => {
               const nextOpen = !alertsOpen;
               setAlertsOpen(nextOpen);
               if (nextOpen) {
-                const message = `Metro Inpatient Capacity: ${
+                const message = `Metro occupancy ${
                   bedAlerts.metroOccupancyPercent === null ? "—" : `${bedAlerts.metroOccupancyPercent}%`
-                } · ${mostPressingAlert.shortName} at ${mostPressingAlert.codeLabel} (${mostPressingAlert.freeBeds} beds free).`;
+                }. ${hottestOccupancyLabel} · ${mostPressingAlert.freeBeds} unoccupied.`;
                 setCapacityToast(message);
                 announceToWardShell(message);
                 if (capacityToastTimerRef.current) clearTimeout(capacityToastTimerRef.current);
@@ -861,18 +717,24 @@ export function WardRail({ asAt }: WardRailProps) {
             className={styles.capacityPulseStrip}
             data-code={mostPressingAlert.code}
             data-testid="ward-rail-capacity-alerts-trigger"
-            title={`Click to view WA Mental Health Bed Alerts. Most pressing: ${mostPressingAlert.shortName} ${mostPressingAlert.codeLabel}.`}
+            title={`Bed alerts. Metro occupancy vs ${mostPressingAlert.shortName} occupancy.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={() => setAlertsOpen((prev) => !prev)}
           >
             <div className={styles.capacityPulseLeft}>
               <span className={styles.pulseDot} data-code={mostPressingAlert.code} aria-hidden="true" />
-              <span className={styles.capacityPulseLabel}>{metroLabel}</span>
+              <span className={styles.capacityPulsePair}>
+                <span className={styles.capacityPulseLabel}>
+                  <span className={styles.capacityPulseKind}>Metro </span>
+                  {bedAlerts.metroOccupancyPercent === null ? "—" : `${bedAlerts.metroOccupancyPercent}%`}
+                </span>
+                <span className={styles.capacityPulseLabel}>
+                  <span className={styles.capacityPulseKind}>{mostPressingAlert.shortName} </span>
+                  {mostPressingAlert.occupancyPercent}%
+                </span>
+              </span>
             </div>
-            <span className={styles.capacityPulseTag} data-code={mostPressingAlert.code}>
-              {mostPressingAlert.codeLabel}
-            </span>
             <ChevronDown
               aria-hidden="true"
               className={styles.capacityChevron}
@@ -881,17 +743,13 @@ export function WardRail({ asAt }: WardRailProps) {
           </button>
 
           {alertsOpen ? (
-            <div
-              className={styles.capacityAlertsDropdown}
-              role="dialog"
-              aria-label="WA Health Service Bed State Alerts"
-            >
+            <div className={styles.capacityAlertsDropdown} role="dialog" aria-label="Bed alerts">
               <div className={styles.alertsDropdownHeader}>
                 <div>
-                  <strong className={styles.alertsDropdownTitle}>WA Bed State Alerts</strong>
-                  <p className={styles.alertsDropdownSub}>Mental Health Services (WA Health)</p>
+                  <strong className={styles.alertsDropdownTitle}>Bed alerts</strong>
+                  <p className={styles.alertsDropdownSub}>Health services (demo)</p>
                 </div>
-                <span className={styles.alertsTotalBadge}>{bedAlerts.totalFreeBeds} Free Beds</span>
+                <span className={styles.alertsTotalBadge}>{bedAlerts.totalFreeBeds} Unoccupied Beds</span>
               </div>
 
               <div className={styles.alertsList}>
@@ -922,34 +780,26 @@ export function WardRail({ asAt }: WardRailProps) {
                         {svc.codeLabel}
                       </span>
                     </div>
-                    <div className={styles.alertMetrics}>
+                    <div className={styles.alertWarningRow}>
                       <span className={styles.alertOccupancy}>
-                        Occupancy: <strong>{svc.occupancyPercent}%</strong>
+                        Occupancy <strong>{svc.occupancyPercent}%</strong>
                       </span>
                       <span className={styles.alertBeds}>
-                        {svc.freeBeds} free ({svc.occupiedBeds}/{svc.totalBeds})
+                        {svc.freeBeds} unoccupied ({svc.occupiedBeds}/{svc.totalBeds})
                       </span>
-                    </div>
-                    {svc.remainingCapacityPercent !== undefined ? (
-                      <div className={styles.alertRemainingRow}>
-                        <span className={styles.alertRemainingText}>
-                          Remaining: <strong>{svc.remainingCapacityPercent}%</strong> ({svc.freeBeds}{" "}
-                          {svc.freeBeds === 1 ? "bed" : "beds"})
+                      {svc.edSummary && svc.edSummary.totalWaiting > 0 ? (
+                        <span
+                          className={styles.alertEdTag}
+                          data-code={svc.edSummary.warningLevel}
+                          title={svc.edSummary.clinicalAdvisory}
+                        >
+                          ED wait: {svc.edSummary.totalWaiting}
+                          {svc.edSummary.totalPastAccessTarget > 0
+                            ? ` (${svc.edSummary.totalPastAccessTarget} >${accessTargetLabel})`
+                            : ""}
                         </span>
-                        {svc.edSummary && svc.edSummary.totalWaiting > 0 ? (
-                          <span
-                            className={styles.alertEdTag}
-                            data-code={svc.edSummary.warningLevel}
-                            title={svc.edSummary.clinicalAdvisory}
-                          >
-                            ED: {svc.edSummary.totalWaiting} waiting
-                            {svc.edSummary.totalPastAccessTarget > 0
-                              ? ` (${svc.edSummary.totalPastAccessTarget} >${accessTargetLabel})`
-                              : ""}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </div>
                     <div className={styles.alertEscalation}>{svc.escalation}</div>
                   </Link>
                 ))}
@@ -989,7 +839,7 @@ export function WardRail({ asAt }: WardRailProps) {
         <div className={styles.mobileMore}>
           <button
             type="button"
-            className={styles.moreTrigger}
+            className={`${styles.moreTrigger} ${styles.allPagesTrigger}`}
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
             aria-controls="ward-rail-more-pages"
@@ -998,7 +848,7 @@ export function WardRail({ asAt }: WardRailProps) {
               setMoreOpen(true);
             }}
           >
-            More pages
+            All Pages
           </button>
         </div>
       </div>

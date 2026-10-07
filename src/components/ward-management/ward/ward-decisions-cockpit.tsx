@@ -165,7 +165,6 @@ function Queue({
   const intakeBadge = intakes.length > 0 ? "Due" : "Done";
   const departureBadge = blockedCount > 0 ? "Blocked" : readyCount > 0 ? "Ready" : "Done";
   const leaveBadge = leaves.length > 0 ? String(leaves.length) : "Done";
-
   return (
     <div className={styles.container}>
       <div className={styles.summaryGrid}>

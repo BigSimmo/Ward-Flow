@@ -305,8 +305,8 @@ describe("the Movements screen", () => {
       );
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
       fireEvent.click(within(worklist).getByRole("radio", { name: "By transport leg, and what has none" }));
-      const requestGroup = within(worklist).getByRole("heading", { name: "Unaccepted transport records" })
-        .parentElement!.parentElement!;
+      const requestGroup = within(worklist).getByRole("heading", { name: "Transport not accepted" }).parentElement!
+        .parentElement!;
       expect(findRecordRow(requestGroup, movement!.id)).toBeInTheDocument();
     } finally {
       movement!.transport = original;
@@ -335,7 +335,7 @@ describe("the Movements screen", () => {
     ).toHaveTextContent(unaccepted.length === 0 ? "none" : String(unaccepted.length));
     expect(
       within(transportPanel)
-        .getAllByText("No transport record", { selector: "span" })
+        .getAllByText("No transport yet", { selector: "span" })
         .map((element) => element.closest("li"))
         .find(Boolean),
     ).toHaveTextContent(noRecord.length === 0 ? "none" : String(noRecord.length));

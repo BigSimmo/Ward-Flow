@@ -827,11 +827,7 @@ function WardReferralDrawerContent({
                 <Send className={styles.headingIcon} aria-hidden="true" />
                 <span>Referrals</span>
                 <span className={styles.categoryBadge} data-testid="ward-referral-drawer-category-badge">
-                  {destType === "community"
-                    ? "Community Referral"
-                    : destType === "ed"
-                      ? "ED Referral"
-                      : "Ward Referral"}
+                  {destType === "community" ? "From community" : destType === "ed" ? "From ED" : "From a ward"}
                 </span>
               </h2>
               <div className={styles.drawerSubhead}>Patient details, referral draft and live placement options.</div>
