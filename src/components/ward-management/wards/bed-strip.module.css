@@ -21,6 +21,27 @@
   border-radius: var(--wf-r-pill);
 }
 
+.bar .ready {
+  flex-grow: var(--strip-ready);
+}
+
+.bar .pulled {
+  flex-grow: var(--strip-pulled);
+}
+
+.bar .closed {
+  flex-grow: var(--strip-closed);
+}
+
+.bar .occupied {
+  flex-grow: var(--strip-occupied);
+}
+
+.segment {
+  flex-basis: 0;
+  min-width: 3px;
+}
+
 .ready {
   background: var(--wf-data-ready);
 }

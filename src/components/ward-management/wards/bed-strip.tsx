@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { cx } from "@/components/wf";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 
@@ -16,20 +18,41 @@ export function BedStrip({
   counts,
   wardName,
   thin = false,
+  bar = false,
   className,
 }: {
   counts: StripCounts;
   wardName: string;
   thin?: boolean;
+  /** One proportional segment per state instead of one cell per bed (Places rows). */
+  bar?: boolean;
   className?: string;
 }) {
+  const label = `${wardName}: ${counts.ready} ready, ${counts.pulled} pulled, ${counts.closed} closed, ${counts.occupied} occupied`;
+  if (bar) {
+    return (
+      <span
+        role="img"
+        aria-label={label}
+        className={cx(styles.strip, styles.thin, styles.bar, className)}
+        style={
+          {
+            "--strip-ready": counts.ready,
+            "--strip-pulled": counts.pulled,
+            "--strip-closed": counts.closed,
+            "--strip-occupied": counts.occupied,
+          } as CSSProperties
+        }
+      >
+        {ORDER.filter((state) => counts[state] > 0).map((state) => (
+          <span key={state} className={cx(styles.cell, styles.segment, styles[state])} />
+        ))}
+      </span>
+    );
+  }
   const cells = ORDER.flatMap((state) => Array.from({ length: Math.max(0, counts[state]) }, () => state));
   return (
-    <span
-      role="img"
-      aria-label={`${wardName}: ${counts.ready} ready, ${counts.pulled} pulled, ${counts.closed} closed, ${counts.occupied} occupied`}
-      className={cx(styles.strip, thin && styles.thin, className)}
-    >
+    <span role="img" aria-label={label} className={cx(styles.strip, thin && styles.thin, className)}>
       {cells.map((state, index) => (
         <span key={`${state}-${index}`} className={cx(styles.cell, styles[state])} />
       ))}
