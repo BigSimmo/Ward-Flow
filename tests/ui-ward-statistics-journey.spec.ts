@@ -221,16 +221,15 @@ test.describe("@mockup page-specific statistics insights", () => {
     await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
     const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
     await expect(detail.locator("summary")).toHaveCount(0);
+    // v6 (7 Oct 2026): the comparison is a bar list whose team names link to each team's page.
+    const comparison = page.getByTestId("ward-statistics-community-comparison");
+    await comparison.getByLabel("Search Team comparison").fill("Bentley");
+    await comparison.getByRole("radio", { name: "With date" }).click();
     const chart = page.getByTestId("statistics-community-comparison-chart");
-    await chart.getByLabel("Search Team comparison").fill("Bentley");
-    await expect(chart.locator("button[data-chart-record]")).toHaveCount(1);
-    await chart.getByLabel("Team comparison measure").selectOption("expected");
-    await chart.locator("button[data-chart-record]").click();
-    await expect(chart.getByRole("complementary", { name: "Bentley details" }).getByRole("link")).toHaveAttribute(
+    await expect(chart.getByRole("link", { name: "Bentley" })).toHaveAttribute(
       "href",
       /statistics\/community\/bentley$/,
     );
-    await chart.getByRole("button", { name: "Close chart details" }).click();
     await expectNoPageOverflow(page, "community chart and comparison");
     await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
   });

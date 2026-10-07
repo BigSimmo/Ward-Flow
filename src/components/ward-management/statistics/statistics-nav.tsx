@@ -56,6 +56,18 @@ export function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   }
 }
 
+/**
+ * The current path, or an empty string where no app router is mounted (a page rendered on its own,
+ * as unit tests do). A page that names its own section never needs it.
+ */
+function useOptionalPathname(): string {
+  try {
+    return usePathname() || "";
+  } catch {
+    return "";
+  }
+}
+
 /** The Samples switch. Invented 30-day charts appear at the foot of the page while it is on. */
 export function StatisticsSamplesSwitch() {
   const samples = useStatisticsSamples();
@@ -71,7 +83,7 @@ export function StatisticsSamplesSwitch() {
  * then the four unit kinds with their counts. On a phone it becomes one native select.
  */
 export function StatisticsNav({ currentSection, activeSlug, withSamples = true, wardCount }: StatisticsNavProps) {
-  const pathname = usePathname() || "";
+  const pathname = useOptionalPathname();
   const router = useOptionalRouter();
 
   const activeSection = currentSection || sectionOf(pathname);

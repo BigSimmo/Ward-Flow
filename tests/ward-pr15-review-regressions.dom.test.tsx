@@ -192,7 +192,9 @@ describe("PR15 recorded facts and unavailable data", () => {
   it("changes community team using the internal router", () => {
     renderFlow(<StatisticsCommunityScreen teamId={COMMUNITY_TEAM_PAGES[0].id} />);
     const next = COMMUNITY_TEAM_PAGES[1].id;
-    fireEvent.change(screen.getByLabelText("Community Team:"), { target: { value: next } });
+    // v6 (7 Oct 2026): the team is changed from the hero's Change team menu.
+    fireEvent.click(screen.getByRole("button", { name: /Change team/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: COMMUNITY_TEAM_PAGES[1].name }));
     expect(push).toHaveBeenCalledExactlyOnceWith(communityStatisticsHref(next));
   });
 

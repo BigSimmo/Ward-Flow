@@ -1,82 +1,78 @@
 "use client";
 
-import { StatisticsInsightChart } from "./statistics-insight-chart";
-import { StatisticsDetailPanel } from "./statistics-detail-panel";
-import family from "./statistics-family.module.css";
-
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { CalendarClock, ChevronDown, FileText, PhoneCall, Search, Users } from "lucide-react";
 
+import {
+  BarList,
+  Button,
+  CardBody,
+  CardFoot,
+  HeroStat,
+  Icon,
+  Menu,
+  Meter,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  buttonClass,
+  tableClasses,
+} from "@/components/wf";
 import {
   admissionsWithNoCommunityTeam,
   communityHubLists,
   communityMembershipResolution,
   communityTeamById,
   COMMUNITY_TEAM_PAGES,
+  type CommunityTeam,
 } from "@/components/ward-management/community/community-derivations";
-import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
-import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
+import { communityStatisticsHref, communityTeamHref } from "@/components/ward-management/shell/ward-facade";
 import {
   statisticsSectionById,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WardPanel } from "@/components/ward-management/ward-panel";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
-import { figureText, isUnmeasured } from "./statistics-absence";
-import { communityFigures } from "./statistics-community-figures";
-import styles from "./statistics-sections.module.css";
-import pageStyles from "./statistics-community-third-edition.module.css";
-
-function openAndFocusCommunitySection(id: string) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  let details = target.closest("details");
-  while (details) {
-    details.open = true;
-    details = details.parentElement?.closest("details") ?? null;
-  }
-  queueMicrotask(() => target.focus({ preventScroll: true }));
-}
+import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-absence";
+import { countAxisMax } from "./statistics-axis";
+import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
+import { csvCell } from "./statistics-csv";
+import { dateOf, fromToday } from "./statistics-dates";
+import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { useOptionalRouter } from "./statistics-nav";
+import styles from "./statistics-v6.module.css";
+import detail from "./statistics-detail.module.css";
 
 /**
  * ONE COMMUNITY TEAM, IN FIGURES — and deliberately NOT a second copy of its operational page.
  *
- * 🔴 **`/mockups/ward-flow/community/[teamId]` ALREADY EXISTS AND ALREADY SHOWS THIS TEAM'S
- * LISTS.** `CommunityScreen` renders "Waiting for your answer", "Ours, in a bed or holding one",
- * "Expected back", "Discharged into the area", "Left the ward another way", the referrals it has
- * made, and its own limits panel. The gap this screen closes is that the STATISTICS hub indexed
- * four kinds of place and the network has five — not that a team had nowhere to be looked at.
+ * 🔴 **`/mockups/ward-flow/community/[teamId]` ALREADY SHOWS THIS TEAM'S LISTS.** This page carries
+ * COUNTS and a CROSS-TEAM COMPARISON — the question the operational hub cannot answer, because it
+ * only ever shows one team — and links to that hub for the work. The two short lists here (who is
+ * due out, and follow-up for those discharged) are read from the same `communityHubLists`, never
+ * re-derived.
  *
- * ⚠️ **SO THIS SCREEN MUST NOT RESTATE THOSE LISTS, AND THE REASON IS THIS REPOSITORY'S OWN RULE:
- * a second name for one fact is the drift every governance gate here exists to prevent.** Two
- * screens rendering the same population from the same derivation will diverge the first time only
- * one of them is edited, and nothing goes red when they do. This page therefore carries COUNTS and
- * a CROSS-TEAM COMPARISON — the question the operational hub cannot answer, because it only ever
- * shows one team — and it links to that hub for the names.
+ * ⚠️ **A SLUG THAT RESOLVES TO NOTHING GETS A PAGE THAT SAYS SO.** `communityTeamById` returns `null`
+ * rather than guessing, and this screen never falls back to a different team.
  *
- * ⚠️ **A SLUG THAT RESOLVES TO NOTHING GETS A PAGE THAT SAYS SO**, matching the ward, department
- * and health-service screens beside it. `communityTeamById` returns `null` rather than guessing,
- * and this screen never falls back to a different team: one team's patients under another team's
- * name is the worst answer it could give.
+ * ⚠️ **AN EMPTY TEAM IS NOT AUTOMATICALLY A MEASURED ABSENCE.** `communityMembershipResolution`
+ * separates "we looked and found nobody" from "we cannot look at all", and every figure here,
+ * including every row of the comparison, carries that state through `communityFigures`. An
+ * unmeasured figure is left out of the bars and said in words, never drawn as a nought.
  *
- * ⚠️ **THE EMPTY-STATE SENTENCES ARE SCOPED TO WHAT EACH FIGURE MEASURES, NEVER WIDENED.**
- * `communityHubLists` documents this trap being sprung twice in one day in two different files: a
- * figure computed over CURRENT cases, rendered as an absence over ALL cases, states something
- * false about the cases it never looked at. `expectedBack` is a subset of `currentlyAdmitted`, so
- * "nobody has a discharge date" here can only ever mean "nobody IN A BED has one" — and it says
- * exactly that. The tempting repair is to widen the figure; the defect is always in the claim.
+ * ⚠️ **"With a discharge date" is a subset of the people holding a bed**, never a count over everyone
+ * this team has had; the card says so.
  *
- * ⚠️ **AND AN EMPTY TEAM IS NOT AUTOMATICALLY A MEASURED ABSENCE.** `communityMembershipResolution`
- * separates "we looked and found nobody" from "we cannot look at all" — the latter when admissions
- * carry a `referralId` pointing at no referral in state. Reporting the second as the first would
- * publish a confident zero over a broken join.
+ * **Left out of the drawing:** the handover Sent/Not sent column and its Ask action, and the "seen
+ * within 7 days" follow-up figure. The record keeps neither a handover message nor a contact date.
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
-  const router = useRouter();
-  const { admissions, referrals } = useWardFlow();
+  const live = useStatisticsLive();
+  const { admissions, referrals, units } = live.state;
+  const now = live.now;
+  const { dayZero } = useWardFlow();
 
   const section = statisticsSectionById("community");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
@@ -85,201 +81,147 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
 
   if (!team) {
     return (
-      <StatisticsSectionFrame
+      <StatisticsPage
         section={section}
-        title="Community team not found"
-        subtitle="The address names a community team this prototype does not have."
+        navSection="community"
         testId="ward-statistics-community-screen"
-        design="third-edition"
+        title="Community team not found"
+        eyebrowLabel="Community team"
+        now={now}
+        paused={live.paused}
+        onTogglePause={live.togglePause}
       >
-        <div className={styles.notFoundBlock}>
-          <p className={styles.notFoundBody} data-testid="ward-statistics-community-unresolved">
-            No community team in this prototype has the address <span className={styles.unresolvedId}>{teamId}</span>.
-            The teams here are exactly those the referral form can name — {COMMUNITY_TEAM_PAGES.length} of them — so a
-            team that exists in the real world and not in that list has no page. This page never falls back to a
-            different team, because a page showing one team&apos;s patients under another team&apos;s name is worse than
-            a page showing nothing.
-          </p>
-          <p className={styles.body}>
-            <Link href={STATISTICS_COMMUNITY_CHOOSER_HREF} data-testid="ward-statistics-community-chooser-link">
-              Choose a community team from the statistics hub
-            </Link>{" "}
-            to reach one that does exist.
-          </p>
-        </div>
-      </StatisticsSectionFrame>
+        <StatCard icon={Users} title="No such team">
+          <CardBody className={styles.bodyStack}>
+            <p data-testid="ward-statistics-community-unresolved">
+              No community team in this prototype has the address <code className={detail.code}>{teamId}</code>. The
+              teams here are exactly those the referral form can name — {COMMUNITY_TEAM_PAGES.length} of them — so a
+              team that exists in the real world and not in that list has no page. This page never falls back to a
+              different team, because a page showing one team&apos;s patients under another team&apos;s name is worse
+              than a page showing nothing.
+            </p>
+            <p>
+              <Link href={STATISTICS_COMMUNITY_CHOOSER_HREF} data-testid="ward-statistics-community-chooser-link">
+                Choose a community team from the statistics hub
+              </Link>{" "}
+              to reach one that does exist.
+            </p>
+          </CardBody>
+        </StatCard>
+      </StatisticsPage>
     );
   }
 
   const lists = communityHubLists(admissions, team, referrals);
-  const resolution = communityMembershipResolution(admissions, team, referrals);
-  /*
-   * 🔴 The four figures carry their own state. Until 2026-09-11 these cells rendered
-   * `lists.<x>.length` with NO gate on `resolution`, while the paragraph below called a zero
-   * there "a confident answer over a question that was never asked" — and the zero was provable,
-   * not merely possible. See `statistics-community-figures.ts`.
-   */
-  const figures = communityFigures(lists, resolution);
-
-  /*
-   * 🔴 **ONE SOURCE FOR THE FOUR ROWS, BECAUSE THE TABLE IS NOT THE ONLY THING THAT NAMES THEM.**
-   * The provenance section below has to say which figures are invented, and a hand-typed list there
-   * would be a SECOND source — stale the first time a row is added, which is six times in this
-   * tranche. Both render from this array, so a row that nobody discloses cannot exist.
-   */
-  const figureRows = [
-    {
-      key: "admitted",
-      label: "In a bed, or holding one",
-      figure: figures.admitted,
-      counts:
-        "Referred to this team and occupying a bed now — including a bed pulled for somebody who has not physically arrived, because the ward has committed it either way.",
-    },
-    {
-      key: "expected",
-      label: "Of those, with a discharge date written down",
-      figure: figures.expected,
-      counts:
-        "A subset of the row above, never a count over everybody this team has ever had. It exists while somebody can still act on it.",
-    },
-    {
-      key: "discharged",
-      label: "Discharged into the area",
-      figure: figures.discharged,
-      counts: "Left the ward to the community this team serves.",
-    },
-    {
-      key: "other",
-      label: "Left the ward another way",
-      figure: figures.other,
-      counts: "Transferred, or left by a route that is not a discharge into the area.",
-    },
-  ] as const;
+  const figures = communityFigures(lists, communityMembershipResolution(admissions, team, referrals));
   const unseen = admissionsWithNoCommunityTeam(admissions, referrals);
+  const allTeams = COMMUNITY_TEAM_PAGES.map((candidate) => ({
+    team: candidate,
+    figures: communityFigures(
+      communityHubLists(admissions, candidate, referrals),
+      communityMembershipResolution(admissions, candidate, referrals),
+    ),
+  }));
+  const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  const notArranged = lists.dischargedIntoTheArea.filter((admission) => admission.followUp?.state !== "arranged");
+  const dueOut = [...lists.expectedBack].sort(
+    (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
+  );
 
-  // Every team, so this page can say where THIS team sits. The operational hub shows one team at a
-  // time by design, so the comparison is the thing only a statistics page can give.
-  //
-  // 🔴 EACH ROW CARRIES ITS OWN `figures`, GATED THE SAME WAY THIS TEAM'S OWN FOUR ARE (see `figures`
-  // above). The comparison cells used to render `row.lists.*.length` directly, with no gate on
-  // whether the join that puts a person on THAT candidate team could even run — the same false-zero
-  // defect `communityFigures` exists to close for this team's own figures, paid a second time, once
-  // per row, because the table computed its own ungated count instead of reusing that gate.
-  const allTeams = COMMUNITY_TEAM_PAGES.map((candidate) => {
-    const candidateLists = communityHubLists(admissions, candidate, referrals);
-    return {
-      team: candidate,
-      lists: candidateLists,
-      figures: communityFigures(candidateLists, communityMembershipResolution(admissions, candidate, referrals)),
-    };
-  });
+  const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
+    { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
+    { key: "expected", label: "With a discharge date", figure: figures.expected },
+    { key: "discharged", label: "Discharged into the area", figure: figures.discharged },
+    { key: "other", label: "Left the ward another way", figure: figures.other },
+  ];
+  const measuredMax = Math.max(1, ...figureRows.map((row) => (row.figure.kind === "measured" ? row.figure.value : 0)));
 
   return (
-    <StatisticsSectionFrame
+    <StatisticsPage
       section={section}
-      title={team.name}
-      subtitle=""
+      navSection="community"
+      slug={team.id}
       testId="ward-statistics-community-screen"
-      design="third-edition"
-    >
-      {/* CMHT Switcher & 64-Clinic Selector Bar */}
-      <div className={pageStyles.teamChooserBar}>
-        <div className={pageStyles.teamSelectGroup}>
-          <label htmlFor="cmhtSelect" className={pageStyles.teamSelectLabel}>
-            Community Team:
-          </label>
-          <select
-            id="cmhtSelect"
-            className={pageStyles.teamSelect}
-            value={team.id}
-            onChange={(e) => {
-              const nextId = e.target.value;
-              if (nextId) router.push(communityStatisticsHref(nextId));
-            }}
-          >
-            {COMMUNITY_TEAM_PAGES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <span className={family.note}>Current snapshot</span>
-      </div>
-      <StatisticsInsightChart
-        title="Community handover"
-        variant="distribution"
-        testId="statistics-community-handover-chart"
-        metrics={[
-          {
-            id: "count",
-            label: "Recorded people",
-            unit: "people",
-            note: "Discharge dates are a subset of people holding a bed. Departures describe recorded admission states, without a reporting window.",
-          },
-        ]}
-        rows={figureRows.map((row) => ({
-          id: row.key,
-          name: row.label,
-          values: { count: row.figure.kind === "measured" ? row.figure.value : null },
-          unavailable: figureText(row.figure),
-          detail: row.counts,
-        }))}
-      />
-      <nav className={pageStyles.viewTabbar} aria-label="Community statistics sections">
-        <a
-          className={pageStyles.tabBtn}
-          href="#community-stat-caseload"
-          onClick={() => openAndFocusCommunitySection("community-stat-caseload")}
-          style={{ textDecoration: "none" }}
-        >
-          Current figures
-        </a>
-        <a
-          className={pageStyles.tabBtn}
-          href="#community-stat-inpatient"
-          onClick={() => openAndFocusCommunitySection("community-stat-inpatient")}
-          style={{ textDecoration: "none" }}
-        >
-          People in beds
-        </a>
-      </nav>
-
-      <div id="community-stat-caseload" tabIndex={-1} className={family.actions}>
-        <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-operational-link">
-          Open the caseload list →
-        </Link>
-      </div>
-
-      {/* Preservation of required accessible details and testids */}
-      <div className={pageStyles.pageGrid}>
-        <StatisticsDetailPanel title="Caseload" testId="ward-statistics-community-figures">
-          <div className={styles.panelBody} role="group" aria-label="Community caseload content" tabIndex={0}>
-            <div className={pageStyles.kpiBand} aria-label="Community caseload headline figures">
-              {figureRows.map((row) => (
-                <div
-                  className={pageStyles.kpi}
-                  key={`kpi-${row.key}`}
+      title={team.name}
+      titleAction={<ChangeTeam currentId={team.id} />}
+      eyebrowLabel="Community team"
+      eyebrowDetail={<span>{COMMUNITY_TEAM_PAGES.length} teams in the network</span>}
+      now={now}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+      stats={
+        <>
+          {figureRows.map((row) => (
+            <HeroStat
+              key={row.key}
+              value={
+                <span
                   data-testid={`ward-statistics-community-kpi-${row.key}`}
+                  data-unmeasured={isUnmeasured(row.figure) || undefined}
                 >
-                  <span className={pageStyles.kpiLabel}>{row.label}</span>
-                  <strong className={pageStyles.kpiValue}>{figureText(row.figure)}</strong>
-                </div>
-              ))}
-            </div>
-            <div className={pageStyles.figureDetailsBody}>
-              <WardTable testId="ward-statistics-community-figures-table">
+                  {row.figure.kind === "measured" ? row.figure.value : "none"}
+                </span>
+              }
+              label={HERO_LABELS[row.key]}
+            />
+          ))}
+          <HeroStat
+            value={figures.discharged.kind === "measured" ? notArranged.length : "none"}
+            label={
+              <span className={styles.flagged}>
+                {figures.discharged.kind === "measured" && notArranged.length > 0 ? (
+                  <StatusGlyph tone="warning" size={9} />
+                ) : null}
+                No follow-up yet
+              </span>
+            }
+          />
+        </>
+      }
+    >
+      <div className={styles.gridMain}>
+        <TeamComparison current={team} rows={allTeams} />
+        <div className={styles.stack}>
+          <StatCard
+            icon={FileText}
+            title="Community handover"
+            aside="Current snapshot"
+            data-testid="statistics-community-handover-chart"
+          >
+            <div className={styles.tableWrap}>
+              <table
+                className={`${tableClasses.table} ${styles.table}`}
+                data-testid="ward-statistics-community-figures-table"
+              >
+                <caption className={styles.srOnly}>Community handover figures for {team.name}, synthetic</caption>
                 <thead>
                   <tr>
                     <th scope="col">Figure</th>
-                    <th scope="col">Count</th>
+                    <th scope="col">
+                      <span className={styles.srOnly}>Bar</span>
+                    </th>
+                    <th scope="col" className={styles.num}>
+                      People
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {figureRows.map((row) => (
                     <tr key={row.key} data-testid={`ward-statistics-community-row-${row.key}`}>
                       <th scope="row">{row.label}</th>
+                      <td className={detail.meterCell}>
+                        {row.figure.kind === "measured" ? (
+                          <Meter
+                            value={row.figure.value}
+                            max={measuredMax}
+                            fill="data-1"
+                            label={row.label}
+                            valueText={null}
+                          />
+                        ) : null}
+                      </td>
                       <td
+                        className={row.figure.kind === "measured" ? styles.num : `${styles.num} ${styles.muted}`}
                         data-testid={`ward-statistics-community-value-${row.key}`}
                         data-unmeasured={isUnmeasured(row.figure) || undefined}
                       >
@@ -288,158 +230,390 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     </tr>
                   ))}
                 </tbody>
-              </WardTable>
-
-              {/*
-            The scoped sentences. Each names the population its figure actually measured — see the
-            file header on why widening the figure is the wrong repair.
-          */}
+              </table>
             </div>
-          </div>
-        </StatisticsDetailPanel>
+            <SrOnly>
+              <p
+                data-testid="ward-statistics-community-in-hospital-count"
+                data-unmeasured={isUnmeasured(figures.admitted) || undefined}
+              >
+                {figureText(figures.admitted)} referred to this team and occupying or holding a bed now.
+              </p>
+              <p
+                data-testid="ward-statistics-community-in-hospital-with-date"
+                data-unmeasured={isUnmeasured(figures.expected) || undefined}
+              >
+                {figureText(figures.expected)} of those have a discharge date written down.
+              </p>
+              <p
+                data-testid="ward-statistics-community-hospital-discharges-count"
+                data-unmeasured={isUnmeasured(figures.discharged) || undefined}
+              >
+                {figureText(figures.discharged)} discharged into the area this team serves.
+              </p>
+              <p
+                data-testid="ward-statistics-community-other-departures-count"
+                data-unmeasured={isUnmeasured(figures.other) || undefined}
+              >
+                {figureText(figures.other)} left a ward another way.
+              </p>
+            </SrOnly>
+            <CardFoot meta="Dates are a subset of people holding a bed">
+              <Link
+                href={communityTeamHref(team)}
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                data-testid="ward-statistics-community-operational-link"
+              >
+                Open caseload
+              </Link>
+            </CardFoot>
+          </StatCard>
 
-        <StatisticsDetailPanel
-          title="Discharges from hospital into this team's care"
-          testId="ward-statistics-community-hospital-discharges"
-        >
-          <div className={styles.panelBody} role="group" aria-label="Hospital discharges content" tabIndex={0}>
-            <p
-              className={styles.measuredCount}
-              data-testid="ward-statistics-community-hospital-discharges-count"
-              data-unmeasured={isUnmeasured(figures.discharged) || undefined}
-            >
-              <strong>{figureText(figures.discharged)}</strong> discharged into the area this team serves.
-            </p>
-            <p
-              className={styles.measuredCount}
-              data-testid="ward-statistics-community-other-departures-count"
-              data-unmeasured={isUnmeasured(figures.other) || undefined}
-            >
-              <strong>{figureText(figures.other)}</strong> left a ward another way.
-            </p>
-          </div>
-        </StatisticsDetailPanel>
+          <StatCard icon={PhoneCall} title="Follow-up" aside="Discharged here">
+            <CardBody className={styles.bodyStack}>
+              {lists.dischargedIntoTheArea.length === 0 ? (
+                <p className={styles.muted}>
+                  {figures.discharged.kind === "measured"
+                    ? "Nobody has been discharged into this area"
+                    : figureText(figures.discharged)}
+                </p>
+              ) : (
+                <ul className={detail.crossList}>
+                  {lists.dischargedIntoTheArea.map((admission) => (
+                    <li key={admission.id} className={detail.crossRow}>
+                      <span>
+                        <span className={detail.primary}>{admission.id}</span>
+                        <span className={detail.secondary}>
+                          {unitName(admission.unitId)}
+                          {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
+                        </span>
+                      </span>
+                      <span className={styles.flagged}>
+                        {admission.followUp?.state === "arranged" ? (
+                          <>
+                            <StatusGlyph tone="success" size={9} />
+                            Arranged
+                          </>
+                        ) : (
+                          <>
+                            <StatusGlyph tone="warning" size={9} />
+                            {admission.followUp ? "Not arranged" : "Not recorded"}
+                          </>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+            <CardFoot meta={`${unseen.length} of ${admissions.length} admissions have no community team`}>
+              <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
+                {unseen.length} of {admissions.length} admissions without a community team
+              </span>
+              <Link
+                href={communityTeamHref(team)}
+                className={styles.footLink}
+                data-testid="ward-statistics-community-coverage-link"
+              >
+                Open {team.name}
+              </Link>
+            </CardFoot>
+          </StatCard>
+        </div>
+      </div>
 
-        <div className={pageStyles.unsupportedGrid}></div>
+      <StatCard icon={CalendarClock} title="Due out to this team" aside="With a discharge date">
+        <div className={styles.tableWrap}>
+          <table className={`${tableClasses.table} ${styles.table}`}>
+            <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
+            <thead>
+              <tr>
+                <th scope="col">Admission</th>
+                <th scope="col">Ward</th>
+                <th scope="col">Discharge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dueOut.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className={styles.muted}>
+                    {figures.expected.kind === "measured"
+                      ? "Nobody in a bed has a discharge date written down"
+                      : figureText(figures.expected)}
+                  </td>
+                </tr>
+              ) : null}
+              {dueOut.map((admission) => (
+                <tr key={admission.id}>
+                  <th scope="row">
+                    <span className={detail.primary}>{admission.id}</span>
+                  </th>
+                  <td>{unitName(admission.unitId)}</td>
+                  <td>
+                    {admission.expectedDischargeAt === null ? (
+                      <span className={styles.muted}>No date</span>
+                    ) : (
+                      <>
+                        {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </StatCard>
+    </StatisticsPage>
+  );
+}
 
-        <WardPanel title="People currently in a hospital bed" testId="ward-statistics-community-in-hospital">
-          <div
-            id="community-stat-inpatient"
-            className={styles.panelBody}
-            role="group"
-            aria-label="People in hospital content"
-            tabIndex={-1}
-          >
-            <p
-              className={styles.measuredCount}
-              data-testid="ward-statistics-community-in-hospital-count"
-              data-unmeasured={isUnmeasured(figures.admitted) || undefined}
-            >
-              <strong>{figureText(figures.admitted)}</strong> referred to this team and occupying or holding a bed now.
-            </p>
-            <p
-              className={styles.measuredCount}
-              data-testid="ward-statistics-community-in-hospital-with-date"
-              data-unmeasured={isUnmeasured(figures.expected) || undefined}
-            >
-              <strong>{figureText(figures.expected)}</strong> of those have a discharge date written down.
-            </p>
-          </div>
-        </WardPanel>
+const HERO_LABELS: Record<keyof CommunityFigures, string> = {
+  admitted: "In a bed or holding",
+  expected: "With a discharge date",
+  discharged: "Discharged here",
+  other: "Left another way",
+};
 
-        <StatisticsDetailPanel title="Where this team sits" testId="ward-statistics-community-comparison">
-          <div className={styles.panelBody} role="group" aria-label="Community comparison content" tabIndex={0}>
-            <StatisticsInsightChart
-              title="Team comparison"
-              testId="statistics-community-comparison-chart"
-              defaultSort="value"
-              metrics={figureRows.map((row) => ({
-                id: row.key,
-                label: row.label,
-                unit: "people",
-                note: "Whole-network recorded team membership. Missing links remain unavailable; discharge dates are a subset of people holding beds.",
-              }))}
-              rows={allTeams.map((row) => ({
+function ChangeTeam({ currentId }: { currentId: string }) {
+  const router = useOptionalRouter();
+  return (
+    <Menu
+      label="Change team"
+      items={COMMUNITY_TEAM_PAGES.map((each) => ({
+        id: each.id,
+        label: each.name,
+        disabled: each.id === currentId,
+        onSelect: () => {
+          const href = communityStatisticsHref(each.id);
+          if (router) router.push(href);
+          else window.location.assign(href);
+        },
+      }))}
+      trigger={(props) => (
+        <button {...props} type="button" className={buttonClass({ variant: "onHero", size: "sm" })}>
+          Change team
+          <Icon icon={ChevronDown} size={14} />
+        </button>
+      )}
+    />
+  );
+}
+
+type Measure = keyof CommunityFigures;
+const MEASURES: { id: Measure; label: string; chart: string }[] = [
+  { id: "admitted", label: "In beds", chart: "People in a bed or holding one, by team" },
+  { id: "expected", label: "With date", chart: "People with a discharge date, by team" },
+  { id: "discharged", label: "Discharged", chart: "People discharged into the area, by team" },
+  { id: "other", label: "Left", chart: "People who left the ward another way, by team" },
+];
+const TOP = 12;
+
+function TeamComparison({
+  current,
+  rows,
+}: {
+  current: CommunityTeam;
+  rows: { team: CommunityTeam; figures: CommunityFigures }[];
+}) {
+  const [view, setView] = useState<"chart" | "data">("chart");
+  const [measure, setMeasure] = useState<Measure>("admitted");
+  const [sort, setSort] = useState<"highest" | "name">("highest");
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const needle = query.trim().toLowerCase();
+  const matching = rows.filter((row) => !needle || row.team.name.toLowerCase().includes(needle));
+  const measured = matching.filter((row) => row.figures[measure].kind === "measured");
+  const valueOf = (row: { figures: CommunityFigures }) => {
+    const figure = row.figures[measure];
+    return figure.kind === "measured" ? figure.value : 0;
+  };
+  const sorted = [...measured].sort((a, b) =>
+    sort === "name"
+      ? a.team.name.localeCompare(b.team.name)
+      : valueOf(b) - valueOf(a) || a.team.name.localeCompare(b.team.name),
+  );
+  const shown = showAll || needle ? sorted : sorted.slice(0, TOP);
+  const unlinked = matching.length - measured.length;
+  const mean =
+    measured.length === 0 ? undefined : measured.reduce((sum, row) => sum + valueOf(row), 0) / measured.length;
+  const chart = MEASURES.find((entry) => entry.id === measure)!;
+
+  function exportCsv() {
+    const lines = [
+      ["Team", "In a bed", "With a discharge date", "Discharged into the area", "Left another way"],
+      ...matching.map((row) => [
+        row.team.name,
+        figureText(row.figures.admitted),
+        figureText(row.figures.expected),
+        figureText(row.figures.discharged),
+        figureText(row.figures.other),
+      ]),
+    ];
+    const url = URL.createObjectURL(
+      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ward-flow-synthetic-community-teams.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <StatCard
+      icon={Users}
+      title="Team comparison"
+      action={
+        <Segmented
+          label="Team comparison view"
+          value={view}
+          onChange={setView}
+          items={[
+            { id: "chart", label: "Chart" },
+            { id: "data", label: "Data" },
+          ]}
+        />
+      }
+      data-testid="ward-statistics-community-comparison"
+    >
+      <div className={styles.toolbar}>
+        <Segmented
+          label="Team comparison measure"
+          value={measure}
+          onChange={setMeasure}
+          items={MEASURES.map((entry) => ({ id: entry.id, label: entry.label }))}
+        />
+        <Segmented
+          label="Sort teams"
+          value={sort}
+          onChange={setSort}
+          items={[
+            { id: "highest", label: "Highest" },
+            { id: "name", label: "A to Z" },
+          ]}
+        />
+        <TextInput
+          type="search"
+          icon={Search}
+          boxClassName={styles.search}
+          aria-label="Search Team comparison"
+          placeholder="Find a team"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
+      {view === "chart" ? (
+        <CardBody className={styles.bodyStack} data-testid="statistics-community-comparison-chart">
+          {shown.length === 0 ? (
+            <p className={styles.muted}>No team matches</p>
+          ) : (
+            <BarList
+              label={chart.chart}
+              axis
+              max={countAxisMax(shown.map(valueOf))}
+              mean={mean}
+              meanLabel="Mean per team"
+              labelWidth="12rem"
+              rows={shown.map((row) => ({
                 id: row.team.id,
-                name: row.team.name,
-                values: Object.fromEntries(
-                  figureRows.map((measure) => {
-                    const figure = row.figures[measure.key];
-                    return [measure.key, figure.kind === "measured" ? figure.value : null];
-                  }),
+                label: (
+                  <Link href={communityStatisticsHref(row.team.id)} className={styles.rowLink}>
+                    {row.team.name}
+                  </Link>
                 ),
-                unavailable: "Not linked",
-                href: communityStatisticsHref(row.team.id),
+                labelText: row.team.name,
+                sub: row.team.id === current.id ? "this team" : undefined,
+                value: valueOf(row),
+                display: String(valueOf(row)),
               }))}
             />
-            <WardTable testId="ward-statistics-community-comparison-table">
-              <thead>
-                <tr>
-                  <th scope="col">Team</th>
-                  <th scope="col">In a bed</th>
-                  <th scope="col">Discharge date written</th>
-                  <th scope="col">Discharged into the area</th>
+          )}
+          {unlinked > 0 ? (
+            <p className={detail.note}>
+              {unlinked} {unlinked === 1 ? "team is" : "teams are"} not linked, so left out of the bars
+            </p>
+          ) : null}
+        </CardBody>
+      ) : (
+        <div className={styles.tableWrap}>
+          <table
+            className={`${tableClasses.table} ${styles.table}`}
+            data-testid="ward-statistics-community-comparison-table"
+          >
+            <caption className={styles.srOnly}>Every community team&apos;s figures, synthetic</caption>
+            <thead>
+              <tr>
+                <th scope="col">Team</th>
+                <th scope="col" className={styles.num}>
+                  In a bed
+                </th>
+                <th scope="col" className={styles.num}>
+                  With date
+                </th>
+                <th scope="col" className={styles.num}>
+                  Discharged
+                </th>
+                <th scope="col" className={styles.num}>
+                  Left
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {matching.map((row) => (
+                <tr
+                  key={row.team.id}
+                  data-testid={`ward-statistics-community-compare-row-${row.team.id}`}
+                  aria-current={row.team.id === current.id ? "true" : undefined}
+                  className={row.team.id === current.id ? detail.currentRow : undefined}
+                >
+                  <th scope="row">
+                    {row.team.id === current.id ? (
+                      <span data-testid="ward-statistics-community-compare-self">{row.team.name}</span>
+                    ) : (
+                      <Link href={communityStatisticsHref(row.team.id)} className={styles.rowLink}>
+                        {row.team.name}
+                      </Link>
+                    )}
+                  </th>
+                  {(["admitted", "expected", "discharged", "other"] as const).map((key) => (
+                    <td
+                      key={key}
+                      className={isUnmeasured(row.figures[key]) ? `${styles.num} ${styles.muted}` : styles.num}
+                      data-unmeasured={isUnmeasured(row.figures[key]) || undefined}
+                    >
+                      {figureText(row.figures[key])}
+                    </td>
+                  ))}
                 </tr>
-              </thead>
-              <tbody>
-                {allTeams.map((row) => (
-                  <tr
-                    key={row.team.id}
-                    data-testid={`ward-statistics-community-compare-row-${row.team.id}`}
-                    aria-current={row.team.id === team.id ? "true" : undefined}
-                  >
-                    <th scope="row">
-                      {row.team.id === team.id ? (
-                        <span data-testid="ward-statistics-community-compare-self">{row.team.name}</span>
-                      ) : (
-                        <Link href={communityStatisticsHref(row.team.id)}>{row.team.name}</Link>
-                      )}
-                    </th>
-                    <td data-unmeasured={isUnmeasured(row.figures.admitted) || undefined}>
-                      {figureText(row.figures.admitted)}
-                    </td>
-                    <td data-unmeasured={isUnmeasured(row.figures.expected) || undefined}>
-                      {figureText(row.figures.expected)}
-                    </td>
-                    <td data-unmeasured={isUnmeasured(row.figures.discharged) || undefined}>
-                      {figureText(row.figures.discharged)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </WardTable>
-          </div>
-        </StatisticsDetailPanel>
-
-        {/*
-        🔴 **THE PROVENANCE SECTION — and its figure list is DERIVED, never typed.**
-
-        The drawing carries "What is invented, and what is real" and this screen has never had it,
-        nor have two of its three siblings. ⚠️ **A hand-typed list of figure names here would be a
-        second source: stale the first time a section is added, which is six times in this tranche.**
-        So it names `figureRows` — the same array the table renders — and a row that nobody discloses
-        cannot exist.
-
-        ⚠️ **WHAT THIS SECTION DELIBERATELY DOES NOT CLAIM.** The drawing's "what is real" list is the
-        health services, the hospital sites and the ward names read from the network's own table —
-        **none of which this screen renders.** 🔴 **A "what is real" claim about things that are not
-        on the page is a second source about somebody else's screen**, so this says only what it can
-        see: everything here is invented, and it names each one.
-      */}
-
-        <WardPanel title="Unassigned community care" testId="ward-statistics-community-limits">
-          <div className={styles.panelBody} role="group" aria-label="Community coverage limits content" tabIndex={0}>
-            <p className={styles.body} data-testid="ward-statistics-community-unseen">
-              <strong>{unseen.length}</strong> of {admissions.length} admissions without a community team
-            </p>
-            <p className={styles.body}>
-              <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-coverage-link">
-                Open {team.name}&apos;s operational page
-              </Link>
-            </p>
-          </div>
-        </WardPanel>
-      </div>
-    </StatisticsSectionFrame>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <CardFoot
+        meta={
+          view === "chart" ? (
+            <>
+              Showing <b>{shown.length}</b> of {measured.length} teams
+            </>
+          ) : (
+            <>
+              <b>{matching.length}</b> of {rows.length} teams
+            </>
+          )
+        }
+      >
+        {view === "chart" && !needle && sorted.length > TOP ? (
+          <Button size="sm" variant="ghost" onClick={() => setShowAll((value) => !value)}>
+            {showAll ? `Top ${TOP}` : `Show all ${sorted.length}`}
+          </Button>
+        ) : null}
+        <Button size="sm" variant="ghost" onClick={exportCsv}>
+          CSV
+        </Button>
+      </CardFoot>
+    </StatCard>
   );
 }

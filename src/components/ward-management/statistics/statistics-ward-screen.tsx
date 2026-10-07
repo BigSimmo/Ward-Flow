@@ -33,7 +33,7 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { MINUTES_PER_DAY, calendarDateOf, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -41,6 +41,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { countAxisMax } from "./statistics-axis";
+import { dateOf, fromToday, weekdayOf } from "./statistics-dates";
 import { csvCell } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { useOptionalRouter } from "./statistics-nav";
@@ -468,26 +469,6 @@ export function StatisticsWardScreen({
       <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
     </StatisticsPage>
   );
-}
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function weekdayOf(instant: number, dayZero: Date): string {
-  return WEEKDAYS[calendarDateOf(instant, dayZero).getDay()]!;
-}
-
-/** "Thu 3 Sep", the calendar day an instant falls on. */
-function dateOf(instant: number, dayZero: Date): string {
-  const date = calendarDateOf(instant, dayZero);
-  return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
-}
-
-/** "in 2d", "today" or "3d ago": how far a day is from today. */
-function fromToday(instant: number, now: number): string {
-  const days = dayOf(instant) - dayOf(now);
-  if (days === 0) return "today";
-  return days > 0 ? `in ${days}d` : `${-days}d ago`;
 }
 
 /** Whole days since arrival, or null when the person has not arrived (or the record says later). */
