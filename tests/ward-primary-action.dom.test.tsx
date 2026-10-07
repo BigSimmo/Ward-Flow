@@ -134,9 +134,13 @@ describe("WardBar primary action — the five kinds, D-16", () => {
       const badge = screen.getByTestId("ward-referral-drawer-category-badge");
       expect(badge).toHaveTextContent(label);
 
-      // Placement Destination Tier select has the corresponding value auto-selected
-      const destSelect = screen.getByLabelText(/Placement Destination Tier/i) as HTMLSelectElement;
-      expect(destSelect.value).toBe(expectedDestType);
+      // The "Refer to" choice has the corresponding destination auto-selected. v6
+      // (ReferralDrawer--referral.webp) shows it as a radio group, which replaced the
+      // "Placement Destination Tier" select.
+      const destLabel = { ward: "Ward bed", community: "Community team", ed: "ED psychiatry" }[expectedDestType];
+      const destRadio = screen.getByLabelText(destLabel) as HTMLInputElement;
+      expect(destRadio).toBeChecked();
+      expect(destRadio.value).toBe(expectedDestType);
     },
   );
 
