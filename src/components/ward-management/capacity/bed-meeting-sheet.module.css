@@ -1,7 +1,8 @@
-/* The morning bed-meeting sheet (`bed-meeting-sheet.tsx`).
+/* The morning bed-meeting sheet (`bed-meeting-sheet.tsx`), v6.
  * On screen it is a dialog over Capacity; on paper it is one A4 page and nothing else. The dialog
  * is portalled to <body>, outside the screen's own token scope, so it composes the shell tokens
- * itself — including their print block, which sends light colours to the printer in dark mode. */
+ * itself (their print block sends light colours to the printer in dark mode). Screen styles use
+ * the global v6 tokens. */
 .portal {
   composes: wardTokens from "../ward-tokens.module.css";
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
@@ -12,53 +13,57 @@
   align-items: flex-start;
   justify-content: center;
   overflow-y: auto;
-  padding: var(--ward-space-24) var(--ward-space-16);
-  color: var(--ink);
-  font-family: var(--body);
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
   font-variant-numeric: tabular-nums;
 }
 
 .backdrop {
   position: fixed;
   inset: 0;
-  background: var(--line-strong);
+  background: var(--wf-scrim);
 }
 
 .dialog {
   position: relative;
-  width: min(100%, 52rem);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--ward-space-8);
-  background: var(--surface);
-  box-shadow: var(--ward-shadow);
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 940px);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
   outline: none;
 }
 
 .toolbar {
+  position: absolute;
+  top: var(--wf-s-3);
+  right: var(--wf-s-4);
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--ward-space-8);
-  padding: var(--ward-space-12) var(--ward-space-16);
-  border-bottom: 1px solid var(--line);
+  gap: var(--wf-s-2);
 }
 
 .openButton,
 .primaryButton,
 .secondaryButton {
-  min-height: var(--ward-tap);
-  padding: 0 var(--ward-space-16);
-  border-radius: var(--ward-space-6);
-  font: inherit;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .openButton,
 .secondaryButton {
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
+  border: 1px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
 }
 
 .openButton {
@@ -66,121 +71,130 @@
 }
 
 .primaryButton {
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
+  border: 1px solid var(--wf-pri-edge);
+  background: linear-gradient(var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
 }
 
 .openButton:hover,
 .secondaryButton:hover {
-  background: var(--surface-2);
+  background: var(--wf-hover);
 }
 
 .primaryButton:hover {
-  background: var(--accent-press);
+  filter: brightness(1.08);
 }
 
 .openButton:focus-visible,
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
 .sheet {
-  padding: var(--ward-space-20) var(--ward-space-24) var(--ward-space-16);
-  color: var(--ink);
-  font-size: 0.875rem;
-  line-height: var(--ward-leading-compact, 1.35);
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
 }
 
 .titleRow {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--ward-space-4) var(--ward-space-16);
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding-right: 220px;
 }
 
 .title {
   margin: 0;
-  font-family: var(--display);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  color: var(--wf-ink-1);
 }
 
 .stamp {
   margin: 0;
-  font-weight: 700;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
 }
 
 .disclosure,
 .footer,
 .note,
 .more {
-  margin: var(--ward-space-4) 0 0;
-  color: var(--ink-soft);
-  font-size: 0.75rem;
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: var(--ward-space-12) var(--ward-space-20);
-  margin-top: var(--ward-space-12);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4) var(--wf-s-4);
+  margin-top: var(--wf-s-4);
 }
 
 .section {
   min-width: 0;
-  padding-top: var(--ward-space-8);
-  border-top: 2px solid var(--ink);
   break-inside: avoid;
 }
 
 .sectionTitle {
-  margin: 0 0 var(--ward-space-6);
-  font-size: 0.9375rem;
-  font-weight: 700;
+  margin: 0 0 var(--wf-s-1);
+  padding-bottom: var(--wf-s-1);
+  border-bottom: 1px solid var(--wf-line-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
 }
 
 .subTitle {
-  margin: var(--ward-space-8) 0 var(--ward-space-2);
-  color: var(--ink-soft);
-  font-size: 0.75rem;
-  font-weight: 700;
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--wf-ink-3);
 }
 
 .summary,
 .empty {
-  margin: 0 0 var(--ward-space-6);
+  margin: 0 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
 }
 
 .empty {
-  color: var(--ink-soft);
+  color: var(--wf-ink-3);
 }
 
 .figure {
-  font-weight: 700;
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
 }
 
 .facts {
   display: grid;
-  gap: var(--ward-space-4);
   margin: 0;
 }
 
 .facts > div {
   display: flex;
   justify-content: space-between;
-  gap: var(--ward-space-12);
-  padding-bottom: var(--ward-space-2);
-  border-bottom: 1px solid var(--line);
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
 }
 
 .facts dt {
-  color: var(--ink-soft);
+  color: var(--wf-ink-2);
 }
 
 .facts dd {
@@ -198,36 +212,66 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 var(--ward-space-8);
-  padding: var(--ward-space-2) 0;
-  border-bottom: 1px solid var(--line);
+  gap: 0 var(--wf-s-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
 }
 
 .rowLead {
   font-weight: 600;
+  color: var(--wf-ink-1);
 }
 
 .rowNote {
-  color: var(--ink-soft);
+  color: var(--wf-ink-2);
 }
 
 .tag,
 .tagStrong {
-  padding: 0 var(--ward-space-4);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--ward-space-4);
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
 }
 
-.tagStrong {
-  border-color: var(--ink);
-  font-weight: 700;
+.tag::before,
+.tagStrong::before {
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--wf-neutral);
+  border-radius: var(--wf-r-pill);
+  content: "";
+}
+
+.tagStrong::before {
+  border: 0;
+  background: var(--wf-warning);
 }
 
 .footer {
-  margin-top: var(--ward-space-12);
-  padding-top: var(--ward-space-6);
-  border-top: 1px solid var(--line);
+  margin-top: var(--wf-s-4);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+@media (max-width: 40rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .titleRow {
+    padding-right: 0;
+    padding-top: 56px;
+  }
+
+  .openButton,
+  .primaryButton,
+  .secondaryButton {
+    min-height: 3rem;
+  }
 }
 
 /* While the sheet is open, printing sends the sheet alone: every other child of <body> leaves the
