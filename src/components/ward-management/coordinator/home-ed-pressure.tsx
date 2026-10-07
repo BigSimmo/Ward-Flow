@@ -8,11 +8,7 @@ import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivat
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
-import {
-  DUE_SOON_MINUTES,
-  DUE_SOON_URGENT_MINUTES,
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
@@ -20,6 +16,14 @@ import { edShortName, siteByCode } from "@/components/ward-management/ward-sites
 import styles from "./home.module.css";
 
 type Order = "longest" | "most";
+
+/**
+ * A due-soon window as it is said on screen: "1h" for whole hours, else "1h 30m". Read from the
+ * saved configuration, because `clockState` classifies against those same saved values.
+ */
+export function dueWindowLabel(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60}h` : durMinutes(minutes);
+}
 
 const ORDER_ITEMS: { id: Order; label: string }[] = [
   { id: "longest", label: "Longest wait" },
@@ -47,6 +51,8 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
   const { configuration } = useWardFlow();
   const [order, setOrder] = useState<Order>("longest");
+  const urgentWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
+  const soonWindow = dueWindowLabel(configuration.dueSoonMinutes);
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
   const summaries = useMemo(() => edOpenSummaries(movements, now), [movements, now]);
 
@@ -67,7 +73,6 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   return (
     <Card className={styles.edCard} aria-label="Emergency department pressure">
       <CardHead
-        className={styles.edHead}
         icon={Activity}
         title="ED pressure"
         meta={`${scoped.length} departments`}
@@ -90,14 +95,14 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
               : critical > 0
                 ? {
                     tone: "danger",
-                    text: `${critical} due in ${DUE_SOON_URGENT_MINUTES / 60}h`,
-                    spoken: `${critical} due within ${DUE_SOON_URGENT_MINUTES / 60}h (your default)`,
+                    text: `${critical} due in ${urgentWindow}`,
+                    spoken: `${critical} due within ${urgentWindow} (your default)`,
                   }
                 : due > 0
                   ? {
                       tone: "warning",
                       text: `${due} due soon`,
-                      spoken: `${due} due within ${DUE_SOON_MINUTES / 60}h (your default)`,
+                      spoken: `${due} due within ${soonWindow} (your default)`,
                     }
                   : deadlines.length > 0
                     ? {

@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero, HeroStat, LiveChip, buttonClass } from "@/components/wf";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { clockState } from "@/components/ward-management/ward-clock";
-import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -30,7 +29,7 @@ import styles from "./home.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { ExceptionDrawer } from "./exception-drawer";
 import { HomeBedflow } from "./home-bedflow";
-import { HomeEdPressure } from "./home-ed-pressure";
+import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
 import { SinceLastLookPanel } from "./since-last-look-panel";
@@ -48,9 +47,9 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  *
  * One hero band (open movements and the day's counts, Live with pause, Start handover), the ED
  * pressure card, then three columns: the priority queue, State bedflow, and the registers with
- * "Since you looked". Selecting a patient or referral opens the explainable shortlist over the
- * right column; State bedflow names the patient, how many wards fit and the best fit, and Offer
- * picks that ward in the shortlist. Nothing on this screen changes state except through the
+ * "Since you looked". Selecting a patient or referral opens the explainable shortlist in the right
+ * column under the registers (a bottom sheet on a phone); State bedflow names the patient, how
+ * many wards fit and the best fit, and Offer picks that ward in the shortlist. Nothing on this screen changes state except through the
  * shortlist's own reducer actions.
  *
  * Kept from the third edition: the selection survives a role switch while the movement is open
@@ -257,7 +256,7 @@ export function CoordinatorScreen() {
                 />
                 <HeroStat
                   value={breachWithinHour}
-                  label={`Due within ${DUE_SOON_URGENT_MINUTES / 60}h`}
+                  label={`Due within ${dueWindowLabel(configuration.dueSoonUrgentMinutes)}`}
                   tone={breachWithinHour > 0 ? "warning" : undefined}
                 />
               </>
@@ -337,8 +336,9 @@ export function CoordinatorScreen() {
                 }}
               />
 
-              <SinceLastLookPanel world={lastLookWorld} now={now} activity={recentActivity} />
-
+              {/* The shortlist opens in this column's own flow, after the registers (the drawing's
+                  order), so it never covers a register tab: Refused stays reachable while a patient
+                  is open. */}
               {hasPanelSubject ? (
                 <>
                   <div
@@ -397,6 +397,8 @@ export function CoordinatorScreen() {
                   </div>
                 </>
               ) : null}
+
+              <SinceLastLookPanel world={lastLookWorld} now={now} activity={recentActivity} />
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Badge, Button, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
+import { Badge, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
 import { DeclineRegister } from "@/components/ward-management/decline-register";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -24,9 +24,6 @@ const REGISTER_TABS: { id: RegisterTabId; label: string }[] = [
   { id: "overrides", label: "Overrides" },
   { id: "refused", label: "Refused" },
 ];
-
-/** Exceptions shown before "Show N more". Every row stays mounted, so counts still match rows. */
-const EXCEPTIONS_SHOWN = 5;
 
 const ALERTS_HREF = "/mockups/ward-flow/alerts";
 
@@ -57,8 +54,9 @@ type ExceptionDrawerProps = {
  *   row closes it so Confirm stays in reach.
  * - All four tabpanels stay mounted at every width; only `hidden` and `data-open` change, so a
  *   tab's `aria-controls` never dangles.
- * - Every count is the `.length` of the array its own panel renders (Ruling 3). The Exceptions
- *   panel shows five rows then "Show N more"; the rest are mounted and hidden.
+ * - Every count is the `.length` of the array its own panel renders, and every row it counts is
+ *   on screen (Ruling 3): a tab reading 7 over a panel showing 5 is the same defect, so the
+ *   mockup's "2 more" truncation is not used.
  * - Refusals are their own tab, separate from exceptions: a refusal and an inbox item are
  *   different facts a coordinator answers differently.
  */
@@ -82,7 +80,6 @@ export function ExceptionDrawer({
   onSelectMovement,
 }: ExceptionDrawerProps) {
   const [activeTab, setActiveTab] = useState<RegisterTabId>("exceptions");
-  const [showAll, setShowAll] = useState(false);
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
 
@@ -112,7 +109,6 @@ export function ExceptionDrawer({
   const unmatchedSilence = [...(silenceReminders?.entries() ?? [])].filter(
     ([movementId]) => !inboxMovementIds.has(movementId),
   );
-  const hiddenCount = Math.max(0, items.length - EXCEPTIONS_SHOWN);
   const checkedAt = formatInstantWithDay(now, now);
 
   return (
@@ -186,10 +182,10 @@ export function ExceptionDrawer({
             <EmptyState title="No exceptions right now" meta={`Checked at ${checkedAt}`} />
           ) : (
             <ul className={styles.registerList}>
-              {items.map((item, index) => {
+              {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
                 return (
-                  <li key={item.id} hidden={!showAll && index >= EXCEPTIONS_SHOWN}>
+                  <li key={item.id}>
                     <button
                       type="button"
                       data-testid={`ward-exception-${item.id}`}
@@ -237,13 +233,7 @@ export function ExceptionDrawer({
             </ul>
           ) : null}
           <div className={styles.cardFoot}>
-            {hiddenCount > 0 ? (
-              <Button variant="ghost" size="sm" onClick={() => setShowAll((current) => !current)}>
-                {showAll ? "Show fewer" : `Show ${hiddenCount} more`}
-              </Button>
-            ) : (
-              <span className={styles.footMeta}>{items.length === 0 ? "None now" : "All shown"}</span>
-            )}
+            <span className={styles.footMeta}>{items.length === 0 ? "None now" : "All shown"}</span>
             <Link href={ALERTS_HREF} className={styles.footLink}>
               View all
             </Link>
@@ -284,19 +274,24 @@ export function ExceptionDrawer({
           {refusalsNewestFirst.length === 0 ? (
             <EmptyState title="No refused actions" meta={`Checked at ${checkedAt}`} />
           ) : (
-            <ul className={styles.registerList}>
-              {refusalsNewestFirst.map((rejection) => (
-                <li key={rejection.id} data-testid={`ward-refusal-${rejection.id}`} className={styles.registerRow}>
-                  <span className={styles.registerMain}>
-                    <span className={styles.registerTitle}>{rejection.attempted}</span>
-                    <span className={styles.registerSub}>{rejection.reason}</span>
-                  </span>
-                  <Badge tone="danger" variant="mono" size="sm" className={styles.noShrink}>
-                    {formatInstantWithDay(rejection.at, now)}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className={styles.registerLead} id="ward-refusals-lead">
+                Refused actions, newest first
+              </p>
+              <ul className={styles.registerList} aria-labelledby="ward-refusals-lead">
+                {refusalsNewestFirst.map((rejection) => (
+                  <li key={rejection.id} data-testid={`ward-refusal-${rejection.id}`} className={styles.registerRow}>
+                    <span className={styles.registerMain}>
+                      <span className={styles.registerTitle}>{rejection.attempted}</span>
+                      <span className={styles.registerSub}>{rejection.reason}</span>
+                    </span>
+                    <Badge tone="danger" variant="mono" size="sm" className={styles.noShrink}>
+                      {formatInstantWithDay(rejection.at, now)}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </section>
       </div>

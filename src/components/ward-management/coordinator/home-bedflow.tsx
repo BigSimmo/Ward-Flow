@@ -22,6 +22,7 @@ import { wardCategory } from "@/components/ward-management/ward-bed-designation"
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
+  candidateReason,
   eligibleCandidatesAmong,
   restrictionNotice,
   wardServiceOrder,
@@ -174,12 +175,14 @@ export function HomeBedflow({
       { id: "closed", value: states.closed, fill: "closed", label: "Closed" },
       { id: "occupied", value: states.occupied, fill: "data-3", label: "Occupied" },
     ];
+    // The old diagram's own words: a recorded destination says which kind it is, and a ward that
+    // was considered but does not fit says why (`candidateReason`), never a bare "Needs a look".
     const status = isAccepted
-      ? "Accepted"
+      ? "Accepted destination"
       : isReferred
-        ? "Referred"
+        ? "Outstanding referral"
         : candidate && !candidate.verdict.eligible
-          ? "Needs a look"
+          ? candidateReason(candidate.verdict)
           : undefined;
 
     return (
@@ -211,9 +214,11 @@ export function HomeBedflow({
             ) : null}
           </span>
           <StackBar className={styles.unitBar} thin label={`${unit.name} beds`} segments={segments} />
+          {/* DOM reads "Ready 2" (the old diagram's wording, and what a screen reader hears);
+              `column-reverse` draws the figure above a lower-case "ready", as the mockup does. */}
           <span className={styles.unitReady}>
+            <span className={styles.unitReadyWord}>Ready</span>{" "}
             <span className={styles.unitReadyValue}>{states.ready}</span>
-            <span className={styles.unitReadyWord}>ready</span>
           </span>
           {status ? (
             <span className={styles.unitStatus}>
@@ -221,7 +226,14 @@ export function HomeBedflow({
               {status}
             </span>
           ) : null}
-          {notice ? <span className="sr-only">{notice.text}</span> : null}
+          {/* A restriction notice is painted, never screen-reader only. A voluntary patient on a
+              locked ward gets the danger glyph: it is the sharper of the two levels. */}
+          {notice ? (
+            <span className={styles.unitStatus} data-level={notice.level}>
+              <StatusGlyph tone={notice.level === "voluntary_on_locked" ? "danger" : "warning"} size={9} />
+              {notice.text}
+            </span>
+          ) : null}
         </button>
         <span className={styles.unitAction}>
           {fit ? (

@@ -325,6 +325,12 @@
   flex: 0 0 auto;
 }
 
+/* Carries `data-tier` and the 12px type-floor hook; adds no box of its own. */
+.queueTierCell {
+  display: contents;
+  font-size: var(--wf-fs-12);
+}
+
 .queueChip {
   flex: 0 0 auto;
 }
@@ -380,6 +386,13 @@
   min-width: 2rem;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.queueScore {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-feature-settings: "tnum" 1;
 }
 
 .queueMarks {
@@ -643,7 +656,7 @@
 
 .unitReady {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: flex-end;
   line-height: var(--wf-lh-12);
 }
@@ -655,15 +668,18 @@
 .unitReadyWord {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-11);
+  text-transform: lowercase;
 }
 
 .unitStatus {
   display: inline-flex;
   grid-column: 1 / -1;
-  align-items: center;
+  /* A notice can wrap to two lines; the glyph stays beside its first line. */
+  align-items: first baseline;
   gap: var(--wf-s-1);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .unitAction {
@@ -780,6 +796,14 @@ button.registerRow:hover {
   color: var(--wf-ink-2);
 }
 
+.registerLead {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
 /* ---------- since you looked ---------- */
 
 .sinceCard {
@@ -830,9 +854,6 @@ button.registerRow:hover {
 }
 
 .shortlistColumn {
-  position: absolute;
-  inset: 0;
-  z-index: var(--co-z-banner);
   display: flex;
   min-width: 0;
 }
@@ -888,26 +909,11 @@ button.registerRow:hover {
 /* ---------- phone ---------- */
 
 @media (max-width: 48rem) {
-  /* The order choice drops below the title rather than squeezing it to an ellipsis. */
-  .edHead,
-  .flowHead {
-    flex-wrap: wrap;
-  }
-
-  .edHead > div:not(:last-child),
-  .flowHead > div:not(:last-child) {
-    flex: 1 0 auto;
-  }
-
-  /* The bed bar takes its own line under the ward name, so the name keeps its width. */
-  .unitMain {
-    grid-template-columns: minmax(0, 1fr) 3.5rem;
-    row-gap: var(--wf-s-1);
-  }
-
-  .unitBar {
-    grid-row: 2;
-    grid-column: 1 / -1;
+  /* Phone form (Task 8): queue first. The ED card and State bedflow leave the page; the queue and
+     the registers stay, and the registers collapse behind "Today's answers". */
+  .edCard,
+  .flowCard {
+    display: none;
   }
 
   .body {
@@ -936,10 +942,6 @@ button.registerRow:hover {
 
   .registersPanel[data-open="false"] {
     display: none;
-  }
-
-  .shortlistColumn {
-    position: static;
   }
 }
 

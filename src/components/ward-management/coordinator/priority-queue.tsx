@@ -159,7 +159,7 @@ export function PriorityQueue({
       {activeTab === "patients" && filterEdId ? (
         <div className={styles.queueFilter}>
           <AppliedFilter onRemove={onClearFilter} removeLabel="Clear filter">
-            {filterEd ? `${filterEd.siteCode} only` : "Department unavailable"}
+            {filterEd ? `Filtered to ${filterEd.siteCode}` : "Filtered to a department that is unavailable"}
           </AppliedFilter>
         </div>
       ) : null}
@@ -232,7 +232,12 @@ export function PriorityQueue({
                 title={flagDetail}
                 onClick={() => onSelect(movement.id)}
               >
-                <TierTile tier={movement.urgency} className={styles.queueTier} />
+                {/* `data-tier` is what the ordering journey reads; the type-floor gate measures the
+                    12px tier digit through this wrapper (`display: contents`, so the tile stays the
+                    row's grid item). */}
+                <span className={styles.queueTierCell} data-ward-type-floor="command-tier" data-tier={movement.urgency}>
+                  <TierTile tier={movement.urgency} className={styles.queueTier} />
+                </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
                     <strong>{who.formalName}</strong>
@@ -241,6 +246,16 @@ export function PriorityQueue({
                     <span className={styles.queueSubText}>
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
                       {originEd ? originEd.siteCode : "unknown ED"}
+                    </span>
+                    {/* The operational score, painted small and labelled "Op" so it never reads as
+                        clinical severity; the screen-reader line below says "Operational" in full. */}
+                    <span
+                      className={styles.queueScore}
+                      data-ward-type-floor="command-score"
+                      title="Operational score: how the movement is going operationally, not clinical severity"
+                      aria-hidden="true"
+                    >
+                      Op {score}
                     </span>
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}

@@ -163,11 +163,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
     // Before selection, the diagram header reports the fixture's ward count and
     // the shortlist is absent. Selecting a row mounts the matching shortlist.
+    // 2026-10-07 (v6 Home): the State bedflow card head reads "22 wards", as the v6 Home mockup
+    // draws it; the count itself is still the fixture's own `allUnits().length`.
     await expect(shortlist).toHaveCount(0);
     await expect(
       page
         .getByRole("region", { name: "State Bedflow", exact: true })
-        .getByText(`${allUnits().length} inpatient wards`, { exact: true }),
+        .getByText(`${allUnits().length} wards`, { exact: true }),
     ).toBeVisible();
 
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
@@ -394,11 +396,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The worst department leads, and says why it is worst.
     const worst = cards.first();
     await expect(worst).toContainText("waiting");
-    // Capitalised on screen ("Longest {duration}", `pressure-strip.tsx`'s own visible label) even
-    // though the card's `aria-label` sentence uses lowercase "longest" for its own flow — two
-    // deliberately different casings for the same fact, one read and one seen. This checks the
-    // rendered text, so it matches the visible label's casing.
-    await expect(worst).toContainText("Longest");
+    // 2026-10-07 (v6 Home): Home's ED pressure card paints "{duration} longest" (the v6 Home
+    // mockup's wording, `home-ed-pressure.tsx`), so the visible label is lower case now. This
+    // still checks the rendered text, so it matches the visible label's casing.
+    await expect(worst).toContainText("longest");
 
     // The rendered sequence itself is non-increasing on the two keys `edPressure` ranks by.
     // Asserting only that card 1 "contains some text" (above) stays true even if the rows were
@@ -569,7 +570,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
+    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
+    // waits on its first ward node instead. Every assertion below reads the same node ids.
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
     const queue = page.getByRole("region", { name: "Priority queue" });
 
     // WF-017 has an outstanding referral to BTY Adult Secure and no acceptance yet —
@@ -686,7 +689,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
+    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
+    // waits on its first ward node instead. Every assertion below reads the same node ids.
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     // WF-001 is an OPEN-status movement whose top candidate is a locked ward that passes every
     // gate — the exact pairing the review found.
@@ -768,7 +773,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
+    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
+    // waits on its first ward node instead. Every assertion below reads the same node ids.
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     const wf301 = requireMovement("WF-301");
     expect(wf301.legalStatus, "fixture assumption: WF-301 is a Voluntary movement").toBe("Voluntary");

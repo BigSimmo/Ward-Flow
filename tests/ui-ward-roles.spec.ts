@@ -1254,8 +1254,11 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // ambiguity: the diagram's scroll container carries a second, more specific
     // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
     // visual upgrade (883ecfdfb4).
+    // 2026-10-07 re-point (v6 Home): Home's State bedflow card is a grouped ward list with no SVG
+    // arrows, so "the diagram has rendered" now waits on its first ward node instead of the old
+    // `svg path[marker-end]`. The nodes keep the old diagram's `ward-diagram-unit-<id>` ids.
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     await page
       .getByRole("region", { name: "Priority queue" })
