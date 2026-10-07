@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 **WHAT A READER ACTUALLY SEES ON THE SCREEN THEY WOULD RING.**
@@ -24,7 +25,12 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  */
 
 function renderOnCall() {
-  return render(<OnCallScreen />);
+  // The screen reads board time from the provider clock, as every screen does.
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <OnCallScreen />
+    </WardFlowProvider>,
+  );
 }
 
 /** The service filter is the hero track: radios whose names end in their role count. */

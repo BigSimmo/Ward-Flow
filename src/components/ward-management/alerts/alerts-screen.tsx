@@ -1631,7 +1631,7 @@ function AlertsWorkspace() {
                     >
                       <option value={60}>1h</option>
                       <option value={120}>2h</option>
-                      <option value={240}>4h, one shift</option>
+                      <option value={240}>4h</option>
                       <option value={480}>8h</option>
                       <option value={720}>12h</option>
                       <option value={1440}>24h</option>

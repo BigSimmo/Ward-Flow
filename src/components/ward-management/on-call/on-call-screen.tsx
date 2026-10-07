@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Building2, Clock, Copy, Layers, Phone, Radio, Search, Star } from "lucide-react";
 import { NETWORK_ON_CALL_ROLES, roleRecordCounts, SERVICE_ON_CALL_ROLES } from "./on-call-roster";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -95,7 +95,7 @@ const COVER_AT_ITEMS: { id: CoverAt; label: string }[] = [
 ];
 
 const DAY = 24 * 60;
-const MIN_MS = 60_000;
+const MINUTE = 60_000;
 const mod = (value: number) => ((value % DAY) + DAY) % DAY;
 const hhmm = (minute: number) =>
   `${String(Math.floor(mod(minute) / 60)).padStart(2, "0")}:${String(mod(minute) % 60).padStart(2, "0")}`;
@@ -147,7 +147,7 @@ function daySegments(window: ShiftWindow): [number, number][] {
  * they do not initiate calls. Empty service filters describe missing records, never real coverage.
  */
 export function OnCallScreen() {
-  const boardNow = useWardFlowClock(NOW_ANCHOR);
+  const boardNow = useWardFlowClock();
   const [selectedService, setSelectedService] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("all");
@@ -355,7 +355,7 @@ export function OnCallScreen() {
                   label="On now"
                   tone={onNow > 0 ? "success" : undefined}
                 />
-                <HeroStat value={dur(nextChange * MIN_MS)} label={`to ${hhmm(boardMinute + nextChange)} change`} />
+                <HeroStat value={dur(nextChange * MINUTE)} label={`to ${hhmm(boardMinute + nextChange)} change`} />
               </>
             }
             bar={
@@ -493,8 +493,8 @@ export function OnCallScreen() {
                                 <StatusGlyph tone={on ? "success" : "neutral"} size={9} />
                                 {on ? "On, ends" : `${window.kind},`}
                                 <Timer
-                                  at={(referenceMinute + minutesToChange(window, referenceMinute)) * MIN_MS}
-                                  now={referenceMinute * MIN_MS}
+                                  at={(referenceMinute + minutesToChange(window, referenceMinute)) * MINUTE}
+                                  now={referenceMinute * MINUTE}
                                   direction="in"
                                 />
                               </span>
@@ -881,7 +881,7 @@ function CoverChart({
       <CardHead
         id="ward-on-call-cover"
         icon={Clock}
-        title="Cover over 24h"
+        title="Cover through the day"
         meta="synthetic shifts"
         action={
           <div className={styles.coverAt}>

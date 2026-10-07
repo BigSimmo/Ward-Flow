@@ -88,7 +88,7 @@ import {
   Timer,
 } from "@/components/wf";
 
-const MINUTE_MS = 60_000;
+const MINUTE = 60_000;
 
 /** The three handover shifts and the board-time clock each one starts at. */
 const SHIFTS = [
@@ -1030,7 +1030,7 @@ export function HandoverPage() {
                 <span className={pageStyles.heroTimer}>
                   <Icon icon={Clock} size={14} />
                   <span>Handover</span>
-                  <Timer at={(now + minutesToHandover) * MINUTE_MS} now={now * MINUTE_MS} direction="in" />
+                  <Timer at={(now + minutesToHandover) * MINUTE} now={now * MINUTE} direction="in" />
                 </span>
               ) : null}
               <Button
