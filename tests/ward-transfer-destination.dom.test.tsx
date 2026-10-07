@@ -20,7 +20,7 @@ describe("Phase 4: Clinical Invariant Hardening", () => {
     expect(result.rejections[0]?.reason).toContain("Unknown or unpermitted event type: UNKNOWN_MALICIOUS_ACTION");
   });
 
-  it("preserves careJourney.transfer on receiving admission when inter-ward transfer arrives", () => {
+  it("retains completed transfer history on the sending stay and starts a fresh receiving journey", () => {
     const state = seedWardFlowState();
     // Pick an occupied admission with a linked movement
     const admission = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
@@ -79,7 +79,15 @@ describe("Phase 4: Clinical Invariant Hardening", () => {
       (a) => a.patientId === admission.patientId && a.state === "occupied",
     );
     expect(receivingAdmission).toBeDefined();
-    expect(receivingAdmission?.careJourney?.transfer).toBeDefined();
-    expect(receivingAdmission?.careJourney?.transfer?.receivingUnitId).toBe(targetUnit.id);
+    expect(receivingAdmission?.careJourney?.transfer).toBeUndefined();
+    expect(next.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer).toMatchObject({
+      step: "arrived",
+      receivingUnitId: targetUnit.id,
+    });
+    const onward = wardFlowReducer(
+      next,
+      command(next, receivingAdmission!.id, { kind: "transfer", step: "accepted", receivingUnitId: admission.unitId }),
+    );
+    expect(onward.rejections).toEqual([]);
   });
 });

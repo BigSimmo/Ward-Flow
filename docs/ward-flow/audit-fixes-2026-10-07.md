@@ -10,11 +10,7 @@ Gender correction updates the held admission and arrival records the gender used
 
 Transport schemas are validated in their owning contexts: movement transport and admission care transport are different records. Restored broadcasts require the collection, sequence, valid row fields and acknowledgement arrays before readers can touch them.
 
-Evidence: nine new public-seam regressions failed before these changes; the regressions and existing care-journey suite pass together (70 tests). Source TypeScript check passed. Further compatibility and UI fixes in progress.
-
-## Remaining patch groups
-
-Draft persistence, expected departure editing, Settings operational defaults, board-refresh disclosure and accessibility preference wiring. Final checks and evidence will be appended here.
+Evidence: nine new public-seam regressions failed before these changes; the regressions and existing care-journey suite pass together (70 tests). Source TypeScript check passed. Compatibility and UI repairs are described below.
 
 ## Draft privacy
 
@@ -34,4 +30,12 @@ Expected departure editing starts with a clock-only `HH:mm` value; saving still 
 
 Reduced motion and high contrast use shared browser preferences, restored by a component above every Ward route. Scoped Ward CSS consumes those attributes: manual reduction suppresses animation, transitions and smooth scrolling; contrast uses the current Ward ink colour for muted text and borders, preserving light/dark palette selection.
 
-Browser proof: system Chromium at desktop 1440×1000 and phone 390×844; animation computed from `audit` to `none`, muted ink from `#5f6873` to `#161a20`; preferences survived a reload on Home; phone Settings disclosure passed; zero page errors. Evidence lives in `/workspace/ward-flow-audit/patch-browser-exact.log` and the adjacent screenshots. The browser probe waits for hydration before activation.
+Browser proof: system Chromium at desktop 1440×1000 and phone 390×844; animation computed from `audit` to `none`, muted ink from `#5f6873` to `#161a20`; preferences survived a reload on Home; phone Settings disclosure passed; zero page errors. Evidence lives in `/workspace/ward-flow-audit/patch-browser-final.log` and the adjacent screenshots. The browser probe waits for hydration before activation.
+
+## Full-suite compatibility review
+
+The first full Ward run completed with 8,790 passing tests, 90 skipped tests and 10 failures across six files. Capacity fixtures reused patients already occupying other wards; the fixtures now give capacity probes distinct synthetic identities while preserving staffing, specialling and cohort assertions. Existing expectations now assert the separate repatriation source, fresh receiving transfer workflow, clock-only editor and absence of browser draft persistence. All 45 cases in those six files pass.
+
+A further legacy-profile regression reproduced historical movement fallback when a current stay had no movement link. The resolver now uses only a current stay's explicit link or matching admission backpointer; without either it displays the current admission without borrowing a historical movement or referral. The new regression failed before this change and passes afterwards; all 45 cases in the profile-focused group pass.
+
+The final full Ward run is in progress against the completed source and test changes. The existing codebase-index coverage advisory about the `.design` root is also present on the untouched base; it is unrelated to these fixes. Generated screen-map validation passes.
