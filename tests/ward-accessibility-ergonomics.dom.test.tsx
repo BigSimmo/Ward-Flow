@@ -271,7 +271,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       const onCallCss = readFileSync("src/components/ward-management/on-call/on-call.module.css", "utf8");
       expect(onCallCss).toMatch(/\.routingLink\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(onCallCss).toMatch(/\.filterBtn,[\s\S]*?min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      // v6: the service filter is the shared HeroTrack (heights from --wf-h-*, lifted to 44px on
+      // coarse pointers); the row's own star control sizes from the same control token.
+      expect(onCallCss).toMatch(/\.favouriteButton\s*\{[^}]*height:\s*var\(--wf-h-sm\);/);
     });
   });
 
