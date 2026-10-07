@@ -206,37 +206,16 @@ function ThirdEditionFrame({
               <span>Back to statistics</span>
             </Link>
 
-            <details className={`${thirdEditionStyles.contextDetails} source-print`}>
-              <summary className={thirdEditionStyles.contextSummary}>
-                <span className={thirdEditionStyles.prototypePill}>Synthetic prototype</span>
-                <span className={thirdEditionStyles.summaryDivider}>·</span>
-                <span>no role restriction</span>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className={thirdEditionStyles.chevronIcon}
-                >
-                  <path d="M4 6l4 4 4-4" />
-                </svg>
-              </summary>
-              <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
-                <strong>Synthetic prototype</strong>
-                <p>
-                  <SyntheticFiguresDisclaimer />
-                </p>
-                <p data-testid="ward-statistics-section-access">
-                  <CoordinatorAccessDisclaimer />
-                </p>
-                {subtitle && <p>{subtitle}</p>}
-              </div>
-            </details>
+            <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
+              <strong>Synthetic prototype</strong>
+              <p>
+                <SyntheticFiguresDisclaimer />
+              </p>
+              <p data-testid="ward-statistics-section-access">
+                <CoordinatorAccessDisclaimer />
+              </p>
+              {subtitle && <p>{subtitle}</p>}
+            </div>
           </div>
 
           <header className={thirdEditionStyles.semanticHeader}>

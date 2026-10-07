@@ -346,6 +346,7 @@ export function LegalFormsScreen() {
 
         {/* Dynamic HUD Island: MHA Statutory Status */}
         <WardDynamicIsland
+          className={styles.hud}
           testId="ward-legal-hud-island"
           title="Recorded legal form due times"
           icon={<Scale size={16} aria-hidden="true" />}

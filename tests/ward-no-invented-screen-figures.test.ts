@@ -33,7 +33,7 @@ import todo from "./ward-invented-figures-todo.json";
 const WARD_DIR = resolve(process.cwd(), "src/components/ward-management");
 
 /** The list can never grow past this. Lower it when entries go; never raise it. */
-const MAX_TODO = 17;
+const MAX_TODO = 13;
 
 /** Files Josh ruled on (rule 4 only), relative to WARD_DIR, and the ruling. */
 const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = [

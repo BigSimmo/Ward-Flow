@@ -10,15 +10,25 @@
 }
 
 .alertStrip {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-soft);
-  border-left: 4px solid var(--danger);
-  border-radius: var(--r2);
-  padding: 12px 14px;
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.alertStrip[data-tone="warning"] {
+  border-color: var(--warn);
+}
+
+.alertStrip[data-tone="critical"] {
+  border-color: var(--danger);
 }
 
 @media (max-width: 768px) {
@@ -43,17 +53,30 @@
 
 .alertClock {
   font-family: var(--mono);
-  font-size: 12px; /* 12px floor */
-  font-weight: 700;
-  background: var(--danger);
-  color: var(--surface);
+  font-size: var(--t-0);
+  font-weight: 650;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
   padding: 2px 7px;
-  border-radius: var(--pill, 999px);
+  border-radius: var(--r2);
   text-transform: uppercase;
 }
 
+.alertStrip[data-tone="warning"] .alertClock {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.alertStrip[data-tone="critical"] .alertClock {
+  color: var(--danger-ink, var(--danger));
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
 .alertText {
-  font-size: 12.5px;
+  font-size: var(--t-0);
   color: var(--ink-soft);
 }
 
@@ -95,29 +118,41 @@
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift-sm);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
+  border-radius: 0.875rem;
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(16px) saturate(1.15);
   overflow: hidden;
   margin-bottom: 14px;
 }
 
 .cardHead {
   padding: 10px 14px;
-  background: var(--surface-2);
+  background: var(--glass-band, var(--surface-2));
   border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--hl);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+.cardMeta {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
 .cardTitle {
-  font-size: 12px;
-  font-weight: 700;
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--ink);
+  color: var(--accent-ink, var(--accent));
   display: flex;
   align-items: center;
   gap: 6px;
@@ -142,9 +177,10 @@
 }
 
 .censusBox {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 75%, var(--hl));
   border-radius: var(--r2);
+  box-shadow: inset 0 1px 0 var(--hl);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -225,7 +261,7 @@
   gap: 10px;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 12.5px;
+  font-size: var(--t-0);
 }
 
 .timelineEntry:last-child {
@@ -271,12 +307,12 @@
 .timelineEmpty {
   padding: 16px 0;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--t-0);
   color: var(--muted);
 }
 
 .pillBadge {
-  font-size: 11px;
+  font-size: var(--t-0);
   font-family: var(--mono);
   font-weight: 600;
   padding: 1px 7px;

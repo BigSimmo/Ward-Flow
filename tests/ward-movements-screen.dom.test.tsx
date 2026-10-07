@@ -64,8 +64,13 @@ function findRecordRow(container: HTMLElement, id: string): HTMLElement {
   return rows[0];
 }
 
+function openShapeOfTheDay(): HTMLElement {
+  fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
+  return screen.getByRole("region", { name: "Shape of the day" });
+}
+
 function openTransportSummary(): HTMLElement {
-  const summary = screen.getByRole("region", { name: /Shape of the day/u });
+  const summary = openShapeOfTheDay();
   fireEvent.click(
     within(within(summary).getByRole("group", { name: "Movement summary" })).getByRole("button", {
       name: /Transport/u,
@@ -300,8 +305,8 @@ describe("the Movements screen", () => {
       );
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
       fireEvent.click(within(worklist).getByRole("radio", { name: "By transport leg, and what has none" }));
-      const requestGroup = within(worklist).getByRole("heading", { name: "Unaccepted transport records" })
-        .parentElement!.parentElement!;
+      const requestGroup = within(worklist).getByRole("heading", { name: "Transport not accepted" }).parentElement!
+        .parentElement!;
       expect(findRecordRow(requestGroup, movement!.id)).toBeInTheDocument();
     } finally {
       movement!.transport = original;
@@ -330,7 +335,7 @@ describe("the Movements screen", () => {
     ).toHaveTextContent(unaccepted.length === 0 ? "none" : String(unaccepted.length));
     expect(
       within(transportPanel)
-        .getAllByText("No transport record", { selector: "span" })
+        .getAllByText("No transport yet", { selector: "span" })
         .map((element) => element.closest("li"))
         .find(Boolean),
     ).toHaveTextContent(noRecord.length === 0 ? "none" : String(noRecord.length));
@@ -355,7 +360,7 @@ describe("the Movements screen", () => {
 
   it("shows the open-stage summary count for every stage, stating zero in words rather than a bare 0", () => {
     renderScreen();
-    const panel = screen.getByRole("region", { name: /Shape of the day/u });
+    const panel = openShapeOfTheDay();
     const openStages = journeyStages(openMovements, NOW);
     for (const stage of openStages) {
       const item = within(panel).getByText(stage.label).closest("li");
