@@ -476,12 +476,13 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         </WardFlowProvider>,
       );
 
-      const passedBtn = screen.getByTestId("ward-legal-kpi-passed");
-      expect(passedBtn).toBeDefined();
+      // v6 hero: the urgency filter is the hero's "Forms shown" switch (All / Expiring).
+      const expiringBtn = screen.getByRole("radio", { name: /^Expiring/u });
+      expect(expiringBtn).toBeDefined();
 
-      fireEvent.click(passedBtn);
+      fireEvent.click(expiringBtn);
       // Urgency filter is now active
-      expect(passedBtn.getAttribute("aria-pressed")).toBe("true");
+      expect(expiringBtn.getAttribute("aria-checked")).toBe("true");
     });
 
     it("Mounts CapacityScreen with WardFlowProvider and verifies co-existence of HUD and Gap Table", () => {

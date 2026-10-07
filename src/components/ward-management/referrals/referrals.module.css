@@ -6844,3 +6844,1851 @@ input.historyField:focus-visible {
   flex: 1;
   min-width: 200px;
 }
+
+/* ═══ v6 (Referrals.png) ═══
+ * One hero band (queue counts, the stream and status tracks and the ordering note), a filter bar
+ * card, the queue card (awaiting decision, recently decided, decisions by hour) and the selected
+ * referral card with its three tabs. v6 tokens only; colour as a glyph beside a word, mono figures,
+ * labels that truncate rather than wrap. Scoped to the register so the intake form is untouched. */
+
+.screen[data-ward-design="v6"] {
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-referral-view="register"][data-ward-design="v6"] .main {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.v6HeroWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6Tracks {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.v6OrderNote {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+/* Filter bar. The wf card is a column; the bar is one row. */
+.v6FilterBar.v6FilterBar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.v6Search {
+  flex: 0 1 15rem;
+  min-width: 10rem;
+  min-height: var(--wf-h-sm);
+}
+
+.v6Cohorts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.v6CohortLabel {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.v6FilterActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+/* The two columns: the queue card and the selected referral card. The register's older wide rules
+ * paint each column as a card; here the wf cards inside carry that paint instead. */
+.screen[data-referral-view="register"][data-ward-design="v6"] .registerQueue,
+.screen[data-referral-view="register"][data-ward-design="v6"] .registerDetail {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.v6QueueCard.v6QueueCard,
+.v6DetailCard.v6DetailCard {
+  min-width: 0;
+}
+
+.v6QueueCard.v6QueueCard {
+  flex-shrink: 0;
+}
+
+.v6Section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6Decided {
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6HeadNote {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6Note {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6Empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.v6EmptyState {
+  margin: var(--wf-s-3);
+}
+
+/* Queue rows: tier tile, who and where, then the wait and the due time. */
+.screen[data-referral-view="register"][data-ward-design="v6"] .v6List {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Item {
+  position: relative;
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6ItemOn {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent);
+}
+
+.v6Row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  width: 100%;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v6Row:hover {
+  background: var(--wf-hover);
+}
+
+.v6Row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Answer 13: the Tier reads bold and dark, unlike the muted facts on the same card. */
+.v6RowTier {
+  display: inline-flex;
+  align-items: center;
+  color: var(--wf-ink-1);
+  font-weight: 700;
+}
+
+.v6RowMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6RowMain > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6RowName {
+  font-weight: 600;
+}
+
+.v6RowId {
+  margin-left: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6RowRoute {
+  color: var(--wf-ink-2);
+}
+
+.v6RowFacts {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6RowClock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.v6RowWait {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.v6Due {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.v6RowNote {
+  display: block;
+  padding: 0 var(--wf-s-3) var(--wf-s-2) calc(var(--wf-s-3) * 2 + 1.75rem);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* Dense: the same rows, one line shorter. The register tables stay print-only, as in comfort. */
+.screen[data-ward-design="v6"][data-dense-view="true"] .v6RowFacts {
+  display: none;
+}
+
+.screen[data-ward-design="v6"][data-dense-view="true"] .v6Row {
+  min-height: var(--wf-h-md);
+  padding-block: var(--wf-s-1);
+}
+
+.v6RowDecided {
+  min-height: var(--wf-h-md);
+}
+
+.v6RowLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6RowOutcome {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* OutcomeDetail's quieter parts stay on the same line in the compact decided list. */
+.v6RowOutcome > span + span::before {
+  content: " · ";
+}
+
+.v6RowTime {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  white-space: nowrap;
+}
+
+.v6Chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6Eyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Selected referral. */
+.v6DetailHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.v6DetailWho {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6DetailName {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  line-height: var(--wf-lh-16);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6DetailMeta {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6DetailTier {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.v6DetailWait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding-left: var(--wf-s-3);
+  border-left: 1px solid var(--wf-line);
+  white-space: nowrap;
+}
+
+.v6WaitFigure {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.v6Facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6Facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+
+.v6Facts > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+
+.v6Facts dt,
+.v6Grid dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.v6Facts dd,
+.v6Grid dd {
+  margin: 0;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6Facts dd.v6FactSub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.v6Tabs {
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6TabBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.v6SectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  margin-bottom: var(--wf-s-2);
+}
+
+.v6SectionHead h3 {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  white-space: nowrap;
+}
+
+.v6SectionHead > span {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.v6Grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.v6Grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.v6Grid > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.v6Grid > .v6GridWide {
+  grid-column: 1 / -1;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.v6Grid > .v6GridWide dd {
+  font-weight: 400;
+  white-space: normal;
+}
+
+.v6Badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Lead {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.v6Checks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6Checks > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.v6CheckText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v6CheckText > strong {
+  font-weight: 600;
+}
+
+.v6CheckText > span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v6CheckState {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .screen[data-referral-view="register"][data-ward-design="v6"] .registerLayout {
+    grid-template-columns: minmax(22rem, 0.55fr) minmax(32rem, 1fr);
+    gap: var(--wf-s-3);
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"] .registerQueue {
+    display: block;
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"][data-dense-view="true"] .tableScroll {
+    display: none;
+  }
+
+  .v6DetailCard.v6DetailCard {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .v6DetailCard .registerDetailBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 48rem) {
+  .screen[data-referral-view="register"][data-ward-design="v6"] .main {
+    padding: var(--wf-s-3);
+  }
+
+  .v6Facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v6Facts > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .v6Grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v6Grid > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .v6DetailHead {
+    flex-wrap: wrap;
+  }
+
+  .screen[data-ward-design="v6"] .v6Row,
+  .screen[data-ward-design="v6"] .v6FilterBar button,
+  .screen[data-ward-design="v6"] .v6FilterBar a[href],
+  .screen[data-ward-design="v6"] .v6DetailHead button,
+  .screen[data-ward-design="v6"] .v6DetailHead a[href] {
+    min-height: 3rem;
+  }
+}
+
+@media print {
+  .v6FilterBar,
+  .v6Chart {
+    display: none;
+  }
+}
+
+/* ═══ v6 (NewReferral.png): the person bar on the intake form ═══
+ * One compact card: the linked or unlinked switch, the search, then the person in one row. */
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .main {
+  padding: var(--wf-s-4);
+  gap: var(--wf-s-3);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.screen[data-ward-design="v6"] .personPanel {
+  margin-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .personHeaderStrip {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .personTitle {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .personSubtitle {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .personModeSwitch {
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .modeBtn {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .modeBtn[data-active="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .addPatientHeaderBtn {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .addPatientHeaderBtn:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .personSearchBox {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .rapidSearchInput {
+  min-height: var(--wf-h-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.screen[data-ward-design="v6"] .rapidSearchInput:focus {
+  border-color: var(--wf-focus-ring);
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.screen[data-ward-design="v6"] .personCardBody {
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .personAvatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .personAvatar[data-mode="unlinked"] {
+  border: 1px dashed var(--wf-line-ctl);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .personName {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .personIdPill,
+.screen[data-ward-design="v6"] .personStatusPill {
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .personDetailSentence {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .actionBtn {
+  min-height: var(--wf-h-sm);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .alreadyOpen {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+@media (max-width: 48rem) {
+  .screen[data-ward-design="v6"] .modeBtn,
+  .screen[data-ward-design="v6"] .addPatientHeaderBtn,
+  .screen[data-ward-design="v6"] .actionBtn,
+  .screen[data-ward-design="v6"] .rapidSearchInput {
+    min-height: 3rem;
+  }
+}
+
+/* ═══ v6 (NewReferral.png): the person bar is one row ═══
+ * The link switch, then the person, the search and Add new patient on a single line. The heading
+ * stays for the section's name but is not drawn; the interpreter alert takes a row of its own. */
+
+/* `!important` only answers the intake panel's own `!important` column layout and clip; the
+   search results must open past the bar's edge. */
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personPanel {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  overflow: visible !important;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personHeaderStrip,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personControlsRight {
+  display: contents;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personTitleGroup {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personModeSwitch {
+  order: 1;
+  flex: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
+  order: 2;
+  flex: 1 1 24rem;
+  flex-wrap: nowrap;
+  padding: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personMetaGroup {
+  flex: 1 1 auto;
+  min-width: 13rem;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personName,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personIdPill,
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personStatusPill {
+  white-space: nowrap;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions .actionBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  text-decoration: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personPrimaryRow {
+  gap: var(--wf-s-2);
+  margin-bottom: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDetailSentence {
+  margin: 0;
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck svg {
+  color: var(--wf-success);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
+  order: 3;
+  flex: 0 1 12rem;
+  min-width: 10rem;
+  padding: 0;
+  border: 0;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .searchResultsDropdown {
+  left: auto;
+  right: 0;
+  width: min(32rem, calc(100vw - 2 * var(--wf-s-4)));
+  border-color: var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .rapidSearchInput {
+  min-height: var(--wf-h-md);
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .addPatientHeaderBtn {
+  order: 4;
+  flex: none;
+}
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .interpreterAlert {
+  order: 5;
+  flex: 1 1 100%;
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+
+/* ═══ v6 (NewReferral--add-patient.webp): the Register new patient dialog ═══ */
+
+.screen[data-ward-design="v6"] .modalOverlay {
+  background: var(--wf-scrim);
+  backdrop-filter: none;
+}
+
+.screen[data-ward-design="v6"] .modalDialog {
+  max-width: 34rem;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .modalHeader {
+  align-items: center;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .modalTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalSubtitle {
+  margin-top: 2px;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalCloseBtn {
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  min-width: var(--wf-h-sm);
+  min-height: var(--wf-h-sm);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-20);
+}
+
+.screen[data-ward-design="v6"] .modalCloseBtn:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .modalBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .modalRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .modalField {
+  min-width: 0;
+  gap: var(--wf-s-1);
+}
+
+.screen[data-ward-design="v6"] .modalLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .modalInput,
+.screen[data-ward-design="v6"] .modalSelect {
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .modalInput:focus,
+.screen[data-ward-design="v6"] .modalSelect:focus {
+  border-color: var(--wf-accent);
+  background: var(--wf-surface);
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.modalHint {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A failed save is the one red thing here; a possible duplicate is a caution, not an emergency. */
+.modalError,
+.modalNotice {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.modalError {
+  color: var(--wf-danger-ink);
+}
+
+.modalNotice {
+  color: var(--wf-ink-1);
+  box-shadow: inset 3px 0 0 var(--wf-warning);
+}
+
+.modalNoticeList {
+  margin: var(--wf-s-1) 0 0;
+  padding-left: var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .modalFooter {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn,
+.modalSecondaryBtn,
+.screen[data-ward-design="v6"] .modalSubmitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn {
+  margin-right: auto;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink);
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn:hover {
+  background: var(--wf-hover);
+}
+
+.modalSecondaryBtn {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.modalSecondaryBtn:hover {
+  border-color: var(--wf-line-3);
+}
+
+/* The one primary: deep slate with white ink, never the pale accent ink on accent that read as
+   disabled. A genuinely disabled state reads as a dashed outline with muted ink. */
+.screen[data-ward-design="v6"] .modalSubmitBtn {
+  border: 1px solid var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
+}
+
+.screen[data-ward-design="v6"] .modalSubmitBtn:hover {
+  filter: brightness(1.08);
+}
+
+.screen[data-ward-design="v6"] .modalSubmitBtn:disabled {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  box-shadow: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+.screen[data-ward-design="v6"] .modalCancelBtn:focus-visible,
+.modalSecondaryBtn:focus-visible,
+.screen[data-ward-design="v6"] .modalSubmitBtn:focus-visible,
+.screen[data-ward-design="v6"] .modalCloseBtn:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
+    flex-basis: 100%;
+  }
+
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
+    flex-wrap: wrap;
+  }
+
+  .screen[data-ward-design="v6"] .modalRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-ward-design="v6"] .modalInput,
+  .screen[data-ward-design="v6"] .modalSelect,
+  .screen[data-ward-design="v6"] .modalCancelBtn,
+  .modalSecondaryBtn,
+  .screen[data-ward-design="v6"] .modalSubmitBtn,
+  .screen[data-ward-design="v6"] .modalCloseBtn {
+    min-height: 3rem;
+  }
+}
+
+/* Bed placement: a unit's state badge, the glyphs that carry its colour, and the gate toggle's
+ * hint. These were inline styles; as classes they can follow the page's design. */
+.unitStateBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
+  white-space: nowrap;
+}
+
+.unitStateReady {
+  background: var(--ward-success);
+  color: var(--surface);
+}
+
+.unitStatePending {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.unitStateExcluded {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.intelGlyphExcluded {
+  color: var(--danger);
+}
+
+.triageGlyph {
+  color: currentColor;
+}
+
+.gateToggleHint {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ═══ v6 (Referrals.png): the Bed placement tab ═══
+ * The drawing is a calm list: hairline cards and rows, neutral ink, and colour only on the glyph
+ * that names a state. Every Accept is a secondary button, because the screen never chooses a
+ * unit for the coordinator; the gate and criteria hints read as plain links. */
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchPanel {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unifiedTriageBanner {
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .triageLargeCount {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* Answers the base rule's !important: a zero count is quiet ink, not a colour. */
+.screen[data-ward-design="v6"] .unifiedTriageBannerZero .triageLargeCount {
+  color: var(--wf-ink-2) !important;
+}
+
+.screen[data-ward-design="v6"] .triagePillGroup {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill {
+  gap: var(--wf-s-1);
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillGood .triageGlyph {
+  color: var(--wf-success);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillWarn .triageGlyph {
+  color: var(--wf-warning);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillMuted .triageGlyph {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .governanceDisclosure {
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .governanceNoticeText {
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.screen[data-ward-design="v6"] .governanceNoticeText strong {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .infoIcon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .syntheticNoticeInline {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .matchCompactNoticeWrap,
+.screen[data-ward-design="v6"] .matchGovernance,
+.screen[data-ward-design="v6"] .syntheticNotice,
+.screen[data-ward-design="v6"] .allNotRecorded {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-ward-design="v6"] .matchGovernance,
+.screen[data-ward-design="v6"] .syntheticNotice,
+.screen[data-ward-design="v6"] .allNotRecorded {
+  border-left-color: var(--wf-line-2);
+}
+
+.screen[data-ward-design="v6"] .structuralGap,
+.screen[data-ward-design="v6"] .noBedAccepts {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .structuralGap {
+  border-left: 3px solid var(--wf-warning);
+}
+
+.screen[data-ward-design="v6"] .noBedAccepts {
+  border-left: 3px solid var(--wf-danger);
+}
+
+/* The three tiers: one hairline card, each tier a ruled section. */
+.screen[data-ward-design="v6"] .tierAccordionGroup {
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .tierAccordionGroup > .tierCard {
+  border-bottom-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierCard:hover {
+  border-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader {
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader:focus-visible,
+.screen[data-ward-design="v6"] .gateToggle:focus-visible,
+.screen[data-ward-design="v6"] .acceptButton:focus-visible,
+.screen[data-ward-design="v6"] .btnGood:focus-visible,
+.screen[data-ward-design="v6"] .btnSubtle:focus-visible,
+.screen[data-ward-design="v6"] .bandSummary:focus-visible,
+.screen[data-ward-design="v6"] .criteriaSummary:focus-visible,
+.screen[data-ward-design="v6"] .localBedButton:focus-visible,
+.screen[data-ward-design="v6"] .matchOverrideButton:focus-visible,
+.screen[data-ward-design="v6"] .declineButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.screen[data-ward-design="v6"] .tierCardHeaderExpanded {
+  border-bottom-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierChevronChip,
+.screen[data-ward-design="v6"] .tierChevronChipExpanded {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierTitleText {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .tierSubtitle {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / calc(var(--wf-h-chip) - 2px) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadgeActive {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadgeZero {
+  border-color: var(--wf-line);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierEmptyWell {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .tierEmptyIconWrap {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierEmptyText {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A unit is a hairline row; the badge and its glyphs carry the state, not a coloured edge. */
+.screen[data-ward-design="v6"] .tierCard .unitCard {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-left: 0;
+  background: transparent;
+  opacity: 1;
+}
+
+.screen[data-ward-design="v6"] .tierCard .unitCard:last-child {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .tierCard .unitCard:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .unitCardTop {
+  gap: var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .unitName {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitSub,
+.screen[data-ward-design="v6"] .unitIntelRow {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitIntelRow {
+  gap: var(--wf-s-2);
+  margin-top: 0;
+}
+
+.screen[data-ward-design="v6"] .unitIntelRow strong {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .demoDot {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .unitStateBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitStateReady {
+  color: var(--wf-success-ink);
+}
+
+.screen[data-ward-design="v6"] .unitStatePending {
+  color: var(--wf-warning-ink);
+}
+
+.screen[data-ward-design="v6"] .unitStateExcluded {
+  color: var(--wf-ink-2);
+}
+
+.screen[data-ward-design="v6"] .intelGlyphExcluded {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .unitActionStatusWrap {
+  gap: var(--wf-s-1);
+  align-items: flex-end;
+}
+
+.screen[data-ward-design="v6"] .unitNoticeMuted {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+}
+
+.screen[data-ward-design="v6"] .gateSummary {
+  padding-top: 0;
+  border-top: 0;
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .gateToggle,
+.screen[data-ward-design="v6"] .gateToggleWarn,
+.screen[data-ward-design="v6"] .gateToggleDanger {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  margin-left: calc(-1 * var(--wf-s-2));
+  width: calc(100% + 2 * var(--wf-s-2));
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .gateToggle:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .gateToggleHint {
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .gateGrid {
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin-top: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .gatePill,
+.screen[data-ward-design="v6"] .gatePillPassed,
+.screen[data-ward-design="v6"] .gatePillPending,
+.screen[data-ward-design="v6"] .gatePillFailed {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-ward-design="v6"] .gatePillFailed {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+/* Every Accept is the same secondary button: the coordinator chooses, the screen does not. */
+.screen[data-ward-design="v6"] .btnGood,
+.screen[data-ward-design="v6"] .acceptButton,
+.screen[data-ward-design="v6"] .btnSubtle,
+.screen[data-ward-design="v6"] .localBedButton,
+.screen[data-ward-design="v6"] .matchOverrideButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-1);
+  min-height: var(--ward-tap);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .btnGood:hover,
+.screen[data-ward-design="v6"] .acceptButton:hover,
+.screen[data-ward-design="v6"] .localBedButton:hover,
+.screen[data-ward-design="v6"] .matchOverrideButton:not(:disabled, [aria-disabled="true"]):hover {
+  border-color: var(--wf-line-3);
+  background: var(--wf-hover);
+}
+
+/* An unavailable action reads as a dashed outline, never as a faded live button. */
+.screen[data-ward-design="v6"] .btnSubtle[aria-disabled="true"],
+.screen[data-ward-design="v6"] .matchOverrideButton:disabled,
+.screen[data-ward-design="v6"] .matchOverrideButton[aria-disabled="true"] {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  color: var(--wf-ink-3);
+  cursor: not-allowed;
+}
+
+.screen[data-ward-design="v6"] .declineButton {
+  min-height: var(--ward-tap);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e1);
+  color: var(--wf-danger-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+/* Travel bands: a small section head, then hairline cards that fold. */
+.screen[data-ward-design="v6"] .geographySection {
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 0;
+}
+
+.screen[data-ward-design="v6"] .geographyHeader {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+}
+
+.screen[data-ward-design="v6"] .geographyTitle {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .geographyBadge {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.screen[data-ward-design="v6"] .matchList {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .bandGroup,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .bandSummary,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-radius: var(--wf-r-lg);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .bandSummary:hover,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary:hover {
+  background-color: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .bandGroup[open] > .bandSummary {
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+}
+
+.screen[data-ward-design="v6"] .bandSummary::after {
+  border-left-color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .bandLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .bandAvailableBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-success-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .bandCounts,
+.screen[data-ward-design="v6"] .bandEmpty,
+.screen[data-ward-design="v6"] .matchBand {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .bandEmpty {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .bandRows {
+  gap: 0;
+  padding: 0 var(--wf-s-4);
+}
+
+/* A unit inside a band is a ruled row, not a tinted card. */
+.screen[data-ward-design="v6"] .matchRowAccepts,
+.screen[data-ward-design="v6"] .matchRowDeclines {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.screen[data-ward-design="v6"] .bandRows > :last-child {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .matchUnitName {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .acceptsLabel {
+  color: var(--wf-success-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .declinedBadge,
+.screen[data-ward-design="v6"] .forensicBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / calc(var(--wf-h-chip) - 2px) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaDisclosure {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .criteriaSummary {
+  min-height: var(--wf-h-sm);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .criteriaDisclosure[open] > .criteriaSummary {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .criteriaSummaryTitle {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .criteriaSummaryHint {
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaList {
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .criteriaPass,
+.screen[data-ward-design="v6"] .criteriaFail {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .criteriaName {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaDetail,
+.screen[data-ward-design="v6"] .criteriaFail .criteriaDetail {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .criteriaPass .criteriaGlyph {
+  color: var(--wf-success);
+}
+
+.screen[data-ward-design="v6"] .criteriaFail .criteriaGlyph {
+  color: var(--wf-danger);
+}
+
+.screen[data-ward-design="v6"] .matchAcceptRow {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .matchDeclineSection,
+.screen[data-ward-design="v6"] .matchOverrideRow {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .matchReasonText {
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-left: 2px solid var(--wf-warning);
+  border-radius: 0 var(--wf-r-sm) var(--wf-r-sm) 0;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideRow {
+  padding-top: var(--wf-s-2);
+  border-top-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideLabel {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideSelect,
+.screen[data-ward-design="v6"] .declineControls .select {
+  min-height: var(--ward-tap);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .localBed {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .localBedRecord {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .declineControls {
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .declineControls .fieldLegend {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A mouse gets the drawing's compact controls; touch keeps the 48px floor. */
+@media (pointer: fine) {
+  .screen[data-ward-design="v6"] .btnGood,
+  .screen[data-ward-design="v6"] .acceptButton,
+  .screen[data-ward-design="v6"] .btnSubtle,
+  .screen[data-ward-design="v6"] .localBedButton,
+  .screen[data-ward-design="v6"] .matchOverrideButton,
+  .screen[data-ward-design="v6"] .declineButton,
+  .screen[data-ward-design="v6"] .matchOverrideSelect,
+  .screen[data-ward-design="v6"] .declineControls .select {
+    min-height: var(--wf-h-md);
+  }
+}
+
+@media (pointer: coarse) {
+  .screen[data-ward-design="v6"] .tierCardHeader,
+  .screen[data-ward-design="v6"] .gateToggle,
+  .screen[data-ward-design="v6"] .criteriaSummary {
+    min-height: var(--ward-tap);
+  }
+}

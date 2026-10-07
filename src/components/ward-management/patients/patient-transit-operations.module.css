@@ -889,3 +889,312 @@
     max-height: 400px;
   }
 }
+
+/* ═══ v6 (Patient.png): transit operations as v6 cards ═══
+ * The deck sits on the page canvas; each column is a hairline card with a small head. The green
+ * washes become plain surfaces, and the one primary is deep slate. */
+
+[data-ward-design="v6"] .deck {
+  gap: var(--wf-s-3);
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+[data-ward-design="v6"] .heading {
+  padding: 0;
+  border: 0;
+}
+
+[data-ward-design="v6"] .heading h2 {
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  letter-spacing: 0;
+}
+
+[data-ward-design="v6"] .heading p,
+[data-ward-design="v6"] .deckHint,
+[data-ward-design="v6"] .card > .deckHint {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+[data-ward-design="v6"] .eyebrow,
+[data-ward-design="v6"] .cardHeader .eyebrow {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+[data-ward-design="v6"] .stage,
+[data-ward-design="v6"] .count,
+[data-ward-design="v6"] .verdict {
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / var(--wf-h-chip) var(--wf-font);
+  white-space: nowrap;
+}
+
+[data-ward-design="v6"] .verdict[data-pass="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-success-ink);
+}
+
+[data-ward-design="v6"] .columns {
+  gap: var(--wf-s-3);
+}
+
+[data-ward-design="v6"] .rightColumn {
+  gap: var(--wf-s-3);
+}
+
+[data-ward-design="v6"] .card,
+[data-ward-design="v6"] .additional {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+[data-ward-design="v6"] .cardHeader {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+[data-ward-design="v6"] .cardHeader h3 {
+  margin-top: 2px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+}
+
+[data-ward-design="v6"] .cardHeader > svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--wf-ink-3);
+}
+
+[data-ward-design="v6"] .filters {
+  margin: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+[data-ward-design="v6"] .filters button {
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+[data-ward-design="v6"] .filters button[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
+}
+
+[data-ward-design="v6"] .deck label.wardSearch {
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+[data-ward-design="v6"] .card > .deckHint {
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-2);
+}
+
+[data-ward-design="v6"] .candidates {
+  padding: 0 var(--wf-s-4);
+}
+
+[data-ward-design="v6"] .candidate {
+  padding: var(--wf-s-2) 0;
+  border-color: var(--wf-line);
+}
+
+[data-ward-design="v6"] .candidate .pick {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+[data-ward-design="v6"] .candidate p,
+[data-ward-design="v6"] .candidateMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .candidate > details > summary {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .cardBody,
+[data-ward-design="v6"] .dispatchBody {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+/* The receiving ward: a plain inset panel; the words carry the state. */
+[data-ward-design="v6"] .destination {
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+[data-ward-design="v6"] .destination span,
+[data-ward-design="v6"] .destination p {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .destination strong {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+[data-ward-design="v6"] .hold,
+[data-ward-design="v6"] .booking {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .facts {
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .facts dt,
+[data-ward-design="v6"] .cardFooter > span,
+[data-ward-design="v6"] .cardFooter span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .gates li {
+  border-color: var(--wf-line);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .cardFooter {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+[data-ward-design="v6"] .primary,
+[data-ward-design="v6"] .secondary,
+[data-ward-design="v6"] .danger {
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+[data-ward-design="v6"] .primary {
+  border: 1px solid var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+}
+
+[data-ward-design="v6"] .primary:disabled {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  opacity: 1;
+}
+
+[data-ward-design="v6"] .secondary {
+  border: 1px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  color: var(--wf-ink-1);
+}
+
+[data-ward-design="v6"] .danger {
+  border: 1px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  color: var(--wf-danger-ink);
+}
+
+[data-ward-design="v6"] .deck :is(button, summary, input, select):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+[data-ward-design="v6"] .deck input:not([type="checkbox"]),
+[data-ward-design="v6"] .deck select {
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+[data-ward-design="v6"] .deck label {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .additional > summary,
+[data-ward-design="v6"] .correction > summary {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+[data-ward-design="v6"] .additional > summary span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+[data-ward-design="v6"] .feedback p,
+[data-ward-design="v6"] .notice {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+}
+
+[data-ward-design="v6"] .empty {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+/* The page resets every button's touch floor for a fine pointer, so these carry a height. */
+@media (pointer: fine) {
+  [data-ward-design="v6"] .deck .primary,
+  [data-ward-design="v6"] .deck .secondary,
+  [data-ward-design="v6"] .deck .danger,
+  [data-ward-design="v6"] .deck input:not([type="checkbox"]),
+  [data-ward-design="v6"] .deck select {
+    min-height: var(--wf-h-md);
+  }
+
+  [data-ward-design="v6"] .deck .filters button,
+  [data-ward-design="v6"] .candidate > details > summary,
+  [data-ward-design="v6"] .additional > summary {
+    min-height: var(--wf-h-sm);
+  }
+}
+
+[data-ward-design="v6"] .deck .wardSearch input {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+}
