@@ -47,11 +47,16 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
+  PULL_HOLD_MINUTES,
   type BedRelease,
   type Movement,
   type Referral,
 } from "@/components/ward-management/ward-model";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import {
+  ED_ELEVATED_PRESSURE_WAIT_MINUTES,
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -110,18 +115,25 @@ const median = (values: number[]): number | null => {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 };
 
-const ED_AMBER_MINUTES = 8 * 60;
-const ED_RED_MINUTES = 24 * 60;
 const PRESSURE_ROWS = 10;
 
-const ARRIVAL_BANDS: Array<{ id: string; label: string; from: number; to: number }> = [
-  { id: "lt2", label: "<2h", from: 0, to: 120 },
-  { id: "2-4", label: "2-4h", from: 120, to: 240 },
-  { id: "4-6", label: "4-6h", from: 240, to: 360 },
-  { id: "6-8", label: "6-8h", from: 360, to: 480 },
-  { id: "8-12", label: "8-12h", from: 480, to: 720 },
-  { id: "12+", label: "12h+", from: 720, to: Number.POSITIVE_INFINITY },
-];
+/** Whole hours, as a short label ("4h"). */
+const hoursLabel = (minutes: number) => `${Math.round(minutes / 60)}h`;
+
+/**
+ * Pull to arrival, banded against the configured pull hold rather than typed hours: under half the
+ * hold, the rest of the hold, up to twice the hold, and longer.
+ */
+function arrivalBandsFor(holdMinutes: number): Array<{ id: string; label: string; from: number; to: number }> {
+  const half = holdMinutes / 2;
+  const twice = holdMinutes * 2;
+  return [
+    { id: "half-hold", label: `Under ${hoursLabel(half)}`, from: 0, to: half },
+    { id: "hold", label: `${hoursLabel(half)} to ${hoursLabel(holdMinutes)}`, from: half, to: holdMinutes },
+    { id: "twice-hold", label: `${hoursLabel(holdMinutes)} to ${hoursLabel(twice)}`, from: holdMinutes, to: twice },
+    { id: "longer", label: `Over ${hoursLabel(twice)}`, from: twice, to: Number.POSITIVE_INFINITY },
+  ];
+}
 
 type WardSortKey = "name" | "beds" | "ready" | "occ" | "ref";
 type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
@@ -221,7 +233,7 @@ export function StatisticsScreen({
           waiting: figures.onTheList,
           longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
           median: median(waits),
-          over8: waits.filter((minutes) => minutes >= ED_AMBER_MINUTES).length,
+          over8: waits.filter((minutes) => minutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
           over24: figures.over24h,
           waits,
         };
@@ -368,7 +380,7 @@ export function StatisticsScreen({
       .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
       .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
       .filter((gap) => Number.isFinite(gap) && gap >= 0);
-    return ARRIVAL_BANDS.map((band) => ({
+    return arrivalBandsFor(PULL_HOLD_MINUTES).map((band) => ({
       id: band.id,
       label: band.label,
       value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
@@ -676,9 +688,9 @@ export function StatisticsScreen({
               longestEd && longestEd.longest !== null ? (
                 <Badge
                   tone={
-                    longestEd.longest >= ED_RED_MINUTES
+                    longestEd.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES
                       ? "danger"
-                      : longestEd.longest >= ED_AMBER_MINUTES
+                      : longestEd.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES
                         ? "warning"
                         : undefined
                   }
@@ -700,7 +712,7 @@ export function StatisticsScreen({
                 aria-label="Filter emergency departments"
               />
               <span className={styles.toolbarEnd} id="edFilterCount">
-                Thresholds 8h and 24h, synthetic
+                {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
               </span>
             </div>
             <div className={styles.tableWrap}>
@@ -742,9 +754,9 @@ export function StatisticsScreen({
                       <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
                       <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
                         <span className={styles.flagged}>
-                          {d.longest !== null && d.longest >= ED_RED_MINUTES ? (
+                          {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
                             <StatusGlyph tone="danger" size={9} />
-                          ) : d.longest !== null && d.longest >= ED_AMBER_MINUTES ? (
+                          ) : d.longest !== null && d.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES ? (
                             <StatusGlyph tone="warning" size={9} />
                           ) : null}
                           {waitText(d.longest)}
