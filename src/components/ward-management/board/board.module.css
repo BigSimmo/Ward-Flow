@@ -410,11 +410,24 @@
 /* The one-line orientation figure. Ordinary ink at body weight — it is a sentence, not a figure
    panel, and the board's own "Since yesterday" panel is where the three numbers are set out. */
 .sheetSince {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
   margin: var(--ward-space-8) 0 0;
+  padding: 0;
   color: var(--ink-soft);
-  font-size: var(--t-3);
+  font-size: var(--t-1, 13px);
   font-weight: 600;
   line-height: var(--ward-leading-body);
+}
+
+.sheetSince span {
+  white-space: nowrap;
+}
+
+.sheetSince strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 .sheetKpiRibbon {
@@ -461,10 +474,10 @@
    minimum rather than a fixed column count, so a narrow phone gets one column without a media
    query and A4 gets two. */
 .sheetGroups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--wb-sheet-col-min), 1fr));
-  gap: var(--ward-space-12);
-  margin: var(--ward-space-12) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  margin: var(--ward-space-8) 0 0;
 }
 
 /* A left rule rather than a fill — the same channel `.flowRow` and `.destination` use, and for the
