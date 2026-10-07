@@ -36,7 +36,7 @@ import styles from "./ward-tasks-panel.module.css";
  */
 export function WardTasksPanel() {
   const router = useRouter();
-  const { movements, units, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
+  const { movements, patients, referrals, units, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);
@@ -52,8 +52,11 @@ export function WardTasksPanel() {
   const items = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
 
   const openMovement = useCallback(
-    (movementId: string) => {
-      router.push(`/mockups/ward-flow/movements/${movementId}`);
+    (movementId: string, action?: "refer" | "contact") => {
+      setOpen(false);
+      router.push(
+        `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+      );
     },
     [router],
   );
@@ -89,6 +92,7 @@ export function WardTasksPanel() {
           dispatch={dispatch}
           onClose={() => setOpen(false)}
           onSelectMovement={openMovement}
+          records={{ movements, patients, referrals, units }}
           withBackdrop
         />
       ) : null}

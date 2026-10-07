@@ -106,7 +106,7 @@ describe("the tasks drawer", () => {
     };
     const { drawer } = renderDrawer({ acknowledgements: acknowledged });
     expect(within(drawer).getByTestId(`ward-task-${items[0].id}`)).toBeTruthy();
-    expect(within(drawer).getByTestId(`ward-task-ack-${items[0].id}`)).toHaveTextContent(/Acknowledged by/u);
+    expect(within(drawer).getByTestId(`ward-task-ack-${items[0].id}`)).toHaveTextContent(/Acknowledged/u);
     // Never disabled: a second acknowledgement is a distinct fact — another person is now answerable
     // too — not a repeat of the first.
     expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
@@ -156,19 +156,45 @@ describe("the tasks drawer", () => {
   });
 });
 
-describe("task workspace search and acknowledgement filters", () => {
-  it("combines text and severity filters, then clears an empty result", () => {
-    const { drawer } = renderDrawer();
+describe("task workspace state filters and actions", () => {
+  it("removes search and combines severity with acknowledgement state", () => {
     const critical = items.find((item) => item.tone === "danger")!;
-    fireEvent.change(within(drawer).getByRole("textbox", { name: "Search tasks" }), {
-      target: { value: critical.detail },
+    const { drawer } = renderDrawer({
+      acknowledgements: { [critical.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }] },
     });
+    expect(within(drawer).queryByRole("textbox", { name: "Search tasks" })).toBeNull();
+    fireEvent.change(within(drawer).getByRole("combobox"), { target: { value: "acknowledged" } });
     expect(within(drawer).getByTestId(`ward-task-${critical.id}`)).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
-    expect(within(drawer).queryByTestId(`ward-task-${critical.id}`)).toBeNull();
     expect(within(drawer).getByText("No matching tasks")).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: "Clear filters" }));
     expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
+  });
+
+  it("offers completed tasks without allowing live facts to be marked done", () => {
+    const { drawer } = renderDrawer();
+    fireEvent.change(within(drawer).getByRole("combobox"), { target: { value: "completed" } });
+    expect(within(drawer).getByText("No completed tasks")).toBeVisible();
+    expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
+  });
+
+  it("shows linked patient identity and routes actions with the correct patient context", () => {
+    const { drawer, onSelectMovement, dispatch } = renderDrawer({ records: seed });
+    const item = items.find((item) => item.title === "Multiple destinations declined")!;
+    const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
+    expect(card).toHaveTextContent(/UMRN UM/u);
+    expect(card).not.toHaveTextContent(item.movementId);
+    expect(card).not.toHaveTextContent("Flow coordinator");
+    fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
+    expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "refer");
+    fireEvent.click(within(card).getByRole("button", { name: "Contact" }));
+    expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
+    fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    fireEvent.change(within(card).getByRole("textbox"), { target: { value: "Duty coordinator" } });
+    fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "RECORD_ESCALATION", movementId: item.movementId, contact: "Duty coordinator" }),
+    );
   });
 
   it("acknowledges only visible, unacknowledged facts", () => {
@@ -198,7 +224,7 @@ describe("task workspace search and acknowledgement filters", () => {
         [item.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
       },
     });
-    const filter = within(drawer).getByRole("combobox", { name: "Filter acknowledgement state" });
+    const filter = within(drawer).getByRole("combobox", { name: "Filter task state" });
     fireEvent.change(filter, { target: { value: "unacknowledged" } });
     expect(within(drawer).queryByTestId(`ward-task-${item.id}`)).toBeNull();
     fireEvent.change(filter, { target: { value: "acknowledged" } });
