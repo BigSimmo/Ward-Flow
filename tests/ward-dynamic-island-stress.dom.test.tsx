@@ -476,12 +476,13 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         </WardFlowProvider>,
       );
 
-      const passedBtn = screen.getByTestId("ward-legal-kpi-passed");
-      expect(passedBtn).toBeDefined();
+      // v6 hero: the urgency filter is the hero's "Forms shown" switch (All / Expiring).
+      const expiringBtn = screen.getByRole("radio", { name: /^Expiring/u });
+      expect(expiringBtn).toBeDefined();
 
-      fireEvent.click(passedBtn);
+      fireEvent.click(expiringBtn);
       // Urgency filter is now active
-      expect(passedBtn.getAttribute("aria-pressed")).toBe("true");
+      expect(expiringBtn.getAttribute("aria-checked")).toBe("true");
     });
 
     it("Mounts CapacityScreen with WardFlowProvider and verifies co-existence of HUD and Gap Table", () => {
@@ -496,8 +497,9 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
 
       expect(hud).toBeDefined();
       expect(gapTable).toBeDefined();
-      expect(within(hud).getByRole("img", { name: "Live synthetic board clock" })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /available\s*\d+\s+ready/iu })).toBeDefined();
+      // v6: the hero carries the Live chip with its pause control, and the counts are hero stats.
+      expect(screen.getByRole("button", { name: "Pause live updates" })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /^\d+\s*locked ready$/iu })).toBeDefined();
     });
   });
 });

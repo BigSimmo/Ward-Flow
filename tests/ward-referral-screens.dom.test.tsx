@@ -334,8 +334,32 @@ const REQUIRED_QUESTIONS: readonly { readonly name: string; readonly answer: () 
  */
 const CONDITIONAL_QUESTION_NAMES = ["Emergency department", "Community team", "Sending ward"] as const;
 
+/**
+ * v6 (7 Oct 2026): Age band and Sex are segmented radio groups rather than selects; every other
+ * question here is still a select. The group carries the same testid the select did, so this
+ * answers either by the value the clinician would pick.
+ */
 function selectAnswer(field: string, value: string) {
-  fireEvent.change(screen.getByTestId(`ward-referral-intake-${field}`), { target: { value } });
+  const control = screen.getByTestId(`ward-referral-intake-${field}`);
+  if (control instanceof HTMLSelectElement) {
+    fireEvent.change(control, { target: { value } });
+    return;
+  }
+  const radio = within(control)
+    .getAllByRole("radio")
+    .find((input) => (input as HTMLInputElement).value === value);
+  expect(radio, `${field} offers no "${value}" answer`).toBeDefined();
+  fireEvent.click(radio!);
+}
+
+/** The answer a question holds now: a select's value, or the checked radio's, else unanswered. */
+function answerValue(field: string): string {
+  const control = screen.getByTestId(`ward-referral-intake-${field}`);
+  if (control instanceof HTMLSelectElement) return control.value;
+  const checked = within(control)
+    .getAllByRole("radio")
+    .find((input) => (input as HTMLInputElement).checked) as HTMLInputElement | undefined;
+  return checked?.value ?? UNANSWERED_VALUE;
 }
 
 /**
@@ -476,6 +500,17 @@ function optionValues(select: HTMLElement): string[] {
  * than before, namely that the unanswered state is first and is spelled the one way. A relaxation
  * would have been `toContain`, or dropping the length check; neither is what happens here.
  */
+/** A segmented question's answers, in order; none may arrive chosen. */
+function radioAnswerValues(group: HTMLElement): string[] {
+  expect(group.getAttribute("role")).toBe("radiogroup");
+  const radios = within(group).getAllByRole("radio") as HTMLInputElement[];
+  expect(
+    radios.filter((radio) => radio.checked),
+    "a segmented answer arrives chosen — nobody chose it",
+  ).toEqual([]);
+  return radios.map((radio) => radio.value);
+}
+
 function answerOptionValues(select: HTMLElement): string[] {
   const options = within(select).getAllByRole("option") as HTMLOptionElement[];
   expect(options[0]?.value, "the first option is not the unanswered prompt").toBe(UNANSWERED_VALUE);
@@ -617,8 +652,8 @@ describe("ReferralIntakeForm", () => {
   it("offers every age band from COHORTS — the four-time defect class this phase keeps hitting", () => {
     renderForm();
 
-    const select = screen.getByTestId("ward-referral-intake-ageBand");
-    expect(answerOptionValues(select)).toEqual([...COHORTS]);
+    const group = screen.getByTestId("ward-referral-intake-ageBand");
+    expect(radioAnswerValues(group)).toEqual([...COHORTS]);
   });
 
   it("offers every home region from HOME_REGIONS", () => {
@@ -646,8 +681,8 @@ describe("ReferralIntakeForm", () => {
     renderForm();
 
     // R7 (owner ruling, 2026-09-25): recorded sex is Female, Male, Another term or Not recorded.
-    const select = screen.getByTestId("ward-referral-intake-sex");
-    expect(answerOptionValues(select)).toEqual([...RECORDED_SEXES]);
+    const group = screen.getByTestId("ward-referral-intake-sex");
+    expect(radioAnswerValues(group)).toEqual([...RECORDED_SEXES]);
   });
 
   /**
@@ -751,7 +786,11 @@ describe("ReferralIntakeForm", () => {
 
     // Non-vacuity: the list above must cover every combobox the form renders, so an eighth
     // picker added later without a name is caught rather than simply going unlisted here.
-    expect(screen.getAllByRole("combobox")).toHaveLength(named.length);
+    // v6 (7 Oct 2026): Age band and Sex are named radio groups now, so they are the two entries
+    // above that are not comboboxes.
+    const segmented = ["ward-referral-intake-ageBand", "ward-referral-intake-sex"];
+    for (const testId of segmented) expect(screen.getByTestId(testId).getAttribute("role")).toBe("radiogroup");
+    expect(screen.getAllByRole("combobox")).toHaveLength(named.length - segmented.length);
   });
 
   it("describes the request, never the person, for the two need toggles", () => {
@@ -854,8 +893,7 @@ describe("ReferralIntakeForm", () => {
     renderForm();
 
     for (const field of ["ageBand", "sex", "homeRegion", "source", "urgency", "originSiteCode"]) {
-      const select = screen.getByTestId(`ward-referral-intake-${field}`) as HTMLSelectElement;
-      expect(select.value, `${field} arrives pre-answered — a default is a wrong answer nobody chose`).toBe(
+      expect(answerValue(field), `${field} arrives pre-answered — a default is a wrong answer nobody chose`).toBe(
         UNANSWERED_VALUE,
       );
     }
@@ -1196,8 +1234,7 @@ describe("ReferralIntakeForm", () => {
     ).toBeInTheDocument();
 
     for (const field of ["ageBand", "sex", "homeRegion", "source", "urgency", "originSiteCode"]) {
-      const select = screen.getByTestId(`ward-referral-intake-${field}`) as HTMLSelectElement;
-      expect(select.value, `${field} still holds the previous patient's answer`).toBe(UNANSWERED_VALUE);
+      expect(answerValue(field), `${field} still holds the previous patient's answer`).toBe(UNANSWERED_VALUE);
     }
     for (const field of ["secureBedNeeded", "involuntaryBedNeeded", "transportNeeded"]) {
       for (const answer of ["yes", "no"]) {
@@ -1286,8 +1323,7 @@ describe("ReferralIntakeForm", () => {
     ).toBeInTheDocument();
 
     for (const field of ["ageBand", "sex", "homeRegion", "source", "urgency"]) {
-      const select = screen.getByTestId(`ward-referral-intake-${field}`) as HTMLSelectElement;
-      expect(select.value, `a refusal threw away the ${field} answer`).not.toBe(UNANSWERED_VALUE);
+      expect(answerValue(field), `a refusal threw away the ${field} answer`).not.toBe(UNANSWERED_VALUE);
     }
     expect(
       (screen.getByTestId("ward-referral-intake-secureBedNeeded-no") as HTMLInputElement).checked,

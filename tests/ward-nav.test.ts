@@ -710,6 +710,8 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "src/components/ward-management/movements/movements-screen.tsx",
       "src/components/ward-management/referrals/referral-board.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
+      // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
+      "src/components/ward-management/wards/ward-index.tsx",
     ]);
     const ward = dynamicRouteScans.get("/mockups/ward-flow/ward/[unitId]");
     // Three builders now, and the list stays exact rather than becoming a `toContain`: the ward
@@ -1693,12 +1695,14 @@ describe("Ward index — every ward in the network has a way in", () => {
     expect(liveCopy.length).toBeGreaterThan(units.length);
 
     // Verifies key sections and controls exist
+    // v6 (approved Wards mockup, 7 Oct 2026): the hero band carries the statewide counts and one
+    // filter card carries service, search, view, status, cohort and order.
     expect(markup).toContain("All wards");
-    expect(markup).toContain("Statewide Capacity Indicators");
-    expect(markup).toContain("Directory Filters");
-    expect(markup).toContain("Operational Wards");
-    expect(markup).toContain("Total Staffed Beds");
-    expect(markup).toContain("Available Beds Now");
+    expect(markup).toContain("Wards · Statewide");
+    expect(markup).toContain("Ward filters");
+    expect(markup).toContain("Occupied");
+    expect(markup).toContain("Ready now");
+    expect(markup).toContain("Stale counts");
     // Owner ruling 2026-09-17: live capacity lives on each directory card; former footer Live-bed sentence removed.
 
     // All 23 units have their cards with link and capacity details
