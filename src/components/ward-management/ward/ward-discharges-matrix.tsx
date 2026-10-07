@@ -14,6 +14,13 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { SuburbTeamPanel } from "./suburb-team-panel";
 
+/**
+ * Owner ruling R7 (2026-09-06): the ward records one waiting-on value, the one that will take
+ * longest. The flag form that used to say this is gone. The discharges list still has to say it,
+ * or a single recorded value reads as the ward's only answer.
+ */
+const WAITING_ON_LONGEST = "One only — the one that will take longest. A ward is often waiting on several.";
+
 interface WardDischargesMatrixProps {
   unit: Unit;
   releasesCountedToday: BedRelease[];
@@ -23,7 +30,6 @@ interface WardDischargesMatrixProps {
   confirmBedRelease: (id: string) => void;
   clearBedReleaseBlock: (id: string) => void;
   endLeaveBed: (id: string) => void;
-  onOpenDecisions?: () => void;
 }
 
 export function WardDischargesMatrix({
@@ -35,7 +41,6 @@ export function WardDischargesMatrix({
   confirmBedRelease,
   clearBedReleaseBlock,
   endLeaveBed,
-  onOpenDecisions,
 }: WardDischargesMatrixProps) {
   const [subTab, setSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
 
@@ -46,15 +51,6 @@ export function WardDischargesMatrix({
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Discharges, Departures &amp; Barrier Resolution Matrix</h2>
         </div>
-        <button
-          type="button"
-          className={`${styles.btnDischargeAction} ${styles.btnSec}`}
-          onClick={() => {
-            if (onOpenDecisions) onOpenDecisions();
-          }}
-        >
-          + Flag Bed Coming Free
-        </button>
       </div>
 
       {/* Stream Tabs */}
@@ -107,6 +103,7 @@ export function WardDischargesMatrix({
           <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
             Scheduled Today ({releasesCountedToday.length})
           </div>
+          <p data-testid="ward-waiting-on-longest">{WAITING_ON_LONGEST}</p>
           {releasesCountedToday.length === 0 ? (
             <p className={styles.placeholder}>No bed release is currently scheduled for today at {unit.name}.</p>
           ) : (
@@ -119,7 +116,10 @@ export function WardDischargesMatrix({
               >
                 <div className={styles.dischargeLeft}>
                   <div className={styles.dischargePatientTitle}>
-                    <span style={{ fontFamily: "var(--mono)", fontWeight: 700 }}>
+                    <span
+                      data-testid={`ward-today-release-state-${release.id}`}
+                      style={{ fontFamily: "var(--mono)", fontWeight: 700 }}
+                    >
                       {bedReleaseStateLabels[release.state]}
                     </span>
                     <span style={{ fontSize: "12px", color: "var(--muted)" }}>
@@ -149,6 +149,7 @@ export function WardDischargesMatrix({
                     <button
                       type="button"
                       className={styles.btnDischargeAction}
+                      data-testid={`ward-today-release-confirm-${release.id}`}
                       onClick={() => confirmBedRelease(release.id)}
                     >
                       Confirm Ready

@@ -2,10 +2,13 @@
 .ribbon {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r2, 6px);
-  box-shadow: var(--lift-sm);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--hl));
+  border-radius: 0.75rem;
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(16px) saturate(1.15);
   overflow: hidden;
   margin-bottom: 0;
 }
@@ -82,9 +85,9 @@
 }
 
 .label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
   display: flex;
@@ -93,7 +96,7 @@
 }
 
 .badge {
-  font-size: 10.5px;
+  font-size: var(--t-0);
   font-family: var(--mono);
   font-weight: 600;
   padding: 1px 5px;
@@ -131,7 +134,7 @@
 }
 
 .mainVal {
-  font-size: 16px;
+  font-size: var(--t-4);
   font-weight: 700;
   font-family: var(--body);
   font-variant-numeric: tabular-nums;
@@ -141,13 +144,13 @@
 }
 
 .unit {
-  font-size: 11.5px;
+  font-size: var(--t-0);
   font-weight: 500;
   color: var(--ink-soft);
 }
 
 .subRow {
-  font-size: 11px;
+  font-size: var(--t-0);
   color: var(--muted);
   margin-top: 2px;
   display: flex;
@@ -161,7 +164,7 @@
 }
 
 .actionLink {
-  font-size: 11px;
+  font-size: var(--t-0);
   font-weight: 600;
   color: var(--good);
   cursor: pointer;

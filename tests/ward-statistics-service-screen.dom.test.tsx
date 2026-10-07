@@ -177,7 +177,7 @@ describe("Health-service statistics — a real service", () => {
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
   it("says the 30-day trends are not recorded, on the page, not only in a comment", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    const history = screen.getByText("View historical referral flow records").closest("details")!;
+    const history = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
     expect(history).toHaveTextContent("Not recorded.");
     expect(history).toHaveTextContent("No daily history is recorded, so neither 30-day series is shown.");
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
@@ -187,7 +187,7 @@ describe("Health-service statistics — a real service", () => {
 
   it("keeps absent history explicit when changing health services", () => {
     const { unmount } = renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    const northHistory = screen.getByText("View historical referral flow records").closest("details")!;
+    const northHistory = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
     expect(northHistory).toHaveTextContent("No daily history is recorded");
     expect(northHistory.querySelector("svg, img")).toBeNull();
     unmount();
@@ -196,7 +196,7 @@ describe("Health-service statistics — a real service", () => {
     expect(within(mainOf("ward-statistics-service-screen")).getByRole("heading", { level: 1 })).toHaveTextContent(
       "South Metro",
     );
-    const southHistory = screen.getByText("View historical referral flow records").closest("details")!;
+    const southHistory = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
     expect(southHistory).toHaveTextContent("No daily history is recorded");
     expect(southHistory.querySelector("svg, img")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
