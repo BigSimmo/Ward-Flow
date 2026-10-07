@@ -8439,5 +8439,7 @@ Automated verification summary:
      - Handled `PopStateEvent` traversal to preserve browser back/forward history for open drawers.
      - Resolved nested modal dialog ambiguity by making `WardTasksDrawer`'s role conditionally `role="dialog"` only when standalone (`withBackdrop=true`) and `role="complementary"` when embedded within `<Sheet>`.
      - Added dedicated regression test suite in `tests/ward-shell-third-edition.dom.test.tsx` (55/55 tests green).
-  6. **Script & Documentation Inventory Synchronization:**
+  6. **Script & Documentation Inventory Synchronization (Commit `07c2f39`):**
      - Ran `npm run docs:update`, updating `docs/scripts-index.md` (159 script files, 117 npm scripts) and `docs/site-map.md`. Verified with `npm run docs:check-inventory`.
+  7. **D-18 Free-Text Privacy Compliance (Commit `d4cd47d`):**
+     - Upholds Decision D-18 ("typed text stays off the device") by removing `sessionStorage` free-text caching in `src/components/ward-management/use-dirty-state-guard.ts` while preserving `beforeunload` warning prompts on tab closure or navigation, protecting against accidental loss without saving clinical narratives to client storage. Verified with `tests/ward-use-dirty-state-guard.dom.test.tsx` (4/4 tests green).
