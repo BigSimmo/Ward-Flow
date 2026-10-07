@@ -294,9 +294,20 @@ export function isOfficerJob(movement: Movement): boolean {
 type StatusFilter = "all" | "requested" | "accepted" | "en_route" | "collected";
 type JobsTab = "active" | "refused" | "cancelled";
 
-/** The ward ETA a job carries, if any: the arrival plan first, then the time typed at booking. */
+/**
+ * The ward ETA a job carries, if any: the arrival plan's time only. The time typed at booking is
+ * the provider's estimate, not a ward ETA, so lateness is never measured against it.
+ */
 function wardEta(movement: Movement): Instant | undefined {
-  return movement.arrivalDetails?.estimatedArrivalAt ?? movement.transport?.estimatedAt;
+  return movement.arrivalDetails?.estimatedArrivalAt;
+}
+
+/** When a job is expected: its ward ETA, or else the time typed at booking, saying which. */
+function expectedArrival(movement: Movement): { at: Instant; booked: boolean } | undefined {
+  const ward = wardEta(movement);
+  if (ward !== undefined) return { at: ward, booked: false };
+  const booked = movement.transport?.estimatedAt;
+  return booked === undefined ? undefined : { at: booked, booked: true };
 }
 
 /** True once a job is more than the grace past its recorded ward ETA and has not arrived. */
@@ -673,11 +684,14 @@ export function OfficerScreen() {
     { id: "collected", label: "Collected", count: statusCounts.collected },
   ];
 
-  // Every open job with a recorded ward ETA. The axis runs from the earlier of now and the first
-  // ETA to the later of now and the last, so no window length is invented.
+  // Every open job with a recorded ward ETA or booking estimate. The axis runs from the earlier of
+  // now and the first to the later of now and the last, so no window length is invented.
   const arrivals = jobs
-    .map((movement) => ({ movement, eta: wardEta(movement) }))
-    .filter((item): item is { movement: Movement; eta: Instant } => item.eta !== undefined)
+    .map((movement) => {
+      const expected = expectedArrival(movement);
+      return expected ? { movement, eta: expected.at, booked: expected.booked } : undefined;
+    })
+    .filter((item): item is { movement: Movement; eta: Instant; booked: boolean } => item !== undefined)
     .sort((a, b) => a.eta - b.eta);
   const arrivalsStart = Math.min(now, ...arrivals.map((item) => item.eta));
   const arrivalsEnd = Math.max(now, ...arrivals.map((item) => item.eta));
@@ -707,7 +721,7 @@ export function OfficerScreen() {
             : leg === "Collected"
               ? arrivedBlocked
               : undefined;
-    const eta = wardEta(movement);
+    const eta = expectedArrival(movement)?.at;
     const canDivert =
       !movement.closure &&
       transport.collectedAt !== undefined &&
@@ -1385,7 +1399,8 @@ export function OfficerScreen() {
                       <span className={styles.nowLine} style={{ left: arrivalsLeft(now) }} />
                     </div>
                     <ul className={styles.arrivalsList}>
-                      {arrivals.map(({ movement, eta }) => {
+                      {arrivals.map(({ movement, eta, booked }) => {
+                        // Only a ward ETA can make a job late; a booking estimate says it is one.
                         const late = pastWardEta(movement, now);
                         return (
                           <li key={movement.id} className={styles.arrivalRow}>
@@ -1399,7 +1414,13 @@ export function OfficerScreen() {
                               <span className={styles.arrivalMark} style={{ left: arrivalsLeft(eta) }}>
                                 <StatusGlyph tone={late ? "warning" : "info"} size={9} />
                                 <b>{formatInstantWithDay(eta, now)}</b>
-                                <span>{late ? "Late" : transportEtaRemainingLabel(eta, now)}</span>
+                                <span>
+                                  {late
+                                    ? "Late"
+                                    : booked
+                                      ? `Booking estimate · ${transportEtaRemainingLabel(eta, now)}`
+                                      : transportEtaRemainingLabel(eta, now)}
+                                </span>
                               </span>
                             </span>
                           </li>
