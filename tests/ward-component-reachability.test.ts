@@ -234,31 +234,23 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * `statistics-primitives.tsx`'s entry, below, retired the same way).
    */
   /*
-   * ✅ **`statistics-primitives.tsx` CAME BACK, AND ITS ENTRY IS DELETED RATHER THAN REWORDED.**
-   *
-   * It was declared here as *"referenced by nothing in src/ at all"* — true when written, sourced
-   * from a census of the ward routes as they then were. A new screen has since imported it, and the
-   * chain is a real one, opened end to end rather than inferred from a grep:
-   *
-   *     src/app/mockups/ward-flow/statistics/service/[serviceId]/page.tsx
-   *       -> StatisticsServiceScreen  (statistics-service-screen.tsx:7)
-   *         -> StatFootnote           (statistics-primitives.tsx)
-   *
-   * 🔴 **This file went red for the reason it exists** — its own assertion is *"holds no stale
-   * declaration, so a screen coming back reddens its own marking"*, and that is precisely what
-   * happened. **A declaration of absence is a measurement with a date on it**, and the danger is not
-   * that it ages but that nothing notices: an unreachable-module list is exactly the document
-   * somebody later reads as permission to delete. Recorded here rather than silently dropped,
-   * because the next person to meet a red in this file should see that a red here has been correct
-   * at least once.
-   *
-   *
-   * ⚠️ **The second half of the guard's own message — "check whether those tests should now be
-   * counted as real coverage" — is answered here rather than left hanging.** They should, and they
-   * now are by construction rather than by anybody deciding: the component is imported by a screen
-   * that a route renders, so the reachability walk reaches it from a route on its own. Nothing was
-   * added to make that true and nothing has to be maintained to keep it true.
+   * 🔴 **`statistics-primitives.tsx` IS UNREACHABLE AGAIN.** The service screen no longer mounts
+   * `StatFootnote`; only `tests/ward-statistics-primitives.dom.test.tsx` still constructs it. The
+   * earlier "came back" note stays in Git history — this entry is the current measurement.
    */
+  {
+    module: "src/components/ward-management/statistics/statistics-primitives.tsx",
+    why: "referenced by nothing in src/ at all — StatFootnote is only constructed by its retired DOM suite",
+  },
+  /*
+   * The v6 rail (header and sidebar boards 02, 03 and 03b, 7 October 2026) removed the "Reconciliation
+   * not published" line from the rail. The component stays because `hub/hub-provenance.ts` still
+   * imports its exported helpers; it is no longer mounted on any route.
+   */
+  {
+    module: "src/components/ward-management/shell/ward-reconciliation-line.tsx",
+    why: "unmounted from the rail by the v6 restyle — its helpers stay for hub-provenance",
+  },
 ];
 
 describe("every ward component a test renders is one a coordinator can still reach", () => {

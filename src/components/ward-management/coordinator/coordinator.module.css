@@ -368,7 +368,7 @@
   height: 0.15rem;
   margin-block: 0.125rem;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--line);
 }
 
@@ -2510,7 +2510,7 @@
   justify-content: center;
   min-width: 1.25rem;
   height: 1.25rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   padding: 0 0.4375rem;
   color: var(--ink-soft);
@@ -3405,7 +3405,7 @@
 .prototypeBadge {
   min-height: 1.5rem;
   border: 1px solid var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent-soft);
   padding: 0.125rem 0.5rem;
   color: var(--accent-ink);
@@ -3550,7 +3550,7 @@
 }
 
 .queueTabCount {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   padding: 0 0.4375rem;
   color: var(--ink-soft);
@@ -3939,7 +3939,7 @@
     width: 2.5rem;
     height: 0.25rem;
     margin: var(--ward-space-8) auto 0;
-    border-radius: 9999px;
+    border-radius: var(--radius-pill, 9999px);
     background: var(--line-strong);
     flex-shrink: 0;
   }

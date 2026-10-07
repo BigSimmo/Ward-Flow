@@ -181,10 +181,6 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      <p className={family.note}>
-        Ready beds and people waiting are separate counts. This page does not match which bed suits which person.
-      </p>
-
       <StatisticsInsightChart
         key="wards"
         defaultSort="value"
@@ -291,39 +287,6 @@ export function StatisticsCompareScreen({
       </nav>
 
       {/* ══════════ SCOPE & ATTRIBUTION LIMITS PANEL ══════════ */}
-      <WardPanel
-        title="Scope and attribution limits"
-        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-        testId="ward-statistics-compare-scope"
-      >
-        <div className={styles.panelBody}>
-          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-          </p>
-          <div data-testid="ward-statistics-compare-why-two">
-            <h3>Method and attribution limits</h3>
-            <div className={styles.revealBody}>
-              <p data-testid="ward-statistics-compare-attributability-rule">
-                <strong>
-                  A measure belongs to a named ward only when its source record carries a required unit id.
-                </strong>{" "}
-                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                optional unit id covers only the records where it happens to be present, not the whole population.
-              </p>
-              <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> Named ward referrals preserve their recipient
-                before acceptance. Older network-wide referrals may lack a ward identifier when declined. Accepted
-                referrals name the ward that accepted.
-              </p>
-              <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                than the number of referrals that exist.
-              </p>
-            </div>
-          </div>
-        </div>
-      </WardPanel>
 
       <div
         id="compare-ward-measures"
@@ -344,7 +307,7 @@ export function StatisticsCompareScreen({
               </div>
               {units.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
-                  No ward is recorded in this prototype, so there is nothing to chart.
+                  No wards recorded.
                 </p>
               ) : (
                 <WardAlosBarChart units={units} admissions={admissions} now={now} />
@@ -384,7 +347,7 @@ export function StatisticsCompareScreen({
               </div>
               {emergencyDepartments.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
-                  No emergency department is recorded in this prototype, so there is nothing to chart.
+                  No emergency departments recorded.
                 </p>
               ) : (
                 <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
@@ -496,38 +459,6 @@ export function StatisticsCompareScreen({
        * typed here.
        */}
       {/* ══════════ DATA PROVENANCE PANEL ══════════ */}
-      <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
-        <div className={styles.panelBody}>
-          {/*
-           * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
-           * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
-           * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
-           * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
-           * has scrolled away, and alone it must still say the figures are not real.
-           *
-           * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
-           * suite run over this screen: "None of it describes a real person…" and a second
-           * paragraph that said only what IS real. Both were honest and both failed, because the
-           * disclosing words were not bound to a verb or a noun inside their own sentence.
-           *
-           * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
-           * sentence boundary, so a marker before it does not vouch for the clause after it —
-           * which is the exact hole its own header records ("The ward names are invented; there
-           * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
-           */}
-          <p className={styles.body}>
-            Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
-            this screen is a real person, a real bed or a real referral.
-          </p>
-          <p className={styles.note}>
-            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
-            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
-            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
-            names is invented.
-          </p>
-        </div>
-      </WardPanel>
     </StatisticsSectionFrame>
   );
 }
@@ -690,21 +621,6 @@ const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
  *
  * A single row cannot be uniform in any useful sense, so a one-row table reports nothing.
  */
-function columnsThatSeparateNothing<Row>(
-  columns: readonly CompareColumn<Row>[],
-  rows: readonly CompareRow<Row>[],
-): readonly string[] {
-  if (rows.length < 2) return [];
-  return columns
-    .filter((column) => new Set(rows.map(({ row }) => column.cell(row).text)).size === 1)
-    .map((column) => column.header);
-}
-
-/** English for a list of column names, so the note reads as a sentence rather than as output. */
-function joinNames(names: readonly string[]): string {
-  if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
 
 /**
  * One comparison table, plus the note about its own uniform columns.
@@ -726,8 +642,6 @@ function CompareTable<Row>({
   columns: readonly CompareColumn<Row>[];
   rows: readonly CompareRow<Row>[];
 }) {
-  const uniform = columnsThatSeparateNothing(columns, rows);
-  const unit = rowHeader.toLowerCase();
   return (
     <>
       {/*
@@ -771,17 +685,6 @@ function CompareTable<Row>({
           })}
         </tbody>
       </WardTable>
-      {uniform.length > 0 && (
-        <p className={styles.note} data-testid={`${testId}-uniform`}>
-          <strong>
-            {joinNames(uniform)} {uniform.length === 1 ? "gives" : "give"} every {unit} the same answer here, so{" "}
-            {uniform.length === 1 ? "it separates" : "they separate"} nothing.
-          </strong>{" "}
-          That is a property of this prototype&apos;s own data rather than a finding about the {unit}s. It is not
-          evidence that they are alike, and the figure is not varied to make the column look useful — an invented spread
-          on a comparison screen would be a ranking nobody measured.
-        </p>
-      )}
     </>
   );
 }
@@ -822,7 +725,6 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
-      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
         height={H}

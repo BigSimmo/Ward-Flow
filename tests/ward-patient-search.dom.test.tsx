@@ -375,9 +375,7 @@ describe("the results table never claims more than the record holds", () => {
       // Owner, 26 Sept 2026: the row shows the patient's name, never the WF journey number, so the
       // row is found by the preview button's testid (which still carries the movement id) rather
       // than by the movement id appearing anywhere in visible text.
-      const row = within(results)
-        .getByTestId(`ward-patient-search-movement-preview-${movement.id}`)
-        .closest("tr");
+      const row = within(results).getByTestId(`ward-patient-search-movement-preview-${movement.id}`).closest("tr");
       expect(row, `movement ${movement.id} is missing from the results table entirely`).not.toBeNull();
       const cells = [...(row as HTMLTableRowElement).cells].map((cell) => cell.textContent ?? "");
 
@@ -1093,7 +1091,12 @@ describe("Third Edition dropdown filters and yield strip", () => {
       expect(label).not.toContain("Form 5A (Involuntary)");
     }
 
-    const chipNames = screen.getAllByRole("button").map((button) => button.textContent ?? "");
+    // v6 (Patients.png): each result row is itself a button carrying its own recorded due time, so
+    // the chip check reads every button except the result rows.
+    const chipNames = screen
+      .getAllByRole("button")
+      .filter((button) => !button.getAttribute("data-testid")?.startsWith("ward-patient-search-case-"))
+      .map((button) => button.textContent ?? "");
     expect(chipNames.filter((name) => /Form \d[A-Z]/.test(name) && /\d+\s*h\b|Involuntary/i.test(name))).toEqual([]);
     expect(chipNames.some((name) => name.includes("Form 5A"))).toBe(false);
   });

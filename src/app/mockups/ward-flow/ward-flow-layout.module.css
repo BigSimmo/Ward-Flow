@@ -50,7 +50,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--ground);
-  scroll-padding-top: 3.5rem;
+  scroll-padding-top: 3.75rem;
 }
 
 /*
@@ -76,6 +76,12 @@
   }
   .shellContent {
     height: auto;
+    overflow-y: visible;
+  }
+  /* A visible/hidden overflow pair creates a scroll container even when only the document
+     scrolls. Use clip on statistics so the navigation can anchor to the document on mobile. */
+  .shellContent:has([data-testid="ward-statistics-nav"]) {
+    overflow-x: clip;
     overflow-y: visible;
   }
 }

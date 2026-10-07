@@ -240,17 +240,12 @@ describe("the statistics overview now carries real figures, honestly", () => {
    * contract.
    */
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
-  it("carries exactly one trend, and it says Not recorded rather than drawing one", () => {
+  it("omits the unavailable historical trend instead of reserving an empty panel", () => {
     renderOverview();
 
     const main = within(screen.getByTestId("ward-statistics-overview-screen")).getByRole("main");
     const charts = main.querySelectorAll('[data-ward-primitive="demonstration-chart"]');
-    expect(charts.length, "expected exactly one demonstration chart on this page").toBe(1);
-
-    const chart = charts[0];
-    expect(chart.textContent).toContain("Not recorded");
-    expect((chart.textContent ?? "").toLowerCase()).toContain("cannot");
-    expect(chart.querySelector("svg"), "no invented line is drawn").toBeNull();
+    expect(charts).toHaveLength(0);
   });
 
   /**
@@ -259,13 +254,10 @@ describe("the statistics overview now carries real figures, honestly", () => {
    * disclosure's own testid rather than the whole page, so a false positive elsewhere in the page's
    * prose cannot satisfy it.
    */
-  it("states who the declines-by-reason figure misses", () => {
+  it("keeps the decline breakdown visible without the retired scope explanation", () => {
     renderOverview();
-
-    const text = value("ward-statistics-overview-declines-scope");
-    expect(text.length, "the disclosure has almost no content").toBeGreaterThan(120);
-    expect(text).toMatch(/already (waiting )?inside/i);
-    expect(text).toMatch(/before the person has (ever )?reached a department/i);
+    expect(screen.queryByTestId("ward-statistics-overview-declines-scope")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeVisible();
   });
 
   /** The two tables the brief requires, at minimum. */
@@ -276,23 +268,23 @@ describe("the statistics overview now carries real figures, honestly", () => {
   });
 
   /** Limits sit on the page. They are not closed disclosures. */
-  it("shows recorded limits on the page rather than behind disclosures", () => {
+  it("removes explanation panels without closing the data behind disclosures", () => {
     renderOverview();
-    const main = within(screen.getByTestId("ward-statistics-overview-screen")).getByRole("main");
+    const main = screen.getByRole("main");
     expect(main.querySelectorAll("details")).toHaveLength(0);
-    expect(screen.getByTestId("ward-statistics-overview-declines-scope")).toBeVisible();
-    expect(screen.getAllByTestId("ward-statistics-overview-capacity-disclosure").length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-statistics-overview-refused-so-far-disclosure")).toBeVisible();
+    for (const id of ["ward-statistics-overview-declines-scope", "ward-statistics-overview-refused-so-far-disclosure"])
+      expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-capacity-disclosure").tagName).toBe("SECTION");
   });
 
-  it("shows the shared section title and retained reporting scope and provenance", () => {
+  it("shows the shared section title and compact synthetic-data footer", () => {
     renderOverview();
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
     expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
-    expect(screen.getByTestId("ward-statistics-overview-scope").textContent).toContain("Network-wide current state");
-    expect(screen.getByTestId("ward-statistics-overview-invented-figures").textContent).toContain(
-      "Every figure here is invented and describes no real person or day.",
-    );
+    expect(screen.queryByTestId("ward-statistics-overview-scope")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-overview-capacity")).toBeVisible();
+    expect(screen.queryByTestId("ward-statistics-overview-invented-figures")).toBeNull();
+    expect(screen.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
   });
 });

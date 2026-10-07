@@ -293,13 +293,17 @@ describe("assertion 3 — drawer focus trap and Escape order", () => {
     // stayed true for the entire 50 presses whether or not the trap existed at all. This is the
     // same idiom `tests/sheet-focus.dom.test.tsx:262-266` already uses to give the trap something
     // to work with, applied here rather than reinvented.
-    const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
-      length: 1,
-      item: () => null,
-      [Symbol.iterator]: function* () {
-        yield {} as DOMRect;
-      },
-    } as DOMRectList);
+    const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return {
+        length: this.closest("[hidden]") ? 0 : 1,
+        item: () => null,
+        [Symbol.iterator]: function* () {
+          yield {} as DOMRect;
+        },
+      } as DOMRectList;
+    });
 
     try {
       const user = userEvent.setup();
@@ -504,90 +508,75 @@ describe("assertion 8 — Tasks drawer network inbox is coordinator-only", () =>
 // CSS-only and outside what this file can measure — see assertion 8 below, the static ordering
 // guard that catches exactly the class of bug this section describes, and `task-4-report-
 // round3.md` for what was read from the cascade rather than measured in a browser.
-describe("assertion 4 — the reconciliation sentence appears exactly once per page", () => {
-  it("renders the reconciled sentence exactly once when every check passes", () => {
+// 7 October 2026, v6 rail (header and sidebar boards 02, 03 and 03b; Josh's brief): the rail no
+// longer carries the reconciliation sentence at all — "Reconciliation not published" was removed
+// from it. Published figure checks stay reachable in the Activity drawer's compact disclosure. The
+// six cases below keep the earlier assertion-4 and round-2 shapes (checks passing, failing, the
+// Activity drawer open, the closed preference, and both rail shapes) and now pin the removal, so the
+// line cannot quietly come back into the rail in one shape while staying gone in another.
+function railReconciliationOwners() {
+  return screen.queryAllByTestId("ward-reconciliation-line");
+}
+
+function railText() {
+  return screen.getByTestId("ward-rail").textContent ?? "";
+}
+
+describe("assertion 4 — the rail carries no reconciliation sentence (v6 rail)", () => {
+  it("renders no reconciliation line in the rail when every check passes", () => {
     renderShell(OK_CHECKS);
-    const matches = screen.getAllByText((_content, element) =>
-      (element?.textContent ?? "").includes("Invented figures, reconciled with each other"),
-    );
-    // Several DOM nodes can carry the same text via ancestor/descendant text matching — collapse
-    // to the elements that own the sentence directly (the reconciliation line's own <p>), which
-    // is the count that actually answers "does this sentence appear once on the page".
-    const owners = matches.filter((element) => element.getAttribute("data-testid") === "ward-reconciliation-line");
-    expect(owners).toHaveLength(1);
+    expect(railReconciliationOwners()).toHaveLength(0);
+    expect(railText()).not.toMatch(/reconcil/i);
   });
 
-  it("renders the disagreement sentence exactly once when a check fails — never the reconciled one", () => {
+  it("renders no reconciliation line in the rail when a check fails", () => {
     renderShell(FAILING_CHECKS);
-    const reconciled = screen.queryAllByText(
-      (_content, element) => (element?.textContent ?? "") === "Invented figures, reconciled with each other.",
-    );
-    expect(reconciled).toHaveLength(0);
-
-    const line = screen.getByTestId("ward-reconciliation-line");
-    expect(line.textContent ?? "").toContain("Invented figures, 1 figure does not reconcile");
+    expect(railReconciliationOwners()).toHaveLength(0);
+    expect(railText()).not.toContain("does not reconcile");
   });
 
-  it("stays exactly once even while the Activity drawer (which reflects the same checks) is open", async () => {
+  it("stays absent while the Activity drawer (which reflects the same checks) is open", async () => {
     const user = userEvent.setup();
     renderShell(OK_CHECKS);
 
     await user.click(screen.getByTestId("ward-bar-activity-trigger"));
     await screen.findByRole("dialog", { name: /Activity/ });
 
-    const owners = screen
-      .getAllByText((_content, element) =>
-        (element?.textContent ?? "").includes("Invented figures, reconciled with each other"),
-      )
-      .filter((element) => element.getAttribute("data-testid") === "ward-reconciliation-line");
-    expect(owners).toHaveLength(1);
+    expect(railReconciliationOwners()).toHaveLength(0);
   });
 
-  // Round-1 review, Important 6: `WardReconciliationLine` used to render only when the rail's
-  // remembered preference was "open" (`ward-rail.tsx`'s own `{open ? <WardReconciliationLine ...>
-  // : null}`), so with the stored preference "closed" the sentence appeared ZERO times — and this
-  // very describe block's other tests never caught it because `renderShell` always mounts with
-  // the rail's default (open) preference. This test seeds the same `localStorage` key the rail
-  // reads (`ward-rail.tsx`'s `RAIL_OPEN_STORAGE_KEY`) to "closed" before rendering, the one
-  // documented way to start the rail collapsed.
-  it("still renders the reconciliation sentence exactly once when the rail's remembered preference is closed", () => {
+  it("stays absent when the rail's remembered preference is closed", () => {
     window.localStorage.setItem("ward-flow-rail", "closed");
     try {
       renderShell(OK_CHECKS);
-      const owners = screen
-        .getAllByText((_content, element) =>
-          (element?.textContent ?? "").includes("Invented figures, reconciled with each other"),
-        )
-        .filter((element) => element.getAttribute("data-testid") === "ward-reconciliation-line");
-      expect(owners).toHaveLength(1);
+      expect(railReconciliationOwners()).toHaveLength(0);
+      expect(railText()).not.toMatch(/reconcil/i);
     } finally {
       window.localStorage.removeItem("ward-flow-rail");
     }
   });
 });
 
-// Round-2 review, Important 2: the drawing's own closed `#railCheck` carries `title="<the
-// sentence>"` so a sighted mouse user hovering the compact dot still gets the word, not colour
-// alone (standard §9: "No colour is the only carrier of any state"). The port had this on
-// neither element before this fix. Unlike round-1's CSS-only findings, a `title` attribute is a
-// plain DOM property jsdom renders exactly like a browser would, so — unlike assertion 4's bar
-// instance above — this one IS fully testable, and is tested rather than merely read.
-describe("round-2 review, Important 2 — the closed rail strip's sighted-user path", () => {
-  it("gives the compact (closed-rail) reconciliation line a title carrying the sentence", () => {
+describe("round-2 review, Important 2 — the closed rail strip's sighted-user path (v6 rail)", () => {
+  it("gives no rail element a reconciliation title in the compact (closed-rail) shape", () => {
     window.localStorage.setItem("ward-flow-rail", "closed");
     try {
       renderShell(OK_CHECKS);
-      const line = screen.getByTestId("ward-reconciliation-line");
-      expect(line).toHaveAttribute("title", "Invented figures, reconciled with each other.");
+      const titled = [...screen.getByTestId("ward-rail").querySelectorAll("[title]")].filter((element) =>
+        /reconcil/i.test(element.getAttribute("title") ?? ""),
+      );
+      expect(titled).toHaveLength(0);
     } finally {
       window.localStorage.removeItem("ward-flow-rail");
     }
   });
 
-  it("carries no title in the open (non-compact) shape, matching the drawing's own open branch", () => {
+  it("gives no rail element a reconciliation title in the open shape either", () => {
     renderShell(OK_CHECKS);
-    const line = screen.getByTestId("ward-reconciliation-line");
-    expect(line).not.toHaveAttribute("title");
+    const titled = [...screen.getByTestId("ward-rail").querySelectorAll("[title]")].filter((element) =>
+      /reconcil/i.test(element.getAttribute("title") ?? ""),
+    );
+    expect(titled).toHaveLength(0);
   });
 });
 
@@ -697,7 +686,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps demo controls and the role switcher in Tools while account utilities stay out", async () => {
+  it("keeps scenario controls and the role switcher under Shift desk while account utilities stay out", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -705,12 +694,14 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeInTheDocument();
+    expect(withinDialog.queryByRole("button", { name: /^Demo$/ })).toBeNull();
+    await user.click(withinDialog.getByRole("button", { name: /^Shift desk$/ }));
+    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeVisible();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
     // The role switcher renders its own labelled control — asserting the heading it sits under
     // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Demonstration")).toBeInTheDocument();
+    expect(withinDialog.getByText("Scenario controls")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {
@@ -760,7 +751,10 @@ describe("assertion 6 — no text below 12px in the shell's CSS modules", () => 
   // scale, per this repo's own `--text-3xs`/`--text-2xs` ban) would have passed it too, having
   // parsed as neither a literal length nor been checked against the token pattern at all. Fixed to
   // require the token form outright and to fail if the file set carries no declarations to check.
-  it("every font-size declaration across the shell's CSS modules is a --t-N token reference", () => {
+  // 7 October 2026: the v6 rail restyle moved `ward-rail.module.css` onto the global v6 type scale
+  // (`--wf-fs-N` in `src/app/ward-flow-v6-tokens.css`, where N is the pixel size). The 12px floor
+  // still holds: a v6 step is accepted only at 12 or above, so `--wf-fs-11` fails here.
+  it("every font-size declaration across the shell's CSS modules is a --t-N or a 12px-or-larger --wf-fs-N token", () => {
     let totalDeclarations = 0;
     for (const file of cssFiles) {
       const css = readFileSync(join(shellDir, file), "utf8");
@@ -769,7 +763,13 @@ describe("assertion 6 — no text below 12px in the shell's CSS modules", () => 
       for (const [, raw] of declarations) {
         // Priority is separate from the value; portalled Sheet overrides still use the same scale.
         const value = raw.trim().replace(/\s*!important$/u, "");
-        expect(value, `${file} declares font-size: ${value}, not a --t-N token`).toMatch(/^var\(--t-\d+\)$/);
+        expect(value, `${file} declares font-size: ${value}, not a --t-N or --wf-fs-N token`).toMatch(
+          /^var\(--(?:t|wf-fs)-\d+\)$/,
+        );
+        const v6Step = /^var\(--wf-fs-(\d+)\)$/u.exec(value);
+        if (v6Step) {
+          expect(Number(v6Step[1]), `${file} declares ${value}, below the 12px floor`).toBeGreaterThanOrEqual(12);
+        }
       }
     }
     // The floor this test lacked: if every file above stopped declaring font-size at all, the

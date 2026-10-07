@@ -172,6 +172,13 @@
   background: var(--rs-subtle);
 }
 
+/* Keyboard focus needs the shared ring, not only the faint hover fill (styling audit, 7 Oct 2026).
+   Focus only, so the resting and hover look is unchanged. */
+.menuItem:focus-visible {
+  outline: 0.125rem solid var(--focus, var(--rs-blue));
+  outline-offset: -0.125rem;
+}
+
 .menuItemDisabled {
   color: var(--rs-disabled);
   cursor: not-allowed;

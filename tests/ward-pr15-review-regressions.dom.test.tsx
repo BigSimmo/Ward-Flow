@@ -133,8 +133,10 @@ describe("PR15 recorded facts and unavailable data", () => {
       <StatisticsCompareScreen units={[available]} emergencyDepartments={[]} admissions={[]} />,
       { movements: [movement] },
     );
-    expect(screen.getByText(/Ready beds and people waiting are separate counts/)).toBeTruthy();
-    expect(container.textContent).toContain("This page does not match which bed suits which person");
+    // Presentation contract: operational bed and waiting panels stay visible; the retired
+    // explanatory "separate counts" prose does not return.
+    expect(container.textContent).not.toMatch(/Ready beds and people waiting are separate counts/);
+    expect(container.textContent).not.toMatch(/This page does not match which bed suits which person/);
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
     expect(screen.getAllByText("Waiting for a bed")).toHaveLength(1);
     expect(container.textContent).toContain(`${available.beds} beds`);
@@ -178,11 +180,12 @@ describe("PR15 recorded facts and unavailable data", () => {
 
   it("retains the service history disclosure without generating demonstration trends", () => {
     renderFlow(<StatisticsServiceScreen serviceId="North Metro" />);
-    const disclosure = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(disclosure.textContent).toContain("Not recorded.");
-    expect(disclosure.querySelector("svg, img")).toBeNull();
+    // Presentation contract: absent history stays absent — no empty history panel and no drawn series.
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Sent and taken in, over the last 30 days" })).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
+    expect(screen.queryByText("Demonstration data")).toBeNull();
   });
 
   it("changes community team using the internal router", () => {
@@ -365,10 +368,12 @@ describe("PR15 discharge and referral provenance", () => {
     )!;
     renderFlow(<ReferralBoard />, { referrals: [referral] });
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${referral.id}`));
-    fireEvent.click(screen.getByRole("tab", { name: "Clinical Dossier & Referrer Letter" }));
+    // v6 (Referrals--clinical-dossier.webp): the tab reads "Clinical dossier" and the facts are a
+    // labelled grid ("Direct contact" over "Not recorded"), with no colon between label and value.
+    fireEvent.click(screen.getByRole("tab", { name: "Clinical dossier" }));
     const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail.textContent).toContain("Direct contact: Not recorded");
-    expect(detail.textContent).toContain("Referral raised:");
+    expect(detail.textContent).toMatch(/Direct contact\s*Not recorded/);
+    expect(detail.textContent).toContain("Referral raised");
     expect(detail.textContent).not.toMatch(/Dr\. M\. Lawson|9956 2200|Electronic Triage Receipt/);
   });
 
@@ -378,9 +383,10 @@ describe("PR15 discharge and referral provenance", () => {
     renderFlow(<LegalFormsScreen />, {
       movements: [{ ...movement, legalForm: { ...movement.legalForm!, dueAt: NOW_ANCHOR - 1 } }],
     });
+    // v6 hero: the passed count is a hero figure labelled "Passed".
     const hud = screen.getByTestId("ward-legal-hud-island");
-    expect(within(hud).getByRole("status", { name: "Synthetic status: 1 recorded due times passed" })).toBeTruthy();
-    expect(hud.textContent).toContain("Recorded legal form due times");
+    expect(within(hud).getByText("Passed").parentElement?.textContent).toBe("1Passed");
+    expect(hud.textContent).toContain("forms on open moves");
     expect(hud.textContent).not.toContain("statutory deadline");
   });
 });

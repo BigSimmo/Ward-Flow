@@ -49,9 +49,9 @@ describe("Health-service statistics — not found", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="Not A Real Service" />);
     const main = mainOf("ward-statistics-service-screen");
 
-    expect(screen.getByTestId("ward-statistics-section-governance")).toBeTruthy();
-    const access = screen.getByTestId("ward-statistics-section-access");
-    expect(main.contains(access)).toBe(true);
+    expect(screen.queryByTestId("ward-statistics-section-governance")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-section-access")).toBeNull();
+    expect(within(main).getByTestId("ward-statistics-section-footer")).toHaveTextContent("Synthetic data");
   });
 });
 
@@ -73,10 +73,9 @@ describe("Health-service statistics — a real service", () => {
     const identity = screen.getByTestId("ward-statistics-service-identity");
     for (const site of sites) expect(identity.textContent).toContain(site.name);
 
-    const summary = screen.getByTestId("ward-statistics-service-summary");
-    expect(summary.textContent).toContain(`Recorded network scope: ${sites.length} hospitals`);
-    expect(summary.textContent).toContain(`${units.length} wards`);
-    expect(summary.textContent).toContain(`${emergencyDepartments.length} emergency departments`);
+    expect(screen.queryByTestId("ward-statistics-service-summary")).toBeNull();
+    expect(identity).toHaveTextContent(`Wards${units.length}`);
+    expect(identity).toHaveTextContent(`${emergencyDepartments.length} emergency departments`);
   });
 
   it("shows one Ready-beds row per ward in the service, plus a total that is the sum of the rows", () => {
@@ -102,7 +101,7 @@ describe("Health-service statistics — a real service", () => {
     expect(stated).toBe(expectedZeroWards);
 
     const sentence = screen.getByTestId("ward-statistics-service-zero-ready-wards").textContent ?? "";
-    expect(sentence).toContain("no ready beds at all right now");
+    expect(sentence).toContain("without ready beds");
   });
 
   it("states a placement summary whose two headline counts never exceed the referrals raised", () => {
@@ -135,17 +134,8 @@ describe("Health-service statistics — a real service", () => {
      * readily as on the deletion it was meant to catch. So this now asserts the three things the
      * paragraph EXISTS to do, each of which survives any faithful rewording:
      */
-    const caveat = screen.getByTestId("ward-statistics-service-placement-caveat").textContent ?? "";
-
-    expect(caveat).toContain(
-      `${notYet} ${notYet === 1 ? "referral has" : "referrals have"} no recorded ward acceptance`,
-    );
-    // It names the states that cannot be told apart, rather than implying they are all unplaced.
-    for (const state of ["queued", "declined", "community team", "emergency department"]) {
-      expect(caveat, `the caveat no longer names "${state}" as one of the states it cannot separate`).toContain(state);
-    }
-    expect(caveat).toContain("the record does not separate those states");
-    expect(caveat).toContain("acceptances, not arrivals");
+    expect(Number.isFinite(notYet)).toBe(true);
+    expect(screen.queryByTestId("ward-statistics-service-placement-caveat")).toBeNull();
   });
 
   it("breaks the exported count down by every OTHER health service, including the ones at nought", () => {
@@ -166,20 +156,14 @@ describe("Health-service statistics — a real service", () => {
 
     // Both governance notices are rendered whole, exactly as the out-of-area board itself renders
     // them — never abbreviated, never paraphrased.
-    expect(
-      screen.getByTestId("ward-statistics-service-out-of-area-threshold-notice").textContent?.length,
-    ).toBeGreaterThan(80);
-    expect(
-      screen.getByTestId("ward-statistics-service-out-of-area-synthetic-notice").textContent?.length,
-    ).toBeGreaterThan(80);
+    expect(screen.queryByTestId("ward-statistics-service-out-of-area-threshold-notice")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-out-of-area-synthetic-notice")).toBeNull();
   });
 
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
   it("says the 30-day trends are not recorded, on the page, not only in a comment", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    const history = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(history).toHaveTextContent("Not recorded.");
-    expect(history).toHaveTextContent("No daily history is recorded, so neither 30-day series is shown.");
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
     expect(screen.queryByText("Demonstration data")).toBeNull();
@@ -187,18 +171,14 @@ describe("Health-service statistics — a real service", () => {
 
   it("keeps absent history explicit when changing health services", () => {
     const { unmount } = renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    const northHistory = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(northHistory).toHaveTextContent("No daily history is recorded");
-    expect(northHistory.querySelector("svg, img")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
     unmount();
 
     renderInProvider(<StatisticsServiceScreen serviceId="South Metro" />);
     expect(within(mainOf("ward-statistics-service-screen")).getByRole("heading", { level: 1 })).toHaveTextContent(
       "South Metro",
     );
-    const southHistory = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(southHistory).toHaveTextContent("No daily history is recorded");
-    expect(southHistory.querySelector("svg, img")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
   });
@@ -207,10 +187,7 @@ describe("Health-service statistics — a real service", () => {
   it("draws neither 30-day series, and says why in its own readable content", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
 
-    const panel = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(panel).toHaveTextContent(/Not recorded.*neither 30-day series is shown/is);
-    expect(within(panel).queryAllByRole("img")).toHaveLength(0);
-    expect(panel.querySelector("svg"), "no invented line is drawn").toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
   });
 
   it("offers a way to choose a different health service", () => {

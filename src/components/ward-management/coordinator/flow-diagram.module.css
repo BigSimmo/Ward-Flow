@@ -260,7 +260,7 @@
   display: inline-flex;
   align-items: center;
   border: 0.0625rem solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   padding: 0 0.625rem;
   color: var(--ink);

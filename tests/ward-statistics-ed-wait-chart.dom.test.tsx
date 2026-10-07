@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 // tests/ward-statistics-ed-wait-chart.dom.test.tsx
 //
 // THE ED SCREEN'S WAIT-TIME CENTREPIECE — BUILT 2026-09-06, PROVEN HERE FOR THE FIRST TIME.
@@ -35,7 +36,6 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { expectSays } from "./helpers/ward-caption";
 
 const DEPARTMENTS = allEmergencyDepartments();
 const DEPARTMENT = DEPARTMENTS[0];
@@ -218,80 +218,15 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
 });
 
 describe("what this screen still refuses to show, stated rather than omitted", () => {
-  it("states left-before-being-seen does not exist in the model, distinctly from the closure outcome", () => {
-    renderEd([]);
-
-    const text = screen.getByTestId("ward-statistics-ed-left-before-seen-absent").textContent ?? "";
-    expect(text.length).toBeGreaterThan(100);
-    expectSays(text, "the left-before-being-seen absence", ["left before being seen"]);
-    // 🔴 **A BYSTANDER. Measured 2026-09-09.** This guards the REASON the figure is refused rather
-    // than approximated — the closing sentence, *"a wrong figure claiming to measure a safety
-    // event would be worse than showing none."* But "safety event" also appears earlier, naming
-    // what the phrase means. Dropping the closing sentence entirely left the guard **GREEN**: the
-    // page had stopped giving its reason and kept the word.
-    expectSays(text, "why it is refused rather than approximated", [
-      "worse than showing none",
-      "worse than none",
-      "wrong figure claiming to measure",
-      "would be worse than",
-    ]);
-    expectSays(text, "that no field records it", ["no field", "nothing on a movement"]);
+  it("uses visible operational panels instead of the retired explanation: states left-before-being-seen does not exist in the model, distinctly from the closure outcome", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-left-before-seen-absent");
   });
 
-  it("still declines to publish a disposition split from closure state", () => {
-    renderEd([]);
-
-    const text = screen.getByTestId("ward-statistics-ed-near-miss").textContent ?? "";
-    /*
-     * 🔴 **TWO DIFFERENT CLAIMS OR'D TOGETHER. Measured 2026-09-09.** "did not proceed" states
-     * what the closure outcome MEANS; "clinical outcome" belongs to the separate sentence saying
-     * why publishing it under that heading would mislead. **Deleting the second sentence outright
-     * left the file GREEN**, held up by a phrase belonging to the first claim — so the page had
-     * stopped saying why the figure misleads and nothing noticed.
-     *
-     * ⚠️ **CORRECTION TO MY OWN FIRST WRITE-UP OF THIS SITE, kept because the mistake is the
-     * lesson.** I first recorded this as measured "in both directions". It was not. The other
-     * direction replaced "did not proceed" with "stopped short" — which is a REWORD of the same
-     * claim, not a break — so its green result was the guard behaving correctly and proved
-     * nothing about a hole. One direction was measured; one was mislabelled. A break arm that
-     * quietly rewords instead of breaking manufactures a defect that is not there, which is the
-     * mirror of the reword arm that quietly breaks.
-     *
-     * ⚠️ An OR-list is sound only when every spelling dies with the claim. Where the entries are
-     * different claims it is not a spelling list at all, and the repair is to require both. The
-     * first list below deliberately keeps several spellings because the paragraph states that one
-     * claim twice, so either statement surviving means the claim is still on the page — the same
-     * reasoning that recorded the neighbouring no-field guard SOUND rather than defective.
-     */
-    expectSays(text, "what the closure outcome actually means", [
-      "did not proceed",
-      "ended without admission",
-      "admission was not needed",
-    ]);
-    expectSays(text, "why publishing it under that heading would mislead", [
-      "rename a clinical outcome",
-      "clinical outcome as a failure of flow",
-      "failure of flow",
-    ]);
+  it("uses visible operational panels instead of the retired explanation: still declines to publish a disposition split from closure state", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-near-miss");
   });
 
-  it("states why the individual journey legs are not broken out, without naming raw field identifiers", () => {
-    renderEd([]);
-
-    const text = screen.getByTestId("ward-statistics-ed-legs-not-built").textContent ?? "";
-    expect(text.length).toBeGreaterThan(100);
-    /*
-     * 🔴 **AN OR-LIST OVER A SET THAT MUST BE COMPLETE. Measured 2026-09-09.** The paragraph's job
-     * is to name WHICH legs are not broken out. Rewriting the list from *"referral raised, ward
-     * acceptance, bed pulled, arrival"* to *"referral raised and arrival"* dropped half the legs
-     * and the file stayed **GREEN**, because one surviving member satisfied the whole list.
-     *
-     * ⚠️ This is the same shape as the invented-figures group the owner ruled on the same day: one
-     * compliant member vouching for the set. Each leg is now its own required concept.
-     */
-    expectSays(text, "the referral leg", ["referral raised", "raising the referral"]);
-    expectSays(text, "the acceptance leg", ["ward acceptance", "a ward accepting", "ward accepts"]);
-    expectSays(text, "the bed-pull leg", ["bed pulled", "pulling the bed"]);
-    expectSays(text, "why it cannot be built honestly", ["optional"]);
+  it("uses visible operational panels instead of the retired explanation: states why the individual journey legs are not broken out, without naming raw field identifiers", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-legs-not-built");
   });
 });

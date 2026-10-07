@@ -1,7 +1,26 @@
-import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import type { ReactNode } from "react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// The bar reads the route and router, which jsdom cannot supply without an App Router context —
+// the same idiom as `tests/ward-shell-third-edition.dom.test.tsx`.
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow/movements",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
+import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { resetWardChecksForTests } from "@/components/ward-management/shell/ward-checks";
@@ -16,90 +35,102 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * must never read as agreement. **A union cannot be flattened by `??`; an array can.**
  *
  * ⚠️ **These render the REAL shell against the REAL screen.** A test that called the store directly
- * would prove the store works and nothing about whether the rail is wired to it — which is the half
+ * would prove the store works and nothing about whether the shell is wired to it — which is the half
  * that was missing for the entire life of this mechanism's design.
+ *
+ * 7 October 2026, v6 rail (header and sidebar boards 02, 03 and 03b): the rail no longer carries
+ * the reconciliation line, so a published check now surfaces in one place, the Activity drawer's
+ * "Figure checks" disclosure (`ward-bar-figure-checks`). These four cases keep the same contract —
+ * nothing published, published by a mounted screen, cleared when that screen unmounts — and each
+ * also pins that the rail itself makes no reconciliation claim in either shape.
  */
 afterEach(() => {
   resetWardChecksForTests();
 });
 
-function renderRailAlone() {
+function renderShellAlone() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardRail />
+      <WardBar />
     </WardFlowProvider>,
   );
 }
 
-function renderRailBelowScreen() {
+function renderShellBelowScreen() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardRail />
+      <WardBar />
       <MovementsScreen />
     </WardFlowProvider>,
   );
 }
 
+async function openActivity() {
+  const user = userEvent.setup();
+  await user.click(screen.getByTestId("ward-bar-activity-trigger"));
+  return screen.findByRole("dialog", { name: /Activity/ });
+}
+
+function expectRailMakesNoClaim() {
+  expect(screen.queryByTestId("ward-reconciliation-line")).not.toBeInTheDocument();
+  expect(screen.getByTestId("ward-rail").textContent ?? "").not.toMatch(/reconcil/i);
+}
+
 describe("a ward screen publishes its checks upward to the shell", () => {
-  it("shows a compact neutral status when no screen has published checks", () => {
-    renderRailAlone();
-    const line = screen.getByTestId("ward-reconciliation-line");
-    expect(line).toHaveTextContent("Reconciliation not published");
-    expect(line).toHaveAttribute("data-tone", "neutral");
-    expect(screen.queryByText("No reconciliation is available for this page yet.")).not.toBeInTheDocument();
+  it("shows no figure-check claim when no screen has published checks", async () => {
+    renderShellAlone();
+    expectRailMakesNoClaim();
+    const dialog = await openActivity();
+    expect(within(dialog).queryByTestId("ward-bar-figure-checks")).not.toBeInTheDocument();
+    expect(dialog.textContent ?? "").not.toMatch(/reconcil/i);
   });
 
-  it("keeps the unpublished status available in the collapsed rail", () => {
+  it("makes no reconciliation claim in the collapsed rail either", () => {
     window.localStorage.setItem("ward-flow-rail", "closed");
     try {
-      renderRailAlone();
-      const line = screen.getByTestId("ward-reconciliation-line");
-      expect(line).toHaveTextContent("Reconciliation not published");
-      expect(line).toHaveAttribute("data-tone", "neutral");
-      expect(line).toHaveAttribute("title", "Reconciliation not published");
-      expect(line.querySelector(".sr-only")).toHaveTextContent("Reconciliation not published");
+      renderShellAlone();
+      expectRailMakesNoClaim();
+      const titled = [...screen.getByTestId("ward-rail").querySelectorAll("[title]")].filter((element) =>
+        /reconcil/i.test(element.getAttribute("title") ?? ""),
+      );
+      expect(titled).toHaveLength(0);
     } finally {
       window.localStorage.removeItem("ward-flow-rail");
     }
   });
 
   /**
-   * 🔴 **THE ASSERTION THE WHOLE MECHANISM EXISTS FOR.** Until O-9 the rail was given `[]` by the
-   * layout on every route, forever, because no screen could hand it anything.
-   *
-   * ⚠️ **THIS COMMENT SAID IT PROVED "a fact travelled from a DESCENDANT to an ANCESTOR". IT DOES
-   * NOT, AND NEITHER DOES THE APP.** `layout.tsx` renders the rail and the bar as SIBLINGS of the
-   * screen, and so does the helper below. **What this proves is that a fact travelled BETWEEN
-   * SIBLINGS through a module store** — which is the harder case, not the easier one: siblings
-   * cannot pass props in either direction.
+   * 🔴 **THE ASSERTION THE WHOLE MECHANISM EXISTS FOR.** A fact travels BETWEEN SIBLINGS (the
+   * screen and the shell) through a module store; siblings cannot pass props in either direction.
    */
-  it("reflects the screen's own check once that screen is mounted", () => {
-    renderRailBelowScreen();
-    const line = screen.getByTestId("ward-reconciliation-line");
-
+  it("reflects the screen's own check once that screen is mounted", async () => {
+    renderShellBelowScreen();
+    expectRailMakesNoClaim();
+    const dialog = await openActivity();
+    const checks = within(dialog).getByTestId("ward-bar-figure-checks");
     expect(
-      line,
-      "the rail still reports nothing published while a screen that publishes is on the page — the " +
+      checks.textContent ?? "",
+      "Activity shows no published figure check while a screen that publishes is on the page — the " +
         "screen and the shell are not connected",
-    ).not.toHaveTextContent("No reconciliation is available for this page yet.");
-    expect(line).toHaveTextContent("Invented figures, reconciled with each other.");
-    expect(line).toHaveAttribute("data-tone", "good");
+    ).toMatch(/Figure checks · (\d+) of \1 reconcile/u);
   });
 
   /**
    * ⚠️ **THE CLEARING HALF, AND IT IS THE ONE THAT KEEPS THE SHELL HONEST.** Without it a screen's
-   * passing claim would stand on the NEXT route — a reconciliation sentence about a page the reader
-   * has already left. **A stale TRUE claim is worse than no claim: it is the shape nobody checks.**
+   * passing claim would stand on the NEXT route. **A stale TRUE claim is worse than no claim: it is
+   * the shape nobody checks.**
    */
-  it("stops claiming the screen's reconciliation once that screen unmounts", () => {
-    const { unmount } = renderRailBelowScreen();
-    expect(screen.getByTestId("ward-reconciliation-line")).toHaveTextContent("reconciled with each other");
+  it("stops claiming the screen's reconciliation once that screen unmounts", async () => {
+    const { unmount } = renderShellBelowScreen();
+    const first = await openActivity();
+    expect(within(first).getByTestId("ward-bar-figure-checks")).toBeInTheDocument();
     unmount();
 
-    renderRailAlone();
-    const line = screen.getByTestId("ward-reconciliation-line");
-    expect(line).toHaveTextContent("Reconciliation not published");
-    expect(line).toHaveAttribute("data-tone", "neutral");
-    expect(line).not.toHaveTextContent("reconciled with each other");
+    renderShellAlone();
+    const dialog = await openActivity();
+    expect(within(dialog).queryByTestId("ward-bar-figure-checks")).not.toBeInTheDocument();
+    expect(dialog.textContent ?? "").not.toMatch(/reconcil/i);
   });
 });
