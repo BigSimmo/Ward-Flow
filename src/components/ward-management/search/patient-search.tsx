@@ -1,7 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { Clock, Copy, History, Lock, UserPlus, UsersRound, X } from "lucide-react";
+
+import {
+  Avatar,
+  Button,
+  Card,
+  CardBody,
+  CardFoot,
+  CardHead,
+  Count,
+  EmptyState,
+  FilterChip,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  Icon,
+  LiveChip,
+  Segmented,
+  Select,
+  StatusGlyph,
+  TierTile,
+  Timeline,
+  Timer,
+  buttonClass,
+  cx,
+  durMinutes,
+} from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -37,7 +64,6 @@ import { formTitleForCode } from "@/lib/form-register";
 import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
-  OPERATIONAL_DEFAULT_LABEL,
   WAIT_FILTER_SHORT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 
@@ -63,9 +89,11 @@ import {
   matchesQuickChip,
 } from "./search-filters";
 import { referralState } from "@/components/ward-management/ward-referrals";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./search.module.css";
-import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+
+const MS_PER_MINUTE = 60_000;
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -128,6 +156,36 @@ const SHOW_FACETS: readonly ShowFacet[] = [
   },
 ];
 
+type KpiFacet = "all" | "live" | "unplaced" | "notin" | "breaches";
+
+function isCommunityReferral(referral: Referral): boolean {
+  return (
+    referral.originSiteCode.includes("CMHT") ||
+    referral.originSiteCode.includes("Clinic") ||
+    (referral.homeRegion as unknown as string) === "Community"
+  );
+}
+
+function matchesKpiFacet(result: PatientSearchResult, facet: KpiFacet, now: number): boolean {
+  if (facet === "live") {
+    if (result.kind === "movement" && !isOpen(result.movement)) return false;
+    if (result.kind === "referral" && isCommunityReferral(result.referral)) return false;
+  }
+  if (facet === "unplaced") {
+    if (result.kind === "movement" && (result.movement.acceptedUnitId || !isOpen(result.movement))) return false;
+    if (result.kind === "referral" && result.referral.destinations.some((d) => d.acceptedUnitId)) return false;
+  }
+  if (facet === "notin") {
+    if (result.kind === "movement") return false;
+    if (result.kind === "referral" && !isCommunityReferral(result.referral)) return false;
+  }
+  if (facet === "breaches") {
+    if (result.kind === "movement" && waitedHours(result.movement, now) * 60 < LONG_WAIT_MINUTES) return false;
+    if (result.kind === "referral") return false;
+  }
+  return true;
+}
+
 function originDepartmentText(movement: Movement): string {
   const originEd = edById(movement.originEdId);
   return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
@@ -177,6 +235,12 @@ export interface UnifiedCaseloadPatient {
   presenceLabel: string;
   presenceDetail: string;
   clinicalNote: string;
+  /** The person's record id when the subject resolves to one, for "Open patient". */
+  patientId: string | null;
+  /** When the movement opened or the referral was raised, in ward minutes. */
+  openedAtInstant: number;
+  /** The recorded legal due time, in ward minutes, for the "Form ending" sort. */
+  legalDueAt: number | null;
   originalSubject: PatientSearchResult | { kind: "person"; patient: Patient };
 }
 
@@ -187,44 +251,25 @@ export function PatientSearchPage() {
   const [stage, setStage] = useState<MovementStage | "">("");
   const [edId, setEdId] = useState("");
   const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>("all");
-  const [activeKpiFacet, setActiveKpiFacet] = useState<"all" | "live" | "unplaced" | "notin" | "breaches">("all");
+  const [activeKpiFacet, setActiveKpiFacet] = useState<KpiFacet>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [settingFilter, setSettingFilter] = useState<string>("all");
   const [legalFilter, setLegalFilter] = useState<string>("all");
   const [waitFilter, setWaitFilter] = useState<string>("all");
   const [tierFilter, setTierFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"wait-desc" | "tier-asc" | "name-asc" | "urm-asc" | "opened-desc">("wait-desc");
+  const [sortBy, setSortBy] = useState<"wait-desc" | "tier-asc" | "form-asc" | "name-asc" | "urm-asc" | "opened-desc">(
+    "wait-desc",
+  );
   const [viewMode, setViewMode] = useState<"cards" | "dense">("cards");
   const [requestedPreview, setPreview] = useState<PreviewSelection | null>(null);
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copyNote, setCopyNote] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((curr) => (curr === msg ? null : curr));
-    }, 3200);
-  };
-
-  useEffect(() => {
-    if (!moreMenuOpen) return;
-    const handlePointerDown = (e: MouseEvent) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
-        setMoreMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [moreMenuOpen]);
+  const showToast = (msg: string) => setCopyNote(msg);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMoreMenuOpen(false);
-      }
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();
@@ -255,6 +300,25 @@ export function PatientSearchPage() {
     () => searchPatients(movements, referrals, units, isChip ? { ...query, text: "" } : query),
     [movements, referrals, units, query, isChip],
   );
+
+  const passes = (result: PatientSearchResult, skip: { facet?: boolean; presence?: boolean } = {}) =>
+    (!isChip || matchesQuickChip(result, text, now)) &&
+    (skip.facet || matchesKpiFacet(result, activeKpiFacet, now)) &&
+    (skip.presence || presenceFilter === "all" || matchesPresence(result, presenceFilter)) &&
+    (serviceFilter === "all" || matchesService(result, serviceFilter)) &&
+    (settingFilter === "all" || matchesSetting(result, settingFilter)) &&
+    (legalFilter === "all" || matchesLegal(result, legalFilter)) &&
+    (waitFilter === "all" || matchesWait(result, waitFilter, now));
+
+  const presenceCounts = {
+    live: baseResults.filter((r) => passes(r, { presence: true }) && matchesPresence(r, "live")).length,
+    community: baseResults.filter((r) => passes(r, { presence: true }) && matchesPresence(r, "community")).length,
+    all: baseResults.filter((r) => passes(r, { presence: true })).length,
+  };
+  const facetCounts = {
+    unplaced: baseResults.filter((r) => passes(r, { facet: true }) && matchesKpiFacet(r, "unplaced", now)).length,
+    breaches: baseResults.filter((r) => passes(r, { facet: true }) && matchesKpiFacet(r, "breaches", now)).length,
+  };
 
   const results = useMemo(() => {
     return baseResults.filter((result) => {
@@ -403,6 +467,9 @@ export function PatientSearchPage() {
           presenceLabel: "Live in Hospital",
           presenceDetail: `Present in ${originText} · ${isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Awaiting transfer"}`,
           clinicalNote: NO_CLINICAL_NOTE,
+          patientId: info.patient?.id ?? null,
+          openedAtInstant: m.openedAt,
+          legalDueAt: m.legalForm?.dueAt ?? null,
           originalSubject: { kind: "movement", movement: m },
         });
       } else if (r.kind === "referral") {
@@ -461,6 +528,9 @@ export function PatientSearchPage() {
             ? `Active Community Referral · ${ref.originSiteCode}`
             : `Queued Referral · ${ref.originSiteCode} ED`,
           clinicalNote: NO_CLINICAL_NOTE,
+          patientId: info.patient?.id ?? null,
+          openedAtInstant: ref.raisedAt,
+          legalDueAt: null,
           originalSubject: { kind: "referral", referral: ref },
         });
       }
@@ -472,6 +542,13 @@ export function PatientSearchPage() {
       if (sortBy === "tier-asc") {
         const rank: Record<string, number> = { "Tier 1": 1, "Tier 2": 2, "Tier 3": 3, Discharged: 4 };
         return (rank[a.urgency] ?? 99) - (rank[b.urgency] ?? 99);
+      }
+      if (sortBy === "form-asc") {
+        // Recorded legal due times first, soonest first; rows without one keep the wait order.
+        if (a.legalDueAt === null && b.legalDueAt === null) return b.waitHours - a.waitHours;
+        if (a.legalDueAt === null) return 1;
+        if (b.legalDueAt === null) return -1;
+        return a.legalDueAt - b.legalDueAt;
       }
       if (sortBy === "name-asc") return a.name.localeCompare(b.name);
       if (sortBy === "urm-asc") return a.urm.localeCompare(b.urm);
@@ -542,55 +619,8 @@ export function PatientSearchPage() {
     setActiveKpiFacet("all");
   };
 
-  const applyKpiFacet = (facet: "all" | "live" | "unplaced" | "notin" | "breaches") => {
+  const applyKpiFacet = (facet: KpiFacet) => {
     setActiveKpiFacet((prev) => (prev === facet && facet !== "all" ? "all" : facet));
-  };
-
-  // ═══ CONSOLIDATED MASTER DROPDOWNS LOGIC (OPTION A) ═══
-  const locationValue = useMemo(() => {
-    if (serviceFilter !== "all") return `service:${serviceFilter}`;
-    if (settingFilter !== "all") return `setting:${settingFilter}`;
-    return "all";
-  }, [serviceFilter, settingFilter]);
-
-  const handleLocationChange = (val: string) => {
-    if (val === "all") {
-      setServiceFilter("all");
-      setSettingFilter("all");
-    } else if (val.startsWith("service:")) {
-      setServiceFilter(val.replace("service:", ""));
-      setSettingFilter("all");
-    } else if (val.startsWith("setting:")) {
-      setSettingFilter(val.replace("setting:", ""));
-      setServiceFilter("all");
-    }
-  };
-
-  const statusValue = useMemo(() => {
-    if (legalFilter !== "all") return `legal:${legalFilter}`;
-    if (tierFilter !== "all") return `tier:${tierFilter}`;
-    if (waitFilter !== "all") return `wait:${waitFilter}`;
-    return "all";
-  }, [legalFilter, tierFilter, waitFilter]);
-
-  const handleStatusChange = (val: string) => {
-    if (val === "all") {
-      setLegalFilter("all");
-      setTierFilter("all");
-      setWaitFilter("all");
-    } else if (val.startsWith("legal:")) {
-      setLegalFilter(val.replace("legal:", ""));
-      setTierFilter("all");
-      setWaitFilter("all");
-    } else if (val.startsWith("tier:")) {
-      setTierFilter(val.replace("tier:", ""));
-      setLegalFilter("all");
-      setWaitFilter("all");
-    } else if (val.startsWith("wait:")) {
-      setWaitFilter(val.replace("wait:", ""));
-      setLegalFilter("all");
-      setTierFilter("all");
-    }
   };
 
   const selectedPatient = useMemo(() => {
@@ -652,11 +682,6 @@ Clinical Note: ${p.clinicalNote}`;
     return { title: "No legal form recorded", req: "Not recorded" };
   }, [selectedPatient]);
 
-  // Population card groups
-  const livePatients = unifiedCaseload.filter((p) => p.presence === "live");
-  const communityPatients = unifiedCaseload.filter((p) => p.presence === "community" || p.presence === "scheduled");
-  const pastPatients = unifiedCaseload.filter((p) => p.presence === "past");
-
   const formatSiteAcronym = (rawSite: string): string => {
     if (!rawSite) return "Unknown Site";
     const s = rawSite.trim();
@@ -677,38 +702,6 @@ Clinical Note: ${p.clinicalNote}`;
       .replace(/Emergency Department/i, "ED")
       .replace(/Hospital/i, "")
       .trim();
-  };
-
-  const serviceDotClass = (svc: string) => {
-    if (svc === "North Metro") return styles.svcNorth || styles.north;
-    if (svc === "South Metro") return styles.svcSouth || styles.south;
-    if (svc === "WACHS") return styles.svcWachs || styles.wachs;
-    return styles.svcEast || styles.east;
-  };
-
-  // Every status that was not Form 1A, 4A or 5A used to read "VOLUNTARY", including an involuntary
-  // inpatient on another form and a status that is not recorded at all (25 September 2026 audit,
-  // A5). The badge now says what the record says; only a voluntary status wears the voluntary colour.
-  const formatLegalStatusBadge = (ls: string): { label: string; className: string } => {
-    if (/Form 1A/i.test(ls)) return { label: "FORM 1A", className: styles.pillForm1a || styles.form1a };
-    if (/Form 4A/i.test(ls)) return { label: "FORM 4A", className: styles.pillForm4a || styles.form4a };
-    if (/Form 5A/i.test(ls)) return { label: "FORM 5A", className: styles.pillForm5a || styles.form5a };
-    if (/^Voluntary/i.test(ls)) return { label: "VOLUNTARY", className: styles.pillVoluntary || styles.voluntary };
-    return { label: ls.toUpperCase(), className: "" };
-  };
-
-  const legalStatusClass = (ls: string) => {
-    if (ls === "Form 1A") return styles.form1a;
-    if (ls === "Form 4A") return styles.form4a;
-    if (ls === "Form 5A") return styles.form5a;
-    return /^Voluntary/i.test(ls) ? styles.voluntary : "";
-  };
-
-  const tierBadgeClass = (urg: string) => {
-    if (urg === "Tier 1") return styles.tier1;
-    if (urg === "Tier 2") return styles.tier2;
-    if (urg === "Discharged") return styles.discharged;
-    return styles.tier3;
   };
 
   const stageCounts = useMemo(() => {
@@ -737,348 +730,111 @@ Clinical Note: ${p.clinicalNote}`;
     [movements, units, text, query.stage],
   );
 
+  const nowMs = now * MS_PER_MINUTE;
+  const selectedTier = selectedPatient ? tierNumber(selectedPatient.urgency) : null;
+
   return (
     <div
       className={styles.screen}
       data-testid="ward-patient-search"
-      data-ward-design="third-edition"
+      data-ward-design="v6"
       data-ward-rebuilt-screen="patient-search"
     >
       <main id="main-content" className={styles.main}>
-        {/* ═══ DIRECTION 3: THE FLOATING GLASS COMMAND HORIZON (56PX) ═══ */}
-        <section
-          className={styles.glassDock}
-          aria-label="Caseload Command Cockpit"
-          data-testid="ward-patient-search-cockpit"
-        >
-          {/* Left: Identity and Ambient Pulse */}
-          <div className={styles.glassDockIdentity}>
-            <div className={styles.glassDockTitleWrap}>
-              <h1 className="sr-only">Patient Search</h1>
-              <span className={styles.glassDockTitle}>Caseload Horizon</span>
-              <div className={styles.glassAmbientRow}>
-                <button
-                  type="button"
-                  className={styles.glassAmbientBtn}
-                  onClick={() => applyKpiFacet("all")}
-                  title="Total live patients in hospital"
-                  data-testid="ward-patient-search-count"
+        <h1 className="sr-only">Patient Search</h1>
+        <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
+          <Hero
+            className={styles.v6Hero}
+            eyebrow="Caseload"
+            title="Statewide patients"
+            stats={
+              <>
+                <HeroStat value={yieldMetrics.live} label="Live in hospital" className={styles.v6HeroStat} />
+                <HeroStat value={yieldMetrics.unplaced} label="No ward yet" className={styles.v6HeroStat} />
+                <HeroStat
+                  value={yieldMetrics.breaches}
+                  label={`Waiting ${LONG_WAIT_TEXT}`}
+                  tone={yieldMetrics.breaches > 0 ? "warning" : undefined}
+                  className={styles.v6HeroStat}
+                />
+              </>
+            }
+            aside={<LiveChip state="live" onHero />}
+            bar={
+              <div className={styles.v6HeroBar}>
+                <form
+                  className={styles.v6SearchForm}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const words = text.trim();
+                    if (words.length === 0) return;
+                    setAccessRecord((l) => recordSearch(l, { words, at: now }));
+                  }}
                 >
-                  <span className={`${styles.glassDot} ${styles.blue}`} />
-                  <span>{unifiedCaseload.length} live</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.glassAmbientBtn}
-                  onClick={() => applyKpiFacet(activeKpiFacet === "unplaced" ? "all" : "unplaced")}
-                  title="Filter to Emergency Department unplaced patients"
-                >
-                  <span className={`${styles.glassDot} ${styles.amber}`} />
-                  <span>{yieldMetrics.unplaced} in ED</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.glassAmbientBtn}
-                  onClick={() => applyKpiFacet(activeKpiFacet === "breaches" ? "all" : "breaches")}
-                  title="Filter to patients waiting over 24 hours"
-                >
-                  <span className={`${styles.glassDot} ${styles.red}`} />
-                  <span>{yieldMetrics.breaches} waiting over 24 hours</span>
-                </button>
+                  <PatientTypeahead
+                    patients={patients}
+                    referrals={referrals}
+                    value={text}
+                    onValueChange={setText}
+                    label="Search"
+                    placeholder="Search name, UMRN, ED or ward"
+                    offerAddPerson={false}
+                  />
+                  <span className="sr-only">Find a person by name or record number</span>
+                </form>
+                {accessRecord.length > 0 ? (
+                  <div className={styles.v6Session} aria-label="Searched this session">
+                    <span className={styles.v6SessionLabel}>
+                      <Icon icon={History} size={14} />
+                      This session
+                    </span>
+                    {accessRecord.slice(0, 4).map((entry) => (
+                      <button
+                        key={`${entry.at}-${entry.words}`}
+                        type="button"
+                        className={styles.v6SessionChip}
+                        onClick={() => setText(entry.words)}
+                      >
+                        <span className={styles.v6SessionWords}>{entry.words}</span>
+                        <span className={styles.v6SessionAt}>{formatInstantWithDay(entry.at, now)}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            </div>
-          </div>
-
-          {/* Center: Integrated Pill Search Composer */}
-          <form
-            className={styles.glassPillComposer}
-            onSubmit={(event) => {
-              event.preventDefault();
-              const words = text.trim();
-              if (words.length === 0) return;
-              setAccessRecord((l) => recordSearch(l, { words, at: now }));
-            }}
-          >
-            <svg
-              className={styles.glassPillSearchIcon}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-
-            <div className={styles.glassTypeaheadSlot}>
-              <PatientTypeahead
-                patients={patients}
-                referrals={referrals}
-                value={text}
-                onValueChange={setText}
-                label="Search"
-                placeholder="Search by name, UMRN or movement..."
-                offerAddPerson={false}
-              />
-              <span className="sr-only">Find a person by name or record number</span>
-            </div>
-
-            {text ? (
-              <button
-                type="button"
-                className={styles.glassPillClear}
-                onClick={() => setText("")}
-                title="Clear search"
-                aria-label="Clear search"
-              >
-                &times;
-              </button>
-            ) : null}
-
-            {/* Embedded Dropdown 1: Location */}
-            <div className={styles.glassEmbeddedSelectWrap}>
-              <label className="sr-only" htmlFor="ward-patient-search-location">
-                Location: Setting &amp; Service
-              </label>
-              <select
-                id="ward-patient-search-location"
-                className={`${styles.glassEmbeddedSelect} ${locationValue !== "all" ? styles.isFiltered : ""}`}
-                value={locationValue}
-                onChange={(e) => handleLocationChange(e.target.value)}
-                aria-label="Filter by location: setting and service"
-              >
-                <option value="all">📍 All Settings</option>
-                <optgroup label="By Care Setting">
-                  <option value="setting:ed">
-                    Emergency Depts ({unifiedCaseload.filter((p) => p.setting === "ed").length})
-                  </option>
-                  <option value="setting:inpatient">
-                    Inpatient Wards ({unifiedCaseload.filter((p) => p.setting === "inpatient").length})
-                  </option>
-                  <option value="setting:transit">
-                    In-Transit ({unifiedCaseload.filter((p) => p.setting === "transit").length})
-                  </option>
-                  <option value="setting:community">
-                    Community / Scheduled ({unifiedCaseload.filter((p) => p.setting === "community").length})
-                  </option>
-                </optgroup>
-                <optgroup label="By Health Service Region">
-                  <option value="service:East Metro">
-                    East Metro ({unifiedCaseload.filter((p) => p.service === "East Metro").length})
-                  </option>
-                  <option value="service:North Metro">
-                    North Metro ({unifiedCaseload.filter((p) => p.service === "North Metro").length})
-                  </option>
-                  <option value="service:South Metro">
-                    South Metro ({unifiedCaseload.filter((p) => p.service === "South Metro").length})
-                  </option>
-                  <option value="service:WACHS">
-                    WACHS ({unifiedCaseload.filter((p) => p.service === "WACHS").length})
-                  </option>
-                </optgroup>
-              </select>
-              <svg className={styles.glassEmbeddedArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
-
-            {/* Embedded Dropdown 2: Status & Priority */}
-            <div className={styles.glassEmbeddedSelectWrap}>
-              <label className="sr-only" htmlFor="ward-patient-search-status">
-                Status: Legal, Acuity &amp; Wait
-              </label>
-              <select
-                id="ward-patient-search-status"
-                className={`${styles.glassEmbeddedSelect} ${statusValue !== "all" ? styles.isFiltered : ""}`}
-                value={statusValue}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                aria-label="Filter by clinical and legal status"
-              >
-                <option value="all">⚖️ All Statuses</option>
-                <optgroup label="By Legal Authority">
-                  {LEGAL_FILTER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={`legal:${opt.value}`}>
-                      {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="By Clinical Acuity Tier">
-                  <option value="tier:Tier 1">
-                    Tier 1 — High Acuity ({unifiedCaseload.filter((p) => p.urgency === "Tier 1").length})
-                  </option>
-                  <option value="tier:Tier 2">
-                    Tier 2 — Moderate Acuity ({unifiedCaseload.filter((p) => p.urgency === "Tier 2").length})
-                  </option>
-                  <option value="tier:Tier 3">
-                    Tier 3 — Stable Placement ({unifiedCaseload.filter((p) => p.urgency === "Tier 3").length})
-                  </option>
-                </optgroup>
-                <optgroup label="By Wait Duration">
-                  <option value="wait:under6">
-                    &lt; {SHORT_WAIT_HOURS} Hours (
-                    {unifiedCaseload.filter((p) => p.waitHours < SHORT_WAIT_HOURS && p.waitHours > 0).length})
-                  </option>
-                  <option value="wait:6to24">
-                    {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} Hours (
-                    {
-                      unifiedCaseload.filter((p) => p.waitHours >= SHORT_WAIT_HOURS && p.waitHours < LONG_WAIT_HOURS)
-                        .length
+            }
+            barAside={
+              <>
+                <HeroTrack
+                  label="Who to show"
+                  items={[
+                    { id: "live", label: "Live", count: presenceCounts.live },
+                    { id: "community", label: "Community", count: presenceCounts.community },
+                    { id: "all", label: "All", count: presenceCounts.all },
+                  ]}
+                  value={presenceFilter === "live" || presenceFilter === "community" ? presenceFilter : "all"}
+                  onChange={(next) => setPresenceFilter(next)}
+                />
+                <Link
+                  href={WARD_ADD_PERSON_HREF}
+                  className={buttonClass({ variant: "light", className: styles.v6AddLink })}
+                  data-testid="ward-patient-search-add"
+                  onClick={(event) => {
+                    if (isNewTabClick(event)) {
+                      handOffTypedPatientQuery("", "carried");
+                      return;
                     }
-                    )
-                  </option>
-                  <option value="wait:over24">
-                    &gt; {LONG_WAIT_HOURS} Hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length}
-                    )
-                  </option>
-                </optgroup>
-              </select>
-              <svg className={styles.glassEmbeddedArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
+                    handOffTypedPatientQuery(text, "carried");
+                  }}
+                >
+                  <Icon icon={UserPlus} size={16} />
+                  <span>Add patient</span>
+                </Link>
+              </>
+            }
+          />
 
-            <span className={styles.glassPillKbd} title="Press / or ⌘K to search">
-              /
-            </span>
-          </form>
-
-          {/* Right: Floating Actions (View mode, Add patient, Print, Reset) */}
-          <div className={styles.glassDockActions}>
-            <div className={styles.glassViewSwitcher} role="group" aria-label="Caseload view layout">
-              <button
-                type="button"
-                id="viewCardsBtn"
-                className={`${styles.glassViewBtn} ${viewMode === "cards" ? styles.active : ""}`}
-                onClick={() => setViewMode("cards")}
-                aria-pressed={viewMode === "cards"}
-                title="Cards view"
-              >
-                Cards
-              </button>
-              <button
-                type="button"
-                id="viewDenseBtn"
-                className={`${styles.glassViewBtn} ${viewMode === "dense" ? styles.active : ""}`}
-                onClick={() => setViewMode("dense")}
-                aria-pressed={viewMode === "dense"}
-                title="Dense view"
-              >
-                Dense
-              </button>
-            </div>
-
-            <Link
-              href={WARD_ADD_PERSON_HREF}
-              className={styles.glassBtnAdd}
-              data-testid="ward-patient-search-add"
-              onClick={(event) => {
-                if (isNewTabClick(event)) {
-                  handOffTypedPatientQuery("", "carried");
-                  return;
-                }
-                handOffTypedPatientQuery(text, "carried");
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>Add patient</span>
-            </Link>
-
-            {/* Reset button: highlighted pill if filters are active; sr-only when idle to preserve tests */}
-            {activeFilterCount > 0 ? (
-              <button
-                type="button"
-                className={styles.glassBtnReset}
-                onClick={resetAllFilters}
-                title="Reset active filters"
-                aria-label={`Reset ${activeFilterCount} active filters`}
-                data-testid="ward-patient-search-reset-filters"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                <span>Reset ({activeFilterCount})</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="sr-only"
-                onClick={resetAllFilters}
-                data-testid="ward-patient-search-reset-filters"
-              >
-                Reset
-              </button>
-            )}
-
-            {/* More Actions Pill Button (···) Matching Mockup */}
-            <div className={styles.glassMoreWrap} ref={moreMenuRef}>
-              <button
-                type="button"
-                className={`${styles.glassBtnMore} ${moreMenuOpen ? styles.isOpen : ""}`}
-                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                title="More actions and options"
-                aria-label="More actions"
-                aria-expanded={moreMenuOpen}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="5" cy="12" r="1.75" />
-                  <circle cx="12" cy="12" r="1.75" />
-                  <circle cx="19" cy="12" r="1.75" />
-                </svg>
-              </button>
-
-              {moreMenuOpen ? (
-                <div className={styles.glassPopoverMenu} role="menu" aria-label="Caseload options">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.glassPopoverItem}
-                    onClick={() => {
-                      setMoreMenuOpen(false);
-                      if (typeof window !== "undefined") {
-                        window.print();
-                      }
-                    }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 6 2 18 2 18 9" />
-                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                      <rect x="6" y="14" width="12" height="8" />
-                    </svg>
-                    <span>Print caseload report</span>
-                  </button>
-
-                  <div className={styles.glassPopoverDivider} />
-
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.glassPopoverItem}
-                    onClick={() => {
-                      setMoreMenuOpen(false);
-                      resetAllFilters();
-                    }}
-                    disabled={activeFilterCount === 0}
-                    style={{ opacity: activeFilterCount === 0 ? 0.5 : 1 }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                      <path d="M3 3v5h5" />
-                    </svg>
-                    <span>Reset all filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Accessible telemetry strip & test invariants (sr-only) */}
+          {/* The counts and filters below the bar that tests and assistive tech read directly. */}
           <div className="sr-only" data-testid="ward-patient-search-yield-strip">
             <span data-testid="ward-patient-search-yield-total">{yieldMetrics.total}</span>
             <span data-testid="ward-patient-search-yield-holds">{yieldMetrics.live}</span>
@@ -1089,21 +845,6 @@ Clinical Note: ${p.clinicalNote}`;
               <span data-testid="ward-patient-search-yield-breaches">{yieldMetrics.breaches}</span>
               Your default, not a legal limit
             </span>
-
-            {/* Preserved Standalone Selects & Chips for Full Test Suite & Screen Reader Compatibility */}
-            <label htmlFor="sortSelect">Sort patient records</label>
-            <select
-              id="sortSelect"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              aria-label="Sort patient records"
-            >
-              <option value="wait-desc">Sort: Longest Wait</option>
-              <option value="tier-asc">Sort: Acuity Tier</option>
-              <option value="name-asc">Sort: Name (A &rarr; Z)</option>
-              <option value="urm-asc">Sort: URM Number</option>
-              <option value="opened-desc">Sort: Opened Recent</option>
-            </select>
 
             <div aria-label="Quick queries">
               {QUICK_CHIPS.map((chip) => {
@@ -1121,64 +862,6 @@ Clinical Note: ${p.clinicalNote}`;
               })}
             </div>
 
-            <label htmlFor="ward-patient-search-service">Service</label>
-            <select
-              id="ward-patient-search-service"
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value)}
-              aria-label="Service"
-            >
-              <option value="all">All</option>
-              <option value="East Metro">East Metro</option>
-              <option value="North Metro">North Metro</option>
-              <option value="South Metro">South Metro</option>
-              <option value="WACHS">WACHS</option>
-            </select>
-
-            <label htmlFor="ward-patient-search-setting">Setting</label>
-            <select
-              id="ward-patient-search-setting"
-              value={settingFilter}
-              onChange={(e) => setSettingFilter(e.target.value)}
-              aria-label="Setting"
-            >
-              <option value="all">All</option>
-              <option value="ed">Emergency Dept</option>
-              <option value="inpatient">Inpatient Ward</option>
-              <option value="transit">In-Transit</option>
-              <option value="community">Community</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="discharged">Discharged</option>
-            </select>
-
-            <label htmlFor="ward-patient-search-legal">Legal Status</label>
-            <select
-              id="ward-patient-search-legal"
-              value={legalFilter}
-              onChange={(e) => setLegalFilter(e.target.value)}
-              aria-label="Legal Status"
-            >
-              <option value="all">All Legal Statuses ({unifiedCaseload.length})</option>
-              {LEGAL_FILTER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
-                </option>
-              ))}
-            </select>
-
-            <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
-            <select
-              id="ward-patient-search-tier"
-              value={tierFilter}
-              onChange={(e) => setTierFilter(e.target.value)}
-              aria-label="Acuity Tier"
-            >
-              <option value="all">All</option>
-              <option value="Tier 1">Tier 1</option>
-              <option value="Tier 2">Tier 2</option>
-              <option value="Tier 3">Tier 3</option>
-            </select>
-
             <label htmlFor="ward-patient-search-wait">Wait Band</label>
             <select
               id="ward-patient-search-wait"
@@ -1186,18 +869,18 @@ Clinical Note: ${p.clinicalNote}`;
               onChange={(e) => setWaitFilter(e.target.value)}
               aria-label="Wait Band"
             >
-              <option value="all">⏱️ Wait: Any ({unifiedCaseload.length})</option>
+              <option value="all">Wait: Any ({unifiedCaseload.length})</option>
               <option value="under6">
-                &lt; {SHORT_WAIT_HOURS} Hours (
+                Under {SHORT_WAIT_HOURS} hours (
                 {unifiedCaseload.filter((p) => p.waitHours < SHORT_WAIT_HOURS && p.waitHours > 0).length})
               </option>
               <option value="6to24">
-                {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} Hours (
+                {SHORT_WAIT_HOURS} to {LONG_WAIT_HOURS} hours (
                 {unifiedCaseload.filter((p) => p.waitHours >= SHORT_WAIT_HOURS && p.waitHours < LONG_WAIT_HOURS).length}
                 )
               </option>
               <option value="over24">
-                &gt; {LONG_WAIT_HOURS} Hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
+                Over {LONG_WAIT_HOURS} hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
               </option>
             </select>
 
@@ -1247,37 +930,157 @@ Clinical Note: ${p.clinicalNote}`;
           </div>
 
           {refusal ? (
-            <p className={styles.refusalNote} data-testid="ward-patient-search-refusal-filter-bar">
+            <p className={styles.v6Refusal} data-testid="ward-patient-search-refusal-filter-bar">
               {refusal.sentence}
             </p>
           ) : null}
-        </section>
+        </div>
 
-        {/* ═══ TWO-COLUMN CASELOAD WORKSPACE (100% FAITHFUL TO MOCKUP) ═══ */}
-        <div className={`${styles.workspaceGrid} ${styles.consoleLayout}`}>
-          {/* Left Column: Caseload Results Panel */}
-          <section
-            className={styles.resultsPanel}
+        <Card className={styles.v6FilterBar} aria-label="Filters">
+          <div className={styles.v6Chips}>
+            <FilterChip
+              pressed={activeKpiFacet === "unplaced"}
+              onPressedChange={() => applyKpiFacet("unplaced")}
+              count={facetCounts.unplaced}
+              tone="neutral"
+            >
+              No ward yet
+            </FilterChip>
+            <FilterChip
+              pressed={activeKpiFacet === "breaches"}
+              onPressedChange={() => applyKpiFacet("breaches")}
+              count={facetCounts.breaches}
+              tone="warning"
+            >
+              Waiting {LONG_WAIT_TEXT}
+            </FilterChip>
+          </div>
+          <span className={styles.v6BarDivider} aria-hidden="true" />
+          <div className={styles.v6Selects}>
+            <Select
+              id="ward-patient-search-setting"
+              boxClassName={styles.v6SelectBox}
+              value={settingFilter}
+              onChange={(e) => setSettingFilter(e.target.value)}
+              aria-label="Setting"
+            >
+              <option value="all">Setting</option>
+              <option value="ed">Emergency Dept</option>
+              <option value="inpatient">Inpatient Ward</option>
+              <option value="transit">In-Transit</option>
+              <option value="community">Community</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="discharged">Discharged</option>
+            </Select>
+            <Select
+              id="ward-patient-search-service"
+              boxClassName={styles.v6SelectBox}
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              aria-label="Service"
+            >
+              <option value="all">Service</option>
+              <option value="East Metro">East Metro</option>
+              <option value="North Metro">North Metro</option>
+              <option value="South Metro">South Metro</option>
+              <option value="WACHS">WACHS</option>
+            </Select>
+            <Select
+              id="ward-patient-search-legal"
+              boxClassName={styles.v6SelectBox}
+              value={legalFilter}
+              onChange={(e) => setLegalFilter(e.target.value)}
+              aria-label="Legal Status"
+            >
+              <option value="all">All Legal Statuses ({unifiedCaseload.length})</option>
+              {LEGAL_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
+                </option>
+              ))}
+            </Select>
+            <Select
+              id="ward-patient-search-tier"
+              boxClassName={styles.v6SelectBox}
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value)}
+              aria-label="Acuity Tier"
+            >
+              <option value="all">Tier</option>
+              <option value="Tier 1">Tier 1</option>
+              <option value="Tier 2">Tier 2</option>
+              <option value="Tier 3">Tier 3</option>
+            </Select>
+          </div>
+          <div className={styles.v6BarEnd}>
+            {activeFilterCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={X}
+                onClick={resetAllFilters}
+                aria-label={`Reset ${activeFilterCount} active filters`}
+                data-testid="ward-patient-search-reset-filters"
+              >
+                Reset ({activeFilterCount})
+              </Button>
+            ) : (
+              <button
+                type="button"
+                className="sr-only"
+                onClick={resetAllFilters}
+                data-testid="ward-patient-search-reset-filters"
+              >
+                Reset
+              </button>
+            )}
+            <Segmented
+              label="Row density"
+              items={[
+                { id: "cards", label: "Comfort" },
+                { id: "dense", label: "Dense" },
+              ]}
+              value={viewMode}
+              onChange={setViewMode}
+            />
+          </div>
+        </Card>
+
+        <div className={styles.v6Layout}>
+          <Card
+            className={styles.v6Results}
             aria-labelledby="ward-patient-search-results-console-title"
             data-testid="ward-patient-search-results-console"
           >
-            <div className={styles.panelHead}>
-              <h2 id="ward-patient-search-results-console-title" className={styles.panelTitle}>
-                Caseload Results
-              </h2>
-              <span className={styles.resultsBadge} id="resultsCountBadge">
-                {unifiedCaseload.length} {unifiedCaseload.length === 1 ? "record" : "records"}
-              </span>
-            </div>
+            <CardHead
+              id="ward-patient-search-results-console-title"
+              icon={UsersRound}
+              title="Results"
+              aside={<Count n={unifiedCaseload.length} />}
+              action={
+                <Segmented
+                  label="Sort patient records"
+                  items={[
+                    { id: "wait-desc", label: "Longest wait" },
+                    { id: "tier-asc", label: "Tier" },
+                    { id: "form-asc", label: "Form ending" },
+                    { id: "name-asc", label: "Name" },
+                  ]}
+                  value={sortBy === "wait-desc" || sortBy === "tier-asc" || sortBy === "form-asc" ? sortBy : "name-asc"}
+                  onChange={setSortBy}
+                />
+              }
+            />
 
             {refusal ? (
-              <p className={styles.summary} role="status" aria-live="polite" data-testid="ward-patient-search-refusal">
+              <p className={styles.v6Status} role="status" aria-live="polite" data-testid="ward-patient-search-refusal">
                 {refusal.sentence}
               </p>
             ) : null}
 
-            {/* Preserved Test Elements for Full Suite Green Invariants. `inert` (25 Sept 2026): out of the
-                tab order and the accessibility tree, so the results are not read twice. */}
+            {/* The people, movement and referral sections, the full record preview and the session's
+                search record. `inert` (25 Sept 2026): out of the tab order and the accessibility tree,
+                so the results are not read twice. */}
             <div className="sr-only" inert>
               <PeopleSection
                 people={people}
@@ -1326,499 +1129,269 @@ Clinical Note: ${p.clinicalNote}`;
               <AccessRecordPanel entries={accessRecord} now={now} />
             </div>
 
-            {/* Visible Authentic Caseload Presentation */}
             {refusal ? null : unifiedCaseload.length === 0 ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyTitle}>No matching records</div>
-                <p className={styles.emptySub}>No patient records match the current search query and filters.</p>
-                <button type="button" className={styles.btnSecondary} onClick={resetAllFilters}>
-                  Reset all filters
-                </button>
-              </div>
-            ) : viewMode === "dense" ? (
-              /* ─── Elevated Dense 2-Line Row Caseload List (No Horizontal Cutoff - Image 2) ─── */
-              <div className={styles.denseContainer} role="table" aria-label="Dense caseload list">
-                {unifiedCaseload.map((p) => {
-                  const isSelected = p.id === selectedId;
-                  const isBreach = p.waitHours * 60 >= LONG_WAIT_MINUTES;
-                  const legalBadge = formatLegalStatusBadge(p.legalStatus);
-                  const siteAcronym = formatSiteAcronym(p.origin);
-
-                  return (
-                    <div
-                      key={p.id}
-                      role="row"
-                      tabIndex={0}
-                      aria-selected={isSelected}
-                      className={`${styles.denseRow} ${isSelected ? styles.denseRowSelected : ""}`}
-                      data-id={p.id}
-                      data-testid={`ward-patient-search-case-${p.id}`}
-                      onClick={() => handleSelectPatient(p)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleSelectPatient(p);
-                        }
-                      }}
-                    >
-                      {/* Line 1: Beacon, URM, Name, Demographics, Wait Time */}
-                      <div className={styles.denseLine1}>
-                        {p.presence === "live" ? (
-                          <span className={styles.pulsingLiveBeacon} title="Patient live in hospital" />
-                        ) : (
-                          <span
-                            role="img"
-                            aria-label={`Health service: ${p.service}`}
-                            title={p.service}
-                            className={`${styles.serviceDot} ${serviceDotClass(p.service)}`}
-                          />
-                        )}
-                        <span className={styles.denseUrm}>{p.urm}</span>
-                        <span className={styles.denseName}>{p.name}</span>
-                        <span className={styles.denseDemo}>
-                          {p.age === null ? "Age not recorded" : `${p.age}y`}{" "}
-                          {p.sex === null ? "Sex not recorded" : p.sex.charAt(0)}
-                          {p.indigenous ? " · ATSI" : ""}
-                        </span>
-                        {p.confidential && (
-                          <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${p.id}`}>
-                            🔒 Restricted
-                          </span>
-                        )}
-                        <span
-                          className={styles.denseWait}
-                          title={
-                            isBreach
-                              ? `Hospital wait time: waiting ${LONG_WAIT_TEXT} (${OPERATIONAL_DEFAULT_LABEL})`
-                              : "Hospital wait time"
-                          }
-                        >
-                          {p.waitHours > 0 ? `${p.waitHours.toFixed(1)}h` : "—"}
-                        </span>
-                      </div>
-
-                      {/* Line 2: Origin Site, Legal Status Pill, Acuity Tier, Destination Arrow */}
-                      <div className={styles.denseLine2}>
-                        <span
-                          role="img"
-                          aria-label={`Health service: ${p.service}`}
-                          title={p.service}
-                          className={`${styles.serviceDot} ${serviceDotClass(p.service)}`}
-                        />
-                        <span className={styles.denseSite}>{siteAcronym}</span>
-                        <span className={`${styles.statusPill} ${legalBadge.className}`}>{legalBadge.label}</span>
-                        <span className={`${styles.tierBadge} ${tierBadgeClass(p.urgency)}`}>{p.urgency}</span>
-                        <span className={styles.denseDest}>
-                          &rarr;{" "}
-                          {p.destinationName && p.destinationName !== "No ward yet"
-                            ? p.destinationName
-                            : "Awaiting bed"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <EmptyState
+                className={styles.v6Empty}
+                title="No matching records"
+                meta="No patient records match the current search and filters."
+                action={
+                  <Button size="sm" onClick={resetAllFilters}>
+                    Reset all filters
+                  </Button>
+                }
+              />
             ) : (
-              /* ─── Cards Mode (Population Grouped) ─── */
-              <div className={styles.patientList} tabIndex={0} aria-label="Caseload cards">
-                {livePatients.length > 0 && (
-                  <>
-                    <div className={styles.populationHeading}>
-                      <span>Live in Hospital ({livePatients.length})</span>
-                    </div>
-                    {livePatients.map((p) => renderCard(p))}
-                  </>
+              <CardBody flush>
+                <div className={styles.v6Head} aria-hidden="true">
+                  <span>Tier</span>
+                  <span>Patient</span>
+                  <span>Where now</span>
+                  <span>Legal</span>
+                  <span>Stage</span>
+                  <span className={styles.v6End}>Waiting</span>
+                </div>
+                {viewMode === "dense" ? (
+                  <div className={styles.v6List} role="table" aria-label="Dense caseload list">
+                    {unifiedCaseload.map((p) => renderRow(p, true))}
+                  </div>
+                ) : (
+                  <div className={styles.v6List} aria-label="Caseload cards">
+                    {unifiedCaseload.map((p) => renderRow(p, false))}
+                  </div>
                 )}
-                {communityPatients.length > 0 && (
-                  <>
-                    <div className={styles.populationHeading}>
-                      <span>Not in Hospital · Community &amp; Scheduled ({communityPatients.length})</span>
-                    </div>
-                    {communityPatients.map((p) => renderCard(p))}
-                  </>
-                )}
-                {pastPatients.length > 0 && (
-                  <>
-                    <div className={styles.populationHeading}>
-                      <span>Past Patient Records ({pastPatients.length})</span>
-                    </div>
-                    {pastPatients.map((p) => renderCard(p))}
-                  </>
-                )}
-              </div>
+              </CardBody>
             )}
-          </section>
+            <CardFoot meta={`${unifiedCaseload.length} ${unifiedCaseload.length === 1 ? "record" : "records"}`}>
+              <span className={styles.v6Muted}>Names are invented</span>
+            </CardFoot>
+          </Card>
 
-          {/* Right Column: Perfected Clinical Dossier Inspector Panel */}
-          <section className={styles.inspectorPanel} role="region" aria-label="Patient details" tabIndex={0}>
-            <div className={styles.panelHead}>
-              <h2 className={styles.panelTitle}>Patient details</h2>
-              <span className={styles.dossierHint}>Active record</span>
-            </div>
-
-            <div className={styles.inspectorContent}>
-              {selectedPatient ? (
-                <>
-                  {/* 1. Presence State Banner */}
-                  <div className={`${styles.presenceBannerCard} ${styles[selectedPatient.presence]}`}>
-                    <div className={styles.presenceBannerLeft}>
-                      <span className={`${styles.presenceDot} ${styles[selectedPatient.presence]}`} />
-                      <strong>
-                        {selectedPatient.presence === "live"
-                          ? "In hospital now"
-                          : selectedPatient.presence === "community"
-                            ? "NOT IN HOSPITAL · COMMUNITY OUTPATIENT"
-                            : selectedPatient.presence === "scheduled"
-                              ? "NOT IN SYSTEM TODAY · SCHEDULED"
-                              : "Not in hospital now"}
-                      </strong>
-                    </div>
-                    <span className={styles.presenceSettingTag}>
-                      {selectedPatient.setting === "ed"
-                        ? "Emergency Dept"
-                        : selectedPatient.setting === "transit"
-                          ? "In-Transit"
-                          : selectedPatient.setting === "inpatient"
-                            ? "Inpatient Ward"
-                            : selectedPatient.setting === "scheduled"
-                              ? "Booked Tomorrow"
-                              : selectedPatient.setting === "discharged"
-                                ? "Discharged"
-                                : "Community Case"}
+          <Card className={styles.v6Preview} role="region" aria-label="Patient details">
+            {selectedPatient ? (
+              <>
+                <div className={styles.v6PreviewHead}>
+                  <Avatar name={selectedPatient.name} size="lg" decorative />
+                  <div className={styles.v6PreviewId}>
+                    <h2 className={styles.v6PreviewName}>{selectedPatient.name}</h2>
+                    <span className={styles.v6Sub}>
+                      <span className={styles.v6Mono}>{selectedPatient.urm}</span> · {ageSexText(selectedPatient)} ·{" "}
+                      {selectedPatient.service}
                     </span>
                   </div>
-
-                  {/* 2. Patient Identity & Core Status Badges */}
-                  <div className={styles.dossierHeader}>
-                    <div className={styles.dossierTitleRow}>
-                      <h3 className={styles.dossierName}>{selectedPatient.name}</h3>
-                      <span className={styles.dossierUrm}>{selectedPatient.urm}</span>
-                    </div>
-                    <div className={styles.dossierMetaRow}>
-                      <span className={styles.metaDemographics}>
-                        {selectedPatient.age === null ? "Age not recorded" : `${selectedPatient.age} years`} ·{" "}
-                        {selectedPatient.sex ?? "Sex not recorded"}
-                      </span>
-                      {selectedPatient.indigenous && <span className={styles.atsiPill}>Aboriginal (ATSI)</span>}
-                      <span style={{ color: "var(--line-strong)" }}>·</span>
-                      <span style={{ fontSize: "var(--t-1)", color: "var(--muted)" }}>{selectedPatient.service}</span>
-                    </div>
-                    <div className={styles.dossierStatusStrip}>
-                      <span className={`${styles.tierBadge} ${tierBadgeClass(selectedPatient.urgency)}`}>
-                        {selectedPatient.urgency}
-                      </span>
-                      <span className={`${styles.statusPill} ${legalStatusClass(selectedPatient.legalStatus)}`}>
-                        {selectedPatient.legalStatus}
-                      </span>
-                      <span className={styles.dispositionBadge}>{selectedPatient.holdStatus}</span>
-                    </div>
-                  </div>
-
-                  {/* 3. Statutory Authority Card (Hairline 1px Border) */}
-                  <div className={styles.statutoryCard}>
-                    <div className={styles.statutoryHead}>
-                      <span className={styles.statutoryTitle}>
-                        {selectedPatient.legalStatus} · {statutoryDetails.title}
-                      </span>
-                      <span
-                        className={`${styles.statutoryCountdown} ${
-                          selectedPatient.legalExpires === "No due time recorded" ? styles.statutoryCountdownMuted : ""
-                        } mono`}
-                      >
-                        {selectedPatient.legalExpires === "No due time recorded"
-                          ? "No deadline pending"
-                          : selectedPatient.legalExpires}
-                      </span>
-                    </div>
-                    <div className={styles.statutoryDetailsGrid}>
-                      <div className={styles.statItem}>
-                        <span className={styles.statItemLabel}>Legal Authority</span>
-                        <span className={styles.statItemValue}>{statutoryDetails.req}</span>
-                      </div>
-                      <div className={styles.statItem}>
-                        <span className={styles.statItemLabel}>Hospital Wait Time</span>
-                        <span className="mono" style={{ fontWeight: 600, color: "var(--ink)" }}>
-                          {selectedPatient.waitHours > 0
-                            ? `${selectedPatient.waitHours.toFixed(1)}h`
-                            : "None (Not admitted)"}{" "}
-                          {selectedPatient.waitHours * 60 >= LONG_WAIT_MINUTES ? `(waiting ${LONG_WAIT_TEXT})` : ""}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Placement & Movement Trajectory */}
-                  <div className={styles.dossierSection}>
-                    <span className={styles.sectionTitle}>Placement &amp; Movement Trajectory</span>
-                    <div className={styles.trajectoryGrid}>
-                      <div className={styles.trajBox}>
-                        <span className={styles.trajLabel}>Originating Site</span>
-                        <span className={styles.trajValue}>{selectedPatient.origin}</span>
-                      </div>
-                      <div className={styles.trajBox}>
-                        <span className={styles.trajLabel}>Target Ward / Unit</span>
-                        <span className={`${styles.trajValue} ${styles.strong}`}>
-                          {selectedPatient.destinationName}
-                        </span>
-                      </div>
-                      <div className={styles.trajBox}>
-                        <span className={styles.trajLabel}>Current Stage</span>
-                        <span className={styles.trajValue}>{selectedPatient.stage}</span>
-                      </div>
-                      <div className={styles.trajBox}>
-                        <span className={styles.trajLabel}>Conveyance &amp; Escort</span>
-                        <span className={styles.trajValue}>
-                          {selectedPatient.transportStatus}
-                          {selectedPatient.nurseEscort ? " · Nurse escort" : ""}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 5. Clinical Presentation & Care Summary */}
-                  <div className={styles.dossierSection}>
-                    <span className={styles.sectionTitle}>Clinical Presentation &amp; Care Summary</span>
-                    <div
-                      className={`${styles.clinicalNoteCard} ${
-                        selectedPatient.clinicalNote === NO_CLINICAL_NOTE ? styles.clinicalNoteEmpty : ""
-                      }`}
-                    >
-                      {selectedPatient.clinicalNote === NO_CLINICAL_NOTE ? (
-                        <span className={styles.clinicalNoteEmptyText}>
-                          No clinical handover note recorded in Ward Flow for this movement.
-                        </span>
-                      ) : (
-                        selectedPatient.clinicalNote
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Previous Presentations & History */}
-                  <div className={styles.dossierSection}>
-                    <span className={styles.sectionTitle}>Previous Presentations &amp; History</span>
-                    <div className={styles.historyCard}>
-                      <div className={styles.historyGrid}>
-                        <div className={styles.historyItem}>
-                          <span className={styles.historyLabel}>Prior Admissions (12m)</span>
-                          <span className={styles.historyVal}>0 recorded</span>
-                        </div>
-                        <div className={styles.historyItem}>
-                          <span className={styles.historyLabel}>Last Discharge</span>
-                          <span className={styles.historyVal}>None on file</span>
-                        </div>
-                        <div className={styles.historyItem}>
-                          <span className={styles.historyLabel}>Community Key Worker</span>
-                          <span className={styles.historyVal}>{selectedPatient.communityTeam ?? "Unassigned"}</span>
-                        </div>
-                        <div className={styles.historyItem}>
-                          <span className={styles.historyLabel}>Care Protocol / Alerts</span>
-                          <span className={styles.historyVal}>Standard observation</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 6. Audit Milestones (Connected Vertical Timeline - Image 4) */}
-                  <div className={styles.dossierSection}>
-                    <span className={styles.sectionTitle}>Audit Milestones</span>
-                    <div className={styles.milestoneTimeline}>
-                      {/* Only the time the record opened. Two entries at fixed times ("10:42 Operational
-                          state verified by Bed Coordinator", "08:15 Transport logistics update") used to
-                          be typed in above it (25 September 2026 audit, A5). */}
-                      <div className={styles.timelineNodeItem}>
-                        <span className={styles.timelineNodeBullet} aria-hidden="true" />
-                        <div className={styles.timelineTimeRow}>
-                          <span className={styles.timelineMonoTime}>{selectedPatient.openedAt} AWST</span>
-                        </div>
-                        <span className={styles.timelineEventText}>
-                          Record active from origin site ({formatSiteAcronym(selectedPatient.origin)})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 7. Coordinator Action Bar */}
-                  <div className={styles.dossierActionBar}>
-                    <button
-                      type="button"
-                      className={styles.btnSecondary}
-                      onClick={copyPatientSummary}
-                      title="Copy patient clinical summary to clipboard"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                      <span>Copy Summary</span>
-                    </button>
-                    {selectedPatient.originalSubject.kind === "movement" ? (
-                      <Link
-                        className={styles.btnPrimary}
-                        href={`/mockups/ward-flow/movements/${selectedPatient.originalSubject.movement.id}`}
-                      >
-                        <span>View Movement</span>
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </Link>
+                </div>
+                <div className={styles.v6PreviewStatus}>
+                  {selectedTier !== null ? <TierTile tier={selectedTier} /> : null}
+                  <span className={styles.v6Stage}>
+                    <StatusGlyph tone={stageTone(selectedPatient)} size={9} />
+                    {selectedPatient.stage}
+                  </span>
+                  <span className={styles.v6PreviewWait}>
+                    <Icon icon={Clock} size={14} />
+                    {selectedPatient.waitHours > 0 ? (
+                      <Timer
+                        at={selectedPatient.openedAtInstant * MS_PER_MINUTE}
+                        now={nowMs}
+                        direction="waiting"
+                        hideFlagWord
+                      />
                     ) : (
-                      <Link className={styles.btnPrimary} href="/mockups/ward-flow/referrals/new">
-                        <span>Create Referral</span>
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </Link>
+                      "No wait"
                     )}
-                    <button
-                      type="button"
-                      className={styles.btnSecondary}
-                      title="Not wired in this prototype."
-                      onClick={() => showToast("Not wired in this prototype.")}
-                    >
-                      Bed Allocation
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.btnSecondary}
-                      title="Not wired in this prototype."
-                      onClick={() => showToast("Not wired in this prototype.")}
-                    >
-                      Transport Order
-                    </button>
+                  </span>
+                </div>
+                <dl className={styles.v6Facts}>
+                  <div>
+                    <dt>Where now</dt>
+                    <dd>{formatSiteAcronym(selectedPatient.origin)}</dd>
+                    <dd className={styles.v6Sub}>Opened {selectedPatient.openedAt}</dd>
                   </div>
-                </>
-              ) : null}
-            </div>
-          </section>
+                  <div>
+                    <dt>Heading to</dt>
+                    <dd>{selectedPatient.destinationName}</dd>
+                    <dd className={styles.v6Sub}>{selectedPatient.holdStatus}</dd>
+                  </div>
+                  <div>
+                    <dt>Legal authority</dt>
+                    <dd>{selectedPatient.legalStatus}</dd>
+                    <dd className={styles.v6Sub}>{statutoryDetails.title}</dd>
+                  </div>
+                  <div>
+                    <dt>Transport</dt>
+                    <dd>{selectedPatient.transportStatus}</dd>
+                    {selectedPatient.nurseEscort ? <dd className={styles.v6Sub}>Nurse escort</dd> : null}
+                  </div>
+                </dl>
+                <div className={styles.v6PreviewSection}>
+                  <span className={styles.v6SectionHead}>Legal due time</span>
+                  <span className={cx(/left|overdue/.test(selectedPatient.legalExpires) && styles.v6Mono)}>
+                    {selectedPatient.legalExpires === "Voluntary status"
+                      ? "Not detained"
+                      : selectedPatient.legalExpires}
+                  </span>
+                </div>
+                <div className={styles.v6PreviewSection}>
+                  <span className={styles.v6SectionHead}>Latest</span>
+                  <Timeline
+                    label="Latest for this record"
+                    holdNew={false}
+                    items={[
+                      {
+                        id: `${selectedPatient.id}-opened`,
+                        at: selectedPatient.openedAt,
+                        tone: "info",
+                        text: `Record active from ${formatSiteAcronym(selectedPatient.origin)}`,
+                      },
+                    ]}
+                  />
+                </div>
+                {selectedPatient.communityTeam ? (
+                  <div className={styles.v6PreviewSection}>
+                    <span className={styles.v6SectionHead}>Community team</span>
+                    <span>{selectedPatient.communityTeam}</span>
+                  </div>
+                ) : null}
+                <CardFoot
+                  meta={
+                    copyNote ? (
+                      <span role="status" aria-live="polite">
+                        {copyNote}
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Copy}
+                    iconOnly
+                    aria-label="Copy summary"
+                    title="Copy summary"
+                    onClick={copyPatientSummary}
+                  />
+                  {selectedPatient.originalSubject.kind === "movement" ? (
+                    <Link
+                      className={buttonClass({ size: "sm" })}
+                      href={`/mockups/ward-flow/movements/${selectedPatient.originalSubject.movement.id}`}
+                    >
+                      Open movement
+                    </Link>
+                  ) : (
+                    <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
+                      New referral
+                    </Link>
+                  )}
+                  {selectedPatient.patientId ? (
+                    <Link
+                      className={buttonClass({ variant: "pri", size: "sm" })}
+                      href={`/mockups/ward-flow/people/${selectedPatient.patientId}`}
+                    >
+                      Open patient
+                    </Link>
+                  ) : null}
+                </CardFoot>
+              </>
+            ) : (
+              <EmptyState title="Nothing selected" meta="Choose a row to see the record." />
+            )}
+          </Card>
         </div>
 
-        {/* ═══ SOVEREIGN MINIMAL FOOTER ═══ */}
         <WardPrototypeFooter
           testId="ward-patient-search-governance"
           note="Demonstration records only — Not a medical device. Cross-setting index across people, movements and active referrals."
         />
-
-        {/* ═══ D4 TOAST NOTIFICATION ═══ */}
-        {toastMessage && (
-          <div className={styles.toastContainer} aria-live="polite">
-            <div className={`${styles.toastNotification} ${styles.show}`}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span>{toastMessage}</span>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
 
-  function renderCard(p: UnifiedCaseloadPatient) {
+  function renderRow(p: UnifiedCaseloadPatient, dense: boolean) {
     const isSelected = p.id === selectedId;
-    let waitClass = styles.none;
-    let waitText = `${p.waitHours.toFixed(1)}h`;
-    // No colour for a long wait: "no hint of a limit" (Josh's card, 26 Sept 2026, D-24).
-    if (p.waitHours === 0) {
-      waitClass = styles.none;
-      waitText = "—";
-    }
-
+    const tier = tierNumber(p.urgency);
+    const cell = dense ? ({ role: "cell" } as const) : {};
+    const select = () => handleSelectPatient(p);
     return (
-      <article
+      <div
         key={p.id}
-        className={`${styles.patientCard} ${isSelected ? styles.selected : ""}`}
+        className={cx(styles.v6Row, dense && styles.v6RowDense, isSelected && styles.selected)}
         data-id={p.id}
         data-testid={`ward-patient-search-case-${p.id}`}
-        onClick={() => handleSelectPatient(p)}
-        onKeyDown={(e) => {
+        onClick={select}
+        onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            handleSelectPatient(p);
+            select();
           }
         }}
         tabIndex={0}
-        role="button"
-        aria-pressed={isSelected}
-        aria-label={`Patient ${p.name}`}
+        {...(dense
+          ? { role: "row", "aria-selected": isSelected }
+          : { role: "button", "aria-pressed": isSelected, "aria-label": `Patient ${p.name}` })}
       >
-        {/* Line 1: Status beacon + Name + Wait time */}
-        <div className={styles.patientCardRow1}>
-          <div className={styles.patientIdentityCluster}>
-            <span className={`${styles.presenceTag} ${styles[p.presence]}`} title={p.presenceDetail}>
-              {p.presence === "live" && <span className={styles.pulsingLiveBeacon} aria-hidden="true" />}
-              {p.presence === "live"
-                ? "Live"
-                : p.presence === "community"
-                  ? "Not in Hosp"
-                  : p.presence === "scheduled"
-                    ? "Scheduled"
-                    : "Past"}
-            </span>
-            <strong className={styles.patientName}>{p.name}</strong>
-            {p.confidential && (
-              <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${p.id}`}>
-                🔒 Restricted
+        <span {...cell} className={styles.v6TierCell}>
+          {tier !== null ? <TierTile tier={tier} /> : <span className={styles.v6Muted}>{p.urgency}</span>}
+        </span>
+        <span {...cell} className={styles.v6Cell}>
+          <span className={styles.v6Name}>
+            {p.name}
+            {p.confidential ? (
+              <span className={styles.v6Restricted} data-testid={`ward-patient-confidential-${p.id}`}>
+                <Icon icon={Lock} size={14} />
+                Restricted
               </span>
-            )}
-          </div>
-          <span className={`${styles.waitBadge} ${waitClass}`} title="Hospital wait time in setting">
-            {waitText}
+            ) : null}
           </span>
-        </div>
-
-        {/* Line 2: UMRN directly under name + Demographics + Health Service */}
-        <div className={styles.patientCardRow2}>
-          <span className={styles.patientIdentifier}>{p.urm}</span>
-          <span className={styles.metaDivider}>·</span>
-          <span className={styles.patientDemographics}>
-            {ageSexText(p)}
-            {p.indigenous ? " · ATSI" : ""}
+          {dense ? null : (
+            <span className={styles.v6Sub}>
+              <span className={styles.v6Mono}>{p.urm}</span> · {ageSexText(p)} · {p.service}
+            </span>
+          )}
+        </span>
+        <span {...cell} className={styles.v6Cell}>
+          <span className={styles.v6Strong}>{formatSiteAcronym(p.origin)}</span>
+          {dense ? null : (
+            <span className={styles.v6Sub}>
+              {p.destinationName !== "No ward yet"
+                ? p.destinationName
+                : p.presence === "past"
+                  ? "Discharged"
+                  : "No ward yet"}
+            </span>
+          )}
+        </span>
+        <span {...cell} className={styles.v6Cell}>
+          <span className={styles.v6Strong}>{p.legalStatus}</span>
+          {dense ? null : (
+            <span className={cx(styles.v6Sub, /left|overdue/.test(p.legalExpires) && styles.v6Mono)}>
+              {p.legalExpires === "Voluntary status" ? "Not detained" : p.legalExpires}
+            </span>
+          )}
+        </span>
+        <span {...cell} className={styles.v6Cell}>
+          <span className={styles.v6Stage}>
+            <StatusGlyph tone={stageTone(p)} size={9} />
+            {p.stage}
           </span>
-          <span className={styles.metaDivider}>·</span>
-          <span className={styles.serviceMetaText}>{p.service}</span>
-        </div>
-
-        {/* Line 3: Origin Site, Legal Status Pill, Acuity Tier, Destination */}
-        <div className={styles.patientCardRow3}>
-          <span className={styles.serviceTag}>
-            <span className={`${styles.serviceDot} ${serviceDotClass(p.service)}`} />
-            {formatSiteAcronym(p.origin)}
-          </span>
-          {(() => {
-            const badge = formatLegalStatusBadge(p.legalStatus);
-            return <span className={`${styles.statusPill} ${badge.className}`}>{badge.label}</span>;
-          })()}
-          <span className={`${styles.tierBadge} ${tierBadgeClass(p.urgency)}`}>{p.urgency}</span>
-          <span className={styles.destinationText}>
-            {p.destinationName && p.destinationName !== "No ward yet" ? (
-              <>
-                &rarr; <strong>{p.destinationName}</strong>
-              </>
-            ) : (
-              <span style={{ color: "var(--muted)" }}>{p.presence === "past" ? "Discharged" : "No ward yet"}</span>
-            )}
-          </span>
-        </div>
-      </article>
+          {dense ? null : <span className={styles.v6Sub}>{p.holdStatus}</span>}
+        </span>
+        <span {...cell} className={cx(styles.v6Cell, styles.v6End)}>
+          <span className={styles.v6Wait}>{p.waitHours > 0 ? durMinutes(Math.round(p.waitHours * 60)) : "—"}</span>
+          {dense ? null : <span className={styles.v6Sub}>waiting</span>}
+        </span>
+      </div>
     );
   }
+}
+
+function tierNumber(urgency: string): number | null {
+  const match = /^Tier (\d)$/.exec(urgency);
+  return match ? Number(match[1]) : null;
+}
+
+/** Colour as a glyph: placed and moving are good news, everything else waits in neutral. */
+function stageTone(p: UnifiedCaseloadPatient): "success" | "info" | "neutral" {
+  if (p.holdStatus === "Bed hold active") return "success";
+  if (p.setting === "transit") return "info";
+  return "neutral";
 }
 
 function getPatientPresence(

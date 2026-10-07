@@ -95,8 +95,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(secondCard).toHaveAttribute("aria-pressed", "false");
       expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
 
-      // Switch to dense view and verify aria-selected on row
-      const denseBtn = screen.getByRole("button", { name: /dense/i });
+      // Switch to dense view and verify aria-selected on row. v6 (Patients.png): Comfort / Dense is a
+      // segmented control, so Dense is a radio.
+      const denseBtn = screen.getByRole("radio", { name: /dense/i });
       fireEvent.click(denseBtn);
 
       const denseContainer = screen.getByRole("table", { name: "Dense caseload list" });

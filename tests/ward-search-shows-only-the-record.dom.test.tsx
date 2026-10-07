@@ -74,7 +74,8 @@ describe("patient search shows only what the record holds", () => {
     // The seed now holds real dates of birth, so a patient can genuinely be 34 or 38: rather than
     // banning those numbers, every age shown beside a UMRN must be the age that patient's own
     // recorded date of birth gives (one year of slack for a birthday falling on the demo day).
-    const shown = [...text.matchAll(/(UM\d+)·(\d+)y\b/g)];
+    // v6 (Patients.png) sets the parts apart with spaced middots: "UM100069 · 30y".
+    const shown = [...text.matchAll(/(UM\d+)\s*·\s*(\d+)y\b/g)];
     expect(shown.length).toBeGreaterThan(0);
     const today = new Date();
     for (const [, umrn, age] of shown) {
@@ -88,7 +89,8 @@ describe("patient search shows only what the record holds", () => {
 
   it("labels a form the record holds by its own code, never as voluntary", () => {
     const text = pageText();
-    // WF-009 is recorded on a Form 3B; that badge used to read "VOLUNTARY".
-    expect(text).toContain("FORM 3B");
+    // WF-009 is recorded on a Form 3B; that badge used to read "VOLUNTARY". v6 writes the form name
+    // in sentence case ("Form 3B") rather than the old upper-case badge.
+    expect(text).toContain("Form 3B");
   });
 });
