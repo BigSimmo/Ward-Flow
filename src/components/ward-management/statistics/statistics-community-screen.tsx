@@ -258,7 +258,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 {figureText(figures.other)} left a ward another way.
               </p>
             </SrOnly>
-            <CardFoot meta="Dates are a subset of people holding a bed">
+            <CardFoot meta="Discharge dates are a subset of people holding a bed">
               <Link
                 href={communityTeamHref(team)}
                 className={buttonClass({ variant: "sec", size: "sm" })}
