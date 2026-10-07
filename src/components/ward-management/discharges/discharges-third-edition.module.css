@@ -982,6 +982,8 @@
 
 .drawerSection select,
 .drawerSection input:not([type="checkbox"]):not([type="radio"]) {
+  min-width: 0;
+  max-width: 100%;
   min-height: var(--wf-h-md);
   padding: 0 10px;
   box-sizing: border-box;
@@ -990,6 +992,20 @@
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* A select sizes to its longest option and a date input to its widest value; at phone width both
+   must shrink to the panel rather than widen it. */
+.careJourney {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.careJourney .filterField,
+.careJourney select,
+.careJourney input {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .careJourney details {
