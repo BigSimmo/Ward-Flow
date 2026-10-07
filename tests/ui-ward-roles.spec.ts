@@ -1217,8 +1217,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(pullButton).not.toHaveAttribute("title");
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
-    // The capacity form opens from "Confirm today's numbers". It is not on the Decisions queue.
-    await wardScreen.getByRole("button", { name: /Confirm today.s numbers/ }).click();
+    // The capacity form opens from "Confirm numbers". It is not on the Decisions queue.
+    await wardScreen.getByRole("button", { name: /Confirm (today.s )?numbers/ }).click();
     await wardScreen.getByTestId("ward-capacity-input").fill("0");
     await wardScreen.getByTestId("ward-capacity-submit").click();
 
