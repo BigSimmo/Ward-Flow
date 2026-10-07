@@ -382,70 +382,67 @@ export function WardFlowSignInScreen() {
             ]}
           />
 
-          {tab === "actions" ? (
-            <TabPanel idPrefix="sign-in" id="actions" className={styles.panel}>
-              <h3 id="sec-can" className="sr-only">
-                What {role.the} can do, {canDo.length} of {SIGN_IN_ACTIONS.length}
-              </h3>
-              <ul className={styles.list} id="canList" aria-labelledby="sec-can">
-                {canDo.length === 0 ? (
-                  <li className={styles.none}>No action on this screen is named for this role.</li>
-                ) : (
-                  canDo.map((action) => (
-                    <li className={styles.item} key={action.words} title={action.where}>
-                      <StatusGlyph tone="success" size={10} />
-                      <strong className={styles.itemWords}>
-                        <ActionWords action={action} />
-                      </strong>
-                      <span className={styles.itemNote}>{action.place}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-              <h3 id="sec-cant" className="sr-only">
-                What {role.the} cannot do, {cannotDo.length} of {SIGN_IN_ACTIONS.length}
-              </h3>
-              <ul className={styles.list} id="cannotList" aria-labelledby="sec-cant">
-                {cannotDo.length === 0 ? (
-                  <li className={styles.none}>Every action on this screen is named for this role.</li>
-                ) : (
-                  cannotDo.map((action) => (
-                    <li
-                      className={`${styles.item} ${styles.itemOff}`}
-                      key={action.words}
-                      title={`The screens index names ${SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.`}
-                    >
-                      <StatusGlyph tone="closed" size={10} />
-                      <span className={styles.itemWords}>
-                        <ActionWords action={action} />
-                      </span>
-                      <span className={`${styles.itemNote} ${styles.itemNoteLine}`} aria-hidden="true">
-                        Named for{" "}
-                        {SIGN_IN_ACTION_NAMED_SHORT[action.words] ??
-                          SIGN_IN_ACTION_NAMED[action.words] ??
-                          "another role"}
-                      </span>
-                      <span className="sr-only">
-                        . The screens index names {SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </TabPanel>
-          ) : (
-            <TabPanel idPrefix="sign-in" id="limits" className={styles.panel}>
-              <h3 id="sec-all" className={styles.panelHeading}>
-                Refused to every role
-                <span className="sr-only">, {SIGN_IN_REFUSED.length} in all</span>
-              </h3>
-              <LimitList list={SIGN_IN_REFUSED} tone="closed" labelledBy="sec-all" />
-              <h3 id="sec-disc" className={styles.panelHeading}>
-                Read this before you go in
-              </h3>
-              <LimitList list={SIGN_IN_READ_FIRST} tone="neutral" labelledBy="sec-disc" />
-            </TabPanel>
-          )}
+          {/* Both panels stay mounted and only `hidden` changes, so each tab's aria-controls
+              always points at an element that exists. */}
+          <TabPanel idPrefix="sign-in" id="actions" className={styles.panel} hidden={tab !== "actions"}>
+            <h3 id="sec-can" className="sr-only">
+              What {role.the} can do, {canDo.length} of {SIGN_IN_ACTIONS.length}
+            </h3>
+            <ul className={styles.list} id="canList" aria-labelledby="sec-can">
+              {canDo.length === 0 ? (
+                <li className={styles.none}>No action on this screen is named for this role.</li>
+              ) : (
+                canDo.map((action) => (
+                  <li className={styles.item} key={action.words} title={action.where}>
+                    <StatusGlyph tone="success" size={10} />
+                    <strong className={styles.itemWords}>
+                      <ActionWords action={action} />
+                    </strong>
+                    <span className={styles.itemNote}>{action.place}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+            <h3 id="sec-cant" className="sr-only">
+              What {role.the} cannot do, {cannotDo.length} of {SIGN_IN_ACTIONS.length}
+            </h3>
+            <ul className={styles.list} id="cannotList" aria-labelledby="sec-cant">
+              {cannotDo.length === 0 ? (
+                <li className={styles.none}>Every action on this screen is named for this role.</li>
+              ) : (
+                cannotDo.map((action) => (
+                  <li
+                    className={`${styles.item} ${styles.itemOff}`}
+                    key={action.words}
+                    title={`The screens index names ${SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.`}
+                  >
+                    <StatusGlyph tone="closed" size={10} />
+                    <span className={styles.itemWords}>
+                      <ActionWords action={action} />
+                    </span>
+                    <span className={`${styles.itemNote} ${styles.itemNoteLine}`} aria-hidden="true">
+                      Named for{" "}
+                      {SIGN_IN_ACTION_NAMED_SHORT[action.words] ?? SIGN_IN_ACTION_NAMED[action.words] ?? "another role"}
+                    </span>
+                    <span className="sr-only">
+                      . The screens index names {SIGN_IN_ACTION_NAMED[action.words] ?? "another role"} for this.
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </TabPanel>
+          <TabPanel idPrefix="sign-in" id="limits" className={styles.panel} hidden={tab !== "limits"}>
+            <h3 id="sec-all" className={styles.panelHeading}>
+              Refused to every role
+              <span className="sr-only">, {SIGN_IN_REFUSED.length} in all</span>
+            </h3>
+            <LimitList list={SIGN_IN_REFUSED} tone="closed" labelledBy="sec-all" />
+            <h3 id="sec-disc" className={styles.panelHeading}>
+              Read this before you go in
+            </h3>
+            <LimitList list={SIGN_IN_READ_FIRST} tone="neutral" labelledBy="sec-disc" />
+          </TabPanel>
 
           <p className={styles.check} data-ok={reconciliation.length === 0}>
             {reconciliation.length === 0 ? (

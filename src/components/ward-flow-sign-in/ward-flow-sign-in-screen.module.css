@@ -399,6 +399,11 @@
   min-height: 0;
 }
 
+/* `display: grid` would otherwise beat the inactive panel's `hidden` attribute. */
+.panel[hidden] {
+  display: none;
+}
+
 .panelHeading {
   margin: var(--wf-s-3) 0 var(--wf-s-1);
   color: var(--wf-ink-3);
