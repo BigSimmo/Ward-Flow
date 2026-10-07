@@ -34,114 +34,63 @@ export function WardTelemetryRibbon({
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
       <span className="sr-only">{pendingPreparation} being made ready</span>
-      {/* 1. Staffed Beds */}
       <div className={styles.cell} data-state="accent">
-        <div className={styles.topRow}>
-          <span className={styles.label}>Staffed Beds</span>
-          <span className={styles.badge}>Budgeted</span>
-        </div>
-        <div className={styles.valueRow}>
-          <span className={styles.mainVal}>{unit.beds}</span>
-          <span className={styles.unit}>Beds</span>
-        </div>
-        <div className={styles.subRow}>
-          <span>Roster not recorded</span>
-        </div>
+        <span className={styles.label}>Staffed beds</span>
+        <span className={styles.mainVal}>{unit.beds}</span>
+        <span className={styles.subRow}>Roster not recorded</span>
       </div>
-
-      {/* 2. Occupancy */}
       <div className={styles.cell} data-state={occPercent >= 90 ? "warn" : "accent"}>
-        <div className={styles.topRow}>
-          <span className={styles.label}>Occupancy</span>
-          <span className={styles.badge} data-tone={occPercent >= 90 ? "warn" : "accent"}>
-            {occPercent}% Full
-          </span>
-        </div>
-        <div className={styles.valueRow}>
-          <span className={styles.mainVal}>{capacity.occupied}</span>
-          <span className={styles.unit}>/ {unit.beds} Patients</span>
-        </div>
-        <div className={styles.subRow}>
-          <span>
-            {capacity.occupied} in bed &middot; {acceptedCount} inbound
-          </span>
-        </div>
+        <span className={styles.label}>Occupancy</span>
+        <span className={styles.mainVal}>
+          {capacity.occupied}
+          <span className={styles.unit}>/{unit.beds}</span>
+        </span>
+        <span className={styles.subRow}>
+          {occPercent}% full · {acceptedCount} inbound
+        </span>
       </div>
-
-      {/* 3. Ready Bed Now (Preserves all ward-hero test IDs) */}
       <div className={styles.cell} data-state="good" data-testid="ward-hero" aria-labelledby="ward-hero-title">
-        <div className={styles.topRow}>
-          <span className={styles.label} id="ward-hero-title">
-            ready bed{capacity.available === 1 ? "" : "s"} on this ward right now
-          </span>
-          <span className={styles.badge} data-tone="good">
-            Recorded ready count
-          </span>
-        </div>
-        <div className={styles.valueRow}>
-          <span className={styles.mainVal} style={{ color: "var(--good)" }}>
-            <span data-testid="ward-hero-ready">{capacity.available}</span>
-          </span>
-          <span className={styles.unit}>Ready Vacant</span>
-        </div>
-        <div className={styles.subRow}>
-          <Link
-            className={styles.actionLink}
-            href="#bed-capacity"
-            data-testid="ward-hero-open-bed-list"
-            onClick={(e) => {
-              if (onOpenBedList) {
-                e.preventDefault();
-                onOpenBedList();
-              }
-            }}
-          >
-            <span>
-              Open bed list &middot; {unit.beds} beds &middot; {capacity.available} ready &rarr;
-            </span>
-          </Link>
-        </div>
+        <span className={styles.label} id="ward-hero-title">
+          Ready now
+        </span>
+        <span className={styles.mainVal} data-tone="good">
+          <span data-testid="ward-hero-ready">{capacity.available}</span>
+        </span>
+        <Link
+          className={styles.actionLink}
+          href="#bed-capacity"
+          data-testid="ward-hero-open-bed-list"
+          onClick={(event) => {
+            if (onOpenBedList) {
+              event.preventDefault();
+              onOpenBedList();
+            }
+          }}
+        >
+          Open bed list · {unit.beds} beds · {capacity.available} ready →
+        </Link>
       </div>
-
-      {/* 4. 1:1 Specialling */}
       <div className={styles.cell} data-state={staffedSpecialling > 0 ? "warn" : undefined}>
-        <div className={styles.topRow}>
-          <span className={styles.label}>1:1 Specialling</span>
-          <span className={styles.badge} data-tone={staffedSpecialling > 0 ? "warn" : undefined}>
-            {staffedSpecialling > 0 ? "Active Watch" : "None recorded"}
-          </span>
-        </div>
-        <div className={styles.valueRow}>
-          <span className={styles.mainVal} style={{ color: staffedSpecialling > 0 ? "var(--warn)" : "var(--ink)" }}>
-            {staffedSpecialling}
-          </span>
-          <span className={styles.unit}>Active Watch</span>
-        </div>
-        <div className={styles.subRow}>
-          <span>
-            {constraints.length > 0
-              ? `Limits: ${constraints.map((c) => wardIntakeConstraintLabels[c] ?? c).join(", ")}`
-              : "Staffing envelope allows intake"}
-          </span>
-        </div>
+        <span className={styles.label}>1:1 specialling</span>
+        <span className={styles.mainVal} data-tone={staffedSpecialling > 0 ? "warn" : undefined}>
+          {staffedSpecialling}
+        </span>
+        <span className={styles.subRow}>
+          {constraints.length > 0
+            ? constraints.map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint).join(", ")
+            : staffedSpecialling > 0
+              ? "Active watch"
+              : "None recorded"}
+        </span>
       </div>
-
-      {/* 5. HDU & Boundary */}
-      <div className={styles.cell} data-state="danger">
-        <div className={styles.topRow}>
-          <span className={styles.label}>HDU &amp; Boundary</span>
-          <span className={styles.badge} style={{ color: "var(--danger)" }}>
-            Protocol Active
-          </span>
-        </div>
-        <div className={styles.valueRow}>
-          <span className={styles.mainVal} style={{ color: "var(--danger)", fontSize: "16px" }}>
-            High Acuity
-          </span>
-        </div>
-        <div className={styles.subRow}>
-          <span>{unit.lockedBeds > 0 ? "Secure Boundary · 1 Seclusion Ready" : "Standard Security Boundary"}</span>
-        </div>
+      <div className={styles.cell} data-state={unit.lockedBeds > 0 ? "danger" : undefined}>
+        <span className={styles.label}>Boundary</span>
+        <span className={styles.mainVal} data-tone={unit.lockedBeds > 0 ? "danger" : undefined}>
+          {unit.lockedBeds > 0 ? "Secure" : "Open"}
+        </span>
+        <span className={styles.subRow}>
+          {unit.lockedBeds > 0 ? "Secure boundary · seclusion ready" : "Standard security boundary"}
+        </span>
       </div>
     </div>
   );
