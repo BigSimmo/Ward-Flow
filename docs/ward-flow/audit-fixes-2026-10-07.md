@@ -16,13 +16,13 @@ Evidence: nine new public-seam regressions failed before these changes; the regr
 
 The dirty-state guard retains unload warnings and in-memory drafts; it no longer reads, writes or restores typed browser caches. The provider purges legacy `wf-draft:` keys on mount and reset, so visiting a draft editor is unnecessary. Existing draft tests now assert the D18 privacy contract, and a real provider remount test checks both cache cleanup and preservation of a safe care transport arrangement.
 
-Locked dependencies were installed independently in the patch worktree after detecting that the supplied shared installation had Next.js 16.3.3 instead of locked 16.3.8. No lockfile or original checkout dependencies were changed. Twenty-six audit-focused tests passed on the exact installation; final broad checks are in progress.
+Locked dependencies were installed independently in the patch worktree after detecting that the supplied shared installation had Next.js 16.3.3 instead of locked 16.3.8. No lockfile or original checkout dependencies were changed. Twenty-six audit-focused tests passed on the exact installation; the final broad check passes as recorded below.
 
 ## Transfer compatibility and defensive release
 
 The duplicate-stay guard recognises recorded psychiatric-ward referrals as transfers, preserving the sending stay through reservation and departing it on receiving arrival. Older saves with a completed incoming care transfer can start a new transfer. Defensive release is tested against the legacy occupied-source alias, independently of the corrected producer. Broadcast validation preserves producer-valid fractional durations and rejects stale ID counters.
 
-Focused state and compatibility regressions passed; the broad run is underway. No runtime logging or diagnostic instrumentation was added.
+Focused state and compatibility regressions passed; the final broad run also passes. No runtime logging or diagnostic instrumentation was added.
 
 ## Discharge editor and truthful Settings
 
@@ -38,4 +38,14 @@ The first full Ward run completed with 8,790 passing tests, 90 skipped tests and
 
 A further legacy-profile regression reproduced historical movement fallback when a current stay had no movement link. The resolver now uses only a current stay's explicit link or matching admission backpointer; without either it displays the current admission without borrowing a historical movement or referral. The new regression failed before this change and passes afterwards; all 45 cases in the profile-focused group pass.
 
-The final full Ward run is in progress against the completed source and test changes. The existing codebase-index coverage advisory about the `.design` root is also present on the untouched base; it is unrelated to these fixes. Generated screen-map validation passes.
+The final full Ward run passed against the completed source and test changes. The existing codebase-index coverage advisory about the `.design` root is also present on the untouched base; it is unrelated to these fixes. Generated screen-map validation passes.
+
+## Final verification
+
+- Final full Ward suite: **793 files passed, nine skipped; 8,802 tests passed, 90 skipped; zero failures**, in 818.69 seconds. Command: `node scripts/run-vitest.mjs run 'tests/ward-' --reporter=dot`. Evidence: `/workspace/ward-flow-audit/patch-ward-final.log`. Existing skips were retained; no new regression was skipped.
+- Full source TypeScript check passed: `tsc -p tsconfig.typecheck.json --noEmit`; evidence `patch-types-completed.log`. Coherent commits also passed the repository's staged lint and TypeScript hooks.
+- Formatting check passed on the final changed files; generated screen map is current (68 mockups, 45 routes, no hard problems); complete diff has no whitespace errors.
+- System Chromium desktop light/dark and phone checks passed with zero page errors; evidence `patch-browser-final.log` and adjacent screenshots. This is local browser proof, not a live-backend or cross-browser certification.
+- Work is preserved on `ward/audit-core-fixes` in the isolated worktree. Original checkout remains clean. Nothing was pushed or deployed, and local servers launched for this task were stopped. Portable patch: `/workspace/ward-flow-audit/core-fixes.patch`.
+
+All twelve recorded findings are addressed. Board refresh remains explicitly disclosed as unwired; operational defaults show runtime values read-only. These changes remove misleading controls without inventing unsupported runtime behaviour. This verification does not establish that the codebase has no undiscovered bugs.
