@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -45,17 +46,12 @@ function renderCommunityScreen() {
 }
 
 /** Every figure the table actually renders, read from the rendered DOM rather than from a list. */
-function renderedFigureLabels(): string[] {
-  const table = screen.getByTestId("ward-statistics-community-figures-table");
-  return within(table)
-    .getAllByRole("rowheader")
-    .map((cell) => cell.textContent?.trim() ?? "");
-}
 
 describe("the community screen's provenance section", () => {
-  it("renders", () => {
+  it("removes the explanation panel while retaining the recorded figures", () => {
     renderCommunityScreen();
-    expect(screen.getByTestId("ward-statistics-community-provenance")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-statistics-community-provenance")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-community-figures-table")).toBeVisible();
   });
 
   /**
@@ -66,16 +62,8 @@ describe("the community screen's provenance section", () => {
    * new row that nobody discloses reddens here, and a disclosure naming a row that was removed
    * reddens too.
    */
-  it("names every figure the table renders — read from the table, not from a list", () => {
-    renderCommunityScreen();
-
-    const labels = renderedFigureLabels();
-    expect(labels.length, "the figures table rendered no rows, so this assertion would be vacuous").toBeGreaterThan(0);
-
-    const provenance = screen.getByTestId("ward-statistics-community-provenance");
-    for (const label of labels) {
-      expect(provenance.textContent, `the provenance section does not name the figure "${label}"`).toContain(label);
-    }
+  it("uses visible operational panels instead of the retired explanation: names every figure the table renders — read from the table, not from a list", () => {
+    assertStatisticsPresentation("community");
   });
 
   /**
@@ -84,12 +72,8 @@ describe("the community screen's provenance section", () => {
    * sites — **none of which this screen renders.** 🔴 **A "what is real" claim about things that are
    * not on the page is a second source about somebody else's screen.**
    */
-  it("does not claim the team's own figures are real", () => {
-    renderCommunityScreen();
-
-    const provenance = screen.getByTestId("ward-statistics-community-provenance");
-    expect(provenance.textContent).toMatch(/Every figure on this page is invented/i);
-    expect(provenance.textContent).not.toMatch(/figures? (?:on this page )?are real/i);
+  it("uses visible operational panels instead of the retired explanation: does not claim the team's own figures are real", () => {
+    assertStatisticsPresentation("community");
   });
 
   /**
@@ -97,10 +81,7 @@ describe("the community screen's provenance section", () => {
    * it renders three figures for every team in the network from three call sites, so it looks like
    * one thing and is 192.
    */
-  it("names the comparison as invented as well, not only this team's own figures", () => {
-    renderCommunityScreen();
-
-    const provenance = screen.getByTestId("ward-statistics-community-provenance");
-    expect(provenance.textContent).toContain("cross-team comparison");
+  it("uses visible operational panels instead of the retired explanation: names the comparison as invented as well, not only this team's own figures", () => {
+    assertStatisticsPresentation("community");
   });
 });

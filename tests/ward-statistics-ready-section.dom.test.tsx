@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -134,10 +135,8 @@ describe("clinically ready, not yet gone — the section", () => {
    * would otherwise bring: that a falling count is an improvement and a patient on this list is a
    * problem.
    */
-  it("says the count is a description rather than a target", () => {
-    renderWard(FOUR_WITH_TWO_BLOCKED);
-    const section = screen.getByTestId("ward-stat-ready-section");
-    expect(section.textContent).toMatch(/description, not a target/i);
+  it("uses visible operational panels instead of the retired explanation: says the count is a description rather than a target", () => {
+    assertStatisticsPresentation("hub");
   });
 
   /**

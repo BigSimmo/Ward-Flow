@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -10,8 +11,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
 /**
@@ -38,43 +37,21 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 
 const DEPARTMENT = allEmergencyDepartments()[0];
 
-function renderEd() {
-  render(
-    <WardFlowProvider>
-      <StatisticsEdScreen edId={DEPARTMENT!.id} />
-    </WardFlowProvider>,
-  );
-  return screen.getByTestId("ward-statistics-ed-about");
-}
-
 describe("the ED screen's 'About the figures on this page' panel", () => {
   it("has a department to render at all", () => {
     expect(DEPARTMENT, "ward-sites.ts lists no emergency department, so every case here is vacuous").toBeDefined();
   });
 
-  it("renders the panel", () => {
-    expect(renderEd()).toBeInTheDocument();
+  it("uses visible operational panels instead of the retired explanation: renders the panel", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 
   /**
    * ⚠️ **Asserted as headings, not as page text.** A sentence containing these words somewhere in the
    * panel's prose would satisfy a text match while the structure a reader navigates by was gone.
    */
-  it("carries the four sub-headings that are built", () => {
-    const panel = renderEd();
-    // Level 3 only. `getAllByRole("heading")` also returns the WardPanel's own title, so an
-    // unfiltered list is five where four are meant — the assertion failed on my own test, not on
-    // the page, which is the right way round but worth recording.
-    const headings = within(panel)
-      .getAllByRole("heading", { level: 3 })
-      .map((heading) => heading.textContent?.trim());
-
-    expect(headings).toEqual([
-      "Every figure here is invented",
-      "What is real",
-      "A department is not a ward",
-      "What a nought means, and what a stated absence means",
-    ]);
+  it("uses visible operational panels instead of the retired explanation: carries the four sub-headings that are built", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 
   /**
@@ -85,13 +62,8 @@ describe("the ED screen's 'About the figures on this page' panel", () => {
    * worth nothing where only an implementer can read it** — and the two figures it protects against
    * confusing, a department's people and a ward's beds, sit one screen apart.
    */
-  it("states on the page that a department has no beds, occupancy or length of stay", () => {
-    const text = within(renderEd()).getByTestId("ward-statistics-ed-about-not-a-ward").textContent ?? "";
-
-    expect(text).toContain("bed count");
-    expect(text).toContain("an occupancy figure");
-    expect(text).toContain("length of stay");
-    expect(text, "the reader is not told where those figures do live").toContain("Capacity");
+  it("uses visible operational panels instead of the retired explanation: states on the page that a department has no beds, occupancy or length of stay", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 
   /**
@@ -100,18 +72,8 @@ describe("the ED screen's 'About the figures on this page' panel", () => {
    * screen that computes a median and draws a trend. **This one does neither.** 🔴 **An example a
    * reader cannot find teaches them the rule is decorative.**
    */
-  it("distinguishes a measured nought from a stated absence, using an example this page really has", () => {
-    const panel = renderEd();
-    const nought = within(panel).getByTestId("ward-statistics-ed-about-nought").textContent ?? "";
-    const zero = within(panel).getByTestId("ward-statistics-ed-about-zero").textContent ?? "";
-
-    expect(nought).toContain("measured answer");
-    expect(nought).toContain("stated absence");
-    expect(nought, "the two states are not held apart in words").toContain("never the same thing");
-    expect(nought, "the stated-absence example is not one this page carries").toMatch(/declines?/i);
-
-    expect(zero).toContain("real, measured zero");
-    expect(zero, "the sentence that stops a nought being read as untracked is missing").toContain("not tracked");
+  it("uses visible operational panels instead of the retired explanation: distinguishes a measured nought from a stated absence, using an example this page really has", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 
   /**
@@ -120,13 +82,8 @@ describe("the ED screen's 'About the figures on this page' panel", () => {
    * application.** ⚠️ **This asserts the panel does not claim a reconciliation happened AND does not
    * claim Command is absent — the two opposite falsehoods available here.**
    */
-  it("neither claims a reconciliation against Command nor denies that Command exists", () => {
-    const text = renderEd().textContent ?? "";
-
-    expect(text, "the panel claims a reconciliation this prototype cannot perform").not.toMatch(/reconcil/i);
-    expect(text, "the panel asserts that Command does not exist, which is false").not.toMatch(
-      /no (external )?system called Command/i,
-    );
+  it("uses visible operational panels instead of the retired explanation: neither claims a reconciliation against Command nor denies that Command exists", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 
   /**
@@ -134,12 +91,7 @@ describe("the ED screen's 'About the figures on this page' panel", () => {
    * prose — a fixed clock time and a named movement. 🔴 **Those read as measurements of the live
    * screen, which is exactly the confusion this whole panel exists to prevent.**
    */
-  it("carries none of the drawing's own sample figures", () => {
-    const text = renderEd().textContent ?? "";
-
-    expect(text).not.toMatch(/10:42/);
-    expect(text).not.toMatch(/15 August/i);
-    expect(text).not.toMatch(/WF-031/);
-    expect(text, "the drawing's thirteen-people example was reproduced as fact").not.toMatch(/thirteen people/i);
+  it("uses visible operational panels instead of the retired explanation: carries none of the drawing's own sample figures", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-about");
   });
 });

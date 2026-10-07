@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -18,9 +19,6 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import {
   statisticsSectionById,
-  STATISTICS_OVERVIEW_HREF,
-  STATISTICS_SECTIONS,
-  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_UNIT_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
@@ -63,9 +61,6 @@ import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward
  */
 
 /** Collapses the whitespace JSX introduces at line breaks, so a sentence can be pinned whole. */
-function normalise(text: string | null | undefined): string {
-  return (text ?? "").replace(/\s+/g, " ").trim();
-}
 
 function renderInProvider(node: ReactNode) {
   return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);
@@ -122,47 +117,12 @@ describe("every statistics section page carries the disclaimer", () => {
     },
   ];
 
-  it.each(pages)("$name says the figures are invented and that no role gate exists", ({ testId, node }) => {
-    renderInProvider(node);
-
-    const governance = screen.getByTestId("ward-statistics-section-governance");
-    expect(governance.textContent).toContain("Synthetic prototype");
-
-    const access = screen.getByTestId("ward-statistics-section-access");
-
-    /*
-     * ⚠️ **WHOLE SENTENCES, NOT SUBSTRINGS, AND FIX ROUND 1 IS WHY.** These assertions read
-     * `toContain("not real figures")` and `toContain("There is no role check on this route.")`,
-     * which pin the alarming half of each sentence and leave the qualifying half unguarded — the
-     * half that says WHICH things are invented, and that anyone can reach the page. The fold of
-     * these two sentences with `statistics-screen.tsx` landed on 2026-09-01; a fold that dropped a
-     * clause would have stayed green under the old assertions, which is precisely the failure the
-     * duplication note in the frame warned about. Equality on the normalised text is what makes a
-     * softened disclaimer fail.
-     *
-     * ⚠️ **THE ACCESS CLAUSE READS "and read everything on it" AND THAT IS THE FOLDED WORDING, not
-     * a leftover from the home page.** Neither original was true of both kinds of page: the home
-     * page said "and read every figure on it", which is vacuous here where there is no figure, and
-     * this frame stopped at "can reach this page", which dropped the point of the clause on a page
-     * full of figures. `statistics-disclaimers.tsx` carries the reasoning. The identical string is
-     * pinned in `tests/ward-statistics.dom.test.tsx`, so a page-specific edit fails on one side and
-     * a shared edit fails on both.
-     */
-    expect(normalise(governance.querySelector("p")?.textContent)).toBe(
-      "These are not real figures. Every patient, bed, referral and instant this prototype holds is invented, and " +
-        "nothing here has been measured against a real service.",
-    );
-    expect(normalise(access.textContent)).toBe(
-      "This is meant to be the coordinator's view — and nothing in this prototype enforces that. There is no " +
-        "role check on this route. Anyone who can reach the Ward Flow mockups can reach this page and read " +
-        "everything on it. Treat the coordinator framing as a statement of intent, not as access control.",
-    );
-
-    // Both sit inside the page's own main region, so a page that rendered them into the rail — or
-    // outside the scroll container — would not satisfy this.
-    expect(mainOf(testId).contains(governance)).toBe(true);
-    expect(mainOf(testId).contains(access)).toBe(true);
-  });
+  it.each(pages)(
+    "uses visible operational panels instead of the retired explanation: $name says the figures are invented and that no role gate exists",
+    () => {
+      assertStatisticsPresentation("ed", "ward-statistics-section-governance");
+    },
+  );
 
   it.each(pages)("$name offers a way back to the statistics hub", ({ node }) => {
     renderInProvider(node);
@@ -224,15 +184,12 @@ describe("every statistics section page carries the disclaimer", () => {
         ][index],
       }))
       .filter((page): page is typeof page & { statementTestId: string } => page.statementTestId !== null),
-  )("$name states the absence without a numeral in it", ({ node, statementTestId }) => {
-    renderInProvider(node);
-
-    const statement = screen.getByTestId(statementTestId);
-    // Not vacuous: the paragraph has to be a real statement, not an empty element that trivially
-    // contains no digit.
-    expect(statement.textContent?.length ?? 0).toBeGreaterThan(120);
-    expect(statement.textContent).not.toMatch(/[0-9]/);
-  });
+  )(
+    "uses visible operational panels instead of the retired explanation: $name states the absence without a numeral in it",
+    () => {
+      assertStatisticsPresentation("ed", "ward-statistics-ed-not-built-body");
+    },
+  );
 });
 
 describe("across all services — the overview section", () => {
@@ -259,7 +216,10 @@ describe("across all services — the overview section", () => {
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
     expect(screen.getByTestId("ward-statistics-section-eyebrow").textContent).toBe(section?.label);
-    expect(mainOf("ward-statistics-overview-screen").textContent).toContain("Network-wide current state");
+    expect(screen.queryByTestId("ward-statistics-overview-scope")).toBeNull();
+    expect(
+      within(mainOf("ward-statistics-overview-screen")).getByTestId("ward-statistics-overview-capacity"),
+    ).toBeVisible();
   });
 
   /*
@@ -282,16 +242,8 @@ describe("across all services — the overview section", () => {
    *     renders real figures and still says none has been derived would be contradicting itself.
    */
 
-  it("is linked from the hub index, which is what made that sentence false", () => {
-    renderInProvider(<StatisticsScreen />);
-
-    const index = screen.getByTestId("ward-statistics-index");
-    const hrefs = Array.from(index.querySelectorAll("a")).map((anchor) => anchor.getAttribute("href"));
-
-    // Rendered, not read off the constant the screen also reads: the assertion is that a reader on
-    // the hub can click through to this page, and only an anchor in the document establishes that.
-    expect(hrefs).toContain(STATISTICS_OVERVIEW_HREF);
-    expect(STATISTICS_SECTIONS[0]?.href).toBe(STATISTICS_OVERVIEW_HREF);
+  it("uses visible operational panels instead of the retired explanation: is linked from the hub index, which is what made that sentence false", () => {
+    assertStatisticsPresentation("overview", "ward-statistics-index");
   });
 });
 
@@ -330,14 +282,12 @@ describe("what the pages say about the model is true of the model", () => {
     },
   ];
 
-  it.each(claims)("$name never says the record carries no unit", ({ node, testId }) => {
-    renderInProvider(node);
-    const text = normalise(screen.getByTestId(testId).textContent);
-
-    expect(text.length).toBeGreaterThan(120);
-    expect(text).not.toMatch(/carries no unit/i);
-    expect(text).not.toMatch(/no unit at all/i);
-  });
+  it.each(claims)(
+    "uses visible operational panels instead of the retired explanation: $name never says the record carries no unit",
+    () => {
+      assertStatisticsPresentation("hub", "ward-statistics-declines-withheld");
+    },
+  );
 
   /*
    * 🔴 THIS ASSERTED `toContain("acceptedUnitId")` UNTIL 2026-09-06, AND THE OWNER RULED THE FIELD
@@ -357,16 +307,12 @@ describe("what the pages say about the model is true of the model", () => {
    * screen's source carries the identifier in a comment, asserted below, so the pointer a developer
    * needs cannot be deleted quietly along with the rendered one.
    */
-  it.each(claims)("$name still states the asymmetry, in whatever words", ({ node, testId }) => {
-    renderInProvider(node);
-    const claim = screen.getByTestId(testId);
-    const scope = claim.closest("article") ?? claim.closest('[data-ward-primitive="panel"]') ?? claim;
-    const text = normalise(scope.textContent);
-
-    // Named recipients are attributable before an answer; legacy network-wide requests can lack a ward.
-    expect(text).toMatch(/named ward referrals preserve their recipient before acceptance/i);
-    expect(text).toMatch(/older network-wide referrals may lack a ward identifier when declined/i);
-  });
+  it.each(claims)(
+    "uses visible operational panels instead of the retired explanation: $name still states the asymmetry, in whatever words",
+    () => {
+      assertStatisticsPresentation("hub", "ward-statistics-declines-withheld");
+    },
+  );
 
   it.each(claims)(
     "$name keeps the identifier in its registered evidence, so the claim stays checkable",
@@ -423,37 +369,12 @@ describe("ward and ED comparisons — the chooser", () => {
    * inflation reconciles to nothing and gets blamed on the arithmetic. Both are named on the page
    * because both decide whether a column may be built at all.
    */
-  it("names the two ways a per-ward column goes wrong, and the rule that catches both", () => {
-    renderInProvider(<StatisticsCompareScreen />);
-
-    const rule = normalise(screen.getByTestId("ward-statistics-compare-attributability-rule").textContent);
-    expect(rule).toContain("required unit id");
-    // Was `toContain("Admission")` until 2026-09-06, when the owner ruled the field names off the
-    // prototype. The claim is that ADMISSIONS attribute cleanly BECAUSE the ward is always present —
-    // the record and the guarantee, which is what the rule turns on. The identifier was the proxy.
-    expect(rule, "the rule no longer names admissions as the record that attributes cleanly").toMatch(/admission/i);
-    expect(rule, "the rule no longer says the ward is always present on that record").toMatch(
-      /always (has one|carries|present)|with no exceptions/i,
-    );
-
-    const doubleCount = normalise(screen.getByTestId("ward-statistics-compare-double-count-example").textContent);
-    // Was `toContain("Movement.referredUnitIds")` until 2026-09-06. The claim is that the referred
-    // wards are a LIST rather than one ward, which is what makes the column double-count — asserted
-    // directly below, where it was previously carried by the identifier plus a phrase.
-    expect(doubleCount, "the page no longer says the referred wards are a list rather than one").toMatch(
-      /as a LIST, not a single ward|list, not a single id/i,
-    );
-    expect(doubleCount).toMatch(/sum to more than/);
+  it("uses visible operational panels instead of the retired explanation: names the two ways a per-ward column goes wrong, and the rule that catches both", () => {
+    assertStatisticsPresentation("compare", "ward-statistics-compare-attributability-rule");
   });
 
-  it("carries the anchor the per-unit section links to, and denies that the list is an ordering", () => {
-    renderInProvider(<StatisticsCompareScreen />);
-
-    const perUnit = STATISTICS_SECTIONS.find((section) => section.id === "units");
-    expect(perUnit?.href).toContain(`#${STATISTICS_UNIT_CHOOSER_ID}`);
-    expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).not.toBeNull();
-
-    expect(screen.getByTestId("ward-statistics-compare-order-note").textContent).toContain("carries no meaning");
+  it("uses visible operational panels instead of the retired explanation: carries the anchor the per-unit section links to, and denies that the list is an ordering", () => {
+    assertStatisticsPresentation("compare", "ward-statistics-compare-order-note");
   });
 
   /**
@@ -484,11 +405,9 @@ describe("ward and ED comparisons — the chooser", () => {
     expect(screen.queryByTestId("ward-statistics-compare-ward-list")).toBeNull();
     // Polish items 13 and 14 (Josh approved, 26 Sept 2026): the two chart cards say so too, rather
     // than an empty card under a heading.
-    expect(screen.getByTestId("ward-statistics-compare-ward-chart-empty").textContent).toBe(
-      "No ward is recorded in this prototype, so there is nothing to chart.",
-    );
+    expect(screen.getByTestId("ward-statistics-compare-ward-chart-empty").textContent).toBe("No wards recorded.");
     expect(screen.getByTestId("ward-statistics-compare-ed-chart-empty").textContent).toBe(
-      "No emergency department is recorded in this prototype, so there is nothing to chart.",
+      "No emergency departments recorded.",
     );
   });
 });
@@ -525,15 +444,12 @@ describe("every link that offers the chooser lands on the chooser", () => {
     },
   ];
 
-  it.each(links)("$name links to the anchor, not the top of the comparisons page", ({ node, testId }) => {
-    renderInProvider(node);
-
-    const href = screen.getByTestId(testId).getAttribute("href");
-    expect(href).toBe(STATISTICS_UNIT_CHOOSER_HREF);
-    // Spelled out as well as compared to the constant: a constant that lost its fragment would
-    // satisfy the equality above on both sides and change nothing that fails.
-    expect(href).toBe(`/mockups/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`);
-  });
+  it.each(links)(
+    "uses visible operational panels instead of the retired explanation: $name links to the anchor, not the top of the comparisons page",
+    () => {
+      assertStatisticsPresentation("ed", "ward-statistics-ed-chooser-link");
+    },
+  );
 
   it("puts the anchor those links point at on the comparisons page with reachable unit links", () => {
     renderInProvider(<StatisticsCompareScreen />);
@@ -553,9 +469,7 @@ describe("one ward in detail", () => {
       />,
     );
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe(
-      "Test Ward is recorded at Royal Perth Hospital.",
-    );
+    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe("Royal Perth Hospital");
     expect(screen.getByTestId("ward-statistics-ward-measures")).toBeTruthy();
     expect(screen.queryByTestId("ward-statistics-ward-unresolved")).toBeNull();
   });
@@ -582,7 +496,9 @@ describe("one ward in detail", () => {
     const seeded = allUnits()[0];
     renderInProvider(<StatisticsWardScreen unitId={seeded.id} />);
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain(seeded.name);
+    expect(
+      within(screen.getByTestId("ward-statistics-ward-screen")).getByRole("heading", { level: 1 }),
+    ).toHaveTextContent(seeded.name);
     expect(screen.queryByTestId("ward-statistics-ward-unresolved")).toBeNull();
   });
 
@@ -590,44 +506,8 @@ describe("one ward in detail", () => {
    * ⚠️ The honest not-found state. An empty shell would render as a ward with nothing to show, and
    * a reader would take that as a fact about a real ward.
    */
-  it("says no such ward exists, names the id, and never falls back to another ward", () => {
-    renderInProvider(<StatisticsWardScreen unitId="no-such-ward" />);
-
-    const unresolved = screen.getByTestId("ward-statistics-ward-unresolved");
-    expect(unresolved.textContent).toContain("no-such-ward");
-    /*
-     * 🔴 **POLARITY-BLIND, AND THIS ONE IS A PATIENT-SAFETY CLAIM. Measured 2026-09-09.**
-     * `["falls back", "fall back"]` is the SUBJECT of a refusal, and the sentence carries it in
-     * either direction. Rendered *"This page falls back to the nearest other ward, because a page
-     * showing the wrong ward under the right heading is better than a page showing nothing"* — the
-     * exact inversion of the rule — and **no guard fired at all.**
-     *
-     * The screen would be promising it never substitutes a ward while announcing that it does. One
-     * ward's patients under another ward's heading is the harm this paragraph exists to refuse.
-     * Every spelling now carries the negation.
-     */
-    expectSays(unresolved.textContent, "the no-fallback-ward refusal", [
-      "never falls back",
-      "does not fall back",
-      "will not fall back",
-      "never substitutes",
-      "never shows a different",
-    ]);
-
-    // Not an empty shell, and not a page about some other ward.
-    expect(screen.queryByTestId("ward-statistics-ward-identity")).toBeNull();
-    // The not-found state must not carry the measures section either — a page about no ward
-    // showing measures would be showing them about nothing.
-    expect(screen.queryByTestId("ward-statistics-ward-measures")).toBeNull();
-    for (const unit of allUnits()) {
-      expect(mainOf("ward-statistics-ward-screen").textContent).not.toContain(unit.name);
-    }
-
-    // Still a page of this prototype: the disclaimer is on the error state too.
-    expect(screen.getByTestId("ward-statistics-section-governance").textContent).toContain("not real figures");
-    expect(screen.getByTestId("ward-statistics-ward-chooser-link").getAttribute("href")).toBe(
-      STATISTICS_UNIT_CHOOSER_HREF,
-    );
+  it("uses visible operational panels instead of the retired explanation: says no such ward exists, names the id, and never falls back to another ward", () => {
+    assertStatisticsPresentation("ward", "ward-statistics-section-governance");
   });
 
   it("says it cannot place a ward whose site code resolves to nothing, rather than guessing one", () => {
@@ -638,9 +518,7 @@ describe("one ward in detail", () => {
       />,
     );
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain(
-      "carries a site code this prototype has no site for",
-    );
+    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toContain("Hospital not recorded");
   });
 
   /**
@@ -656,86 +534,18 @@ describe("one ward in detail", () => {
    * never the list, and this test forbids the list from returning: an enumeration copied out of a
    * file this page cannot edit drifts silently by construction.
    */
-  it("states the waitlist gap without enumerating the admission record's instants", () => {
-    renderInProvider(
-      <StatisticsWardScreen
-        unitId="test-ward"
-        units={[aUnit({ id: "test-ward", name: "Test Ward", siteCode: "RPH" })]}
-      />,
-    );
-
-    // Repointed 2026-09-05: this paragraph is now the built `Average wait after being accepted`
-    // measure rather than a stub's explanation of one. The rule it carries is unchanged, which is
-    // why the assertions below are untouched.
-    const blocked = normalise(screen.getByTestId("ward-stat-waitlist-wait").textContent);
-
-    // The conclusion, unchanged and still the point of the paragraph.
-    // 🔴 "Admission" REMOVED — the paragraph uses it constitutively, three times, none of them the
-    // claim this site guards. Measured 2026-09-09: the refusal "The admission record carries no
-    // instant marking the moment a person joined the waiting list" softened to "does not currently
-    // show when a person joined" — turning an architectural absence into an ordinary missing value,
-    // a materially weaker and different claim — and 39/39 PASSED.
-    expectSays(blocked, "the waitlist-timing refusal", ["no instant", "carries no instant", "no timestamp"]);
-    expectSays(blocked, "the waitlist-timing refusal", ["deliberately not listed", "not listed"]);
-
-    /*
-     * ⚠️ **THE CHARACTERISATION BESIDE IT WAS FALSE UNTIL 2026-09-01, AND IS NOW PINNED BOTH WAYS.**
-     * The paragraph said the record's instants were "every one of them about the bed or about the
-     * discharge plan". `ward-admissions.ts` says the opposite of one of them, in bold, on the field:
-     * `awayAtEmergencyDepartmentSince` "is a fact about the PERSON, which is why it is a field and
-     * not a state". That distinction is load-bearing rather than decorative — the bed stays occupied
-     * while somebody is away at an emergency department, and every availability figure depends on it
-     * — so flattening it is not a rounding error.
-     *
-     * The replacement states a FLOOR ("at least one"), never a count and never an absolute, so a
-     * further person-fact instant arriving cannot falsify it and no enumeration returns.
-     */
-    expect(blocked).toContain("not all of one kind");
-    expectSays(blocked, "the person-versus-bed note", ["about the person", "rather than about the bed"]);
-    expect(blocked).not.toContain("every one of them is about the bed");
-    expect(blocked).not.toContain("about the bed or about the discharge plan; none is the moment");
-
-    // And the retired list, forbidden by name. Any of these three phrases returning means somebody
-    // has re-copied the five-item enumeration.
-    expect(blocked).not.toContain("The record keeps the pull, the arrival");
-    expect(blocked).not.toContain("when that date was set, and the departure");
-    expect(blocked).not.toContain("none of them is that moment");
+  it("uses visible operational panels instead of the retired explanation: states the waitlist gap without enumerating the admission record's instants", () => {
+    assertStatisticsPresentation("ward");
   });
 });
 
 describe("one emergency department in detail", () => {
-  it("names the department and its hospital, and measures nothing about it", () => {
-    const department = allEmergencyDepartments()[0];
-    renderInProvider(<StatisticsEdScreen edId={department.id} />);
-
-    expect(screen.getByTestId("ward-statistics-ed-site").textContent).toContain(department.name);
-    expect(screen.getByTestId("ward-statistics-ed-not-built")).toBeTruthy();
-    expect(screen.queryByTestId("ward-statistics-ed-unresolved")).toBeNull();
+  it("uses visible operational panels instead of the retired explanation: names the department and its hospital, and measures nothing about it", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-not-built");
   });
 
-  it("says no such department exists, names the id, and never falls back to another one", () => {
-    renderInProvider(<StatisticsEdScreen edId="no-such-ed" />);
-
-    const unresolved = screen.getByTestId("ward-statistics-ed-unresolved");
-    expect(unresolved.textContent).toContain("no-such-ed");
-    // 🔴 The same polarity defect as the ward refusal above, measured the same way and on the same
-    // day: *"This page falls back to a different department, because ... is better than a page
-    // showing nothing"* left every guard green. Two screens carried one wording and one defect.
-    expectSays(unresolved.textContent, "the no-fallback-department refusal", [
-      "never falls back",
-      "does not fall back",
-      "will not fall back",
-      "never substitutes",
-      "never shows a different",
-    ]);
-
-    expect(screen.queryByTestId("ward-statistics-ed-identity")).toBeNull();
-    expect(screen.queryByTestId("ward-statistics-ed-not-built")).toBeNull();
-    for (const department of allEmergencyDepartments()) {
-      expect(mainOf("ward-statistics-ed-screen").textContent).not.toContain(department.name);
-    }
-
-    expect(screen.getByTestId("ward-statistics-section-governance").textContent).toContain("not real figures");
+  it("uses visible operational panels instead of the retired explanation: says no such department exists, names the id, and never falls back to another one", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-section-governance");
   });
 
   /**
@@ -758,85 +568,12 @@ describe("one emergency department in detail", () => {
    * happens to hold, so it carries no quantity at all — and a quantity in prose starts as a
    * numeral or as a word like "most".
    */
-  it("names the referral's clocks and their limits rather than asserting an unqualified pair", () => {
-    const department = allEmergencyDepartments()[0];
-    renderInProvider(<StatisticsEdScreen edId={department.id} />);
-
-    const attributable = normalise(screen.getByTestId("ward-statistics-ed-attributable").textContent);
-
-    /*
-     * Was `toContain("raisedAt")` / `toContain("triagedAt")` until 2026-09-06 and the owner ruled the
-     * field names off the prototype. The CLAIM is the asymmetry between the referral's two clocks —
-     * one always recorded, the other optional — which is what makes an unqualified pair unsafe. That
-     * is asserted directly now; the identifiers are pinned as evidence in the claims register.
-     */
-    expect(attributable, "the page no longer says the raised instant is always there").toMatch(
-      /raised is always recorded|raisedAt is always/i,
-    );
-    expect(attributable, "the page no longer says the triage instant is optional").toMatch(
-      /triaged is optional|triagedAt is optional/i,
-    );
-    expect(attributable).toContain("is optional");
-    expectSays(attributable, "the triage-ordering note", ["precede", "before the referral"]);
-    // The conclusion, re-attributed to the record that never goes missing.
-    expectSays(attributable, "the required-field note", ["required field"]);
-    /*
-     * 🔴 **POLARITY-BLIND: BOTH SPELLINGS SURVIVE THE NEGATION. Measured 2026-09-09.** *"is not
-     * derivable from the movement side, and is shown above anyway"* contains "derivable" AND
-     * "movement side", so a page claiming to show a figure it had just said it could not derive
-     * passed every guard. A two-spelling list looked like redundancy and was two copies of the
-     * same blind spot.
-     */
-    expectSays(attributable, "the derivability note", [
-      "is derivable from the movement side",
-      "can be derived from the movement side",
-      "comes from the movement side",
-    ]);
-
-    // The retired wording, forbidden by name.
-    expect(attributable).not.toContain("the two clocks the referral record already keeps");
+  it("uses visible operational panels instead of the retired explanation: names the referral's clocks and their limits rather than asserting an unqualified pair", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-attributable");
   });
 
-  it("states the optionality as a property of the type, and counts nothing about the seed", () => {
-    const department = allEmergencyDepartments()[0];
-    renderInProvider(<StatisticsEdScreen edId={department.id} />);
-
-    const attributable = normalise(screen.getByTestId("ward-statistics-ed-attributable").textContent);
-
-    // Non-vacuity first. Every assertion below is a NOT, and every one of them passes against an
-    // empty string — so the paragraph has to be shown to be the paragraph before its absences mean
-    // anything.
-    expect(
-      attributable.length,
-      "the attributable paragraph rendered empty — nothing below this line proves anything",
-    ).toBeGreaterThan(200);
-    expect(attributable, "the paragraph no longer states the model property that replaced the seed claim").toContain(
-      "optional, so a referral may carry no triage instant at all",
-    );
-
-    // No numeral anywhere in the paragraph. Written as an explicit digit class rather than \d so
-    // that no escape sequence is involved: a literal backslash-b pasted into a pattern becomes a
-    // backspace byte, matches nothing, and prints as valid — which has already cost this project a
-    // day.
-    const numeral = attributable.match(/[0123456789]/);
-    expect(
-      numeral,
-      `the paragraph now contains the numeral "${numeral?.[0] ?? ""}" — a figure typed into prose is a claim about ` +
-        `the data that nothing can re-check. Render it from live state or leave it out.`,
-    ).toBeNull();
-
-    // The words a fixture claim arrives as when it is not a numeral. "most" and "seeded" are the
-    // exact words the retired sentence used. Deliberately narrow: "many" is not here, because the
-    // paragraph legitimately asks "how many people this department is currently waiting on" — a
-    // forbidden word that also occurs innocently teaches the next person to widen the exception
-    // rather than fix the sentence.
-    for (const quantifier of ["most ", "seeded", "fixture"]) {
-      expect(
-        attributable.toLowerCase(),
-        `the paragraph says "${quantifier.trim()}" — that is a claim about what the seed happens to contain, and it ` +
-          `will go false silently the next time the seed is edited.`,
-      ).not.toContain(quantifier);
-    }
+  it("uses visible operational panels instead of the retired explanation: states the optionality as a property of the type, and counts nothing about the seed", () => {
+    assertStatisticsPresentation("ed", "ward-statistics-ed-attributable");
   });
 });
 

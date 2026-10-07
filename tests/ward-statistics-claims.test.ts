@@ -34,7 +34,8 @@ import {
  * red. It is recorded here so the next reader can check the reason rather than the arithmetic: the
  * six removals are enumerated in `statistics-claims-register.ts` beside the section they left.
  */
-const EXPECTED_MODEL_CLAIMS = 81;
+// The removed overview precedent depended on a home-page explanation that the owner retired.
+const EXPECTED_MODEL_CLAIMS = 80;
 /*
  * 12 -> 11 on 2026-09-05. The admitted gap that left was
  * `statistics-ward-screen/computed/ward-statistics-has-no-consumer-in-the-app`, and it left because
@@ -44,11 +45,51 @@ const EXPECTED_MODEL_CLAIMS = 81;
  * commit that ended it and is inverted in the same change.
  */
 const EXPECTED_UNEVIDENCED_CLAIMS = 11;
-const EXPECTED_REGISTERED_SURFACES = 9;
+const EXPECTED_REGISTERED_SURFACES = 8;
 
 // Q004 removed these implementation explanations from the page, not their historical evidence.
 // This exact set is the only locator exemption; arbitrary retirement metadata cannot bypass it.
+// Owner-requested removal of page explanations. Keep checking each underlying model citation.
+const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set([
+  "statistics-ward-screen/blocked/waitlist-wait-is-always-null",
+  "statistics-screen/refused-so-far/the-shared-derivation-classifies-escalation-first",
+  "statistics-screen/refused-so-far/an-escalation-is-recorded-unvalidated",
+
+  "statistics-screen/bed-readiness/preparing-is-a-boolean",
+  "statistics-screen/bed-readiness/preparation-stamps-confirmed-at",
+  "statistics-screen/bed-readiness/confirmed-at-is-one-shared-field",
+  "statistics-screen/bed-readiness/reducer-writes-the-callers-preparing-value",
+  "statistics-screen/declines/addressing-has-one-unit-field",
+  "statistics-screen/declines/accepted-unit-id-is-written-on-acceptance",
+  "statistics-screen/declines/movement-declines-name-a-unit",
+  "statistics-screen/declines/movement-carries-a-decline-list",
+  "statistics-screen/declines/a-movement-is-inside-an-emergency-department",
+  "statistics-screen/not-offered/a-unit-holds-two-aggregate-capacity-counts",
+  "statistics-screen/declines-by-reason/the-existing-label-map-belongs-to-the-other-list",
+  "statistics-screen/pull-to-arrival/the-arrival-instant",
+  "statistics-screen/referral-to-bed/referrals-carry-a-raised-instant",
+  "statistics-overview-screen/precedent/addressing-has-one-unit-field",
+  "statistics-overview-screen/precedent/movement-declines-name-a-unit",
+  "statistics-overview-screen/precedent/a-movement-is-inside-an-emergency-department",
+  "statistics-compare-screen/attributability/admissions-always-carry-a-unit",
+  "statistics-compare-screen/declines/ward-destination-records-bed-criteria",
+  "statistics-compare-screen/declines/addressing-has-one-unit-field",
+  "statistics-compare-screen/declines/accepted-unit-id-is-written-on-acceptance",
+  "statistics-compare-screen/double-count/referred-unit-ids-is-a-list",
+  "statistics-ward-screen/blocked/the-derivation-takes-admissions-only",
+  "statistics-ward-screen/blocked/the-nearest-equivalent-measures-from-referral-raised-at",
+  "statistics-ed-screen/attributable/department-record-holds-three-fields",
+  "statistics-ed-screen/attributable/origin-ed-id-is-required",
+  "statistics-ed-screen/attributable/a-movement-records-when-it-opened",
+  "statistics-ed-screen/attributable/a-movement-records-its-stage",
+  "statistics-ed-screen/attributable/a-movement-records-every-ward-decline",
+  "statistics-ed-screen/attributable/an-ed-destination-carries-an-ed-id",
+  "statistics-ed-screen/attributable/raised-at-is-required",
+  "statistics-ed-screen/attributable/triaged-at-is-optional",
+  "statistics-ed-screen/near-miss/a-movement-can-close-as-did-not-proceed",
+]);
 const RETIRED_PAGE_CLAIM_IDS = new Set([
+  ...PRESENTATION_RETIRED_PAGE_CLAIM_IDS,
   "statistics-screen/bed-readiness/confirming-the-discharge-overwrites-it",
   "statistics-screen/bed-readiness/blocking-the-bed-overwrites-it",
   "statistics-screen/bed-readiness/clearing-the-block-overwrites-it",
@@ -336,14 +377,16 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(19);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(62);
+    expect(retired).toHaveLength(54);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(26);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
-        claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
-          claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
-          ? "2026-10-02"
-          : "2026-09-13",
+        PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)
+          ? "2026-10-07"
+          : claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
+              claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
+            ? "2026-10-02"
+            : "2026-09-13",
       );
       expect(claim.retiredPageProse?.reason.trim()).not.toBe("");
       expect(
@@ -401,9 +444,9 @@ describe("the model-claims register", () => {
     }
   });
 
-  it("makes every claim on a registered surface", () => {
+  it("makes every active claim on a registered surface", () => {
     const surfaces = new Set(REGISTERED_SURFACES);
-    for (const claim of MODEL_CLAIMS) {
+    for (const claim of MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)) {
       expect(
         surfaces.has(claim.renderedIn),
         `${name(claim)}\n  but ${claim.renderedIn} is not in REGISTERED_SURFACES — either add it, or the claim is ` +

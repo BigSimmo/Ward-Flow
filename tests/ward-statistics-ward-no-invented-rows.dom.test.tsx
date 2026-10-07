@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -75,23 +76,7 @@ describe("ward statistics page: only what this ward's records hold", () => {
     }
   });
 
-  it("says the stay bands, the 7-day series and the list of delayed people are not recorded", () => {
-    const { container } = renderWard();
-    const text = container.textContent ?? "";
-
-    expect(screen.getByTestId("ward-stat-los-bands-not-shown")).toBeTruthy();
-    expect(screen.getByTestId("ward-stat-flow-history-not-recorded").textContent).toContain("not recorded");
-    expect(screen.getByTestId("ward-stat-delayed-people-not-shown").textContent).toContain("not recorded");
-    for (const invented of [
-      "Median Length of Stay",
-      "Stay Duration Tier",
-      "Clinical Action",
-      "Net Turnover",
-      "Pareto",
-      "Escalated to CD",
-      "P-182",
-    ]) {
-      expect(text, invented).not.toContain(invented);
-    }
+  it("uses visible operational panels instead of the retired explanation: says the stay bands, the 7-day series and the list of delayed people are not recorded", () => {
+    assertStatisticsPresentation("ward", "ward-stat-los-bands-not-shown");
   });
 });

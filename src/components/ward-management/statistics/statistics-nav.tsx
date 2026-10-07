@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import {
   STATISTICS_COMPARE_HREF,
   STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_SERVICE_CHOOSER_HREF,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
 } from "./statistics-sections";
+import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-nav.module.css";
 
 export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community";
@@ -18,8 +20,33 @@ interface StatisticsNavProps {
 }
 
 export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps) {
+  const samples = useStatisticsSamples();
   const pathname = usePathname() || "";
   const router = useRouter();
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = document.querySelector<HTMLElement>('[data-testid="ward-bar"]');
+    if (!bar || !navRef.current) return;
+    const nav = navRef.current;
+    const updateOffset = () => {
+      const barHeight = bar.getBoundingClientRect().height;
+      nav.style.setProperty("--statistics-header-offset", `${barHeight}px`);
+      // Account for both rows when links wrap, and avoid counting the shell's scroll padding twice.
+      const shell = nav.closest<HTMLElement>('[class*="shellContent"]');
+      const scroller = shell && getComputedStyle(shell).overflowY === "auto" ? shell : document.scrollingElement;
+      const shellScrollPadding = scroller ? parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0 : 0;
+      nav.parentElement?.style.setProperty(
+        "--statistics-anchor-offset",
+        `${barHeight + nav.getBoundingClientRect().height - shellScrollPadding + 12}px`,
+      );
+    };
+    updateOffset();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(bar);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
 
   // Auto-detect section if not provided explicitly
   const activeSection =
@@ -206,7 +233,12 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
   ];
 
   return (
-    <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+    <nav
+      ref={navRef}
+      className={styles.navBar}
+      aria-label="Ward Flow statistics sections"
+      data-testid="ward-statistics-nav"
+    >
       <label className={styles.mobileSelect}>
         <span>Statistics</span>
         <select
@@ -241,6 +273,20 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
           );
         })}
       </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={samples}
+        aria-label="Sample statistics"
+        className={styles.sampleSwitch}
+        onClick={() => setStatisticsSamples(!samples)}
+      >
+        <span>Samples</span>
+        <span className={styles.switchTrack} aria-hidden="true">
+          <span />
+        </span>
+        <span className={styles.switchState}>{samples ? "On" : "Off"}</span>
+      </button>
     </nav>
   );
 }

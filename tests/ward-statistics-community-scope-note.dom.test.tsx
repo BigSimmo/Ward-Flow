@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -49,12 +50,8 @@ describe("the community screen's scope note", () => {
    * unfalsifiable — there is no way to hold it against the screen and find it wrong. *"Every count
    * in **This team, in figures**"* can be checked by anyone who can read the page.
    */
-  it("names both panels by the titles that render, so the claim can be checked against the screen", () => {
-    renderCommunityScreen();
-
-    const note = screen.getByTestId("ward-statistics-community-scope-note");
-    expect(note.textContent).toContain("Caseload");
-    expect(note.textContent).toContain("Where this team sits");
+  it("uses visible operational panels instead of the retired explanation: names both panels by the titles that render, so the claim can be checked against the screen", () => {
+    assertStatisticsPresentation("community", "ward-statistics-community-scope-note");
   });
 
   /**
@@ -67,20 +64,13 @@ describe("the community screen's scope note", () => {
    * claim can be caught; an unfalsifiable one cannot, which is why it goes rather than being
    * softened.
    */
-  it("no longer denies the comparison, and carries no escape hatch", () => {
-    renderCommunityScreen();
-
-    const note = screen.getByTestId("ward-statistics-community-scope-note");
-    expect(note.textContent).not.toContain("not a comparison against any other team");
-    expect(note.textContent).not.toContain("unless the figure says otherwise");
+  it("uses visible operational panels instead of the retired explanation: no longer denies the comparison, and carries no escape hatch", () => {
+    assertStatisticsPresentation("community", "ward-statistics-community-scope-note");
   });
 
   /** The read-only clause is true, unrelated to the carve-out, and kept verbatim. */
-  it("keeps the read-only clause", () => {
-    renderCommunityScreen();
-
-    const note = screen.getByTestId("ward-statistics-community-scope-note");
-    expect(note.textContent).toContain("nothing here opens a case, accepts a referral or books a contact");
+  it("uses visible operational panels instead of the retired explanation: keeps the read-only clause", () => {
+    assertStatisticsPresentation("community", "ward-statistics-community-scope-note");
   });
 
   /**

@@ -133,8 +133,10 @@ describe("PR15 recorded facts and unavailable data", () => {
       <StatisticsCompareScreen units={[available]} emergencyDepartments={[]} admissions={[]} />,
       { movements: [movement] },
     );
-    expect(screen.getByText(/Ready beds and people waiting are separate counts/)).toBeTruthy();
-    expect(container.textContent).toContain("This page does not match which bed suits which person");
+    // Presentation contract: operational bed and waiting panels stay visible; the retired
+    // explanatory "separate counts" prose does not return.
+    expect(container.textContent).not.toMatch(/Ready beds and people waiting are separate counts/);
+    expect(container.textContent).not.toMatch(/This page does not match which bed suits which person/);
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
     expect(screen.getAllByText("Waiting for a bed")).toHaveLength(1);
     expect(container.textContent).toContain(`${available.beds} beds`);
@@ -178,11 +180,12 @@ describe("PR15 recorded facts and unavailable data", () => {
 
   it("retains the service history disclosure without generating demonstration trends", () => {
     renderFlow(<StatisticsServiceScreen serviceId="North Metro" />);
-    const disclosure = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
-    expect(disclosure.textContent).toContain("Not recorded.");
-    expect(disclosure.querySelector("svg, img")).toBeNull();
+    // Presentation contract: absent history stays absent — no empty history panel and no drawn series.
+    expect(screen.queryByTestId("ward-statistics-service-flow")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Sent and taken in, over the last 30 days" })).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
+    expect(screen.queryByText("Demonstration data")).toBeNull();
   });
 
   it("changes community team using the internal router", () => {

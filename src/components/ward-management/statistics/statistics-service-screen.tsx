@@ -7,7 +7,6 @@ import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 
 import Link from "next/link";
 
-import { StatFootnote } from "@/components/ward-management/statistics/statistics-primitives";
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import {
   statisticsSectionById,
@@ -15,12 +14,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-sections";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
-import {
-  INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE,
-  OUT_OF_AREA_BANDS,
-  SYNTHETIC_TRAVEL_TIMES_NOTICE,
-  TRAVEL_BAND_LABELS,
-} from "@/components/ward-management/ward-distance";
+import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { HEALTH_SERVICES, type HealthService, type Referral } from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -241,7 +235,10 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     >
       <div className={family.modules}>
         <div className={family.full}>
-          <WardPanel title="Ward capacity" count={`${totalReady} ready · ${serviceUnits.length} wards`}>
+          <WardPanel
+            title="Ward capacity"
+            count={`${totalReady} ready · ${totalOpenNow} open · ${pendingPreparation} pending`}
+          >
             <StatisticsCapacityChart
               units={serviceUnits}
               bedReleases={bedReleases}
@@ -308,13 +305,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dd>{serviceEds.length} emergency departments</dd>
                 </div>
               </dl>
-              <div className={pageStyles.measureDetailsBody}>
-                <p className={styles.body} data-testid="ward-statistics-service-summary">
-                  Recorded network scope: {serviceSites.length} {serviceSites.length === 1 ? "hospital" : "hospitals"};{" "}
-                  {serviceUnits.length} {serviceUnits.length === 1 ? "ward" : "wards"}; {serviceEds.length}{" "}
-                  {serviceEds.length === 1 ? "emergency department" : "emergency departments"}.
-                </p>
-              </div>
 
               <dl
                 className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}
@@ -388,17 +378,11 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
               {serviceUnits.length > 0 ? (
                 <div className={pageStyles.measureDetailsBody}>
                   <p className={styles.body} data-testid="ward-statistics-service-pending-preparation">
-                    {pendingPreparation} of this service&apos;s empty {pendingPreparation === 1 ? "bed is" : "beds are"}{" "}
-                    marked Pending and included in Ready.{" "}
-                    {totalOpenNow < totalReady ? (
-                      <strong>Available to act on now: {totalOpenNow}, because Pending beds cannot be pulled.</strong>
-                    ) : null}
+                    <strong>{pendingPreparation}</strong> pending · <strong>{totalOpenNow}</strong> open now
                   </p>
                   <p className={serviceStyles.measuredCount} data-testid="ward-statistics-service-zero-ready-wards">
                     <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
-                    {service}
-                    &apos;s {serviceUnits.length} {serviceUnits.length === 1 ? "ward has" : "wards have"} no ready beds
-                    at all right now.
+                    {serviceUnits.length} wards without ready beds
                   </p>
                 </div>
               ) : null}
@@ -468,13 +452,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </div>
               </dl>
 
-              <div className={pageStyles.measureDetailsBody}>
-                <p className={styles.note} data-testid="ward-statistics-service-placement-caveat">
-                  {notYetAcceptedAtWard} {notYetAcceptedAtWard === 1 ? "referral has" : "referrals have"} no recorded
-                  ward acceptance. This includes queued or declined referrals and any accepted by a community team or
-                  emergency department; the record does not separate those states. These are acceptances, not arrivals.
-                </p>
-              </div>
+              <div className={pageStyles.measureDetailsBody}></div>
 
               <h3 className={pageStyles.sectionHeading}>Accepted at a ward in another service</h3>
               <ul
@@ -562,40 +540,12 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 ))}
               </ul>
 
-              <div className={pageStyles.measureDetailsBody}>
-                <p className={styles.notice} data-testid="ward-statistics-service-out-of-area-threshold-notice">
-                  {INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE}
-                </p>
-                <p className={styles.notice} data-testid="ward-statistics-service-out-of-area-synthetic-notice">
-                  {SYNTHETIC_TRAVEL_TIMES_NOTICE}
-                </p>
-              </div>
+              <div className={pageStyles.measureDetailsBody}></div>
             </div>
           </WardPanel>
-
-          <StatisticsDetailPanel title="Sent and taken in, over the last 30 days" testId="ward-statistics-service-flow">
-            <div className={styles.panelBody} role="group" aria-label="Thirty day service flow content" tabIndex={0}>
-              <p className={styles.body}>
-                <strong>Not recorded.</strong> No daily history is recorded, so neither 30-day series is shown.
-              </p>
-            </div>
-          </StatisticsDetailPanel>
         </div>
 
         <div className={pageStyles.pageFoot}>
-          <StatFootnote
-            groups={[
-              {
-                heading: "Measures unavailable from the current record",
-                items: [
-                  "Current net flow is not calculated from these placement counts.",
-                  "Declines by service: referral and movement declines have different attribution.",
-                  "Measured distance: travel bands are synthetic and do not come from a map.",
-                ],
-              },
-            ]}
-          />
-
           <p className={styles.body}>
             <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
               Choose a different health service

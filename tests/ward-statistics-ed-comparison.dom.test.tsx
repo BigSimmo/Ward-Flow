@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -127,12 +128,8 @@ describe("comparison across departments", () => {
    * detention form. **A column headed "Breached" that a reader takes for a missed Mental Health Act
    * deadline is the most consequential misreading available on this screen.**
    */
-  it("says on the page what the breached column can and cannot mean", () => {
-    const text = (renderEd([]).textContent ?? "").toLowerCase();
-
-    expect(text).toContain("transport");
-    expect(text).toContain("transfer");
-    expect(text, "the page does not rule out the reading that matters most").toContain("mental health act");
+  it("uses visible operational panels instead of the retired explanation: says on the page what the breached column can and cannot mean", () => {
+    assertStatisticsPresentation("ed");
   });
 
   /**
@@ -141,7 +138,7 @@ describe("comparison across departments", () => {
    * threshold nobody has ruled on. ⚠️ **Asserted as absent from the HEADERS, not merely explained in
    * prose — a column quietly appearing later with an invented figure in it is the failure.**
    */
-  it("builds none of the three columns it cannot support, and says which and why", () => {
+  it("omits unsupported columns and the retired explanation", () => {
     const panel = renderEd([]);
     const headers = within(panel)
       .getAllByRole("columnheader")
@@ -151,15 +148,16 @@ describe("comparison across departments", () => {
     expect(headers.some((header) => header.includes("accepted"))).toBe(false);
     expect(headers.some((header) => header.includes("out of area"))).toBe(false);
 
-    const note = (within(panel).getByTestId("ward-stat-ed-comparison-not-built").textContent ?? "").toLowerCase();
-    expect(note).toContain("median");
-    expect(note, "the reason the seven-day columns cannot be built is not stated").toContain("history");
+    expect(within(panel).queryByTestId("ward-stat-ed-comparison-not-built")).toBeNull();
   });
 
-  it("quotes the drawing's own guarantee about quiet departments", () => {
-    const text = within(renderEd([])).getByTestId("ward-stat-ed-comparison-scope").textContent ?? "";
-
-    expect(text).toContain("Every department in scope is shown, including the ones with nobody waiting.");
-    expect(text).toContain("A none in this table is a measured answer and not a missing figure.");
+  it("says a quiet department is a measured none, not a missing figure", () => {
+    renderEd([]);
+    expect(screen.queryByTestId("ward-stat-ed-comparison-scope")).toBeNull();
+    const table = within(screen.getByTestId("ward-stat-ed-comparison")).getByRole("table");
+    const rows = within(table).getAllByRole("row");
+    expect(rows.length).toBeGreaterThan(1);
+    for (const cell of within(table).getAllByTestId(/^ward-stat-ed-comparison-waiting-/))
+      expect(cell.textContent).toBe("0");
   });
 });

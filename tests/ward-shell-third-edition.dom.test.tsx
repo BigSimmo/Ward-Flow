@@ -293,13 +293,17 @@ describe("assertion 3 — drawer focus trap and Escape order", () => {
     // stayed true for the entire 50 presses whether or not the trap existed at all. This is the
     // same idiom `tests/sheet-focus.dom.test.tsx:262-266` already uses to give the trap something
     // to work with, applied here rather than reinvented.
-    const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
-      length: 1,
-      item: () => null,
-      [Symbol.iterator]: function* () {
-        yield {} as DOMRect;
-      },
-    } as DOMRectList);
+    const getClientRectsSpy = vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return {
+        length: this.closest("[hidden]") ? 0 : 1,
+        item: () => null,
+        [Symbol.iterator]: function* () {
+          yield {} as DOMRect;
+        },
+      } as DOMRectList;
+    });
 
     try {
       const user = userEvent.setup();
@@ -697,7 +701,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps demo controls and the role switcher in Tools while account utilities stay out", async () => {
+  it("keeps scenario controls and the role switcher under Shift desk while account utilities stay out", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -705,12 +709,14 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeInTheDocument();
+    expect(withinDialog.queryByRole("button", { name: /^Demo$/ })).toBeNull();
+    await user.click(withinDialog.getByRole("button", { name: /^Shift desk$/ }));
+    expect(withinDialog.getByTestId("ward-demo-controls-trigger")).toBeVisible();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
     // The role switcher renders its own labelled control — asserting the heading it sits under
     // proves the section rather than reaching into its internals.
-    expect(withinDialog.getByText("Demonstration")).toBeInTheDocument();
+    expect(withinDialog.getByText("Scenario controls")).toBeInTheDocument();
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {

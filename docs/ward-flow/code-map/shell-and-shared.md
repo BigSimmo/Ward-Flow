@@ -1,5 +1,30 @@
 # Routes, shell, navigation and shared UI
 
+## Statistics and Tools update — 7 October 2026
+
+The statistics layout preserves its seven modes and panel grids. The shared navigation anchors
+under the measured WardBar height. Statistics alone uses clipped horizontal overflow on mobile,
+so the document remains the sticky scroll container. Explanation disclosures and provenance
+panels have been removed; operational breakdowns render directly through `StatisticsDetailPanel`.
+The compact footer still identifies synthetic data. Bed, admission, decline and community counts
+continue to use the existing derivations, including unavailable values rather than invented history.
+
+`tools/ward-tools-workspace.tsx` supplies the shared Tools drawer's whole-network figures,
+searchable contact directory and operational shortcuts. Figures can be filtered by capacity,
+flow/discharges and recorded limits. Shift desk replaces Demo and links to handover, capacity,
+delays, movements, on-call and legal forms. Existing appearance, referral, catchment and form-date
+controls are retained. Heavy tool content loads on demand through the existing drawer shell.
+
+The directory includes wards, ED teams, community, switchboards, bed flow coordinators, transport,
+and executive/escalation roles. Approved community contact mappings retain their published
+numbers and recording dates. At the owner's request, missing contact methods use labelled mock
+numbers with an unassigned `0000` prefix and email addresses under `example.invalid`; those mock
+methods have no call/email links. They are presentation fixtures, not verified service contacts.
+
+The older prose-pinning DOM tests now check the requested visible-panel presentation. Calculation
+fixtures remain covered separately, with additional tests for live deadlines, network figures,
+contact filtering and mock-versus-published contact behavior.
+
 ## WA remediation update — 3 October 2026
 
 `WardFlowProvider.recordWardDeparture` snapshots current patient identity, world generation and admission revision for protected departures; only explicitly anonymous legacy admissions use the legacy writer. Community record handles bind a validated acting team and are audited without impersonating a coordinator. Care projections are structured clones; denied care events retain no unvalidated payload. Fixed ward request presets avoid introducing free-text into synthetic persistence.
@@ -742,3 +767,11 @@ referencing it by name were not searched, and its own header comment's claim abo
 screen" is unverified beyond that one importer. Whether `shell/ward-bar.tsx`'s
 Escape-order and drawer-history behaviour actually works in a browser was not verified here — only
 read from source and the doc comments' own citations of `tests/ward-shell-third-edition.dom.test.tsx`.
+
+The statistics polish also removes the remaining comparison provenance panel, empty scope panel, long unavailable-measure explanations, and community figure-definition column. Historical measures retain compact “Not recorded” labels; recorded numbers and error states remain visible. The shared seven-mode presentation check rejects these explanation panels and placeholder paragraphs.
+
+The statistics navigation now includes a persisted Sample statistics switch (`statistics-samples.ts`), off by default. The shared statistics layout adds `statistics-sample-figures.tsx` only when enabled; its context-specific 30-day previews render through the branded `DemonstrationChart` and remain explicitly labelled Sample/Invented data. Recorded current-state figures are unaffected. Empty history, community identity/follow-up, and unavailable ward averages are omitted; the ward location is a compact label instead of an empty identity card. The third-edition header no longer contains the Synthetic prototype explanation block.
+
+Statistics table scroll containers now keep their headings and first identifying column pinned, scoped through `statistics-polish.module.css` to all seven modes. Long tables scroll within a bounded area; printing removes the bounds and pinning. `statistics-nav.tsx` measures the main header and its own wrapped height for section-link offsets. The mobile mode selector and Samples switch share a compact row. All cards remain expanded; charts with no recorded measures are omitted while true zero counts and filter-empty states stay available. The ward roster leads with the admission identifier and omits the permanently unrecorded assigned-bed column. Remaining duplicate scope, bed-definition and roster explanations are removed.
+
+The empty Demo navigation entry reintroduced by the shell integration is removed. Existing scenario and role controls are preserved inside Shift desk, with no demonstration section repeated across the other Tools views.
