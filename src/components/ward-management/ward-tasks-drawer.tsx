@@ -281,7 +281,7 @@ export function WardTasksDrawer({
 
           <div className={styles.filterMeta}>
             <span role="status">
-              {filteredItems.length} of {items.length} tasks
+              {filteredItems.length} of {items.length} invented tasks
             </span>
             <div className={styles.selectWrap}>
               <select
