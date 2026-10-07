@@ -1,14 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
-
-// Australian Medicare (10 digits starting with 2-6), hospital MRN/UMRN records, or phones
-const UNSAFE_IDENTIFIER_PATTERN =
-  /\b([2-6]\d{3}[ -]?\d{5}[ -]?\d)\b|\b(?:UMRN|MRN|UR[N#]?)\s*[:#]?\s*(\d{6,9})\b|\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/i;
-
-function isSyntheticSafe(value: string): boolean {
-  return !UNSAFE_IDENTIFIER_PATTERN.test(value);
-}
+import { useEffect, useCallback } from "react";
 
 export interface DirtyStateGuardOptions {
   key?: string;
@@ -23,51 +15,13 @@ export interface DirtyStateGuardOptions {
 /**
  * Guards against accidental loss of clinical text, form input, or active draft sessions.
  * 1. Attaches window 'beforeunload' listener when isDirty is true (browser reload, tab close).
- * 2. Caches draft responses in sessionStorage keyed by `key`, restoring content if the tab reloads.
- * 3. Clears cached draft when isDirty becomes false or when text is erased.
+ * 2. In strict compliance with Decision D-18 ("typed text stays off the device"), clinical
+ *    free-text is never cached in browser storage (sessionStorage/localStorage). The beforeunload
+ *    listener warns the clinician before closing or navigating away, preventing accidental data loss
+ *    while maintaining strict patient privacy boundaries.
  */
-export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStateGuardOptions) {
-  const isRestoringRef = useRef(true);
-  const onRestoreRef = useRef(onRestore);
-
-  useEffect(() => {
-    onRestoreRef.current = onRestore;
-  }, [onRestore]);
-
-  // 1. Restore cached draft on initial mount
-  useEffect(() => {
-    if (!key || typeof window === "undefined" || !onRestoreRef.current) {
-      isRestoringRef.current = false;
-      return;
-    }
-    try {
-      const cached = window.sessionStorage.getItem(`wf-draft:${key}`);
-      if (cached !== null && cached.length > 0) {
-        onRestoreRef.current(cached);
-      }
-    } catch {
-      // Storage unavailable or disabled
-    } finally {
-      isRestoringRef.current = false;
-    }
-  }, [key]);
-
-  // 2. Cache draft when value changes and isDirty is true; clear when clean or text erased
-  useEffect(() => {
-    if (!key || typeof window === "undefined" || isRestoringRef.current) return;
-    try {
-      if (isDirty && value !== undefined && value.length > 0) {
-        if (!isSyntheticSafe(value)) return;
-        window.sessionStorage.setItem(`wf-draft:${key}`, value);
-      } else if (!isDirty || (value !== undefined && value.length === 0)) {
-        window.sessionStorage.removeItem(`wf-draft:${key}`);
-      }
-    } catch {
-      // Storage quota exceeded or disabled
-    }
-  }, [key, isDirty, value]);
-
-  // 3. Clear storage helper
+export function useDirtyStateGuard({ key, isDirty }: DirtyStateGuardOptions) {
+  // 1. Storage helper: cleans up any legacy draft key from storage without writing new data
   const clearDraft = useCallback(() => {
     if (!key || typeof window === "undefined") return;
     try {
@@ -77,7 +31,12 @@ export function useDirtyStateGuard({ key, isDirty, value, onRestore }: DirtyStat
     }
   }, [key]);
 
-  // 4. Window beforeunload event listener
+  // Clean up any legacy persisted draft on mount to sanitize device storage
+  useEffect(() => {
+    clearDraft();
+  }, [clearDraft]);
+
+  // 2. Window beforeunload event listener
   useEffect(() => {
     if (!isDirty || typeof window === "undefined") return;
 

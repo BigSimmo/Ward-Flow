@@ -39,102 +39,55 @@ describe("useDirtyStateGuard", () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
   });
 
-  it("caches draft in sessionStorage and restores it on mount", () => {
-    const onRestore = vi.fn();
-    window.sessionStorage.setItem("wf-draft:test-form", "Draft note content");
-
+  it("upholds Decision D-18: never writes typed free-text to sessionStorage", () => {
     renderHook(() =>
       useDirtyStateGuard({
-        key: "test-form",
-        isDirty: false,
-        onRestore,
+        key: "test-override",
+        isDirty: true,
+        value: "Clinical override justification containing psychiatric narrative",
       }),
     );
 
-    expect(onRestore).toHaveBeenCalledWith("Draft note content");
+    // Free text must stay off the device per Decision D-18
+    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBeNull();
   });
 
-  it("updates and clears draft in sessionStorage when dirtiness changes", () => {
-    const { rerender, result } = renderHook(
-      ({ isDirty, value }: { isDirty: boolean; value: string }) =>
-        useDirtyStateGuard({
-          key: "test-override",
-          isDirty,
-          value,
-        }),
-      { initialProps: { isDirty: true, value: "Clinical override justification" } },
+  it("sanitizes legacy drafts by clearing key on mount and on clearDraft", () => {
+    window.sessionStorage.setItem("wf-draft:legacy-form", "Stale draft from prior session");
+
+    const { result } = renderHook(() =>
+      useDirtyStateGuard({
+        key: "legacy-form",
+        isDirty: false,
+      }),
     );
 
-    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBe("Clinical override justification");
+    // Mount sanitization: legacy key purged
+    expect(window.sessionStorage.getItem("wf-draft:legacy-form")).toBeNull();
 
-    // Clear via clearDraft
+    // Explicit clearDraft helper works safely
+    window.sessionStorage.setItem("wf-draft:legacy-form", "Another entry");
     act(() => {
       result.current.clearDraft();
     });
-    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBeNull();
-
-    // Rerender as clean
-    rerender({ isDirty: false, value: "" });
-    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBeNull();
+    expect(window.sessionStorage.getItem("wf-draft:legacy-form")).toBeNull();
   });
 
-  it("clears cached draft in sessionStorage when user erases text while remaining dirty", () => {
-    const { rerender } = renderHook(
-      ({ isDirty, value }: { isDirty: boolean; value: string }) =>
+  it("removes beforeunload listener when unmounted or when isDirty becomes false", () => {
+    const removeEventListenerSpy = vi.spyOn(window, "removeEventListener");
+
+    const { rerender, unmount } = renderHook(
+      ({ isDirty }: { isDirty: boolean }) =>
         useDirtyStateGuard({
-          key: "test-erase",
+          key: "test-lifecycle",
           isDirty,
-          value,
         }),
-      { initialProps: { isDirty: true, value: "Preliminary clinical note" } },
+      { initialProps: { isDirty: true } },
     );
 
-    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBe("Preliminary clinical note");
+    rerender({ isDirty: false });
+    expect(removeEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
 
-    // User deletes all content from the input
-    rerender({ isDirty: true, value: "" });
-    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBeNull();
-  });
-
-  it("handles QuotaExceededError and disabled storage gracefully without throwing", () => {
-    const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new DOMException("Quota exceeded", "QuotaExceededError");
-    });
-
-    expect(() => {
-      renderHook(() =>
-        useDirtyStateGuard({
-          key: "quota-test",
-          isDirty: true,
-          value: "Large clinical payload",
-        }),
-      );
-    }).not.toThrow();
-
-    setItemSpy.mockRestore();
-  });
-
-  it("does not re-trigger onRestore when an inline callback identity changes on re-render", () => {
-    window.sessionStorage.setItem("wf-draft:test-identity", "Cached content");
-    let callCount = 0;
-
-    const { rerender } = renderHook(
-      // `renderIndex` only exists to force a rerender with a new inline `onRestore`.
-      () =>
-        useDirtyStateGuard({
-          key: "test-identity",
-          isDirty: false,
-          onRestore: () => {
-            callCount++;
-          },
-        }),
-      { initialProps: { renderIndex: 1 } },
-    );
-
-    expect(callCount).toBe(1);
-
-    // Rerender with new inline function reference
-    rerender({ renderIndex: 2 });
-    expect(callCount).toBe(1);
+    unmount();
   });
 });
