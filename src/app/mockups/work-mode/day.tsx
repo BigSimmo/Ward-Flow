@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { Chevron, DateTile, Foot, Icon, Ring } from "./ui";
 import { useWork } from "./context";
 
@@ -163,7 +161,7 @@ function NeedRow({
 }
 
 export function DayBody() {
-  const { state, dispatch } = useWork();
+  const { state } = useWork();
   if (state.view === "needs") return <NeedsYou />;
   if (state.tab === 1) return state.weekAsMonth ? <MonthBody /> : <WeekBody />;
   if (state.tab === 2) return <HoursBody />;
