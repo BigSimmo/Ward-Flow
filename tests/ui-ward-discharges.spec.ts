@@ -205,7 +205,14 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // --- Step 2: the person leaves, recorded on the ward board. Leaving completes this person's
     // release and is the one step here that frees a real bed. ---
     await goBackToWard(page);
-    await page.getByRole("link", { name: "Bed board" }).click();
+    // The ward page no longer links to the bed board. A same-origin anchor click is intercepted
+    // by the app router, so the layout provider — and this journey's bed releases — stay mounted.
+    await page.evaluate((unitId) => {
+      const anchor = document.createElement("a");
+      anchor.href = `/mockups/ward-flow/board/${unitId}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+    }, UNIT_ID);
     await page.locator(`#ward-board-tile-${release.admissionId}`).click();
     await page.getByTestId("ward-board-record-leaving-submit").click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });

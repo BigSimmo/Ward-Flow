@@ -1880,7 +1880,7 @@ export function WardBoard({
                 <rect x="3" y="3.5" width="10" height="11" rx="1.5" />
                 <path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" />
               </svg>
-              <span>{sheetOpen ? "Hide ward daily sheet" : "Show ward daily sheet"}</span>
+              <span>{sheetOpen ? "Hide shift brief" : "Show shift brief"}</span>
               <span
                 className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`}
                 aria-hidden="true"
@@ -3446,7 +3446,7 @@ export function WardBoard({
             aria-controls="ward-board-sheet-body"
             onClick={() => setSheetOpen((open) => !open)}
           >
-            {sheetOpen ? "Hide" : "Show"} ward daily sheet
+            {sheetOpen ? "Hide" : "Show"} shift brief
           </button>
           <div
             id="ward-board-sheet-body"

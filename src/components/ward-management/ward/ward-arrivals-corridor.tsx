@@ -151,6 +151,7 @@ export function WardArrivalsCorridor({
             return (
               <article
                 key={movement.id}
+                id={`ward-arrival-${movement.id}`}
                 className={styles.inboundCard}
                 data-state={canPull ? "warn" : canArrive ? "good" : "accent"}
                 data-testid={`ward-accepted-${movement.id}`}
@@ -269,17 +270,6 @@ export function WardArrivalsCorridor({
                 <div className={styles.corridorActions}>
                   {canPull ? (
                     <div>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "var(--muted)",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Pull Available Bed:
-                      </span>
                       <button
                         type="button"
                         data-testid={`ward-pull-${movement.id}`}
@@ -313,17 +303,6 @@ export function WardArrivalsCorridor({
 
                   {canArrive ? (
                     <div>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "var(--muted)",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Assign Bed &amp; Admit:
-                      </span>
                       <button
                         type="button"
                         data-testid={`ward-confirm-arrival-${movement.id}`}

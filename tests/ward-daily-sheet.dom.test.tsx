@@ -161,7 +161,7 @@ describe("the daily sheet is folded away and last, not second", () => {
     const button = screen.getByTestId("ward-board-sheet-fold").querySelector("button");
     expect(button, "the fold has no button").not.toBeNull();
     expect(button).toHaveAttribute("aria-expanded", "false");
-    expect(button?.textContent).toMatch(/show ward daily sheet/i);
+    expect(button?.textContent).toMatch(/show shift brief/i);
   });
 
   it("opens and closes, and says which state it is in", () => {
@@ -170,7 +170,7 @@ describe("the daily sheet is folded away and last, not second", () => {
 
     fireEvent.click(button);
     expect(button).toHaveAttribute("aria-expanded", "true");
-    expect(button.textContent).toMatch(/hide ward daily sheet/i);
+    expect(button.textContent).toMatch(/hide shift brief/i);
 
     fireEvent.click(button);
     expect(button).toHaveAttribute("aria-expanded", "false");
