@@ -8,7 +8,20 @@ import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNod
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import { Badge, Button, Count, Hero, HeroStat, Icon, Menu, Popover, SrOnly, TextInput } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Count,
+  Hero,
+  HeroStat,
+  Icon,
+  Menu,
+  Popover,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  type WfTone,
+} from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import {
@@ -107,6 +120,40 @@ const SEARCH_RESULT_LIMIT = 8;
  * to reach it, the sample deployment) are no longer a fifth tab: the v6 page keeps them in view
  * under every list, as the mockup's side column does.
  */
+/**
+ * The side column's sample roster (v6 "On duty today"). Illustrative only, the same eight example
+ * roles the page carried before, by role rather than by name. No caseload counts: those were
+ * invented figures with nothing behind them.
+ */
+const SAMPLE_ROSTER: readonly {
+  initials: string;
+  role: string;
+  detail: string;
+  status: "On duty" | "In field" | "At base";
+  lead?: boolean;
+}[] = [
+  {
+    initials: "SC",
+    role: "Consultant psychiatrist",
+    detail: "Catchment lead · clinic room 2",
+    status: "On duty",
+    lead: true,
+  },
+  { initials: "KR", role: "Senior registrar", detail: "Vehicle 1 · co-response", status: "In field" },
+  { initials: "JL", role: "Medical officer", detail: "Clinic room 1 · physical health reviews", status: "On duty" },
+  { initials: "KV", role: "Nurse unit manager", detail: "Coordination · triage allocation", status: "On duty" },
+  { initials: "TB", role: "Registered nurse", detail: "Depot and crisis · vehicle 1", status: "In field" },
+  { initials: "CD", role: "RN case manager", detail: "Home visits", status: "On duty" },
+  { initials: "MD", role: "Senior social worker", detail: "Housing and NDIS liaison", status: "At base" },
+  { initials: "EW", role: "Occupational therapist", detail: "Recovery assessments", status: "At base" },
+];
+
+const ROSTER_TONE: Record<(typeof SAMPLE_ROSTER)[number]["status"], WfTone> = {
+  "On duty": "success",
+  "In field": "info",
+  "At base": "neutral",
+};
+
 const TEAM_TABS = [
   { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
   { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
@@ -1450,7 +1497,7 @@ export function CommunityScreen({
           </nav>
         </div>
 
-        <div className={styles.contentWorkspace}>
+        <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
           {/* ── Tab 1: Priority Referral Triage Queue ── */}
           <div
             className={activeTab === "tab-triage" ? styles.tabPanelActive : styles.tabPanelHidden}
@@ -2112,15 +2159,17 @@ export function CommunityScreen({
                         <caption>People referred to this team in a bed or holding one</caption>
                         <thead>
                           <tr>
-                            <th scope="col">Patient</th>
-                            <th scope="col">Admitting Ward &amp; Health Service</th>
-                            <th scope="col">Bed</th>
+                            {/*
+                              v6 columns (`CommunityTeam--in-a-bed`), where the record holds the
+                              figure: no key clinician or liaison column, since nothing records
+                              either, and no invented bed number.
+                            */}
+                            <th scope="col">Person</th>
+                            <th scope="col">Unit</th>
+                            <th scope="col">Legal status</th>
                             <th scope="col" className={styles.n}>
-                              Days in Bed
+                              In bed
                             </th>
-                            <th scope="col">Legal Status</th>
-                            <th scope="col">Community Key Clinician</th>
-                            <th scope="col">Liaison / MDT Status</th>
                             {/*
                           Drawing Actions column shows Open Dossier only. Owner decision 1
                           (22 Sep 2026): drawings own look; book/cancel stays as behaviour and
@@ -2151,29 +2200,19 @@ export function CommunityScreen({
                               transport === undefined;
                             const dossierPatientId = admission.patientId;
                             const pt = patients.find((p) => p.id === admission.patientId);
-                            const daysInBed = admission.arrivedAt
-                              ? Math.max(0, Math.floor((now - admission.arrivedAt) / 1440))
-                              : 0;
+                            const stayDays = daysInBed(admission, now);
                             return (
                               <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
                                 <td style={{ whiteSpace: "nowrap" }}>
                                   <b className={styles.patientIdWrap}>{admission.patientId ?? admission.id}</b>
                                   {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
                                 </td>
-                                <td>{unitName(admission.unitId, units)}</td>
                                 <td>
-                                  <span className={`${styles.statusPillBadge} ${styles.neutral}`}>
-                                    {admission.movementId ? `Bed ${admission.movementId.slice(-2)}` : "In Bed"}
-                                  </span>
+                                  <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
+                                  <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
                                 </td>
-                                <td className={styles.n}>{daysInBed}d</td>
-                                <td>
-                                  <span className={`${styles.statusPillBadge} ${styles.danger}`}>
-                                    {pt?.legalStatus ?? "Form 5A Invol"}
-                                  </span>
-                                </td>
-                                <td>{pt ? "RN K. Vance" : "Not allocated"}</td>
-                                <td>{bedStateLabel(admission)}</td>
+                                <td>{pt?.legalStatus ?? "Not recorded"}</td>
+                                <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>
                                 <td
                                   className={styles.actionsCell}
                                   data-testid={`ward-community-transport-cell-${admission.id}`}
@@ -2951,8 +2990,7 @@ export function CommunityScreen({
                   <table id="caseloadTable" className={styles.table} data-testid="ward-community-caseload-table">
                     <thead>
                       <tr>
-                        <th scope="col">Referral / person</th>
-                        <th scope="col">Age band</th>
+                        <th scope="col">Person</th>
                         <th scope="col">Statutory status</th>
                         <th scope="col">Recorded expiry</th>
                         <th scope="col">Follow-up</th>
@@ -2962,7 +3000,7 @@ export function CommunityScreen({
                     <tbody>
                       {visibleCaseload.length === 0 ? (
                         <tr>
-                          <td colSpan={6}>
+                          <td colSpan={5}>
                             <p className={styles.emptyNote} data-testid="ward-community-caseload-empty">
                               {caseloadFilter === "all"
                                 ? "No accepted follow-up or matched admission is on this team's caseload yet."
@@ -2981,9 +3019,11 @@ export function CommunityScreen({
                             <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>
                               <td>
                                 <strong>{row.patientId ?? "No person on file"}</strong>
-                                <span className={styles.caseloadMeta}>{row.umrn ?? row.referralId}</span>
+                                {/* The age band sits under the person, as the v6 table carries it. */}
+                                <span className={styles.caseloadMeta}>
+                                  {row.umrn ?? row.referralId} · {row.ageBand}
+                                </span>
                               </td>
-                              <td>{row.ageBand}</td>
                               <td>
                                 <span className={styles.statusPillBadge} data-tone={formTone}>
                                   {formLabel}
@@ -3019,7 +3059,7 @@ export function CommunityScreen({
           </div>
 
           {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
-          <div className={styles.tabPanelActive} id="tab-team">
+          <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team">
             {/* ── How to reach this team ── */}
             <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
               {(() => {
@@ -3027,57 +3067,56 @@ export function CommunityScreen({
                 const decision = contactDecisionFor(team.name);
                 return (
                   <section
-                    className={styles.cardPanel}
+                    className={v6.sideCard}
                     aria-label="How to reach this team"
                     data-testid="ward-community-contact"
                   >
-                    <div className={styles.panelHead}>
-                      <h3 className={styles.panelTitle}>
-                        <span>How to reach this team</span>
-                      </h3>
+                    <div className={v6.sideHead}>
+                      <h3 className={v6.sideTitle}>How to reach</h3>
+                      <span className={v6.sideMeta}>Published contacts</span>
                     </div>
-                    <div className={styles.panelBody} role="region" aria-label="How to reach this team details">
+                    <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
                       {contact === null ? (
-                        <p className={styles.emptyNote}>
+                        <p className={v6.sideNote}>
                           Nobody has yet recorded which real service this name refers to, so no contact detail is shown.
                           That is not a statement that this team has no phone number.
                         </p>
                       ) : (
                         <>
-                          <dl className={styles.contactList} data-testid="ward-community-contact-detail">
+                          <dl className={v6.keyValues} data-testid="ward-community-contact-detail">
                             {contact.publishedPhone === null ? null : (
-                              <>
+                              <div>
                                 <dt>Phone</dt>
-                                <dd>
+                                <dd className={v6.mono}>
                                   <a href={`tel:${contact.publishedPhone.replace(/[^\d+]/g, "")}`}>
                                     {contact.publishedPhone}
                                   </a>
                                 </dd>
-                              </>
+                              </div>
                             )}
                             {contact.publishedHours === null ? null : (
-                              <>
+                              <div>
                                 <dt>Hours</dt>
                                 <dd>{contact.publishedHours}</dd>
-                              </>
+                              </div>
                             )}
                             {contact.referralEmail === null ? null : (
-                              <>
-                                <dt>Referral email</dt>
+                              <div>
+                                <dt>Referrals</dt>
                                 <dd>
                                   <a href={`mailto:${contact.referralEmail}`}>{contact.referralEmail}</a>
                                 </dd>
-                              </>
+                              </div>
                             )}
                             {contact.address === null ? null : (
-                              <>
+                              <div>
                                 <dt>Address</dt>
                                 <dd>{contact.address}</dd>
-                              </>
+                              </div>
                             )}
                           </dl>
-                          <p className={styles.footnote}>{REFERENCE_TEAM_CAVEAT}</p>
-                          <p className={styles.footnote}>
+                          <p className={v6.sideNote}>{REFERENCE_TEAM_CAVEAT}</p>
+                          <p className={v6.sideNote}>
                             Recorded {contact.recordedOn ?? "on a date the register does not give"}
                             {decision === null
                               ? null
@@ -3229,230 +3268,69 @@ export function CommunityScreen({
                 </div>
               </>
             ) : (
-              <details className={styles.teamWorkspaceSection} id="section-team-workspace" open>
-                <summary className={styles.teamWorkspaceSummary}>
-                  Illustrative staffing, rooms and vehicles
-                  <span className={styles.badgePill}>Sample only</span>
-                </summary>
-                <div className={styles.caseloadHead}>
-                  <h3 className={styles.caseloadTitle}>
-                    <span>Example team deployment</span>
-                    <span id="teamStaffCountBadge" className={styles.badgePill}>
-                      8 example staff
-                    </span>
+              <section
+                className={v6.sideCard}
+                id="section-team-workspace"
+                aria-labelledby="ward-community-roster-title"
+                data-testid="ward-community-roster"
+              >
+                <div className={v6.sideHead}>
+                  <h3 id="ward-community-roster-title" className={v6.sideTitle}>
+                    On duty today
                   </h3>
-                  <span style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-                    Example huddle complete 0830 hrs · example routes assigned
+                  <span id="teamStaffCountBadge" className={v6.sideMeta}>
+                    Sample roster
                   </span>
                 </div>
-                <p className={styles.illustrativeNotice} role="note">
+                <p className={v6.sampleNote} role="note">
                   Illustrative staffing and logistics only. These are not roster, huddle, room or vehicle records for
                   {` ${team.name}`}.
                 </p>
-                <div style={{ padding: "var(--ward-space-12) var(--ward-space-16)" }}>
-                  <div className={styles.teamRosterGrid}>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div id="leadConsultantName" className={styles.staffName}>
-                            Dr S. Chen
-                          </div>
-                          <div className={styles.staffRole}>Consultant Psychiatrist · Catchment Lead</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>42</b>
+                <ul className={v6.roster} aria-label="Sample roster, illustrative">
+                  {SAMPLE_ROSTER.map((member) => (
+                    <li key={member.role} className={v6.rosterRow}>
+                      <span className={v6.initials} aria-hidden="true">
+                        {member.initials}
+                      </span>
+                      <span className={v6.rosterWho}>
+                        <span className={v6.rosterRole} id={member.lead ? "leadConsultantName" : undefined}>
+                          {member.role}
                         </span>
-                        <span>Clinic Rm 2 · 0900 to 1630 hrs</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>Dr K. Rao</div>
-                          <div className={styles.staffRole}>Senior Registrar</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.neutral}`}>In Field</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>31</b>
-                        </span>
-                        <span>Vehicle 1 · Mobile Co-Response</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>Dr J. Lim</div>
-                          <div className={styles.staffRole}>Medical Officer</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>24</b>
-                        </span>
-                        <span>Clinic Rm 1 · Physical Health Reviews</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>K. Vance</div>
-                          <div className={styles.staffRole}>Nursing Unit Manager (NUM)</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>Coordination</span>
-                        <span>Triage Allocation &amp; Safety</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>T. Bradley</div>
-                          <div className={styles.staffRole}>Registered Nurse · Depot &amp; Crisis</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.neutral}`}>In Field</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>18</b>
-                        </span>
-                        <span>Outreach Vehicle 1</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>C. Davis</div>
-                          <div className={styles.staffRole}>Registered Nurse · Case Manager</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>22</b>
-                        </span>
-                        <span>Home Visits · Midland Sector</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>M. Davies</div>
-                          <div className={styles.staffRole}>Senior Social Worker</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>16</b>
-                        </span>
-                        <span>Housing &amp; NDIS Liaison</span>
-                      </div>
-                    </div>
-                    <div className={styles.staffCard}>
-                      <div className={styles.staffHead}>
-                        <div>
-                          <div className={styles.staffName}>E. Wilson</div>
-                          <div className={styles.staffRole}>Occupational Therapist</div>
-                        </div>
-                        <span className={`${styles.statusPillBadge} ${styles.good}`}>On Duty</span>
-                      </div>
-                      <div className={styles.staffMetrics}>
-                        <span>
-                          Caseload: <b>14</b>
-                        </span>
-                        <span>Functional Recovery Assessments</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.clinicFleetGrid}>
-                    <div>
-                      <h4
-                        style={{
-                          margin: "0.75rem 0 0.5rem",
-                          fontSize: "var(--t-1)",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Illustrative clinic rooms
-                      </h4>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Clinic Room 1 · Depot Clinic</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>Active</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          0900 to 1300 hrs · Dr J. Lim / RN T. Bradley
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Clinic Room 2 · Consultant Reviews</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>Active</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          0900 to 1630 hrs · Dr S. Chen
-                        </span>
-                      </div>
-                      <div className={styles.clinicRoomItem}>
-                        <div className={styles.clinicRoomTop}>
-                          <span className={styles.clinicRoomTitle}>Clinic Room 3 · Urgent Intake</span>
-                          <span className={`${styles.statusPillBadge} ${styles.neutral}`}>Active Standby</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          Available for emergency crisis walk-ins
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4
-                        style={{
-                          margin: "0.75rem 0 0.5rem",
-                          fontSize: "var(--t-1)",
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Illustrative outreach fleet
-                      </h4>
-                      <div className={styles.vehicleItem}>
-                        <div className={styles.vehicleTop}>
-                          <span id="fleetVehicle1Title" className={styles.vehicleTitle}>
-                            Outreach Vehicle 1 (Dual Crew)
-                          </span>
-                          <span className={`${styles.statusPillBadge} ${styles.neutral}`}>In Field</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          Dr K. Rao &amp; RN T. Bradley · Midland East Route
-                        </span>
-                      </div>
-                      <div className={styles.vehicleItem}>
-                        <div className={styles.vehicleTop}>
-                          <span id="fleetVehicle2Title" className={styles.vehicleTitle}>
-                            Outreach Vehicle 2 (Secondary)
-                          </span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>At Base</span>
-                        </div>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          Inspected · Standby for crisis call-out
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </details>
+                        <span className={v6.rosterDetail}>{member.detail}</span>
+                      </span>
+                      <span className={v6.rosterStatus}>
+                        <StatusGlyph tone={ROSTER_TONE[member.status]} size={9} />
+                        {member.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <details className={v6.sampleMore}>
+                  <summary>Sample rooms and vehicles</summary>
+                  <ul className={v6.sampleList} aria-label="Sample clinic rooms and vehicles, illustrative">
+                    <li>
+                      <span>Clinic room 1 · depot clinic</span>
+                      <span className={v6.rosterDetail}>Active</span>
+                    </li>
+                    <li>
+                      <span>Clinic room 2 · consultant reviews</span>
+                      <span className={v6.rosterDetail}>Active</span>
+                    </li>
+                    <li>
+                      <span>Clinic room 3 · urgent intake</span>
+                      <span className={v6.rosterDetail}>Standby</span>
+                    </li>
+                    <li>
+                      <span id="fleetVehicle1Title">Outreach vehicle 1 (dual crew)</span>
+                      <span className={v6.rosterDetail}>In field</span>
+                    </li>
+                    <li>
+                      <span id="fleetVehicle2Title">Outreach vehicle 2 (secondary)</span>
+                      <span className={v6.rosterDetail}>At base</span>
+                    </li>
+                  </ul>
+                </details>
+              </section>
             )}
           </div>
 
