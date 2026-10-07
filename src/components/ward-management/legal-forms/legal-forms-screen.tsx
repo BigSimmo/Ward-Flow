@@ -40,7 +40,6 @@ import { departmentLabel } from "@/components/ward-management/ward-absence-label
 import {
   currentDueSoonThresholds,
   dayOf,
-  formatInstant,
   formatInstantWithDay,
   type Instant,
   minutesUntil,
@@ -237,8 +236,8 @@ function formEvents(movement: Movement, edName: string): FormEvent_[] {
   return items.sort((a, b) => b.sortAt - a.sortAt);
 }
 
-function asTimeline(events: FormEvent_[]): TimelineItem[] {
-  return events.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstant(sortAt), tone, text }));
+function asTimeline(events: FormEvent_[], now: Instant): TimelineItem[] {
+  return events.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
 
 export function LegalFormsScreen() {
@@ -375,7 +374,9 @@ export function LegalFormsScreen() {
     return left >= 0 && left <= CHART_WINDOW_MINUTES;
   });
   const handoverText = expiringSoon
-    .map((m) => `${formatInstant(m.legalForm!.dueAt!)} Form ${m.legalForm!.code}, ${patientOf(m).formalName}`)
+    .map(
+      (m) => `${formatInstantWithDay(m.legalForm!.dueAt!, now)} Form ${m.legalForm!.code}, ${patientOf(m).formalName}`,
+    )
     .join("\n");
 
   // Forms by emergency department, most first.
@@ -402,6 +403,7 @@ export function LegalFormsScreen() {
       .filter((event) => event.sortAt <= now && dayOf(event.sortAt) === dayOf(now))
       .sort((a, b) => b.sortAt - a.sortAt)
       .slice(0, 5),
+    now,
   );
 
   const catalogueCount = (codes: string[]) => rows.filter((m) => codes.includes(m.legalForm?.code ?? "")).length;
@@ -907,7 +909,9 @@ export function LegalFormsScreen() {
                       direction="left"
                       hideFlagWord
                     />
-                    <span className={styles.meta}>expires {formatInstant(selectedMovement.legalForm.dueAt)}</span>
+                    <span className={styles.meta}>
+                      expires {formatInstantWithDay(selectedMovement.legalForm.dueAt, now)}
+                    </span>
                   </span>
                 </div>
               ) : null}
@@ -977,7 +981,7 @@ export function LegalFormsScreen() {
                   Form history
                 </h3>
                 <Timeline
-                  items={asTimeline(formEvents(selectedMovement, edNameOf(selectedMovement)))}
+                  items={asTimeline(formEvents(selectedMovement, edNameOf(selectedMovement)), now)}
                   label="Form history"
                   holdNew={false}
                 />
@@ -1215,6 +1219,15 @@ function WindowScale({ urgentMinutes, soonMinutes }: { urgentMinutes: number; so
  * The next eight hours as one axis: a glyph at each recorded expiry, labelled with the form code
  * and family name, the second warning window dashed. Page-local; no shared chart draws a strip.
  */
+/** Axis tick: the clock face, with the day named once, on the first tick of a day other than today. */
+function hourTick(h: Instant, previous: Instant | undefined, now: Instant): string {
+  const label = formatInstantWithDay(h, now);
+  const face = label.slice(0, 5);
+  const day = label.slice(5).trim();
+  const previousDay = previous === undefined ? "" : formatInstantWithDay(previous, now).slice(5).trim();
+  return day !== "" && day !== previousDay ? label : face;
+}
+
 function ExpiryStrip({
   rows,
   now,
@@ -1248,16 +1261,16 @@ function ExpiryStrip({
             <StatusGlyph tone={row.tone} size={9} />
           </span>
         ))}
-        {hours.map((h) => (
+        {hours.map((h, index) => (
           <span key={h} className={styles.stripHour} style={{ left: `${x(h)}%` }}>
-            {formatInstant(h)}
+            {hourTick(h, index === 0 ? undefined : hours[index - 1], now)}
           </span>
         ))}
       </div>
       <ul className={styles.srOnly} aria-label="Expiring next 8h">
         {rows.map((row) => (
           <li key={row.id}>
-            {row.label} expires {formatInstant(row.dueAt)}
+            {row.label} expires {formatInstantWithDay(row.dueAt, now)}
           </li>
         ))}
       </ul>
@@ -1292,7 +1305,7 @@ function SelectedFormCard({
   const state = windowState(movement, now);
   const breached = isLegalDeadlineBreached(movement, now);
   const reading = actPeriodReading(movement, dayZero);
-  const history = asTimeline(formEvents(movement, edName).slice(0, 3));
+  const history = asTimeline(formEvents(movement, edName).slice(0, 3), now);
   return (
     <Card aria-label="Selected form" data-testid="ward-legal-selected">
       <div className={styles.selHead}>
@@ -1321,7 +1334,7 @@ function SelectedFormCard({
                 }
                 label={breached ? "Overdue" : "Left"}
               />
-              <Stat value={formatInstant(legalForm.dueAt)} label="Expires" />
+              <Stat value={formatInstantWithDay(legalForm.dueAt, now)} label="Expires" />
             </>
           ) : (
             <Stat
