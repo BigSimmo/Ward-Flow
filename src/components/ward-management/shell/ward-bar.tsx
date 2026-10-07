@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
-  FlaskConical,
   FileText,
   History,
   Plus,
@@ -370,9 +369,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   // header for why `sessionStorage` rather than `localStorage`, and why a storage throw still works.
   const service = useServiceScope();
   const appearance = useAppearanceStore();
-  const [toolsPart, setToolsPart] = useState<
-    "overview" | "figures" | "utilities" | "directory" | "operations" | "demo"
-  >("overview");
+  const [toolsPart, setToolsPart] = useState<"overview" | "figures" | "utilities" | "directory" | "operations">(
+    "overview",
+  );
   const [activityQuery, setActivityQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
@@ -1527,7 +1526,6 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               ["utilities", "Utilities", Calculator],
               ["directory", "Directory", BookOpen],
               ["operations", "Shift desk", ClipboardCheck],
-              ["demo", "Demo", FlaskConical],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -1668,16 +1666,15 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         <div id="ward-tools-operations" className={styles.toolsPanel} hidden={toolsPart !== "operations"}>
           <h3 className={styles.toolsHeading}>Shift desk</h3>
           <OperationalLinks onNavigate={() => closePopover("tools", false)} />
+          <section className={styles.toolsSection} aria-label="Scenario controls">
+            <h3 className={styles.toolsHeading}>Scenario controls</h3>
+            <WardDemoControls />
+            <WardRoleSwitcher />
+          </section>
         </div>
         <div id="ward-tools-directory" className={styles.toolsPanel} hidden={toolsPart !== "directory"}>
           <ToolsContactDirectory onNavigate={() => closePopover("tools", false)} />
         </div>
-        <section className={styles.toolsSection} aria-label="Demonstration">
-          <h3 className={styles.toolsHeading}>Demonstration</h3>
-          <WardDemoControls />
-          <WardRoleSwitcher />
-        </section>
-        <div id="ward-tools-demo" className={styles.toolsPanel} hidden={toolsPart !== "demo"} />
       </Sheet>
 
       <Sheet
