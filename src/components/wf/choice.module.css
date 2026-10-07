@@ -1,0 +1,264 @@
+/* v6 tabs (`.tabs`), segmented (`.seg`), hero track (`.trk`) and filter chips. */
+
+/* Tabs: ink underline. */
+.tabs {
+  display: flex;
+  gap: var(--wf-s-4);
+  min-width: 0;
+  border-bottom: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.tab:hover {
+  color: var(--wf-ink-1);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  border-bottom-color: var(--wf-ink-1);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Segmented: the selected item has a 3:1 edge. */
+.seg {
+  display: inline-flex;
+  padding: var(--wf-s-1);
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+.segItem {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  min-width: 0;
+  text-decoration: none;
+  transition: background var(--wf-m-base) var(--wf-ease);
+}
+
+.segItem:hover {
+  color: var(--wf-ink-1);
+}
+
+.segOn {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 12%, transparent),
+    0 0 0 1px var(--wf-line-ctl);
+}
+
+.segItem:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.md .segItem {
+  height: 28px;
+  font-size: var(--wf-fs-13);
+}
+
+/* Hero track: the dark segmented control on the hero band. */
+.trk {
+  display: inline-flex;
+  padding: var(--wf-s-1);
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+}
+
+.trk .segItem {
+  border: 1px solid transparent;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.trk .segItem:not(.segOn):hover {
+  color: var(--wf-hero-ink);
+}
+
+.trk .segOn {
+  background: var(--wf-hero-ink);
+  border-color: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+  font-weight: 600;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-hero-edge) 80%, transparent);
+}
+
+.trk .k {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.trk .segOn .k {
+  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
+  color: var(--wf-hero-2);
+}
+
+/* Filter chips. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-sm);
+  padding: 0 10px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.chip:hover {
+  border-color: var(--wf-line-3);
+  color: var(--wf-ink-1);
+}
+
+.chip[aria-pressed="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  border-color: var(--wf-line-ctl);
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
+}
+
+.chip:focus-visible,
+.chipRemove:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.chipLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Applied filter: label plus a remove button. */
+.applied {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--wf-h-chip);
+  padding: 0 2px 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.chipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.chipRemove:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+/* Hook class on the Count inside segments, so the hero track can recolour it. */
+.k {
+  flex: 0 0 auto;
+}
+
+@media (pointer: coarse) {
+  .segItem,
+  .trk .segItem {
+    height: 36px;
+  }
+  .tab {
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segItem {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .segOn,
+  .trk .segOn,
+  .chip[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+  }
+  .tab[aria-selected="true"] {
+    border-bottom-color: Highlight;
+  }
+  .tab:focus-visible,
+  .segItem:focus-visible,
+  .chip:focus-visible {
+    outline: 2px solid CanvasText;
+  }
+}

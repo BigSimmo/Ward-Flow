@@ -1967,7 +1967,7 @@
   display: flex;
   height: 0.65rem;
   margin-top: 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   overflow: hidden;
   background: var(--line);
 }

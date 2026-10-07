@@ -49,6 +49,11 @@ const APPROVED_SHARED_MODULES = new Map([
   ],
   ["@/components/ui/sheet", "the slide-over panel primitive"],
   [
+    "@/components/wf",
+    "the approved v6 design system kit (Josh, 7 October 2026): tokens-only primitives every Ward Flow " +
+      "screen builds from. Imported through this one barrel only, so it travels as one folder.",
+  ],
+  [
     "@/components/ui/sheet-focus",
     "Ward Lead UI decision, 2026-09-23: receipt/upload dialogs share the already-approved Sheet " +
       "singleton for topmost Escape, inert background and safe focus return; a separate stack " +
@@ -258,7 +263,8 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // the drawing's closed-rail card; the specific extraction cost is documented beside its entry.
     // 9 → 10 on 2026-09-23: the same Sheet stack must coordinate custom Ward dialogs.
     // 10 -> 9 on 2026-09-28: the developer-key access gate was removed at Josh's request.
-    expect(APPROVED_SHARED_MODULES.size).toBe(9);
+    // 9 -> 10 on 2026-10-07: the v6 design system kit, @/components/wf, approved by Josh.
+    expect(APPROVED_SHARED_MODULES.size).toBe(10);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -274,6 +280,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/ui/sheet",
       "@/components/ui/sheet-focus",
       "@/components/ui/tooltip",
+      "@/components/wf",
       "@/lib/client-store-factory",
       "@/lib/form-register",
     ]);

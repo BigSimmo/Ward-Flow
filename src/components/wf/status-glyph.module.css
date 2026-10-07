@@ -1,0 +1,36 @@
+.glyph {
+  flex: 0 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.danger {
+  color: var(--wf-danger);
+}
+
+.warning {
+  color: var(--wf-warning);
+}
+
+.success {
+  color: var(--wf-success);
+}
+
+.info {
+  color: var(--wf-info);
+}
+
+.neutral,
+.closed {
+  color: var(--wf-neutral);
+}
+
+.dot {
+  min-width: 8px;
+}
+
+@media (forced-colors: active) {
+  .glyph {
+    color: CanvasText;
+  }
+}

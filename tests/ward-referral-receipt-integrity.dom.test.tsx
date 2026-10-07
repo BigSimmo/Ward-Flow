@@ -28,8 +28,13 @@ describe("accepted referral receipt", () => {
         <Latest />
       </WardFlowProvider>,
     );
-    const select = (name: string, value: string) =>
-      fireEvent.change(screen.getByTestId(`ward-referral-intake-${name}`), { target: { value } });
+    // v6 (7 Oct 2026): Age band and Sex are segmented radio groups; the rest are still selects.
+    const select = (name: string, value: string) => {
+      const control = screen.getByTestId(`ward-referral-intake-${name}`);
+      const radio = control.querySelector<HTMLInputElement>(`input[type="radio"][value="${value}"]`);
+      if (radio) fireEvent.click(radio);
+      else fireEvent.change(control, { target: { value } });
+    };
     select("ageBand", COHORTS[0]);
     select("sex", SEXES[0]);
     select("gender", REFERRAL_GENDERS[0]);

@@ -1,0 +1,139 @@
+/* Shared small v6 pieces: icon, screen-reader text, Kbd, counts, divider, inset, spinner, tile. */
+
+.icon {
+  flex: 0 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  padding: 3px 5px;
+  border-radius: var(--wf-r-xs);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+/* `.k` count: rounded square, mono, inside tabs, segments and buttons. */
+.count {
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-line);
+  color: var(--wf-ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+/* Round count bubble, as on the header Tasks button. */
+.bubble {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+}
+
+.divider {
+  height: 1px;
+  background: var(--wf-line);
+  border: 0;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.dividerV {
+  width: 1px;
+  height: auto;
+  align-self: stretch;
+  background: var(--wf-line);
+  flex: 0 0 auto;
+}
+
+.inset {
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.spin {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  box-sizing: border-box;
+  animation: wfSpinLocal 0.8s linear infinite;
+}
+
+/* Neutral icon tile for card heads. Line icon, never a coloured fill. */
+.tile {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border: 1px solid var(--wf-line-2);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+}
+
+@keyframes wfSpinLocal {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation-duration: 1.6s;
+  }
+}
+
+@media (forced-colors: active) {
+  .kbd,
+  .count,
+  .bubble,
+  .tile {
+    border: 1px solid CanvasText;
+  }
+  .divider,
+  .dividerV {
+    background: CanvasText;
+  }
+}

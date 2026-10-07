@@ -74,7 +74,12 @@ const WARD_CSS = "src/components/ward-management/**/*.css";
  * stylesheet's tokens are, so it must never leak onto `:root` and repaint elements outside a
  * shell subtree that opts in by composing the class.
  */
-const TOKEN_LAYERS = ["src/app/globals.css", "src/app/ckb-v2-tokens.css", "src/app/ward-flow-shell-tokens.module.css"];
+const TOKEN_LAYERS = [
+  "src/app/globals.css",
+  "src/app/ckb-v2-tokens.css",
+  "src/app/ward-flow-shell-tokens.module.css",
+  "src/app/ward-flow-v6-tokens.css",
+];
 
 /** A declaration: `--name:` at the start of a rule, after a brace, or after a semicolon. */
 const DECLARATION = /(^|[;{\s])(--[A-Za-z0-9_-]+)\s*:/g;
@@ -374,24 +379,9 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
         "--success-bg-hover",
         "--text-2xl",
         /*
-         * 🔴 **`--ease` IS THE SAME SHAPE AS `--railw` WAS, AND IT IS NOT THE SAME FINDING.**
-         * The 2026-09-11 sync also flagged `--railw` here (`ward-rail.module.css:21`,
-         * `width: var(--railw, 14.75rem)`) — that one closed the moment `ward-flow-shell-
-         * tokens.module.css` joined `TOKEN_LAYERS` above, because `--railw` genuinely IS
-         * declared there (`:135`) and simply lived in a layer this file did not yet read.
-         * `--ease` (`ward-rail.module.css:29`, `transition: width 0.18s var(--ease, ease);`)
-         * is declared NOWHERE in this repository — not in any of the three token layers, not
-         * in a ward stylesheet — checked by name, not assumed from the family resemblance to
-         * `--ease-out-soft`/`--ease-spring`/`--ease-standard` (`globals.css`, `ckb-v2-
-         * tokens.css`), which are different names entirely. It stays a fallback-bearing miss
-         * rather than a strict one because its fallback is the literal CSS keyword `ease`, a
-         * legitimate transition-timing-function value on its own — the rail's rail-width
-         * transition still animates correctly with no shell token backing it. Recorded here,
-         * not declared, for the same reason `--focus-ring` and its neighbours above are: a
-         * design-system decision (add `--ease` to the shell token layer, or leave the keyword)
-         * is the owner's, not this file's.
+         * `--ease` left this list on 7 October 2026: the v6 rail restyle replaced
+         * `var(--ease, ease)` with the declared `--wf-ease` token, so no stylesheet reads it now.
          */
-        "--ease",
         /*
          * Recorded 2026-09-25 (test fixer): names that 22–25 September stylesheets read with a
          * fallback and that no layer declares. Each renders its fallback today, and the latest

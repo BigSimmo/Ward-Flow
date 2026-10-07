@@ -1296,14 +1296,14 @@
 }
 .graphTabs {
   flex-wrap: wrap;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 3px;
   gap: 2px;
   background: var(--surface-2);
 }
 .graphTabs button {
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   border-bottom: 0;
   padding: 6px 11px;
   background: transparent;
@@ -1318,7 +1318,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .ownerCard > div {
   display: flex;
@@ -1355,7 +1355,7 @@
   align-self: stretch;
   width: 100%;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--dc-line);
   box-sizing: border-box;
 }
@@ -1396,7 +1396,7 @@
   height: 26px;
   padding: 0 8px;
   border: 1px solid var(--dc-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   color: var(--dc-ink);
   font: inherit;
@@ -1427,7 +1427,7 @@
 }
 .ownerField select,
 .secondary {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .serviceMarks {
   display: flex;
@@ -1442,7 +1442,7 @@
   height: 32px;
   padding: 0 8px;
   border: 1px solid var(--dc-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   color: var(--dc-ink);
   font: inherit;
@@ -1458,7 +1458,7 @@
   width: 28px;
   height: 8px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--line);
 }
 .serviceMarks i b {
@@ -1618,7 +1618,7 @@
   transform: translateY(-50%);
   padding: 2px 8px;
   border: 1px solid var(--dc-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   color: var(--dc-ink);
   font-size: 11px;
@@ -1659,7 +1659,7 @@
 }
 .outlierChip {
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 4px 8px;
 }
 .outlierChip[data-band="breached"] {

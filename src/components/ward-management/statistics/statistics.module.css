@@ -497,7 +497,7 @@
  */
 [data-ward-design="third-edition"] .prototypeBadge {
   border-color: var(--line-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   color: var(--ink-soft);
   font-family: var(--body);

@@ -78,8 +78,8 @@ describe("Figures in the Tools workspace", () => {
     expect(launch.textContent).toMatch(/deadline passed|due within/i);
     fireEvent.click(launch);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
-    expect(await within(tools).findByRole("heading", { name: "Beds & capacity" })).toBeVisible();
-    for (const heading of ["Waits & recorded limits", "Beds & capacity", "Flow & discharges"]) {
+    expect(await within(tools).findByRole("heading", { name: "Beds and capacity" })).toBeVisible();
+    for (const heading of ["Waits and recorded limits", "Beds and capacity", "Flow and discharges"]) {
       expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
     }
     expect(screen.getAllByRole("dialog")).toHaveLength(1);

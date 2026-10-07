@@ -317,7 +317,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 
 .statusPill.form1a {
@@ -348,7 +348,7 @@
   font-size: var(--t-0);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent-soft);
   color: var(--accent-ink);
   border: 1px solid var(--accent);

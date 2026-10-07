@@ -56,6 +56,28 @@ function renderWithQuery(query: Record<string, string>) {
   );
 }
 
+/**
+ * v6 (7 Oct 2026): Age band and Sex are segmented radio groups, named by their visible label like
+ * the selects. These read and answer either kind by that same name.
+ */
+function answerOf(label: RegExp): string {
+  const control = screen.getByLabelText(label);
+  if (control instanceof HTMLSelectElement) return control.value;
+  const checked = control.querySelector<HTMLInputElement>('input[type="radio"]:checked');
+  return checked?.value ?? UNANSWERED_VALUE;
+}
+
+function choose(label: RegExp, value: string) {
+  const control = screen.getByLabelText(label);
+  if (control instanceof HTMLSelectElement) {
+    fireEvent.change(control, { target: { value } });
+    return;
+  }
+  const radio = control.querySelector<HTMLInputElement>(`input[type="radio"][value="${value}"]`);
+  expect(radio, `no "${value}" answer`).not.toBeNull();
+  fireEvent.click(radio!);
+}
+
 describe("the intake form reads the query contract", () => {
   /** The anti-vacuity floor: every case below depends on these two populations being real. */
   it("has real sources and real emergency departments to prefill from", () => {
@@ -197,8 +219,8 @@ describe("the intake form reads the query contract", () => {
     renderWithQuery({});
     expect(screen.getByLabelText(/referral source/i)).toHaveValue(UNANSWERED_VALUE);
     expect(screen.getByLabelText(/origin site/i)).toHaveValue(UNANSWERED_VALUE);
-    expect(screen.getByLabelText(/^age band$/i)).toHaveValue(UNANSWERED_VALUE);
-    expect(screen.getByLabelText(/^sex$/i)).toHaveValue(UNANSWERED_VALUE);
+    expect(answerOf(/^age band$/i)).toBe(UNANSWERED_VALUE);
+    expect(answerOf(/^sex$/i)).toBe(UNANSWERED_VALUE);
     expect(screen.getByTestId("ward-referral-intake-gender")).toHaveValue(UNANSWERED_VALUE);
     expect(screen.getByLabelText(/^suburb$/i)).toHaveValue(UNANSWERED_VALUE);
   });
@@ -206,8 +228,8 @@ describe("the intake form reads the query contract", () => {
   it("prefills only compatible facts already held on the linked patient record and labels them editable", () => {
     renderWithQuery({ patientId: "PT-001" });
 
-    expect(screen.getByLabelText(/^age band$/i)).toHaveValue(UNANSWERED_VALUE);
-    expect(screen.getByLabelText(/^sex$/i)).toHaveValue("Female");
+    expect(answerOf(/^age band$/i)).toBe(UNANSWERED_VALUE);
+    expect(answerOf(/^sex$/i)).toBe("Female");
     // T11 (item 8): PT-001 carries `gender: "Female"` on the patient record — a SEPARATE fact
     // from `sex` above, prefilled from `Patient.gender`, never from `Patient.sex`.
     expect(screen.getByTestId("ward-referral-intake-gender")).toHaveValue("Female");
@@ -222,11 +244,11 @@ describe("the intake form reads the query contract", () => {
   it("never answers gender from sex: a recorded sex prefills sex only, and gender stays unanswered", () => {
     renderWithQuery({ patientId: "PT-007" });
 
-    expect(screen.getByLabelText(/^age band$/i)).toHaveValue(UNANSWERED_VALUE);
+    expect(answerOf(/^age band$/i)).toBe(UNANSWERED_VALUE);
     // R7 (owner ruling, 2026-09-25): PT-007's record holds sex "Female" and NO gender. Sex prefills
     // from the record; the GENDER question stays genuinely unchosen (blocks "Raise referral"), never
     // answered from sex and never pre-answered "not yet recorded" on the clinician's behalf.
-    expect(screen.getByLabelText(/^sex$/i)).toHaveValue("Female");
+    expect(answerOf(/^sex$/i)).toBe("Female");
     expect(screen.getByTestId("ward-referral-intake-sex-source")).toHaveTextContent(/patient record.*editable/i);
     expect(screen.getByTestId("ward-referral-intake-gender")).toHaveValue(UNANSWERED_VALUE);
     expect(screen.queryByTestId("ward-referral-intake-gender-source")).not.toBeInTheDocument();
@@ -235,8 +257,8 @@ describe("the intake form reads the query contract", () => {
 
   it("does not reapply linked-record defaults over the clinician's edits when the query changes", () => {
     const rendered = renderWithQuery({ patientId: "PT-001" });
-    fireEvent.change(screen.getByLabelText(/^age band$/i), { target: { value: "Youth" } });
-    fireEvent.change(screen.getByLabelText(/^sex$/i), { target: { value: "Male" } });
+    choose(/^age band$/i, "Youth");
+    choose(/^sex$/i, "Male");
     fireEvent.change(screen.getByLabelText(/^suburb$/i), { target: { value: "Bassendean" } });
     fireEvent.change(screen.getByLabelText(/referral source/i), { target: { value: "ambulance" } });
 
@@ -247,17 +269,18 @@ describe("the intake form reads the query contract", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByLabelText(/^age band$/i)).toHaveValue("Youth");
-    expect(screen.getByLabelText(/^sex$/i)).toHaveValue("Male");
+    expect(answerOf(/^age band$/i)).toBe("Youth");
+    expect(answerOf(/^sex$/i)).toBe("Male");
     expect(screen.getByLabelText(/^suburb$/i)).toHaveValue("Bassendean");
     expect(screen.getByLabelText(/referral source/i)).toHaveValue("ambulance");
   });
 
   it("starts a fresh linked draft when the patient changes", async () => {
     const rendered = renderWithQuery({ patientId: "PT-001" });
-    expect(screen.getByLabelText(/^sex$/i)).toHaveValue("Female");
+    expect(answerOf(/^sex$/i)).toBe("Female");
     expect(screen.getByLabelText(/^suburb$/i)).toHaveValue("Ashfield");
-    fireEvent.change(screen.getByLabelText(/^sex$/i), { target: { value: UNANSWERED_VALUE } });
+    // v6: a segmented answer cannot be cleared, so the clinician's edit is a different answer.
+    choose(/^sex$/i, "Another term");
     fireEvent.change(screen.getByLabelText(/^suburb$/i), { target: { value: UNANSWERED_VALUE } });
 
     window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new?patientId=PT-002");
@@ -268,7 +291,7 @@ describe("the intake form reads the query contract", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/^sex$/i)).toHaveValue("Male");
+      expect(answerOf(/^sex$/i)).toBe("Male");
       expect(screen.getByLabelText(/^suburb$/i)).toHaveValue("Bassendean");
     });
     expect(screen.getByLabelText(/^home region$/i)).toHaveValue(UNANSWERED_VALUE);

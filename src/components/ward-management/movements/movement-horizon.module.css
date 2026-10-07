@@ -68,7 +68,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--muted);
@@ -233,7 +233,7 @@
   appearance: none;
   flex: 1;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   border: 1px solid var(--line);
   outline: none;
