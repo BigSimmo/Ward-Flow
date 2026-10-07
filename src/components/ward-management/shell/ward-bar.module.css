@@ -2504,6 +2504,15 @@
   border-radius: 1.75rem !important;
   box-shadow: 0 1.5rem 5rem color-mix(in srgb, var(--ink) 22%, transparent);
 }
+/* Tasks retains its compact footprint with a restrained, nested glass edge. */
+.drawerSheetTasks {
+  border-radius: 1.25rem !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 88%, white),
+    0 8px 24px color-mix(in srgb, black 10%, transparent),
+    0 24px 64px color-mix(in srgb, black 18%, transparent);
+}
+
 .drawerHeader {
   padding: 0.625rem 1rem !important;
   background: linear-gradient(125deg, var(--surface), var(--surface-2));
