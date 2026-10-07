@@ -427,7 +427,8 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "task" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Tasks")).toBeInTheDocument();
+    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Tasks");
+    expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Tasks");
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
     expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/mockups\/ward-flow\/movements\//));
