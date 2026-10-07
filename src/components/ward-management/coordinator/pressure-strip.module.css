@@ -162,7 +162,9 @@
 /* Phone: the queue comes first and the strip steps aside, at the same 48rem width where the
    coordinator's diagram hides and its registers toggle appears (`coordinator.module.css`). */
 @media (max-width: 48rem) {
-  .strip {
+  /* Doubled class: the strip is also a wf Card, whose display rule has the same specificity, so
+     without it the winner depends on which module the bundle happens to load last. */
+  .strip.strip {
     display: none;
   }
 }
