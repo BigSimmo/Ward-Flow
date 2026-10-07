@@ -4762,3 +4762,18 @@
     min-height: 44px;
   }
 }
+
+/* v6: the transport booking record is one more card under the clinical overview. */
+.screen[data-ward-design="v6"] .legacyTransportDisclosure {
+  margin: var(--wf-s-3) 0 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .legacyTransportDisclosure > summary {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
