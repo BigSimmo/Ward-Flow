@@ -112,7 +112,9 @@ const PINNED: Record<string, string | readonly string[] | null> = {
    * intrinsic-width measurement. */
   // Re-pinned 2026-09-25 (test fixer): 53105ca6ea split the on-call table into a roster table
   // (52rem) and an ED directory table (48rem). The latest folded app is the design reference.
-  "on-call/on-call.module.css": ["52rem", "48rem"],
+  // Re-pinned 2026-10-07 (v6 On-call): the roster table shares its row with the role panel
+  // (46rem) and the ED directory sits in the narrower lower card (36rem).
+  "on-call/on-call.module.css": ["46rem", "36rem"],
   "out-of-area/out-of-area.module.css": "30rem",
   /* The out-of-area register inspector redesign (PR #25) makes the ledger a fluid, fixed-layout
    * table that fits its panel at every desktop width; the narrow-screen case is handled by the

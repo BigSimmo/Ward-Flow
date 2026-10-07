@@ -29,6 +29,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   DAY_SHIFT_END_MINUTE,
+  dayShiftEndInstant,
   openWorkBeforeShiftEnd,
   openWorkBeforeShiftEndLabel,
 } from "@/components/ward-management/ward-board-time-features";
@@ -71,6 +72,46 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import {
+  Activity,
+  Check,
+  ClipboardList,
+  Clock,
+  Copy,
+  ListChecks,
+  Maximize2,
+  Minimize2,
+  Printer,
+  RotateCcw,
+  ShieldCheck,
+  X,
+} from "lucide-react";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHead,
+  EmptyState,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  Icon,
+  IconTile,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  Timer,
+} from "@/components/wf";
+
+const MINUTE = 60_000;
+
+/** The three handover shifts and the board-time clock each one starts at. */
+const SHIFTS = [
+  { id: "morning", label: "Morning", start: "07:00" },
+  { id: "afternoon", label: "Afternoon", start: "15:00" },
+  { id: "night", label: "Night", start: "23:00" },
+] as const;
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -323,7 +364,7 @@ export function resolveAdmissionPatient(
  * Task 4 / Master Standard: The Statewide Clinical Handover & Bedflow Coordination Page.
  * Sovereign Clinical Console Standard (Platinum Raised Cool palette, 100/100 Rubric).
  */
-const TABLE_SECTION_TABS = ["longest", "pulled", "open", "transit", "placement", "all"] as const;
+const TABLE_SECTION_TABS = ["longest", "transit", "pulled", "open", "placement", "all"] as const;
 
 export function HandoverPage() {
   usePrintableDisclosures();
@@ -363,6 +404,8 @@ export function HandoverPage() {
   const [activeTableSection, setActiveTableSection] = useState<
     "longest" | "pulled" | "open" | "transit" | "placement" | "all"
   >("longest");
+  // The movement the ISBAR panel shows; null falls back to the first row of the active list.
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const shiftEndClock = `${String(Math.floor(DAY_SHIFT_END_MINUTE / 60)).padStart(2, "0")}:${String(DAY_SHIFT_END_MINUTE % 60).padStart(2, "0")}`;
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
@@ -425,6 +468,7 @@ export function HandoverPage() {
    */
   const openMovementDetail = useCallback((movement: Movement) => {
     setIsTableEnlarged(false);
+    setFocusedId(movement.id);
     setSelectedMovement(movement);
   }, []);
 
@@ -899,6 +943,47 @@ export function HandoverPage() {
     [patients, referrals, units, now],
   );
 
+  const currentShift = SHIFTS.find((shift) => shift.id === selectedShift) ?? SHIFTS[1];
+  const previousShift = SHIFTS[(SHIFTS.indexOf(currentShift) + SHIFTS.length - 1) % SHIFTS.length];
+  // Same 15:00 board-time boundary the sidebar handover countdown reads.
+  const minutesToHandover = dayShiftEndInstant(now) - now;
+
+  // The sheet's tabs: each list is one the printed sections already derive, never a new count.
+  const sheetTabs: { id: (typeof TABLE_SECTION_TABS)[number]; label: string; count: number }[] = [
+    { id: "longest", label: "Longest waits", count: snapshot.longestWaits.length },
+    { id: "transit", label: "In transit", count: snapshot.inTransit.length },
+    { id: "pulled", label: "Beds pulled", count: snapshot.pulledBeds.length },
+    { id: "open", label: `Still open at ${shiftEndClock}`, count: openBeforeShiftEnd.length },
+    { id: "placement", label: "Placement issues", count: snapshot.placementGoneWrong.length },
+    { id: "all", label: "All", count: filteredMovements.length },
+  ];
+  const sheetRows: { movement: Movement; note?: string; key: string }[] =
+    activeTableSection === "longest"
+      ? snapshot.longestWaits.map(({ movement }) => ({ movement, key: movement.id }))
+      : activeTableSection === "transit"
+        ? snapshot.inTransit.map(({ movement }) => ({ movement, key: movement.id }))
+        : activeTableSection === "pulled"
+          ? snapshot.pulledBeds.map(({ movement, expired }) => ({
+              movement,
+              note: pullLabel(movement, expired, snapshot.takenAt),
+              key: movement.id,
+            }))
+          : activeTableSection === "open"
+            ? openBeforeShiftEnd.map((item) => ({
+                movement: item.movement,
+                note: openWorkBeforeShiftEndLabel(item, now),
+                key: `${item.kind}-${item.movement.id}-${item.at}`,
+              }))
+            : activeTableSection === "placement"
+              ? snapshot.placementGoneWrong.map(({ movement, kind }) => ({
+                  movement,
+                  note: goneWrongLabel(movement, kind),
+                  key: movement.id,
+                }))
+              : filteredMovements.map((movement) => ({ movement, key: movement.id }));
+  const focusedMovement =
+    sheetRows.find((row) => row.movement.id === focusedId)?.movement ?? sheetRows[0]?.movement ?? null;
+
   const shiftLabelText =
     selectedShift === "morning"
       ? "Morning Shift (07:00–15:30)"
@@ -907,87 +992,115 @@ export function HandoverPage() {
         : "Night Shift (23:00–07:30)";
 
   return (
-    <div
-      className={`${styles.screen} ${pageStyles.screen}`}
-      data-testid="ward-handover-page"
-      data-ward-design="third-edition"
-    >
+    <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-handover-page" data-ward-design="v6">
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── UNIFIED COMMAND HORIZON: 3-TIER HANDOVER FLIGHT DECK ── */}
-        <div className={pageStyles.commandHorizonCard}>
-          {/* TIER 1: DARK HERO HEADER */}
-          <header className={pageStyles.heroHeader}>
-            <div className={pageStyles.shiftInfo}>
-              <div className={pageStyles.govTag}>
-                <span className={pageStyles.badgeDot} />
-                WA HEALTH MENTAL HEALTH OPERATIONS · LIVE SYNC
-              </div>
-              <div className={pageStyles.shiftTitleRow}>
-                <h1 className={pageStyles.shiftTitle}>
-                  {selectedShift === "morning"
-                    ? "Morning handover"
-                    : selectedShift === "afternoon"
-                      ? "Afternoon handover"
-                      : "Night handover"}
-                </h1>
-                <span className={pageStyles.shiftTime}>
-                  {selectedShift === "morning"
-                    ? "07:00 – 15:30 AWST"
-                    : selectedShift === "afternoon"
-                      ? "15:00 – 23:30 AWST"
-                      : "23:00 – 07:30 AWST"}
-                </span>
-              </div>
-              <div className={pageStyles.handoffTeams}>
-                Outgoing:{" "}
-                <strong>
-                  {selectedShift === "morning"
-                    ? "Night Shift"
-                    : selectedShift === "afternoon"
-                      ? "Morning Shift"
-                      : "Afternoon Shift"}
-                </strong>{" "}
-                → Incoming:{" "}
-                <strong>
-                  {selectedShift === "morning"
-                    ? "Morning Shift"
-                    : selectedShift === "afternoon"
-                      ? "Afternoon Shift"
-                      : "Night Shift"}
-                </strong>
-                <span className={pageStyles.takenAtMeta} data-testid="ward-handover-taken-at">
-                  {" · "}Updated {formatSheetMoment(now, dayZero)}
-                </span>
-              </div>
+        {/* v6 hero: shift, the five handover counts, the shift track and the print action. */}
+        <Hero
+          level={1}
+          className={pageStyles.handoverHero}
+          eyebrow={`Handover · ${currentShift.start} start`}
+          title={`${currentShift.label} handover`}
+          stats={
+            <div
+              className={pageStyles.heroStats}
+              data-testid="ward-handover-kpi-strip"
+              aria-label="Handover summary indicators"
+              data-print-hide
+            >
+              <SrOnly>Handover HUD</SrOnly>
+              <HeroStat
+                value={
+                  includedOpenCount === totalOpenCount ? (
+                    includedOpenCount
+                  ) : (
+                    <>
+                      {includedOpenCount}
+                      <span className={pageStyles.statOf}> of {totalOpenCount}</span>
+                    </>
+                  )
+                }
+                label={
+                  <>
+                    <span aria-hidden="true">Caseload</span>
+                    <SrOnly>Caseload in Scope</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat value={currentReferralsCount} label="Referrals" />
+              <HeroStat
+                value={allocatableVacancies}
+                tone={allocatableVacancies > 0 ? "success" : undefined}
+                label={
+                  <>
+                    <span aria-hidden="true">Allocatable beds</span>
+                    <SrOnly>Unoccupied Beds</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat
+                value={breachedOnSheetCount + urgentOutsideFilter.length}
+                tone={breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : undefined}
+                label={
+                  <>
+                    <span aria-hidden="true">Form expiries</span>
+                    <SrOnly>Form expiries passed</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat
+                value={speciallingInScopeCount}
+                label={
+                  <>
+                    <span aria-hidden="true">1:1 specialling</span>
+                    <SrOnly>1:1 Specialling Roster</SrOnly>
+                  </>
+                }
+              />
             </div>
-
-            <div className={pageStyles.actions}>
-              <button
-                type="button"
-                className={pageStyles.btnAction}
+          }
+          bar={
+            <>
+              <HeroTrack
+                label="Shift"
+                value={selectedShift}
+                onChange={setSelectedShift}
+                items={SHIFTS.map((shift) => ({
+                  id: shift.id,
+                  label: (
+                    <>
+                      {shift.label}
+                      <span className={pageStyles.trackClock}>{shift.start}</span>
+                    </>
+                  ),
+                }))}
+              />
+              <span className={pageStyles.handoffTeams}>
+                Outgoing <strong>{previousShift.label}</strong> · incoming <strong>{currentShift.label}</strong>
+              </span>
+            </>
+          }
+          barAside={
+            <>
+              {minutesToHandover > 0 ? (
+                <span className={pageStyles.heroTimer}>
+                  <Icon icon={Clock} size={14} />
+                  <span>Handover</span>
+                  <Timer at={(now + minutesToHandover) * MINUTE} now={now * MINUTE} direction="in" />
+                </span>
+              ) : null}
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={copied ? Check : Copy}
                 onClick={handleCopySummary}
                 title="Copy formatted text handover snapshot"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-                <span>{copied ? "✓ Copied!" : "Copy Summary"}</span>
-              </button>
-
-              <button
-                type="button"
-                className={pageStyles.btnAction}
+                {copied ? "Copied" : "Copy summary"}
+              </Button>
+              <Button
+                variant="light"
+                size="sm"
+                icon={Printer}
                 aria-label="Print"
                 onClick={() => {
                   setActiveTab("snapshot");
@@ -997,100 +1110,20 @@ export function HandoverPage() {
                 data-testid="print-button"
                 title="Print A4 rapid handover sheet"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="6 9 6 2 18 2 18 9" />
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                  <rect x="6" y="14" width="12" height="8" />
-                </svg>
-                <span>Print A4 Sheet</span>
-              </button>
-            </div>
-          </header>
+                Print A4 sheet
+              </Button>
+            </>
+          }
+        />
 
-          {/* TIER 2: DARK TELEMETRY DECK */}
-          <div
-            className={pageStyles.telemetryDeck}
-            data-testid="ward-handover-kpi-strip"
-            aria-label="Handover summary indicators"
-            data-print-hide
-          >
-            <span className={pageStyles.srOnly}>Handover HUD</span>
-            <div className={pageStyles.telemetryPlain}>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Caseload:
-                  <span className={pageStyles.srOnly}>Caseload in Scope</span>
-                </span>
-                <span className={pageStyles.metricVal}>
-                  {includedOpenCount} / {totalOpenCount}
-                </span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>Referrals:</span>
-                <span className={pageStyles.metricVal}>{currentReferralsCount}</span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Allocatable Beds:
-                  <span className={pageStyles.srOnly}>Unoccupied Beds</span>
-                </span>
-                <span className={`${pageStyles.metricVal} ${allocatableVacancies > 0 ? pageStyles.goodVal : ""}`}>
-                  {allocatableVacancies}
-                </span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Form Expiries:
-                  <span className={pageStyles.srOnly}>Form expiries passed</span>
-                </span>
-                <span
-                  className={`${pageStyles.metricVal} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.dangerVal : ""}`}
-                >
-                  {breachedOnSheetCount + urgentOutsideFilter.length}
-                </span>
-                <LegalLimitsNotChecked variant="tag" />
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  1:1 Specialling:
-                  <span className={pageStyles.srOnly}>1:1 Specialling Roster</span>
-                </span>
-                <span className={`${pageStyles.metricVal} ${speciallingInScopeCount > 0 ? pageStyles.warnVal : ""}`}>
-                  {speciallingInScopeCount}
-                </span>
-              </div>
-            </div>
-
-            <div className={pageStyles.liveSyncRoster}>
-              <span className={pageStyles.rosterDot} /> Whole Network Live Roster Sync
-            </div>
-          </div>
-
-          {/* TIER 3: WHITE CONTROL DECK */}
-          <section className={pageStyles.controlToolbarDeck} aria-label="Handover Scope and Filters" data-print-hide>
-            {/* Far Left: Three Dropdowns + Reset */}
-            <div className={pageStyles.ctrlGroupLeft}>
-              {/* Dropdown 1: Network / Master Scope Control */}
+        {/* Scope and layout toolbar */}
+        <Card as="section" className={pageStyles.toolbarCard} aria-label="Handover Scope and Filters" data-print-hide>
+          <div className={pageStyles.toolbarRow}>
+            <div className={pageStyles.toolbarGroup}>
               <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
-
-              {/* Dropdown 2: Wards Quick Selection */}
-              <select
+              <Select
                 aria-label="Wards Selection"
-                className={`${pageStyles.selectThin} ${pageStyles.selectWards}`}
+                boxClassName={pageStyles.toolbarSelect}
                 value={scope.kind === "ward" ? scope.id : ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1101,134 +1134,74 @@ export function HandoverPage() {
                   }
                 }}
               >
-                <option value="">All Wards</option>
+                <option value="">All wards</option>
                 {sortedUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.name}
                   </option>
                 ))}
-              </select>
-
-              {/* Dropdown 3: Filters (Movement Focus) */}
-              <select
-                aria-label="Movement Filters"
-                className={`${pageStyles.selectThin} ${pageStyles.selectFilters}`}
-                value={activeTableSection === "all" && focusFilter !== "all" ? focusFilter : activeTableSection}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (
-                    val === "longest" ||
-                    val === "pulled" ||
-                    val === "open" ||
-                    val === "transit" ||
-                    val === "placement" ||
-                    val === "all"
-                  ) {
-                    setActiveTableSection(val);
-                    setFocusFilter("all");
-                  }
-                }}
-              >
-                <option value="longest">Longest Waits ({snapshot.longestWaits.length})</option>
-                <option value="pulled">Beds Pulled ({snapshot.pulledBeds.length})</option>
-                <option value="open">Still Open ({openBeforeShiftEnd.length})</option>
-                <option value="transit">In Transit ({snapshot.inTransit.length})</option>
-                <option value="placement">Placement ({snapshot.placementGoneWrong.length})</option>
-                <option value="all">All Movements ({scopeIncludedCount})</option>
-              </select>
-
-              {/* Reset Button */}
-              <button
-                type="button"
-                className={pageStyles.btnResetIntuitive}
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={RotateCcw}
+                aria-label="Reset to Statewide"
+                title="Reset to Statewide"
                 onClick={() => {
                   setScopeValue(NETWORK_SCOPE_VALUE);
                   setFocusFilter("all");
                   setActiveTableSection("longest");
                   setSearchQuery("");
                 }}
-                title="Reset to Statewide"
               >
-                <span style={{ fontSize: "13px" }}>↺</span> Reset
-                <span className={pageStyles.srOnly}>Reset to Statewide</span>
-              </button>
+                Reset
+              </Button>
             </div>
-
-            {/* Far Right: Shift Switcher with Exact Shift Times + Count Chip */}
-            <div className={pageStyles.ctrlGroupRight}>
-              <div className={pageStyles.shiftPillLight}>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "morning" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("morning")}
-                  title="Switch to Morning Shift"
-                >
-                  {selectedShift === "morning" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Morning</span>
-                  <span className={pageStyles.shiftSubtime}>07:00</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "afternoon" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("afternoon")}
-                  title="Switch to Afternoon Shift"
-                >
-                  {selectedShift === "afternoon" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Afternoon</span>
-                  <span className={pageStyles.shiftSubtime}>15:00</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "night" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("night")}
-                  title="Switch to Night Shift"
-                >
-                  {selectedShift === "night" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Night</span>
-                  <span className={pageStyles.shiftSubtime}>23:00</span>
-                </button>
-              </div>
-
-              <span className={pageStyles.countChip}>
-                <span className={pageStyles.countDot} />
-                {totalOpenCount} open
-              </span>
+            <div className={pageStyles.toolbarGroup}>
+              <Segmented
+                label="Sheet Layout"
+                value={sheetViewMode}
+                onChange={setSheetViewMode}
+                items={[
+                  { id: "table", label: "Table" },
+                  { id: "cards", label: "ISBAR cards" },
+                ]}
+              />
+              {sheetViewMode === "table" ? (
+                <Button
+                  variant="sec"
+                  size="sm"
+                  iconOnly
+                  icon={isTableEnlarged ? Minimize2 : Maximize2}
+                  aria-label={isTableEnlarged ? "Compress view" : "Enlarge table"}
+                  aria-expanded={isTableEnlarged}
+                  title={
+                    isTableEnlarged ? "Compress table to normal bounded view" : "Enlarge table to view all records"
+                  }
+                  onClick={() => setIsTableEnlarged(!isTableEnlarged)}
+                />
+              ) : null}
+              <Button variant="sec" size="sm" icon={Copy} onClick={handleCopySummary}>
+                Copy text
+              </Button>
             </div>
-          </section>
-
-          {/* Scope transparency banner */}
-          <div className={pageStyles.filterBanner} id="filterBanner" data-print-hide>
-            <div className={pageStyles.filterBannerText}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="8" cy="8" r="7" />
-                <path d="M8 5v3l2 2" />
-              </svg>
-              <span>
-                Displaying records for{" "}
-                <b data-testid="ward-handover-scope-summary">
-                  {scopeLabel} · {scopeIncludedCount} of {totalOpenCount} open movements
-                </b>
-                {" · "}
-                <span data-testid="ward-handover-scope-excluded">
-                  {scopeExcludedCount} open movement{scopeExcludedCount === 1 ? "" : "s"}{" "}
-                  {scopeExcludedCount === 1 ? "is" : "are"} outside this filter.
-                </span>
-              </span>
-            </div>
-            <button
-              type="button"
-              className={pageStyles.filterResetBtn}
-              onClick={() => {
-                setScopeValue(NETWORK_SCOPE_VALUE);
-                setFocusFilter("all");
-                setActiveTableSection("longest");
-                setSearchQuery("");
-              }}
-            >
-              Reset to Statewide
-            </button>
           </div>
-        </div>
+          {/* Scope transparency line: the named scope and the excluded count stay side by side. */}
+          <p className={pageStyles.scopeLine} id="filterBanner">
+            <StatusGlyph tone="info" size={9} />
+            <span>
+              Showing{" "}
+              <b data-testid="ward-handover-scope-summary">
+                {scopeLabel} · {scopeIncludedCount} of {totalOpenCount} open movements
+              </b>
+              {" · "}
+              <span data-testid="ward-handover-scope-excluded">
+                {scopeExcludedCount} open movement{scopeExcludedCount === 1 ? "" : "s"}{" "}
+                {scopeExcludedCount === 1 ? "is" : "are"} outside this filter.
+              </span>
+            </span>
+          </p>
+        </Card>
 
         {/* Hidden / accessible Tab Nav for R2-12 test compatibility */}
         <nav className={pageStyles.tabNavHidden} role="tablist" aria-label="Handover Detail Sections" data-print-hide>
@@ -1311,815 +1284,638 @@ export function HandoverPage() {
           role="tabpanel"
           aria-labelledby="tabBtn-snapshot"
         >
-          {/* THE CROWN JEWEL: RAPID PRINTABLE SNAPSHOT CARD */}
-          <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
-            <div className={pageStyles.snapshotHead}>
-              <div className={pageStyles.snapshotTitleGroup}>
-                <h2>Handover sheet</h2>
-                <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
+          <div className={pageStyles.sheetLayout}>
+            {/* The sheet: one list per tab, the printed sections below it. */}
+            <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
+              <div className={pageStyles.snapshotHead}>
+                <div className={pageStyles.snapshotTitleGroup}>
+                  <IconTile icon={ClipboardList} />
+                  <h2>Handover sheet</h2>
+                  <span className={pageStyles.snapshotMeta}>
+                    {scopeLabel} · {currentShift.label.toLowerCase()} shift
+                  </span>
+                </div>
+                <span className={pageStyles.snapshotBadge}>
+                  <Icon icon={Clock} size={14} />
+                  Snapshot{" "}
+                  <span className={pageStyles.snapshotClock} data-testid="ward-handover-taken-at">
+                    at {formatInstant(now)}
+                  </span>
+                </span>
               </div>
 
-              <div className={pageStyles.snapshotControls}>
-                <div className={pageStyles.viewModeToggle} role="radiogroup" aria-label="Sheet Layout" data-print-hide>
-                  <button
-                    type="button"
-                    className={`${pageStyles.viewModeBtn} ${sheetViewMode === "table" ? pageStyles.active : ""}`}
-                    onClick={() => setSheetViewMode("table")}
-                    role="radio"
-                    aria-checked={sheetViewMode === "table"}
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <line x1="2" y1="4" x2="14" y2="4" />
-                      <line x1="2" y1="8" x2="14" y2="8" />
-                      <line x1="2" y1="12" x2="14" y2="12" />
-                    </svg>
-                    <span>Table View</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.viewModeBtn} ${sheetViewMode === "cards" ? pageStyles.active : ""}`}
-                    onClick={() => setSheetViewMode("cards")}
-                    role="radio"
-                    aria-checked={sheetViewMode === "cards"}
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <rect x="2" y="2" width="5" height="5" rx="1" />
-                      <rect x="9" y="2" width="5" height="5" rx="1" />
-                      <rect x="2" y="9" width="5" height="5" rx="1" />
-                      <rect x="9" y="9" width="5" height="5" rx="1" />
-                    </svg>
-                    <span>ISBAR Cards</span>
-                  </button>
-                </div>
-                {sheetViewMode === "table" && (
-                  <button
-                    type="button"
-                    className={pageStyles.btnActionSec}
-                    onClick={() => setIsTableEnlarged(!isTableEnlarged)}
-                    aria-expanded={isTableEnlarged}
-                    title={
-                      isTableEnlarged ? "Compress table to normal bounded view" : "Enlarge table to view all records"
-                    }
-                    data-print-hide
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      {isTableEnlarged ? (
-                        <>
-                          <polyline points="4 14 7 14 7 11" />
-                          <polyline points="12 2 9 2 9 5" />
-                          <polyline points="14 7 14 4 11 4" />
-                          <polyline points="2 9 2 12 5 12" />
-                        </>
-                      ) : (
-                        <>
-                          <polyline points="1.5 6 1.5 1.5 6 1.5" />
-                          <polyline points="14.5 6 14.5 1.5 10 1.5" />
-                          <polyline points="1.5 10 1.5 14.5 6 14.5" />
-                          <polyline points="14.5 10 14.5 14.5 10 14.5" />
-                        </>
-                      )}
-                    </svg>
-                    <span>{isTableEnlarged ? "Compress View" : "Enlarge Table"}</span>
-                  </button>
-                )}
-                <button type="button" className={pageStyles.btnActionSec} onClick={handleCopySummary}>
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                  <span>Copy Text</span>
-                </button>
-                <button type="button" className={pageStyles.btnPrintPrimary} onClick={() => window.print()}>
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" />
-                  </svg>
-                  <span>Print Sheet (A4)</span>
-                </button>
-              </div>
-            </div>
-
-            <div className={pageStyles.snapshotBody}>
-              {/* Official WA Health Department Header */}
-              <div className={pageStyles.officialHeaderRow}>
-                <div>
-                  <div className={pageStyles.officialEntity}>
-                    Government of Western Australia · Department of Health
-                  </div>
-                  <div className={pageStyles.officialDocTitle}>Handover sheet</div>
-                  <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                    Scope: <b>{scopeLabel}</b> · Generated Point-in-Time: <b>{formatInstant(now)} AWST</b>
-                  </div>
-                </div>
-                <div className={pageStyles.officialMeta}>
-                  <div>
-                    Shift: <b>{shiftLabelText}</b>
-                  </div>
-                  <div>
-                    Date: <b>{formatSheetMoment(now, dayZero)}</b>
-                  </div>
-                  <div>Medical Coordinator: Not recorded in this snapshot</div>
-                </div>
-              </div>
-
-              {/* Either ISBAR Priority Patient Cards or High-Yield Bedflow Table */}
-              {sheetViewMode === "cards" ? (
-                <div className={pageStyles.prioritySectionsWrap}>
-                  {filteredMovements.length === 0 ? (
-                    <div className={pageStyles.emptyPriorityNote}>
-                      No clinical movements or referrals match the active scope &amp; focus filters. Stated absence: 0
-                      records in scope.
-                    </div>
-                  ) : (
-                    priorityGroups.map((group) => {
-                      const tierClass =
-                        group.tier === "critical"
-                          ? pageStyles.priorityCritical
-                          : group.tier === "inbound"
-                            ? pageStyles.priorityInbound
-                            : group.tier === "referral"
-                              ? pageStyles.priorityReferral
-                              : pageStyles.priorityDischarge;
-
-                      return (
-                        <section key={group.tier} className={pageStyles.prioritySection}>
-                          <div className={pageStyles.priorityHead}>
-                            <div className={pageStyles.priorityTitleGroup}>
-                              <div className={pageStyles.priorityIcon}>{group.icon}</div>
-                              <div>
-                                <span className={pageStyles.priorityTitle}>{group.title}</span>
-                                <span className={pageStyles.prioritySub}> · {group.subtitle}</span>
-                              </div>
-                            </div>
-                            <span className={`${pageStyles.statusPill} ${pageStyles[group.badgeTone]}`}>
-                              {group.badgeText}
-                            </span>
-                          </div>
-
-                          {group.movements.length === 0 ? (
-                            <p className={pageStyles.emptyPriorityNote}>
-                              None in this priority tier under active filter.
-                            </p>
-                          ) : (
-                            <div className={pageStyles.patientCardGrid}>
-                              {group.movements.map((movement) => {
-                                const elapsed = elapsedLabel(movement, now);
-                                const isBreach = movementIsUrgent(movement, now);
-                                const waitBadgeClass = isBreach ? pageStyles.danger : pageStyles.warn;
-                                const dest = destinationCell(movement, units);
-                                const orig = originDepartmentText(movement);
-                                const flags = getHighRiskFlags(movement, now);
-                                const patientInfo = resolveMovementPatient(movement, patients, referrals);
-                                const formattedUmrn =
-                                  patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
-                                    ? patientInfo.umrn
-                                    : `UMRN ${patientInfo.umrn}`;
-
-                                return (
-                                  <article
-                                    key={movement.id}
-                                    className={`${pageStyles.patientCard} ${tierClass}`}
-                                    data-testid={`patient-card-${movement.id}`}
-                                  >
-                                    <div className={pageStyles.patientCardHead}>
-                                      <div className={pageStyles.patientMainInfo}>
-                                        <div className={pageStyles.patientIdGroup}>
-                                          <button
-                                            type="button"
-                                            className={pageStyles.btnPatientName}
-                                            onClick={(e) => {
-                                              setDrawerTrigger(e.currentTarget);
-                                              openMovementDetail(movement);
-                                            }}
-                                            // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                                            aria-label={`View clinical handover details for ${patientInfo.name}`}
-                                          >
-                                            <span className={pageStyles.patientFullName}>{patientInfo.name}</span>
-                                          </button>
-                                          <span className={pageStyles.patientUmrn}>{formattedUmrn}</span>
-                                        </div>
-                                        <div className={pageStyles.patientSubtitle}>
-                                          <span className={pageStyles.patientOwner}>
-                                            {movement.owner || "ED mental health team"}
-                                          </span>
-                                          {orig && <span className={pageStyles.patientOrigin}> · {orig}</span>}
-                                        </div>
-                                      </div>
-                                      <div className={pageStyles.patientCardBadges}>
-                                        <span className={`${pageStyles.statusPill} ${waitBadgeClass}`}>
-                                          {elapsed} {isBreach ? "(Delay)" : ""}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* ISBAR Grid Structure */}
-                                    <div className={pageStyles.isbarGrid}>
-                                      {/* S: Situation */}
-                                      <div className={pageStyles.isbarRow}>
-                                        <span className={pageStyles.isbarLabel}>
-                                          <abbr title="Situation">S</abbr>
-                                        </span>
-                                        <div className={pageStyles.isbarContent}>
-                                          <div className={pageStyles.isbarRoutePath}>
-                                            <span className={pageStyles.isbarOrigin}>{orig}</span>
-                                            <svg
-                                              className={pageStyles.isbarArrow}
-                                              viewBox="0 0 16 16"
-                                              width="12"
-                                              height="12"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="2"
-                                              aria-hidden="true"
-                                            >
-                                              <path
-                                                d="M3 8h10M9 4l4 4-4 4"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                              />
-                                            </svg>
-                                            <span className={pageStyles.isbarDest}>{dest}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* B & A: Background & Assessment (Compact horizontal badge bar) */}
-                                      <div className={pageStyles.isbarRow}>
-                                        <span className={pageStyles.isbarLabel}>
-                                          <abbr title="Background & Assessment">B&amp;A</abbr>
-                                        </span>
-                                        <div className={pageStyles.isbarContent}>
-                                          <div className={pageStyles.chipRow}>
-                                            <span
-                                              className={`${pageStyles.statusPill} ${movement.legalForm ? pageStyles.danger : pageStyles.mono}`}
-                                            >
-                                              {movement.legalForm
-                                                ? `Form ${movement.legalForm.code} (${movement.legalStatus ?? "Involuntary"})`
-                                                : (movement.legalStatus ?? "Not recorded")}
-                                            </span>
-                                            <span
-                                              className={`${pageStyles.statusPill} ${movement.flaggedUrgent || movement.specialling ? pageStyles.danger : pageStyles.mono}`}
-                                            >
-                                              {movementObservationLabel(movement)}
-                                            </span>
-                                            {flags
-                                              .filter(
-                                                (flag) =>
-                                                  !flag.label.includes("Observations") &&
-                                                  !flag.label.includes("Specialling") &&
-                                                  !flag.label.includes("Supervision") &&
-                                                  !(
-                                                    flag.label === "Urgent" &&
-                                                    (movement.flaggedUrgent ||
-                                                      movementObservationLabel(movement) === "Urgent")
-                                                  ),
-                                              )
-                                              .map((flag, idx) => (
-                                                <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
-                                                  {flag.icon && <span aria-hidden="true">{flag.icon} </span>}
-                                                  <span>{flag.label}</span>
-                                                </span>
-                                              ))}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* R: Recommendation & Action */}
-                                      <div className={pageStyles.isbarRow}>
-                                        <span className={pageStyles.isbarLabel}>
-                                          <abbr title="Recommendation">R</abbr>
-                                        </span>
-                                        <div className={pageStyles.isbarContent}>
-                                          <span className={pageStyles.actionText}>
-                                            {stageCopy[movement.stage]?.label ?? "In Handover"}
-                                            {dest !== "No destination unit recorded"
-                                              ? ` targeted for ${dest}.`
-                                              : " awaiting bed allocation."}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className={pageStyles.patientCardFoot}>
-                                      <button
-                                        type="button"
-                                        className={pageStyles.btnActionSec}
-                                        onClick={() => handleCopyPatientISBAR(movement)}
-                                        title="Copy structured ISBAR clinical note for EMR (PSOLIS/WebPAS)"
-                                        data-print-hide
-                                      >
-                                        <svg
-                                          viewBox="0 0 24 24"
-                                          width="12"
-                                          height="12"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          aria-hidden="true"
-                                        >
-                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                        </svg>
-                                        <span>{copiedPatientId === movement.id ? "✓ Copied" : "Copy to EMR"}</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className={pageStyles.btnActionSec}
-                                        onClick={(e) => {
-                                          setDrawerTrigger(e.currentTarget);
-                                          openMovementDetail(movement);
-                                        }}
-                                        aria-label={`View clinical details for ${patientInfo.name}`}
-                                      >
-                                        Clinical Details →
-                                      </button>
-                                    </div>
-                                  </article>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </section>
-                      );
-                    })
-                  )}
-                </div>
-              ) : (
-                /* High-Yield Bedflow Table with Explicit Time Waiting Column */
+              {sheetViewMode === "table" ? (
                 <div
-                  className={`${pageStyles.snapSheetWrap} ${isTableEnlarged ? pageStyles.snapSheetEnlarged : pageStyles.snapSheetBounded}`}
-                  ref={tableContainerRef}
-                  tabIndex={isTableEnlarged ? -1 : undefined}
-                  role={isTableEnlarged ? "dialog" : undefined}
-                  aria-modal={isTableEnlarged ? true : undefined}
-                  aria-label={isTableEnlarged ? "Enlarged handover table" : undefined}
-                >
-                  {isTableEnlarged && (
-                    <div className={pageStyles.enlargeHeaderBar} data-print-hide>
-                      <div>
-                        <h2 className={pageStyles.enlargeTitle}>Handover</h2>
-                        <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                          Showing {filteredMovements.length} records in scope · Press Esc or click Compress to return
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className={pageStyles.btnCompressTable}
-                        onClick={() => setIsTableEnlarged(false)}
-                      >
-                        ✕ Compress View (Esc)
-                      </button>
-                    </div>
-                  )}
-                  <div className={isTableEnlarged ? pageStyles.enlargedTableScroll : pageStyles.tableScrollPassthrough}>
-                    <table className={pageStyles.snapSheet}>
-                      <thead>
-                        <tr>
-                          <th scope="col" style={{ width: "18%", minWidth: "160px" }}>
-                            Name &amp; UMRN
-                          </th>
-                          <th scope="col" style={{ width: "22%", minWidth: "180px" }}>
-                            Current Unit / Origin
-                          </th>
-                          <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
-                            Time Waiting
-                          </th>
-                          <th scope="col" style={{ width: "12%", minWidth: "100px" }}>
-                            Order Status
-                          </th>
-                          <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
-                            Acuity / Obs
-                          </th>
-                          <th scope="col" style={{ width: "24%", minWidth: "200px" }}>
-                            Next step
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredMovements.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={6}
-                              style={{
-                                textAlign: "center",
-                                padding: "20px",
-                                color: "var(--muted)",
-                                fontStyle: "italic",
-                              }}
-                            >
-                              No clinical movements or referrals match the active scope &amp; focus filters. Stated
-                              absence: 0 records in scope.
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredMovements.map((movement) => {
-                            const elapsed = elapsedLabel(movement, now);
-                            const isBreach = movementIsUrgent(movement, now);
-                            const waitBadgeClass = isBreach ? pageStyles.danger : pageStyles.warn;
-                            const statClass = isBreach ? pageStyles.danger : pageStyles.mono;
-                            const dest = destinationCell(movement, units);
-                            const orig = originDepartmentText(movement);
-                            const patientInfo = resolveMovementPatient(movement, patients, referrals);
-                            const formattedUmrn =
-                              patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
-                                ? patientInfo.umrn
-                                : `UMRN ${patientInfo.umrn}`;
-
-                            return (
-                              <tr key={movement.id}>
-                                <td>
-                                  <div className={pageStyles.patientIdentityCell}>
-                                    <button
-                                      type="button"
-                                      className={pageStyles.btnLinkAction}
-                                      onClick={(e) => {
-                                        setDrawerTrigger(e.currentTarget);
-                                        openMovementDetail(movement);
-                                      }}
-                                      aria-label={`View clinical handover details for ${patientInfo.name}`}
-                                    >
-                                      <span className={pageStyles.patientAvatarPill}>{patientInfo.name.charAt(0)}</span>
-                                      <b>{patientInfo.name}</b>
-                                    </button>
-                                    <div className={pageStyles.patientMetaRow}>
-                                      <span className={pageStyles.patientUmrnChip}>{formattedUmrn}</span>
-                                      {movement.owner ? (
-                                        <span className={pageStyles.patientOwnerTag}>{movement.owner}</span>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className={pageStyles.routeCell}>
-                                    <span className={pageStyles.routeOrigin}>
-                                      <b>{orig}</b>
-                                    </span>
-                                    <span className={pageStyles.routeDest}>→ {dest}</span>
-                                  </div>
-                                </td>
-                                <td>
-                                  <span className={`${pageStyles.statusPill} ${waitBadgeClass}`}>
-                                    {elapsed} {isBreach ? "(Delay)" : ""}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span className={`${pageStyles.statusPill} ${statClass}`}>
-                                    {movement.legalForm
-                                      ? `Form ${movement.legalForm.code}`
-                                      : (movement.legalStatus ?? "Not recorded")}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span
-                                    className={`${pageStyles.statusPill} ${movement.flaggedUrgent || movement.specialling ? pageStyles.danger : pageStyles.mono}`}
-                                  >
-                                    {movementObservationLabel(movement)}
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className={pageStyles.actionCell}>
-                                    <span className={pageStyles.actionStageTag}>
-                                      {stageCopy[movement.stage]?.label ?? "In Handover"}
-                                    </span>
-                                    <span className={pageStyles.actionTargetText}>
-                                      {dest !== "No destination unit recorded"
-                                        ? `Target: ${dest}`
-                                        : "Awaiting bed allocation"}
-                                    </span>
-                                    {movement.owner ? (
-                                      <span className={pageStyles.actionOwnerText}>Owner: {movement.owner}</span>
-                                    ) : null}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* ── 4 VERIFIED SECTIONS & OUTSIDE-FILTER & SIGN-OFF (STRICT TEST PRESERVATION) ── */}
-              <div className={pageStyles.sheetBody} role="region" aria-label="Handover sheet sections" tabIndex={0}>
-                {/* ── Segmented Table Switcher (Images 1 & 2 Overhaul) ── */}
-                <div
-                  className={pageStyles.tableSwitcherBar}
+                  className={pageStyles.sheetTabs}
                   data-print-hide
                   role="tablist"
                   aria-label="Handover table sections"
                   onKeyDown={onTableSectionKeyDown}
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-longest"
-                    aria-selected={activeTableSection === "longest"}
-                    aria-controls="tablePanel-longest"
-                    tabIndex={activeTableSection === "longest" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "longest" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("longest")}
-                  >
-                    <span>Longest Waits</span>
-                    <span className={pageStyles.tableSwitchBadge}>{snapshot.longestWaits.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-pulled"
-                    aria-selected={activeTableSection === "pulled"}
-                    aria-controls="tablePanel-pulled"
-                    tabIndex={activeTableSection === "pulled" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "pulled" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("pulled")}
-                  >
-                    <span>Beds Pulled</span>
-                    <span className={pageStyles.tableSwitchBadge}>{snapshot.pulledBeds.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-open"
-                    aria-selected={activeTableSection === "open"}
-                    aria-controls="tablePanel-open"
-                    tabIndex={activeTableSection === "open" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "open" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("open")}
-                  >
-                    <span>Still Open at {shiftEndClock}</span>
-                    <span className={pageStyles.tableSwitchBadge}>{openBeforeShiftEnd.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-transit"
-                    aria-selected={activeTableSection === "transit"}
-                    aria-controls="tablePanel-transit"
-                    tabIndex={activeTableSection === "transit" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "transit" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("transit")}
-                  >
-                    <span>In Transit</span>
-                    <span className={pageStyles.tableSwitchBadge}>{snapshot.inTransit.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-placement"
-                    aria-selected={activeTableSection === "placement"}
-                    aria-controls="tablePanel-placement"
-                    tabIndex={activeTableSection === "placement" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "placement" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("placement")}
-                  >
-                    <span>Placement Issues</span>
-                    <span
-                      className={`${pageStyles.tableSwitchBadge} ${snapshot.placementGoneWrong.length > 0 ? pageStyles.badgeDanger : ""}`}
-                    >
-                      {snapshot.placementGoneWrong.length}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    id="tableTab-all"
-                    aria-selected={activeTableSection === "all"}
-                    aria-controls="tablePanel-longest tablePanel-pulled tablePanel-open tablePanel-transit tablePanel-placement"
-                    tabIndex={activeTableSection === "all" ? 0 : -1}
-                    className={`${pageStyles.tableSwitchBtn} ${activeTableSection === "all" ? pageStyles.tableSwitchBtnActive : ""}`}
-                    onClick={() => setActiveTableSection("all")}
-                  >
-                    <span>View All Tables</span>
-                  </button>
-                </div>
-
-                <div
-                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "longest" ? pageStyles.tableSectionHidden : ""}`}
-                  role="tabpanel"
-                  id="tablePanel-longest"
-                  aria-labelledby="tableTab-longest"
-                >
-                  <LongestWaitsSection
-                    snapshot={snapshot}
-                    units={units}
-                    wholeNetworkCount={networkSnapshot.longestWaits.length}
-                    patients={patients}
-                    referrals={referrals}
-                    onSelectMovement={(movement, trigger) => {
-                      setDrawerTrigger(trigger ?? null);
-                      openMovementDetail(movement);
-                    }}
-                  />
-                </div>
-                <div
-                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "pulled" ? pageStyles.tableSectionHidden : ""}`}
-                  role="tabpanel"
-                  id="tablePanel-pulled"
-                  aria-labelledby="tableTab-pulled"
-                >
-                  <PulledBedsSection
-                    snapshot={snapshot}
-                    wholeNetworkCount={networkSnapshot.pulledBeds.length}
-                    patients={patients}
-                    referrals={referrals}
-                    onSelectMovement={(movement, trigger) => {
-                      setDrawerTrigger(trigger ?? null);
-                      openMovementDetail(movement);
-                    }}
-                  />
-                </div>
-                <div
-                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "open" ? pageStyles.tableSectionHidden : ""}`}
-                  role="tabpanel"
-                  id="tablePanel-open"
-                  aria-labelledby="tableTab-open"
-                >
-                  <OpenBeforeShiftEndSection
-                    items={openBeforeShiftEnd}
-                    now={now}
-                    patients={patients}
-                    referrals={referrals}
-                    onSelectMovement={(movement, trigger) => {
-                      setDrawerTrigger(trigger ?? null);
-                      openMovementDetail(movement);
-                    }}
-                  />
-                </div>
-                <div
-                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "transit" ? pageStyles.tableSectionHidden : ""}`}
-                  role="tabpanel"
-                  id="tablePanel-transit"
-                  aria-labelledby="tableTab-transit"
-                >
-                  <InTransitSection
-                    snapshot={snapshot}
-                    units={units}
-                    wholeNetworkCount={networkSnapshot.inTransit.length}
-                    patients={patients}
-                    referrals={referrals}
-                    onSelectMovement={(movement, trigger) => {
-                      setDrawerTrigger(trigger ?? null);
-                      openMovementDetail(movement);
-                    }}
-                  />
-                </div>
-                <div
-                  className={`${pageStyles.tableSectionWrapper} ${activeTableSection !== "all" && activeTableSection !== "placement" ? pageStyles.tableSectionHidden : ""}`}
-                  role="tabpanel"
-                  id="tablePanel-placement"
-                  aria-labelledby="tableTab-placement"
-                >
-                  <PlacementGoneWrongSection
-                    snapshot={snapshot}
-                    wholeNetworkCount={networkSnapshot.placementGoneWrong.length}
-                    patients={patients}
-                    referrals={referrals}
-                    onSelectMovement={(movement, trigger) => {
-                      setDrawerTrigger(trigger ?? null);
-                      openMovementDetail(movement);
-                    }}
-                  />
-                </div>
-                <UrgentOutsideFilterFooter
-                  movements={urgentOutsideFilter}
-                  scopeLabel={scopeLabel}
-                  now={now}
-                  excludedOpenCount={excludedOpenCount}
-                  urgentAnywhereCount={urgentAnywhereCount}
-                  patients={patients}
-                  referrals={referrals}
-                />
-
-                {/* Shift Sign-off Block */}
-                <div className={pageStyles.signBlock}>
-                  <div className={pageStyles.signCols}>
-                    <div className={pageStyles.signCol}>
-                      <span className={pageStyles.signRole}>Outgoing Coordinator</span>
-                      <span className={pageStyles.signName}>Not recorded</span>
-                      <span className={pageStyles.signAhpra}>Identity not recorded</span>
-                    </div>
-                    <div className={pageStyles.signCol}>
-                      <span className={pageStyles.signRole}>Snapshot time</span>
-                      <span className={`${pageStyles.signName} mono`}>{formatInstant(now)} AWST</span>
-                      <span className={pageStyles.signAhpra}>{formatSheetMoment(now, dayZero)}</span>
-                    </div>
-                    <div className={pageStyles.signCol}>
-                      <span className={pageStyles.signRole}>Incoming Coordinator</span>
-                      <span className={pageStyles.signName}>Not recorded</span>
-                      <span className={pageStyles.signAhpra}>Identity not recorded</span>
-                    </div>
-                  </div>
-
-                  <div id="signActionContainer">
+                  {sheetTabs.map((tab) => (
                     <button
+                      key={tab.id}
                       type="button"
-                      className={pageStyles.btnPrintPrimary}
-                      id="btnSignHandover"
-                      data-testid="ward-handover-sign-off-button-visible"
-                      onClick={handleSignOff}
+                      role="tab"
+                      id={`tableTab-${tab.id}`}
+                      aria-selected={activeTableSection === tab.id}
+                      aria-controls="handover-sheet-rows"
+                      tabIndex={activeTableSection === tab.id ? 0 : -1}
+                      className={pageStyles.sheetTab}
+                      onClick={() => {
+                        setActiveTableSection(tab.id);
+                        setFocusFilter("all");
+                      }}
                     >
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 2v4H8M12 2L4 10v4h4l8-8z" />
-                      </svg>
-                      <span>Sign off the handover</span>
+                      {tab.label}
+                      <span className={pageStyles.sheetTabCount}>{tab.count}</span>
                     </button>
-                    <p
-                      className={pageStyles.signOffHint}
-                      data-testid="ward-handover-sign-off-visible-status"
-                      data-recorded={signOffRecord ? "true" : "false"}
-                    >
-                      {signOffRecord
-                        ? `Signed off as ${signOffRecord.role} at ${formatInstantWithDay(signOffRecord.at, now)}.`
-                        : "Sign-off is not recorded yet."}
-                    </p>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className={pageStyles.snapshotBody}>
+                {/* Official header: on paper only. */}
+                <div className={pageStyles.officialHeaderRow}>
+                  <div>
+                    <div className={pageStyles.officialEntity}>
+                      Government of Western Australia · Department of Health
+                    </div>
+                    <div className={pageStyles.officialDocTitle}>Handover sheet</div>
+                    <div className={pageStyles.officialScope}>
+                      Scope: <b>{scopeLabel}</b> · Generated Point-in-Time: <b>{formatInstant(now)} AWST</b>
+                    </div>
+                  </div>
+                  <div className={pageStyles.officialMeta}>
+                    <div>
+                      Shift: <b>{shiftLabelText}</b>
+                    </div>
+                    <div>
+                      Date: <b>{formatSheetMoment(now, dayZero)}</b>
+                    </div>
+                    <div>Medical Coordinator: Not recorded in this snapshot</div>
                   </div>
                 </div>
 
-                {/* NSQHS Standard 6 Clinical Handover Accreditation Footer */}
-                <footer className={pageStyles.accreditationFooter} data-testid="handover-accreditation-footer">
-                  <div className={pageStyles.accreditationGrid}>
-                    <div className={pageStyles.accreditationField}>
-                      <span className={pageStyles.accreditationLabel}>Handover Given By (Outgoing MO / Nurse):</span>
-                      <div className={pageStyles.accreditationLine} />
+                <div
+                  role={sheetViewMode === "table" ? "tabpanel" : undefined}
+                  id="handover-sheet-rows"
+                  aria-labelledby={sheetViewMode === "table" ? `tableTab-${activeTableSection}` : undefined}
+                >
+                  {sheetViewMode === "cards" ? (
+                    <div className={pageStyles.prioritySectionsWrap}>
+                      {filteredMovements.length === 0 ? (
+                        <div className={pageStyles.emptyPriorityNote}>
+                          No clinical movements or referrals match the active scope &amp; focus filters. Stated absence:
+                          0 records in scope.
+                        </div>
+                      ) : (
+                        priorityGroups.map((group) => {
+                          return (
+                            <section key={group.tier} className={pageStyles.prioritySection}>
+                              <div className={pageStyles.priorityHead}>
+                                <div className={pageStyles.priorityTitleGroup}>
+                                  <div className={pageStyles.priorityIcon}>{group.icon}</div>
+                                  <div>
+                                    <span className={pageStyles.priorityTitle}>{group.title}</span>
+                                    <span className={pageStyles.prioritySub}> · {group.subtitle}</span>
+                                  </div>
+                                </div>
+                                <span className={`${pageStyles.statusPill} ${pageStyles[group.badgeTone]}`}>
+                                  {group.badgeText}
+                                </span>
+                              </div>
+
+                              {group.movements.length === 0 ? (
+                                <p className={pageStyles.emptyPriorityNote}>
+                                  None in this priority tier under active filter.
+                                </p>
+                              ) : (
+                                <div className={pageStyles.patientCardGrid}>
+                                  {group.movements.map((movement) => {
+                                    const elapsed = elapsedLabel(movement, now);
+                                    const isBreach = movementIsUrgent(movement, now);
+                                    const waitBadgeClass = isBreach ? pageStyles.danger : pageStyles.warn;
+                                    const dest = destinationCell(movement, units);
+                                    const orig = originDepartmentText(movement);
+                                    const flags = getHighRiskFlags(movement, now);
+                                    const patientInfo = resolveMovementPatient(movement, patients, referrals);
+                                    const formattedUmrn =
+                                      patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
+                                        ? patientInfo.umrn
+                                        : `UMRN ${patientInfo.umrn}`;
+
+                                    return (
+                                      <article
+                                        key={movement.id}
+                                        className={pageStyles.patientCard}
+                                        data-testid={`patient-card-${movement.id}`}
+                                      >
+                                        <div className={pageStyles.patientCardHead}>
+                                          <div className={pageStyles.patientMainInfo}>
+                                            <div className={pageStyles.patientIdGroup}>
+                                              <button
+                                                type="button"
+                                                className={pageStyles.btnPatientName}
+                                                onClick={(e) => {
+                                                  setDrawerTrigger(e.currentTarget);
+                                                  openMovementDetail(movement);
+                                                }}
+                                                // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+                                                aria-label={`View clinical handover details for ${patientInfo.name}`}
+                                              >
+                                                <span className={pageStyles.patientFullName}>{patientInfo.name}</span>
+                                              </button>
+                                              <span className={pageStyles.patientUmrn}>{formattedUmrn}</span>
+                                            </div>
+                                            <div className={pageStyles.patientSubtitle}>
+                                              <span className={pageStyles.patientOwner}>
+                                                {movement.owner || "ED mental health team"}
+                                              </span>
+                                              {orig && <span className={pageStyles.patientOrigin}> · {orig}</span>}
+                                            </div>
+                                          </div>
+                                          <div className={pageStyles.patientCardBadges}>
+                                            <span className={`${pageStyles.statusPill} ${waitBadgeClass}`}>
+                                              {elapsed} {isBreach ? "(Delay)" : ""}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {/* ISBAR Grid Structure */}
+                                        <div className={pageStyles.isbarGrid}>
+                                          {/* S: Situation */}
+                                          <div className={pageStyles.isbarRow}>
+                                            <span className={pageStyles.isbarLabel}>
+                                              <abbr title="Situation">S</abbr>
+                                            </span>
+                                            <div className={pageStyles.isbarContent}>
+                                              <div className={pageStyles.isbarRoutePath}>
+                                                <span className={pageStyles.isbarOrigin}>{orig}</span>
+                                                <svg
+                                                  className={pageStyles.isbarArrow}
+                                                  viewBox="0 0 16 16"
+                                                  width="12"
+                                                  height="12"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  strokeWidth="2"
+                                                  aria-hidden="true"
+                                                >
+                                                  <path
+                                                    d="M3 8h10M9 4l4 4-4 4"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                  />
+                                                </svg>
+                                                <span className={pageStyles.isbarDest}>{dest}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* B & A: Background & Assessment (Compact horizontal badge bar) */}
+                                          <div className={pageStyles.isbarRow}>
+                                            <span className={pageStyles.isbarLabel}>
+                                              <abbr title="Background & Assessment">B&amp;A</abbr>
+                                            </span>
+                                            <div className={pageStyles.isbarContent}>
+                                              <div className={pageStyles.chipRow}>
+                                                <span
+                                                  className={`${pageStyles.statusPill} ${movement.legalForm ? pageStyles.danger : pageStyles.mono}`}
+                                                >
+                                                  {movement.legalForm
+                                                    ? `Form ${movement.legalForm.code} (${movement.legalStatus ?? "Involuntary"})`
+                                                    : (movement.legalStatus ?? "Not recorded")}
+                                                </span>
+                                                <span
+                                                  className={`${pageStyles.statusPill} ${movement.flaggedUrgent || movement.specialling ? pageStyles.danger : pageStyles.mono}`}
+                                                >
+                                                  {movementObservationLabel(movement)}
+                                                </span>
+                                                {flags
+                                                  .filter(
+                                                    (flag) =>
+                                                      !flag.label.includes("Observations") &&
+                                                      !flag.label.includes("Specialling") &&
+                                                      !flag.label.includes("Supervision") &&
+                                                      !(
+                                                        flag.label === "Urgent" &&
+                                                        (movement.flaggedUrgent ||
+                                                          movementObservationLabel(movement) === "Urgent")
+                                                      ),
+                                                  )
+                                                  .map((flag, idx) => (
+                                                    <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
+                                                      {flag.icon && <span aria-hidden="true">{flag.icon} </span>}
+                                                      <span>{flag.label}</span>
+                                                    </span>
+                                                  ))}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* R: Recommendation & Action */}
+                                          <div className={pageStyles.isbarRow}>
+                                            <span className={pageStyles.isbarLabel}>
+                                              <abbr title="Recommendation">R</abbr>
+                                            </span>
+                                            <div className={pageStyles.isbarContent}>
+                                              <span className={pageStyles.actionText}>
+                                                {stageCopy[movement.stage]?.label ?? "In Handover"}
+                                                {dest !== "No destination unit recorded"
+                                                  ? ` targeted for ${dest}.`
+                                                  : " awaiting bed allocation."}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className={pageStyles.patientCardFoot}>
+                                          <button
+                                            type="button"
+                                            className={pageStyles.btnActionSec}
+                                            onClick={() => handleCopyPatientISBAR(movement)}
+                                            title="Copy structured ISBAR clinical note for EMR (PSOLIS/WebPAS)"
+                                            data-print-hide
+                                          >
+                                            <svg
+                                              viewBox="0 0 24 24"
+                                              width="12"
+                                              height="12"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              aria-hidden="true"
+                                            >
+                                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg>
+                                            <span>{copiedPatientId === movement.id ? "✓ Copied" : "Copy to EMR"}</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className={pageStyles.btnActionSec}
+                                            onClick={(e) => {
+                                              setDrawerTrigger(e.currentTarget);
+                                              openMovementDetail(movement);
+                                            }}
+                                            aria-label={`View clinical details for ${patientInfo.name}`}
+                                          >
+                                            Clinical Details →
+                                          </button>
+                                        </div>
+                                      </article>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </section>
+                          );
+                        })
+                      )}
                     </div>
-                    <div className={pageStyles.accreditationField}>
-                      <span className={pageStyles.accreditationLabel}>Handover Received By (Incoming MO / Nurse):</span>
-                      <div className={pageStyles.accreditationLine} />
-                    </div>
-                    <div className={pageStyles.accreditationField}>
-                      <span className={pageStyles.accreditationLabel}>Shift Handover Safety Verification:</span>
-                      <div className={pageStyles.accreditationChecks}>
-                        <span className={pageStyles.checkItem}>[ ] Controlled Drugs Safe Checked</span>
-                        <span className={pageStyles.checkItem}>[ ] Resuscitation Trolley Checked</span>
-                        <span className={pageStyles.checkItem}>[ ] Duress Alarms Operational</span>
+                  ) : (
+                    <div
+                      className={`${pageStyles.snapSheetWrap} ${isTableEnlarged ? pageStyles.snapSheetEnlarged : pageStyles.snapSheetBounded}`}
+                      ref={tableContainerRef}
+                      tabIndex={isTableEnlarged ? -1 : undefined}
+                      role={isTableEnlarged ? "dialog" : undefined}
+                      aria-modal={isTableEnlarged ? true : undefined}
+                      aria-label={isTableEnlarged ? "Enlarged handover table" : undefined}
+                    >
+                      {isTableEnlarged && (
+                        <div className={pageStyles.enlargeHeaderBar} data-print-hide>
+                          <div>
+                            <h2 className={pageStyles.enlargeTitle}>Handover</h2>
+                            <span className={pageStyles.enlargeMeta}>
+                              {sheetRows.length} shown · Esc returns to the sheet
+                            </span>
+                          </div>
+                          <Button variant="sec" size="sm" icon={Minimize2} onClick={() => setIsTableEnlarged(false)}>
+                            Compress view
+                          </Button>
+                        </div>
+                      )}
+                      <div
+                        className={isTableEnlarged ? pageStyles.enlargedTableScroll : pageStyles.tableScrollPassthrough}
+                      >
+                        <table className={pageStyles.snapSheet}>
+                          <thead>
+                            <tr>
+                              <th scope="col">Patient</th>
+                              <th scope="col">Origin</th>
+                              <th scope="col">Waiting</th>
+                              <th scope="col">Order</th>
+                              <th scope="col">Acuity</th>
+                              <th scope="col">Next step</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sheetRows.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className={pageStyles.sheetEmptyCell}>
+                                  No movement in this list for the active scope. Stated absence: 0 records.
+                                </td>
+                              </tr>
+                            ) : (
+                              sheetRows.map(({ movement, note, key }) => {
+                                const urgent = movementIsUrgent(movement, now);
+                                const dest = destinationCell(movement, units);
+                                const patientInfo = resolveMovementPatient(movement, patients, referrals);
+                                const formattedUmrn =
+                                  patientInfo.umrn.startsWith("UMRN") || patientInfo.umrn.startsWith("UM")
+                                    ? patientInfo.umrn
+                                    : `UMRN ${patientInfo.umrn}`;
+                                const observation = movementObservationLabel(movement);
+                                const nextNote = note ?? (movement.owner ? movement.owner : "No owner recorded");
+                                return (
+                                  <tr key={key} data-focused={focusedMovement?.id === movement.id ? "true" : undefined}>
+                                    <td>
+                                      <div className={pageStyles.patientIdentityCell}>
+                                        <span className={pageStyles.tierBox}>
+                                          <SrOnly>Tier </SrOnly>
+                                          {movement.urgency}
+                                        </span>
+                                        <span className={pageStyles.patientText}>
+                                          <button
+                                            type="button"
+                                            className={pageStyles.btnLinkAction}
+                                            onClick={(e) => {
+                                              setDrawerTrigger(e.currentTarget);
+                                              openMovementDetail(movement);
+                                            }}
+                                            aria-label={`View clinical handover details for ${patientInfo.name}`}
+                                          >
+                                            {patientInfo.name}
+                                          </button>
+                                          <span className={pageStyles.patientUmrnChip}>{formattedUmrn}</span>
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className={pageStyles.cellMain}>
+                                        <OriginDepartmentCell movement={movement} />
+                                      </span>
+                                      <span className={pageStyles.cellSub} title={dest}>
+                                        {dest}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className={pageStyles.cellMono}>
+                                        <Timer
+                                          at={movement.openedAt * MINUTE}
+                                          now={now * MINUTE}
+                                          direction="waiting"
+                                          hideDirection
+                                        />
+                                      </span>
+                                      {urgent ? (
+                                        <span className={pageStyles.cellUrgent}>
+                                          <StatusGlyph tone="danger" size={9} />
+                                          Urgent
+                                        </span>
+                                      ) : (
+                                        <span className={pageStyles.cellSub}>waiting</span>
+                                      )}
+                                    </td>
+                                    <td className={pageStyles.cellStrong}>
+                                      {movement.legalForm
+                                        ? `Form ${movement.legalForm.code}`
+                                        : (movement.legalStatus ?? "Not recorded")}
+                                    </td>
+                                    <td>
+                                      <span className={pageStyles.cellAcuity}>
+                                        {observation !== "Standard" ? (
+                                          <StatusGlyph tone={movement.flaggedUrgent ? "danger" : "warning"} size={9} />
+                                        ) : null}
+                                        <span className={pageStyles.cellAcuityText}>{observation}</span>
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className={pageStyles.cellMain}>
+                                        {stageCopy[movement.stage]?.label ?? "In handover"}
+                                      </span>
+                                      <span className={pageStyles.cellSub} title={nextNote}>
+                                        {nextNote}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  </div>
-                  <div className={pageStyles.accreditationLegal}>
-                    National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
-                    Government of Western Australia Department of Health
-                  </div>
-                </footer>
-              </div>
-            </div>
-          </article>
+                  )}
+                </div>
 
-          {/* Legacy side-column sign off preserved for full test compatibility */}
-          <div style={{ display: "none" }}>
+                <p className={pageStyles.sheetFoot} data-print-hide>
+                  <span>
+                    {sheetRows.length} of {includedOpenCount} open movements
+                    {activeTableSection === "longest" ? ", longest first" : ""}
+                  </span>
+                  <span>
+                    Form due times as typed <LegalLimitsNotChecked variant="tag" />
+                  </span>
+                </p>
+
+                <div className={pageStyles.sheetBody}>
+                  {/* The four sections print in full; on screen the tabs above carry the same rows. */}
+                  <div className={pageStyles.printSections}>
+                    <LongestWaitsSection
+                      snapshot={snapshot}
+                      units={units}
+                      wholeNetworkCount={networkSnapshot.longestWaits.length}
+                      patients={patients}
+                      referrals={referrals}
+                      onSelectMovement={(movement, trigger) => {
+                        setDrawerTrigger(trigger ?? null);
+                        openMovementDetail(movement);
+                      }}
+                    />
+                    <PulledBedsSection
+                      snapshot={snapshot}
+                      wholeNetworkCount={networkSnapshot.pulledBeds.length}
+                      patients={patients}
+                      referrals={referrals}
+                      onSelectMovement={(movement, trigger) => {
+                        setDrawerTrigger(trigger ?? null);
+                        openMovementDetail(movement);
+                      }}
+                    />
+                    <InTransitSection
+                      snapshot={snapshot}
+                      units={units}
+                      wholeNetworkCount={networkSnapshot.inTransit.length}
+                      patients={patients}
+                      referrals={referrals}
+                      onSelectMovement={(movement, trigger) => {
+                        setDrawerTrigger(trigger ?? null);
+                        openMovementDetail(movement);
+                      }}
+                    />
+                    <PlacementGoneWrongSection
+                      snapshot={snapshot}
+                      wholeNetworkCount={networkSnapshot.placementGoneWrong.length}
+                      patients={patients}
+                      referrals={referrals}
+                      onSelectMovement={(movement, trigger) => {
+                        setDrawerTrigger(trigger ?? null);
+                        openMovementDetail(movement);
+                      }}
+                    />
+                  </div>
+                  <UrgentOutsideFilterFooter
+                    movements={urgentOutsideFilter}
+                    scopeLabel={scopeLabel}
+                    now={now}
+                    excludedOpenCount={excludedOpenCount}
+                    urgentAnywhereCount={urgentAnywhereCount}
+                    patients={patients}
+                    referrals={referrals}
+                  />
+
+                  {/* NSQHS Standard 6 Clinical Handover Accreditation Footer: on paper only. */}
+                  <footer className={pageStyles.accreditationFooter} data-testid="handover-accreditation-footer">
+                    <div className={pageStyles.accreditationGrid}>
+                      <div className={pageStyles.accreditationField}>
+                        <span className={pageStyles.accreditationLabel}>Handover Given By (Outgoing MO / Nurse):</span>
+                        <div className={pageStyles.accreditationLine} />
+                      </div>
+                      <div className={pageStyles.accreditationField}>
+                        <span className={pageStyles.accreditationLabel}>
+                          Handover Received By (Incoming MO / Nurse):
+                        </span>
+                        <div className={pageStyles.accreditationLine} />
+                      </div>
+                      <div className={pageStyles.accreditationField}>
+                        <span className={pageStyles.accreditationLabel}>Shift Handover Safety Verification:</span>
+                        <div className={pageStyles.accreditationChecks}>
+                          <span className={pageStyles.checkItem}>[ ] Controlled Drugs Safe Checked</span>
+                          <span className={pageStyles.checkItem}>[ ] Resuscitation Trolley Checked</span>
+                          <span className={pageStyles.checkItem}>[ ] Duress Alarms Operational</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={pageStyles.accreditationLegal}>
+                      National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
+                      Government of Western Australia Department of Health
+                    </div>
+                  </footer>
+                </div>
+              </div>
+            </article>
+
+            {/* ISBAR for the movement last opened, or the first row of the list. */}
+            <Card as="div" className={pageStyles.isbarPanel} data-print-hide data-testid="ward-handover-isbar-panel">
+              {focusedMovement === null ? (
+                <EmptyState title="No movement in this list" icon={ClipboardList} />
+              ) : (
+                (() => {
+                  const info = resolveMovementPatient(focusedMovement, patients, referrals);
+                  const umrn =
+                    info.umrn.startsWith("UMRN") || info.umrn.startsWith("UM") ? info.umrn : `UMRN ${info.umrn}`;
+                  const legal = focusedMovement.legalForm
+                    ? `Form ${focusedMovement.legalForm.code}`
+                    : (focusedMovement.legalStatus ?? "legal status not recorded");
+                  const declines = focusedMovement.declines.length;
+                  const tabLabel = sheetTabs.find((tab) => tab.id === activeTableSection)?.label ?? "Handover";
+                  return (
+                    <>
+                      <div className={pageStyles.isbarHead}>
+                        <div className={pageStyles.isbarTitleBlock}>
+                          <span className={pageStyles.isbarEyebrow}>ISBAR · {tabLabel}</span>
+                          <h3 className={pageStyles.isbarName}>{info.name}</h3>
+                          <span className={pageStyles.isbarMeta}>
+                            {umrn} · tier {focusedMovement.urgency}
+                          </span>
+                        </div>
+                        <span className={pageStyles.isbarWait}>
+                          <Timer at={focusedMovement.openedAt * MINUTE} now={now * MINUTE} direction="waiting" chip />
+                        </span>
+                      </div>
+                      <ol className={pageStyles.isbarList}>
+                        <li>
+                          <span className={pageStyles.isbarLetter} aria-hidden="true">
+                            I
+                          </span>
+                          <span className={pageStyles.isbarText}>
+                            <span className={pageStyles.isbarLabelText}>Identify</span>
+                            {info.name}, {umrn}, {legal}
+                          </span>
+                        </li>
+                        <li>
+                          <span className={pageStyles.isbarLetter} aria-hidden="true">
+                            S
+                          </span>
+                          <span className={pageStyles.isbarText}>
+                            <span className={pageStyles.isbarLabelText}>Situation</span>
+                            {originDepartmentText(focusedMovement)}, {destinationCell(focusedMovement, units)}.{" "}
+                            {elapsedLabel(focusedMovement, now)}.
+                          </span>
+                        </li>
+                        <li>
+                          <span className={pageStyles.isbarLetter} aria-hidden="true">
+                            B
+                          </span>
+                          <span className={pageStyles.isbarText}>
+                            <span className={pageStyles.isbarLabelText}>Background and assessment</span>
+                            {movementObservationLabel(focusedMovement)}.
+                            {declines > 0 ? ` ${declines} decline${declines === 1 ? "" : "s"} logged.` : ""}
+                          </span>
+                        </li>
+                        <li>
+                          <span className={pageStyles.isbarLetter} aria-hidden="true">
+                            R
+                          </span>
+                          <span className={pageStyles.isbarText}>
+                            <span className={pageStyles.isbarLabelText}>Recommendation</span>
+                            {stageCopy[focusedMovement.stage]?.label ?? "In handover"}.
+                            {focusedMovement.owner ? ` Owner, ${focusedMovement.owner}.` : " No owner recorded."}
+                          </span>
+                        </li>
+                      </ol>
+                      <div className={pageStyles.isbarFoot}>
+                        <Button
+                          variant="sec"
+                          size="sm"
+                          icon={copiedPatientId === focusedMovement.id ? Check : Copy}
+                          onClick={() => handleCopyPatientISBAR(focusedMovement)}
+                          title="Copy structured ISBAR clinical note for EMR"
+                        >
+                          {copiedPatientId === focusedMovement.id ? "Copied" : "Copy to EMR"}
+                        </Button>
+                        <Button
+                          variant="pri"
+                          size="sm"
+                          onClick={(e) => {
+                            setDrawerTrigger(e.currentTarget);
+                            openMovementDetail(focusedMovement);
+                          }}
+                        >
+                          Movement details
+                        </Button>
+                      </div>
+                    </>
+                  );
+                })()
+              )}
+            </Card>
+
+            <OpenBeforeShiftEndSection
+              items={openBeforeShiftEnd}
+              now={now}
+              patients={patients}
+              referrals={referrals}
+              onSelectMovement={(movement, trigger) => {
+                setDrawerTrigger(trigger ?? null);
+                openMovementDetail(movement);
+              }}
+            />
+
             <SignOffSection
               takenAt={snapshot.takenAt}
               dayZero={dayZero}
@@ -3286,23 +3082,23 @@ export function HandoverPage() {
           onClick={(e) => e.stopPropagation()}
         >
           <div className={pageStyles.drawerHead}>
-            <div>
-              <h2 id="movement-drawer-heading">
-                {selectedMovement ? `Movement · ${selectedMovement.id}` : "Handover details"}
-              </h2>
-              <span style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-                {selectedMovement ? `Point-in-Time Handover State · ${selectedMovement.owner || "Unassigned"}` : ""}
+            <IconTile icon={ClipboardList} />
+            <div className={pageStyles.drawerTitleBlock}>
+              <h2 id="movement-drawer-heading">{selectedMovement ? "Movement details" : "Handover details"}</h2>
+              <span className={pageStyles.drawerMeta}>
+                Point in time, {formatInstant(now)} ·{" "}
+                {sheetTabs.find((tab) => tab.id === activeTableSection)?.label ?? "Handover"}
               </span>
             </div>
-            <button
+            <Button
               ref={drawerCloseBtnRef}
-              type="button"
-              className={pageStyles.drawerCloseBtn}
+              variant="ghost"
+              size="sm"
+              icon={X}
+              iconOnly
               onClick={closeMovementDetail}
               aria-label="Close movement details"
-            >
-              ×
-            </button>
+            />
           </div>
 
           {selectedMovement &&
@@ -3312,99 +3108,97 @@ export function HandoverPage() {
                 selPatientInfo.umrn.startsWith("UMRN") || selPatientInfo.umrn.startsWith("UM")
                   ? selPatientInfo.umrn
                   : `UMRN ${selPatientInfo.umrn}`;
+              const selUrgent = movementIsUrgent(selectedMovement, now);
+              const selObservation = movementObservationLabel(selectedMovement);
               return (
                 <div className={pageStyles.drawerBody}>
-                  <div className={pageStyles.drawerDetailList}>
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Patient Name &amp; UMRN</span>
-                      <span className={pageStyles.drawerDetailValue}>
-                        <b>{selPatientInfo.name}</b> · {selFormattedUmrn}
+                  <div className={pageStyles.drawerIdentity}>
+                    <span className={pageStyles.tierBox}>
+                      <SrOnly>Tier </SrOnly>
+                      {selectedMovement.urgency}
+                    </span>
+                    <div className={pageStyles.drawerTitleBlock}>
+                      <h3 className={pageStyles.drawerName}>{selPatientInfo.name}</h3>
+                      <span className={pageStyles.drawerMeta}>
+                        {selFormattedUmrn} · tier {selectedMovement.urgency}
+                        {selectedMovement.owner ? ` · owner ${selectedMovement.owner}` : ""}
                       </span>
                     </div>
-                    {/* Owner, 26 Sept 2026: no WF journey number row; the patient is named above. */}
-
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Current Unit / Origin</span>
-                      <span className={pageStyles.drawerDetailValue}>
-                        {originDepartmentText(selectedMovement)} → {destinationCell(selectedMovement, units)}
-                      </span>
-                    </div>
-
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Elapsed Waiting Time</span>
-                      <span className={pageStyles.drawerDetailValue}>
-                        <span
-                          className={`${pageStyles.statusPill} ${movementIsUrgent(selectedMovement, now) ? pageStyles.danger : pageStyles.warn}`}
-                        >
-                          {elapsedLabel(selectedMovement, now)}{" "}
-                          {movementIsUrgent(selectedMovement, now) ? "(Urgent Delay)" : ""}
-                        </span>
-                      </span>
-                    </div>
-
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Order / Legal Status</span>
-                      <span className={pageStyles.drawerDetailValue}>
-                        <span
-                          className={`${pageStyles.statusPill} ${selectedMovement.legalForm ? pageStyles.danger : pageStyles.mono}`}
-                        >
-                          {selectedMovement.legalForm
-                            ? `Form ${selectedMovement.legalForm.code}`
-                            : (selectedMovement.legalStatus ?? "Voluntary")}
-                        </span>
-                      </span>
-                    </div>
-
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Clinical Acuity &amp; Nursing Observations</span>
-                      <span className={pageStyles.drawerDetailValue}>
-                        <span
-                          className={`${pageStyles.statusPill} ${selectedMovement.flaggedUrgent || selectedMovement.specialling ? pageStyles.danger : pageStyles.mono}`}
-                        >
-                          {movementObservationLabel(selectedMovement)}
-                        </span>
-                      </span>
-                    </div>
-
-                    <div className={pageStyles.drawerDetailRow}>
-                      <span className={pageStyles.drawerDetailLabel}>Operational Stage &amp; Coordinator Action</span>
-                      <span
-                        className={pageStyles.drawerDetailValue}
-                        style={{ fontSize: "var(--t-1)", lineHeight: 1.45 }}
-                      >
-                        <b>{stageCopy[selectedMovement.stage]?.label ?? "In Handover"}</b>.{" "}
-                        {selectedMovement.owner ? `Recorded owner: ${selectedMovement.owner}. ` : ""}
-                        Target destination: {destinationCell(selectedMovement, units)}.
-                      </span>
-                    </div>
+                    <Timer at={selectedMovement.openedAt * MINUTE} now={now * MINUTE} direction="waiting" chip />
                   </div>
+                  {/* Owner, 26 Sept 2026: no WF journey number row; the patient is named above. */}
+                  <dl className={pageStyles.drawerFacts}>
+                    <div>
+                      <dt>From</dt>
+                      <dd>{originDepartmentText(selectedMovement)}</dd>
+                    </div>
+                    <div>
+                      <dt>To</dt>
+                      <dd>{destinationCell(selectedMovement, units)}</dd>
+                    </div>
+                    <div>
+                      <dt>Waiting</dt>
+                      <dd>
+                        <b>{elapsedLabel(selectedMovement, now)}</b>
+                        {selUrgent ? (
+                          <span className={pageStyles.cellUrgent}>
+                            <StatusGlyph tone="danger" size={9} />
+                            Urgent
+                          </span>
+                        ) : null}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Order</dt>
+                      <dd>
+                        <span>
+                          <b>
+                            {selectedMovement.legalForm
+                              ? `Form ${selectedMovement.legalForm.code}`
+                              : (selectedMovement.legalStatus ?? "Voluntary")}
+                          </b>
+                          {selectedMovement.legalForm ? " · due times as typed" : ""}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Acuity and obs</dt>
+                      <dd>
+                        <span className={pageStyles.cellAcuity}>
+                          {selObservation !== "Standard" ? (
+                            <StatusGlyph tone={selectedMovement.flaggedUrgent ? "danger" : "warning"} size={9} />
+                          ) : null}
+                          {selObservation}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Stage and action</dt>
+                      <dd>
+                        <span>
+                          <b>{stageCopy[selectedMovement.stage]?.label ?? "In handover"}</b>
+                          {selectedMovement.owner ? `, ${selectedMovement.owner}` : ", no owner recorded"}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
 
                   <div className={pageStyles.drawerFooter}>
                     <Link
                       // No resolved patient: the movement id (WF-…) is what the person route accepts; a UMRN, or the
                       // literal "UMRN not recorded" fallback, is not.
                       href={patientHref(selPatientInfo.patientId ?? selectedMovement.id)}
-                      className={pageStyles.btnActionSec}
-                      style={{
-                        textDecoration: "none",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      className={pageStyles.drawerLink}
                     >
-                      Patient Journey →
+                      <Icon icon={Activity} size={14} />
+                      Patient journey
                     </Link>
-                    <button
-                      type="button"
-                      className={pageStyles.btnPrintPrimary}
-                      onClick={() => announceToWardShell("Not wired in this prototype.")}
-                    >
-                      Allocate Candidate Bed
-                    </button>
-                    <button type="button" className={pageStyles.btnActionSec} onClick={closeMovementDetail}>
+                    <Button variant="ghost" size="sm" onClick={closeMovementDetail}>
                       Close
-                    </button>
+                    </Button>
+                    <Button variant="pri" size="sm" onClick={() => announceToWardShell("Not wired in this prototype.")}>
+                      Allocate candidate bed
+                    </Button>
                   </div>
                 </div>
               );
@@ -3432,74 +3226,44 @@ export function HandoverScopeControl({
   return (
     <label htmlFor="ward-handover-scope" className={pageStyles.scopeSelectForm} data-print-hide>
       <span className={pageStyles.srOnly}>Filter the sheet</span>
-      <div className={pageStyles.scopeSelectWrap}>
-        <svg
-          viewBox="0 0 16 16"
-          width="13"
-          height="13"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={pageStyles.scopeSelectIcon}
-          aria-hidden="true"
-        >
-          <path d="M2 14h12M4 14V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v11M7 5h2M7 8h2M7 11h2" />
-        </svg>
-        <select
-          id="ward-handover-scope"
-          aria-label="Filter the sheet"
-          data-testid="ward-handover-scope-select"
-          className={pageStyles.wardSelect}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
-          <optgroup label="Service">
-            {HEALTH_SERVICES.map((service) => (
-              <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
-                {service}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Ward">
-            {sortedUnits.map((unit) => (
-              <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
-                {unit.name}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Emergency department">
-            {sortedEds.map((ed) => (
-              <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
-                {ed.name}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Community team">
-            {sortedTeams.map((team) => (
-              <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
-                {team.name}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-        <svg
-          viewBox="0 0 12 12"
-          width="10"
-          height="10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={pageStyles.scopeChevronIcon}
-          aria-hidden="true"
-        >
-          <path d="M3 4.5l3 3 3-3" />
-        </svg>
-      </div>
+      <Select
+        id="ward-handover-scope"
+        aria-label="Filter the sheet"
+        data-testid="ward-handover-scope-select"
+        boxClassName={pageStyles.scopeSelect}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
+        <optgroup label="Service">
+          {HEALTH_SERVICES.map((service) => (
+            <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
+              {service}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Ward">
+          {sortedUnits.map((unit) => (
+            <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
+              {unit.name}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Emergency department">
+          {sortedEds.map((ed) => (
+            <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
+              {ed.name}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Community team">
+          {sortedTeams.map((team) => (
+            <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
+              {team.name}
+            </option>
+          ))}
+        </optgroup>
+      </Select>
     </label>
   );
 }
@@ -3934,63 +3698,61 @@ function OpenBeforeShiftEndSection({
 }) {
   const shiftEndClock = `${String(Math.floor(DAY_SHIFT_END_MINUTE / 60)).padStart(2, "0")}:${String(DAY_SHIFT_END_MINUTE % 60).padStart(2, "0")}`;
   return (
-    <section className={styles.section} data-testid="ward-handover-open-before-shift-end">
-      <h2 className={styles.sectionHeading}>Still open at {shiftEndClock}</h2>
-      <p className={styles.emptyNote}>
-        Pull holds and typed form times that fall before day-shift end ({shiftEndClock} board time).
-      </p>
+    <Card as="section" className={pageStyles.tasksCard} data-testid="ward-handover-open-before-shift-end">
+      <CardHead
+        icon={ListChecks}
+        title={`Still open at ${shiftEndClock}`}
+        meta="Pull holds and typed form times"
+        aside={<span className={pageStyles.taskCount}>{items.length}</span>}
+      />
       {items.length === 0 ? (
-        <p className={styles.emptyNote} data-testid="ward-handover-open-before-shift-end-empty">
-          None — no open pull hold or typed form time falls before {shiftEndClock}.
-        </p>
+        <CardBody>
+          <p className={pageStyles.tasksEmpty} data-testid="ward-handover-open-before-shift-end-empty">
+            None — no open pull hold or typed form time falls before {shiftEndClock}.
+          </p>
+        </CardBody>
       ) : (
-        <div className={pageStyles.boundedTableScroll}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Movement</th>
-                <th scope="col">Kind</th>
-                <th scope="col">On the board clock</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const pat = resolveMovementPatient(item.movement, patients, referrals);
-                const formattedUmrn =
-                  pat.umrn.startsWith("UMRN") || pat.umrn.startsWith("UM") ? pat.umrn : `UMRN ${pat.umrn}`;
-                return (
-                  <tr
-                    key={`${item.kind}-${item.movement.id}-${item.at}`}
-                    data-testid={`ward-handover-open-before-shift-end-${item.kind}-${item.movement.id}`}
-                  >
-                    {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                    <td>
-                      <div className={pageStyles.patientIdentityCellSecondary}>
-                        {onSelectMovement ? (
-                          <button
-                            type="button"
-                            className={pageStyles.patientNameBtn}
-                            onClick={(event) => onSelectMovement(item.movement, event.currentTarget)}
-                            title="View clinical handover details"
-                          >
-                            <b>{pat.name}</b>
-                          </button>
-                        ) : (
-                          <b>{pat.name}</b>
-                        )}
-                        <span className={pageStyles.patientUmrnChipSecondary}>{formattedUmrn}</span>
-                      </div>
-                    </td>
-                    <td>{item.kind === "pull_hold" ? "Bed pull" : "Typed form time"}</td>
-                    <td>{openWorkBeforeShiftEndLabel(item, now)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <CardBody flush>
+          <ul className={pageStyles.taskList}>
+            {items.map((item) => {
+              const pat = resolveMovementPatient(item.movement, patients, referrals);
+              const passed = item.at <= now;
+              return (
+                <li
+                  key={`${item.kind}-${item.movement.id}-${item.at}`}
+                  className={pageStyles.taskRow}
+                  data-testid={`ward-handover-open-before-shift-end-${item.kind}-${item.movement.id}`}
+                >
+                  {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                  <span className={pageStyles.taskText}>
+                    {onSelectMovement ? (
+                      <button
+                        type="button"
+                        className={pageStyles.btnLinkAction}
+                        onClick={(event) => onSelectMovement(item.movement, event.currentTarget)}
+                        title="View clinical handover details"
+                      >
+                        {pat.name}
+                      </button>
+                    ) : (
+                      <b>{pat.name}</b>
+                    )}
+                    <span className={pageStyles.taskKind}>
+                      {item.kind === "pull_hold" ? "Bed pull" : "Typed form time"}
+                    </span>
+                  </span>
+                  <span className={pageStyles.taskOwner}>{item.movement.owner || "No owner recorded"}</span>
+                  <span className={pageStyles.taskDue}>
+                    {passed ? <StatusGlyph tone="danger" size={9} /> : null}
+                    {openWorkBeforeShiftEndLabel(item, now)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -4026,48 +3788,64 @@ export function SignOffSection({
   onSignOff?: () => void;
   signOffRecord?: { role: WardFlowRole; at: Instant } | null;
 }) {
+  const signed = Boolean(signOffRecord);
   return (
-    <section className={styles.section} data-testid="ward-handover-sign-off">
-      <h2 className={styles.sectionHeading}>Shift and sign off</h2>
-      <ul className={styles.factsList} data-testid="ward-handover-sign-off-records">
-        <li>
-          Snapshot: {formatSheetMoment(takenAt, dayZero)} · {scopeLabel}.
-        </li>
-        <li>
-          Coverage: {includedOpenCount} of {totalOpenCount} open movement{totalOpenCount === 1 ? "" : "s"}.
-        </li>
-        <li>
-          {breachedOnSheetCount === 0
-            ? "No form due time passed on the sheet"
-            : `${breachedOnSheetCount} form due time${breachedOnSheetCount === 1 ? "" : "s"} passed on the sheet`}
-          {" · "}
-          {urgentOutsideFilter.length === 0
-            ? "none urgent outside the filter."
-            : `${urgentOutsideFilter.length} urgent outside: ${urgentOutsideFilter.map((movement) => movement.id).join(", ")}.`}
-        </li>
-      </ul>
-      <div className={styles.ctlRow}>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          data-testid="ward-handover-sign-off-button"
-          onClick={() => {
-            if (onSignOff) onSignOff();
-            else announceToWardShell("Not wired in this prototype.");
-          }}
-        >
-          Sign off the handover
-        </button>
-        <span className={styles.ctlHint}>
-          {signOffRecord
-            ? `Signed off as ${signOffRecord.role} at ${formatInstantWithDay(signOffRecord.at, takenAt)}.`
-            : "Sign-off is not recorded yet."}
-        </span>
-      </div>
-      <h3 className={styles.subHeading}>Incoming note</h3>
-      <p className={styles.emptyNote} data-testid="ward-handover-sign-off-notes">
-        No note is recorded for this shift. This does not describe whether the shift was quiet.
-      </p>
-    </section>
+    <Card as="section" className={pageStyles.signOffCard} data-testid="ward-handover-sign-off">
+      <CardHead
+        icon={ShieldCheck}
+        title="Shift and sign off"
+        aside={
+          <span className={pageStyles.signState}>
+            <StatusGlyph tone={signed ? "success" : "neutral"} size={9} />
+            {signed ? "Signed" : "Not signed"}
+          </span>
+        }
+      />
+      <CardBody className={pageStyles.signOffBody}>
+        <ul className={pageStyles.signRecords} data-testid="ward-handover-sign-off-records">
+          <li>
+            Snapshot: {formatSheetMoment(takenAt, dayZero)} · {scopeLabel}.
+          </li>
+          <li>
+            Coverage: {includedOpenCount} of {totalOpenCount} open movement{totalOpenCount === 1 ? "" : "s"}.
+          </li>
+          <li>
+            {breachedOnSheetCount === 0
+              ? "No form due time passed on the sheet"
+              : `${breachedOnSheetCount} form due time${breachedOnSheetCount === 1 ? "" : "s"} passed on the sheet`}
+            {" · "}
+            {urgentOutsideFilter.length === 0
+              ? "none urgent outside the filter."
+              : `${urgentOutsideFilter.length} urgent outside: ${urgentOutsideFilter.map((movement) => movement.id).join(", ")}.`}
+          </li>
+        </ul>
+        <div className={pageStyles.signAction}>
+          <p
+            className={pageStyles.signStatus}
+            data-testid="ward-handover-sign-off-visible-status"
+            data-recorded={signed ? "true" : "false"}
+          >
+            {signOffRecord
+              ? `Signed off as ${signOffRecord.role} at ${formatInstantWithDay(signOffRecord.at, takenAt)}.`
+              : "Sign-off is not recorded yet."}
+          </p>
+          <Button
+            variant="sec"
+            size="sm"
+            data-testid="ward-handover-sign-off-button"
+            onClick={() => {
+              if (onSignOff) onSignOff();
+              else announceToWardShell("Not wired in this prototype.");
+            }}
+          >
+            Sign off the handover
+          </Button>
+        </div>
+        <h3 className={pageStyles.signNoteHeading}>Incoming note</h3>
+        <p className={pageStyles.signNote} data-testid="ward-handover-sign-off-notes">
+          No note is recorded for this shift. This does not describe whether the shift was quiet.
+        </p>
+      </CardBody>
+    </Card>
   );
 }

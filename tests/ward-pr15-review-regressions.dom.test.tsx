@@ -201,11 +201,10 @@ describe("PR15 recorded facts and unavailable data", () => {
   it("names the synthetic directory without asserting live network coverage", () => {
     renderFlow(<OnCallScreen />);
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(
-      within(hud).getByRole("status", {
-        name: "Synthetic status: Synthetic role directory; live coverage not verified",
-      }),
-    ).toBeTruthy();
+    // v6 hero (approved mockup, October 2026): counts only; live cover is stated as not verified
+    // in the role panel beside the table.
+    expect(within(hud).getByRole("heading", { level: 1, name: "On-call directory" })).toBeTruthy();
+    expect(within(screen.getByTestId("ward-on-call-role-panel")).getByText("Not verified")).toBeTruthy();
     expect(hud.textContent).not.toMatch(/networks active|On Standby|EDs active/);
   });
 });

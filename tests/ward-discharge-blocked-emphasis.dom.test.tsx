@@ -70,8 +70,10 @@ describe("the discharges board raises the blocked group, and only while it has r
       "src/components/ward-management/discharges/discharges-third-edition.module.css",
       "utf8",
     ).replace(/\/\*[\s\S]*?\*\//gu, "");
+    // v6 (7 Oct 2026): the raised group is marked by the danger glyph beside its heading, shown only
+    // while the group has rows; the old 3px warn edge bar broke the no-stripe rule.
     expect(css).toMatch(
-      /\.workTable tbody\[data-testid="ward-discharge-group-blocked"\]\[data-has-items="true"\] \.groupRow th\s*\{[^}]*border-left:\s*3px solid var\(--warn\)/u,
+      /\.workTable tbody\[data-testid="ward-discharge-group-blocked"\]\[data-has-items="true"\] \.groupRow \.groupGlyph\s*\{[^}]*display:\s*inline-flex/u,
     );
     const keys = ["blocked", "confirmed", "expected", "discharged-today"];
     for (const key of keys) expect(groupSection(key), `${key} did not render`).toBeTruthy();
